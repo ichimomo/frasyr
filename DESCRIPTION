@@ -20,3 +20,8 @@ Imports:
     formattable,
     ggrepel,
     RcppRoll
+Suggests: 
+    knitr,
+    rmarkdown,
+    testthat
+VignetteBuilder: knitr
