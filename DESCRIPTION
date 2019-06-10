@@ -1,5 +1,5 @@
 Package: frasyr
-Title: Fisheries Research Agency (FRA) provides the method for calculating sustainable yield (SR) with R 
+Title: Fisheries Research Agency (FRA) provides the method for calculating sustainable yield (SY) with R 
 Version: 0.0.0.9000
 Authors@R: person(given="Momoko", family="Ichinokawa", email = "ichimomo@fra.affrc.go.jp", role = c("aut", "cre"))
 Description: Estimating stock status with stock assessment models and calculating RPs and ABC for Japanese fisheries management
