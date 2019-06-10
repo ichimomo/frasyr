@@ -72,6 +72,13 @@ convert_vector <- function(vector,name){
         mutate(type="VPA",sim="s0",stat=name,age=NA) 
 } 
 
+#' VPAの結果オブジェクトをtibble形式に変換する関数
+#'
+#' @param vpares vpaの結果のオブジェクト
+#' 
+#'
+#' @export
+
 convert_vpa_tibble <- function(vpares){
 
     total.catch <- colSums(vpares$input$dat$caa*vpares$input$dat$waa,na.rm=T)
@@ -98,7 +105,16 @@ convert_vpa_tibble <- function(vpares){
                            Recruitment)
 }
 
-SRplot_gg <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,ylabel="尾",
+
+#' 再生産関係をプロットする関数
+#'
+#' @param SR_result fit.SRの結果のオブジェクト
+#'
+#' @export
+#' 
+
+
+SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,ylabel="尾",
                       labeling.year=NULL,add.info=TRUE){
     require(tidyverse,quietly=TRUE)    
     require(ggrepel)
@@ -160,7 +176,14 @@ get.trace <- function(trace){
         mutate(age=fct_reorder(age,length(age):1))
     return(trace)
 }
-    
+
+#' 漁獲量曲線(yield curve)を書く
+#'
+#' @param MSY_obj est.MSYの結果のオブジェクト
+#' @param refs_base est.MSYから得られる管理基準値の表
+#'
+#' @export
+
 plot_yield <- function(MSY_obj,refs_base,
                        refs.label=NULL, # label for reference point
                        refs.color=c("#00533E","#edb918","#C73C2E"),
@@ -314,6 +337,13 @@ plot_yield <- function(MSY_obj,refs_base,
         
 }
 
+#' 管理基準値の表を作成する
+#'
+#' @param refs_base est.MSYから得られる管理基準値の表
+#'
+#' @export
+#'
+
 make_RP_table <- function(refs_base){
     require(formattable)
     require(tidyverse,quietly=TRUE)
@@ -346,6 +376,12 @@ derive_RP_value <- function(refs_base,RP_name){
     refs_base[refs_base$RP.definition%in%RP_name,]    
 }
 
+#' Kobe II matrixを計算するための関数
+#'
+#' @param fres_base future.vpaの結果のオブジェクト
+#' @param refs_base est.MSYから得られる管理基準値の表
+#'
+#' @export
 
 calc_kobeII_matrix <- function(fres_base,
                               refs_base,
@@ -460,8 +496,12 @@ get.stat4 <- function(fout,Brefs,
     return(bind_cols(catch.mean,Btarget.prob,Blow.prob,Blimit.prob,Bban.prob))
 }
 
+#' Kobe plotを書く
+#'
+#' @param vpares VPAの結果のオブジェクト
+#' @param refs_base est.MSYから得られる管理基準値の表
 
-plot_kobe_gg <- function(vpares,refs_base,roll_mean=1,
+plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
                          category=4,# 4区分か、6区分か
                          Btarget=c("Btarget0"),
                          Blimit=c("Blimit0"),
@@ -630,6 +670,13 @@ plot_kobe_gg <- function(vpares,refs_base,roll_mean=1,
     if(category==4) return(g4) else return(g6)
 }
 
+#' 将来予測の複数の結果をggplotで重ね書きする
+#'
+#' @param vpares VPAの結果のオブジェクト
+#' @param future.list 将来予測の結果をリストで並べたもの
+#'
+#' @export
+
 plot_futures <- function(vpares,
                          future.list=NULL,
                          future.name=names(future.list),
@@ -760,6 +807,12 @@ plot_futures <- function(vpares,
     return(g1)
 }
 
+#' F currentをプロットする
+#'
+#' @param vpares VPAの結果のオブジェクト
+#'
+#' @export
+
 plot_Fcurrent <- function(vpares,
                           year.range=NULL){
 
@@ -807,6 +860,15 @@ library(ggplot2)
 #SBlim <- 0.4*SBtarget
 #Ftarget <-1.5
 #beta <- 0.8
+
+#' HCRを書く
+#'
+#' @param SBtarget 目標管理基準値
+#' @param SBlim    限界管理基準値
+#' @param SBlim    禁漁水準
+#' @param Ftarget  Ftarget
+#'
+#' @export
 
 plot_HCR <- function(SBtarget,SBlim,SBban,Ftarget,
                      biomass.unit=1,

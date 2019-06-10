@@ -1,7 +1,8 @@
 #' 再生産関係を仮定しない管理基準値計算のための関数
 #'
 #' @param res VPAの出力結果
-#' 
+#'
+#' @export
 
 # ref.F
 ref.F <- function(
@@ -237,6 +238,8 @@ ref.F <- function(
 #' @param rres ref.Fの出力結果
 #'
 #' 
+#'
+#' @export
 
 plot.Fref <- function(rres,xlabel="max", # or, "mean","Fref/Fcur"
                       vline.text=c("F0.1","Fmax","Fcurrent","Fmed") # and "FpSPR.20.SPR" etc..
@@ -288,7 +291,8 @@ calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=
 #' @param multi currentFに乗じる係数
 #'　
 #' 
-
+#'
+#' @export
 
 ##----------------------- 将来予測関数 ----------------------------
 ## multiのオプションは管理後のFのmultiplier（管理前後でselectivityが同じ）
@@ -941,6 +945,8 @@ resample_2block.rec <- function(ssb,vpares,#deterministic=FALSE,
 #' @param ssb 親魚資源量
 #' @param vpares VPAの出力結果
 #' 
+#'
+#' @export
 
 HS.recAR <- function(ssb,vpares,#deterministic=FALSE,
                       rec.resample=NULL,
@@ -963,6 +969,8 @@ HS.recAR <- function(ssb,vpares,#deterministic=FALSE,
 #' @param ssb 親魚資源量
 #' @param vpares VPAの出力結果
 #' 
+#'
+#' @export
 
 # Beverton-Holt
 BH.recAR <- function(ssb,vpares,deterministic=FALSE,rec.resample=NULL,
@@ -980,6 +988,8 @@ BH.recAR <- function(ssb,vpares,deterministic=FALSE,rec.resample=NULL,
 #' @param vpares VPAの出力結果
 #'
 #' 
+#'
+#' @export
 
 RI.recAR <- function(ssb,vpares,deterministic=FALSE,rec.resample=NULL,
                    rec.arg=list(a=1000,b=1000,sd=0.1,bias.correction=TRUE)){                   
@@ -1047,6 +1057,8 @@ RI.recAR2 <- function(ssb,vpares,deterministic=FALSE,rec.resample=NULL,
 #' @param fres.list future.vpaからの出力結果をリストで並べたもの
 #' 
 #' 
+#'
+#' @export
 
 plot.futures <- function(fres.list,conf=c(0.1,0.5,0.9),target="SSB",legend.text="",xlim.tmp=NULL,y.scale=1){
     if(target=="SSB")  aa <- lapply(fres.list,function(x) apply(x$vssb[,-1],1,quantile,probs=conf))
@@ -1070,7 +1082,8 @@ plot.futures <- function(fres.list,conf=c(0.1,0.5,0.9),target="SSB",legend.text=
 #' @param fres0 future.vpaからの出力結果
 #' 
 #' 
-
+#'
+#' @export
 
 plot.future <- function(fres0,ylim.tmp=NULL,xlim.tmp=NULL,vpares=NULL,what=c(TRUE,TRUE,TRUE),conf=0.1,N.line=0,
                         label=c("Biomass","SSB","Catch"),is.legend=TRUE,add=FALSE,col=NULL,...){
@@ -1331,7 +1344,8 @@ get.data <- function(tfile){
 #' @param res VPAの結果
 #' @param rres ref.Fの結果
 #' @param fres future.vpaの結果
-
+#'
+#' @export
 
 out.vpa <- function(res=NULL, # VPA result 
                     rres=NULL, # reference point 
@@ -1448,6 +1462,8 @@ out.vpa <- function(res=NULL, # VPA result
 
 #' csvファイルとしてまとめられた資源計算結果を読み込んでRのオブジェクトにする
 #' @param tfile 資源計算結果がまとめられたcsvファイルの名前
+#'
+#' @export
 
 read.vpa <- function(tfile,
                      caa.label="catch at age",
@@ -1881,6 +1897,8 @@ get.SPR <- function(dres,target.SPR=30,Fmax=10,max.age=Inf){
 #'
 #' @param vpares VPAの結果のオブジェクト
 #' 
+#'
+#' @export
 
 get.SRdata <- function(vpares,R.dat=NULL,SSB.dat=NULL,years=as.numeric(colnames(vpares$naa))){
     # R.datとSSB.datだけが与えられた場合、それを使ってシンプルにフィットする
@@ -1919,6 +1937,8 @@ plot.SRdata <- function(SRdata){
 #' @param vpares VPAの結果のオブジェクト
 #' @param frag   MSY計算時の将来予測で用いる引数のリスト
 #' 
+#'
+#' @export
 
 est.MSY <- function(vpares,farg,
                    seed=farg$seed,
@@ -2494,6 +2514,8 @@ get.kobemat <- function(fout,N=fout$input$N,nyear=fout$input$nyear,Btarget=0,
 #' TMB = TRUEでmarginal likelihood (.cppファイルが必要)
 #'
 #' @param SRdata get.SRdataで作成した再生産関係データ
+#'
+#' @export
 
 fit.SR <- function(SRdata,
                    SR="HS",
