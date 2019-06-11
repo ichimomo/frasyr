@@ -28,6 +28,15 @@
 # rvpa1.9.3 - Popeの近似式を一般化
 ##
 
+#' csvデータを読み込んでvpa用のデータを作成する関数
+#'
+#' @param caa catch at age
+#' @param waa weight at age
+#' @param maa maturity at age
+#'
+#' @export
+
+
 data.handler <- function(
   caa,
   waa,
@@ -395,10 +404,81 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
    return(list(q=q, b=rep(1,np), sigma=sigma, obj=obj, convergence=convergence))
 }
     
-#
 
-# vpa 
-#
+#' VPAによる資源計算を実施する
+#'
+#' @param dat    data for vpa
+#' @param sel.f  最終年の選択率
+#' @param tf.year terminal Fをどの年の平均にするか
+#' @param rec.new 翌年の加入を外から与える
+#' @param rec     rec.yearの加入
+#' @param rec.year 加入を代入する際の年
+#' @param rps.year 翌年のRPSをどの範囲の平均にするか
+#' @param fc.year   Fcurrentでどの範囲を参照するか
+#' @param last.year vpaを計算する最終年を指定（retrospective analysis）
+#' @param last.catch.zero TRUEなら強制的に最終年の漁獲量を0にする
+#' @param faa0  sel.update=TRUEのとき，初期値となるfaa
+#' @param naa0  sel.update=TRUEのとき，初期値となるnaa
+#' @param f.new 
+#' @param Pope  Popeの近似式を使うかどうか
+#' @param p.pope  Popeの式でどこで漁獲するか（0.5 = 真ん中の時期）
+#' @param tune    tuningをするかどうか
+#' @param abund  tuningの際，何の指標に対応するか
+#' @param min.age tuning指標の年齢参照範囲の下限
+#' @param max.age tuning指標の年齢参照範囲の上限
+#' @param link    tuningのlink関数
+#' @param base    link関数が"log"のとき，底を何にするか
+#' @param af      資源量指数が年の中央のとき，af=0なら漁期前，af=1なら漁期真ん中，af=2なら漁期後となる
+#' @param p.m 
+#' @param index.w  tuning indexの重み
+#' @param use.index 
+#' @param scale  重量のscaling
+#' @param hessian 
+#' @param alpha  最高齢と最高齢-1のFの比 F_a = alpha*F_{a-1}
+#' @param maxit  石岡・岸田/平松の方法の最大繰り返し数
+#' @param d  石岡・岸田/平松の方法の収束判定基準
+#' @param min.caa  caaに0があるとき，0をmin.caaで置き換える
+#' @param plot  tuningに使った資源量指数に対するフィットのプロット
+#' @param plot.year  上のプロットの参照年
+#' @param term.F  terminal Fの何を推定するか: "max" or "all"
+#' @param plus.group 
+#' @param stat.tf  最終年のFを推定する統計量（年齢別に与えること可）
+#' @param add.p.est  追加で最高齢以外のfaaを推定する際．年齢を指定する．
+#' @param add.p.ini 
+#' @param sel.update チューニングVPAにおいて，選択率を更新しながら推定
+#' @param sel.def   sel.update=TRUEで選択率を更新していく際に，選択率をどのように計算するか．最大値を1とするか，平均値を1にするか...
+#' @param max.dd  sel.updateの際の収束判定基準
+#' @param ti.scale  資源量の係数と切片のscaling
+#' @param tf.mat terminal Fの平均をとる年の設定．0-1行列．
+#' @param eq.tf.mean terminal Fの平均値を過去のFの平均値と等しくする
+#' @param no.est  パラメータ推定しない．
+#' @param est.method 推定方法 （ls = 最小二乗法，ml = 最尤法）
+#' @param b.est bを推定するかどうか
+#' @param est.constraint  制約付き推定をするかどうか
+#' @param q.const  qパラメータの制約（0は推定しないで1にfix）
+#' @param b.const  bパラメータの制約（0は推定しないで1にfix）
+#' @param q.fix 
+#' @param b.fix 
+#' @param sigma.const  sigmaパラメータの制約
+#' @param fixed.index.var 
+#' @param max.iter  q,b,sigma計算の際の最大繰り返し数
+#' @param optimizer 
+#' @param Lower 
+#' @param Upper 
+#' @param p.fix 
+#' @param lambda  ridge回帰係数
+#' @param beta  penaltyのexponent  (beta = 1: lasso, 2: ridge)
+#' @param penalty 
+#' @param ssb.def  i: 年はじめ，m: 年中央, l: 年最後
+#' @param ssb.lag  0: no lag, 1: lag 1
+#' @param TMB
+#' @param TMB.compile
+#' @param sel.rank
+#' @param p.init 
+#' @param sigma.constraint
+#' 
+#' @export
+#' 
 
 vpa <- function(
   dat,  # data for vpa
@@ -1165,17 +1245,11 @@ Ft <- mean(faa[,ny],na.rm=TRUE)
 }
 
 
-
-
-
-
-
-
-
-
-
-
-# profile likelihood (one parameter)
+#' VPAの推定値についてprofile likelihood (one parameter)を実施する
+#'
+#' @param res vpa関数の出力値
+#'
+#' @export
 
 profile.likelihood.vpa <- function(res,Alpha=0.95,min.p=1.0E-6,max.p=1,L=20,method="ci"){
    
@@ -1312,7 +1386,11 @@ profile.likelihood.vpa.B <- function(res,Alpha=0.95,min.p=1.0E-6,max.p=1,L=20,me
   return(out)
 }
 
-# bootstrap
+#' bootstrapを実施する
+#'
+#' @param res vpaの出力値
+#'
+#' @export
 
 boo.vpa <- function(res,B=5,method="p",mean.correction=FALSE){
   ## method == "p": parametric bootstrap
@@ -1371,196 +1449,6 @@ boo.vpa <- function(res,B=5,method="p",mean.correction=FALSE){
   return(Res1)
 }
 
-# SR estimation
-
-SR.est.old <- function(res, model="BH", method="log", scale=1){
-  SSB <- colSums(res$ssb,na.rm=TRUE)/scale
-  R <- unlist(res$naa[1,])
-  
-  if (model=="BH"){
-    res0 <- lm(SSB/R ~ SSB)
-
-    a0 <- 1/res0$coef[1]
-    b0 <- res0$coef[2]*a0
-  }
-  if (model=="RI"){
-    res0 <- lm(log(R/SSB) ~ SSB)
-
-    a0 <- exp(res0$coef[1])
-    b0 <- -res0$coef[2]
-  }
-
-  p0 <- log(c(a0,b0))  
-
-  data <- data.frame(SSB=SSB,R=R)
-
-  if (model=="BH"){
-    if (method=="id") res <- nls(R~exp(log.a)*SSB/(1+exp(log.b)*SSB), data, start=list(log.a=p0[1],log.b=p0[2]))
-    if (method=="log") res <- nls(log(R)~log.a+log(SSB)-log(1+exp(log.b)*SSB), data, start=list(log.a=p0[1],log.b=p0[2]))
-   }
-
-  if (model=="RI"){
-    if (method=="id") res <- nls(R~exp(log.a)*SSB*exp(-exp(log.b)*SSB), data, start=list(log.a=p0[1],log.b=p0[2]))
-    if (method=="log") res <- nls(log(R)~log.a+log(SSB)-exp(log.b)*SSB, data, start=list(log.a=p0[1],log.b=p0[2]))
-   }
-
-  par <- exp(coef(res))
-  names(par) <- c("a","b")
-
-  out <- list(res=res, model=model, method=method, par=par)
-
-  return(out)
-}
-
-# MSY estimation
-
-MSY.est <- function(res,model="schaefer",r.fix=NULL,K.fix=NULL,p.init=NULL,scale=1,main=""){
-  B <- colSums(res$baa,na.rm=TRUE)/scale
-  C <- colSums(res$input$dat$caa*res$input$dat$waa,na.rm=TRUE)/scale
-
-  n <- length(B)
-
-  if (C[n]==0) {n <- n-1; B <- B[1:n]; C <- C[1:n]}
-
-  B2 <- B[2:n]
-  B1 <- B[1:(n-1)]
-  C1 <- C[1:(n-1)]
-  
-  S1 <- B2 - B1 + C1
-
-  if (is.null(p.init)){
-    if (model=="schaefer") {
-      res0 <- lm(S1/B1 ~ B1)
-      r0 <- res0$coef[1]
-      K0 <- -r0/res0$coef[2]
-    }
-    if (model=="fox") {
-      res0 <- lm(S1/B1 ~ log(B1))
-      r0 <- res0$coef[1]
-      K0 <- exp(-r0/res0$coef[2])
-    }
-
-    p0 <- log(c(max(r0, 0.001), max(K0, 100)))
-  }
-  else p0 <- p.init
-
-  data <- data.frame(S1=S1,B1=B1)
-
-  if (is.null(r.fix) & is.null(K.fix)){
-    if (model=="schaefer") res <- nls(S1~exp(log.r)*B1*(1-B1/exp(log.K)), data, start=list(log.r=p0[1],log.K=p0[2]))
-    if (model=="fox") res <- nls(S1~exp(log.r)*B1*(1-log(B1)/log.K), data, start=list(log.r=p0[1],log.K=p0[2]))
-
-    p <- exp(coef(res))
-    names(p) <- c("r","K")
-  }
-  else {
-    if (!is.null(r.fix) & is.null(K.fix)){
-      if (model=="schaefer") res <- nls(S1~r.fix*B1*(1-B1/exp(log.K)), data, start=list(log.K=p0[2]))
-      if (model=="fox") res <- nls(S1~r.fix*B1*(1-log(B1)/log.K), data, start=list(log.K=p0[2]))
-
-      p <- c(r.fix, exp(coef(res)))
-      names(p) <- c("r","K")
-    }
-    if (is.null(r.fix) & !is.null(K.fix)){
-      log.K <- log(K.fix)
-      if (model=="schaefer") res <- nls(S1~exp(log.r)*B1*(1-B1/exp(log.K)), data, start=list(log.r=log(0.2)))
-      if (model=="fox") res <- nls(S1~exp(log.r)*B1*(1-log(B1)/log.K), data, start=list(log.r=log(0.2)))
-
-      p <- c(exp(coef(res)),exp(log.K))
-      names(p) <- c("r","K")
-    }
-    if (!is.null(r.fix) & !is.null(K.fix)){
-      res <- list()
-
-      p <- c(r.fix, B[1])
-      names(p) <- c("r","K")
-    }
-  }
-
-  r <- p[1]
-  K <- p[2]
-
-  p.S1 <- predict(res)
-
-  if (model=="schaefer") MSY <- c(r*K/4, K/2, r/2)
-  if (model=="fox") MSY <- c(r*K/(log(K)*exp(1)), K/exp(1), r/log(K))
-  names(MSY) <- c("MSY","Bmsy","Fmsy")
-
-  Assess <- c(B[n]/MSY[2], (C[n]/B[n])/MSY[3])
-  names(Assess) <- c("Bcur/Bmsy","Fcur/Fmsy")
-
-  # SP plot
-  std.S <- (S1-mean(S1,na.rm=TRUE))/sd(S1,na.rm=TRUE)
-  std.pS <- (p.S1-mean(S1,na.rm=TRUE))/sd(S1,na.rm=TRUE)
-  std.MSY <- (MSY[1]-mean(S1,na.rm=TRUE))/sd(S1,na.rm=TRUE)
-  std.C <- (C1-mean(S1,na.rm=TRUE))/sd(S1,na.rm=TRUE)
-
-  plot(names(B1), std.S, pch=16, col="blue", xlab="Year", ylab="Standardized Surplus Production", main=main, cex=1.5)
-  lines(names(B1), std.pS , col="red", lwd=2)
-  abline(h=std.MSY, col="green", lty=2, lwd=2)
-  points(names(B1), std.C , pch=17, col="orange", cex=1.5)
-
-  Res <- list(B=B, C=C, S=S1, std.S=std.S, std.pS=std.pS, std.MSY=std.MSY, std.C=std.C, res=res, log.p = coef(res), p = p, vcov = vcov(res), MSY=MSY, Assess=Assess)
-
-  return(Res)
-}
-
-SR.est.old <- function(res,model="BH",k=1,p.init=NULL,lower.limit=-25,scale=1,main=NULL,log=FALSE){
-  SSB <- colSums(res$ssb,na.rm=TRUE)/scale
-  R <- res$naa[1,]/scale
-
-  n <- length(R)
-
-  R1 <- R[(1+k):n]
-  SSB1 <- SSB[1:(n-k)]
-
-  if (is.null(p.init)){
-    if (model=="BH") {
-      Y <- as.numeric(SSB1/R1)
-      res0 <- lm(Y ~ SSB1)
-      alpha <- 1/res0$coef[1]
-      beta <- res0$coef[2]*alpha
-    }
-    if (model=="RI") {
-      Y <- as.numeric(log(R1/SSB1))
-      res0 <- lm(Y ~ SSB1)
-      alpha <- exp(res0$coef[1])
-      beta <- -res0$coef[2]
-    }
-
-    p0 <- log(c(max(alpha, 0.00000000001), max(beta, 0.00000000001)))
-  }
-  else p0 <- p.init
-
-  data <- data.frame(R1=as.numeric(R1),SSB1=as.numeric(SSB1))
-
-  if (isTRUE(log)){
-    if (model=="BH") res <- nls(log(R1)~log.a+log(SSB1)-log(1+exp(log.b)*SSB1), data, start=list(log.a=p0[1],log.b=p0[2]), control=list(warnOnly=TRUE), lower=rep(lower.limit,2), algorithm="port")
-    if (model=="RI") res <- nls(log(R1)~log.a+log(SSB1)-exp(log.b)*SSB1, data, start=list(log.a=p0[1],log.b=p0[2]), control=list(warnOnly=TRUE), lower=rep(lower.limit,2), algorithm="port")
-  }
-  else{
-    if (model=="BH") res <- nls(R1~exp(log.a)*SSB1/(1+exp(log.b)*SSB1), data, start=list(log.a=p0[1],log.b=p0[2]), control=list(warnOnly=TRUE), lower=rep(lower.limit,2), algorithm="port")
-    if (model=="RI") res <- nls(R1~exp(log.a)*SSB1*exp(-exp(log.b)*SSB1), data, start=list(log.a=p0[1],log.b=p0[2]), control=list(warnOnly=TRUE), lower=rep(lower.limit,2), algorithm="port")
-  }
-
-  p <- exp(coef(res))
-  names(p) <- c("alpha","beta")
-
-  if(is.null(main)) main <- model 
-  plot(SSB1,R1,xlab="SSB",ylab="R",xlim=c(0,max(SSB1)*1.05),ylim=c(0,max(R1)*1.05),main=main)
-  
-  x <- seq(0,max(SSB1),len=100)
-
-  if(model=="BH") pred <- p[1]*x/(1+p[2]*x)
-  if(model=="RI") pred <- p[1]*x*exp(-p[2]*x)
-
-  lines(x,pred,col="red",lwd=2)
-
-  Res <- list(SSB=SSB1,R=R1, k=k, p=p)
-
-  return(Res)
-}
-
 
 logit <- function(x) log(x/(1-x))
 
@@ -1589,6 +1477,12 @@ cv.est <- function(res,n=5){
    
    return(mean(obj,na.rm=TRUE))
 }
+
+#' レトロスペクティブ解析の実施
+#'
+#' @param res VPAの出力
+#' @export
+#' 
 
 retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE){
    res.c <- res
