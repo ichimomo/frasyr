@@ -1,44 +1,33 @@
 ---
-title: "管理基準値・ABC計算チュートリアル"
-author: "Momoko Ichinokawa"
+title: "VPA、将来予測関数の使い方"
+author: "市野川桃子"
 date: "`r Sys.Date()`"
-output: 
-  rmdformats::readthedown:
-    highlight: kate
-    md_extensions: -ascii_identifiers
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
-```{r, echo=FALSE}
-library(rmdformats)
-library(knitr)
-## Global options
-options(max.print="75")
-opts_chunk$set(echo=TRUE,
-#                     cache=TRUE,
-               prompt=FALSE,
-               tidy=TRUE,
-               comment=NA,
-               message=FALSE,
-               warning=FALSE)
-#opts_knit$set(width=75)
-
-
-par(mar=c(4,4,3,1))
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.widths=100,
+  fig.heights=100
+)
 ```
 	
 # 1. 事前準備
    
 - データの読み込み，RVPA関数の読み込みなど
 ```{r data-read}
-# 関数の読み込み →  warningまたは「警告」が出るかもしれませんが，その後動いていれば問題ありません
-source("../../rvpa1.9.2.r")
-source("../../future2.1.r")
-source("../../utilities.r",encoding="UTF-8") # ggplotを使ったグラフ作成用の関数
 
+library(frasyr)
 # データの読み込み
-caa <- read.csv("caa_pma.csv",row.names=1)
-waa <- read.csv("waa_pma.csv",row.names=1)
-maa <- read.csv("maa_pma.csv",row.names=1)
+caa <- read.csv("../data-raw/caa_pma.csv",row.names=1)
+waa <- read.csv("../data-raw/waa_pma.csv",row.names=1)
+maa <- read.csv("../data-raw/maa_pma.csv",row.names=1)
 dat <- data.handler(caa=caa, waa=waa, maa=maa, M=0.5)
 names(dat)
 
@@ -53,7 +42,6 @@ names(dat)
 # VPAによる資源量推定
 res.pma <- vpa(dat,fc.year=2009:2011,rec=585,rec.year=2011,tf.year = 2008:2010,
                term.F="max",stat.tf="mean",Pope=TRUE,tune=FALSE,p.init=1.0)
-library(testthat)
 ```
 
 ```{r}
@@ -67,8 +55,8 @@ plot(res.pma$Fc.at.age,type="b",xlab="Age",ylab="F",ylim=c(0,max(res.pma$Fc.at.a
 - out.vpa関数による出力と同じ書式になりますので、out.vpa関数でひな形ファイルを作成してから、エクセルでそれを編集し、read.vpa関数で読むと良いと思います
 
 ```{r}
-out.vpa(res.pma) # vpa.csvというファイルが作成されます。VPAの結果のグラフ出力となるvpa.pdfも出力されます。
-res.pma2 <- read.vpa("vpa.csv") # vpa.csvを編集後、read.vpa関数で読み込みます
+#out.vpa(res.pma) # vpa.csvというファイルが作成されます。VPAの結果のグラフ出力となるvpa.pdfも出力されます。
+res.pma2 <- read.vpa("../data-raw/vpa.csv") # vpa.csvを編集後、read.vpa関数で読み込みます
 ```
 
 
@@ -97,9 +85,9 @@ rres.pma$summary
 ```
 
 ```{r ref.F3, fig.cap="図：YPR, SPR曲線 (x軸などを変更した場合)"}
-# 横軸や縦線で示す管理基準値を調整する場合、plot.Fref関数を使う
+# 横軸や縦線で示す管理基準値を調整する場合、plot_Fref関数を使う
 # x.labelは res.pma$summaryの行名、vline.textは res.pma$summaryの列名前に対応させて指定する
-plot.Fref(rres.pma,xlabel="Fref/Fcur", vline.text=c("FpSPR.20.SPR","FpSPR.30.SPR","FpSPR.40.SPR"))
+plot_Fref(rres.pma,xlabel="Fref/Fcur", vline.text=c("FpSPR.20.SPR","FpSPR.30.SPR","FpSPR.40.SPR"))
 ```
 
 # 4. 再生産関係の推定
@@ -146,7 +134,7 @@ c(HS.par0$AICc,HS.par1$AICc,BH.par0$AICc,BH.par1$AICc,RI.par0$AICc,RI.par1$AICc)
 ```
 - 結果の図示
 ```{r, fig.cap="図：**観測値（○）に対する再生産関係式．plot=赤がHS，緑と青がBH, RIだが両者はほとんど重なっていて見えない**"}
-plot.SRdata(SRdata)
+plot_SRdata(SRdata)
 lines(HS.par0$pred,col=2,type="l",lwd=3)
 lines(BH.par0$pred,col=3,type="l",lwd=3)    
 lines(RI.par0$pred,col=4,type="l",lwd=3)
@@ -156,10 +144,10 @@ lines(RI.par0$pred,col=4,type="l",lwd=3)
 [autoregressiveSR2.cpp](http://cse.fra.affrc.go.jp/ichimomo/fish/autoregressiveSR2.cpp)をダウンロードして，作業フォルダに置く
 ```{r, eval=FALSE}
 # install.packages("TMB")　#TMBがインストールされてなければ
-library(TMB)
-compile("autoregressiveSR2.cpp")
-dyn.load(dynlib("autoregressiveSR2"))
-HS.par11 <- fit.SR(SRdata,SR="HS",method="L2",AR=1,TMB=TRUE) #marginal likelihood
+#library(TMB)
+#compile("autoregressiveSR2.cpp")
+#dyn.load(dynlib("autoregressiveSR2"))
+#HS.par11 <- fit.SR(SRdata,SR="HS",method="L2",AR=1,TMB=TRUE) #marginal likelihood
 ```
 
 ## モデル診断
@@ -187,7 +175,7 @@ fres.HS <- future.vpa(res.pma,
                       waa.year=2009:2011, # 生物パラメータの参照年
                       maa.year=2009:2011,
                       M.year=2009:2011,
-                      is.plot=TRUE, # 結果をプロットするかどうか
+                      is.plot=FALSE, # 結果をプロットするかどうか
                       seed=1,
                       silent=TRUE,
                       recfunc=HS.recAR, # 再生産関係の関数
@@ -231,7 +219,7 @@ fres.BH <- future.vpa(res.pma,
                       waa.year=2009:2011, # 生物パラメータの参照年
                       maa.year=2009:2011,
                       M.year=2009:2011,
-                      is.plot=TRUE, # 結果をプロットするかどうか
+                      is.plot=FALSE, # 結果をプロットするかどうか
                       seed=1,
                       silent=TRUE,
                       recfunc=BH.recAR, # 再生産関係の関数
@@ -263,9 +251,9 @@ plot.futures関数を使って複数の結果を比較
 
 ```{r, fig.cap="図：plot.futures関数の結果"}
 par(mfrow=c(2,2))
-plot.futures(list(fres.HS,fres.HS3),legend.text=c("F=Fcurrent","F=0.5Fcurrent"),target="SSB")
-plot.futures(list(fres.HS,fres.HS3),legend.text=c("F=Fcurrent","F=0.5Fcurrent"),target="Catch")
-plot.futures(list(fres.HS,fres.HS3),legend.text=c("F=Fcurrent","F=0.5Fcurrent"),target="Biomass") 
+#plot.futures(list(fres.HS,fres.HS3),legend.text=c("F=Fcurrent","F=0.5Fcurrent"),target="SSB")
+#plot.futures(list(fres.HS,fres.HS3),legend.text=c("F=Fcurrent","F=0.5Fcurrent"),target="Catch")
+#plot.futures(list(fres.HS,fres.HS3),legend.text=c("F=Fcurrent","F=0.5Fcurrent"),target="Biomass") 
 ```
 
 ### 旧ルールで使っていたRPSのリサンプリングによる将来予測
@@ -275,7 +263,7 @@ rps.year <- 2001:2011
 fout.rps <- future.vpa(res.pma,currentF=NULL, multi=1, 
                     nyear=15,start.year=2012,N=10000,ABC.year=2013, 
                     waa.year=byear,maa.year=byear,M.year=byear,
-                    rec.new=NULL,
+                    rec.new=NULL,is.plot=FALSE,
                     recfunc=RPS.simple.rec,
                     rec.arg=list(rps.year=rps.year,
                       upper.ssb=Inf,bias.corrected=TRUE,rpsmean=FALSE,
@@ -316,7 +304,7 @@ fres.currentSSB <- future.vpa(res.pma,
                       waa.year=2009:2011, # 生物パラメータの参照年
                       maa.year=2009:2011,
                       M.year=2009:2011,seed=1,
-                      is.plot=TRUE, # 結果をプロットするかどうか
+                      is.plot=FALSE, # 結果をプロットするかどうか
                       Frec=list(stochastic=TRUE,future.year=2023,Blimit=rev(colSums(res.pma$ssb))[1],scenario="blimit",target.probs=50),
                       recfunc=HS.recAR, # 再生産関係の関数
                       # recfuncに対する引数
@@ -342,9 +330,9 @@ fres.HS4 <- future.vpa(res.pma,
                           waa.year=2009:2011, # 生物パラメータの参照年
                           maa.year=2009:2011,
                           M.year=2009:2011,
-                          is.plot=TRUE, # 結果をプロットするかどうか
+                          is.plot=FALSE, # 結果をプロットするかどうか
                           seed=1,
-                          recfunc=HS.rec, # 再生産関係の関数（HS.rec=Hockey-stick)                                
+                          recfunc=HS.recAR, # 再生産関係の関数（HS.rec=Hockey-stick)                                
                           rec.arg=list(a=HS.par0$pars$a,b=HS.par0$pars$b,
                                        rho=HS.par0$pars$rho,
                                        sd=HS.par0$pars$sd,bias.correction=TRUE,
@@ -367,7 +355,7 @@ plot.futures(list(fres.HS,fres.HS4)) # 両者の比較
 - 太平洋マイワシ，対馬マイワシ，太平洋マサバ，ホッケ，瀬戸内サワラでは年齢別体重と年齢別資源尾数に関係がありそうなかんじです
 
 ```{r}
-lm.res <- plot.waa(res.pma) # weight at ageが資源尾数の関数になっているかどうか，確認してみる．この例の場合は特に有意な関係はない
+lm.res <- plot_waa(res.pma) # weight at ageが資源尾数の関数になっているかどうか，確認してみる．この例の場合は特に有意な関係はない
 # lm.resの中に回帰した結果が年齢分だけ入っています
 fres.HS6 <- fres.HS
 fres.HS6$input$waa.fun <- TRUE
@@ -391,8 +379,8 @@ fres.HS5 <- future.vpa(res.pma,
                        ABC.year=2013, # ABCを計算する年
                        waa.year=2009:2011, # 生物パラメータの参照年
                        maa.year=2009:2011,
-                       M.year=2009:2011,
-                       recfunc=HS.rec, 
+                       M.year=2009:2011,is.plot=FALSE,
+                       recfunc=HS.recAR, 
                        rec.arg=list(a=HS.par0$pars$a,b=HS.par0$pars$b,
                                        rho=HS.par0$pars$rho,
                                        sd=HS.par0$pars$sd,bias.correction=TRUE,
@@ -515,7 +503,7 @@ input.abc$HCR <- list(Blim=refs$Blim,
                       beta=0.8) # 算定ルールのデフォルトは0.8
 input.abc$nyear <- 30 # ABC計算時には長期間計算する必要はない
 input.abc$ABC.year <- 2013 # ここでABC.yearを設定しなおしてください
-input.abc$is.plot <- TRUE
+input.abc$is.plot <- FALSE
 fres.abc1 <- do.call(future.vpa,input.abc)
 
 par(mfrow=c(1,1))
