@@ -345,7 +345,7 @@ fres.HS4 <- future.vpa(res.pma,
 par(mfrow=c(2,2))
 plot(fres.HS$vssb[,-1],fres.HS$naa[1,,-1],xlab="SSB",ylab="Recruits") 
 plot(fres.HS4$vssb[,-1],fres.HS4$naa[1,,-1],xlab="SSB",ylab="Recruits") 
-plot.futures(list(fres.HS,fres.HS4)) # 両者の比較
+#plot.futures(list(fres.HS,fres.HS4)) # 両者の比較
 ```
 
 ## (5-3) 年齢別体重が資源尾数に影響される場合の将来予測
@@ -512,16 +512,16 @@ ABC <- mean(fres.abc1$ABC) # 平均値をABCとする
 
 ## SSBの将来予測結果
 par(mfrow=c(1,1))
-plot.future(fres.abc1,what=c(FALSE,TRUE,FALSE),is.legend=TRUE,lwd=2,
-            col="darkblue",N=5,label=rep(NA,3))
-draw.refline(cbind(unlist(refs[c(1,1,2,3)+3]),unlist(refs[c(1,1,2,3)])),horiz=TRUE,lwd=1,scale=1)
+#plot.future(fres.abc1,what=c(FALSE,TRUE,FALSE),is.legend=TRUE,lwd=2,
+#            col="darkblue",N=5,label=rep(NA,3))
+#draw.refline(cbind(unlist(refs[c(1,1,2,3)+3]),unlist(refs[c(1,1,2,3)])),horiz=TRUE,lwd=1,scale=1)
 
 ## 漁獲量の将来予測結果
 par(mfrow=c(1,1))
-plot.future(fres.abc1,what=c(FALSE,FALSE,TRUE),is.legend=TRUE,lwd=2,
-            col="darkblue",N=5,label=rep(NA,3))
-points(fres.abc1$input$ABC.year,ABC,pch=20,col=2,cex=3)
-text(fres.abc1$input$ABC.year+1,ABC,"ABC",col=2)
+#plot.future(fres.abc1,what=c(FALSE,FALSE,TRUE),is.legend=TRUE,lwd=2,
+#            col="darkblue",N=5,label=rep(NA,3))
+#points(fres.abc1$input$ABC.year,ABC,pch=20,col=2,cex=3)
+#text(fres.abc1$input$ABC.year+1,ABC,"ABC",col=2)
 
 ## 実際に、どんなFが将来予測で使われているか
 boxplot(t(fres.abc1$faa[1,,]/fres.abc1$faa[1,1,]),ylab="multiplier to current F")
@@ -530,8 +530,8 @@ boxplot(t(fres.abc1$faa[1,,]/fres.abc1$faa[1,1,]),ylab="multiplier to current F"
 ```{r HCR}
 # どんなHCRなのか書いてみる
 ssb.abc <- mean(fres.abc1$vssb[rownames(fres.abc1$vssb)%in%fres.abc1$input$ABC.year,]) # ABC計算年のssbをとる
-plot.HCR(beta=beta,bban=refs$Bban,blimit=refs$Blim,btarget=refs$Bmsy,lwd=2,
-         xlim=c(0,refs$Bmsy*2),ssb.cur=ssb.abc,Fmsy=refs$Fmsy,yscale=0.7,scale=1000)
+#plot.HCR(beta=beta,bban=refs$Bban,blimit=refs$Blim,btarget=refs$Bmsy,lwd=2,
+#         xlim=c(0,refs$Bmsy*2),ssb.cur=ssb.abc,Fmsy=refs$Fmsy,yscale=0.7,scale=1000)
 ```
 
 ```{r probability}
