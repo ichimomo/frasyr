@@ -228,7 +228,7 @@ ref.F <- function(
   class(Res) <- "ref"
     
   if(isTRUE(plot)){
-      plot.Fref(Res)
+      plot_Fref(Res)
   }    
   return(Res)
 }
@@ -237,11 +237,9 @@ ref.F <- function(
 #'
 #' @param rres ref.Fの出力結果
 #'
-#' 
-#'
 #' @export
 
-plot.Fref <- function(rres,xlabel="max", # or, "mean","Fref/Fcur"
+plot_Fref <- function(rres,xlabel="max", # or, "mean","Fref/Fcur"
                       vline.text=c("F0.1","Fmax","Fcurrent","Fmed") # and "FpSPR.20.SPR" etc..
                       ){
     old.par <- par()
@@ -1928,7 +1926,17 @@ get.SRdata <- function(vpares,R.dat=NULL,SSB.dat=NULL,years=as.numeric(colnames(
     return(dat[c("year","SSB","R")])
 }
 
-plot.SRdata <- function(SRdata){
+#' SRdataをプロットする
+#'
+#' @param vpares VPAの結果のオブジェクト
+#' @param frag   MSY計算時の将来予測で用いる引数のリスト
+#' 
+#'
+#' @export
+#'
+#' 
+
+plot_SRdata <- function(SRdata){
     plot(SRdata$SSB,SRdata$R,xlab="SSB",ylab="R",xlim=c(0,max(SRdata$SSB)),ylim=c(0,max(SRdata$R)))
 }
 
@@ -2802,7 +2810,11 @@ fit.SR2 <- function(SRdata,
   return(Res)
 }
 
-plot.waa <- function(vres){
+#'
+#' @export
+#' 
+
+plot_waa <- function(vres){
     lm.list <- list()
     nage <- nrow(vres$naa)
     col.tmp <- rainbow(nage)    
@@ -3012,6 +3024,7 @@ draw.refline <- function(reftable,horiz=TRUE,scale=1000,lwd=3){
         }
 }
 
+#' @export
 
 #---- 期間内のRPSをサンプリング。平均値と中央値の差を補正するかどうか？など 
 RPS.simple.rec <- function(ssb,vpares,
