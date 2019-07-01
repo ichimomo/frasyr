@@ -1,10 +1,10 @@
 ---
-title: "Vignette Title"
-author: "Vignette Author"
+title: "将来予測の実施とABC計算（旧ルール）"
+author: "市野川桃子"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteIndexEntry{将来予測の実施とABC計算（旧ルール）}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -16,47 +16,120 @@ knitr::opts_chunk$set(
 )
 ```
 
-Vignettes are long form documentation commonly included in packages. Because they are part of the distribution of the package, they need to be as compact as possible. The `html_vignette` output type provides a custom style sheet (and tweaks some options) to ensure that the resulting html is as small as possible. The `html_vignette` format:
+# 将来予測の実施とABC計算（旧ルール）
+- 旧ルール用のコードになります．新しいパッケージでは動かない部分もありますので，古い関数をsourceしてください
 
-- Never uses retina figures
-- Has a smaller default figure size
-- Uses a custom CSS stylesheet instead of the default Twitter Bootstrap style
+## 管理基準値の計算
+```{r, fig.width=10}
+library(frasyr)
+# 古い関数を呼び出して上書き
+source("https://raw.githubusercontent.com/ichimomo/future-rvpa/master/future1.11.r")
 
-## Vignette Info
+## 年齢別体重など、将来で仮定する生物パラメータ
+## を平均する期間が共通の場合、あらかじめbyearに入れておく
+## 同様に、将来で仮定するRPSをとる期間もrps.yearとしておく
+byear <- 1998:2000
+rps.year <- 1991:2000
 
-Note the various macros within the `vignette` section of the metadata block above. These are required in order to instruct R how to build the vignette. Note that you should change the `title` field and the `\VignetteIndexEntry` to match the title of your vignette.
-
-## Styles
-
-The `html_vignette` template includes a basic CSS theme. To override this theme you can specify your own CSS in the document metadata as follows:
-
-    output: 
-      rmarkdown::html_vignette:
-        css: mystyles.css
-
-## Figures
-
-The figure sizes have been customised so that you can easily put two images side-by-side. 
-
-```{r, fig.show='hold'}
-plot(1:10)
-plot(10:1)
+## 管理基準値の計算
+data(vout3)
+rout <- ref.F(vout3,
+                waa.year=byear,maa.year=byear,
+                M.year=byear,rps.year=rps.year,
+                max.age=Inf,pSPR=c(20,25,30,40),
+                Fspr.init=0.2)
+rout$summary #　結果の概観
 ```
 
-You can enable figure captions by `fig_caption: yes` in YAML:
+## 将来予測
+```{r, eval=FALSE}
+## 将来予測(vout1); 例えば親魚資源を２００７年に４００までに回復させる
+fout1 <- future.vpa(vout3,currentF=NULL, multi=1, 
+                    nyear=15,start.year=2001,N=1000,ABC.year=2002, 
+                    waa.year=byear,maa.year=byear,M.year=byear,
+                    is.plot=FALSE,
+                    rec.new=NULL,
+                    recfunc=RPS.simple.rec,
+                    rec.arg=list(rps.year=rps.year,
+                      upper.ssb=Inf,bias.correction=TRUE,rpsmean=FALSE,
+                      upper.recruit=Inf),
+    # ↓回復シナリオ(Frec)の場合、Frecにリストを与えて、回復シナリオを設定する
+    #   stochasitc=FALSEで、決定論的な親魚資源量がBlimitと一致するようにする
+    #   stochasitc=TRUEでは、確率論的に将来予測をしたとき、50%の確率で
+    #                      親魚資源がBlimitを上回るようにする
+                    Frec=list(stochastic=FALSE,future.year=2007,
+                      Blimit=500000,seed=1,method="optim",scenario="blimit"))
+fout1$ABC[1] #1000回シミュレーションで1001個の結果が返される。1個目の要素は、決定論的
+             #将来予測の結果。2-1001個目の要素が、確率論的な将来予測の結果
+hist(fout1$ABC[-1]) # 加入の不確実性を考慮した場合のABCの分布
+fout1$multi # 最終的に使われたFcurrentに対する乗数
 
-    output:
-      rmarkdown::html_vignette:
-        fig_caption: yes
+## 将来予測(vout3)；Fmedで漁獲
+par(mfrow=c(2,2))
+fout2 <- future.vpa(vout3,
+                    # ↓NULLの場合、vout1$Fc.at.aが用いられる
+                    currentF=NULL, 
+                    # ↓管理がスタートする年からcurrentFに乗じられる係数
+                    #   ここでは,Fmedを使っている
+                    multi=rout$summary$Fmed[3],
+                    is.plot=FALSE,                    
+                    nyear=15,start.year=2001,N=1000,
+                    #　↓ABCを計算する年
+                    ABC.year=2002, 
+                    waa.year=byear,maa.year=byear,M.year=byear,
+                    rec.new=NULL,
+                    #　↓将来の加入関数とその引数
+                    recfunc=RPS.simple.rec,
+                    rec.arg=list(rps.year=rps.year,
+                      upper.ssb=Inf,bias.correction=TRUE,rpsmean=FALSE,
+                      upper.recruit=Inf))
+fout2$ABC[1] 
+hist(fout2$ABC[-1]) 
 
-Then you can use the chunk option `fig.cap = "Your figure caption."` in **knitr**.
+## ABC計算
+SSBcur.sim <- rev(colSums(vout3$ssb))[1]
+ABC.sim <- getABC(res.vpa=vout3, # vpaの結果
+                  res.ref=rout, # ref.Fの結果
+                  res.future=fout2, # future.vpaの結果 
+                  target.year=2005, # 確率を計算する基準の年
+                  is.plot=FALSE,                  
+                  Blim=200,N=1000,SSBcur=SSBcur.sim,
+                  # ↓ABCの基礎となる管理基準値（names(rout2$summary)から選ぶ）
+                  ref.case=c("Fcurrent","Fcurrent","FpSPR.20.SPR","FpSPR.30.SPR"),
+                  multi=c(1,fout2$multi,1,1)) # 上の管理基準値に対する乗数
+ABC.sim$ABC # 要約表
+	   
+## 結果をcsvファイル、グラフとして出力する
+out.vpa(res=vout3, # VPAの結果 
+        rres=rout,  # 管理基準値の計算結果
+        fres=fout1, # 将来予測結果
+        ABC=ABC.sim) # ABC計算結果
+# デフォルトではvpa.pdfとvpa.csvというファイルが作成され、
+# そこに推定された資源量などの情報が載っています
+# res, rres, fres, ABCがすべて揃っていなくてもOK
+#   ない場合はNULLを入れる
+# 例：VPAの結果だけ出力する場合
+out.vpa(res=vout3)
+```
 
-## More Examples
-
-You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
-
-```{r, echo=FALSE, results='asis'}
-knitr::kable(head(mtcars, 10))
-a <- 1:10
+```{r,eval=FALSE}
+## bootstrap結果を使って将来予測
+fssb <- fbiom <- ABC <- NULL
+tmp <- fout2$input
+tmp$N <- 20 # stochastic runは20回づつ繰り返す
+for(i in 1:length(boot.sim1)){
+  tmp$res0 <- boot.sim1[[i]]
+  tmp$res0$input <- vout3$input
+  # ↓ブートストラップで推定に失敗している場合、エラーが出て止まるのでtryで囲む
+  ftmp <- try(do.call(future.vpa,tmp))
+  if(class(ftmp)!="try-error"){
+    fssb <- cbind(fssb,ftmp$vssb[,-1])
+    fbiom <- cbind(fbiom,ftmp$vbiom[,-1])
+    ABC <- cbind(ABC,ftmp$ABC)
+  }
+}
+par(mfrow=c(2,1))
+boxplot(t(fssb),ylim=c(0,500))
+boxplot(t(fbiom))
 ```
 
