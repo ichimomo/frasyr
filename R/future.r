@@ -3087,3 +3087,15 @@ RPS.simple.rec <- function(ssb,vpares,
     return(list(rec=rec2,rec.resample=rec.resample))
 }
 
+
+menplot <- function(x,y,line.col=1,...){
+    polygon(c(x,rev(x)),c(y[,1],rev(y[,2])),...)
+    if(dim(y)[[2]]>2) points(x,y[,3],type="l",lwd=2,col=line.col)
+}
+
+menplot2 <- function(xy,probs=c(0.1,0.9),new=FALSE,xlab=NULL,ylab=NULL,...){
+    xx <- rownames(xy)
+    yy <- t(apply(xy,1,quantile,probs=c(0.1,0.9)))
+    if(isTRUE(new)) matplot(xx,yy,type="n",xlab=xlab,ylab=ylab)
+    menplot(xx,yy,...)
+}
