@@ -31,3 +31,4 @@ rsconnect/
 # for emacs
 *~
 .[#]*
+.Rproj.user
