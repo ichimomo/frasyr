@@ -1,0 +1,18 @@
+---
+title: "frasyrパッケージ：説明"
+author: "市野川桃子"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{frasyr}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+## VPAとか
+- test
+- test2
+
+## future.vpa
+
+
