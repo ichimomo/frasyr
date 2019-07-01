@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="author" content="市野川桃子" />
+
+<meta name="date" content="2019-07-01" />
+
+<title>VPAによる資源量推定</title>
+
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css" data-origin="pandoc">
+a.sourceLine { display: inline-block; line-height: 1.25; }
+a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
+a.sourceLine:empty { height: 1.2em; position: absolute; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+a.sourceLine { text-indent: -1em; padding-left: 1em; }
+}
+pre.numberSource a.sourceLine
+  { position: relative; }
+pre.numberSource a.sourceLine:empty
+  { position: absolute; }
+pre.numberSource a.sourceLine::before
+  { content: attr(data-line-number);
+    position: absolute; left: -5em; text-align: right; vertical-align: baseline;
+    border: none; pointer-events: all;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {  }
+@media screen {
+a.sourceLine::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    for (var j = 0; j < rules.length; j++) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' || rule.style.backgroundColor === '') continue;
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#header {
+text-align: center;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">VPAによる資源量推定</h1>
+<h4 class="author">市野川桃子</h4>
+<h4 class="date">2019-07-01</h4>
+
+
+
+<div id="1-vpa" class="section level2">
+<h2>例コード1: VPA計算</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="co"># 必要なパッケージのインストール</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="co">#install.packages(c(&quot;devtools&quot;))</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="co"># 最新のパッケージのインストールと呼び出し</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="co">#devtools::github_install(&quot;ichimomo/frasyr&quot;) # インストール</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">library</span>(frasyr)</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7">## 例データの読み込み</a>
+<a class="sourceLine" id="cb1-8" data-line-number="8">caa   &lt;-<span class="st"> </span><span class="kw">read.csv</span>(<span class="st">&quot;http://cse.fra.affrc.go.jp/ichimomo/fish/caa.csv&quot;</span>,  <span class="dt">row.names=</span><span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb1-9" data-line-number="9">waa   &lt;-<span class="st"> </span><span class="kw">read.csv</span>(<span class="st">&quot;http://cse.fra.affrc.go.jp/ichimomo/fish/caa.csv&quot;</span>,  <span class="dt">row.names=</span><span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb1-10" data-line-number="10">maa   &lt;-<span class="st"> </span><span class="kw">read.csv</span>(<span class="st">&quot;http://cse.fra.affrc.go.jp/ichimomo/fish/caa.csv&quot;</span>,  <span class="dt">row.names=</span><span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb1-11" data-line-number="11">M     &lt;-<span class="st"> </span><span class="kw">read.csv</span>(<span class="st">&quot;http://cse.fra.affrc.go.jp/ichimomo/fish/M.csv&quot;</span>,    <span class="dt">row.names=</span><span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb1-12" data-line-number="12">index &lt;-<span class="st"> </span><span class="kw">read.csv</span>(<span class="st">&quot;http://cse.fra.affrc.go.jp/ichimomo/fish/index.csv&quot;</span>,<span class="dt">row.names=</span><span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14">## データの整形</a>
+<a class="sourceLine" id="cb1-15" data-line-number="15">dat &lt;-<span class="st"> </span><span class="kw">data.handler</span>(<span class="dt">caa=</span>caa, <span class="dt">waa=</span>waa, <span class="dt">maa=</span>maa, <span class="dt">index=</span>index, <span class="dt">M=</span><span class="fl">0.4</span>)</a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17">## チューニングなしVPA</a>
+<a class="sourceLine" id="cb1-18" data-line-number="18">  <span class="co"># p.initは初期値。収束しない場合（Fがゼロになる場合など）は、初期値を変えてみる</span></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19">  <span class="co"># fc.yearは、Fcurrentを計算する範囲。管理基準値と将来予測で使われる。</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20">vout1 &lt;-<span class="st"> </span><span class="kw">vpa</span>(dat,<span class="dt">tf.year=</span><span class="dv">1997</span><span class="op">:</span><span class="dv">1999</span>,<span class="dt">Pope=</span><span class="ot">TRUE</span>,<span class="dt">fc.year=</span><span class="dv">1998</span><span class="op">:</span><span class="dv">2000</span>,<span class="dt">alpha=</span><span class="dv">1</span>,<span class="dt">p.init=</span><span class="fl">0.5</span>) </a>
+<a class="sourceLine" id="cb1-21" data-line-number="21">vout1a &lt;-<span class="st"> </span><span class="kw">vpa</span>(dat,<span class="dt">tf.year=</span><span class="dv">1997</span><span class="op">:</span><span class="dv">1999</span>,<span class="dt">Pope=</span><span class="ot">FALSE</span>,<span class="dt">fc.year=</span><span class="dv">1998</span><span class="op">:</span><span class="dv">2000</span>,<span class="dt">alpha=</span><span class="dv">1</span>,<span class="dt">p.init=</span><span class="fl">0.5</span>)</a>
+<a class="sourceLine" id="cb1-22" data-line-number="22">vout1b &lt;-<span class="st"> </span><span class="kw">vpa</span>(dat,<span class="dt">tf.year=</span><span class="dv">1997</span><span class="op">:</span><span class="dv">1999</span>,<span class="dt">Pope=</span><span class="ot">TRUE</span>,<span class="dt">fc.year=</span><span class="dv">1998</span><span class="op">:</span><span class="dv">2000</span>,<span class="dt">alpha=</span><span class="fl">0.5</span>,<span class="dt">p.init=</span><span class="fl">0.5</span>)</a>
+<a class="sourceLine" id="cb1-23" data-line-number="23">vout1c &lt;-<span class="st"> </span><span class="kw">vpa</span>(dat,<span class="dt">tf.year=</span><span class="dv">1999</span><span class="op">:</span><span class="dv">1999</span>,<span class="dt">Pope=</span><span class="ot">TRUE</span>,<span class="dt">fc.year=</span><span class="dv">1998</span><span class="op">:</span><span class="dv">2000</span>,<span class="dt">alpha=</span><span class="dv">1</span>,<span class="dt">p.init=</span><span class="fl">0.5</span>) </a>
+<a class="sourceLine" id="cb1-24" data-line-number="24"></a>
+<a class="sourceLine" id="cb1-25" data-line-number="25">## vout2; チューニング，選択率updateなし</a>
+<a class="sourceLine" id="cb1-26" data-line-number="26">vout2 &lt;-<span class="st"> </span><span class="kw">vpa</span>(dat,<span class="dt">tune=</span><span class="ot">TRUE</span>,<span class="dt">sel.update=</span><span class="ot">FALSE</span>,<span class="dt">Pope=</span><span class="ot">FALSE</span>,</a>
+<a class="sourceLine" id="cb1-27" data-line-number="27">             <span class="dt">tf.year=</span><span class="ot">NULL</span>,<span class="dt">sel.f=</span>vout1<span class="op">$</span>saa<span class="op">$</span><span class="st">&quot;2000&quot;</span>, <span class="co"># 選択率の仮定</span></a>
+<a class="sourceLine" id="cb1-28" data-line-number="28">             <span class="dt">abund=</span><span class="kw">c</span>(<span class="st">&quot;N&quot;</span>),<span class="dt">min.age=</span><span class="kw">c</span>(<span class="dv">0</span>),<span class="dt">max.age=</span><span class="kw">c</span>(<span class="dv">6</span>), <span class="co"># 資源量指数の設定</span></a>
+<a class="sourceLine" id="cb1-29" data-line-number="29">             <span class="dt">alpha=</span><span class="dv">1</span>,<span class="dt">p.init=</span><span class="fl">0.5</span>,<span class="dt">max.dd =</span> <span class="fl">0.00001</span>,<span class="dt">fc.year=</span><span class="dv">1998</span><span class="op">:</span><span class="dv">2000</span>)</a>
+<a class="sourceLine" id="cb1-30" data-line-number="30"></a>
+<a class="sourceLine" id="cb1-31" data-line-number="31">## vout3; チューニング，選択率update</a>
+<a class="sourceLine" id="cb1-32" data-line-number="32">  <span class="co"># tf.yearは選択率の初期値として用いられる。</span></a>
+<a class="sourceLine" id="cb1-33" data-line-number="33">vout3 &lt;-<span class="st"> </span><span class="kw">vpa</span>(dat,<span class="dt">tune=</span><span class="ot">TRUE</span>,<span class="dt">sel.update=</span><span class="ot">TRUE</span>,<span class="dt">Pope=</span><span class="ot">FALSE</span>,</a>
+<a class="sourceLine" id="cb1-34" data-line-number="34">             <span class="dt">tf.year=</span><span class="dv">1997</span><span class="op">:</span><span class="dv">1999</span>,<span class="dt">sel.f=</span><span class="ot">NULL</span>, </a>
+<a class="sourceLine" id="cb1-35" data-line-number="35">             <span class="dt">abund=</span><span class="kw">c</span>(<span class="st">&quot;N&quot;</span>),<span class="dt">min.age=</span><span class="kw">c</span>(<span class="dv">0</span>),<span class="dt">max.age=</span><span class="kw">c</span>(<span class="dv">7</span>), <span class="co"># 資源量指数の設定</span></a>
+<a class="sourceLine" id="cb1-36" data-line-number="36">             <span class="dt">alpha=</span><span class="dv">1</span>,<span class="dt">p.init=</span><span class="fl">0.5</span>,<span class="dt">max.dd =</span> <span class="fl">0.00001</span>,<span class="dt">fc.year=</span><span class="dv">1998</span><span class="op">:</span><span class="dv">2000</span>)</a>
+<a class="sourceLine" id="cb1-37" data-line-number="37"></a>
+<a class="sourceLine" id="cb1-38" data-line-number="38">## チューニング，選択率全推定</a>
+<a class="sourceLine" id="cb1-39" data-line-number="39">  <span class="co"># tf.yearも sel.fも必要ない</span></a>
+<a class="sourceLine" id="cb1-40" data-line-number="40">vout4 &lt;-<span class="st"> </span><span class="kw">vpa</span>(dat,<span class="dt">tune=</span><span class="ot">TRUE</span>,<span class="dt">sel.update=</span><span class="ot">FALSE</span>,<span class="dt">term.F=</span><span class="st">&quot;all&quot;</span>,</a>
+<a class="sourceLine" id="cb1-41" data-line-number="41">             <span class="dt">tf.year=</span><span class="ot">NULL</span>,<span class="dt">sel.f=</span><span class="ot">NULL</span>,</a>
+<a class="sourceLine" id="cb1-42" data-line-number="42">             <span class="dt">abund=</span><span class="kw">c</span>(<span class="st">&quot;N&quot;</span>),<span class="dt">min.age=</span><span class="kw">c</span>(<span class="dv">0</span>),<span class="dt">max.age=</span><span class="kw">c</span>(<span class="dv">6</span>), <span class="co"># 資源量指数の設定</span></a>
+<a class="sourceLine" id="cb1-43" data-line-number="43">             <span class="dt">alpha=</span><span class="dv">1</span>,<span class="dt">p.init=</span><span class="fl">0.5</span>,<span class="dt">max.dd =</span> <span class="fl">0.00001</span>,<span class="dt">fc.year=</span><span class="dv">1998</span><span class="op">:</span><span class="dv">2000</span>)</a></code></pre></div>
+</div>
+<div id="2-" class="section level2">
+<h2>例コード2: モデル診断・推定パラメータの不確実性の評価</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" data-line-number="1">## 尤度プロファイルを用いた80%信頼区間推定</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">ci0 &lt;-<span class="st"> </span><span class="kw">profile_likelihood.vpa</span>(vout3, <span class="dt">method=</span><span class="st">&quot;ci&quot;</span>,<span class="dt">Alpha=</span><span class="fl">0.80</span>)<span class="op">$</span>ci</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">## ノンパラメトリックブートストラップ(method=&quot;n&quot;)</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5"><span class="kw">set.seed</span>(<span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">boot.sim1 &lt;-<span class="st"> </span><span class="kw">boo.vpa</span>(vout3,<span class="dt">B=</span><span class="dv">10</span>,<span class="dt">method=</span><span class="st">&quot;n&quot;</span>)</a>
+<a class="sourceLine" id="cb2-7" data-line-number="7"><span class="co">#&gt; [1] 1</span></a>
+<a class="sourceLine" id="cb2-8" data-line-number="8"><span class="co">#&gt; [1] 2</span></a>
+<a class="sourceLine" id="cb2-9" data-line-number="9"><span class="co">#&gt; [1] 3</span></a>
+<a class="sourceLine" id="cb2-10" data-line-number="10"><span class="co">#&gt; [1] 4</span></a>
+<a class="sourceLine" id="cb2-11" data-line-number="11"><span class="co">#&gt; [1] 5</span></a>
+<a class="sourceLine" id="cb2-12" data-line-number="12"><span class="co">#&gt; [1] 6</span></a>
+<a class="sourceLine" id="cb2-13" data-line-number="13"><span class="co">#&gt; [1] 7</span></a>
+<a class="sourceLine" id="cb2-14" data-line-number="14"><span class="co">#&gt; [1] 8</span></a>
+<a class="sourceLine" id="cb2-15" data-line-number="15"><span class="co">#&gt; [1] 9</span></a>
+<a class="sourceLine" id="cb2-16" data-line-number="16"><span class="co">#&gt; [1] 10</span></a>
+<a class="sourceLine" id="cb2-17" data-line-number="17">  <span class="co"># boo.vpaはブートストラップ回数分のvpa関数の返り値のリストを返す</span></a>
+<a class="sourceLine" id="cb2-18" data-line-number="18">  <span class="co"># 値の取り出しは、リストの操作関数sapplyまたはlapplyを用いる</span></a>
+<a class="sourceLine" id="cb2-19" data-line-number="19">  <span class="co"># Bで繰り返し回数を指定します．ここでは10回ですが実際には1000回(B=1000)以上やってください</span></a>
+<a class="sourceLine" id="cb2-20" data-line-number="20">tf.dist1 &lt;-<span class="st"> </span><span class="kw">sapply</span>(boot.sim1,<span class="cf">function</span>(x) x<span class="op">$</span>faa[<span class="st">&quot;2000&quot;</span>][<span class="dv">7</span>,])</a>
+<a class="sourceLine" id="cb2-21" data-line-number="21">ci1 &lt;-<span class="st"> </span><span class="kw">quantile</span>(tf.dist1,<span class="dt">probs=</span><span class="kw">c</span>(<span class="fl">0.1</span>,<span class="fl">0.9</span>))</a>
+<a class="sourceLine" id="cb2-22" data-line-number="22"></a>
+<a class="sourceLine" id="cb2-23" data-line-number="23">## パラメトリックブートストラップ(method=&quot;p&quot;)</a>
+<a class="sourceLine" id="cb2-24" data-line-number="24"><span class="kw">set.seed</span>(<span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb2-25" data-line-number="25">boot.sim2 &lt;-<span class="st"> </span><span class="kw">boo.vpa</span>(vout3,<span class="dt">B=</span><span class="dv">10</span>,<span class="dt">method=</span><span class="st">&quot;p&quot;</span>) <span class="co"># 実際には1000回以上(B=1000)やってください</span></a>
+<a class="sourceLine" id="cb2-26" data-line-number="26"><span class="co">#&gt; [1] 1</span></a>
+<a class="sourceLine" id="cb2-27" data-line-number="27"><span class="co">#&gt; [1] 2</span></a>
+<a class="sourceLine" id="cb2-28" data-line-number="28"><span class="co">#&gt; [1] 3</span></a>
+<a class="sourceLine" id="cb2-29" data-line-number="29"><span class="co">#&gt; [1] 4</span></a>
+<a class="sourceLine" id="cb2-30" data-line-number="30"><span class="co">#&gt; [1] 5</span></a>
+<a class="sourceLine" id="cb2-31" data-line-number="31"><span class="co">#&gt; [1] 6</span></a>
+<a class="sourceLine" id="cb2-32" data-line-number="32"><span class="co">#&gt; [1] 7</span></a>
+<a class="sourceLine" id="cb2-33" data-line-number="33"><span class="co">#&gt; [1] 8</span></a>
+<a class="sourceLine" id="cb2-34" data-line-number="34"><span class="co">#&gt; [1] 9</span></a>
+<a class="sourceLine" id="cb2-35" data-line-number="35"><span class="co">#&gt; [1] 10</span></a>
+<a class="sourceLine" id="cb2-36" data-line-number="36">tf.dist2 &lt;-<span class="st"> </span><span class="kw">sapply</span>(boot.sim2,<span class="cf">function</span>(x) x<span class="op">$</span>faa[<span class="st">&quot;2000&quot;</span>][<span class="dv">6</span>,])</a>
+<a class="sourceLine" id="cb2-37" data-line-number="37">ci2 &lt;-<span class="st"> </span><span class="kw">quantile</span>(tf.dist2,<span class="dt">probs=</span><span class="kw">c</span>(<span class="fl">0.1</span>,<span class="fl">0.9</span>))</a>
+<a class="sourceLine" id="cb2-38" data-line-number="38"></a>
+<a class="sourceLine" id="cb2-39" data-line-number="39">## 平滑化ブートストラップ(method=&quot;r&quot;)</a>
+<a class="sourceLine" id="cb2-40" data-line-number="40"><span class="kw">set.seed</span>(<span class="dv">1</span>) </a>
+<a class="sourceLine" id="cb2-41" data-line-number="41">boot.sim3 &lt;-<span class="st"> </span><span class="kw">boo.vpa</span>(vout3,<span class="dt">B=</span><span class="dv">10</span>,<span class="dt">method=</span><span class="st">&quot;r&quot;</span>) <span class="co"># 実際には1000回以上(B=1000)やってください</span></a>
+<a class="sourceLine" id="cb2-42" data-line-number="42"><span class="co">#&gt; [1] 1</span></a>
+<a class="sourceLine" id="cb2-43" data-line-number="43"><span class="co">#&gt; [1] 2</span></a>
+<a class="sourceLine" id="cb2-44" data-line-number="44"><span class="co">#&gt; [1] 3</span></a>
+<a class="sourceLine" id="cb2-45" data-line-number="45"><span class="co">#&gt; [1] 4</span></a>
+<a class="sourceLine" id="cb2-46" data-line-number="46"><span class="co">#&gt; [1] 5</span></a>
+<a class="sourceLine" id="cb2-47" data-line-number="47"><span class="co">#&gt; [1] 6</span></a>
+<a class="sourceLine" id="cb2-48" data-line-number="48"><span class="co">#&gt; [1] 7</span></a>
+<a class="sourceLine" id="cb2-49" data-line-number="49"><span class="co">#&gt; [1] 8</span></a>
+<a class="sourceLine" id="cb2-50" data-line-number="50"><span class="co">#&gt; [1] 9</span></a>
+<a class="sourceLine" id="cb2-51" data-line-number="51"><span class="co">#&gt; [1] 10</span></a>
+<a class="sourceLine" id="cb2-52" data-line-number="52">tf.dist3 &lt;-<span class="st"> </span><span class="kw">sapply</span>(boot.sim3,<span class="cf">function</span>(x) x<span class="op">$</span>faa[<span class="st">&quot;2000&quot;</span>][<span class="dv">6</span>,])</a>
+<a class="sourceLine" id="cb2-53" data-line-number="53">ci3 &lt;-<span class="st"> </span><span class="kw">quantile</span>(tf.dist3,<span class="dt">probs=</span><span class="kw">c</span>(<span class="fl">0.1</span>,<span class="fl">0.9</span>))</a>
+<a class="sourceLine" id="cb2-54" data-line-number="54"></a>
+<a class="sourceLine" id="cb2-55" data-line-number="55">## 4つの信頼区間の比較</a>
+<a class="sourceLine" id="cb2-56" data-line-number="56"><span class="kw">rbind</span>(ci0,ci1,ci2,ci3)</a>
+<a class="sourceLine" id="cb2-57" data-line-number="57"><span class="co">#&gt;           10%       90%</span></a>
+<a class="sourceLine" id="cb2-58" data-line-number="58"><span class="co">#&gt; ci0 0.2317481 0.3879756</span></a>
+<a class="sourceLine" id="cb2-59" data-line-number="59"><span class="co">#&gt; ci1 0.2401430 0.3260112</span></a>
+<a class="sourceLine" id="cb2-60" data-line-number="60"><span class="co">#&gt; ci2 0.2406343 0.3193398</span></a>
+<a class="sourceLine" id="cb2-61" data-line-number="61"><span class="co">#&gt; ci3 0.2166567 0.3488743</span></a>
+<a class="sourceLine" id="cb2-62" data-line-number="62"></a>
+<a class="sourceLine" id="cb2-63" data-line-number="63">## ノンパラメトリックブートストラップ for vout4</a>
+<a class="sourceLine" id="cb2-64" data-line-number="64"><span class="kw">set.seed</span>(<span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb2-65" data-line-number="65">boot.sim4 &lt;-<span class="st"> </span><span class="kw">boo.vpa</span>(vout4,<span class="dt">B=</span><span class="dv">10</span>,<span class="dt">method=</span><span class="st">&quot;n&quot;</span>) <span class="co"># 実際には1000回以上(B=1000)やってください</span></a>
+<a class="sourceLine" id="cb2-66" data-line-number="66"><span class="co">#&gt; [1] 1</span></a>
+<a class="sourceLine" id="cb2-67" data-line-number="67"><span class="co">#&gt; [1] 2</span></a>
+<a class="sourceLine" id="cb2-68" data-line-number="68"><span class="co">#&gt; [1] 3</span></a>
+<a class="sourceLine" id="cb2-69" data-line-number="69"><span class="co">#&gt; [1] 4</span></a>
+<a class="sourceLine" id="cb2-70" data-line-number="70"><span class="co">#&gt; [1] 5</span></a>
+<a class="sourceLine" id="cb2-71" data-line-number="71"><span class="co">#&gt; [1] 6</span></a>
+<a class="sourceLine" id="cb2-72" data-line-number="72"><span class="co">#&gt; [1] 7</span></a>
+<a class="sourceLine" id="cb2-73" data-line-number="73"><span class="co">#&gt; [1] 8</span></a>
+<a class="sourceLine" id="cb2-74" data-line-number="74"><span class="co">#&gt; [1] 9</span></a>
+<a class="sourceLine" id="cb2-75" data-line-number="75"><span class="co">#&gt; [1] 10</span></a>
+<a class="sourceLine" id="cb2-76" data-line-number="76"></a>
+<a class="sourceLine" id="cb2-77" data-line-number="77">tf.dist4 &lt;-<span class="st"> </span><span class="kw">sapply</span>(boot.sim4[boot.sim4<span class="op">!=</span><span class="st">&quot;try-error&quot;</span>],<span class="cf">function</span>(x) x<span class="op">$</span>faa[<span class="st">&quot;2000&quot;</span>][<span class="dv">7</span>,])</a>
+<a class="sourceLine" id="cb2-78" data-line-number="78">ci4 &lt;-<span class="st"> </span><span class="kw">quantile</span>(tf.dist4,<span class="dt">probs=</span><span class="kw">c</span>(<span class="fl">0.1</span>,<span class="fl">0.9</span>))</a>
+<a class="sourceLine" id="cb2-79" data-line-number="79"></a>
+<a class="sourceLine" id="cb2-80" data-line-number="80">## 親魚量の信頼区間のプロット</a>
+<a class="sourceLine" id="cb2-81" data-line-number="81">Years &lt;-<span class="st"> </span><span class="kw">colnames</span>(dat<span class="op">$</span>caa)</a>
+<a class="sourceLine" id="cb2-82" data-line-number="82">ssb.boot &lt;-<span class="st"> </span><span class="kw">sapply</span>(boot.sim1,<span class="cf">function</span>(x) <span class="kw">colSums</span>(x<span class="op">$</span>ssb))</a>
+<a class="sourceLine" id="cb2-83" data-line-number="83">x &lt;-<span class="st"> </span><span class="kw">t</span>(<span class="kw">apply</span>(ssb.boot,<span class="dv">1</span>,quantile,<span class="dt">probs=</span><span class="kw">c</span>(<span class="fl">0.1</span>,<span class="fl">0.5</span>,<span class="fl">0.9</span>)))</a>
+<a class="sourceLine" id="cb2-84" data-line-number="84"><span class="kw">matplot</span>(Years,x,<span class="dt">ylim=</span><span class="kw">c</span>(<span class="dv">0</span>,<span class="kw">max</span>(x)),<span class="dt">col=</span><span class="dv">1</span>,<span class="dt">type=</span><span class="kw">c</span>(<span class="st">&quot;l&quot;</span>,<span class="st">&quot;b&quot;</span>,<span class="st">&quot;l&quot;</span>),</a>
+<a class="sourceLine" id="cb2-85" data-line-number="85">        <span class="dt">pch=</span><span class="dv">1</span>,<span class="dt">lty=</span><span class="kw">c</span>(<span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">2</span>),<span class="dt">ylab=</span><span class="st">&quot;Spawning biomass&quot;</span>)</a></code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1"></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">## 残差の自己相関のチェック</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">resid &lt;-<span class="st"> </span><span class="kw">as.numeric</span>(<span class="kw">log</span>(vout3<span class="op">$</span>pred.index) <span class="op">-</span><span class="st"> </span><span class="kw">log</span>(dat<span class="op">$</span>index))</a>
+<a class="sourceLine" id="cb3-4" data-line-number="4"><span class="kw">plot</span>(resid,<span class="dt">type=</span><span class="st">&quot;b&quot;</span>)</a></code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">acf</span>(resid) <span class="co"># 自己相関は特にない</span></a></code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="co"># 正規性の検定</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2"><span class="kw">ks.test</span>(resid,<span class="st">&quot;pnorm&quot;</span>,<span class="dt">mean=</span><span class="kw">mean</span>(resid),<span class="dt">sd=</span><span class="kw">sd</span>(resid))</a>
+<a class="sourceLine" id="cb5-3" data-line-number="3"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4"><span class="co">#&gt;  One-sample Kolmogorov-Smirnov test</span></a>
+<a class="sourceLine" id="cb5-5" data-line-number="5"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb5-6" data-line-number="6"><span class="co">#&gt; data:  resid</span></a>
+<a class="sourceLine" id="cb5-7" data-line-number="7"><span class="co">#&gt; D = 0.13904, p-value = 0.9759</span></a>
+<a class="sourceLine" id="cb5-8" data-line-number="8"><span class="co">#&gt; alternative hypothesis: two-sided</span></a>
+<a class="sourceLine" id="cb5-9" data-line-number="9"><span class="co"># 分布が有意に正規分布から外れているわけではない</span></a>
+<a class="sourceLine" id="cb5-10" data-line-number="10"><span class="kw">ks.test</span>(<span class="kw">c</span>(resid,<span class="dv">10</span>),<span class="st">&quot;pnorm&quot;</span>,<span class="dt">mean=</span><span class="kw">mean</span>(<span class="kw">c</span>(resid,<span class="dv">10</span>)),<span class="dt">sd=</span><span class="kw">sd</span>(<span class="kw">c</span>(resid,<span class="dv">10</span>)))</a>
+<a class="sourceLine" id="cb5-11" data-line-number="11"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb5-12" data-line-number="12"><span class="co">#&gt;  One-sample Kolmogorov-Smirnov test</span></a>
+<a class="sourceLine" id="cb5-13" data-line-number="13"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb5-14" data-line-number="14"><span class="co">#&gt; data:  c(resid, 10)</span></a>
+<a class="sourceLine" id="cb5-15" data-line-number="15"><span class="co">#&gt; D = 0.48991, p-value = 0.005872</span></a>
+<a class="sourceLine" id="cb5-16" data-line-number="16"><span class="co">#&gt; alternative hypothesis: two-sided</span></a>
+<a class="sourceLine" id="cb5-17" data-line-number="17"><span class="co"># 大きな外れ値があると、p値が小さくなって、正規分布でない、となる。</span></a></code></pre></div>
+</div>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

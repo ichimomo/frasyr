@@ -1245,13 +1245,15 @@ Ft <- mean(faa[,ny],na.rm=TRUE)
 }
 
 
+#'
 #' VPAの推定値についてprofile likelihood (one parameter)を実施する
 #'
 #' @param res vpa関数の出力値
 #'
 #' @export
+#' 
 
-profile.likelihood.vpa <- function(res,Alpha=0.95,min.p=1.0E-6,max.p=1,L=20,method="ci"){
+ profile_likelihood.vpa <- function(res,Alpha=0.95,min.p=1.0E-6,max.p=1,L=20,method="ci"){
    
    res.c <- res
    res.c$input$no.est <- TRUE

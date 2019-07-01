@@ -3,4 +3,6 @@
 ^data-raw$
 ^.*\.Rproj$
 ^\.Rproj\.user$
+vignettes/future-old.Rmd
+
 
