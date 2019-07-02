@@ -2,23 +2,28 @@
 title: "再生産関係・将来予測関数の使い方"
 author: "市野川桃子"
 date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+output:
+  html_document:
+    highlight: kate
+    toc: yes
+    toc_float: yes
 vignette: >
   %\VignetteIndexEntry{2. Estimating SR functions and Simulating futures}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
+
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.widths=100,
-  fig.heights=100
+  fig.width=10,
+  fig.height=10
 )
 ```
 	
-## 1. 事前準備
+# 1. 事前準備
    
 - データの読み込み，RVPA関数の読み込みなど
 ```{r data-read}
@@ -34,7 +39,7 @@ names(dat)
 ```
 
 
-## 2. VPAによる資源量推定
+# 2. VPAによる資源量推定
 
 今後はvpa関数の返り値，res.pmaを使って将来予測計算をおこなっていくので，そのためにvpaを実施します．(この辺はあまり詳しく解説しません．)
 
@@ -60,7 +65,7 @@ res.pma2 <- read.vpa("../data-raw/vpa.csv") # vpa.csvを編集後、read.vpa関�
 ```
 
 
-## 3. 再生産関係を仮定しない管理基準値の計算
+# 3. 再生産関係を仮定しない管理基準値の計算
 - ref.F関数を使います
 - %SPRやFmaxなど、再生産関係を仮定しない管理基準値を計算します
 - 計算結果はrres.pmaに格納されます
@@ -90,7 +95,7 @@ rres.pma$summary
 plot_Fref(rres.pma,xlabel="Fref/Fcur", vline.text=c("FpSPR.20.SPR","FpSPR.30.SPR","FpSPR.40.SPR"))
 ```
 
-## 4. 再生産関係の推定
+# 4. 再生産関係の推定
 ### データの作成
 
 - get.SRdataを使って再生産関係のフィット用のデータを作る
@@ -154,7 +159,7 @@ lines(RI.par0$pred,col=4,type="l",lwd=3)
 再生産関係のあてはめのあとは、推定されたパラメータの信頼区間や頑健性などをチェックする必要があります。そのための関数群なども用意しています。詳しくは<a href=https://ichimomo.github.io/future-rvpa/SRR-guidline.html> SRRガイドライン </a> へ
 
 
-## 5. 将来予測
+# 5. 将来予測
 
 future.vpa関数を使います
 
@@ -391,7 +396,7 @@ fres.HS5 <- future.vpa(res.pma,
 ```
   
 
-## 6. MSY管理基準値の計算
+# 6. MSY管理基準値の計算
 - MSY管理基準値計算では，上記の将来予測において，Fの値を様々に変えたときの平衡状態（世代時間×20年を```nyear```で指定します）における資源量やそれに対応するF等を管理基準値として算出します
 - なので、ここまでのプロセスで、ABC計算のためにきちんとしたオプションを設定したfuture.vpaを実行しておいてください。その返り値```fres.HS```をMSY計算では使っていきます 
 

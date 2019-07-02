@@ -2,8 +2,8 @@
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.widths=100,
-  fig.heights=100
+  fig.width=10,
+  fig.height=10
 )
 
 ## ----data-read-----------------------------------------------------------

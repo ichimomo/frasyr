@@ -2,7 +2,11 @@
 title: "VPAによる資源量推定"
 author: "市野川桃子"
 date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+output:
+  html_document:
+    highlight: kate
+    toc: yes
+    toc_float: yes
 vignette: >
   %\VignetteIndexEntry{1. Estimating abundances with VPA}
   %\VignetteEngine{knitr::rmarkdown}
