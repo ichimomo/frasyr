@@ -15,3 +15,13 @@ library(frasyr) # frasyrの呼び出し
 - 新ルールのもとでの将来予測計算 https://ichimomo.github.io/frasyr/doc/future.html
 
 
+
+# 開発ワークフロー（開発者向け）
+- 本レポジトリをcloneするかfolkする
+- 自分の環境下でコードを修正
+```{r}
+devtools::loac_all() # パッケージをビルド，テスト，インストール
+```
+- 修正したファイルを git add ファイル名，git commit -m "コメント" 
+- folkした場合は，pull request
+- などなど
