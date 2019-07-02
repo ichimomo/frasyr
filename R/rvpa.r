@@ -36,7 +36,6 @@
 #'
 #' @export
 
-
 data.handler <- function(
   caa,
   waa,
@@ -226,6 +225,7 @@ abund.extractor <- function(
   catch.prop=NULL,
   sel.def="maxage",
   p.m=0.5,
+  omega=NULL,
   scale=1000
 ){
 # abund = "N": abundance
@@ -258,6 +258,11 @@ abund.extractor <- function(
        saa <- sel.func(faa, def=sel.def)
        res <- colSums((naa*waa*saa)[min.age:max.age,], na.rm=TRUE)
  }
+ if (abund=="Bo"){
+        saa <- sel.func(faa*omega, def=sel.def)
+        saa <- sweep(saa,2,colSums(saa),FUN="/")
+       res <- colSums((naa*waa*saa)[min.age:max.age,], na.rm=TRUE)
+ } 
  if (abund=="Ns"){
        saa <- sel.func(faa, def=sel.def)
        res <- colSums((naa*saa)[min.age:max.age,], na.rm=TRUE)
@@ -503,7 +508,8 @@ vpa <- function(
   link = "id",  # tuningのlink関数
   base = NA,  # link関数が"log"のとき，底を何にするか
   af = NA,  # 資源量指数が年の中央のとき，af=0なら漁期前，af=1なら漁期真ん中，af=2なら漁期後となる
-  p.m = 0.5,
+  p.m = 0.5,  # Popeの近似式でどこで漁獲が起こるか（0.5は年の真ん中）
+  omega = NULL,  # チューニングの際にselectivityを補正する行列
   index.w = NULL,  # tuning indexの重み
   use.index = "all",
   scale = 1000,  # 重量のscaling
@@ -575,7 +581,7 @@ vpa <- function(
   if (!is.null(dat$catch.prop)) catch.prop <- dat$catch.prop
   index <- dat$index   # abundance indices
   M <- dat$M    # natural mortality-at-age
-  waa.catch <- ifelse(is.null(dat$waa.catch),waa,dat$waa.catch)
+  if(is.null(dat$waa.catch)) waa.catch <- waa else waa.catch <- dat$waa.catch
 
   if (isTRUE(tune) & is.null(index)) {print("Check!: There is no abundance index."); stop()}
   
@@ -596,6 +602,8 @@ vpa <- function(
       if (length(index.w)>1) index.w <- index.w[use.index]  
     }
   }
+
+  if (!is.null(omega)) omega <- omega[,1:ncol(caa)]
 
   #
   
@@ -679,7 +687,6 @@ vpa <- function(
   p.est <- function(log.p, out=FALSE){
  
     p <- exp(log.p)
-
 
     # sel.f==NULLで，パラメータpが1個なら，最終年最高齢のfaaとnaaを推定
     if (is.null(sel.f) & length(p) == 1){
@@ -895,9 +902,6 @@ vpa <- function(
         if (ssb.lag==1) ssb <- cbind(NA, ssb[,-ncol(ssb)])
       }
 
-
-
-
   # tuning
   
     obj <- NULL
@@ -908,7 +912,7 @@ vpa <- function(
        Abund <- NULL
        
        for (i in 1:nindex){
-         abundance <- abund.extractor(abund=abund[i], naa, faa, dat, min.age=min.age[i], max.age=max.age[i], link=link[i], base=base[i], af=af[i], catch.prop=catch.prop, sel.def=sel.def, p.m=p.m, scale=scale)
+         abundance <- abund.extractor(abund=abund[i], naa, faa, dat, min.age=min.age[i], max.age=max.age[i], link=link[i], base=base[i], af=af[i], catch.prop=catch.prop, sel.def=sel.def, p.m=p.m, omega=omega, scale=scale)
          Abund <- rbind(Abund, abundance)
        }
    
@@ -933,7 +937,7 @@ vpa <- function(
         Abund <- nn <- sigma <- b <- NULL
         for (i in 1:nindex)
         {
-            abundance <- abund.extractor(abund=abund[i], naa, faa, dat, min.age=min.age[i], max.age=max.age[i], link=link[i], base=base[i], af=af[i], catch.prop=catch.prop, sel.def=sel.def, p.m=p.m,scale=scale)
+            abundance <- abund.extractor(abund=abund[i], naa, faa, dat, min.age=min.age[i], max.age=max.age[i], link=link[i], base=base[i], af=af[i], catch.prop=catch.prop, sel.def=sel.def, p.m=p.m, omega=omega, scale=scale)
             Abund <- rbind(Abund, abundance)
             avail <- which(!is.na(as.numeric(index[i,])))
             if (b.est)
@@ -968,7 +972,7 @@ vpa <- function(
         Abund <- nn <- sigma <- b <- NULL
         for (i in 1:nindex)
         {
-            abundance <- abund.extractor(abund=abund[i], naa, faa, dat, min.age=min.age[i], max.age=max.age[i], link=link[i], base=base[i], af=af[i], catch.prop=catch.prop, sel.def=sel.def, p.m=p.m, scale=scale)
+            abundance <- abund.extractor(abund=abund[i], naa, faa, dat, min.age=min.age[i], max.age=max.age[i], link=link[i], base=base[i], af=af[i], catch.prop=catch.prop, sel.def=sel.def, p.m=p.m, omega=omega, scale=scale)
             Abund <- rbind(Abund, abundance)
             avail <- which(!is.na(as.numeric(index[i,])))
             nn[i] <- length(avail)
@@ -1014,7 +1018,7 @@ vpa <- function(
             sq.error <- 0
             for(j in index.num)
             {
-                abundance <- abund.extractor(abund=abund[j], naa, faa, dat, min.age=min.age[j], max.age=max.age[j], link=link[j], base=base[j], af=af[j], catch.prop=catch.prop, sel.def=sel.def, p.m=p.m, scale=scale)
+                abundance <- abund.extractor(abund=abund[j], naa, faa, dat, min.age=min.age[j], max.age=max.age[j], link=link[j], base=base[j], af=af[j], catch.prop=catch.prop, sel.def=sel.def, p.m=p.m, omega=omega, scale=scale)
                 avail <- which(!is.na(as.numeric(index[j,])))
                 sq.error <- sq.error + sum((log(as.numeric(index[j,avail]))-log(q[j])-b[j]*log(as.numeric(abundance[avail])))^2)
             }
@@ -1022,7 +1026,7 @@ vpa <- function(
         }
         for (i in 1:nindex)
         {
-            abundance <- abund.extractor(abund=abund[i], naa, faa, dat, min.age=min.age[i], max.age=max.age[i], link=link[i], base=base[i], af=af[i], catch.prop=catch.prop, sel.def=sel.def, p.m=p.m, scale=scale)
+            abundance <- abund.extractor(abund=abund[i], naa, faa, dat, min.age=min.age[i], max.age=max.age[i], link=link[i], base=base[i], af=af[i], catch.prop=catch.prop, sel.def=sel.def, p.m=p.m, omega=omega, scale=scale)
             obj <- c(obj,index.w[i]*(-as.numeric(na.omit(dnorm(log(as.numeric(index[i,avail])),log(q[i])+b[i]*log(as.numeric(abundance[avail])),sigma[i],log=TRUE)))))
         }
     }
@@ -1243,7 +1247,6 @@ Ft <- mean(faa[,ny],na.rm=TRUE)
   
   
 }
-
 
 #'
 #' VPAの推定値についてprofile likelihood (one parameter)を実施する
