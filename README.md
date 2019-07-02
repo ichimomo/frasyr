@@ -11,7 +11,7 @@ library(frasyr) # frasyrの呼び出し
 ```
 
 # マニュアル
-- VPAによる資源量推定　
-- 新ルールのもとでの将来予測計算
+- VPAによる資源量推定　https://ichimomo.github.io/frasyr/doc/vpa.html
+- 新ルールのもとでの将来予測計算 https://ichimomo.github.io/frasyr/doc/future.html
 
 
