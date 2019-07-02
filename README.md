@@ -6,7 +6,12 @@
 
 ```
 # install.pakcages("devtools") # <-- devtoolsをインストールしていない人
-devtools::install_github("ichimomo/frasyr")
+devtools::install_github("ichimomo/frasyr") # frasyrのインストール
+library(frasyr) # frasyrの呼び出し
 ```
 
 # マニュアル
+- VPAによる資源量推定　
+- 新ルールのもとでの将来予測計算
+
+
