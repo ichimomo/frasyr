@@ -1,0 +1,260 @@
+---
+title: "会議用資料"
+author: ""
+date: "`r Sys.Date()`"
+output: github_document
+---
+
+```{r, echo=FALSE}
+
+## Global options
+library(rmarkdown)
+library(knitr)
+options(max.print="75")
+opts_chunk$set(prompt=FALSE,
+               tidy=TRUE,
+               comment=NA,
+               message=FALSE,
+               warning=FALSE)
+
+
+```
+
+# マアジ太平洋系群 (ダミーデータ)
+
+- レポートの完成例はこちら
+- こちらではレポートをつくるさいのRコードも一緒に示しています
+- rvpaやfuture.vpaではあまり特殊なライブラリは必要としていませんでしたが、レポート用の図の作成のため、ここではggplot2などいろいろライブラリを使います。必要なパッケージを適宜インストールしてください。tidyverseなど、一部のパッケージがうまくインストールできない場合は、Rを最新のものに更新してください。
+- est.MSY以降の計算についてはtidyverseパッケージのdplyrやggplot2ライブラリを多用しています。今のRのコーディングはこれを使ってやるのが主流のようです。
+    - 参考リンク tidyr https://heavywatal.github.io/rstats/tidyr.html
+    - 参考リンク ggplot2 https://heavywatal.github.io/rstats/ggplot2.html
+	
+- ここで必要なオブジェクトは以下です。
+     - res.pma(VPAの結果)
+     - future.Fcurrent(Fcurrentによる将来予測結果)
+     - MSY.base(MSYの計算結果)
+     - refs.all(計算したすべての管理基準値)
+     - refs.base(選択した管理基準値)
+
+## 再生産関係式
+
+**(レポート記述内容例)**
+
+- 何年から何年までのデータを使ったか？（また、その判断基準）
+- 詳細な報告書には、モデル診断の結果で重要そうなもの、AICが近い他の再生産関係でフィットしたときの図なども示す。
+
+
+```{r}
+library(frasyr)
+options(scipen=100) # 桁数表示の調整(1E+9とかを抑制する)
+
+
+# 再生産関係のプロット
+(g1_SRplot <- SRplot_gg(SRmodel.base))
+```
+
+## 管理基準値
+
+- どの管理基準値がどのような意味を示すのか？デフォルト以外に候補がある場合には、その候補を選んだ理由。その管理基準値における利点・欠点を示す。0, 1, 2の数字が小さいほどデフォルトルールにのっとった管理基準値となる。
+- 漁獲量曲線は指示書の中にはなかったですｇが、管理基準値の位置の概要を見るため、また、水産庁からの資料には例として載っていたため、追加してみました。
+- 表では、有効数字が資源量・漁獲量について最小値で有効数字1桁になるように調整しています
+
+**(レポート記述内容例)** (あくまで例です。今の例で、代替基準値を最大限選ぶとしたらどうするか、というものです)
+
+<br>
+<br>
+
+**表：さまざまな管理基準値**
+
+
+|ラベル    | 管理基準値           | 説明                              |
+|:-----------|:-----------------|:---------------------------------|
+| Btarget0 |目標 | 最大の平均漁獲量を得る時の親魚量(**Bmsy**)。過去最大親魚量の2倍となり、SSB>SSB_maxの範囲における不確実性が大きい懸念がある。 |
+| Btarget1 |目標(代替値候補1) | 説明を書く |
+| Btarget2|目標(代替値候補2)  | 説明を書く|
+| Blimit0 |限界 |MSYの60%の平均漁獲量を得るときの親魚資源量 |
+| Blimit1 |限界(代替値候補1) |説明を書く|
+| Bban0 | 禁漁 |MSYの10%の平衡漁獲量を得るときの親魚資源量|
+| Bmax |  経験値 |過去最大親魚量　|
+|  B_HS | 経験値 |HS再生産関係の折れ点　|
+|  B_current |経験値 | 最近年の親魚量　|
+
+
+```{r}
+# 管理基準値表
+make_RP_table(refs.base)
+
+# 漁獲量曲線
+# 再生産関係をもとにしたyield curveと管理基準値のプロット。
+# 計算した全管理基準値を示す場合にはrefs.allを、厳選したものだけを示す場合にはrefs.baseを引数に使ってください
+# AR==TRUEにするとARありの結果もプロットされます
+
+# 将来予測と過去の漁獲量を追記した図
+(g2_yield_curve <- plot_yield(MSY.base$trace,refs.base,
+                   future=list(future.Fcurrent,future.default),
+                   past=res.pma,AR=FALSE,xlim.scale=0.4,ylim.scale=1.3,lining=FALSE))
+
+# xlimやylimを変更する場合
+(g2.2 <- plot_yield(MSY.base$trace,refs.base,AR_select=FALSE,xlim.scale=0.5,ylim.scale=1.3,lining=FALSE))
+
+# yield curveの元データが欲しい場合
+yield.table <- get.trace(MSY.base$trace) 
+yield.table <- yield.table %>% mutate(age=as.character(age)) %>% spread(key=age,value=value) %>% arrange(ssb.mean)
+
+
+# 神戸チャート
+
+# Btarget0として選ばれた管理基準値をベースにした神戸チャート4区分
+# roll_meanで各年の値を何年分移動平均するか指定します
+(g3_kobe4 <- plot_kobe_gg(res.pma,refs.base,roll_mean=3,category=4,
+                   Blow="Btarget0", # Btargeと同じ値を入れておいてください
+                   Btarget="Btarget0")) # <- どの管理基準値を軸に使うのか指定。指定しなければ"0"マークがついた管理基準値が使われます
+
+# Btarget0, Blow0, Blimit0として選ばれた管理基準値をベースにした神戸チャート6区分
+# Blowを使うかどうかは不明。とりあえず6区分の一番上の境界(Blowのオプション)は"Btarget0"と、targetで使う管理基準値の名前を入れて下さい
+(g4_kobe6 <- plot_kobe_gg(res.pma,refs.base,roll_mean=3,category=6,Blow="Btarget0"))
+
+```
+
+## HCRによる将来予測
+
+- デフォルトの管理基準値を使った将来予測と現状のFのまま維持した場合の将来予測の結果を比較します
+
+**(レポート記述内容例)**
+- 現状のFは2015年から2017年の年齢別Fの単純平均を用いた（など、どのようにcurrent Fを定義したかを書く)
+
+```{r}
+# 親魚資源量と漁獲量の時系列の図示
+(g5_future <- plot_futures(res.pma, #vpaの結果
+                   list(future.Fcurrent,future.default), # 将来予測結果
+                   future.name=c("F current",str_c("HCR(beta=",future.default$input$HCR$beta,")")),
+                   CI_range=c(0.1,0.9),
+                   maxyear=2045,ncol=2,
+                   Btarget=derive_RP_value(refs.base,"Btarget0")$SSB,
+                   Blimit=derive_RP_value(refs.base,"Blimit0")$SSB,
+#                   Blow=derive_RP_value(refs.base,"Blow0")$SSB,
+                   Bban=derive_RP_value(refs.base,"Bban0")$SSB,
+                   biomass.unit=10000,  # バイオマスの単位(100, 1000, or 10000トン)
+                   font.size=12)) # フォントサイズ
+#(g5 <- g5+ggtitle("図5. 現行のFとデフォルトのHCRを用いた時の将来予測\n(実線：平均値、範囲：80パーセント信頼区間)")+ylab("トン"))
+
+# Fcurrentの図
+(g6_Fcurrent <- plot_Fcurrent(res.pma,year.range=2007:2017))
+
+# HCRの図
+(g7_hcr <- plot_HCR(SBtarget=derive_RP_value(refs.base,"Btarget0")$SSB,
+         SBlim=derive_RP_value(refs.base,"Blimit0")$SSB,
+         SBban=derive_RP_value(refs.base,"Bban0")$SSB,
+         Ftarget=1,biomass.unit=1000,
+         beta=0.8))
+ggsave("g7_hcr.png",g7_hcr,width=8,height=4,dpi=600) 
+```
+
+## 図の一括保存
+- g1からg6までの図を一括してpngに保存します。あらかじめ解像度や大きさを設定しておくことで、ワードに貼った時に一貫した十分なクオリティを確保できます。
+
+```{r,eval=FALSE}
+ggsave("g1_SRplot.png",g1_SRplot,width=8,height=5,dpi=400)
+ggsave("g2_yield_curve.png",g2_yield_curve,width=8,height=5,dpi=400)
+ggsave("g3_kobe4.png",g3_kobe4,width=8,height=5,dpi=400)
+ggsave("g4_kobe6.png",g4_kobe6,width=8,height=5,dpi=400)
+ggsave("g5_future.png",g5_future,width=12,height=6,dpi=400)
+ggsave("g6_Fcurrent.png",g6_Fcurrent,width=6,height=4,dpi=400)
+```
+
+## パフォーマンス指標の比較
+
+- 代替管理基準値やさまざまなβを用いたときの将来予測を実施し、パフォーマンスを表にします
+- 代替管理基準値が多すぎると表がすごく長くなります。
+- ```calc_kobeII_matrix```で計算した結果を使います
+
+### csvへの出力
+```{r}
+all.table <- bind_rows(catch.table,
+                       ssbtarget.table,
+                       ssblow.table,
+                       ssblimit.table,
+                       ssbmin.table)
+write.csv(all.table,file="all.table.csv")
+```
+					   
+
+### htmlへの出力
+#### 平均漁獲量
+
+```{r}
+library(formattable)
+catch.table %>%  select(-stat_name) %>%
+    formattable::formattable(list(area(col=-1)~color_tile("white","steelblue"),
+                                  beta=color_tile("white","blue"),
+                                  HCR_name=formatter("span", 
+    style = ~ style(color = ifelse(HCR_name == "Btarget0-Blimit0-Bban0" & beta==0.8, "red", "black")))))
+```
+
+#### currentFからのFの削減率
+
+```{r}
+library(formattable)
+Fsakugen.table %>%  select(-stat_name) %>%
+    formattable::formattable(list(area(col=-1)~color_tile("white","steelblue"),
+                                  beta=color_tile("white","blue"),
+                                  HCR_name=formatter("span", 
+    style = ~ style(color = ifelse(HCR_name == "Btarget0-Blimit0-Bban0" & beta==0.8, "red", "black")))))
+```    
+
+#### SSB>SSBtargetとなる確率
+```{r}
+ssbtarget.table %>% select(-stat_name) %>%
+    formattable::formattable(list(area(col=-1)~color_tile("white","olivedrab"),
+                                  beta=color_tile("white","blue"),
+                                  HCR_name=formatter("span", 
+                                                     style = ~ style(color = ifelse(HCR_name == "Btarget0-Blimit0-Bban0" & beta==0.8, "red", "black")))))
+
+```
+
+#### Blimitを上回る確率
+```{r}
+
+ssblimit.table %>% select(-stat_name) %>%
+    formattable::formattable(list(area(col=-1)~color_tile("white","olivedrab"),
+                                  beta=color_tile("white","blue"),
+                                  HCR_name=formatter("span", 
+                                                     style = ~ style(color = ifelse(HCR_name == "Btarget0-Blimit0-Bban0" & beta==0.8, "red", "black")))))
+
+```
+
+#### Blimitを上回る確率
+```{r}
+
+ssblimit.table %>% select(-stat_name) %>%
+    formattable::formattable(list(area(col=-1)~color_tile("white","olivedrab"),
+                                  beta=color_tile("white","blue"),
+                                  HCR_name=formatter("span", 
+                                                     style = ~ style(color = ifelse(HCR_name == "Btarget0-Blimit0-Bban0" & beta==0.8, "red", "black")))))
+
+```
+
+#### 過去最低親魚量を上回る確率
+```{r}
+
+ssbmin.table %>% select(-stat_name) %>%
+    formattable::formattable(list(area(col=-1)~color_tile("white","olivedrab"),
+                                  beta=color_tile("white","blue"),
+                                  HCR_name=formatter("span", 
+                                                     style = ~ style(color = ifelse(HCR_name == "Btarget0-Blimit0-Bban0" & beta==0.8, "red", "black")))))
+
+
+
+```
+
+#### オプション：Catch AAV mean((catch_y-catch_y+1)/catch_y+1)
+```{r}
+
+catch.aav.table %>% select(-stat_name) %>%
+    formattable::formattable(list(area(col=-1)~color_tile("white","olivedrab"),
+                                  beta=color_tile("white","blue"),
+                                  HCR_name=formatter("span", 
+                                                     style = ~ style(color = ifelse(HCR_name == "Btarget0-Blimit0-Bban0" & beta==0.8, "red", "black")))))
+
+```
+
