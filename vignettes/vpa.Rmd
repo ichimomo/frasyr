@@ -1,5 +1,5 @@
 ---
-title: "VPAによる資源量推定"
+title: "VPA関数を使った資源量推定"
 author: "市野川桃子"
 date: "`r Sys.Date()`"
 output:
@@ -20,7 +20,10 @@ knitr::opts_chunk$set(
 )
 ```
 
-## 例コード1: VPA計算
+こちら　http://cse.fra.affrc.go.jp/ichimomo/fish/rvpa.html　のサイトからの転載になります．
+データも，このサイトから持ってきています．
+
+# データの読み込みと整形
 
 ```{r, fig.show='hold'}
 # 必要なパッケージのインストール
@@ -38,15 +41,21 @@ index <- read.csv("http://cse.fra.affrc.go.jp/ichimomo/fish/index.csv",row.names
 
 ## データの整形
 dat <- data.handler(caa=caa, waa=waa, maa=maa, index=index, M=0.4)
+```
 
-## チューニングなしVPA
+# VPAの実施
+## チューニングなしVPA 
+```{r}
   # p.initは初期値。収束しない場合（Fがゼロになる場合など）は、初期値を変えてみる
   # fc.yearは、Fcurrentを計算する範囲。管理基準値と将来予測で使われる。
 vout1 <- vpa(dat,tf.year=1997:1999,Pope=TRUE,fc.year=1998:2000,alpha=1,p.init=0.5) 
 vout1a <- vpa(dat,tf.year=1997:1999,Pope=FALSE,fc.year=1998:2000,alpha=1,p.init=0.5)
 vout1b <- vpa(dat,tf.year=1997:1999,Pope=TRUE,fc.year=1998:2000,alpha=0.5,p.init=0.5)
 vout1c <- vpa(dat,tf.year=1999:1999,Pope=TRUE,fc.year=1998:2000,alpha=1,p.init=0.5) 
+```
 
+## チューニングVPA
+```{r}
 ## vout2; チューニング，選択率updateなし
 vout2 <- vpa(dat,tune=TRUE,sel.update=FALSE,Pope=FALSE,
              tf.year=NULL,sel.f=vout1$saa$"2000", # 選択率の仮定
@@ -68,11 +77,15 @@ vout4 <- vpa(dat,tune=TRUE,sel.update=FALSE,term.F="all",
              alpha=1,p.init=0.5,max.dd = 0.00001,fc.year=1998:2000)
 ```
 
-## 例コード2: モデル診断・推定パラメータの不確実性の評価
-```{r}
-## 尤度プロファイルを用いた80%信頼区間推定
-ci0 <- profile_likelihood.vpa(vout3, method="ci",Alpha=0.80)$ci
+# モデル診断・推定パラメータの不確実性の評価
 
+## 尤度プロファイル
+```{r}
+ci0 <- profile_likelihood.vpa(vout3, method="ci",Alpha=0.80)$ci
+```
+
+## ブートストラップ
+```{r}
 ## ノンパラメトリックブートストラップ(method="n")
 set.seed(1)
 boot.sim1 <- boo.vpa(vout3,B=10,method="n")
@@ -110,8 +123,10 @@ ssb.boot <- sapply(boot.sim1,function(x) colSums(x$ssb))
 x <- t(apply(ssb.boot,1,quantile,probs=c(0.1,0.5,0.9)))
 matplot(Years,x,ylim=c(0,max(x)),col=1,type=c("l","b","l"),
         pch=1,lty=c(2,1,2),ylab="Spawning biomass")
+```
 
 ## 残差の自己相関のチェック
+```{r}
 resid <- as.numeric(log(vout3$pred.index) - log(dat$index))
 plot(resid,type="b")
 acf(resid) # 自己相関は特にない
