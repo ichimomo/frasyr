@@ -5,7 +5,7 @@
 # 使い方
 
 ```
-# install.pakcages("devtools") # <-- devtoolsをインストールしていない人
+# install.pakcages("devtools") # <-- devtoolsをインストールしていない人はインストールする
 devtools::install_github("ichimomo/frasyr") # frasyrのインストール
 library(frasyr) # frasyrの呼び出し
 ```
