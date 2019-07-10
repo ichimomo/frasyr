@@ -2,7 +2,7 @@ library(frasyr)
 
 context("future ref.F")
 
-test_that("inputput value check",{
+test_that("oututput value check",{
   caa <- read.csv(system.file("extdata","caa_pma.csv",package="frasyr"),row.names=1)
   waa <- read.csv(system.file("extdata","waa_pma.csv",package="frasyr"),row.names=1)
   maa <- read.csv(system.file("extdata","maa_pma.csv",package="frasyr"),row.names=1)
@@ -89,3 +89,306 @@ test_that("inputput value check",{
   expect_equal(res.ref.f$spr0,res_ref_f_spr0_pma_check[1,])
 })
 
+context("future SRdata")
+
+test_that("oututput value check",{
+  caa <- read.csv(system.file("extdata","caa_pma.csv",package="frasyr"),row.names=1)
+  waa <- read.csv(system.file("extdata","waa_pma.csv",package="frasyr"),row.names=1)
+  maa <- read.csv(system.file("extdata","maa_pma.csv",package="frasyr"),row.names=1)
+  dat <- data.handler(caa=caa, waa=waa, maa=maa, M=0.5)
+  res.pma <- vpa(dat,fc.year=2009:2011,rec=585,rec.year=2011,tf.year = 2008:2010,
+                 term.F="max",stat.tf="mean",Pope=TRUE,tune=FALSE,p.init=1.0)
+  SRdata <- get.SRdata(res.pma)
+  SRdata0 <- get.SRdata(R.dat=exp(rnorm(10)),SSB.dat=exp(rnorm(10)))
+  SRdata0usingPeriodFrom1990To2000 <- get.SRdata(res.pma,years=1990:2000)
+
+  #上記引数での計算結果を読み込み
+  SRdata_pma_check <- read.csv(system.file("extdata","future_SRdata_pma_check.csv",package="frasyr"),row.names=1)
+  SRdata0_pma_check <- read.csv(system.file("extdata","future_SRdata0_pma_check.csv",package="frasyr"),row.names=1)
+  SRdata0usingPeriodFrom1990To2000_pma_check <- read.csv(system.file("extdata","future_SRdata0usingPeriodFrom1990To2000_pma_check.csv",package="frasyr"),row.names=1)
+
+  #結果の数値を照合
+  expect_equal(SRdata$year, SRdata_pma_check$year)
+  expect_equal(SRdata$SSB, SRdata_pma_check$SSB)
+  expect_equal(SRdata$R, SRdata_pma_check$R)
+
+  expect_equal(SRdata0$year, SRdata0_pma_check$year)
+  #expect_equal(SRdata0$SSB, SRdata0_pma_check$SSB)
+  #expect_equal(SRdata0$R, SRdata0_pma_check$R)
+
+  expect_equal(SRdata0usingPeriodFrom1990To2000$year, SRdata0usingPeriodFrom1990To2000_pma_check$year)
+  expect_equal(SRdata0usingPeriodFrom1990To2000$SSB, SRdata0usingPeriodFrom1990To2000_pma_check$SSB)
+  expect_equal(SRdata0usingPeriodFrom1990To2000$R, SRdata0usingPeriodFrom1990To2000_pma_check$R)
+
+})
+
+context("future fitSR")
+
+test_that("oututput value check",{
+  caa <- read.csv(system.file("extdata","caa_pma.csv",package="frasyr"),row.names=1)
+  waa <- read.csv(system.file("extdata","waa_pma.csv",package="frasyr"),row.names=1)
+  maa <- read.csv(system.file("extdata","maa_pma.csv",package="frasyr"),row.names=1)
+  dat <- data.handler(caa=caa, waa=waa, maa=maa, M=0.5)
+  res.pma <- vpa(dat,fc.year=2009:2011,rec=585,rec.year=2011,tf.year = 2008:2010,
+                 term.F="max",stat.tf="mean",Pope=TRUE,tune=FALSE,p.init=1.0)
+  SRdata <- get.SRdata(res.pma)
+
+  HS.par0 <- fit.SR(SRdata,SR="HS",method="L2",AR=0,hessian=FALSE)
+  HS.par1 <- fit.SR(SRdata,SR="HS",method="L2",AR=1,hessian=FALSE)
+  BH.par0 <- fit.SR(SRdata,SR="BH",method="L2",AR=0,hessian=FALSE)
+  BH.par1 <- fit.SR(SRdata,SR="BH",method="L2",AR=1,hessian=FALSE)
+  RI.par0 <- fit.SR(SRdata,SR="RI",method="L2",AR=0,hessian=FALSE)
+  RI.par1 <- fit.SR(SRdata,SR="RI",method="L2",AR=1,hessian=FALSE)
+
+  #上記引数での計算結果を読み込み
+  HSpar0_opt_par_pma_check <- read.csv(system.file("extdata","future_HSpar0_opt_par_pma_check.csv",package="frasyr"),row.names=1)
+  HSpar0_opt_value_pma_check <- read.csv(system.file("extdata","future_HSpar0_opt_value_pma_check.csv",package="frasyr"),row.names=1)
+  HSpar0_opt_counts_pma_check <- read.csv(system.file("extdata","future_HSpar0_opt_counts_pma_check.csv",package="frasyr"),row.names=1)
+  HSpar0_opt_convergence_pma_check <- read.csv(system.file("extdata","future_HSpar0_opt_convergence_pma_check.csv",package="frasyr"),row.names=1)
+  HSpar0_resid_pma_check <- read.csv(system.file("extdata","future_HSpar0_resid_pma_check.csv",package="frasyr"),row.names=1)
+  HSpar0_resid2_pma_check <- read.csv(system.file("extdata","future_HSpar0_resid2_pma_check.csv",package="frasyr"),row.names=1)
+  HSpar0_pars_pma_check <- read.csv(system.file("extdata","future_HSpar0_pars_pma_check.csv",package="frasyr"),row.names=1)
+  HSpar0_loglik_pma_check <- read.csv(system.file("extdata","future_HSpar0_loglik_pma_check.csv",package="frasyr"),row.names=1)
+  HSpar0_pred_pma_check <- read.csv(system.file("extdata","future_HSpar0_pred_pma_check.csv",package="frasyr"),row.names=1)
+  HSpar0_k_pma_check <- read.csv(system.file("extdata","future_HSpar0_k_pma_check.csv",package="frasyr"),row.names=1)
+  HSpar0_AIC_pma_check <- read.csv(system.file("extdata","future_HSpar0_AIC_pma_check.csv",package="frasyr"),row.names=1)
+  HSpar0_AICc_pma_check <- read.csv(system.file("extdata","future_HSpar0_AICc_pma_check.csv",package="frasyr"),row.names=1)
+  HSpar0_BIC_pma_check <- read.csv(system.file("extdata","future_HSpar0_BIC_pma_check.csv",package="frasyr"),row.names=1)
+
+  HSpar1_opt_par_pma_check <- read.csv(system.file("extdata","future_HSpar1_opt_par_pma_check.csv",package="frasyr"),row.names=1)
+  HSpar1_opt_value_pma_check <- read.csv(system.file("extdata","future_HSpar1_opt_value_pma_check.csv",package="frasyr"),row.names=1)
+  HSpar1_opt_counts_pma_check <- read.csv(system.file("extdata","future_HSpar1_opt_counts_pma_check.csv",package="frasyr"),row.names=1)
+  HSpar1_opt_convergence_pma_check <- read.csv(system.file("extdata","future_HSpar1_opt_convergence_pma_check.csv",package="frasyr"),row.names=1)
+  HSpar1_resid_pma_check <- read.csv(system.file("extdata","future_HSpar1_resid_pma_check.csv",package="frasyr"),row.names=1)
+  HSpar1_resid2_pma_check <- read.csv(system.file("extdata","future_HSpar1_resid2_pma_check.csv",package="frasyr"),row.names=1)
+  HSpar1_pars_pma_check <- read.csv(system.file("extdata","future_HSpar1_pars_pma_check.csv",package="frasyr"),row.names=1)
+  HSpar1_loglik_pma_check <- read.csv(system.file("extdata","future_HSpar1_loglik_pma_check.csv",package="frasyr"),row.names=1)
+  HSpar1_pred_pma_check <- read.csv(system.file("extdata","future_HSpar1_pred_pma_check.csv",package="frasyr"),row.names=1)
+  HSpar1_k_pma_check <- read.csv(system.file("extdata","future_HSpar1_k_pma_check.csv",package="frasyr"),row.names=1)
+  HSpar1_AIC_pma_check <- read.csv(system.file("extdata","future_HSpar1_AIC_pma_check.csv",package="frasyr"),row.names=1)
+  HSpar1_AICc_pma_check <- read.csv(system.file("extdata","future_HSpar1_AICc_pma_check.csv",package="frasyr"),row.names=1)
+  HSpar1_BIC_pma_check <- read.csv(system.file("extdata","future_HSpar1_BIC_pma_check.csv",package="frasyr"),row.names=1)
+
+  BHpar0_opt_par_pma_check <- read.csv(system.file("extdata","future_BHpar0_opt_par_pma_check.csv",package="frasyr"),row.names=1)
+  BHpar0_opt_value_pma_check <- read.csv(system.file("extdata","future_BHpar0_opt_value_pma_check.csv",package="frasyr"),row.names=1)
+  BHpar0_opt_counts_pma_check <- read.csv(system.file("extdata","future_BHpar0_opt_counts_pma_check.csv",package="frasyr"),row.names=1)
+  BHpar0_opt_convergence_pma_check <- read.csv(system.file("extdata","future_BHpar0_opt_convergence_pma_check.csv",package="frasyr"),row.names=1)
+  BHpar0_resid_pma_check <- read.csv(system.file("extdata","future_BHpar0_resid_pma_check.csv",package="frasyr"),row.names=1)
+  BHpar0_resid2_pma_check <- read.csv(system.file("extdata","future_BHpar0_resid2_pma_check.csv",package="frasyr"),row.names=1)
+  BHpar0_pars_pma_check <- read.csv(system.file("extdata","future_BHpar0_pars_pma_check.csv",package="frasyr"),row.names=1)
+  BHpar0_loglik_pma_check <- read.csv(system.file("extdata","future_BHpar0_loglik_pma_check.csv",package="frasyr"),row.names=1)
+  BHpar0_pred_pma_check <- read.csv(system.file("extdata","future_BHpar0_pred_pma_check.csv",package="frasyr"),row.names=1)
+  BHpar0_k_pma_check <- read.csv(system.file("extdata","future_BHpar0_k_pma_check.csv",package="frasyr"),row.names=1)
+  BHpar0_AIC_pma_check <- read.csv(system.file("extdata","future_BHpar0_AIC_pma_check.csv",package="frasyr"),row.names=1)
+  BHpar0_AICc_pma_check <- read.csv(system.file("extdata","future_BHpar0_AICc_pma_check.csv",package="frasyr"),row.names=1)
+  BHpar0_BIC_pma_check <- read.csv(system.file("extdata","future_BHpar0_BIC_pma_check.csv",package="frasyr"),row.names=1)
+
+  BHpar1_opt_par_pma_check <- read.csv(system.file("extdata","future_BHpar1_opt_par_pma_check.csv",package="frasyr"),row.names=1)
+  BHpar1_opt_value_pma_check <- read.csv(system.file("extdata","future_BHpar1_opt_value_pma_check.csv",package="frasyr"),row.names=1)
+  BHpar1_opt_counts_pma_check <- read.csv(system.file("extdata","future_BHpar1_opt_counts_pma_check.csv",package="frasyr"),row.names=1)
+  BHpar1_opt_convergence_pma_check <- read.csv(system.file("extdata","future_BHpar1_opt_convergence_pma_check.csv",package="frasyr"),row.names=1)
+  BHpar1_resid_pma_check <- read.csv(system.file("extdata","future_BHpar1_resid_pma_check.csv",package="frasyr"),row.names=1)
+  BHpar1_resid2_pma_check <- read.csv(system.file("extdata","future_BHpar1_resid2_pma_check.csv",package="frasyr"),row.names=1)
+  BHpar1_pars_pma_check <- read.csv(system.file("extdata","future_BHpar1_pars_pma_check.csv",package="frasyr"),row.names=1)
+  BHpar1_loglik_pma_check <- read.csv(system.file("extdata","future_BHpar1_loglik_pma_check.csv",package="frasyr"),row.names=1)
+  BHpar1_pred_pma_check <- read.csv(system.file("extdata","future_BHpar1_pred_pma_check.csv",package="frasyr"),row.names=1)
+  BHpar1_k_pma_check <- read.csv(system.file("extdata","future_BHpar1_k_pma_check.csv",package="frasyr"),row.names=1)
+  BHpar1_AIC_pma_check <- read.csv(system.file("extdata","future_BHpar1_AIC_pma_check.csv",package="frasyr"),row.names=1)
+  BHpar1_AICc_pma_check <- read.csv(system.file("extdata","future_BHpar1_AICc_pma_check.csv",package="frasyr"),row.names=1)
+  BHpar1_BIC_pma_check <- read.csv(system.file("extdata","future_BHpar1_BIC_pma_check.csv",package="frasyr"),row.names=1)
+
+  RIpar0_opt_par_pma_check <- read.csv(system.file("extdata","future_RIpar0_opt_par_pma_check.csv",package="frasyr"),row.names=1)
+  RIpar0_opt_value_pma_check <- read.csv(system.file("extdata","future_RIpar0_opt_value_pma_check.csv",package="frasyr"),row.names=1)
+  RIpar0_opt_counts_pma_check <- read.csv(system.file("extdata","future_RIpar0_opt_counts_pma_check.csv",package="frasyr"),row.names=1)
+  RIpar0_opt_convergence_pma_check <- read.csv(system.file("extdata","future_RIpar0_opt_convergence_pma_check.csv",package="frasyr"),row.names=1)
+  RIpar0_resid_pma_check <- read.csv(system.file("extdata","future_RIpar0_resid_pma_check.csv",package="frasyr"),row.names=1)
+  RIpar0_resid2_pma_check <- read.csv(system.file("extdata","future_RIpar0_resid2_pma_check.csv",package="frasyr"),row.names=1)
+  RIpar0_pars_pma_check <- read.csv(system.file("extdata","future_RIpar0_pars_pma_check.csv",package="frasyr"),row.names=1)
+  RIpar0_loglik_pma_check <- read.csv(system.file("extdata","future_RIpar0_loglik_pma_check.csv",package="frasyr"),row.names=1)
+  RIpar0_pred_pma_check <- read.csv(system.file("extdata","future_RIpar0_pred_pma_check.csv",package="frasyr"),row.names=1)
+  RIpar0_k_pma_check <- read.csv(system.file("extdata","future_RIpar0_k_pma_check.csv",package="frasyr"),row.names=1)
+  RIpar0_AIC_pma_check <- read.csv(system.file("extdata","future_RIpar0_AIC_pma_check.csv",package="frasyr"),row.names=1)
+  RIpar0_AICc_pma_check <- read.csv(system.file("extdata","future_RIpar0_AICc_pma_check.csv",package="frasyr"),row.names=1)
+  RIpar0_BIC_pma_check <- read.csv(system.file("extdata","future_RIpar0_BIC_pma_check.csv",package="frasyr"),row.names=1)
+
+  RIpar1_opt_par_pma_check <- read.csv(system.file("extdata","future_RIpar1_opt_par_pma_check.csv",package="frasyr"),row.names=1)
+  RIpar1_opt_value_pma_check <- read.csv(system.file("extdata","future_RIpar1_opt_value_pma_check.csv",package="frasyr"),row.names=1)
+  RIpar1_opt_counts_pma_check <- read.csv(system.file("extdata","future_RIpar1_opt_counts_pma_check.csv",package="frasyr"),row.names=1)
+  RIpar1_opt_convergence_pma_check <- read.csv(system.file("extdata","future_RIpar1_opt_convergence_pma_check.csv",package="frasyr"),row.names=1)
+  RIpar1_resid_pma_check <- read.csv(system.file("extdata","future_RIpar1_resid_pma_check.csv",package="frasyr"),row.names=1)
+  RIpar1_resid2_pma_check <- read.csv(system.file("extdata","future_RIpar1_resid2_pma_check.csv",package="frasyr"),row.names=1)
+  RIpar1_pars_pma_check <- read.csv(system.file("extdata","future_RIpar1_pars_pma_check.csv",package="frasyr"),row.names=1)
+  RIpar1_loglik_pma_check <- read.csv(system.file("extdata","future_RIpar1_loglik_pma_check.csv",package="frasyr"),row.names=1)
+  RIpar1_pred_pma_check <- read.csv(system.file("extdata","future_RIpar1_pred_pma_check.csv",package="frasyr"),row.names=1)
+  RIpar1_k_pma_check <- read.csv(system.file("extdata","future_RIpar1_k_pma_check.csv",package="frasyr"),row.names=1)
+  RIpar1_AIC_pma_check <- read.csv(system.file("extdata","future_RIpar1_AIC_pma_check.csv",package="frasyr"),row.names=1)
+  RIpar1_AICc_pma_check <- read.csv(system.file("extdata","future_RIpar1_AICc_pma_check.csv",package="frasyr"),row.names=1)
+  RIpar1_BIC_pma_check <- read.csv(system.file("extdata","future_RIpar1_BIC_pma_check.csv",package="frasyr"),row.names=1)
+
+
+  #結果の数値を照合
+  #HS.par0
+
+  for(i in 1:nrow(HSpar0_opt_par_pma_check)){
+    expect_equal(HS.par0$opt$par[i],HSpar0_opt_par_pma_check[i,])
+  }
+  expect_equal(HS.par0$opt$value,as.numeric(HSpar0_opt_value_pma_check))
+  for(i in 1:nrow(HSpar0_opt_counts_pma_check)){
+    expect_equal(as.numeric(HS.par0$opt$counts[i]),HSpar0_opt_counts_pma_check[i,])
+  }
+  expect_equal(HS.par0$opt$convergence,as.numeric(HSpar0_opt_convergence_pma_check))
+  for(i in 1:nrow(HSpar0_resid_pma_check)){
+    expect_equal(HS.par0$resid[i],HSpar0_resid_pma_check[i,])
+  }
+  for(i in 1:nrow(HSpar0_resid2_pma_check)){
+    expect_equal(HS.par0$resid2[i],HSpar0_resid2_pma_check[i,])
+  }
+  expect_equal(HS.par0$pars,HSpar0_pars_pma_check)
+  expect_equal(HS.par0$loglik,as.numeric(HSpar0_loglik_pma_check))
+  expect_equal(HS.par0$pred,HSpar0_pred_pma_check)
+  expect_equal(HS.par0$k,as.numeric(HSpar0_k_pma_check))
+  expect_equal(HS.par0$AIC,as.numeric(HSpar0_AIC_pma_check))
+  expect_equal(HS.par0$AICc,as.numeric(HSpar0_AICc_pma_check))
+  expect_equal(HS.par0$BIC,as.numeric(HSpar0_BIC_pma_check))
+
+  #HS.par1
+
+  for(i in 1:nrow(HSpar1_opt_par_pma_check)){
+    expect_equal(HS.par1$opt$par[i],HSpar1_opt_par_pma_check[i,])
+  }
+  expect_equal(HS.par1$opt$value,as.numeric(HSpar1_opt_value_pma_check))
+  for(i in 1:nrow(HSpar1_opt_counts_pma_check)){
+    expect_equal(as.numeric(HS.par1$opt$counts[i]),HSpar1_opt_counts_pma_check[i,])
+  }
+  expect_equal(HS.par1$opt$convergence,as.numeric(HSpar1_opt_convergence_pma_check))
+  for(i in 1:nrow(HSpar1_resid_pma_check)){
+    expect_equal(HS.par1$resid[i],HSpar1_resid_pma_check[i,])
+  }
+  for(i in 1:nrow(HSpar1_resid2_pma_check)){
+    expect_equal(HS.par1$resid2[i],HSpar1_resid2_pma_check[i,])
+  }
+  expect_equal(HS.par1$pars,HSpar1_pars_pma_check)
+  expect_equal(HS.par1$loglik,as.numeric(HSpar1_loglik_pma_check))
+  expect_equal(HS.par1$pred,HSpar1_pred_pma_check)
+  expect_equal(HS.par1$k,as.numeric(HSpar1_k_pma_check))
+  expect_equal(HS.par1$AIC,as.numeric(HSpar1_AIC_pma_check))
+  expect_equal(HS.par1$AICc,as.numeric(HSpar1_AICc_pma_check))
+
+  #BHpar0
+
+  for(i in 1:nrow(BHpar0_opt_par_pma_check)){
+    expect_equal(BH.par0$opt$par[i],BHpar0_opt_par_pma_check[i,])
+  }
+  expect_equal(BH.par0$opt$value,as.numeric(BHpar0_opt_value_pma_check))
+  for(i in 1:nrow(BHpar0_opt_counts_pma_check)){
+    expect_equal(as.numeric(BH.par0$opt$counts[i]),BHpar0_opt_counts_pma_check[i,])
+  }
+  expect_equal(BH.par0$opt$convergence,as.numeric(BHpar0_opt_convergence_pma_check))
+  for(i in 1:nrow(BHpar0_resid_pma_check)){
+    expect_equal(BH.par0$resid[i],BHpar0_resid_pma_check[i,])
+  }
+  for(i in 1:nrow(BHpar0_resid2_pma_check)){
+    expect_equal(BH.par0$resid2[i],BHpar0_resid2_pma_check[i,])
+  }
+  expect_equal(BH.par0$pars,BHpar0_pars_pma_check)
+  expect_equal(BH.par0$loglik,as.numeric(BHpar0_loglik_pma_check))
+  expect_equal(BH.par0$pred,BHpar0_pred_pma_check)
+  expect_equal(BH.par0$k,as.numeric(BHpar0_k_pma_check))
+  expect_equal(BH.par0$AIC,as.numeric(BHpar0_AIC_pma_check))
+  expect_equal(BH.par0$AICc,as.numeric(BHpar0_AICc_pma_check))
+  expect_equal(BH.par0$BIC,as.numeric(BHpar0_BIC_pma_check))
+
+  #BHpar1
+
+  for(i in 1:nrow(BHpar1_opt_par_pma_check)){
+    expect_equal(BH.par1$opt$par[i],BHpar1_opt_par_pma_check[i,])
+  }
+  expect_equal(BH.par1$opt$value,as.numeric(BHpar1_opt_value_pma_check))
+  for(i in 1:nrow(BHpar1_opt_counts_pma_check)){
+    expect_equal(as.numeric(BH.par1$opt$counts[i]),BHpar1_opt_counts_pma_check[i,])
+  }
+  expect_equal(BH.par1$opt$convergence,as.numeric(BHpar1_opt_convergence_pma_check))
+  for(i in 1:nrow(BHpar1_resid_pma_check)){
+    expect_equal(BH.par1$resid[i],BHpar1_resid_pma_check[i,])
+  }
+  for(i in 1:nrow(BHpar1_resid2_pma_check)){
+    expect_equal(BH.par1$resid2[i],BHpar1_resid2_pma_check[i,])
+  }
+  expect_equal(BH.par1$pars,BHpar1_pars_pma_check)
+  expect_equal(BH.par1$loglik,as.numeric(BHpar1_loglik_pma_check))
+  expect_equal(BH.par1$pred,BHpar1_pred_pma_check)
+  expect_equal(BH.par1$k,as.numeric(BHpar1_k_pma_check))
+  expect_equal(BH.par1$AIC,as.numeric(BHpar1_AIC_pma_check))
+  expect_equal(BH.par1$AICc,as.numeric(BHpar1_AICc_pma_check))
+
+  #RIpar0
+
+
+  for(i in 1:nrow(RIpar0_opt_par_pma_check)){
+    expect_equal(RI.par0$opt$par[i],RIpar0_opt_par_pma_check[i,])
+  }
+  expect_equal(RI.par0$opt$value,as.numeric(RIpar0_opt_value_pma_check))
+  for(i in 1:nrow(RIpar0_opt_counts_pma_check)){
+    expect_equal(as.numeric(RI.par0$opt$counts[i]),RIpar0_opt_counts_pma_check[i,])
+  }
+  expect_equal(RI.par0$opt$convergence,as.numeric(RIpar0_opt_convergence_pma_check))
+  for(i in 1:nrow(RIpar0_resid_pma_check)){
+    expect_equal(RI.par0$resid[i],RIpar0_resid_pma_check[i,])
+  }
+  for(i in 1:nrow(RIpar0_resid2_pma_check)){
+    expect_equal(RI.par0$resid2[i],RIpar0_resid2_pma_check[i,])
+  }
+  expect_equal(RI.par0$pars,RIpar0_pars_pma_check)
+  expect_equal(RI.par0$loglik,as.numeric(RIpar0_loglik_pma_check))
+  expect_equal(RI.par0$pred,RIpar0_pred_pma_check)
+  expect_equal(RI.par0$k,as.numeric(RIpar0_k_pma_check))
+  expect_equal(RI.par0$AIC,as.numeric(RIpar0_AIC_pma_check))
+  expect_equal(RI.par0$AICc,as.numeric(RIpar0_AICc_pma_check))
+  expect_equal(RI.par0$BIC,as.numeric(RIpar0_BIC_pma_check))
+
+  #RIpar1
+
+  for(i in 1:nrow(RIpar1_opt_par_pma_check)){
+    expect_equal(RI.par1$opt$par[i],RIpar1_opt_par_pma_check[i,])
+  }
+  expect_equal(RI.par1$opt$value,as.numeric(RIpar1_opt_value_pma_check))
+  for(i in 1:nrow(RIpar1_opt_counts_pma_check)){
+    expect_equal(as.numeric(RI.par1$opt$counts[i]),RIpar1_opt_counts_pma_check[i,])
+  }
+  expect_equal(RI.par1$opt$convergence,as.numeric(RIpar1_opt_convergence_pma_check))
+  for(i in 1:nrow(RIpar1_resid_pma_check)){
+    expect_equal(RI.par1$resid[i],RIpar1_resid_pma_check[i,])
+  }
+  for(i in 1:nrow(RIpar1_resid2_pma_check)){
+    expect_equal(RI.par1$resid2[i],RIpar1_resid2_pma_check[i,])
+  }
+  expect_equal(RI.par1$pars,RIpar1_pars_pma_check)
+  expect_equal(RI.par1$loglik,as.numeric(RIpar1_loglik_pma_check))
+  expect_equal(RI.par1$pred,RIpar1_pred_pma_check)
+  expect_equal(RI.par1$k,as.numeric(RIpar1_k_pma_check))
+  expect_equal(RI.par1$AIC,as.numeric(RIpar1_AIC_pma_check))
+  expect_equal(RI.par1$AICc,as.numeric(RIpar1_AICc_pma_check))
+
+})
+
+context("future SR")
+
+test_that("oututput value check",{
+  caa <- read.csv(system.file("extdata","caa_pma.csv",package="frasyr"),row.names=1)
+  waa <- read.csv(system.file("extdata","waa_pma.csv",package="frasyr"),row.names=1)
+  maa <- read.csv(system.file("extdata","maa_pma.csv",package="frasyr"),row.names=1)
+  dat <- data.handler(caa=caa, waa=waa, maa=maa, M=0.5)
+  res.pma <- vpa(dat,fc.year=2009:2011,rec=585,rec.year=2011,tf.year = 2008:2010,
+                 term.F="max",stat.tf="mean",Pope=TRUE,tune=FALSE,p.init=1.0)
+  SRdata <- get.SRdata(res.pma)
+
+  HS.par0 <- fit.SR(SRdata,SR="HS",method="L2",AR=0,hessian=FALSE)
+  HS.par1 <- fit.SR(SRdata,SR="HS",method="L2",AR=1,hessian=FALSE)
+  BH.par0 <- fit.SR(SRdata,SR="BH",method="L2",AR=0,hessian=FALSE)
+  BH.par1 <- fit.SR(SRdata,SR="BH",method="L2",AR=1,hessian=FALSE)
+  RI.par0 <- fit.SR(SRdata,SR="RI",method="L2",AR=0,hessian=FALSE)
+  RI.par1 <- fit.SR(SRdata,SR="RI",method="L2",AR=1,hessian=FALSE)
+
+  #上記引数での計算結果を読み込み
+
+})
