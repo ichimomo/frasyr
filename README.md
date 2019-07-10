@@ -5,7 +5,7 @@
 # 使い方
 
 ```
-# install.pakcages("devtools") # <-- devtoolsをインストールしていない人
+# install.pakcages("devtools") # <-- devtoolsをインストールしていない人はインストールする
 devtools::install_github("ichimomo/frasyr") # frasyrのインストール
 library(frasyr) # frasyrの呼び出し
 ```
@@ -18,22 +18,29 @@ library(frasyr) # frasyrの呼び出し
 
 
 # 開発ワークフロー（開発者向け）
+## ブランチ構成
+- master: 公開用のブランチ．いつでも動くようにしておく
+- dev：開発用ブランチ．新規変更はこちらのブランチにアップすること
+- dev - 個人の名前（たとえばichimomo）：個人の作業用ブランチ．このブランチで作業して，ある程度たまったらdevに変更をアップ
+- bug_fix: masterにすぐに反映させたい細かいバグの修正
+- web_edit: githubのウェブ上でファイルを編集する用．たとえばreadmeなど．編集が終わったらmaster?にmergeする・
+## ワークフロー
 1. 本レポジトリを直接cloneするか，自分のところにfolkしてからcloneする
 2. 自分の環境下でコードを修正
+3. パッケージをビルド，テスト，インストール
 ```{r}
-3. devtools::load_all() # パッケージをビルド，テスト，インストール
+devtools::load_all() 
 ```
-4. 2,3を繰り返してコードの修正を完了する
-
-5. テストコードを走らせる
+4. 2,3を繰り返してコードの修正を完了させる
+5. テストコードを走らせて確認
 ```{r}
 devtoos::test()
 ```
-
 6. 仕上げ（vignetteも作り直す）
 ```{r}
 devtoos::check()
 ```
-7. 修正したファイルを git add ファイル名，git commit -m "コメント" 
-8 folkした場合は，pull request
+7. 修正した一連の変更を 個人の名前のブランチichimomoに push する
+8. Githubのウェブ上で，ichimomoからdevにpull request => merge
+9. 安定版が完成した段階でmasterも変更
 
