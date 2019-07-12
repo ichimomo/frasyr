@@ -373,7 +373,7 @@ test_that("oututput value check",{
 
 context("future future.vpa HS")
 
-test_that("oututput value check",{
+test_that("oututput value check (iteration for future sim is fixed as 2) ",{
   caa <- read.csv(system.file("extdata","caa_pma.csv",package="frasyr"),row.names=1)
   waa <- read.csv(system.file("extdata","waa_pma.csv",package="frasyr"),row.names=1)
   maa <- read.csv(system.file("extdata","maa_pma.csv",package="frasyr"),row.names=1)
@@ -384,10 +384,6 @@ test_that("oututput value check",{
 
   HS.par0 <- fit.SR(SRdata,SR="HS",method="L2",AR=0,hessian=FALSE)
   HS.par1 <- fit.SR(SRdata,SR="HS",method="L2",AR=1,hessian=FALSE)
-  BH.par0 <- fit.SR(SRdata,SR="BH",method="L2",AR=0,hessian=FALSE)
-  BH.par1 <- fit.SR(SRdata,SR="BH",method="L2",AR=1,hessian=FALSE)
-  RI.par0 <- fit.SR(SRdata,SR="RI",method="L2",AR=0,hessian=FALSE)
-  RI.par1 <- fit.SR(SRdata,SR="RI",method="L2",AR=1,hessian=FALSE)
 
   fres.HS <- future.vpa(res.pma,
                         multi=1, # res.pma$Fc.at.ageに掛ける乗数
@@ -408,7 +404,9 @@ test_that("oututput value check",{
                                      sd=HS.par0$pars$sd,resid=HS.par0$resid)
                         )
 
+
   #上記引数での計算結果を読み込み
+    # HS
   fresHS_faa1_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_HS_faa1_pma_check.csv",package="frasyr"),row.names=1)
   fresHS_faa2_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_HS_faa2_pma_check.csv",package="frasyr"),row.names=1)
   fresHS_faa3_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_HS_faa3_pma_check.csv",package="frasyr"),row.names=1)
@@ -488,8 +486,10 @@ test_that("oututput value check",{
   fresHS_multi_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_HS_multi_pma_check.csv",package="frasyr"),row.names=1)
   fresHS_multiyear_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_HS_multi_year_pma_check.csv",package="frasyr"),row.names=1)
 
+    # HS.AR
 
   #結果の数値を照合
+    # HS
   for( i in 1:nrow(fresHS_faa1_pma_check)){
     for( j in 1:ncol(fresHS_faa1_pma_check)){
       expect_equal(fres.HS$faa[i,j,1], fresHS_faa1_pma_check[i,j])
@@ -522,7 +522,6 @@ test_that("oututput value check",{
     }
   }
 
-
   for( i in 1:nrow(fresHS_biom1_pma_check)){
     for( j in 1:ncol(fresHS_biom1_pma_check)){
       expect_equal(fres.HS$biom[i,j,1], fresHS_biom1_pma_check[i,j])
@@ -538,7 +537,6 @@ test_that("oututput value check",{
       expect_equal(fres.HS$biom[i,j,3], fresHS_biom3_pma_check[i,j])
     }
   }
-
 
   for( i in 1:nrow(fresHS_baa1_pma_check)){
     for( j in 1:ncol(fresHS_baa1_pma_check)){
@@ -556,7 +554,6 @@ test_that("oututput value check",{
     }
   }
 
-
   for( i in 1:nrow(fresHS_ssb1_pma_check)){
     for( j in 1:ncol(fresHS_ssb1_pma_check)){
       expect_equal(fres.HS$ssb[i,j,1], fresHS_ssb1_pma_check[i,j])
@@ -573,7 +570,6 @@ test_that("oututput value check",{
     }
   }
 
-
   for( i in 1:nrow(fresHS_wcaa1_pma_check)){
     for( j in 1:ncol(fresHS_wcaa1_pma_check)){
       expect_equal(fres.HS$wcaa[i,j,1], fresHS_wcaa1_pma_check[i,j])
@@ -589,7 +585,6 @@ test_that("oututput value check",{
       expect_equal(fres.HS$wcaa[i,j,3], fresHS_wcaa3_pma_check[i,j])
     }
   }
-
 
   for( i in 1:nrow(fresHS_wcaa1_pma_check)){
     for( j in 1:ncol(fresHS_wcaa1_pma_check)){
@@ -772,5 +767,402 @@ test_that("oututput value check",{
 
   expect_equal(fres.HS$multi, fresHS_multi_pma_check[1,])
   expect_equal(fres.HS$multi.year, fresHS_multiyear_pma_check[1,])
+
+    # HS.AR
+
+})
+
+context("future future.vpa BH")
+
+test_that("oututput value check (iteration for future sim is fixed as 2) ",{
+  caa <- read.csv(system.file("extdata","caa_pma.csv",package="frasyr"),row.names=1)
+  waa <- read.csv(system.file("extdata","waa_pma.csv",package="frasyr"),row.names=1)
+  maa <- read.csv(system.file("extdata","maa_pma.csv",package="frasyr"),row.names=1)
+  dat <- data.handler(caa=caa, waa=waa, maa=maa, M=0.5)
+  res.pma <- vpa(dat,fc.year=2009:2011,rec=585,rec.year=2011,tf.year = 2008:2010,
+                 term.F="max",stat.tf="mean",Pope=TRUE,tune=FALSE,p.init=1.0)
+  SRdata <- get.SRdata(res.pma)
+
+  BH.par0 <- fit.SR(SRdata,SR="BH",method="L2",AR=0,hessian=FALSE)
+  BH.par1 <- fit.SR(SRdata,SR="BH",method="L2",AR=1,hessian=FALSE)
+
+  fres.BH <- future.vpa(res.pma,
+                        multi=1,
+                        nyear=50, # 将来予測の年数
+                        start.year=2012, # 将来予測の開始年
+                        N=2, # 確率的計算の繰り返し回数
+                        ABC.year=2013, # ABCを計算する年
+                        waa.year=2009:2011, # 生物パラメータの参照年
+                        maa.year=2009:2011,
+                        M.year=2009:2011,
+                        is.plot=TRUE, # 結果をプロットするかどうか
+                        seed=1,
+                        silent=TRUE,
+                        recfunc=BH.recAR, # 再生産関係の関数
+                        # recfuncに対する引数
+                        rec.arg=list(a=BH.par0$pars$a,b=BH.par0$pars$b,rho=BH.par0$rho,
+                                     sd=BH.par0$pars$sd,resid=BH.par0$resid))
+  #上記引数での計算結果を読み込み
+  # BH
+  fresBH_faa1_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_faa1_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_faa2_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_faa2_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_faa3_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_faa3_pma_check.csv",package="frasyr"),row.names=1)
+
+  fresBH_naa1_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_naa1_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_naa2_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_naa2_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_naa3_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_naa3_pma_check.csv",package="frasyr"),row.names=1)
+
+  fresBH_biom1_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_biom1_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_biom2_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_biom2_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_biom3_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_biom3_pma_check.csv",package="frasyr"),row.names=1)
+
+  fresBH_baa1_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_baa1_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_baa2_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_baa2_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_baa3_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_baa3_pma_check.csv",package="frasyr"),row.names=1)
+
+  fresBH_ssb1_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_ssb1_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_ssb2_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_ssb2_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_ssb3_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_ssb3_pma_check.csv",package="frasyr"),row.names=1)
+
+  fresBH_wcaa1_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_wcaa1_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_wcaa2_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_wcaa2_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_wcaa3_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_wcaa3_pma_check.csv",package="frasyr"),row.names=1)
+
+  fresBH_caa1_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_caa1_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_caa2_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_caa2_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_caa3_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_caa3_pma_check.csv",package="frasyr"),row.names=1)
+
+  fresBH_M1_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_M1_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_M2_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_M2_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_M3_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_M3_pma_check.csv",package="frasyr"),row.names=1)
+
+  fresBH_rps_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_rps_pma_check.csv",package="frasyr"),row.names=1)
+
+  fresBH_maa1_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_maa1_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_maa2_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_maa2_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_maa3_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_maa3_pma_check.csv",package="frasyr"),row.names=1)
+
+  fresBH_vbiom_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_vbiom_pma_check.csv",package="frasyr"),row.names=1)
+
+  fresBH_recruit_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_recruit_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_eaa_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_eaa_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_alpha_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_alpha_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_thisyear_ssb_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_thisyear-ssb_pma_check.csv",package="frasyr"),row.names=1)
+
+  fresBH_waa1_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_waa1_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_waa2_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_waa2_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_waa3_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_waa3_pma_check.csv",package="frasyr"),row.names=1)
+
+  fresBH_waacatch1_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_waa-catch1_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_waacatch2_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_waa-catch2_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_waacatch3_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_waa-catch3_pma_check.csv",package="frasyr"),row.names=1)
+
+  fresBH_currentF_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_currentF_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_vssb_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_vssb_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_vwcaa_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_vwcaa_pma_check.csv",package="frasyr"),row.names=1)
+
+  fresBH_naa_all1_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_naa_all1_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_naa_all2_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_naa_all2_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_naa_all3_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_naa_all3_pma_check.csv",package="frasyr"),row.names=1)
+
+  fresBH_years_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_years_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_fyear_year_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_fyear_year_pma_check.csv",package="frasyr"),row.names=1)
+
+  fresBH_ABC_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_ABC_pma_check.csv",package="frasyr"),row.names=1)
+
+  fresBH_recarg_a_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_rec-arg_a_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_recarg_b_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_rec-arg_b_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_recarg_rho_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_rec-arg_rho_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_recarg_sd_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_rec-arg_sd_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_recarg_resid_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_rec-arg_resid_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_recarg_sd2_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_rec-arg_sd2_pma_check.csv",package="frasyr"),row.names=1)
+
+  fresBH_waayear_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_waa_year_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_maayear_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_maa_year_pma_check.csv",package="frasyr"),row.names=1)
+
+  fresBH_multi_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_multi_pma_check.csv",package="frasyr"),row.names=1)
+  fresBH_multiyear_pma_check <- read.csv(system.file("extdata", "future_vpa_fres_BH_multi_year_pma_check.csv",package="frasyr"),row.names=1)
+
+  #結果の数値を照合
+  # BH
+
+  for( i in 1:nrow(fresBH_faa1_pma_check)){
+    for( j in 1:ncol(fresBH_faa1_pma_check)){
+      expect_equal(fres.BH$faa[i,j,1], fresBH_faa1_pma_check[i,j])
+    }
+  }
+  for( i in 1:nrow(fresBH_faa2_pma_check)){
+    for( j in 1:ncol(fresBH_faa2_pma_check)){
+      expect_equal(fres.BH$faa[i,j,2], fresBH_faa2_pma_check[i,j])
+    }
+  }
+  for( i in 1:nrow(fresBH_faa3_pma_check)){
+    for( j in 1:ncol(fresBH_faa3_pma_check)){
+      expect_equal(fres.BH$faa[i,j,3], fresBH_faa3_pma_check[i,j])
+    }
+  }
+
+  for( i in 1:nrow(fresBH_naa1_pma_check)){
+    for( j in 1:ncol(fresBH_naa1_pma_check)){
+      expect_equal(fres.BH$naa[i,j,1], fresBH_naa1_pma_check[i,j])
+    }
+  }
+  for( i in 1:nrow(fresBH_naa2_pma_check)){
+    for( j in 1:ncol(fresBH_naa2_pma_check)){
+      expect_equal(fres.BH$naa[i,j,2], fresBH_naa2_pma_check[i,j])
+    }
+  }
+  for( i in 1:nrow(fresBH_naa3_pma_check)){
+    for( j in 1:ncol(fresBH_naa3_pma_check)){
+      expect_equal(fres.BH$naa[i,j,3], fresBH_naa3_pma_check[i,j])
+    }
+  }
+
+  for( i in 1:nrow(fresBH_biom1_pma_check)){
+    for( j in 1:ncol(fresBH_biom1_pma_check)){
+      expect_equal(fres.BH$biom[i,j,1], fresBH_biom1_pma_check[i,j])
+    }
+  }
+  for( i in 1:nrow(fresBH_biom2_pma_check)){
+    for( j in 1:ncol(fresBH_biom2_pma_check)){
+      expect_equal(fres.BH$biom[i,j,2], fresBH_biom2_pma_check[i,j])
+    }
+  }
+  for( i in 1:nrow(fresBH_biom3_pma_check)){
+    for( j in 1:ncol(fresBH_biom3_pma_check)){
+      expect_equal(fres.BH$biom[i,j,3], fresBH_biom3_pma_check[i,j])
+    }
+  }
+
+  for( i in 1:nrow(fresBH_baa1_pma_check)){
+    for( j in 1:ncol(fresBH_baa1_pma_check)){
+      expect_equal(fres.BH$baa[i,j,1], fresBH_baa1_pma_check[i,j])
+    }
+  }
+  for( i in 1:nrow(fresBH_baa2_pma_check)){
+    for( j in 1:ncol(fresBH_baa2_pma_check)){
+      expect_equal(fres.BH$baa[i,j,2], fresBH_baa2_pma_check[i,j])
+    }
+  }
+  for( i in 1:nrow(fresBH_baa3_pma_check)){
+    for( j in 1:ncol(fresBH_baa3_pma_check)){
+      expect_equal(fres.BH$baa[i,j,3], fresBH_baa3_pma_check[i,j])
+    }
+  }
+
+  for( i in 1:nrow(fresBH_ssb1_pma_check)){
+    for( j in 1:ncol(fresBH_ssb1_pma_check)){
+      expect_equal(fres.BH$ssb[i,j,1], fresBH_ssb1_pma_check[i,j])
+    }
+  }
+  for( i in 1:nrow(fresBH_ssb2_pma_check)){
+    for( j in 1:ncol(fresBH_ssb2_pma_check)){
+      expect_equal(fres.BH$ssb[i,j,2], fresBH_ssb2_pma_check[i,j])
+    }
+  }
+  for( i in 1:nrow(fresBH_ssb3_pma_check)){
+    for( j in 1:ncol(fresBH_ssb3_pma_check)){
+      expect_equal(fres.BH$ssb[i,j,3], fresBH_ssb3_pma_check[i,j])
+    }
+  }
+
+  for( i in 1:nrow(fresBH_wcaa1_pma_check)){
+    for( j in 1:ncol(fresBH_wcaa1_pma_check)){
+      expect_equal(fres.BH$wcaa[i,j,1], fresBH_wcaa1_pma_check[i,j])
+    }
+  }
+  for( i in 1:nrow(fresBH_wcaa2_pma_check)){
+    for( j in 1:ncol(fresBH_wcaa2_pma_check)){
+      expect_equal(fres.BH$wcaa[i,j,2], fresBH_wcaa2_pma_check[i,j])
+    }
+  }
+  for( i in 1:nrow(fresBH_wcaa3_pma_check)){
+    for( j in 1:ncol(fresBH_wcaa3_pma_check)){
+      expect_equal(fres.BH$wcaa[i,j,3], fresBH_wcaa3_pma_check[i,j])
+    }
+  }
+
+
+  for( i in 1:nrow(fresBH_wcaa1_pma_check)){
+    for( j in 1:ncol(fresBH_wcaa1_pma_check)){
+      expect_equal(fres.BH$wcaa[i,j,1], fresBH_wcaa1_pma_check[i,j])
+    }
+  }
+  for( i in 1:nrow(fresBH_wcaa2_pma_check)){
+    for( j in 1:ncol(fresBH_wcaa2_pma_check)){
+      expect_equal(fres.BH$wcaa[i,j,2], fresBH_wcaa2_pma_check[i,j])
+    }
+  }
+  for( i in 1:nrow(fresBH_wcaa3_pma_check)){
+    for( j in 1:ncol(fresBH_wcaa3_pma_check)){
+      expect_equal(fres.BH$wcaa[i,j,3], fresBH_wcaa3_pma_check[i,j])
+    }
+  }
+
+  for( i in 1:nrow(fresBH_M1_pma_check)){
+    for( j in 1:ncol(fresBH_M1_pma_check)){
+      expect_equal(fres.BH$M[i,j,1], fresBH_M1_pma_check[i,j])
+    }
+  }
+  for( i in 1:nrow(fresBH_M2_pma_check)){
+    for( j in 1:ncol(fresBH_M2_pma_check)){
+      expect_equal(fres.BH$M[i,j,2], fresBH_M2_pma_check[i,j])
+    }
+  }
+  for( i in 1:nrow(fresBH_M3_pma_check)){
+    for( j in 1:ncol(fresBH_M3_pma_check)){
+      expect_equal(fres.BH$M[i,j,3], fresBH_M3_pma_check[i,j])
+    }
+  }
+
+  for( i in 1:nrow(fresBH_rps_pma_check)){
+    for( j in 1:ncol(fresBH_rps_pma_check)){
+      expect_equal(fres.BH$rps[i,j], fresBH_rps_pma_check[i,j])
+    }
+  }
+
+  for( i in 1:nrow(fresBH_maa1_pma_check)){
+    for( j in 1:ncol(fresBH_maa1_pma_check)){
+      expect_equal(fres.BH$maa[i,j,1], fresBH_maa1_pma_check[i,j])
+    }
+  }
+  for( i in 1:nrow(fresBH_maa2_pma_check)){
+    for( j in 1:ncol(fresBH_maa2_pma_check)){
+      expect_equal(fres.BH$maa[i,j,2], fresBH_maa2_pma_check[i,j])
+    }
+  }
+  for( i in 1:nrow(fresBH_maa3_pma_check)){
+    for( j in 1:ncol(fresBH_maa3_pma_check)){
+      expect_equal(fres.BH$maa[i,j,3], fresBH_maa3_pma_check[i,j])
+    }
+  }
+
+  for( i in 1:nrow(fresBH_vbiom_pma_check)){
+    for( j in 1:ncol(fresBH_vbiom_pma_check)){
+      expect_equal(fres.BH$vbiom[i,j], fresBH_vbiom_pma_check[i,j])
+    }
+  }
+
+  for( i in 1:nrow(fresBH_recruit_pma_check)){
+    for( j in 1:ncol(fresBH_recruit_pma_check)){
+      expect_equal(fres.BH$recruit[i,j], fresBH_recruit_pma_check[i,j])
+    }
+  }
+
+  for( i in 1:nrow(fresBH_eaa_pma_check)){
+    for( j in 1:ncol(fresBH_eaa_pma_check)){
+      expect_equal(fres.BH$eaa[i,j], fresBH_eaa_pma_check[i,j])
+    }
+  }
+
+  for( i in 1:nrow(fresBH_alpha_pma_check)){
+    for( j in 1:ncol(fresBH_alpha_pma_check)){
+      expect_equal(fres.BH$alpha[i,j], fresBH_alpha_pma_check[i,j])
+    }
+  }
+
+  for( i in 1:nrow(fresBH_thisyear_ssb_pma_check)){
+    for( j in 1:ncol(fresBH_thisyear_ssb_pma_check)){
+      expect_equal(fres.BH$thisyear.ssb[i,j], fresBH_thisyear_ssb_pma_check[i,j])
+    }
+  }
+
+  for( i in 1:nrow(fresBH_waa1_pma_check)){
+    for( j in 1:ncol(fresBH_waa1_pma_check)){
+      expect_equal(fres.BH$waa[i,j,1], fresBH_waa1_pma_check[i,j])
+    }
+  }
+  for( i in 1:nrow(fresBH_waa2_pma_check)){
+    for( j in 1:ncol(fresBH_waa2_pma_check)){
+      expect_equal(fres.BH$waa[i,j,2], fresBH_waa2_pma_check[i,j])
+    }
+  }
+  for( i in 1:nrow(fresBH_waa3_pma_check)){
+    for( j in 1:ncol(fresBH_waa3_pma_check)){
+      expect_equal(fres.BH$waa[i,j,3], fresBH_waa3_pma_check[i,j])
+    }
+  }
+
+  for( i in 1:nrow(fresBH_waacatch1_pma_check)){
+    for( j in 1:ncol(fresBH_waacatch1_pma_check)){
+      expect_equal(fres.BH$waa.catch[i,j,1], fresBH_waacatch1_pma_check[i,j])
+    }
+  }
+  for( i in 1:nrow(fresBH_waacatch2_pma_check)){
+    for( j in 1:ncol(fresBH_waacatch2_pma_check)){
+      expect_equal(fres.BH$waa.catch[i,j,2], fresBH_waacatch2_pma_check[i,j])
+    }
+  }
+  for( i in 1:nrow(fresBH_waacatch3_pma_check)){
+    for( j in 1:ncol(fresBH_waacatch3_pma_check)){
+      expect_equal(fres.BH$waa.catch[i,j,3], fresBH_waacatch3_pma_check[i,j])
+    }
+  }
+
+  for( i in 1:nrow(fresBH_currentF_pma_check)){
+    expect_equal(as.numeric(fres.BH$currentF[i]), fresBH_currentF_pma_check[i,])
+  }
+
+  for( i in 1:nrow(fresBH_vssb_pma_check)){
+    for( j in 1:ncol(fresBH_vssb_pma_check)){
+      expect_equal(fres.BH$vssb[i,j], fresBH_vssb_pma_check[i,j])
+    }
+  }
+
+  for( i in 1:nrow(fresBH_vwcaa_pma_check)){
+    for( j in 1:ncol(fresBH_vwcaa_pma_check)){
+      expect_equal(fres.BH$vwcaa[i,j], fresBH_vwcaa_pma_check[i,j])
+    }
+  }
+
+  for( i in 1:nrow(fresBH_naa_all1_pma_check)){
+    for( j in 1:ncol(fresBH_naa_all1_pma_check)){
+      expect_equal(fres.BH$naa_all[i,j,1], fresBH_naa_all1_pma_check[i,j])
+    }
+  }
+  for( i in 1:nrow(fresBH_naa_all2_pma_check)){
+    for( j in 1:ncol(fresBH_naa_all2_pma_check)){
+      expect_equal(fres.BH$naa_all[i,j,2], fresBH_naa_all2_pma_check[i,j])
+    }
+  }
+  for( i in 1:nrow(fresBH_naa_all3_pma_check)){
+    for( j in 1:ncol(fresBH_naa_all3_pma_check)){
+      expect_equal(fres.BH$naa_all[i,j,3], fresBH_naa_all3_pma_check[i,j])
+    }
+  }
+
+  for( i in 1:nrow(fresBH_years_pma_check)){
+    expect_equal(as.numeric(fres.BH$years[i]), fresBH_years_pma_check[i,])
+  }
+
+  for( i in 1:nrow(fresBH_fyear_year_pma_check)){
+    expect_equal(as.numeric(fres.BH$fyear.year[i]), fresBH_fyear_year_pma_check[i,])
+  }
+
+  for( i in 1:nrow(fresBH_ABC_pma_check)){
+    expect_equal(as.numeric(fres.BH$ABC[i]), fresBH_ABC_pma_check[i,])
+  }
+
+  expect_equal(fres.BH$rec.arg$a, fresBH_recarg_a_pma_check[1,])
+  expect_equal(fres.BH$rec.arg$b, fresBH_recarg_b_pma_check[1,])
+  expect_equal(fres.BH$rec.arg$rho, fresBH_recarg_rho_pma_check[1,])
+  for( i in 1:nrow(fresBH_recarg_sd_pma_check)){
+    expect_equal(fres.BH$rec.arg$sd[i], as.numeric(fresBH_recarg_sd_pma_check[i,]))
+  }
+  for( i in 1:nrow(fresBH_recarg_resid_pma_check)){
+    expect_equal(as.numeric(fres.BH$rec.arg$resid[i]), fresBH_recarg_resid_pma_check[i,])
+  }
+  for( i in 1:nrow(fresBH_recarg_sd2_pma_check)){
+    expect_equal(fres.BH$rec.arg$sd2[i], as.numeric(fresBH_recarg_sd2_pma_check[i,]))
+  }
+  for( i in 1:nrow(fresBH_waayear_pma_check)){
+    expect_equal(fres.BH$waa.year[i], as.numeric(fresBH_waayear_pma_check[i,]))
+  }
+  for( i in 1:nrow(fresBH_maayear_pma_check)){
+    expect_equal(fres.BH$maa.year[i], as.numeric(fresBH_maayear_pma_check[i,]))
+  }
+
+  expect_equal(fres.BH$multi, fresBH_multi_pma_check[1,])
+  expect_equal(fres.BH$multi.year, fresBH_multiyear_pma_check[1,])
 
 })
