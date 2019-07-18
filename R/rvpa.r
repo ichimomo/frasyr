@@ -268,7 +268,7 @@ abund.extractor <- function(
        res <- colSums((naa*saa)[min.age:max.age,], na.rm=TRUE)
  } 
  if (abund=="SSBm"){
-   if (is.null(maa.tune)) ssb <- naa*waa*maa*exp(-p/m*dat$M-p.m*af*faa) else ssb <- naa*waa*maa.tune*exp(-p.m*dat$M-p.m*af*faa)
+   if (is.null(maa.tune)) ssb <- naa*waa*maa*exp(-p.m*dat$M-p.m*af*faa) else ssb <- naa*waa*maa.tune*exp(-p.m*dat$M-p.m*af*faa)
    res <- colSums(ssb,na.rm=TRUE)
  }
 
