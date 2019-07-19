@@ -245,8 +245,8 @@ plot_Fref <- function(rres,xlabel="max", # or, "mean","Fref/Fcur"
     old.par <- par()
     par(mar=c(4,4,1,4))
     F.range <- rres$ypr.spr$F.range
-    if(xlabel=="Fref/Fcur") F.range <- F.range/rres.pma$summary$Fcurrent[1]*rres.pma$summary$Fcurrent[3]
-    if(xlabel=="mean") F.range <- F.range/rres.pma$summary$Fcurrent[1]*rres.pma$summary$Fcurrent[2]    
+    if(xlabel=="Fref/Fcur") F.range <- F.range/rres$summary$Fcurrent[1]*rres$summary$Fcurrent[3]
+    if(xlabel=="mean") F.range <- F.range/rres$summary$Fcurrent[1]*rres$summary$Fcurrent[2]    
     spr <- rres$ypr.spr$spr
     ypr <- rres$ypr.spr$ypr
     plot(F.range,spr,xlab=xlabel,ylab="%SPR",type="l",ylim=c(0,max(spr)))
