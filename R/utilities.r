@@ -370,6 +370,14 @@ make_RP_table <- function(refs_base){
     
 }
 
+#' 管理基準値表から目的の管理基準値を取り出す関数
+#'
+#' @param refs_base est.MSYから得られる管理基準値の表
+#' @param RP_name 取り出したい管理基準値の名前
+#'
+#' @export
+#' 
+
 derive_RP_value <- function(refs_base,RP_name){
 #    refs_base %>% dplyr::filter(RP.definition%in%RP_name)
 #    subset(refs_base,RP.definition%in%RP_name)
