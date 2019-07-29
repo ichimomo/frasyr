@@ -454,7 +454,7 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param sel.def   sel.update=TRUEで選択率を更新していく際に，選択率をどのように計算するか．最大値を1とするか，平均値を1にするか...
 #' @param max.dd  sel.updateの際の収束判定基準
 #' @param ti.scale  資源量の係数と切片のscaling
-#' @param tf.mat terminal Fの平均をとる年の設定．0-1行列．
+#' @param tf.mat terminal Fの平均をとる年の設定．NA行列に平均をとる箇所に1を入れる．
 #' @param eq.tf.mean terminal Fの平均値を過去のFの平均値と等しくする
 #' @param no.est  パラメータ推定しない．
 #' @param est.method 推定方法 （ls = 最小二乗法，ml = 最尤法）
@@ -481,6 +481,8 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param sel.rank
 #' @param p.init 
 #' @param sigma.constraint
+#' @param eta Fのpenaltyを分けて与えるときにeta.ageで指定した年齢への相対的なpenalty (0~1)
+#' @param eta.age Fのpenaltyを分けるときにetaを与える年齢(0 = 0歳（加入）,0:1 = 0~1歳)
 #' 
 #' @export
 #' 
@@ -552,19 +554,23 @@ vpa <- function(
   ssb.def = "i",  # i: 年はじめ，m: 年中央, l: 年最後
   ssb.lag = 0,   # 0: no lag, 1: lag 1
   TMB=FALSE,
-  TMB.compile=FALSE,
+  # TMB.compile=FALSE,
   sel.rank=NULL,
   p.init = 0.2,   # 推定パラメータの初期値
-  sigma.constraint = 1:length(abund)
+  sigma.constraint = 1:length(abund),
+  eta = NULL,
+  eta.age = 0,
+  tmb.file = "rvpa_tmb"
 )
 {
   #
   
-  if (TMB.compile) {
-    library(TMB)
-    compile("rvpa_tmb.cpp")
-    dyn.load(dynlib("rvpa_tmb"))
-  }
+  # if (TMB.compile) {
+  #   library(TMB)
+  #   cpp_name = paste0(tmb.file, ".cpp")
+  #   compile(cpp_name)
+  #   dyn.load(dynlib(tmb.file))
+  # }
     
   # inputデータをリスト化
 
@@ -774,7 +780,20 @@ vpa <- function(
      itt <- itt + 1
      
      faa <- faa1
-   }
+     }
+     
+     # トラフグ伊勢三河湾用オプション
+     # 特定の年齢だけチューニングせずに最近数年のFの平均
+     # 平均する年齢・年に1を入れた行列tf.matを使用（それ以外はNA）
+     if (!is.null(tf.mat)) {
+       for (i in 1:nrow(faa)) {
+         if (sum(!is.na(tf.mat[i,]))) faa[i, ny] <- get(stat.tf[1])(faa[i, !is.na(tf.mat[i,])])
+       }
+       naa[, ny] <- vpa.core.Pope(caa,faa,M,ny,p=p.pope)
+       for (i in (ny-1):(ny-na[ny]+1)){
+         naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group)
+       }
+     }
 
    saa <- sel.func(faa, def=sel.def)
    
@@ -1037,7 +1056,14 @@ vpa <- function(
       convergence <- 1
       saa <- sel.func(faa, def=sel.def)
 
-      if (penalty=="p") obj <- (1-lambda)*obj + lambda*sum(p^beta)     
+      if (penalty=="p") {
+        if (is.null(eta)) {
+          obj <- (1-lambda)*obj + lambda*sum(p^beta)
+        } else {
+          eta.age <- eta.age + 1
+          obj <- (1-lambda)*obj + lambda*(eta*sum(p[eta.age]^beta) + (1-eta)*sum(p[-eta.age]^beta))
+        }
+      }     
       
       if (penalty=="s") obj <- (1-lambda)*obj + lambda*sum((abs(saa[,ny]-apply(saa[, years %in% tf.year],1,get(stat.tf))))^beta)
       
@@ -1158,14 +1184,26 @@ vpa <- function(
     
     if (isTRUE(b.est)) b_fix <- rep(0,nindex) else b_fix <- rep(1,nindex)
     b_fix <- ifelse(is.na(b.fix),b_fix,b.fix)
-    
-    data2 <- list(Est=ifelse(est.method=="ls",0,1),b_fix=as.numeric(b_fix),alpha=alpha,lambda=lambda,beta=beta,Ab_type=Ab_type,Ab_type_age=Ab_type_age,w=index.w,af=af,CATCH=t(as.matrix(dat$caa)),WEI=t(as.matrix(dat$waa)),MAT=t(MAA),M=t(as.matrix(dat$M)),CPUE=t(index2),MISS=t(ifelse(index2==0,1,0)),Last_Catch_Zero=ifelse(isTRUE(last.catch.zero),1,0))
+    if (!(length(sigma.constraint)==nindex)) {
+      stop("length of sigma constraint does not match the number of indices!!!!")#sigma.constraintの長さがindexの本数と異なる場合にはエラーを出して停止。
+    }
+    unique.sigma.constraint <- unique(sigma.constraint)
+    nsigma <- length(unique.sigma.constraint)
+    sigma_constraint <- sigma.constraint
+    for (i in 1:nsigma) {
+      pos <- which(sigma.constraint == unique.sigma.constraint[i])
+      sigma_constraint[pos] <- i-1
+    }
+    if (is.null(eta)) eta <- -1.0
+    eta_age <- rep(1,length(p.init))
+    eta_age[eta.age+1] <- 0
+    data2 <- list(Est=ifelse(est.method=="ls",0,1),b_fix=as.numeric(b_fix),alpha=alpha,lambda=lambda,beta=beta,Ab_type=Ab_type,Ab_type_age=Ab_type_age,w=index.w,af=af,CATCH=t(as.matrix(dat$caa)),WEI=t(as.matrix(dat$waa)),MAT=t(MAA),M=t(as.matrix(dat$M)),CPUE=t(index2),MISS=t(ifelse(index2==0,1,0)),Last_Catch_Zero=ifelse(isTRUE(last.catch.zero),1,0),sigma_constraint=sigma_constraint,eta=eta,eta_age=eta_age)
     
     parameters <- list(
       log_F=log(p.init)
     )
     
-    obj <- MakeADFun(data2, parameters, DLL="rvpa_tmb")
+    obj <- MakeADFun(data2, parameters, DLL=tmb.file)
     opt <- nlm(obj$fn, obj$par, gradient=obj$gr, hessian=hessian)
     
     summary.p.est <- list()
@@ -1513,9 +1551,10 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE){
      res.c$input$dat$M <- res.c$input$dat$M[,-nc]
      res.c$input$dat$index <- res.c$input$dat$index[,-nc,drop=FALSE]
      res.c$input$dat$catch.prop <- res.c$input$dat$catch.prop[,-nc]
-     
+
      res.c$input$tf.year <- res.c$input$tf.year-1
      res.c$input$fc.year <- res.c$input$fc.year-1
+     if (!is.null(res.c$input$tf.mat)) res.c$input$tf.mat <- res.c$input$tf.mat[,-1]
      
      if (isTRUE(init.est)) res.c$input$p.init <- res.c$term.f
      
@@ -1570,6 +1609,7 @@ retro.est2 <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE){
      
      res.c$input$tf.year <- res.c$input$tf.year-1
      res.c$input$fc.year <- res.c$input$fc.year-1
+     if (!is.null(res.c$input$tf.mat)) res.c$input$tf.mat <- res.c$input$tf.mat[,-1]
      
      if (isTRUE(init.est)) res.c$input$p.init <- res.c$term.f
      

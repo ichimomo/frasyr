@@ -1,41 +1,12 @@
----
-<<<<<<< HEAD
-title: "MSY管理基準値計算"
-=======
-title: "future関数を使った将来予測と管理基準値計算（簡易版）"
->>>>>>> 07acd67cd1b870e640bfc8cb56065a43521ba244
-author: "市野川桃子"
-date: "`r Sys.Date()`"
-output:
-  html_document:
-    highlight: kate
-    toc: yes
-    toc_float: yes
-vignette: >
-  %\VignetteIndexEntry{2. Estimating SR functions and Simulating futures}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
----
-
-
-```{r setup, include = FALSE}
+## ----setup, include = FALSE----------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.width=10,
   fig.height=10
 )
-```
 
-<<<<<<< HEAD
-# res_vpaの読み込み
-=======
-# 事前準備: res_vpaの作成
->>>>>>> 07acd67cd1b870e640bfc8cb56065a43521ba244
-
-- **設定ポイント:** vpa関数の引数fc.yearで指定した年数が今後current FのFとして扱われます。
-
-```{r data-read}
+## ----data-read-----------------------------------------------------------
 library(frasyr)
 data(res_vpa)
 res_vpa$Fc.at.age # 将来予測やMSY計算で使うcurrent Fを確認してプロットする
@@ -43,14 +14,8 @@ plot(res_vpa$Fc.at.age,type="b",xlab="Age",ylab="F",ylim=c(0,max(res_vpa$Fc.at.a
 
 # 独自のFc.at.ageを使いたい場合は以下のようにここで指定する
 # res_vpa$Fc.at.age[] <- c(1,1,2,2)
-```
 
-<<<<<<< HEAD
-# 再生産関係の推定
-=======
-## 再生産関係の推定
->>>>>>> 07acd67cd1b870e640bfc8cb56065a43521ba244
-```{r SRdata}
+## ----SRdata--------------------------------------------------------------
 # VPA結果を使って再生産データを作る
 SRdata <- get.SRdata(res_vpa, years=1988:2016) 
 head(SRdata)
@@ -70,24 +35,8 @@ SR.list <- SR.list[order(SRmodel.list$AICc)]  # AICの小さい順に並べた�
 (SRmodel.list <- SRmodel.list[order(SRmodel.list$AICc), ]) # 結果
 
 SRmodel.base <- SR.list[[1]] # AIC最小モデルを今後使っていく
-```
 
-<<<<<<< HEAD
-# currentFによる将来予測
-=======
-## 将来予測
->>>>>>> 07acd67cd1b870e640bfc8cb56065a43521ba244
-- 細かい設定の解説は[こちら](https://ichimomo.github.io/frasyr/docs/future.html)
-    - 自己相関を考慮する場合
-    - Frecオプション（目標の年に指定した確率で漁獲する）
-    - 年齢別体重が資源尾数に影響される場合、などのオプションがあります
-- **設定ポイント:**　将来予測やMSY推定で使う生物パラメータをここで指定します（```waa.year```, ```maa.year```, ```M.year```）。ABC計算年（```ABC.year```）などの設定もここで。
-- **設定ポイント:**　再生産関係の関数型とパラメータも与えます。```rec.fun```に関数名を、```rec.arg```にリスト形式で引数を与えます。
-- これはFcurrentでの将来予測を実施しますが、今後の管理基準値計算でもここで指定したオプションを引き継いで使っていきます
-- 近年の加入の仮定(```rec.new```)や近年の漁獲量(```pre.catch```)を設定する場合にはここで設定してください
-- 引数 ```silent == TRUE``` とすると、設定した引数のリストがすべて表示されます。意図しない設定などがないかどうか確認してください。
-
-```{r future.vpa, fig.cap="図：is.plot=TRUEで表示される図．Fcurrentでの将来予測。資源量(Biomass)，親魚資源量(SSB), 漁獲量(Catch)の時系列．決定論的将来予測（Deterministic），平均値（Mean），中央値(Median)，80％信頼区間を表示"}
+## ----future.vpa, fig.cap="図：is.plot=TRUEで表示される図．Fcurrentでの将来予測。資源量(Biomass)，親魚資源量(SSB), 漁獲量(Catch)の時系列．決定論的将来予測（Deterministic），平均値（Mean），中央値(Median)，80％信頼区間を表示"----
 
 res_future_Fcurrent <- future.vpa(res_vpa,
                       multi=1,
@@ -106,21 +55,8 @@ res_future_Fcurrent <- future.vpa(res_vpa,
                       rec.arg=list(a=SRmodel.base$pars$a,b=SRmodel.base$pars$b,
                                    rho=SRmodel.base$pars$rho, # ここではrho=0なので指定しなくてもOK
                                    sd=SRmodel.base$pars$sd,resid=SRmodel.base$resid))
-```
 
-<<<<<<< HEAD
-# MSY管理基準値の計算
-=======
-## MSY管理基準値の計算
->>>>>>> 07acd67cd1b870e640bfc8cb56065a43521ba244
-- MSY管理基準値計算では，上記の将来予測において，Fcurrentの値に様々な乗数を乗じたF一定方策における平衡状態時の（世代時間×20年を```nyear```で指定します）資源量やそれに対応するF等を管理基準値として算出します
-- なので、ここまでのプロセスで、ABC計算のためにきちんとしたオプションを設定したfuture.vpaを実行しておいてください。その返り値```res_future_Fcurrent```をMSY計算では使っていきます
-- MSY.est関数の引数の詳細な解説は[こちら](https://ichimomo.github.io/future-rvpa/future-doc-abc.html#msy%E7%AE%A1%E7%90%86%E5%9F%BA%E6%BA%96%E5%80%A4%E3%81%AE%E8%A8%88%E7%AE%97)
-- オプション```PGY```(MSYに対する比率を指定) や```B0percent```(B0に対する比率を指定)、```Bempirical```(親魚資源量の絶対値で指定)で、別の管理基準値も同時に計算できます。
-- 最近年の親魚量で維持した場合の管理基準値も、比較のためにあとで見るため```Bempirical```で指定しておいてください。また、B_HS(HSの折れ点)や最大親魚量などもここで計算しておいても良いかと。。。
-
-
-```{r msy, fig.cap="**図：est.MSYのis.plot=TRUEで計算完了時に表示される図．Fの強さに対する平衡状態の親魚資源量（左）と漁獲量（右）．推定された管理基準値も表示．**", fig.height=5, eval=TRUE}
+## ----msy, fig.cap="**図：est.MSYのis.plot=TRUEで計算完了時に表示される図．Fの強さに対する平衡状態の親魚資源量（左）と漁獲量（右）．推定された管理基準値も表示．**", fig.height=5, eval=TRUE----
 
 # MSY管理基準値の計算
 res_MSY <- est.MSY(res_vpa, # VPAの計算結果
@@ -136,17 +72,8 @@ res_MSY <- est.MSY(res_vpa, # VPAの計算結果
                               24000, # 現行Blimit
                               SRmodel.base$pars$b) # HSの折れ点
                  ) # 計算したいB0%レベル
-```
 
-<<<<<<< HEAD
-## 結果の表示
-=======
-### 結果の表示
->>>>>>> 07acd67cd1b870e640bfc8cb56065a43521ba244
-
-- ```res_MSY$summary_tb```にすべての結果が入っています。
-
-```{r summary}
+## ----summary-------------------------------------------------------------
 # 結果の表示(tibbleという形式で表示され、最初の10行以外は省略されます)
 options(tibble.width = Inf)
 (refs.all <- res_MSY$summary_tb)
@@ -154,23 +81,8 @@ options(tibble.width = Inf)
 # 全データをじっくり見たい場合
 # View(refs.all)
 
-```
 
-<<<<<<< HEAD
-## 管理基準値の選択
-=======
-### 管理基準値の選択
->>>>>>> 07acd67cd1b870e640bfc8cb56065a43521ba244
-
-- **設定ポイント** est.MSYで計算された管理基準値から、何をBtarget, Blimit, Bbanとして用いるかをチョイスします。
-- 具体的には、refs.allにRP.definitionという新しい列をひとつ作って、その列にそれぞれの管理基準値をどのように使うかを指定します
-- 「管理基準値名 + 0」はデフォルト規則による管理基準値
-- デフォルトでは、ARなし、MSY="Btarget0", 0.9MSY="Blow0",0.6MSY="Blimit0", 0.1MSY="Bban0"になるようになっています
-- 代替候補がある場合は「管理基準値名 + 数字」として指定
-- たとえば目標管理基準値の第一候補はBmsyなのでRP_nameがMSYでARなしの行のRP.definitionには"Btarget0"と入力します
-- Rコードがちょっと汚いですがご容赦ください。いい方法あったら教えてください。
-
-```{r}
+## ------------------------------------------------------------------------
 # どの管理基準値をどのように定義するか。デフォルトから外れる場合はここで定義する
 refs.all$RP.definition[refs.all$RP_name=="B0-20%" & refs.all$AR==FALSE] <- "Btarget1"  # たとえばBtargetの代替値としてB020%も候補に残しておきたい場合
 refs.all$RP.definition[refs.all$RP_name=="PGY_0.95_lower" & refs.all$AR==FALSE] <- "Btarget2" 
@@ -188,15 +100,8 @@ refs.all %>% select(RP_name,RP.definition)
     arrange(desc(SSB)) %>% # SSBを大きい順に並び替え
     select(RP.definition,RP_name,SSB,SSB2SSB0,Catch,Catch.CV,U,Fref2Fcurrent)) #　列を並び替え
 
-```
 
-<<<<<<< HEAD
-# デフォルトルールを使った将来予測
-=======
-### デフォルトルールを使った将来予測
->>>>>>> 07acd67cd1b870e640bfc8cb56065a43521ba244
-
-```{r}
+## ------------------------------------------------------------------------
 # デフォルトのHCRはBtarget0,Blimit0,Bban0のセットになるので、それを使って将来予測する
 input.abc <- res_future_Fcurrent$input # Fcurrentにおける将来予測の引数をベースに将来予測します
 input.abc$multi <- derive_RP_value(refs.base,"Btarget0")$Fref2Fcurrent # currentFへの乗数を"Btarget0"で指定した値に
@@ -282,5 +187,4 @@ all.table <- bind_rows(catch.table,
                        ssblimit.table,
                        ssbmin.table)
 write.csv(all.table,file="all.table.csv")
-```
 

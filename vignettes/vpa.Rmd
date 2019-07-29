@@ -23,28 +23,72 @@ knitr::opts_chunk$set(
 こちら　http://cse.fra.affrc.go.jp/ichimomo/fish/rvpa.html　のサイトからの転載になります．
 データも，このサイトから持ってきています．
 
-# データの読み込みと整形
-
+# VPA実施の概要
+## データの読み込み
 ```{r, fig.show='hold'}
-# 必要なパッケージのインストール
-#install.packages(c("devtools"))
-# 最新のパッケージのインストールと呼び出し
-#devtools::github_install("ichimomo/frasyr") # インストール
 library(frasyr)
+<<<<<<< HEAD
+caa   <- read.csv("https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex2_caa.csv",  row.names=1)
+waa   <- read.csv("https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex2_waa.csv",  row.names=1)
+maa   <- read.csv("https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex2_maa.csv",  row.names=1)
+dat <- data.handler(caa=caa, waa=waa, maa=maa, M=0.5)
 
-## 例データの読み込み
-caa   <- read.csv("http://cse.fra.affrc.go.jp/ichimomo/fish/caa.csv",  row.names=1)
-waa   <- read.csv("http://cse.fra.affrc.go.jp/ichimomo/fish/caa.csv",  row.names=1)
-maa   <- read.csv("http://cse.fra.affrc.go.jp/ichimomo/fish/caa.csv",  row.names=1)
-M     <- read.csv("http://cse.fra.affrc.go.jp/ichimomo/fish/M.csv",    row.names=1)
-index <- read.csv("http://cse.fra.affrc.go.jp/ichimomo/fish/index.csv",row.names=1)
+# VPAによる資源量推定
+res_vpa <- vpa(dat,fc.year=2015:2017,tf.year = 2015:2016,
+               term.F="max",stat.tf="mean",Pope=TRUE,tune=FALSE,p.init=0.5)
+=======
+caa   <- read.csv("https://github.com/ichimomo/frasyr/blob/master/data-raw/ex2_caa.csv",  row.names=1)
+waa   <- read.csv("https://github.com/ichimomo/frasyr/blob/master/data-raw/ex2_waa.csv",  row.names=1)
+maa   <- read.csv("https://github.com/ichimomo/frasyr/blob/master/data-raw/ex2_maa.csv",  row.names=1)
+dat <- data.handler(caa=caa, waa=waa, maa=maa, M=0.5)
 
-## データの整形
+# VPAによる資源量推定
+res_vpa <- vpa(dat,fc.year=2015:2017,tf.year = 2015:2017,
+               term.F="max",stat.tf="mean",Pope=TRUE,tune=FALSE,p.init=1.0)
+>>>>>>> 07acd67cd1b870e640bfc8cb56065a43521ba244
+
+res_vpa$Fc.at.age # 将来予測やMSY計算で使うcurrent F (fc.yearのオプションでいつのFの平均かが指定される)
+plot(res_vpa$Fc.at.age,type="b",xlab="Age",ylab="F",ylim=c(0,max(res_vpa$Fc.at.age)))
+```
+
+## VPA結果を外部から読み込む場合
+
+- read.vpa関数を使って読み込めます
+- out.vpa関数による出力と同じ書式になりますので、out.vpa関数でひな形ファイルを作成してから、エクセルでそれを編集し、read.vpa関数で読むと良いと思います
+
+```{r}
+#out.vpa(res_vpa) # vpa.csvというファイルが作成されます。VPAの結果のグラフ出力となるvpa.pdfも出力されます。
+<<<<<<< HEAD
+res_vpa2 <- read.vpa("https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex2_vpa.csv") # vpa.csvを編集後、read.vpa関数で読み込みます
+=======
+res_vpa2 <- read.vpa("https://github.com/ichimomo/frasyr/blob/master/data-raw/ex2_vpa.csv") # vpa.csvを編集後、read.vpa関数で読み込みます
+>>>>>>> 07acd67cd1b870e640bfc8cb56065a43521ba244
+```
+
+# さまざまなVPAのデモ
+
+## データの読み込みと整形
+```{r}
+# 読み込み
+<<<<<<< HEAD
+caa   <- read.csv("https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex1_caa.csv",  row.names=1)
+waa   <- read.csv("https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex1_waa.csv",  row.names=1)
+maa   <- read.csv("https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex1_maa.csv",  row.names=1)
+M     <- read.csv("https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex1_M.csv",  row.names=1)
+index     <- read.csv("https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex1_index.csv",  row.names=1)
+=======
+caa   <- read.csv("https://github.com/ichimomo/frasyr/blob/master/data-raw/ex1_caa.csv",  row.names=1)
+waa   <- read.csv("https://github.com/ichimomo/frasyr/blob/master/data-raw/ex1_waa.csv",  row.names=1)
+maa   <- read.csv("https://github.com/ichimomo/frasyr/blob/master/data-raw/ex1_maa.csv",  row.names=1)
+M     <- read.csv("https://github.com/ichimomo/frasyr/blob/master/data-raw/ex1_M.csv",    row.names=1)
+index <- read.csv("https://github.com/ichimomo/frasyr/blob/master/data-raw/ex1_index.csv",row.names=1)
+>>>>>>> 07acd67cd1b870e640bfc8cb56065a43521ba244
+
+# 整形
 dat <- data.handler(caa=caa, waa=waa, maa=maa, index=index, M=0.4)
 ```
 
-# VPAの実施
-## チューニングなしVPA 
+## チューニングなしVPAのバリエーション 
 ```{r}
   # p.initは初期値。収束しない場合（Fがゼロになる場合など）は、初期値を変えてみる
   # fc.yearは、Fcurrentを計算する範囲。管理基準値と将来予測で使われる。
@@ -54,7 +98,7 @@ vout1b <- vpa(dat,tf.year=1997:1999,Pope=TRUE,fc.year=1998:2000,alpha=0.5,p.init
 vout1c <- vpa(dat,tf.year=1999:1999,Pope=TRUE,fc.year=1998:2000,alpha=1,p.init=0.5) 
 ```
 
-## チューニングVPA
+## チューニングVPAのバリエーション
 ```{r}
 ## vout2; チューニング，選択率updateなし
 vout2 <- vpa(dat,tune=TRUE,sel.update=FALSE,Pope=FALSE,

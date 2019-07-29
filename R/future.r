@@ -408,8 +408,8 @@ future.vpa <-
             if(rec.arg$rho>0) stop("You set rho is >0. You cannot use resample=TRUE option when rho>0") # resamplingの場合に自己相関は考慮できないのでrhoは強制的にゼロ
         }
         
-        if(!is.null(rec.arg$sd)) rec.arg$sd <- c(0,rep(rec.arg$sd,N-1))
-        if(!is.null(rec.arg$sd2)) rec.arg$sd2 <- c(0,rep(rec.arg$sd2,N-1))
+        if(!is.null(rec.arg$sd) & isTRUE(det.run)) rec.arg$sd <- c(0,rep(rec.arg$sd,N-1))
+        if(!is.null(rec.arg$sd2)  & isTRUE(det.run)) rec.arg$sd2 <- c(0,rep(rec.arg$sd2,N-1))
         if(!is.null(HCR) && is.null(HCR$year.lag)) HCR$year.lag <- 0
         ##---------------------------------
 

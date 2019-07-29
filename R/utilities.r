@@ -181,7 +181,10 @@ get.trace <- function(trace){
 #'
 #' @param MSY_obj est.MSYの結果のオブジェクト
 #' @param refs_base est.MSYから得られる管理基準値の表
-#'
+#' @param future 将来予測結果のリスト。与えられると将来予測の結果を重ね書きする
+#' @param future.replicat 将来予測結果から特定のreplicateのみを示す。futureで与えたリストの長さのベクトルを与える。
+#' @param past  VPA結果。与えられると過去の推定値を重ね書きする
+#' 
 #' @export
 
 plot_yield <- function(MSY_obj,refs_base,
@@ -191,7 +194,9 @@ plot_yield <- function(MSY_obj,refs_base,
                        biomass.unit=1,labeling=TRUE,lining=TRUE,
                        age.label.ratio=0.9, # 年齢のラベルを入れる位置（xの最大値からの割合)
                        family = "JP1",
-                       ylim.scale=1.2,future=NULL,past=NULL,future.name=NULL){
+                       ylim.scale=1.2,future=NULL,
+                       future.replicate=NULL,
+                       past=NULL,future.name=NULL){
     
     junit <- c("","十","百","千","万")[log10(biomass.unit)+1]
    
@@ -268,24 +273,34 @@ plot_yield <- function(MSY_obj,refs_base,
     if(!is.null(future)){
         tmpdata <- NULL
         for(j in 1:length(future)){
-            tmpdata <- bind_rows(tmpdata,
-                tibble(
-                year        =as.numeric(rownames(future[[j]]$vssb)),
-                ssb.future  =apply(future[[j]]$vssb[,-1],1,mean)/biomass.unit,
-                catch.future=apply(future[[j]]$vwcaa[,-1],1,mean)/biomass.unit,
-                scenario=future.name[j]))
+            if(is.null(future.replicate)){
+               tmpdata <- bind_rows(tmpdata,
+                   tibble(
+                   year        =as.numeric(rownames(future[[j]]$vssb)),
+                   ssb.future  =apply(future[[j]]$vssb[,-1],1,mean)/biomass.unit,
+                   catch.future=apply(future[[j]]$vwcaa[,-1],1,mean)/biomass.unit,
+                   scenario=future.name[j]))
             }
-        tmpdata <- tmpdata %>% group_by(scenario)
-        g1 <- g1 +
-            geom_path(data=tmpdata,
-                      mapping=aes(x=ssb.future,y=catch.future,
-                                  linetype=factor(scenario)),
-                      lwd=1,col=col.SBtarget)+
-            geom_point(data=tmpdata,
-                       mapping=aes(x=ssb.future,y=catch.future,
-                                   shape=factor(scenario)),color=col.SBtarget,size=3)
+            else{
+               tmpdata <- bind_rows(tmpdata,
+                   tibble(
+                   year        =as.numeric(rownames(future[[j]]$vssb)),
+                   ssb.future  =future[[j]]$vssb[,future.replicate[j]]/biomass.unit,
+                   catch.future=future[[j]]$vwcaa[,future.replicate[j]]/biomass.unit,
+                   scenario=future.name[j]))                
+            }
+            tmpdata <- tmpdata %>% group_by(scenario)
+            g1 <- g1 +
+                geom_path(data=tmpdata,
+                          mapping=aes(x=ssb.future,y=catch.future,
+                                      linetype=factor(scenario)),
+                          lwd=1,col=col.SBtarget)+
+                geom_point(data=tmpdata,
+                           mapping=aes(x=ssb.future,y=catch.future,
+                                       shape=factor(scenario)),color=col.SBtarget,size=3)
 
-
+            
+        }
     }
     
     if(!is.null(past)){
@@ -335,7 +350,7 @@ plot_yield <- function(MSY_obj,refs_base,
 
     return(g1)
         
-}
+    }
 
 #' 管理基準値の表を作成する
 #'
@@ -682,7 +697,8 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
 #'
 #' @param vpares VPAの結果のオブジェクト
 #' @param future.list 将来予測の結果をリストで並べたもの
-#'
+#' @param n_example 個々のシミュレーションの例を示す数
+#' @param future.replicate どのreplicateを選ぶかを選択する。この場合n_exampleによる指定は無効になる
 #' @export
 
 plot_futures <- function(vpares,
@@ -690,15 +706,25 @@ plot_futures <- function(vpares,
                          future.name=names(future.list),
                          future_tibble=NULL,
                          CI_range=c(0.1,0.9),
-                         maxyear=NULL,font.size=18,
+                         maxyear=NULL,
+                         font.size=18,
                          ncol=3,
+                         is.plot.CIrange=TRUE,
                          what.plot=c("Recruitment","SSB","biomass","catch","Fsakugen","Fsakugen_ratio"),
-                         biomass.unit=1,RP_name=c("Btarget","Blimit","Bban"),
+                         biomass.unit=1,
+                         RP_name=c("Btarget","Blimit","Bban"),
                          Btarget=0,Blimit=0,Bban=0,#Blow=0,
                          n_example=3, # number of examples
+                         future.replicate=NULL, 
                          seed=1 # seed for selecting the above example
                          ){
 
+    col.SBtarget <- "#00533E"
+    col.SBlim <- "#edb918"
+    col.SBban <- "#C73C2E"
+    col.Ftarget <- "#714C99"
+    col.betaFtarget <- "#505596"
+    
     junit <- c("","十","百","千","万")[log10(biomass.unit)+1]
     require(tidyverse,quietly=TRUE)
     rename_list <- tibble(stat=c("Recruitment","SSB","biomass","catch","Fsakugen","Fsakugen_ratio","alpha"),
@@ -728,9 +754,17 @@ plot_futures <- function(vpares,
         mutate(stat=factor(stat,levels=rename_list$stat))
 
     set.seed(seed)
-    future.example <- future.table %>%
-      dplyr::filter(sim%in%sample(2:max(future.table$sim),n_example)) %>%
-      mutate(stat = as.character(stat),
+    if(!is.null(future.replicate)){
+        future.example <- future.table %>%
+            dplyr::filter(sim%in%future.replicate)
+    }
+    else{
+        future.example <- future.table %>%
+            dplyr::filter(sim%in%sample(2:max(future.table$sim),n_example))
+    }
+    
+    future.example <- future.example %>%
+        mutate(stat = as.character(stat),
              value=ifelse((stat=="Fsakugen"|stat=="Fsakugen_ratio"),
                           value,value/biomass.unit)) %>%
       left_join(rename_list) %>%
@@ -751,12 +785,14 @@ plot_futures <- function(vpares,
 
     org.warn <- options()$warn
     options(warn=-1)
-    future.table <- bind_rows(future.table,vpa_tb,future.dummy) %>%
+    future.table <-
+        bind_rows(future.table,vpa_tb,future.dummy) %>%
         mutate(stat=factor(stat,levels=rename_list$stat)) %>%
         mutate(scenario=factor(scenario,levels=c("VPA",future.name))) %>%
         mutate(value=ifelse(stat%in%c("Fsakugen","Fsakugen_ratio","alpha"),value,value/biomass.unit))
 
-    future.table.qt <- future.table %>% group_by(scenario,year,stat) %>%
+    future.table.qt <- 
+        future.table %>% group_by(scenario,year,stat) %>%
         summarise(low=quantile(value,CI_range[1],na.rm=T),
                   high=quantile(value,CI_range[2],na.rm=T),
                   median=median(value,na.rm=T),
@@ -787,10 +823,21 @@ plot_futures <- function(vpares,
     options(warn=org.warn)
     
     g1 <- future.table.qt %>% dplyr::filter(!is.na(stat)) %>%
-        ggplot() +
-        geom_ribbon(aes(x=year,ymin=low,ymax=high,fill=scenario),alpha=0.4)+        
-        geom_line(aes(x=year,y=mean,color=scenario),lwd=1)+
-        geom_line(aes(x=year,y=mean,color=scenario),linetype=2,lwd=1)+
+        ggplot()
+
+    if(isTRUE(is.plot.CIrange)){
+        g1 <- g1+
+            geom_ribbon(aes(x=year,ymin=low,ymax=high,fill=scenario),alpha=0.4)+
+            geom_line(aes(x=year,y=mean,color=scenario),lwd=1)#+
+#            geom_line(aes(x=year,y=mean,color=scenario),linetype=2,lwd=1)
+    }
+    else{
+        g1 <- g1+
+            geom_line(data=dplyr::filter(future.table.qt,!is.na(stat) & scenario=="VPA"),
+                      mapping=aes(x=year,y=mean),lwd=1,color="black")#+        
+    }
+    
+    g1 <- g1+
         geom_blank(data=dummy,mapping=aes(y=value,x=year))+
         geom_blank(data=dummy2,mapping=aes(y=value,x=year))+
         theme_bw(base_size=font.size) +
@@ -805,12 +852,20 @@ plot_futures <- function(vpares,
 
 
     if(n_example>0){
-        g1 <- g1 + geom_line(data=future.example,
-                             mapping=aes(x=year,y=value,
-                                         alpha=factor(sim),
-                                         color=scenario)) +
-            scale_alpha_discrete(guide=FALSE)
-            
+        if(n_example>1){
+            g1 <- g1 + geom_line(data=future.example,
+                                 mapping=aes(x=year,y=value,
+                                             alpha=factor(sim),
+                                             color=scenario),
+                                 lwd=0.7) 
+        }
+        else{
+            g1 <- g1 + geom_line(data=future.example,
+                                 mapping=aes(x=year,y=value,
+                                             color=scenario),
+                                 lwd=0.7) 
+        }
+        g1 <- g1+scale_alpha_discrete(guide=FALSE)            
     }
     return(g1)
 }
