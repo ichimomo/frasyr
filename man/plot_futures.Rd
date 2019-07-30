@@ -7,15 +7,19 @@
 plot_futures(vpares, future.list = NULL,
   future.name = names(future.list), future_tibble = NULL,
   CI_range = c(0.1, 0.9), maxyear = NULL, font.size = 18, ncol = 3,
-  what.plot = c("Recruitment", "SSB", "biomass", "catch", "Fsakugen",
-  "Fsakugen_ratio"), biomass.unit = 1, RP_name = c("Btarget", "Blimit",
-  "Bban"), Btarget = 0, Blimit = 0, Bban = 0, n_example = 3,
-  seed = 1)
+  is.plot.CIrange = TRUE, what.plot = c("Recruitment", "SSB",
+  "biomass", "catch", "Fsakugen", "Fsakugen_ratio"), biomass.unit = 1,
+  RP_name = c("Btarget", "Blimit", "Bban"), Btarget = 0, Blimit = 0,
+  Bban = 0, n_example = 3, future.replicate = NULL, seed = 1)
 }
 \arguments{
 \item{vpares}{VPAの結果のオブジェクト}
 
 \item{future.list}{将来予測の結果をリストで並べたもの}
+
+\item{n_example}{個々のシミュレーションの例を示す数}
+
+\item{future.replicate}{どのreplicateを選ぶかを選択する。この場合n_exampleによる指定は無効になる}
 }
 \description{
 将来予測の複数の結果をggplotで重ね書きする

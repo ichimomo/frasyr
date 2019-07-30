@@ -22,8 +22,9 @@ vpa(dat, sel.f = NULL, tf.year = 2008:2010, rec.new = NULL,
   sigma.const = 1:length(abund), fixed.index.var = NULL,
   max.iter = 100, optimizer = "nlm", Lower = -Inf, Upper = Inf,
   p.fix = NULL, lambda = 0, beta = 2, penalty = "p",
-  ssb.def = "i", ssb.lag = 0, TMB = FALSE, TMB.compile = FALSE,
-  sel.rank = NULL, p.init = 0.2, sigma.constraint = 1:length(abund))
+  ssb.def = "i", ssb.lag = 0, TMB = FALSE, sel.rank = NULL,
+  p.init = 0.2, sigma.constraint = 1:length(abund), eta = NULL,
+  eta.age = 0, tmb.file = "rvpa_tmb")
 }
 \arguments{
 \item{dat}{data for vpa}
@@ -110,7 +111,7 @@ vpa(dat, sel.f = NULL, tf.year = 2008:2010, rec.new = NULL,
 
 \item{ti.scale}{資源量の係数と切片のscaling}
 
-\item{tf.mat}{terminal Fの平均をとる年の設定．0-1行列．}
+\item{tf.mat}{terminal Fの平均をとる年の設定．NA行列に平均をとる箇所に1を入れる．}
 
 \item{eq.tf.mean}{terminal Fの平均値を過去のFの平均値と等しくする}
 
@@ -156,7 +157,9 @@ vpa(dat, sel.f = NULL, tf.year = 2008:2010, rec.new = NULL,
 
 \item{p.init}{}
 
-\item{sigma.constraint}{}
+\item{eta}{Fのpenaltyを分けて与えるときにeta.ageで指定した年齢への相対的なpenalty (0~1)}
+
+\item{eta.age}{Fのpenaltyを分けるときにetaを与える年齢(0 = 0歳（加入）,0:1 = 0~1歳)}
 }
 \description{
 VPAによる資源計算を実施する

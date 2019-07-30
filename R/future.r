@@ -286,8 +286,9 @@ calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=
 #' 将来予測のための関数
 #'
 #' @param res0 VPAの出力結果
-#' @param multi currentFに乗じる係数
-#'　
+#' @param currentF ABC算定年-1年目までに用いるF at age。NULLの場合、VPA結果のres0$Fc.at.ageを用いる
+#' @param multi ABC算定年以降にcurrentFに乗じる係数
+#' @param futureF ABC算定年以降に用いられるF at age。NULLの場合にはcurrentFをそのまま用いる。currentF, multi, futureFをあわせて、将来のF at ageはABC算定年-1年まではcurrentF, ABC算定年以降はmulti x futureF (NULLの場合、currentF)が用いられる
 #' 
 #'
 #' @export
@@ -298,6 +299,7 @@ future.vpa <-
     function(res0,
              currentF=NULL, # 管理前のF
              multi=1, # 管理後（ABC.yearから）のF (current F x multi)
+             futureF=NULL, 
              nyear=10,Pope=res0$input$Pope,
              outtype="FULL",
              multi.year=1,#ある特定の年だけFを変えたい場合。デフォルトは1。変える場合は、指定した年またはタイムステップの要素数のベクトルで指定。
@@ -528,12 +530,13 @@ future.vpa <-
             if(!is.null(res0$input$dat$waa.catch)) waa.catch[] <- apply(as.matrix(res0$input$dat$waa.catch[,years %in% waa.year]),1,mean)
             else waa.catch <- waa
         }
+
         
-        
+        if(is.null(futureF)) futureF <- currentF 
         # future F matrix
-        faa[] <- currentF*multi # *exp(rnorm(length(faa),0,F.sigma))
+        faa[] <- futureF*multi # *exp(rnorm(length(faa),0,F.sigma))
         # ABCyear以前はcurrent Fを使う。
-        faa[,fyears<min(ABC.year),] <- currentF*exp(rnorm(length(faa[,fyears<min(ABC.year),]),0,F.sigma))
+        faa[,fyears<min(ABC.year),] <- currentF #*exp(rnorm(length(faa[,fyears<min(ABC.year),]),0,F.sigma))
         
         ## VPA期間と将来予測期間が被っている場合、VPA期間のFはVPAの結果を使う
         overlapped.years <- list(future=which(fyear.year %in% years),vpa=which(years %in% fyear.year))
@@ -796,6 +799,7 @@ future.vpa <-
                      recruit=naa[1,,],
                      eaa=eaa,alpha=alpha,thisyear.ssb=thisyear.ssb,
                      waa=waa,waa.catch=waa.catch,currentF=currentF,
+                     futureF=futureF,
                      vssb=apply(ssb,c(2,3),sum,na.rm=T),vwcaa=vwcaa,naa_all=naa_all,
                      years=fyears,fyear.year=fyear.year,ABC=ABC,recfunc=recfunc,rec.arg=rec.arg,
                      waa.year=waa.year,maa.year=maa.year,multi=multi,multi.year=multi.year,
@@ -814,6 +818,7 @@ future.vpa <-
                          waa=waa[,,1],waa.catch=waa.catch[,,1],currentF=currentF,
                          vssb=apply(ssb,c(2,3),sum,na.rm=T),vwcaa=vwcaa,alpha=alpha,
                          years=fyears,fyear.year=fyear.year,ABC=ABC,recfunc=recfunc,
+                         futureF=futureF,                         
                          waa.year=waa.year,maa.year=maa.year,multi=multi,multi.year=multi.year,
                          Frec=Frec,rec.new=rec.new,pre.catch=pre.catch,input=arglist)
         }
@@ -822,6 +827,7 @@ future.vpa <-
             fres <- list(recruit=naa[1,,],eaa=eaa,#baa=biom,
                          vbiom=apply(biom,c(2,3),sum,na.rm=T),
                          currentF=currentF,alpha=alpha,
+                         futureF=futureF,                         
                          vssb=apply(ssb,c(2,3),sum,na.rm=T),vwcaa=vwcaa,
                          years=fyears,fyear.year=fyear.year,ABC=ABC,
                          waa.year=waa.year,maa.year=maa.year,multi=multi,multi.year=multi.year,
