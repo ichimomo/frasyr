@@ -8,12 +8,19 @@ plot_yield(MSY_obj, refs_base, refs.label = NULL,
   refs.color = c("#00533E", "#edb918", "#C73C2E"), AR_select = FALSE,
   xlim.scale = 1.1, biomass.unit = 1, labeling = TRUE,
   lining = TRUE, age.label.ratio = 0.9, family = "JP1",
-  ylim.scale = 1.2, future = NULL, past = NULL, future.name = NULL)
+  ylim.scale = 1.2, future = NULL, future.replicate = NULL,
+  past = NULL, future.name = NULL)
 }
 \arguments{
 \item{MSY_obj}{est.MSYの結果のオブジェクト}
 
 \item{refs_base}{est.MSYから得られる管理基準値の表}
+
+\item{future}{将来予測結果のリスト。与えられると将来予測の結果を重ね書きする}
+
+\item{past}{VPA結果。与えられると過去の推定値を重ね書きする}
+
+\item{future.replicat}{将来予測結果から特定のreplicateのみを示す。futureで与えたリストの長さのベクトルを与える。}
 }
 \description{
 漁獲量曲線(yield curve)を書く

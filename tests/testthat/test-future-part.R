@@ -1166,3 +1166,48 @@ test_that("oututput value check (iteration for future sim is fixed as 2) ",{
   expect_equal(fres.BH$multi.year, fresBH_multiyear_pma_check[1,])
 
 })
+
+context("future future.vpa (option of futureF)")
+
+test_that("oututput value check (iteration for future sim is fixed as 2) ",{
+#  caa <- read.csv(system.file("extdata","caa_pma.csv",package="frasyr"),row.names=1)
+#  waa <- read.csv(system.file("extdata","waa_pma.csv",package="frasyr"),row.names=1)
+#  maa <- read.csv(system.file("extdata","maa_pma.csv",package="frasyr"),row.names=1)
+#  dat <- data.handler(caa=caa, waa=waa, maa=maa, M=0.5)
+#  res.pma <- vpa(dat,fc.year=2009:2011,rec=585,rec.year=2011,tf.year = 2008:2010,
+#                 term.F="max",stat.tf="mean",Pope=TRUE,tune=FALSE,p.init=1.0)
+#  SRdata <- get.SRdata(res.pma)
+
+#  HS.par0 <- fit.SR(SRdata,SR="HS",method="L2",AR=0,hessian=FALSE)
+#  HS.par1 <- fit.SR(SRdata,SR="HS",method="L2",AR=1,hessian=FALSE)
+
+  currentF.test <- 1:4/10
+  futureF.test <- 5:8/10
+  fres.HS.check <- future.vpa(res.pma,
+                              multi=2,
+                              currentF=currentF.test,
+                              futureF=5:8/10,
+                              nyear=50, 
+                              start.year=2012, 
+                              N=2, ABC.year=2013, 
+                        waa.year=2009:2011, 
+                        maa.year=2009:2011,
+                        M.year=2009:2011,
+                        is.plot=TRUE, 
+                        seed=1,
+                        silent=TRUE,
+                        recfunc=HS.recAR, 
+                        rec.arg=list(a=HS.par0$pars$a,b=HS.par0$pars$b,
+                                     rho=HS.par0$pars$rho, 
+                                     sd=HS.par0$pars$sd,resid=HS.par0$resid)
+                        )
+
+
+  # faaが想定通りに入っていればOKくらいのテストです
+  for(i in 1:4){
+      expect_true(mean(fres.HS.check$faa[i,dimnames(fres.HS.check$faa)[[2]]==2012,])==currentF.test[i])
+      expect_true(mean(fres.HS.check$faa[i,dimnames(fres.HS.check$faa)[[2]]>2012,])==futureF.test[i]*2)      
+  }
+})
+
+
