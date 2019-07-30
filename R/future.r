@@ -1779,6 +1779,15 @@ get.stat3 <- function(fout,eyear=0,hsp=NULL,tmp.year=NULL,unit.waa=1){
                     "biom.det"=mean(fout$vbiom[tmp.year,1],na.rm=T),
                     "biom.L10"=quantile(fout$vbiom[tmp.year,col.target],na.rm=T,probs=0.1),
                     "biom.H10"=quantile(fout$vbiom[tmp.year,col.target],na.rm=T,probs=0.9),
+                    
+                    "rec.mean"=mean(unlist(fout$naa[1,,])[tmp.year,col.target]),
+                    "rec.sd"=sd(unlist(fout$naa[1,,])[tmp.year,col.target]),
+                    "rec.geomean"=geomean(unlist(fout$naa[1,,])[tmp.year,col.target]),
+                    "rec.median"=median(unlist(fout$naa[1,,])[tmp.year,col.target],na.rm=T),
+                    "rec.det"=mean(unlist(fout$naa[1,,])[tmp.year,1],na.rm=T),
+                    "rec.L10"=quantile(unlist(fout$naa[1,,])[tmp.year,col.target],na.rm=T,probs=0.1),
+                    "rec.H10"=quantile(unlist(fout$naa[1,,])[tmp.year,col.target],na.rm=T,probs=0.9),
+                    
                     "lower.HSpoint"=lhs,
                     "Fref2Fcurrent"=fout$multi
                     )
