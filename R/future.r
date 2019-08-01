@@ -1944,7 +1944,7 @@ est.MSY <- function(vpares,farg,
                    current.resid=NULL # 残差の値を直接入れる場合。上の年数が設定されていてもこちらが設定されたらこの値を使う
                    ){
 
-    require(tidyverse)
+#    require(tidyverse)
   
     farg$seed <- seed
 
@@ -2538,8 +2538,8 @@ get.kobemat2 <- function(fouts,brefs,xlim=NULL,target.prob=0.5){
     abline(h=1:ncol(brefs),v=years,col="gray")
     axis(side=2,at=1:nrow(brefs),label=rownames(brefs))
 
-    require(RColorBrewer)
-    cols <- brewer.pal(ncol(brefs), "Paired")
+#    require()
+    cols <- RColorBrewer::brewer.pal(ncol(brefs), "Paired")
 
     for(i in 1:length(fouts)){
         points(years,rep(i,length(years)),
