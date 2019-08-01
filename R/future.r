@@ -1799,6 +1799,7 @@ get.stat3 <- function(fout,eyear=0,hsp=NULL,tmp.year=NULL,unit.waa=1){
     a$catch.CV <- a$catch.sd/a$catch.mean
     a$ssb.CV <- a$ssb.sd/a$ssb.mean
     a$biom.CV <- a$biom.sd/a$biom.mean
+    a$rec.CV <- a$rec.sd/a$rec.mean
 
     Faa <- as.data.frame(t(fout$multi * fout$input$res0$Fc.at.age))
     colnames(Faa) <- paste("F",dimnames(fout$naa)[[1]],sep="")
