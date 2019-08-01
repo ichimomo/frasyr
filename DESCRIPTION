@@ -15,9 +15,10 @@ Imports:
     dplyr,
     tidyr,
     stringr,
+    readr,
+    forcats,
     formattable,
     ggrepel,
-    magrittr,    
     RcppRoll
 Suggests: 
     knitr,
