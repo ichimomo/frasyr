@@ -1785,6 +1785,15 @@ get.stat3 <- function(fout,eyear=0,hsp=NULL,tmp.year=NULL,unit.waa=1){
                     "biom.det"=mean(fout$vbiom[tmp.year,1],na.rm=T),
                     "biom.L10"=quantile(fout$vbiom[tmp.year,col.target],na.rm=T,probs=0.1),
                     "biom.H10"=quantile(fout$vbiom[tmp.year,col.target],na.rm=T,probs=0.9),
+                    
+                    "rec.mean"=mean(unlist(fout$naa[1,,])[tmp.year,col.target]),
+                    "rec.sd"=sd(unlist(fout$naa[1,,])[tmp.year,col.target]),
+                    "rec.geomean"=geomean(unlist(fout$naa[1,,])[tmp.year,col.target]),
+                    "rec.median"=median(unlist(fout$naa[1,,])[tmp.year,col.target],na.rm=T),
+                    "rec.det"=mean(unlist(fout$naa[1,,])[tmp.year,1],na.rm=T),
+                    "rec.L10"=quantile(unlist(fout$naa[1,,])[tmp.year,col.target],na.rm=T,probs=0.1),
+                    "rec.H10"=quantile(unlist(fout$naa[1,,])[tmp.year,col.target],na.rm=T,probs=0.9),
+                    
                     "lower.HSpoint"=lhs,
                     "Fref2Fcurrent"=fout$multi
                     )
@@ -1796,6 +1805,7 @@ get.stat3 <- function(fout,eyear=0,hsp=NULL,tmp.year=NULL,unit.waa=1){
     a$catch.CV <- a$catch.sd/a$catch.mean
     a$ssb.CV <- a$ssb.sd/a$ssb.mean
     a$biom.CV <- a$biom.sd/a$biom.mean
+    a$rec.CV <- a$rec.sd/a$rec.mean
 
     Faa <- as.data.frame(t(fout$multi * fout$input$res0$Fc.at.age))
     colnames(Faa) <- paste("F",dimnames(fout$naa)[[1]],sep="")
