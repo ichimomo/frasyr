@@ -116,8 +116,8 @@ convert_vpa_tibble <- function(vpares){
 
 SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,ylabel="尾",
                       labeling.year=NULL,add.info=TRUE){
-    require(tidyverse,quietly=TRUE)    
-    require(ggrepel)
+#    require(tidyverse,quietly=TRUE)    
+#    require(ggrepel)
     
     SRdata <- as_tibble(SR_result$input$SRdata) %>%
         mutate(type="obs")
@@ -144,7 +144,7 @@ SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千ト�
 #                         aes(y=R,x=SSB,label=year),
     #                         size=3,box.padding=3,segment.color="black") +
     #        geom_text_repel(aes(y=R,x=SSB,label=pickyear)) +
-    geom_text_repel(data=dplyr::filter(alldata,type=="obs"),
+    ggrepel::geom_text_repel(data=dplyr::filter(alldata,type=="obs"),
                     segment.alpha=0.5,nudge_y=5,
                     aes(y=R,x=SSB,label=pick.year)) +                
         theme_bw(base_size=14)+
@@ -206,8 +206,8 @@ plot_yield <- function(MSY_obj,refs_base,
       trace.msy <- MSY_obj
     }
         
-    require(tidyverse,quietly=TRUE)
-    require(ggrepel)    
+#    require(tidyverse,quietly=TRUE)
+#    require(ggrepel)    
 
     trace <- get.trace(trace.msy) %>%
         mutate("年齢"=age,ssb.mean=ssb.mean/biomass.unit,value=value/biomass.unit)
@@ -325,7 +325,7 @@ plot_yield <- function(MSY_obj,refs_base,
     if(isTRUE(lining)){
 #        ylim.scale.factor <- rep(c(0.94,0.97),ceiling(length(refs.label)/2))[1:length(refs.label)]
         g1 <- g1 + geom_vline(xintercept=refs_base$SSB,lty="41",lwd=0.6,color=refs.color)+
-            geom_label_repel(data=refs_base,
+            ggrepel::geom_label_repel(data=refs_base,
                              aes(y=ymax*ylim.scale*0.85,
                                  x=SSB,label=refs.label),
                              direction="x",size=11*0.282,nudge_y=ymax*ylim.scale*0.9)  
@@ -335,7 +335,7 @@ plot_yield <- function(MSY_obj,refs_base,
         g1 <- g1 +
             geom_point(data=refs_base,
                         aes(y=Catch,x=SSB))+
-            geom_label_repel(data=refs_base,
+            ggrepel::geom_label_repel(data=refs_base,
                             aes(y=Catch,x=SSB,label=refs.label),
 #                            size=4,box.padding=0.5,segment.color=1,
                             hjust=0,#nudge_y      = ymax*ylim.scale-refs_base$Catch/2,
@@ -360,8 +360,8 @@ plot_yield <- function(MSY_obj,refs_base,
 #'
 
 make_RP_table <- function(refs_base){
-    require(formattable)
-    require(tidyverse,quietly=TRUE)
+#    require(formattable)
+#    require(tidyverse,quietly=TRUE)
     table_output <- refs_base %>%
         select(-RP_name) %>% # どの列を表示させるか選択する
         # 各列の有効数字を指定
@@ -414,7 +414,7 @@ calc_kobeII_matrix <- function(fres_base,
                               Bban=c("Bban0"),
                               year.lag=0,
                               beta=seq(from=0.5,to=1,by=0.1)){
-    require(tidyverse,quietly=TRUE)    
+#    require(tidyverse,quietly=TRUE)    
 # HCRの候補を網羅的に設定
 #    HCR_candidate1 <- expand.grid(
 #        Btarget_name=refs_base$RP.definition[str_detect(refs_base$RP.definition,Btarget)],
@@ -539,8 +539,8 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
                          beta=NULL){
 
    
-    require(tidyverse,quietly=TRUE)
-    require(ggrepel,quietly=TRUE)    
+#    require(tidyverse,quietly=TRUE)
+#    require(ggrepel,quietly=TRUE)    
 
     target.RP <- derive_RP_value(refs_base,Btarget)
     limit.RP <- derive_RP_value(refs_base,Blimit)
@@ -564,12 +564,12 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
     h=Vectorize(multi2currF)
     ####
     
-    require(RcppRoll)
+#    require(RcppRoll)
     vpa_tb <- convert_vpa_tibble(vpares)
     UBdata <- vpa_tb %>% dplyr::filter(stat=="U" | stat=="SSB") %>%
         spread(key=stat,value=value) %>%
-        mutate(Uratio=roll_mean(U/target.RP$U,n=roll_mean,fill=NA,align="right"),
-               Bratio=roll_mean(SSB/target.RP$SSB,n=roll_mean,fill=NA,align="right")) %>%
+        mutate(Uratio=RcppRoll::roll_mean(U/target.RP$U,n=RcppRoll::roll_mean,fill=NA,align="right"),
+               Bratio=RcppRoll::roll_mean(SSB/target.RP$SSB,n=RcppRoll::roll_mean,fill=NA,align="right")) %>%
         arrange(year)
     if(ylab.type=="F") UBdata <- UBdata %>% mutate(Uratio=Fratio)
     
@@ -643,7 +643,7 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
 #                                  y=max.U*c(1.05,1.1,1.05),
 #                                  label=c("目標管理基準値","限界管理基準値","禁漁水準")),
     #                      aes(x=x,y=y,label=label),hjust=0)
-             geom_label_repel(data=tibble(x=c(1,limit.ratio,ban.ratio),
+         ggrepel::geom_label_repel(data=tibble(x=c(1,limit.ratio,ban.ratio),
                                           y=max.U*0.85,
                                           label=c("目標管理基準値","限界管理基準値","禁漁水準")),
                               aes(x=x,y=y,label=label),
@@ -672,7 +672,7 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
         geom_point(mapping=aes(x=Bratio,y=Uratio),shape=21,fill="white") +        
         coord_cartesian(xlim=c(0,max.B*1.1),ylim=c(0,max.U*1.15),expand=0) +
         ylab("漁獲率の比 (U/Umsy)") + xlab("親魚量の比 (SB/SBmsy)")  +
-        geom_text_repel(#data=dplyr::filter(UBdata,year%in%labeling.year),
+        ggrepel::geom_text_repel(#data=dplyr::filter(UBdata,year%in%labeling.year),
                          aes(x=Bratio,y=Uratio,label=year.label),
                          size=4,box.padding=0.5,segment.color="gray")
 
@@ -681,7 +681,7 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
         geom_point(mapping=aes(x=Bratio,y=Uratio),shape=21,fill="white") +
         coord_cartesian(xlim=c(0,max.B*1.1),ylim=c(0,max.U*1.15),expand=0) +
         ylab("漁獲率の比 (U/Umsy)") + xlab("親魚量の比 (SB/SBmsy)")  +
-        geom_text_repel(#data=dplyr::filter(UBdata,year%in%labeling.year),
+        ggrepel::geom_text_repel(#data=dplyr::filter(UBdata,year%in%labeling.year),
                          aes(x=Bratio,y=Uratio,label=year.label),
                          size=4,box.padding=0.5,segment.color="gray")
 
@@ -726,7 +726,7 @@ plot_futures <- function(vpares,
     col.betaFtarget <- "#505596"
     
     junit <- c("","十","百","千","万")[log10(biomass.unit)+1]
-    require(tidyverse,quietly=TRUE)
+#    require(tidyverse,quietly=TRUE)
     rename_list <- tibble(stat=c("Recruitment","SSB","biomass","catch","Fsakugen","Fsakugen_ratio","alpha"),
                           jstat=c(str_c("加入尾数"),
                               str_c("親魚量 (",junit,"トン)"),
