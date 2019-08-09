@@ -10,7 +10,8 @@ plot_futures(vpares, future.list = NULL,
   is.plot.CIrange = TRUE, what.plot = c("Recruitment", "SSB",
   "biomass", "catch", "Fsakugen", "Fsakugen_ratio"), biomass.unit = 1,
   RP_name = c("Btarget", "Blimit", "Bban"), Btarget = 0, Blimit = 0,
-  Bban = 0, n_example = 3, future.replicate = NULL, seed = 1)
+  Bban = 0, MSY = 0, exclude.japanese.font = FALSE, n_example = 3,
+  future.replicate = NULL, seed = 1)
 }
 \arguments{
 \item{vpares}{VPAの結果のオブジェクト}
