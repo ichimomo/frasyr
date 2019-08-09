@@ -8,6 +8,8 @@ knitr::opts_chunk$set(
 
 ## ----data-read-----------------------------------------------------------
 library(frasyr)
+library(tidyverse)
+
 data(res_vpa)
 res_vpa$Fc.at.age # 将来予測やMSY計算で使うcurrent Fを確認してプロットする
 plot(res_vpa$Fc.at.age,type="b",xlab="Age",ylab="F",ylim=c(0,max(res_vpa$Fc.at.age)))

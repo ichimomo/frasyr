@@ -117,7 +117,11 @@ convert_vpa_tibble <- function(vpares){
 SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,ylabel="尾",
                       labeling.year=NULL,add.info=TRUE){
 #    require(tidyverse,quietly=TRUE)    
-#    require(ggrepel)
+    #    require(ggrepel)
+
+    if (SR_result$input$SR=="HS") SRF <- function(SSB,a,b) ifelse(SSB*xscale>b,b*a,SSB*xscale*a)
+    if (SR_result$input$SR=="BH") SRF <- function(SSB,a,b) a*SSB*xscale/(1+b*SSB*xscale)
+    if (SR_result$input$SR=="RI") SRF <- function(SSB,a,b) a*SSB*xscale*exp(-b*SSB*xscale)
     
     SRdata <- as_tibble(SR_result$input$SRdata) %>%
         mutate(type="obs")
@@ -131,11 +135,12 @@ SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千ト�
     if(is.null(labeling.year)) labeling.year <- c(tmp[tmp%%5==0],year.max)
     alldata <- alldata %>% mutate(pick.year=ifelse(year%in%labeling.year,year,""))
 
-
-    g1 <- ggplot() +
-        geom_line(data=dplyr::filter(alldata,type=="pred"),
-                  aes(y=R,x=SSB),color="deepskyblue3",lwd=1.3) +
-        geom_path(data=dplyr::filter(alldata,type=="obs"),
+    g1 <- ggplot(data=alldata,mapping=aes(x=SSB,y=R)) +
+#        geom_line(data=dplyr::filter(alldata,type=="pred"),
+#                      aes(y=R,x=SSB),color="deepskyblue3",lwd=1.3) +
+        stat_function(fun=SRF,args=list(a=SR_result$pars$a,
+                                        b=SR_result$pars$b),color="deepskyblue3",lwd=1.3)+
+    geom_path(data=dplyr::filter(alldata,type=="obs"),
                   aes(y=R,x=SSB),color=1) +
         geom_point(data=dplyr::filter(alldata,type=="obs"),
                    aes(y=R,x=SSB),shape=21,fill="white") +
@@ -292,12 +297,17 @@ plot_yield <- function(MSY_obj,refs_base,
             tmpdata <- tmpdata %>% group_by(scenario)
             g1 <- g1 +
                 geom_path(data=tmpdata,
-                          mapping=aes(x=ssb.future,y=catch.future,
-                                      linetype=factor(scenario)),
-                          lwd=1,col=col.SBtarget)+
+                          mapping=aes(x       =ssb.future,
+                                      y       = catch.future,
+                                      linetype=factor(scenario),
+                                      color   = factor(scenario)),
+                          lwd=1)+
                 geom_point(data=tmpdata,
-                           mapping=aes(x=ssb.future,y=catch.future,
-                                       shape=factor(scenario)),color=col.SBtarget,size=3)
+                           mapping=aes(x    =ssb.future,
+                                       y    =catch.future,
+                                       shape=factor(scenario),
+                                       color=factor(scenario)),
+                           size=3)
 
             
         }
@@ -588,17 +598,17 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
         geom_polygon(data=tibble(x=c(-1,low.ratio,low.ratio,-1),
                                  y=c(-1,-1,1,1)),
                      aes(x=x,y=y),fill="khaki1")+
-        geom_polygon(data=tibble(x=c(low.ratio,10,10,low.ratio),
+        geom_polygon(data=tibble(x=c(low.ratio,20,20,low.ratio),
                                  y=c(-1,-1,1,1)),
                      aes(x=x,y=y),fill="olivedrab2")+
-        geom_polygon(data=tibble(x=c(low.ratio,10,10,low.ratio),
-                                 y=c(1,1,10,10)),
+        geom_polygon(data=tibble(x=c(low.ratio,20,20,low.ratio),
+                                 y=c(1,1,20,20)),
                      aes(x=x,y=y),fill="khaki1")+
         geom_polygon(data=tibble(x=c(-1,limit.ratio,limit.ratio,-1),
-                                 y=c(1,1,10,10)),
+                                 y=c(1,1,20,20)),
                      aes(x=x,y=y),fill="indianred1") +
         geom_polygon(data=tibble(x=c(limit.ratio,low.ratio,low.ratio,limit.ratio),
-                                 y=c(1,1,10,10)),aes(x=x,y=y),fill="tan1") +
+                                 y=c(1,1,20,20)),aes(x=x,y=y),fill="tan1") +
         geom_polygon(data=tibble(x=c(-1,limit.ratio,limit.ratio,-1),
                                  y=c(-1,-1,1,1)),aes(x=x,y=y),fill="khaki2") +
         geom_polygon(data=tibble(x=c(limit.ratio,low.ratio,low.ratio,limit.ratio),
@@ -609,14 +619,14 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
         geom_polygon(data=tibble(x=c(-1,low.ratio,low.ratio,-1),
                                  y=c(-1,-1,1,1)),
                      aes(x=x,y=y),fill="khaki1")+
-        geom_polygon(data=tibble(x=c(1,10,10,1),
+        geom_polygon(data=tibble(x=c(1,20,20,1),
                                  y=c(-1,-1,1,1)),
                      aes(x=x,y=y),fill="olivedrab2")+
-        geom_polygon(data=tibble(x=c(1,10,10,1),
-                                 y=c(1,1,10,10)),
+        geom_polygon(data=tibble(x=c(1,20,20,1),
+                                 y=c(1,1,20,20)),
                      aes(x=x,y=y),fill="khaki1")+
         geom_polygon(data=tibble(x=c(-1,1,1,-1),
-                                 y=c(1,1,10,10)),
+                                 y=c(1,1,20,20)),
                      aes(x=x,y=y),fill="indianred1") +
         geom_polygon(data=tibble(x=c(-1,1,1,-1),
                                  y=c(-1,-1,1,1)),aes(x=x,y=y),fill="khaki1")
@@ -714,6 +724,8 @@ plot_futures <- function(vpares,
                          biomass.unit=1,
                          RP_name=c("Btarget","Blimit","Bban"),
                          Btarget=0,Blimit=0,Bban=0,#Blow=0,
+                         MSY=0,
+                         exclude.japanese.font=FALSE, # english version
                          n_example=3, # number of examples
                          future.replicate=NULL, 
                          seed=1 # seed for selecting the above example
@@ -722,19 +734,36 @@ plot_futures <- function(vpares,
     col.SBtarget <- "#00533E"
     col.SBlim <- "#edb918"
     col.SBban <- "#C73C2E"
+    col.MSY <- "black"
     col.Ftarget <- "#714C99"
     col.betaFtarget <- "#505596"
-    
-    junit <- c("","十","百","千","万")[log10(biomass.unit)+1]
-#    require(tidyverse,quietly=TRUE)
-    rename_list <- tibble(stat=c("Recruitment","SSB","biomass","catch","Fsakugen","Fsakugen_ratio","alpha"),
-                          jstat=c(str_c("加入尾数"),
-                              str_c("親魚量 (",junit,"トン)"),
-                              str_c("資源量 (",junit,"トン)"),
-                              str_c("漁獲量 (",junit,"トン)"),
-                              "努力量の削減率",
-                              "Fcurrentに対する乗数",
-                              "alpha"))
+
+    if(!isTRUE(exclude.japanese.font)){
+        junit <- c("","十","百","千","万")[log10(biomass.unit)+1]
+        #    require(tidyverse,quietly=TRUE)
+
+        rename_list <- tibble(stat=c("Recruitment","SSB","biomass","catch","Fsakugen","Fsakugen_ratio","alpha"),
+                              jstat=c(str_c("加入尾数"),
+                                      str_c("親魚量 (",junit,"トン)"),
+                                      str_c("資源量 (",junit,"トン)"),
+                                      str_c("漁獲量 (",junit,"トン)"),
+                                      "努力量の削減率",
+                                      "Fcurrentに対する乗数",
+                                      "alpha"))
+    }
+    else{
+        junit <- c("","10","100","1000","10,000")[log10(biomass.unit)+1]
+        #    require(tidyverse,quietly=TRUE)
+
+        rename_list <- tibble(stat=c("Recruitment","SSB","biomass","catch","Fsakugen","Fsakugen_ratio","alpha"),
+                              jstat=c(str_c("Recruits"),
+                                      str_c("SB (",junit,"MT)"),
+                                      str_c("Biomass (",junit,"MT)"),
+                                      str_c("Catch (",junit,"MT)"),
+                                      "Effort reduction",
+                                      "multiplier to Fcurrent",
+                                      "alpha"))        
+        }
 
     rename_list <- rename_list %>% dplyr::filter(stat%in%what.plot)
     
@@ -819,36 +848,46 @@ plot_futures <- function(vpares,
                           dplyr::pull(jstat),
                         value = c(Btarget, Blimit, Bban) / biomass.unit,
                         RP_name = RP_name)
+    if(!is.null(MSY)){
+        ssb_table <- tibble(jstat=dplyr::filter(rename_list, stat == "catch") %>%
+                                  dplyr::pull(jstat),
+                              value=MSY/biomass.unit,
+                              RP_name="MSY") %>% bind_rows(ssb_table)
+    }
     
     options(warn=org.warn)
     
     g1 <- future.table.qt %>% dplyr::filter(!is.na(stat)) %>%
-        ggplot()
+        ggplot()+
+        geom_line(data=dplyr::filter(future.table.qt,!is.na(stat) & scenario=="VPA"),
+                  mapping=aes(x=year,y=mean),lwd=1,color=1)# VPAのプロット                
 
     if(isTRUE(is.plot.CIrange)){
         g1 <- g1+
-            geom_ribbon(aes(x=year,ymin=low,ymax=high,fill=scenario),alpha=0.4)+
-            geom_line(aes(x=year,y=mean,color=scenario),lwd=1)#+
-#            geom_line(aes(x=year,y=mean,color=scenario),linetype=2,lwd=1)
+            geom_ribbon(data=dplyr::filter(future.table.qt,!is.na(stat) & scenario!="VPA"),
+                        mapping=aes(x=year,ymin=low,ymax=high,fill=scenario),alpha=0.4)+
+            geom_line(data=dplyr::filter(future.table.qt,!is.na(stat) & scenario!="VPA"),
+                      mapping=aes(x=year,y=mean,color=scenario),lwd=1)
     }
-    else{
-        g1 <- g1+
-            geom_line(data=dplyr::filter(future.table.qt,!is.na(stat) & scenario=="VPA"),
-                      mapping=aes(x=year,y=mean),lwd=1,color="black")#+        
-    }
+#    else{
+#        g1 <- g1+
+#            geom_line(data=dplyr::filter(future.table.qt,!is.na(stat) & scenario=="VPA"),
+#                      mapping=aes(x=year,y=mean,color=scenario),lwd=1)#+        
+#    }
     
     g1 <- g1+
         geom_blank(data=dummy,mapping=aes(y=value,x=year))+
         geom_blank(data=dummy2,mapping=aes(y=value,x=year))+
         theme_bw(base_size=font.size) +
-        coord_cartesian(expand=0)+
+        #        coord_cartesian(expand=0)+
+        scale_y_continuous(expand=expand_scale(mult=c(0,0.05)))+
         theme(legend.position="top",panel.grid = element_blank())+
         facet_wrap(~factor(jstat,levels=rename_list$jstat),scales="free_y",ncol=ncol)+        
         xlab("年")+ylab("")+ labs(fill = "",linetype="",color="")+
         xlim(min(future.table$year),maxyear)+
         geom_hline(data = ssb_table,
                    aes(yintercept = value, linetype = RP_name),
-                   color = c(col.SBtarget, col.SBlim, col.SBban))
+                   color = c(col.SBtarget, col.SBlim, col.SBban,col.MSY))
 
 
     if(n_example>0){

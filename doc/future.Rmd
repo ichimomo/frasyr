@@ -22,7 +22,6 @@ knitr::opts_chunk$set(
   fig.height=5
 )
 ```
-
 # 再生産関係の推定
 - AICで比較したあと、フィットした再生産関係のプロットなどをみて、ちゃんと推定できてそうか確かめて下さい
 - [モデル診断](https://ichimomo.github.io/future-rvpa/SRR-guidline.html)も行って下さい。
@@ -30,7 +29,6 @@ knitr::opts_chunk$set(
 - **設定ポイント:** ここで、将来予測で使う再生産関係を一つに決めます(SRmodel.baseに入れる)。
 
 ## データの作成
-
 - get.SRdataを使って再生産関係のフィット用のデータを作る
 - get.SRdata関数では，```rownames(res_vpa$naa)```を参照し、必要な年齢分のSSBをずらしたデータを作成する
 - yearは加入年
@@ -360,3 +358,4 @@ res_bref$summary
 # x.labelは res_bref$summaryの行名、vline.textは res_bref$summaryの列名前に対応させて指定する
 plot_Fref(res_bref,xlabel="Fref/Fcur", vline.text=c("FpSPR.20.SPR","FpSPR.30.SPR","FpSPR.40.SPR"))
 ```
+
