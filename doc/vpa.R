@@ -14,7 +14,6 @@ dat <- data.handler(caa=caa, waa=waa, maa=maa, M=0.5)
 # VPAによる資源量推定
 res_vpa <- vpa(dat,fc.year=2015:2017,tf.year = 2015:2016,
                term.F="max",stat.tf="mean",Pope=TRUE,tune=FALSE,p.init=0.5)
-
 res_vpa$Fc.at.age # 将来予測やMSY計算で使うcurrent F (fc.yearのオプションでいつのFの平均かが指定される)
 plot(res_vpa$Fc.at.age,type="b",xlab="Age",ylab="F",ylim=c(0,max(res_vpa$Fc.at.age)))
 
