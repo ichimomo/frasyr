@@ -29,6 +29,8 @@ knitr::opts_chunk$set(
 
 ```{r data-read}
 library(frasyr)
+library(tidyverse)
+
 data(res_vpa)
 res_vpa$Fc.at.age # 将来予測やMSY計算で使うcurrent Fを確認してプロットする
 plot(res_vpa$Fc.at.age,type="b",xlab="Age",ylab="F",ylim=c(0,max(res_vpa$Fc.at.age)))
@@ -38,6 +40,7 @@ plot(res_vpa$Fc.at.age,type="b",xlab="Age",ylab="F",ylim=c(0,max(res_vpa$Fc.at.a
 ```
 
 # 再生産関係の推定
+
 ```{r SRdata}
 # VPA結果を使って再生産データを作る
 SRdata <- get.SRdata(res_vpa, years=1988:2016) 
@@ -60,7 +63,9 @@ SR.list <- SR.list[order(SRmodel.list$AICc)]  # AICの小さい順に並べた�
 SRmodel.base <- SR.list[[1]] # AIC最小モデルを今後使っていく
 ```
 
+
 # currentFによる将来予測
+>>>>>>> 07acd67cd1b870e640bfc8cb56065a43521ba244
 - 細かい設定の解説は[こちら](https://ichimomo.github.io/frasyr/docs/future.html)
     - 自己相関を考慮する場合
     - Frecオプション（目標の年に指定した確率で漁獲する）
@@ -119,7 +124,6 @@ res_MSY <- est.MSY(res_vpa, # VPAの計算結果
 ```
 
 ## 結果の表示
-
 - ```res_MSY$summary_tb```にすべての結果が入っています。
 
 ```{r summary}
@@ -133,7 +137,6 @@ options(tibble.width = Inf)
 ```
 
 ## 管理基準値の選択
-
 - **設定ポイント** est.MSYで計算された管理基準値から、何をBtarget, Blimit, Bbanとして用いるかをチョイスします。
 - 具体的には、refs.allにRP.definitionという新しい列をひとつ作って、その列にそれぞれの管理基準値をどのように使うかを指定します
 - 「管理基準値名 + 0」はデフォルト規則による管理基準値

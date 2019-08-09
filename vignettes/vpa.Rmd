@@ -27,7 +27,6 @@ knitr::opts_chunk$set(
 ## データの読み込み
 ```{r, fig.show='hold'}
 library(frasyr)
-<<<<<<< HEAD
 caa   <- read.csv("https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex2_caa.csv",  row.names=1)
 waa   <- read.csv("https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex2_waa.csv",  row.names=1)
 maa   <- read.csv("https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex2_maa.csv",  row.names=1)
@@ -36,17 +35,6 @@ dat <- data.handler(caa=caa, waa=waa, maa=maa, M=0.5)
 # VPAによる資源量推定
 res_vpa <- vpa(dat,fc.year=2015:2017,tf.year = 2015:2016,
                term.F="max",stat.tf="mean",Pope=TRUE,tune=FALSE,p.init=0.5)
-=======
-caa   <- read.csv("https://github.com/ichimomo/frasyr/blob/master/data-raw/ex2_caa.csv",  row.names=1)
-waa   <- read.csv("https://github.com/ichimomo/frasyr/blob/master/data-raw/ex2_waa.csv",  row.names=1)
-maa   <- read.csv("https://github.com/ichimomo/frasyr/blob/master/data-raw/ex2_maa.csv",  row.names=1)
-dat <- data.handler(caa=caa, waa=waa, maa=maa, M=0.5)
-
-# VPAによる資源量推定
-res_vpa <- vpa(dat,fc.year=2015:2017,tf.year = 2015:2017,
-               term.F="max",stat.tf="mean",Pope=TRUE,tune=FALSE,p.init=1.0)
->>>>>>> 07acd67cd1b870e640bfc8cb56065a43521ba244
-
 res_vpa$Fc.at.age # 将来予測やMSY計算で使うcurrent F (fc.yearのオプションでいつのFの平均かが指定される)
 plot(res_vpa$Fc.at.age,type="b",xlab="Age",ylab="F",ylim=c(0,max(res_vpa$Fc.at.age)))
 ```
@@ -58,11 +46,7 @@ plot(res_vpa$Fc.at.age,type="b",xlab="Age",ylab="F",ylim=c(0,max(res_vpa$Fc.at.a
 
 ```{r}
 #out.vpa(res_vpa) # vpa.csvというファイルが作成されます。VPAの結果のグラフ出力となるvpa.pdfも出力されます。
-<<<<<<< HEAD
 res_vpa2 <- read.vpa("https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex2_vpa.csv") # vpa.csvを編集後、read.vpa関数で読み込みます
-=======
-res_vpa2 <- read.vpa("https://github.com/ichimomo/frasyr/blob/master/data-raw/ex2_vpa.csv") # vpa.csvを編集後、read.vpa関数で読み込みます
->>>>>>> 07acd67cd1b870e640bfc8cb56065a43521ba244
 ```
 
 # さまざまなVPAのデモ
@@ -70,19 +54,11 @@ res_vpa2 <- read.vpa("https://github.com/ichimomo/frasyr/blob/master/data-raw/ex
 ## データの読み込みと整形
 ```{r}
 # 読み込み
-<<<<<<< HEAD
 caa   <- read.csv("https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex1_caa.csv",  row.names=1)
 waa   <- read.csv("https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex1_waa.csv",  row.names=1)
 maa   <- read.csv("https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex1_maa.csv",  row.names=1)
 M     <- read.csv("https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex1_M.csv",  row.names=1)
 index     <- read.csv("https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex1_index.csv",  row.names=1)
-=======
-caa   <- read.csv("https://github.com/ichimomo/frasyr/blob/master/data-raw/ex1_caa.csv",  row.names=1)
-waa   <- read.csv("https://github.com/ichimomo/frasyr/blob/master/data-raw/ex1_waa.csv",  row.names=1)
-maa   <- read.csv("https://github.com/ichimomo/frasyr/blob/master/data-raw/ex1_maa.csv",  row.names=1)
-M     <- read.csv("https://github.com/ichimomo/frasyr/blob/master/data-raw/ex1_M.csv",    row.names=1)
-index <- read.csv("https://github.com/ichimomo/frasyr/blob/master/data-raw/ex1_index.csv",row.names=1)
->>>>>>> 07acd67cd1b870e640bfc8cb56065a43521ba244
 
 # 整形
 dat <- data.handler(caa=caa, waa=waa, maa=maa, index=index, M=0.4)

@@ -1,9 +1,5 @@
 ---
-<<<<<<< HEAD
 title: "future.vpa関数を使った将来予測"
-=======
-title: "future関数を使った将来予測と管理基準値計算（詳細版）"
->>>>>>> 07acd67cd1b870e640bfc8cb56065a43521ba244
 author: "市野川桃子"
 date: "`r Sys.Date()`"
 output:
@@ -26,8 +22,6 @@ knitr::opts_chunk$set(
   fig.height=5
 )
 ```
-<<<<<<< HEAD
-
 # 再生産関係の推定
 - AICで比較したあと、フィットした再生産関係のプロットなどをみて、ちゃんと推定できてそうか確かめて下さい
 - [モデル診断](https://ichimomo.github.io/future-rvpa/SRR-guidline.html)も行って下さい。
@@ -35,56 +29,6 @@ knitr::opts_chunk$set(
 - **設定ポイント:** ここで、将来予測で使う再生産関係を一つに決めます(SRmodel.baseに入れる)。
 
 ## データの作成
-=======
-	
-# 事前準備: res_vpaの作成
-
-- **設定ポイント:** vpa関数の引数fc.yearで指定した年数が今後current FのFとして扱われます。
-
-```{r data-read}
-library(frasyr)
-data(res_vpa)
-```
-
-# 再生産関係を仮定しない管理基準値の計算
-- ref.F関数を使います
-- %SPRやFmaxなど、再生産関係を仮定しない管理基準値を計算します
-- 計算結果はres_brefに格納されます
-- YPR, SPR曲線とFcurrent (```res_vpa$Fc.at.age```に入っている値です), Fmax, Fmed, F0.1などの位置が表示されます
-
-```{r ref.F, fig.cap="図：YPR, SPR曲線"}
-byear <- 2015:2017 # 生物パラメータを平均する期間を2009年から2011年とする
-res_bref <- ref.F(res_vpa, # VPAの計算結果
-                  waa.year=byear, maa.year=byear, M.year=byear, 
-                  rps.year=2000:2017, # Fmedを計算するときに用いるRPSの範囲
-                  max.age=Inf, # SPR計算で仮定する年齢の最大値 
-                  pSPR=c(10,20,30,35,40), # F_%SPRを計算するときに，何パーセントのSPRを計算するか
-                  Fspr.init=1)
-```
-
-- 結果のサマリーは```res_bref$summary```によって見れます
-- max: F at ageの最大値，mean: F at ageの平均値，Fref/Fcur: Fcurrentを分母にしたときのF管理基準値の比
-- この結果から，現状のF（Fcurrent）はFmedとほぼ同等（Fref/Fcur=0.96なので），F％SRP=10％くらいであることがわかります
-
-```{r ref.F2}
-res_bref$summary
-```
-
-```{r ref.F3, fig.cap="図：YPR, SPR曲線 (x軸などを変更した場合)"}
-# 横軸や縦線で示す管理基準値を調整する場合、plot_Fref関数を使う
-# x.labelは res_bref$summaryの行名、vline.textは res_bref$summaryの列名前に対応させて指定する
-plot_Fref(res_bref,xlabel="Fref/Fcur", vline.text=c("FpSPR.20.SPR","FpSPR.30.SPR","FpSPR.40.SPR"))
-```
-
-# 再生産関係の推定
-- AICで比較したあと、フィットした再生産関係のプロットなどをみて、ちゃんと推定できてそうか確かめて下さい
-- [モデル診断](https://ichimomo.github.io/future-rvpa/SRR-guidline.html)も行って下さい。
-- **設定ポイント:** get.SRdata関数のyearsの引数で、再生産関係をフィットさせたい年を指定します。何も指定しないと全年のデータが使われます。
-- **設定ポイント:** ここで、将来予測で使う再生産関係を一つに決めます(SRmodel.baseに入れる)。
-
-### データの作成
->>>>>>> 07acd67cd1b870e640bfc8cb56065a43521ba244
-
 - get.SRdataを使って再生産関係のフィット用のデータを作る
 - get.SRdata関数では，```rownames(res_vpa$naa)```を参照し、必要な年齢分のSSBをずらしたデータを作成する
 - yearは加入年
@@ -345,44 +289,7 @@ fres.currentSSB <- future.vpa(res_vpa,
 ```
 
 
-<<<<<<< HEAD
 ## 年齢別体重が資源尾数に影響される場合
-=======
-- 残差リサンプリングで将来予測をする場合→refuncとしてHS.rec（ホッケー・スティック）、BH.rec（べバートン・ホルト）、RI.rec（リッカー）を使う
-- rec.argの引数で、**必ず** resample=TRUEとしてください。
-- rho>0の場合には対応しておりません
-
-```{r}
-# 残差リサンプリングによる将来予測
-fres.HS4 <- future.vpa(res_vpa,
-                          multi=1,
-                          nyear=50, # 将来予測の年数
-                          start.year=2012, # 将来予測の開始年
-                          N=100, # 確率的計算の繰り返し回数
-                          ABC.year=2013, # ABCを計算する年
-                          waa.year=2015:2017, # 生物パラメータの参照年
-                          maa.year=2015:2017,
-                          M.year=2015:2017,
-                          is.plot=FALSE, # 結果をプロットするかどうか
-                          seed=1,
-                          recfunc=HS.recAR, # 再生産関係の関数（HS.rec=Hockey-stick)                                
-                          rec.arg=list(a=HS.par0$pars$a,b=HS.par0$pars$b,
-                                       rho=HS.par0$pars$rho,
-                                       sd=HS.par0$pars$sd,bias.correction=TRUE,
-                                       resample=TRUE,resid=HS.par0$resid))
-```
-
-残差リサンプリングか対数正規分布かの違いを比較
-
-```{r,eval=FALSE}
-par(mfrow=c(2,2))
-plot(fres.HS$vssb[,-1],fres.HS$naa[1,,-1],xlab="SSB",ylab="Recruits") 
-plot(fres.HS4$vssb[,-1],fres.HS4$naa[1,,-1],xlab="SSB",ylab="Recruits") 
-#plot.futures(list(fres.HS,fres.HS4)) # 両者の比較
-```
-
-### (5-3) 年齢別体重が資源尾数に影響される場合の将来予測
->>>>>>> 07acd67cd1b870e640bfc8cb56065a43521ba244
 - ***future.vpaで，waa.fun = TRUEとすれば、年齢別資源重量が資源尾数（log(体重)~log(資源尾数)の回帰を関数内部で実行）の関数から予測されます***
 - ***不確実性も考慮されます***
 - 30系群であてはめた例は<a href="waa-lm.pdf">こちら</a> (データは1年分古いです)
@@ -403,10 +310,6 @@ fres.HS6 <- do.call(future.vpa, fres.HS6$input)
 - `rec.new=list(year=2012,rec=1500)`のように与えると、対応する年の加入を置き換えます。
 
 ```{r options}
-<<<<<<< HEAD
-=======
-# 残差リサンプリングによる将来予測
->>>>>>> 07acd67cd1b870e640bfc8cb56065a43521ba244
 fres.HS5 <- future.vpa(res_vpa,
                        multi=1,
                        nyear=50, # 将来予測の年数
@@ -425,7 +328,6 @@ fres.HS5 <- future.vpa(res_vpa,
                        pre.catch=list(year=2013,wcatch=100)
                        )
 ```
-<<<<<<< HEAD
 
 # 再生産関係を仮定しない管理基準値の計算
 - ref.F関数を使います
@@ -456,10 +358,4 @@ res_bref$summary
 # x.labelは res_bref$summaryの行名、vline.textは res_bref$summaryの列名前に対応させて指定する
 plot_Fref(res_bref,xlabel="Fref/Fcur", vline.text=c("FpSPR.20.SPR","FpSPR.30.SPR","FpSPR.40.SPR"))
 ```
-=======
-  
 
-  
-
-
->>>>>>> 07acd67cd1b870e640bfc8cb56065a43521ba244
