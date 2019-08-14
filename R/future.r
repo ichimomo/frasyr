@@ -1,8 +1,21 @@
+#'
+#' @import ggplot2
+#' @import magrittr          
+#' @import dplyr             
+#' @import tidyr             
+#' @import tibble            
+#' @importFrom magrittr %>%
+#' @importFrom dplyr filter
+#' 
+NULL
+
+#'
 #' 再生産関係を仮定しない管理基準値計算のための関数
 #'
 #' @param res VPAの出力結果
 #'
 #' @export
+#' @import tibble
 
 # ref.F
 ref.F <- function(
