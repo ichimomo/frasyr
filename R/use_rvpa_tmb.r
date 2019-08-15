@@ -1,7 +1,12 @@
 
+#' Ridge VPAの計算をTMBで実行するためにcppファイルのコンパイル等をする関数
+#' 
 #' @param TmbFile Cppファイルの名前
 #' @param CppDir Cppファイルが格納されているディレクトリ
 #' @param RunDir 実行するディレクトリ
+#' 
+#' @examples 
+#' use_rvpa_tmb()
 #' 
 #' @export
 
