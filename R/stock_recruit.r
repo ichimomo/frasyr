@@ -165,10 +165,11 @@ fit.SR <- function(SRdata,
   }
   
   if (AR==1 && out.AR) {
-    arres <- ar(resid,aic=FALSE,order.max=1)
+    arres <- ar(resid,aic=FALSE,order.max=1,demean=FALSE,method="mle")
     Res$pars[3] <- sqrt(arres$var.pred)
-    Res$pars[4] <- arres$ar
+    Res$pars[4] <- as.numeric(arres$ar)
     Res$resid2[2:length(Res$resid2)] <- arres$resid[-1]
+    Res$AIC.ar  <- ar(resid,order.max=1,demean=FALSE,method="mle")$aic
   }
   
   Res$loglik <- loglik <- -opt$value
