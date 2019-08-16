@@ -270,7 +270,7 @@ lines(y=as.numeric(quantile(sapply(1:length(boot.res),function(i)boot.res[[i]]$p
       x=rep(resSR$pars$b,2),col=4,lwd=2)
 lines(x=as.numeric(quantile(sapply(1:length(boot.res),function(i)boot.res[[i]]$pars$b),c(0.1,0.9))),
       y=rep(resSR$pars$a,2),col=4,lwd=2)
-legend("bottomleft",c("Bootstrap CI(0.8)","Jackknife"),lty=1:0,pch=c("","○"),col=c(4,1),lwd=2:1)
+legend("bottomleft",c("Bootstrap CI(0.8)","Jackknife"),lty=1:0,pch=c("",1),col=c(4,1),lwd=2:1)
 ```
 
 診断結果：パラメータbの値が大きくなっても尤度の変化は比較的小さい
