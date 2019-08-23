@@ -7,15 +7,15 @@
 future.vpa(res0, currentF = NULL, multi = 1, futureF = NULL,
   nyear = 10, Pope = res0$input$Pope, outtype = "FULL",
   multi.year = 1, start.year = NULL, ABC.year = NULL,
-  waa.year = NULL, maa.year = NULL, M.year = NULL, seed = NULL,
-  strategy = "F", HCR = NULL, use.MSE = FALSE, beta = NULL,
-  delta = NULL, Blim = 0, Bban = 0,
-  plus.group = res0$input$plus.group, N = 1000, silent = FALSE,
-  is.plot = TRUE, random.select = NULL, pre.catch = NULL,
-  rec.new = NULL, recfunc = HS.recAR, rec.arg = list(a = 1, b = 1,
-  rho = 0, sd = 0, c = 1, bias.correction = TRUE, resample = FALSE, resid =
-  0, resid.year = NULL), Frec = NULL, waa = NULL, waa.catch = NULL,
-  maa = NULL, M = NULL, replace.rec.year = 2012, F.sigma = 0,
+  waa.year = NULL, waa.catch.year = NULL, maa.year = NULL,
+  M.year = NULL, seed = NULL, strategy = "F", HCR = NULL,
+  use.MSE = FALSE, MSE.options = NULL, beta = NULL, delta = NULL,
+  Blim = 0, Bban = 0, plus.group = res0$input$plus.group, N = 1000,
+  silent = FALSE, is.plot = TRUE, random.select = NULL,
+  pre.catch = NULL, rec.new = NULL, recfunc = HS.recAR,
+  rec.arg = list(a = 1, b = 1, rho = 0, sd = 0, c = 1, bias.correction =
+  TRUE, resample = FALSE, resid = 0, resid.year = NULL), Frec = NULL,
+  waa = NULL, waa.catch = NULL, maa = NULL, M = NULL,
   waa.fun = FALSE, naa0 = NULL, eaa0 = NULL, ssb0 = NULL,
   faa0 = NULL, add.year = 0, det.run = TRUE)
 }
@@ -27,6 +27,10 @@ future.vpa(res0, currentF = NULL, multi = 1, futureF = NULL,
 \item{multi}{ABC算定年以降にcurrentFに乗じる係数}
 
 \item{futureF}{ABC算定年以降に用いられるF at age。NULLの場合にはcurrentFをそのまま用いる。currentF, multi, futureFをあわせて、将来のF at ageはABC算定年-1年まではcurrentF, ABC算定年以降はmulti x futureF (NULLの場合、currentF)が用いられる}
+
+\item{use.MSE}{簡易MSEを実施するかどうか}
+
+\item{MSE.option}{簡易MSEのoption}
 }
 \description{
 将来予測のための関数
