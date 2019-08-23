@@ -2050,6 +2050,15 @@ show.likeprof <- function(res){
 }
 
 
+#'
+#' VPA計算結果を入れると、毎年のF at ageがどのくらいのSPR, YPRに相当するかを返す
+#'
+#' @param dres vpa関数の返り値
+#' @param target.SPR 目標とするSPR。この値を入れると、結果の$ysdataでその年のFが目標とするSPRを達成するためのFの何倍になっているかを返す。デフォルトは30が入っている
+#' @param Fmax 上の計算をするときに探索するFの乗数の最大値
+#' @param max.age SPRやYPRの計算をするときに最大何歳まで考慮するか（デフォルトは無限大) 
+#'
+#' @export 
 get.SPR <- function(dres,target.SPR=30,Fmax=10,max.age=Inf){
     # Fの歴史的な%SPRを見てみる                                                                             
     # 毎年異なるFや生物パラメータに対して、YPR,SPR、SPR0がどのくらい変わっているのか見る(Rコード例2)
@@ -2530,6 +2539,7 @@ est.MSY <- function(vpares,
     Fvector <- select(allsum,num_range("F",0:40))
 
     output <- list(summary =allsum,#as.data.frame(as.matrix(sumvalue)),
+                   summary_tb=allsum,
 #                   summary_tb=allsum,
 #                   all.stat=as.data.frame(as.matrix(refvalue)),
                    all.stat=bind_rows(refvalue,refvalue2),                   
