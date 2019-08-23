@@ -420,7 +420,7 @@ calc_kobeII_matrix <- function(fres_base,
                               refs_base,
                               Btarget=c("Btarget0"),
                               Blimit=c("Blimit0"),
-                              Blow=c("Blow0"),
+#                              Blow=c("Blow0"),
                               Bban=c("Bban0"),
                               year.lag=0,
                               beta=seq(from=0.5,to=1,by=0.1)){
@@ -433,20 +433,20 @@ calc_kobeII_matrix <- function(fres_base,
 #        Bban_name=refs_base$RP.definition[str_detect(refs_base$RP.definition,Bban)],
     #        beta=beta)
 
-    refs.unique <- unique(c(Btarget,Blimit,Blow,Bban))
+    refs.unique <- unique(c(Btarget,Blimit,Bban))
     tmp <- !refs.unique%in%refs_base$RP.definition    
     if(sum(tmp)>0) stop(refs.unique[tmp]," does not appear in column of RP.definition\n")
 
     HCR_candidate1 <- expand.grid(
         Btarget_name=derive_RP_value(refs_base,Btarget)$RP.definition,
-        Blow_name=derive_RP_value(refs_base,Blow)$RP.definition,    
+#        Blow_name=derive_RP_value(refs_base,Blow)$RP.definition,    
         Blimit_name=derive_RP_value(refs_base,Blimit)$RP.definition,
         Bban_name=derive_RP_value(refs_base,Bban)$RP.definition,
         beta=beta)    
 
     HCR_candidate2 <- expand.grid(
         Btarget=derive_RP_value(refs_base,Btarget)$SSB,
-        Blow=derive_RP_value(refs_base,Blow)$SSB,    
+#        Blow=derive_RP_value(refs_base,Blow)$SSB,    
         Blimit=derive_RP_value(refs_base,Blimit)$SSB,    
         Bban=derive_RP_value(refs_base,Bban)$SSB,   
         beta=beta) %>% select(-beta)
@@ -469,8 +469,115 @@ calc_kobeII_matrix <- function(fres_base,
     cat(length(unique(HCR_candidate$HCR_name)), "HCR is calculated: ",
         unique(HCR_candidate$HCR_name),"\n")
 
-    kobeII_table <- left_join(kobeII_table,HCR_candidate)
-    kobeII_table    
+    kobeII_data <- left_join(kobeII_table,HCR_candidate)
+    return(kobeII_data)
+}
+
+#'
+#' @export
+#' 
+
+make_kobeII_table <- function(kobeII_data,
+                              res_vpa,
+                              year.catch,
+                              year.Fsakugen,
+                              year.ssbtarget,
+                              year.ssblimit,
+                              year.ssbban,
+                              year.ssbmin,
+                              year.ssbmax,                              
+                              year.aav){
+    # 例えば2017~2023,28,38年の漁獲量の表を作成する
+    (catch.table <- kobeII.data %>%
+         dplyr::filter(year%in%year.catch,stat=="catch") %>% # 取り出す年とラベル("catch")を選ぶ
+         group_by(HCR_name,beta,year) %>%
+         summarise(catch.mean=round(mean(value),-3)) %>%  # 値の計算方法を指定（漁獲量の平均ならmean(value)）
+         # "-3"とかの値で桁数を指定
+         spread(key=year,value=catch.mean) %>% ungroup() %>%
+         arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
+         mutate(stat_name="catch.mean"))
+
+    # 1-currentFに乗じる値=currentFからの努力量の削減率の平均値（実際には確率分布になっている）
+    (Fsakugen.table <- kobeII.data %>%
+         dplyr::filter(year%in%year.Fsakugen,stat=="Fsakugen") %>% # 取り出す年とラベル("catch")を選ぶ
+         group_by(HCR_name,beta,year) %>%
+         summarise(Fsakugen=round(mean(value),2)) %>%
+         spread(key=year,value=Fsakugen) %>% ungroup() %>%
+         arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
+         mutate(stat_name="Fsakugen"))
+
+    # SSB>SSBtargetとなる確率
+    ssbtarget.table <- kobeII.data %>%
+        dplyr::filter(year%in%year.ssbtarget,stat=="SSB") %>%
+        group_by(HCR_name,beta,year) %>%
+        summarise(ssb.over=round(100*mean(value>Btarget))) %>%
+        spread(key=year,value=ssb.over) %>%
+        ungroup() %>%
+        arrange(HCR_name,desc(beta))%>%
+        mutate(stat_name="Pr(SSB>SSBtarget)")
+
+    # SSB>SSBlimとなる確率
+    ssblimit.table <- kobeII.data %>%
+        dplyr::filter(year%in%year.ssblimit,stat=="SSB") %>%
+        group_by(HCR_name,beta,year) %>%
+        summarise(ssb.over=round(100*mean(value>Blimit))) %>%
+        spread(key=year,value=ssb.over)%>%
+        ungroup() %>%
+        arrange(HCR_name,desc(beta))%>%
+        mutate(stat_name="Pr(SSB>SSBlim)")
+
+    # SSB>SSBbanとなる確率
+    ssblimit.table <- kobeII.data %>%
+        dplyr::filter(year%in%year.ssblimit,stat=="SSB") %>%
+        group_by(HCR_name,beta,year) %>%
+        summarise(ssb.over=round(100*mean(value>Bban))) %>%
+        spread(key=year,value=ssb.over)%>%
+        ungroup() %>%
+        arrange(HCR_name,desc(beta))%>%
+        mutate(stat_name="Pr(SSB>SSBban)")    
+
+    # SSB>SSBmin(過去最低親魚量を上回る確率)
+    ssb.min <- min(unlist(colSums(res_vpa$ssb)))
+    ssbmin.table <- kobeII.data %>%
+        dplyr::filter(year%in%year.ssbmin,stat=="SSB") %>%
+        group_by(HCR_name,beta,year) %>%
+        summarise(ssb.over=round(100*mean(value>ssb.min))) %>%
+        spread(key=year,value=ssb.over)%>%
+        ungroup() %>%
+        arrange(HCR_name,desc(beta))%>%
+        mutate(stat_name="Pr(SSB>SSBmin)")
+
+    # SSB>SSBmax(過去最低親魚量を上回る確率)
+    ssb.max <- max(unlist(colSums(res_vpa$ssb)))
+    ssbmax.table <- kobeII.data %>%
+        dplyr::filter(year%in%year.ssbmax,stat=="SSB") %>%
+        group_by(HCR_name,beta,year) %>%
+        summarise(ssb.over=round(100*mean(value>ssb.max))) %>%
+        spread(key=year,value=ssb.over)%>%
+        ungroup() %>%
+        arrange(HCR_name,desc(beta))%>%
+        mutate(stat_name="Pr(SSB>SSBmax)")    
+
+    # オプション: Catch AAV mean 
+    calc.aav <- function(x)sum(abs(diff(x)))/sum(x[-1])
+    catch.aav.table <- kobeII.data %>%
+        dplyr::filter(year%in%year.aav,stat=="catch") %>%
+        group_by(HCR_name,beta,sim) %>%
+        dplyr::summarise(catch.aav=(calc.aav(value))) %>%
+        group_by(HCR_name,beta) %>%
+        summarise(catch.aav.mean=mean(catch.aav)) %>%
+        arrange(HCR_name,desc(beta))%>%
+        mutate(stat_name="catch.csv (recent 5 year)")
+
+    res_list <- list(catch           = catch.table,
+                     prob.ssbtarget  = ssbtarget.table,
+                     prob.ssblimit   = ssblimit.table,
+                     prob.ssbban     = ssblimit.table,                     
+                     prob.ssbmin     = ssbmin.table,
+                     prob.ssbmax     = ssbmax.table,                     
+                     catch.aav       = catch.aav.table)    
+    return(res_list)
+                
 }
 
 
@@ -514,9 +621,9 @@ get.stat4 <- function(fout,Brefs,
         t() %>% as_tibble() 
     names(Btarget.prob) <- str_c("Btarget_prob",names(Btarget.prob))
 
-    Blow.prob <- rowMeans(fout$vssb[years%in%refyear,col.target]>Brefs$Blow) %>%
-        t() %>% as_tibble() 
-    names(Blow.prob) <- str_c("Blow_prob",names(Blow.prob))
+#    Blow.prob <- rowMeans(fout$vssb[years%in%refyear,col.target]>Brefs$Blow) %>%
+#        t() %>% as_tibble() 
+#    names(Blow.prob) <- str_c("Blow_prob",names(Blow.prob))
 
     Blimit.prob <- rowMeans(fout$vssb[years%in%refyear,col.target]<Brefs$Blimit) %>%
         t() %>% as_tibble() 
@@ -526,7 +633,7 @@ get.stat4 <- function(fout,Brefs,
         t() %>% as_tibble() 
     names(Bban.prob) <- str_c("Bban_prob",names(Bban.prob))             
 
-    return(bind_cols(catch.mean,Btarget.prob,Blow.prob,Blimit.prob,Bban.prob))
+    return(bind_cols(catch.mean,Btarget.prob,Blimit.prob,Bban.prob))
 }
 
 #' Kobe plotを書く

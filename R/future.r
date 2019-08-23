@@ -2522,7 +2522,7 @@ est.MSY <- function(vpares,
     allsum <- bind_rows(sumvalue,sumvalue2)
     allsum$RP.definition <- NA
     allsum$RP.definition[allsum$AR==FALSE&allsum$RP_name=="MSY"] <- "Btarget0"
-    allsum$RP.definition[allsum$AR==FALSE&allsum$RP_name=="PGY_0.9_lower"] <- "Blow0"
+#    allsum$RP.definition[allsum$AR==FALSE&allsum$RP_name=="PGY_0.9_lower"] <- "Blow0"
     allsum$RP.definition[allsum$AR==FALSE&allsum$RP_name=="PGY_0.6_lower"] <- "Blimit0"    
     allsum$RP.definition[allsum$AR==FALSE&allsum$RP_name=="PGY_0.1_lower"] <- "Bban0"
     allsum <- allsum %>% select(1,ncol(allsum),2:(ncol(allsum)-1))    
