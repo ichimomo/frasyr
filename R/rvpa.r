@@ -984,6 +984,8 @@ vpa <- function(
     }
     if (est.method=="ml")
     {
+      if (use.index[1] != "all") sigma.constraint <- sigma.constraint[use.index]
+      
         if(!(length(sigma.constraint)==nindex))
         {
             stop("length of sigma constraint does not match the number of indices!!!!")#sigma.constraintの長さがindexの本数と異なる場合にはエラーを出して停止。
@@ -1183,15 +1185,20 @@ vpa <- function(
     if (is.na(af[1])) af <- rep(0,nindex)
     
     if (isTRUE(b.est)) b_fix <- rep(0,nindex) else b_fix <- rep(1,nindex)
-    b_fix <- ifelse(is.na(b.fix),b_fix,b.fix)
-    if (!(length(sigma.constraint)==nindex)) {
-      stop("length of sigma constraint does not match the number of indices!!!!")#sigma.constraintの長さがindexの本数と異なる場合にはエラーを出して停止。
-    }
+    if (!is.null(b.fix)) b_fix <- ifelse(is.na(b.fix),0,b.fix)
+    if (use.index[1] != "all") b_fix <- b_fix[use.index]
+    # if (!(length(sigma.constraint)==nindex)) {
+    #   stop("length of sigma constraint does not match the number of indices!!!!")#sigma.constraintの長さがindexの本数と異なる場合にはエラーを出して停止。
+    # }
     unique.sigma.constraint <- unique(sigma.constraint)
-    nsigma <- length(unique.sigma.constraint)
     sigma_constraint <- sigma.constraint
+    if (use.index[1] != "all") {
+      unique.sigma.constraint <- unique.sigma.constraint[use.index]
+      sigma_constraint <- sigma_constraint[use.index]
+      }
+    nsigma <- length(unique.sigma.constraint)
     for (i in 1:nsigma) {
-      pos <- which(sigma.constraint == unique.sigma.constraint[i])
+      pos <- which(sigma_constraint == unique.sigma.constraint[i])
       sigma_constraint[pos] <- i-1
     }
     if (is.null(eta)) eta <- -1.0
