@@ -1745,6 +1745,9 @@ read.vpa <- function(tfile,
       dres$input$Pope <- Pope
   }    
     if(is.null(dres$Fc.at.age) && !is.null(fc.year)) dres$Fc.at.age <- apply(dres$faa[,colnames(dres$faa)%in%fc.year],1,mean)
+
+    # その他、他関数で必要になるVPAへのインプット
+    dres$input$last.catch.zero <- FALSE
     
   return(dres)
 }
