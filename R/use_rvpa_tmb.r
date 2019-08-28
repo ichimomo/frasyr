@@ -13,7 +13,9 @@
 use_rvpa_tmb <- function(TmbFile = "rvpa_tmb",
                          CppDir = system.file("executable",package="frasyr"),
                          RunDir = getwd()) {
-library(TMB)  
+  if (!requireNamespace("TMB", quietly = TRUE)) {
+    stop("Please install TMB package!")
+  }
 file.copy( from=paste0(CppDir,"/",TmbFile,".cpp"), to=paste0(RunDir,"/",TmbFile,".cpp"), overwrite=FALSE)
   TMB::compile( paste0(TmbFile,".cpp") )
   dyn.load(dynlib(TmbFile))

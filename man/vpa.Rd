@@ -155,11 +155,15 @@ vpa(dat, sel.f = NULL, tf.year = 2008:2010, rec.new = NULL,
 
 \item{ssb.lag}{0: no lag, 1: lag 1}
 
+\item{TMB}{TMBで高速計算する場合TMB=TRUE (事前にuse_rvpa_tmb()を実行)}
+
 \item{p.init}{}
 
 \item{eta}{Fのpenaltyを分けて与えるときにeta.ageで指定した年齢への相対的なpenalty (0~1)}
 
 \item{eta.age}{Fのpenaltyを分けるときにetaを与える年齢(0 = 0歳（加入）,0:1 = 0~1歳)}
+
+\item{tmb.file}{TMB=TRUEのとき使用するcppファイルの名前}
 }
 \description{
 VPAによる資源計算を実施する
