@@ -1211,7 +1211,10 @@ vpa <- function(
       log_F=log(p.init)
     )
     
-    obj <- MakeADFun(data2, parameters, DLL=tmb.file)
+    obj <- try(MakeADFun(data2, parameters, DLL=tmb.file))
+    if (class(obj) == "try-error") {
+      stop("Please run use_rvpa_tmb() first!")
+    }
     opt <- nlm(obj$fn, obj$par, gradient=obj$gr, hessian=hessian)
     
     summary.p.est <- list()
