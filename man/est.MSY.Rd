@@ -11,7 +11,7 @@ est.MSY(vpares, farg, seed = farg$seed, nyear = NULL, eyear = 0,
   to = 0.9, by = 0.1), 1, seq(from = 1.1, to = 2, by = 0.1), 3:5, 7, 20,
   100), is.plot = TRUE, PGY = NULL, B0percent = NULL,
   Bempirical = NULL, long.term = 20, GT = NULL, mY = 5,
-  resid.year = 0, current.resid = NULL)
+  estAR.RP = FALSE, resid.year = 0, current.resid = NULL)
 }
 \arguments{
 \item{vpares}{VPAの結果のオブジェクト}
