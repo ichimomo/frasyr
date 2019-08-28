@@ -165,7 +165,7 @@ SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千ト�
     }
 
     if(!is.null(refs)){
-        g1 <- g1+geom_vline(xintercept=c(refs$Bmsy,refs$Blim,refs$Bban),linetype=2)
+        g1 <- g1+geom_vline(xintercept=c(refs$Bmsy/xscale,refs$Blimit/xscale,refs$Bban/xscale),linetype=2)
     }
     g1
 }
