@@ -120,6 +120,8 @@ SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千ト�
 #    require(tidyverse,quietly=TRUE)    
     #    require(ggrepel)
 
+    if(is.null(refs$Blimit) && !is.null(refs$Blim)) refs$Blimit <- refs$Blim
+
     if (SR_result$input$SR=="HS") SRF <- function(SSB,a,b) (ifelse(SSB*xscale>b,b*a,SSB*xscale*a))/yscale
     if (SR_result$input$SR=="BH") SRF <- function(SSB,a,b) (a*SSB*xscale/(1+b*SSB*xscale))/yscale
     if (SR_result$input$SR=="RI") SRF <- function(SSB,a,b) (a*SSB*xscale*exp(-b*SSB*xscale))/yscale
