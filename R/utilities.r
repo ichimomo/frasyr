@@ -1,6 +1,7 @@
 
 col.SBtarget <- "#00533E"
 col.SBlim <- "#edb918"
+col.SBlimit <- "#edb918"
 col.SBban <- "#C73C2E"
 col.Ftarget <- "#714C99"
 col.betaFtarget <- "#505596"
@@ -119,9 +120,9 @@ SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千ト�
 #    require(tidyverse,quietly=TRUE)    
     #    require(ggrepel)
 
-    if (SR_result$input$SR=="HS") SRF <- function(SSB,a,b) ifelse(SSB*xscale>b,b*a,SSB*xscale*a)
-    if (SR_result$input$SR=="BH") SRF <- function(SSB,a,b) a*SSB*xscale/(1+b*SSB*xscale)
-    if (SR_result$input$SR=="RI") SRF <- function(SSB,a,b) a*SSB*xscale*exp(-b*SSB*xscale)
+    if (SR_result$input$SR=="HS") SRF <- function(SSB,a,b) (ifelse(SSB*xscale>b,b*a,SSB*xscale*a))/yscale
+    if (SR_result$input$SR=="BH") SRF <- function(SSB,a,b) (a*SSB*xscale/(1+b*SSB*xscale))/yscale
+    if (SR_result$input$SR=="RI") SRF <- function(SSB,a,b) (a*SSB*xscale*exp(-b*SSB*xscale))/yscale
     
     SRdata <- as_tibble(SR_result$input$SRdata) %>%
         mutate(type="obs")
@@ -165,7 +166,9 @@ SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千ト�
     }
 
     if(!is.null(refs)){
-        g1 <- g1+geom_vline(xintercept=c(refs$Bmsy/xscale,refs$Blimit/xscale,refs$Bban/xscale),linetype=2)
+        g1 <- g1+geom_vline(xintercept=c(refs$Bmsy/xscale,refs$Blimit/xscale,refs$Bban/xscale),
+                            linetype=2,
+                            col=c(col.SBtarget,col.SBlimit,col.SBban))
     }
     g1
 }
