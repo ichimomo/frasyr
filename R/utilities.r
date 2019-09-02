@@ -496,7 +496,7 @@ make_kobeII_table <- function(kobeII_data,
     (catch.table <- kobeII.data %>%
          dplyr::filter(year%in%year.catch,stat=="catch") %>% # 取り出す年とラベル("catch")を選ぶ
          group_by(HCR_name,beta,year) %>%
-         summarise(catch.mean=round(mean(value),-3)) %>%  # 値の計算方法を指定（漁獲量の平均ならmean(value)）
+         summarise(catch.mean=round(mean(value))) %>%  # 値の計算方法を指定（漁獲量の平均ならmean(value)）
          # "-3"とかの値で桁数を指定
          spread(key=year,value=catch.mean) %>% ungroup() %>%
          arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
@@ -690,8 +690,8 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
     vpa_tb <- convert_vpa_tibble(vpares)
     UBdata <- vpa_tb %>% dplyr::filter(stat=="U" | stat=="SSB") %>%
         spread(key=stat,value=value) %>%
-        mutate(Uratio=RcppRoll::roll_mean(U/target.RP$U,n=RcppRoll::roll_mean,fill=NA,align="right"),
-               Bratio=RcppRoll::roll_mean(SSB/target.RP$SSB,n=RcppRoll::roll_mean,fill=NA,align="right")) %>%
+        mutate(Uratio=RcppRoll::roll_mean(U/target.RP$U,n=roll_mean,fill=NA,align="right"),
+               Bratio=RcppRoll::roll_mean(SSB/target.RP$SSB,n=roll_mean,fill=NA,align="right")) %>%
         arrange(year)
     if(ylab.type=="F") UBdata <- UBdata %>% mutate(Uratio=Fratio)
     
@@ -820,6 +820,7 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
 #' @param vpares VPAの結果のオブジェクト
 #' @param future.list 将来予測の結果をリストで並べたもの
 #' @param n_example 個々のシミュレーションの例を示す数
+#' @param width_example 個々のシミュレーションをプロットする場合の線の太さ (default=0.7)
 #' @param future.replicate どのreplicateを選ぶかを選択する。この場合n_exampleによる指定は無効になる
 #' @export
 
@@ -839,6 +840,7 @@ plot_futures <- function(vpares,
                          MSY=0,
                          exclude.japanese.font=FALSE, # english version
                          n_example=3, # number of examples
+                         example_width=0.7, # line width of examples
                          future.replicate=NULL, 
                          seed=1 # seed for selecting the above example
                          ){
@@ -1008,13 +1010,13 @@ plot_futures <- function(vpares,
                                  mapping=aes(x=year,y=value,
                                              alpha=factor(sim),
                                              color=scenario),
-                                 lwd=0.7) 
+                                 lwd=example_width) 
         }
         else{
             g1 <- g1 + geom_line(data=future.example,
                                  mapping=aes(x=year,y=value,
                                              color=scenario),
-                                 lwd=0.7) 
+                                 lwd=example_width) 
         }
         g1 <- g1+scale_alpha_discrete(guide=FALSE)            
     }
@@ -1181,14 +1183,15 @@ calc_MSY_spr <- function(MSYres,Fmax=10,max.age=Inf){
     fout.msy <- do.call(future.vpa,MSYres$input.list$msy)
     # 生物パラメータはその将来予測で使われているものを使う
     waa.msy <- fout.msy$waa[,dim(fout.msy$waa)[[2]],1]
+    waa.catch.msy <- fout.msy$waa.catch[,dim(fout.msy$waa)[[2]],1]    
     maa.msy <- fout.msy$maa[,dim(fout.msy$maa)[[2]],1]
     M.msy <- fout.msy$M[,dim(fout.msy$M)[[2]],1]
-    # F.msyの定義
-    F.msy <- MSYres$input$msy$multi*MSYres$input$msy$res0$Fc.at.age
 
-    # PPRを計算
-    dres$Fc.at.age <- F.msy
-    spr.msy <- ref.F(dres,waa=waa.msy,maa=maa.msy,M=M.msy,rps.year=as.numeric(colnames(dres$naa)),
+    # SPRを計算
+    dres$Fc.at.age <- MSYres$F.msy
+    spr.msy <- ref.F(dres,waa=waa.msy,
+                     waa.catch=waa.catch.msy,
+                     maa=maa.msy,M=M.msy,rps.year=as.numeric(colnames(dres$naa)),
                      F.range=c(seq(from=0,to=ceiling(max(dres$Fc.at.age,na.rm=T)*Fmax),
                                    length=101),max(dres$Fc.at.age,na.rm=T)),plot=FALSE,max.age=max.age)$ypr.spr
     target.SPR <- spr.msy[spr.msy$Frange2Fcurrent==1,]$spr[1]
