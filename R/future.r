@@ -1764,7 +1764,7 @@ read.vpa <- function(tfile,
     
     dres$Fc.at.age <- tmpfunc(tmpdata,Fc.label,type="Fc")
     dres$Fc.at.age <- dres$Fc.at.age[!is.na(dres$Fc.at.age)]
-    if(length(dres$Fc.at.age)!=nrow(res_vpa$naa)) stop("Dimension of Fc.at.age and numbers at age is differerent.")
+    if(length(dres$Fc.at.age)!=nrow(dres$naa)) stop("Dimension of Fc.at.age and numbers at age is differerent.")
     
   dres$input <- list()
   dres$input$dat <- list()
