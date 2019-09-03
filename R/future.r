@@ -2375,7 +2375,9 @@ est.MSY <- function(vpares,
 #    MSY <- cbind(MSY,get.stat2(fout.msy,eyear=eyear))
     rownames(MSY) <- "MSY"
 #    cat(" SSB=",MSY$"ssb.mean","\n")    
-    
+	
+    gc(); gc();
+	
     ## PGYの計算
     fout.PGY <- list()
     PGYstat <- NULL
@@ -2404,7 +2406,8 @@ est.MSY <- function(vpares,
                                                                 fmulti=fout.PGY[[s]]$multi+c(-0.025,-0.05,-0.075,0,0.025,0.05,0.075))$table)
                     trace$table <- trace$table[order(trace$table$fmulti),]
                 }
-                s <- s+1                
+                s <- s+1 
+		gc(); gc();
             }
         }
 #        PGYstat <- as.data.frame(t(sapply(fout.PGY,get.stat3,eyear=eyear,hsp=Blimit)))
@@ -2438,7 +2441,8 @@ est.MSY <- function(vpares,
                 trace$table <- rbind(trace$table,trace.func(farg.msy,eyear,hsp=Blimit,trace.N=trace.N,
                                                             fmulti=fout.B0percent[[j]]$multi+c(-0.025,-0.05,-0.075,0,0.025,0.05,0.075))$table)
                     trace$table <- trace$table[order(trace$table$fmulti),]
-            }                
+            } 
+            gc(); gc();
         }
         rownames(B0stat) <- names(fout.B0percent) <- paste("B0-",B0percent*100,"%",sep="")
     }
@@ -2469,7 +2473,8 @@ est.MSY <- function(vpares,
                 trace$table <- rbind(trace$table,trace.func(farg.msy,eyear,hsp=Blimit,trace.N=trace.N,
                                                             fmulti=fout.Bempirical[[j]]$multi+c(-0.025,-0.05,-0.075,0,0.025,0.05,0.075))$table)
                     trace$table <- trace$table[order(trace$table$fmulti),]
-            }                            
+            } 
+           gc(); gc();
         }
         rownames(Bempirical.stat) <- names(fout.Bempirical) <- paste("Ben-",round(Bempirical),"",sep="")
     }
