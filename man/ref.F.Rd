@@ -2,18 +2,61 @@
 % Please edit documentation in R/future.r
 \name{ref.F}
 \alias{ref.F}
-\title{再生産関係を仮定しない管理基準値計算のための関数}
+\title{再生産関係を仮定しない管理基準値計算(SPR,YPR,F0.1,Fmax)のための関数}
 \usage{
 ref.F(res, sel = NULL, waa = NULL, maa = NULL, M = NULL,
   waa.catch = NULL, M.year = NULL, waa.year = NULL,
   maa.year = NULL, rps.year = NULL, max.age = Inf, min.age = 0,
-  d = 0.001, Fspr.init = 0.5, Fmax.init = 1.5, F0.1.init = 0.7,
+  d = 0.001, Fem.init = 0.5, Fmax.init = 1.5, F0.1.init = 0.7,
   pSPR = seq(10, 90, by = 10), iterlim = 1000, plot = TRUE,
-  Pope = FALSE, F.range = seq(from = 0, to = 2, length = 101))
+  Pope = NULL, F.range = seq(from = 0, to = 2, length = 101))
 }
 \arguments{
 \item{res}{VPAの出力結果}
+
+\item{sel}{仮定する選択率．NULLの場合，res$Fc.at.ageが使われる}
+
+\item{waa}{仮定する年齢別体重。直接の値を入れるか，waa.yearで年を指定するやり方のどちらでも動く。直接指定するほうが優先。}
+
+\item{maa}{仮定する年齢別成熟率。直接の値を入れるか，waa.yearで年を指定するやり方のどちらでも動く。直接指定するほうが優先。}
+
+\item{M}{仮定する年齢別死亡率。直接の値を入れるか，waa.yearで年を指定するやり方のどちらでも動く。直接指定するほうが優先。}
+
+\item{waa.catch}{仮定する年齢別体重（漁獲量計算用）。直接の値を入れるか，waa.yearで年を指定するやり方のどちらでも動く。直接指定するほうが優先。}
+
+\item{M.year}{年を指定して生物パラメータを仮定する場合．年の範囲の平均値が用いられる．NULLの場合，VPA最終年の値が使われる}
+
+\item{waa.year}{年を指定して生物パラメータを仮定する場合．年の範囲の平均値が用いられる．NULLの場合，VPA最終年の値が使われる}
+
+\item{maa.year}{年を指定して生物パラメータを仮定する場合．年の範囲の平均値が用いられる．NULLの場合，VPA最終年の値が使われる}
+
+\item{rps.year}{Fmedの計算に使うRPSの年の範囲．NULLの場合，全範囲が用いられる}
+
+\item{max.age}{加入年齢を０歳としたときに、SPR計算で考慮される最大の年齢（年齢の数ではないことに注意, デフォルトはInf）。加入年齢が１歳以上のときは、SPR計算で考慮したい年齢-加入年齢を入力する、またはmin.ageの引数に加入年齢を設定する。}
+
+\item{min.age}{加入年齢が0歳でないときに指定できる(デフォルトは0)}
+
+\item{d}{0.001}
+
+\item{Fem.init}{経験的管理基準値(Fmed, Fmean, Fhigh, Flow)の初期値 (default=0.5)}
+
+\item{Fmax.init}{Fmaxの初期値 (default=1.5)}
+
+\item{F0.1.init}{F0.1の初期値 (default=0.7)}
+
+\item{pSPR}{= seq(10,90,by=10), # F%SPRを計算するときの％SPR}
+
+\item{iterlim}{}
+
+\item{plot}{結果のプロットを表示するかどうか}
+
+\item{Pope}{Popeの式を使うか}
+
+\item{F.range}{YPR, SPR曲線を書くときのFの範囲}
 }
 \description{
-再生産関係を仮定しない管理基準値計算のための関数
+再生産関係を仮定しない管理基準値計算(SPR,YPR,F0.1,Fmax)のための関数
+}
+\note{
+F_SPRのF管理基準値の初期値は　与えられたFのもとでのSPR/目的のSPR　を初期値とするように調整されるので不要。
 }

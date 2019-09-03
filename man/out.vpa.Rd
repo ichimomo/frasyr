@@ -4,15 +4,22 @@
 \alias{out.vpa}
 \title{VPA結果をcsvファイルに出力する}
 \usage{
-out.vpa(res = NULL, rres = NULL, fres = NULL, ABC = NULL,
+out.vpa(res = NULL, srres = NULL, msyres = NULL,
+  fres_current = NULL, fres_HCR = NULL, kobeII = NULL,
   filename = "vpa")
 }
 \arguments{
 \item{res}{VPAの結果}
 
-\item{rres}{ref.Fの結果}
+\item{srres}{fit.SRの結果}
 
-\item{fres}{future.vpaの結果}
+\item{msyres}{est.MSYの結果}
+
+\item{fres_current}{future.vpaの結果(Fcurrent)}
+
+\item{fres_HCR}{future.vpaの結果(F with HCR)}
+
+\item{kobeII}{kobeII.matrixの結果}
 }
 \description{
 VPA結果をcsvファイルに出力する
