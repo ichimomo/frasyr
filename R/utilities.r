@@ -933,6 +933,7 @@ plot_futures <- function(vpares,
         mutate(scenario=type,year=as.numeric(year),
                stat=factor(stat,levels=rename_list$stat),
                mean=value,sim=0)
+    # 将来と過去をつなげるためのダミーデータ
     tmp <- vpa_tb %>% group_by(stat) %>%
         summarise(value=tail(value[!is.na(value)],n=1,na.rm=T),year=tail(year[!is.na(value)],n=1,na.rm=T),sim=0) 
     future.dummy <- purrr::map_dfr(future.name,function(x) mutate(tmp,scenario=x))
@@ -989,9 +990,9 @@ plot_futures <- function(vpares,
 
     if(isTRUE(is.plot.CIrange)){
         g1 <- g1+
-            geom_ribbon(data=dplyr::filter(future.table.qt,!is.na(stat) & scenario!="VPA"),
+            geom_ribbon(data=dplyr::filter(future.table.qt,!is.na(stat) & scenario!="VPA" & year <= maxyear),
                         mapping=aes(x=year,ymin=low,ymax=high,fill=scenario),alpha=0.4)+
-            geom_line(data=dplyr::filter(future.table.qt,!is.na(stat) & scenario!="VPA"),
+            geom_line(data=dplyr::filter(future.table.qt,!is.na(stat) & scenario!="VPA" & year <= maxyear),
                       mapping=aes(x=year,y=mean,color=scenario),lwd=1)
     }
 #    else{
@@ -1017,14 +1018,14 @@ plot_futures <- function(vpares,
 
     if(n_example>0){
         if(n_example>1){
-            g1 <- g1 + geom_line(data=future.example,
+            g1 <- g1 + geom_line(data=dplyr::filter(future.example,year <= maxyear),
                                  mapping=aes(x=year,y=value,
                                              alpha=factor(sim),
                                              color=scenario),
                                  lwd=example_width) 
         }
         else{
-            g1 <- g1 + geom_line(data=future.example,
+            g1 <- g1 + geom_line(data=dplyr::filter(future.example,year <= maxyear),
                                  mapping=aes(x=year,y=value,
                                              color=scenario),
                                  lwd=example_width) 
