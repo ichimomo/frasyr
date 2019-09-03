@@ -485,6 +485,7 @@ calc_kobeII_matrix <- function(fres_base,
 make_kobeII_table <- function(kobeII_data,
                               res_vpa,
                               year.catch,
+                              year.ssb,                              
                               year.Fsakugen,
                               year.ssbtarget,
                               year.ssblimit,
@@ -492,7 +493,7 @@ make_kobeII_table <- function(kobeII_data,
                               year.ssbmin,
                               year.ssbmax,                              
                               year.aav){
-    # 例えば2017~2023,28,38年の漁獲量の表を作成する
+    # 平均漁獲量
     (catch.table <- kobeII.data %>%
          dplyr::filter(year%in%year.catch,stat=="catch") %>% # 取り出す年とラベル("catch")を選ぶ
          group_by(HCR_name,beta,year) %>%
@@ -501,6 +502,15 @@ make_kobeII_table <- function(kobeII_data,
          spread(key=year,value=catch.mean) %>% ungroup() %>%
          arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
          mutate(stat_name="catch.mean"))
+
+    # 平均親魚
+    (ssb.table <- kobeII.data %>%
+         dplyr::filter(year%in%year.ssb,stat=="SSB") %>% 
+         group_by(HCR_name,beta,year) %>%
+         summarise(ssb.mean=round(mean(value))) %>%  
+         spread(key=year,value=ssb.mean) %>% ungroup() %>%
+         arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
+         mutate(stat_name="ssb.mean"))    
 
     # 1-currentFに乗じる値=currentFからの努力量の削減率の平均値（実際には確率分布になっている）
     (Fsakugen.table <- kobeII.data %>%
@@ -532,8 +542,8 @@ make_kobeII_table <- function(kobeII_data,
         mutate(stat_name="Pr(SSB>SSBlim)")
 
     # SSB>SSBbanとなる確率
-    ssblimit.table <- kobeII.data %>%
-        dplyr::filter(year%in%year.ssblimit,stat=="SSB") %>%
+    ssbban.table <- kobeII.data %>%
+        dplyr::filter(year%in%year.ssbban,stat=="SSB") %>%
         group_by(HCR_name,beta,year) %>%
         summarise(ssb.over=round(100*mean(value>Bban))) %>%
         spread(key=year,value=ssb.over)%>%
@@ -574,10 +584,11 @@ make_kobeII_table <- function(kobeII_data,
         arrange(HCR_name,desc(beta))%>%
         mutate(stat_name="catch.csv (recent 5 year)")
 
-    res_list <- list(catch           = catch.table,
+    res_list <- list(average.catch   = catch.table,
+                     average.ssb     = ssb.table,
                      prob.ssbtarget  = ssbtarget.table,
                      prob.ssblimit   = ssblimit.table,
-                     prob.ssbban     = ssblimit.table,                     
+                     prob.ssbban     = ssbban.table,                     
                      prob.ssbmin     = ssbmin.table,
                      prob.ssbmax     = ssbmax.table,                     
                      catch.aav       = catch.aav.table)    

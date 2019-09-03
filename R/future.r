@@ -10,12 +10,34 @@
 NULL
 
 #'
-#' 再生産関係を仮定しない管理基準値計算のための関数
+#' 再生産関係を仮定しない管理基準値計算(SPR,YPR,F0.1,Fmax)のための関数
 #'
 #' @param res VPAの出力結果
+#' @param sel 仮定する選択率．NULLの場合，res$Fc.at.ageが使われる
+#' @param waa 仮定する年齢別体重。直接の値を入れるか，waa.yearで年を指定するやり方のどちらでも動く。直接指定するほうが優先。
+#' @param maa 仮定する年齢別成熟率。直接の値を入れるか，waa.yearで年を指定するやり方のどちらでも動く。直接指定するほうが優先。
+#' @param M 仮定する年齢別死亡率。直接の値を入れるか，waa.yearで年を指定するやり方のどちらでも動く。直接指定するほうが優先。
+#' @param waa.catch　仮定する年齢別体重（漁獲量計算用）。直接の値を入れるか，waa.yearで年を指定するやり方のどちらでも動く。直接指定するほうが優先。
+#' @param M.year 年を指定して生物パラメータを仮定する場合．年の範囲の平均値が用いられる．NULLの場合，VPA最終年の値が使われる
+#' @param waa.year 年を指定して生物パラメータを仮定する場合．年の範囲の平均値が用いられる．NULLの場合，VPA最終年の値が使われる
+#' @param maa.year 年を指定して生物パラメータを仮定する場合．年の範囲の平均値が用いられる．NULLの場合，VPA最終年の値が使われる
+#' @param rps.year Fmedの計算に使うRPSの年の範囲．NULLの場合，全範囲が用いられる
+#' @param max.age 加入年齢を０歳としたときに、SPR計算で考慮される最大の年齢（年齢の数ではないことに注意, デフォルトはInf）。加入年齢が１歳以上のときは、SPR計算で考慮したい年齢-加入年齢を入力する、またはmin.ageの引数に加入年齢を設定する。
+#' @param min.age  加入年齢が0歳でないときに指定できる(デフォルトは0)
+#' @param  pSPR = seq(10,90,by=10), # F%SPRを計算するときの％SPR
+#' @param d 0.001
+#' @param  Fem.init 経験的管理基準値(Fmed, Fmean, Fhigh, Flow)の初期値 (default=0.5)
+#' @param  Fmax.init Fmaxの初期値 (default=1.5)
+#' @param  F0.1.init F0.1の初期値 (default=0.7)
+#' @param  iterlim 
+#' @param  plot 結果のプロットを表示するかどうか
+#' @param  Pope Popeの式を使うか
+#' @param  F.range YPR, SPR曲線を書くときのFの範囲
+#'
+#' @note F_SPRのF管理基準値の初期値は　与えられたFのもとでのSPR/目的のSPR　を初期値とするように調整されるので不要。
 #'
 #' @export
-#' @import tibble
+#' @import tibble 
 
 # ref.F
 ref.F <- function(
@@ -32,19 +54,21 @@ ref.F <- function(
   max.age = Inf, # 加入年齢を０歳としたときに、SPR計算で考慮される最大の年齢（年齢の数ではないことに注意）。加入年齢が１歳以上のときは、SPR計算で考慮したい年齢-加入年齢を入力する、またはmin.ageの引数に加入年齢を設定する。
   min.age = 0, # 加入年齢が0歳でないときに指定できる
   d = 0.001,
-  Fspr.init = 0.5, # F%SPRの初期値
+  Fem.init = 0.5, 
   Fmax.init = 1.5, # Fmaxの初期値
   F0.1.init = 0.7, # F0.1の初期値
   pSPR = seq(10,90,by=10), # F%SPRを計算するときの％SPR
   iterlim=1000,
   plot=TRUE,
-  Pope=FALSE, # 2014.7.4追加
+  Pope=NULL, # 2014.7.4追加
   F.range = seq(from=0,to=2,length=101)  # YPR, SPR曲線を書くときのFの範囲
 ){
 
     argname <- ls()
     arglist <- lapply(argname,function(x) eval(parse(text=x)))
     names(arglist) <- argname
+
+    if(is.null(Pope)) Pope <- res$input$Pope
   
   naa <- res$naa
   ssb <- res$ssb
@@ -98,9 +122,15 @@ ref.F <- function(
   rps.q <- quantile(rps[tmp], na.rm=TRUE, probs=c(0.1,0.5,0.9))
   rps.q <- c(rps.q,mean(rps[tmp], na.rm=TRUE))  
   names(rps.q)[4] <- "mean"
-  spr.q <- 1/rps.q
+    spr.q <- 1/rps.q
 
-#  browser()
+  original.spr <- calc.rel.abund(sel,1,na,M,waa,waa.catch,maa,min.age=min.age,
+                                 max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)
+  original.spr0 <- calc.rel.abund(sel,0,na,M,waa,waa.catch,maa,min.age=min.age,
+                                  max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)
+  original.perspr <- sum(original.spr$spr)/sum(original.spr0$spr)
+    
+
   # F.spr
 
   spr.f.est <- function(log.p, out=FALSE, sub="med", spr0=NULL){
@@ -124,11 +154,10 @@ ref.F <- function(
 
   spr0 <- spr.f.est(-Inf, out=TRUE)
 
-  Fmed.res <- nlm(spr.f.est, Fspr.init, out=FALSE, sub="med", iterlim = iterlim)
-  Fmean.res <- nlm(spr.f.est, Fspr.init, out=FALSE, sub="mean", iterlim = iterlim)
-#  browser()
-  Flow.res <- nlm(spr.f.est, Fspr.init, out=FALSE, sub="low", iterlim = iterlim)
-  Fhigh.res <- nlm(spr.f.est, Fspr.init, out=FALSE, sub="high", iterlim = iterlim)
+  Fmed.res <- nlm(spr.f.est, Fem.init, out=FALSE, sub="med", iterlim = iterlim)
+  Fmean.res <- nlm(spr.f.est, Fem.init, out=FALSE, sub="mean", iterlim = iterlim)
+  Flow.res <- nlm(spr.f.est, Fem.init, out=FALSE, sub="low", iterlim = iterlim)
+  Fhigh.res <- nlm(spr.f.est, Fem.init, out=FALSE, sub="high", iterlim = iterlim)
 
   Fmean <- exp(Fmean.res$estimate)  
   Fmed <- exp(Fmed.res$estimate)
@@ -139,9 +168,10 @@ ref.F <- function(
     FpSPR <- NULL
 
     for (i in pSPR){
+      Fspr.init <- original.perspr/i*100
       FpSPR.res <- nlm(spr.f.est, Fspr.init, out=FALSE, sub=i, spr0=spr0, iterlim=iterlim)
 #      print(FpSPR.res)
-#       cat("i", FpSPR.res$code," ")
+#      cat("Fspr.init", Fspr.init," ",exp(FpSPR.res$estimate),"\n")
       FpSPR <- c(FpSPR, exp(FpSPR.res$estimate))
     }
     names(FpSPR) <- paste(pSPR,"%SPR",sep="")
@@ -218,8 +248,12 @@ ref.F <- function(
   #---- make summary
   Res$summary <- as.data.frame(Res[substr(names(Res),1,1)=="F"])
   Res$summary <- rbind(Res$summary,Res$summary[1,]/Res$summary[1,1])
-  dimnames(Res$summary)[[1]][3] <- "Fref/Fcur"    
+  dimnames(Res$summary)[[1]][3] <- "Fref/Fcur"
 
+  Res$Fcurrent <- list(SPR=sum(original.spr$spr),
+                       perSPR=sum(original.spr$spr)/sum(original.spr$spr0),
+                       YPR=sum(original.spr$spr))
+ 
   #-----  YPR & SPR figure -----
     F_current <- Res$summary$Fcurrent[1]*Res$summary$Fcurrent[3]
     F.range <- sort(c(F.range,  F_current))
@@ -236,6 +270,7 @@ ref.F <- function(
 
   Res$arglist <- arglist
   Res$spr0 <- spr0
+    
 
   Res$ypr.spr$Frange2Fcurrent  <- Res$ypr.spr$F.range/F_current
   class(Res) <- "ref"
@@ -691,13 +726,11 @@ future.vpa <-
                     }
                 }
                 
-                # 選択率をランダムサンプリングする場合
-                #          if(!is.null(random.select)) saa.tmp <- as.numeric(res0$saa[,colnames(res0$saa)==sample(random.select,1)])
                 saa.tmp <- sweep(faa[,i,],2,apply(faa[,i,],2,max),FUN="/")
                 tmp <- lapply(1:dim(naa)[[3]],
                               function(x) caa.est.mat(naa[,i,x],saa.tmp[,x],
-                                                      #                                                      waa.catch[,i,x],M[,i,x],tmpcatch,Pope=Pope))
-                                                      waa[,i,x],M[,i,x],tmpcatch,Pope=Pope))                                                      
+                                                      waa.catch[,i,x],M[,i,x],tmpcatch,Pope=Pope))
+#                                                      waa[,i,x],M[,i,x],tmpcatch,Pope=Pope))   # ここがwaa.catchだとwaa.fun=TRUE&MSEの場合に不都合が生じる？？ちょっと応急処置                                                   
                 faa.new <- sweep(saa.tmp,2,sapply(tmp,function(x) x$x),FUN="*")
                 caa[,i,] <- sapply(tmp,function(x) x$caa)
                 faa[,i,] <- faa.new
@@ -2113,7 +2146,7 @@ get.SPR <- function(dres,target.SPR=30,Fmax=10,max.age=Inf){
             a <- ref.F(dres,waa.year=byear,maa.year=byear,M.year=byear,rps.year=2000:2011,
                        pSPR=round(target.SPR),
                        F.range=c(seq(from=0,to=ceiling(max(dres$Fc.at.age,na.rm=T)*Fmax),
-                                     length=101),max(dres$Fc.at.age,na.rm=T)),plot=FALSE,max.age=max.age)
+                                     length=301),max(dres$Fc.at.age,na.rm=T)),plot=FALSE,max.age=max.age)
             # YPRと%SPR
             dres$ysdata[i,1:2] <- (as.numeric(rev(a$ypr.spr[which(a$ypr.spr$Frange2Fcurrent==1)[1],2:3])))
             # SPR                                                                                               
