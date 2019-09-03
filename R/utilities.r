@@ -656,6 +656,9 @@ get.stat4 <- function(fout,Brefs,
 #'
 #' @param vpares VPAの結果のオブジェクト
 #' @param refs_base est.MSYから得られる管理基準値の表
+#'
+#' @export
+#' 
 
 plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
                          category=4,# 4区分か、6区分か
