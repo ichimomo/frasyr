@@ -52,7 +52,7 @@ ref.F(res, sel = NULL, waa = NULL, maa = NULL, M = NULL,
 
 \item{Pope}{Popeの式を使うか}
 
-\item{F.range}{YPR, SPR曲線を書くときのFの範囲}
+\item{F.range}{YPR, SPR曲線を書くときのFの範囲（Fの最大値のスケール）、かつ、F%SPRを計算するときの初期値を決めるために利用される。F%SPRの推定がうまくいかない場合はこの範囲を調整してください。}
 }
 \description{
 再生産関係を仮定しない管理基準値計算(SPR,YPR,F0.1,Fmax)のための関数

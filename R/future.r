@@ -32,7 +32,7 @@ NULL
 #' @param  iterlim 
 #' @param  plot 結果のプロットを表示するかどうか
 #' @param  Pope Popeの式を使うか
-#' @param  F.range YPR, SPR曲線を書くときのFの範囲
+#' @param  F.range YPR, SPR曲線を書くときのFの範囲（Fの最大値のスケール）、かつ、F%SPRを計算するときの初期値を決めるために利用される。F%SPRの推定がうまくいかない場合はこの範囲を調整してください。
 #'
 #' @note F_SPRのF管理基準値の初期値は　与えられたFのもとでのSPR/目的のSPR　を初期値とするように調整されるので不要。
 #'
@@ -131,6 +131,19 @@ ref.F <- function(
   original.perspr <- sum(original.spr$spr)/sum(original.spr0$spr)
     
 
+    # Fcurrent
+    Fcurrent <- c(max(Fc.at.age,na.rm=T), mean(Fc.at.age,na.rm=T))
+    
+    # grid search
+    F_current <- Fcurrent[1]
+    F.range <- sort(c(F.range,  F_current))
+    spr0 <- sum(calc.rel.abund(sel,0,na,M,waa,waa.catch,maa,min.age=min.age,max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)$spr)  
+    tmp <- lapply(F.range, function(x) calc.rel.abund(sel,x,na,M,waa,waa.catch,maa,min.age=min.age,max.age=max.age,Pope=Pope,ssb.coef=ssb.coef))
+    ypr <- sapply(tmp,function(x) sum(x$ypr))
+    pspr <- sapply(tmp,function(x) sum(x$spr))/spr0*100
+    ypr.spr <- data.frame(F.range=F.range,ypr=ypr,pspr=pspr)
+    ypr.spr$Frange2Fcurrent  <- ypr.spr$F.range/F_current    
+    
   # F.spr
 
   spr.f.est <- function(log.p, out=FALSE, sub="med", spr0=NULL){
@@ -168,10 +181,9 @@ ref.F <- function(
     FpSPR <- NULL
 
     for (i in pSPR){
-      Fspr.init <- original.perspr/i*100
+      Fspr.init <- ypr.spr$F.range[which.min(abs(ypr.spr$pspr-i))] #original.perspr/i*100
       FpSPR.res <- nlm(spr.f.est, Fspr.init, out=FALSE, sub=i, spr0=spr0, iterlim=iterlim)
-#      print(FpSPR.res)
-#      cat("Fspr.init", Fspr.init," ",exp(FpSPR.res$estimate),"\n")
+      cat("Estimate F%spr: initial value=", Fspr.init," : estimated value=",exp(FpSPR.res$estimate),"\n")
       FpSPR <- c(FpSPR, exp(FpSPR.res$estimate))
     }
     names(FpSPR) <- paste(pSPR,"%SPR",sep="")
@@ -222,9 +234,7 @@ ref.F <- function(
  
   F0.1 <- exp(F0.1.res$estimate)
 
-  # Fcurrent
-  Fcurrent <- c(max(Fc.at.age,na.rm=T), mean(Fc.at.age,na.rm=T))
-  
+ 
   # output
   f.mean <- function(x) mean(x*sel, na.rm=T)
 
@@ -250,19 +260,11 @@ ref.F <- function(
   Res$summary <- rbind(Res$summary,Res$summary[1,]/Res$summary[1,1])
   dimnames(Res$summary)[[1]][3] <- "Fref/Fcur"
 
-  Res$Fcurrent <- list(SPR=sum(original.spr$spr),
-                       perSPR=sum(original.spr$spr)/sum(original.spr$spr0),
+  Res$currentSPR <- list(SPR=sum(original.spr$spr),
+                         perSPR=original.perspr,
                        YPR=sum(original.spr$spr))
  
-  #-----  YPR & SPR figure -----
-    F_current <- Res$summary$Fcurrent[1]*Res$summary$Fcurrent[3]
-    F.range <- sort(c(F.range,  F_current))
-  spr0 <- sum(calc.rel.abund(sel,0,na,M,waa,waa.catch,maa,min.age=min.age,max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)$spr)  
-  tmp <- lapply(F.range, function(x) calc.rel.abund(sel,x,na,M,waa,waa.catch,maa,min.age=min.age,max.age=max.age,Pope=Pope,ssb.coef=ssb.coef))
-  ypr <- sapply(tmp,function(x) sum(x$ypr))
-  spr <- sapply(tmp,function(x) sum(x$spr))/spr0*100
-
-  Res$ypr.spr  <- data.frame(F.range=F.range,ypr=ypr,spr=spr)
+  Res$ypr.spr  <- ypr.spr #data.frame(F.range=F.range,ypr=ypr,spr=spr)
   Res$waa <- waa
   Res$waa.catch <- waa.catch  
   Res$maa <- maa
@@ -270,9 +272,7 @@ ref.F <- function(
 
   Res$arglist <- arglist
   Res$spr0 <- spr0
-    
 
-  Res$ypr.spr$Frange2Fcurrent  <- Res$ypr.spr$F.range/F_current
   class(Res) <- "ref"
     
   if(isTRUE(plot)){
@@ -295,7 +295,7 @@ plot_Fref <- function(rres,xlabel="max", # or, "mean","Fref/Fcur"
     F.range <- rres$ypr.spr$F.range
     if(xlabel=="Fref/Fcur") F.range <- F.range/rres$summary$Fcurrent[1]*rres$summary$Fcurrent[3]
     if(xlabel=="mean") F.range <- F.range/rres$summary$Fcurrent[1]*rres$summary$Fcurrent[2]    
-    spr <- rres$ypr.spr$spr
+    spr <- rres$ypr.spr$pspr
     ypr <- rres$ypr.spr$ypr
     plot(F.range,spr,xlab=xlabel,ylab="%SPR",type="l",ylim=c(0,max(spr)))
     par(new=T)
@@ -306,7 +306,8 @@ plot_Fref <- function(rres,xlabel="max", # or, "mean","Fref/Fcur"
     abline(v=xx <- c(rres$summary[vline.text][n.line,]))
     text(xx,max(ypr)*seq(from=0.5,to=0.3,length=length(vline.text)),vline.text)
     legend("topright",lty=1:2,legend=c("SPR","YPR"))
-    options(warn=-1); par(old.par); options(warn=0)
+    old.par[c("cin","cxy","csi","cra","csy","din","page")] <- NULL
+    par(old.par)
 }
 
 calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=Inf,Pope=TRUE,ssb.coef=0){
