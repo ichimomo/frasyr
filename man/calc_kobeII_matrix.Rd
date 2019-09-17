@@ -5,8 +5,8 @@
 \title{Kobe II matrixを計算するための関数}
 \usage{
 calc_kobeII_matrix(fres_base, refs_base, Btarget = c("Btarget0"),
-  Blimit = c("Blimit0"), Blow = c("Blow0"), Bban = c("Bban0"),
-  year.lag = 0, beta = seq(from = 0.5, to = 1, by = 0.1))
+  Blimit = c("Blimit0"), Bban = c("Bban0"), year.lag = 0,
+  beta = seq(from = 0.5, to = 1, by = 0.1))
 }
 \arguments{
 \item{fres_base}{future.vpaの結果のオブジェクト}

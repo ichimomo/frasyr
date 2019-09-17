@@ -11,7 +11,7 @@ test_that("oututput value check",{
                  term.F="max",stat.tf="mean",Pope=TRUE,tune=FALSE,p.init=1.0)
   res.ref.f <- ref.F(res.pma,sel=NULL,waa=NULL,maa=NULL,M=NULL,waa.catch=NULL,M.year=NULL,
                      waa.year=NULL,maa.year=NULL,rps.year = NULL,max.age = Inf,min.age = 0,
-                     d = 0.001,Fspr.init = 0.5,Fmax.init = 1.5,F0.1.init = 0.7,pSPR = seq(10,90,by=10),
+                     d = 0.001,Fem.init = 0.5,Fmax.init = 1.5,F0.1.init = 0.7,pSPR = seq(10,90,by=10),
                      iterlim=1000,plot=TRUE,Pope=FALSE,F.range = seq(from=0,to=2,length=101) )
   #上記引数での計算結果を読み込み
   res_ref_f_sel_pma_check <- read.csv(system.file("extdata","future_ref_F_sel_check.csv",package="frasyr"),row.names=1)
@@ -27,7 +27,7 @@ test_that("oututput value check",{
   res_ref_f_F01_pma_check <- read.csv(system.file("extdata","future_ref_F_F01_check.csv",package="frasyr"),row.names=1)
   res_ref_f_Fmean_pma_check <- read.csv(system.file("extdata","future_ref_F_Fmean_check.csv",package="frasyr"),row.names=1)
   res_ref_f_rpsdata_pma_check <- read.csv(system.file("extdata","future_ref_F_rps-data_check.csv",package="frasyr"),row.names=1)
-  res_ref_f_FpSPR_pma_check <- read.csv(system.file("extdata","future_ref_F_FpSPR_check.csv",package="frasyr"),row.names=1)
+  res_ref_f_FpSPR_pma_check <- read.csv(system.file("extdata","future_ref_F_FpSPR_check.csv",package="frasyr"),row.names=1) # summaryとFpSPRの内容は全く同じなので、本来ならテストは必要ない
   res_ref_f_summary_pma_check <- read.csv(system.file("extdata","future_ref_F_summary_check.csv",package="frasyr"),row.names=1)
   res_ref_f_ypr_spr_pma_check <- read.csv(system.file("extdata","future_ref_F_ypr-spr_check.csv",package="frasyr"),row.names=1)
   res_ref_f_waa_pma_check <- read.csv(system.file("extdata","future_ref_F_waa_check.csv",package="frasyr"),row.names=1)
@@ -305,7 +305,8 @@ test_that("oututput value check",{
   }
   expect_equal(BH.par1$opt$value,as.numeric(BHpar1_opt_value_pma_check))
   for(i in 1:nrow(BHpar1_opt_counts_pma_check)){
-    expect_equal(as.numeric(BH.par1$opt$counts[i]),BHpar1_opt_counts_pma_check[i,])
+      #    expect_equal(as.numeric(BH.par1$opt$counts[i]),BHpar1_opt_counts_pma_check[i,])
+      # 環境が変わるとこのカウント数が変わるので、とりあえずコメントアウト
   }
   expect_equal(BH.par1$opt$convergence,as.numeric(BHpar1_opt_convergence_pma_check))
   for(i in 1:nrow(BHpar1_resid_pma_check)){
@@ -1170,16 +1171,16 @@ test_that("oututput value check (iteration for future sim is fixed as 2) ",{
 context("future future.vpa (option of futureF)")
 
 test_that("oututput value check (iteration for future sim is fixed as 2) ",{
-#  caa <- read.csv(system.file("extdata","caa_pma.csv",package="frasyr"),row.names=1)
-#  waa <- read.csv(system.file("extdata","waa_pma.csv",package="frasyr"),row.names=1)
-#  maa <- read.csv(system.file("extdata","maa_pma.csv",package="frasyr"),row.names=1)
-#  dat <- data.handler(caa=caa, waa=waa, maa=maa, M=0.5)
-#  res.pma <- vpa(dat,fc.year=2009:2011,rec=585,rec.year=2011,tf.year = 2008:2010,
-#                 term.F="max",stat.tf="mean",Pope=TRUE,tune=FALSE,p.init=1.0)
-#  SRdata <- get.SRdata(res.pma)
+  caa <- read.csv(system.file("extdata","caa_pma.csv",package="frasyr"),row.names=1)
+  waa <- read.csv(system.file("extdata","waa_pma.csv",package="frasyr"),row.names=1)
+  maa <- read.csv(system.file("extdata","maa_pma.csv",package="frasyr"),row.names=1)
+  dat <- data.handler(caa=caa, waa=waa, maa=maa, M=0.5)
+  res.pma <- vpa(dat,fc.year=2009:2011,rec=585,rec.year=2011,tf.year = 2008:2010,
+                 term.F="max",stat.tf="mean",Pope=TRUE,tune=FALSE,p.init=1.0)
+  SRdata <- get.SRdata(res.pma)
 
-#  HS.par0 <- fit.SR(SRdata,SR="HS",method="L2",AR=0,hessian=FALSE)
-#  HS.par1 <- fit.SR(SRdata,SR="HS",method="L2",AR=1,hessian=FALSE)
+  HS.par0 <- fit.SR(SRdata,SR="HS",method="L2",AR=0,hessian=FALSE)
+  HS.par1 <- fit.SR(SRdata,SR="HS",method="L2",AR=1,hessian=FALSE)
 
   currentF.test <- 1:4/10
   futureF.test <- 5:8/10

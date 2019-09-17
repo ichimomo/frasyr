@@ -1,8 +1,43 @@
-#' 再生産関係を仮定しない管理基準値計算のための関数
+#'
+#' @import ggplot2
+#' @import magrittr          
+#' @import dplyr             
+#' @import tidyr             
+#' @import tibble            
+#' @importFrom magrittr %>%
+#' @importFrom dplyr filter
+#' 
+NULL
+
+#'
+#' 再生産関係を仮定しない管理基準値計算(SPR,YPR,F0.1,Fmax)のための関数
 #'
 #' @param res VPAの出力結果
+#' @param sel 仮定する選択率．NULLの場合，res$Fc.at.ageが使われる
+#' @param waa 仮定する年齢別体重。直接の値を入れるか，waa.yearで年を指定するやり方のどちらでも動く。直接指定するほうが優先。
+#' @param maa 仮定する年齢別成熟率。直接の値を入れるか，waa.yearで年を指定するやり方のどちらでも動く。直接指定するほうが優先。
+#' @param M 仮定する年齢別死亡率。直接の値を入れるか，waa.yearで年を指定するやり方のどちらでも動く。直接指定するほうが優先。
+#' @param waa.catch　仮定する年齢別体重（漁獲量計算用）。直接の値を入れるか，waa.yearで年を指定するやり方のどちらでも動く。直接指定するほうが優先。
+#' @param M.year 年を指定して生物パラメータを仮定する場合．年の範囲の平均値が用いられる．NULLの場合，VPA最終年の値が使われる
+#' @param waa.year 年を指定して生物パラメータを仮定する場合．年の範囲の平均値が用いられる．NULLの場合，VPA最終年の値が使われる
+#' @param maa.year 年を指定して生物パラメータを仮定する場合．年の範囲の平均値が用いられる．NULLの場合，VPA最終年の値が使われる
+#' @param rps.year Fmedの計算に使うRPSの年の範囲．NULLの場合，全範囲が用いられる
+#' @param max.age 加入年齢を０歳としたときに、SPR計算で考慮される最大の年齢（年齢の数ではないことに注意, デフォルトはInf）。加入年齢が１歳以上のときは、SPR計算で考慮したい年齢-加入年齢を入力する、またはmin.ageの引数に加入年齢を設定する。
+#' @param min.age  加入年齢が0歳でないときに指定できる(デフォルトは0)
+#' @param  pSPR = seq(10,90,by=10), # F%SPRを計算するときの％SPR
+#' @param d 0.001
+#' @param  Fem.init 経験的管理基準値(Fmed, Fmean, Fhigh, Flow)の初期値 (default=0.5)
+#' @param  Fmax.init Fmaxの初期値 (default=1.5)
+#' @param  F0.1.init F0.1の初期値 (default=0.7)
+#' @param  iterlim 
+#' @param  plot 結果のプロットを表示するかどうか
+#' @param  Pope Popeの式を使うか
+#' @param  F.range YPR, SPR曲線を書くときのFの範囲（Fの最大値のスケール）、かつ、F%SPRを計算するときの初期値を決めるために利用される。F%SPRの推定がうまくいかない場合はこの範囲を調整してください。
+#'
+#' @note F_SPRのF管理基準値の初期値は　与えられたFのもとでのSPR/目的のSPR　を初期値とするように調整されるので不要。
 #'
 #' @export
+#' @import tibble 
 
 # ref.F
 ref.F <- function(
@@ -19,19 +54,21 @@ ref.F <- function(
   max.age = Inf, # 加入年齢を０歳としたときに、SPR計算で考慮される最大の年齢（年齢の数ではないことに注意）。加入年齢が１歳以上のときは、SPR計算で考慮したい年齢-加入年齢を入力する、またはmin.ageの引数に加入年齢を設定する。
   min.age = 0, # 加入年齢が0歳でないときに指定できる
   d = 0.001,
-  Fspr.init = 0.5, # F%SPRの初期値
+  Fem.init = 0.5, 
   Fmax.init = 1.5, # Fmaxの初期値
   F0.1.init = 0.7, # F0.1の初期値
   pSPR = seq(10,90,by=10), # F%SPRを計算するときの％SPR
   iterlim=1000,
   plot=TRUE,
-  Pope=FALSE, # 2014.7.4追加
+  Pope=NULL, # 2014.7.4追加
   F.range = seq(from=0,to=2,length=101)  # YPR, SPR曲線を書くときのFの範囲
 ){
 
     argname <- ls()
     arglist <- lapply(argname,function(x) eval(parse(text=x)))
     names(arglist) <- argname
+
+    if(is.null(Pope)) Pope <- res$input$Pope
   
   naa <- res$naa
   ssb <- res$ssb
@@ -85,9 +122,28 @@ ref.F <- function(
   rps.q <- quantile(rps[tmp], na.rm=TRUE, probs=c(0.1,0.5,0.9))
   rps.q <- c(rps.q,mean(rps[tmp], na.rm=TRUE))  
   names(rps.q)[4] <- "mean"
-  spr.q <- 1/rps.q
+    spr.q <- 1/rps.q
 
-#  browser()
+  original.spr <- calc.rel.abund(sel,1,na,M,waa,waa.catch,maa,min.age=min.age,
+                                 max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)
+  original.spr0 <- calc.rel.abund(sel,0,na,M,waa,waa.catch,maa,min.age=min.age,
+                                  max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)
+  original.perspr <- sum(original.spr$spr)/sum(original.spr0$spr)
+    
+
+    # Fcurrent
+    Fcurrent <- c(max(Fc.at.age,na.rm=T), mean(Fc.at.age,na.rm=T))
+    
+    # grid search
+    F_current <- Fcurrent[1]
+    F.range <- sort(c(F.range,  F_current))
+    spr0 <- sum(calc.rel.abund(sel,0,na,M,waa,waa.catch,maa,min.age=min.age,max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)$spr)  
+    tmp <- lapply(F.range, function(x) calc.rel.abund(sel,x,na,M,waa,waa.catch,maa,min.age=min.age,max.age=max.age,Pope=Pope,ssb.coef=ssb.coef))
+    ypr <- sapply(tmp,function(x) sum(x$ypr))
+    pspr <- sapply(tmp,function(x) sum(x$spr))/spr0*100
+    ypr.spr <- data.frame(F.range=F.range,ypr=ypr,pspr=pspr)
+    ypr.spr$Frange2Fcurrent  <- ypr.spr$F.range/F_current    
+    
   # F.spr
 
   spr.f.est <- function(log.p, out=FALSE, sub="med", spr0=NULL){
@@ -111,11 +167,10 @@ ref.F <- function(
 
   spr0 <- spr.f.est(-Inf, out=TRUE)
 
-  Fmed.res <- nlm(spr.f.est, Fspr.init, out=FALSE, sub="med", iterlim = iterlim)
-  Fmean.res <- nlm(spr.f.est, Fspr.init, out=FALSE, sub="mean", iterlim = iterlim)
-#  browser()
-  Flow.res <- nlm(spr.f.est, Fspr.init, out=FALSE, sub="low", iterlim = iterlim)
-  Fhigh.res <- nlm(spr.f.est, Fspr.init, out=FALSE, sub="high", iterlim = iterlim)
+  Fmed.res <- nlm(spr.f.est, Fem.init, out=FALSE, sub="med", iterlim = iterlim)
+  Fmean.res <- nlm(spr.f.est, Fem.init, out=FALSE, sub="mean", iterlim = iterlim)
+  Flow.res <- nlm(spr.f.est, Fem.init, out=FALSE, sub="low", iterlim = iterlim)
+  Fhigh.res <- nlm(spr.f.est, Fem.init, out=FALSE, sub="high", iterlim = iterlim)
 
   Fmean <- exp(Fmean.res$estimate)  
   Fmed <- exp(Fmed.res$estimate)
@@ -126,9 +181,9 @@ ref.F <- function(
     FpSPR <- NULL
 
     for (i in pSPR){
+      Fspr.init <- ypr.spr$F.range[which.min(abs(ypr.spr$pspr-i))] #original.perspr/i*100
       FpSPR.res <- nlm(spr.f.est, Fspr.init, out=FALSE, sub=i, spr0=spr0, iterlim=iterlim)
-#      print(FpSPR.res)
-#       cat("i", FpSPR.res$code," ")
+      cat("Estimate F%spr: initial value=", Fspr.init," : estimated value=",exp(FpSPR.res$estimate),"\n")
       FpSPR <- c(FpSPR, exp(FpSPR.res$estimate))
     }
     names(FpSPR) <- paste(pSPR,"%SPR",sep="")
@@ -179,9 +234,7 @@ ref.F <- function(
  
   F0.1 <- exp(F0.1.res$estimate)
 
-  # Fcurrent
-  Fcurrent <- c(max(Fc.at.age,na.rm=T), mean(Fc.at.age,na.rm=T))
-  
+ 
   # output
   f.mean <- function(x) mean(x*sel, na.rm=T)
 
@@ -205,17 +258,13 @@ ref.F <- function(
   #---- make summary
   Res$summary <- as.data.frame(Res[substr(names(Res),1,1)=="F"])
   Res$summary <- rbind(Res$summary,Res$summary[1,]/Res$summary[1,1])
-  dimnames(Res$summary)[[1]][3] <- "Fref/Fcur"    
+  dimnames(Res$summary)[[1]][3] <- "Fref/Fcur"
 
-  #-----  YPR & SPR figure -----
-    F_current <- Res$summary$Fcurrent[1]*Res$summary$Fcurrent[3]
-    F.range <- sort(c(F.range,  F_current))
-  spr0 <- sum(calc.rel.abund(sel,0,na,M,waa,waa.catch,maa,min.age=min.age,max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)$spr)  
-  tmp <- lapply(F.range, function(x) calc.rel.abund(sel,x,na,M,waa,waa.catch,maa,min.age=min.age,max.age=max.age,Pope=Pope,ssb.coef=ssb.coef))
-  ypr <- sapply(tmp,function(x) sum(x$ypr))
-  spr <- sapply(tmp,function(x) sum(x$spr))/spr0*100
-
-  Res$ypr.spr  <- data.frame(F.range=F.range,ypr=ypr,spr=spr)
+  Res$currentSPR <- list(SPR=sum(original.spr$spr),
+                         perSPR=original.perspr,
+                       YPR=sum(original.spr$spr))
+ 
+  Res$ypr.spr  <- ypr.spr #data.frame(F.range=F.range,ypr=ypr,spr=spr)
   Res$waa <- waa
   Res$waa.catch <- waa.catch  
   Res$maa <- maa
@@ -224,7 +273,6 @@ ref.F <- function(
   Res$arglist <- arglist
   Res$spr0 <- spr0
 
-  Res$ypr.spr$Frange2Fcurrent  <- Res$ypr.spr$F.range/F_current
   class(Res) <- "ref"
     
   if(isTRUE(plot)){
@@ -247,7 +295,7 @@ plot_Fref <- function(rres,xlabel="max", # or, "mean","Fref/Fcur"
     F.range <- rres$ypr.spr$F.range
     if(xlabel=="Fref/Fcur") F.range <- F.range/rres$summary$Fcurrent[1]*rres$summary$Fcurrent[3]
     if(xlabel=="mean") F.range <- F.range/rres$summary$Fcurrent[1]*rres$summary$Fcurrent[2]    
-    spr <- rres$ypr.spr$spr
+    spr <- rres$ypr.spr$pspr
     ypr <- rres$ypr.spr$ypr
     plot(F.range,spr,xlab=xlabel,ylab="%SPR",type="l",ylim=c(0,max(spr)))
     par(new=T)
@@ -258,7 +306,8 @@ plot_Fref <- function(rres,xlabel="max", # or, "mean","Fref/Fcur"
     abline(v=xx <- c(rres$summary[vline.text][n.line,]))
     text(xx,max(ypr)*seq(from=0.5,to=0.3,length=length(vline.text)),vline.text)
     legend("topright",lty=1:2,legend=c("SPR","YPR"))
-    options(warn=-1); par(old.par); options(warn=0)
+    old.par[c("cin","cxy","csi","cra","csy","din","page")] <- NULL
+    par(old.par)
 }
 
 calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=Inf,Pope=TRUE,ssb.coef=0){
@@ -289,6 +338,8 @@ calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=
 #' @param currentF ABC算定年-1年目までに用いるF at age。NULLの場合、VPA結果のres0$Fc.at.ageを用いる
 #' @param multi ABC算定年以降にcurrentFに乗じる係数
 #' @param futureF ABC算定年以降に用いられるF at age。NULLの場合にはcurrentFをそのまま用いる。currentF, multi, futureFをあわせて、将来のF at ageはABC算定年-1年まではcurrentF, ABC算定年以降はmulti x futureF (NULLの場合、currentF)が用いられる
+#' @param use.MSE 簡易MSEを実施するかどうか
+#' @param MSE.option 簡易MSEのoption
 #' 
 #'
 #' @export
@@ -299,7 +350,7 @@ future.vpa <-
     function(res0,
              currentF=NULL, # 管理前のF
              multi=1, # 管理後（ABC.yearから）のF (current F x multi)
-             futureF=NULL, 
+             futureF=NULL,              
              nyear=10,Pope=res0$input$Pope,
              outtype="FULL",
              multi.year=1,#ある特定の年だけFを変えたい場合。デフォルトは1。変える場合は、指定した年またはタイムステップの要素数のベクトルで指定。
@@ -307,13 +358,14 @@ future.vpa <-
              start.year=NULL, # 将来予測の開始年，NULLの場合はVPA計算の最終年の次の年
              ABC.year=NULL, # ABC yearを計算する年。NULLの場合はVPA計算の最終年の次の次の年
              waa.year=NULL, # VPA結果から生物パラメータをもってきて平均する期間
+             waa.catch.year=NULL, # VPA結果から生物パラメータをもってきて平均する期間             
              # NULLの場合，VPAの最終年のパラメータを持ってくる
              maa.year=NULL, # VPA結果から生物パラメータをもってきて平均する期間
              M.year=NULL, # VPA結果から生物パラメータをもってきて平均する期間
              seed=NULL,
              strategy="F", # F: 漁獲係数一定, E: 漁獲割合一定、C: 漁獲量一定（pre.catchで漁獲量を指定）
              HCR=NULL,# HCRを使う場合、list(Blim=154500, Bban=49400,beta=1,year.lag=0)のように指定するか、以下の引数をセットする,year.lag=0で将来予測年の予測SSBを使う。-2の場合は２年遅れのSSBを使う
-             use.MSE=FALSE,
+             use.MSE=FALSE,MSE.options=NULL,
              beta=NULL,delta=NULL,Blim=0,Bban=0,
              plus.group=res0$input$plus.group,
              N=1000,# 確率的なシミュレーションをする場合の繰り返し回数。
@@ -341,9 +393,7 @@ future.vpa <-
              #      scenario="catch.mean" or "blimit" (デフォルトはblimit; "catch.mean"とするとstochastic simulationにおける平均漁獲量がBlimitで指定した値と一致するようになる)
              #      Frange=c(0.01,2*mult)) # Fの探索範囲
              waa=NULL,waa.catch=NULL,maa=NULL,M=NULL, # 季節毎の生物パラメータ、または、生物パラメータを外から与える場合
-             replace.rec.year=2012, # 加入量を暦年の将来予測での加入量に置き換えるか？
-             F.sigma=0,
-             waa.fun=FALSE, #waaをnaaのfunctionとするか
+             waa.fun=FALSE, #waaをnaaのfunctionとするか(waa.catchが別に与えられているときには機能しない)
              naa0=NULL,eaa0=NULL,ssb0=NULL,faa0=NULL,
              add.year=0, # 岡村オプションに対応。=1で1年分余計に計算する
              det.run=TRUE # 1回めのランは決定論的将来予測をする（完璧には対応していない）
@@ -367,59 +417,41 @@ future.vpa <-
         ##------------- set default options
         if(is.null(currentF)) currentF <- res0$Fc.at.age
         if(is.null(waa.year)) waa.year <- rev(years)[1]
+        if(is.null(waa.catch.year)) waa.catch.year <- rev(years)[1]        
         if(is.null(maa.year)) maa.year <- rev(years)[1]
         if(is.null(M.year)) M.year <- rev(years)[1]
         if(is.null(start.year)) start.year <- rev(years)[1]+1
         if(is.null(ABC.year)) ABC.year <- rev(years)[1]+1
-        ##    if(!is.null(Bban)) Bban$is.Bban <- rep(FALSE,N)        
         arglist$ABC.year <- ABC.year
-        ##-------------
 
-        ##---- set S-R functin option -----
-        ## 使う関数によっては必要ないオプションもあるが、使わないオプションを入れてもエラーは出ないので、
-        # rec.arg$resampleがNULLかどうかで、パラメトリックな誤差分布かそうでないか（残差リサンプリング）を判別する
-        if(is.null(rec.arg$rho)){
-            rec.arg$rho <- 0
-            if(!silent) cat("rec.arg$rho is assumed to be 0...\n")
-        }
-        if(is.null(rec.arg$sd2)) rec.arg$sd2 <- sqrt(rec.arg$sd^2/(1-rec.arg$rho^2)) #rho込み平均補正用SD # HS.recAR
+        ##------------- set SR options
+        rec.arg.org <- rec.arg
+        rec.arg <- set_SR_options(rec.arg,N=N,silent=silent,eaa0=eaa0,det.run=det.run)
 
-        ## resampling optionを使わない場合
-        if(is.null(rec.arg$resample)|!isTRUE(rec.arg$resample)){
-            if(is.null(rec.arg$bias.correction)) rec.arg$bias.correction <- TRUE # HS.recAR, HS.rec0
-            if(is.null(rec.arg$rho)){
-                rec.arg$rho <- 0 # HS.recAR, HS.rec0
-                rec.arg$resid <- 0
-            }
-            if(!is.null(rec.arg$rho)){
-                if(rec.arg$rho>0){
-                    if(is.null(eaa0)){
-                        if(is.null(rec.arg$resid.year)) rec.arg$resid <- rep(rev(rec.arg$resid)[1],N)
-                        else rec.arg$resid <- rep(mean(rev(rec.arg$resid)[1:rec.arg$resid.year]),N)
-                    }
-                    else{
-                        rec.arg$resid <- eaa0
-                    }
-                }
-                else{
-                    rec.arg$resid <- rep(0,N)
-                }
-            }
-        }
-        else{
-            if(rec.arg$rho>0) stop("You set rho is >0. You cannot use resample=TRUE option when rho>0") # resamplingの場合に自己相関は考慮できないのでrhoは強制的にゼロ
-        }
+        ##------------- set HCR options
         
-        if(!is.null(rec.arg$sd) & isTRUE(det.run)) rec.arg$sd <- c(0,rep(rec.arg$sd,N-1))
-        if(!is.null(rec.arg$sd2)  & isTRUE(det.run)) rec.arg$sd2 <- c(0,rep(rec.arg$sd2,N-1))
         if(!is.null(HCR) && is.null(HCR$year.lag)) HCR$year.lag <- 0
-        ##---------------------------------
-
         if(!is.null(beta)){
             HCR$beta <- beta
             HCR$Blim <- Blim
             HCR$Bban <- Bban
         }
+
+        ##------------- set options for MSE
+        if(isTRUE(use.MSE)){
+            if(is.null(MSE.options$N)) MSE.options$N <- N            
+            if(is.null(MSE.options$recfunc)) MSE.options$recfunc <- recfunc
+            if(is.null(MSE.options$rec.arg)){
+                MSE.options$rec.arg <- set_SR_options(rec.arg.org,
+                                                      N=MSE.options$N,silent=silent,eaa0=eaa0)
+            }
+            else{
+                MSE.options$rec.arg <- set_SR_options(MSE.options$rec.arg,
+                                                      N=MSE.options$N,silent=silent,eaa0=eaa0)
+            }
+            if(is.null(MSE.options$max.ER)) MSE.options$max.ER <- 0.7            
+        }
+        ##-------------        
         
         #  fyears <- seq(from=start.year,to=start.year+nyear-1,by=1/ts)
         fyears <- seq(from=start.year,to=start.year+nyear+add.year,by=1)
@@ -512,31 +544,45 @@ future.vpa <-
         allyears <- sort(unique(c(fyears,years)))
 
         # 全部のデータを記録したフレーム  
-        naa_all <- waa_all <- waa_catch_all <- maa_all <- array(NA,dim=c(length(ages),length(allyears),N),dimnames=list(age=ages,year=allyears,nsim=1:N))
+        naa_all <- waa_all <- waa_catch_all <- maa_all <- faa_all <- 
+            array(NA,dim=c(length(ages),length(allyears),N),dimnames=list(age=ages,year=allyears,nsim=1:N))
         naa_all[,1:length(years),] <- unlist(res0$naa)
+        faa_all[,1:length(years),] <- unlist(res0$faa)        
         waa_all[,1:length(years),] <- unlist(res0$input$dat$waa)
-        if(is.null(res0$input$dat$waa.catch))  waa_catch_all[,1:length(years),] <- unlist(res0$input$dat$waa) else waa_catch_all[,1:length(years),] <- unlist(res0$input$dat$waa.catch)
+        if(is.null(res0$input$dat$waa.catch)){
+            waa_catch_all[,1:length(years),] <- unlist(res0$input$dat$waa)
+        }else{
+            waa_catch_all[,1:length(years),] <- unlist(res0$input$dat$waa.catch)
+        }
         maa_all[,1:length(years),] <- unlist(res0$input$dat$maa)      
         i_all <- which(allyears%in%start.year)
         
         alpha <- thisyear.ssb <- array(1,dim=c(ntime,N),dimnames=list(year=fyears,nsim=1:N))
         
         # future biological patameter
-        if(!is.null(M.org))  M[] <- M.org  else M[] <- apply(as.matrix(res0$input$dat$M[,years %in% M.year]),1,mean)
-        if(!is.null(waa.org))  waa[] <- waa.org  else waa[] <- apply(as.matrix(res0$input$dat$waa[,years %in% waa.year]),1,mean)
-        if(!is.null(maa.org))  maa[] <- maa.org  else maa[] <- apply(as.matrix(res0$input$dat$maa[,years %in% maa.year]),1,mean)
-        if(!is.null(waa.catch.org))  waa.catch[] <- waa.catch.org
-        else{
-            if(!is.null(res0$input$dat$waa.catch)) waa.catch[] <- apply(as.matrix(res0$input$dat$waa.catch[,years %in% waa.year]),1,mean)
-            else waa.catch <- waa
+        if(is.null(  M.org))   M.org <- apply(as.matrix(res0$input$dat$M[,years %in% M.year]),1,mean)
+        if(is.null(waa.org)) waa.org <- apply(as.matrix(res0$input$dat$waa[,years %in% waa.year]),1,mean)
+        if(is.null(maa.org)) maa.org <- apply(as.matrix(res0$input$dat$maa[,years %in% maa.year]),1,mean)
+        if(is.null(waa.catch.org)){
+            if(!is.null(res0$input$dat$waa.catch)) waa.catch.org <- apply(as.matrix(res0$input$dat$waa.catch[,years %in% waa.catch.year]),1,mean)
+            else waa.catch.org <- waa.org
         }
-
         
-        if(is.null(futureF)) futureF <- currentF 
+        M[] <- M.org
+        waa[] <- waa.org
+        waa_all[,(length(years)+1):dim(waa_all)[[2]],] <- waa.org
+        maa[] <- maa.org
+        maa_all[,(length(years)+1):dim(maa_all)[[2]],] <- maa.org
+        waa.catch[] <- waa.catch.org
+        waa_catch_all[,(length(years)+1):dim(maa_all)[[2]],] <- waa.catch.org        
+        
+        if(is.null(futureF)) futureF <- currentF         
         # future F matrix
         faa[] <- futureF*multi # *exp(rnorm(length(faa),0,F.sigma))
+        faa_all[is.na(faa_all)] <- futureF*multi
         # ABCyear以前はcurrent Fを使う。
-        faa[,fyears<min(ABC.year),] <- currentF #*exp(rnorm(length(faa[,fyears<min(ABC.year),]),0,F.sigma))
+        faa[,fyears<min(ABC.year),] <- currentF
+        faa_all[,allyears%in%fyears[fyears<min(ABC.year)],] <- currentF
         
         ## VPA期間と将来予測期間が被っている場合、VPA期間のFはVPAの結果を使う
         overlapped.years <- list(future=which(fyear.year %in% years),vpa=which(years %in% fyear.year))
@@ -563,7 +609,7 @@ future.vpa <-
         #  vpa.multi <- ifelse(is.null(vpa.mode),1,vpa.mode$multi)
         # rps assumption
         rps.mat <- array(NA,dim=c(ntime,N),dimnames=list(fyears,1:N))
-        eaa <- matrix(0,ntime,N)
+        eaa <- ABC.mat <- matrix(0,ntime,N)
         rec.tmp <- list(rec.resample=NULL,tmparg=NULL)
         
         if (waa.fun){ #年齢別体重の予測関数
@@ -611,7 +657,8 @@ future.vpa <-
             }
             else{
                 if(waa.fun){
-                    waa[2:nage,1,] <- t(sapply(2:nage, function(ii) as.numeric(exp(WAA.b0[ii]+WAA.b1[ii]*log(naa[ii,1,])+waa.rand[ii,1,]))))
+                    waa[2:nage,1,] <- waa_all[2:nage,i_all,] <-
+                        t(sapply(2:nage, function(ii) as.numeric(exp(WAA.b0[ii]+WAA.b1[ii]*log(naa[ii,1,])+waa.rand[ii,1,]))))
                 }
                 thisyear.ssb[1,] <- colSums(naa[,1,]*waa[,1,]*maa[,1,],na.rm=T)*res0$input$unit.waa/res0$input$unit.biom                           }
             
@@ -628,7 +675,8 @@ future.vpa <-
             if(!is.null(rec.tmp$rec.arg)) rec.arg <- rec.tmp$rec.arg
             naa[1,1,] <- naa_all[1,i_all,] <- rec.tmp$rec
             if (waa.fun) {
-                waa[1,1,] <- as.numeric(exp(WAA.b0[1]+WAA.b1[1]*log(naa[1,1,])+waa.rand[1,1,])) 
+                waa[1,1,] <- waa_all[1,i_all,] <-
+                    as.numeric(exp(WAA.b0[1]+WAA.b1[1]*log(naa[1,1,])+waa.rand[1,1,])) 
             }
             rps.mat[1,] <- naa[1,1,]/thisyear.ssb[1,]          
             }
@@ -679,12 +727,11 @@ future.vpa <-
                     }
                 }
                 
-                # 選択率をランダムサンプリングする場合
-                #          if(!is.null(random.select)) saa.tmp <- as.numeric(res0$saa[,colnames(res0$saa)==sample(random.select,1)])
                 saa.tmp <- sweep(faa[,i,],2,apply(faa[,i,],2,max),FUN="/")
                 tmp <- lapply(1:dim(naa)[[3]],
                               function(x) caa.est.mat(naa[,i,x],saa.tmp[,x],
                                                       waa.catch[,i,x],M[,i,x],tmpcatch,Pope=Pope))
+#                                                      waa[,i,x],M[,i,x],tmpcatch,Pope=Pope))   # ここがwaa.catchだとwaa.fun=TRUE&MSEの場合に不都合が生じる？？ちょっと応急処置                                                   
                 faa.new <- sweep(saa.tmp,2,sapply(tmp,function(x) x$x),FUN="*")
                 caa[,i,] <- sapply(tmp,function(x) x$caa)
                 faa[,i,] <- faa.new
@@ -697,24 +744,43 @@ future.vpa <-
             if(!is.null(HCR) && fyears[i]>=ABC.year
                && is.null(faa.new)) # <- pre.catchで漁獲量をセットしていない
             {
-                tmp <- i+HCR$year.lag
-                if(tmp>0){
-                    ssb.tmp <- colSums(naa[,tmp,]*waa[,tmp,]*maa[,tmp,],na.rm=T)*
-                        res0$input$unit.waa/res0$input$unit.biom
-                }
-                else{
-                    vpayear <- fyears[i]+HCR$year.lag
-                    ssb.tmp <- sum(res0$ssb[as.character(vpayear)])
-                }
-                alpha[i,] <- ifelse(ssb.tmp<HCR$Blim,HCR$beta*(ssb.tmp-HCR$Bban)/(HCR$Blim-HCR$Bban),HCR$beta)
-                alpha[i,] <- ifelse(alpha[i,]<0,0,alpha[i,])                
-                faa[,i,] <- sweep(faa[,i,],2,alpha[i,],FUN="*")
-                faa[,i,] <- ifelse(faa[,i,]<0,0,faa[,i,])
-            }
+                if(!isTRUE(use.MSE)){
+                    tmp <- i+HCR$year.lag
+                    if(tmp>0){
+                        ssb.tmp <- colSums(naa[,tmp,]*waa[,tmp,]*maa[,tmp,],na.rm=T)*
+                            res0$input$unit.waa/res0$input$unit.biom
+                    }
+                    else{
+                        vpayear <- fyears[i]+HCR$year.lag
+                        ssb.tmp <- sum(res0$ssb[as.character(vpayear)])
+                    }
+                    alpha[i,] <- ifelse(ssb.tmp<HCR$Blim,HCR$beta*(ssb.tmp-HCR$Bban)/(HCR$Blim-HCR$Bban),HCR$beta)
+                    alpha[i,] <- ifelse(alpha[i,]<0,0,alpha[i,])
+                    faa[,i,] <- sweep(faa[,i,],2,alpha[i,],FUN="*")
+                    faa[,i,] <- faa_all[,i,] <- ifelse(faa[,i,]<0,0,faa[,i,])
 
-            if(isTRUE(use.MSE)){
-                aa <- get_ABC_inMSE(naa_all,waa_all,maa_all,faa,M,res0,
-                                    i_all-2,2,recfunc,rec.arg,Pope,HCR,plus.group,min.age)
+                }
+                else{ # when using MSE option
+                    ABC.tmp <- get_ABC_inMSE(naa_all,waa_all,maa_all,faa_all,M[,(i-2):(i),],res0,
+                                             start_year=i_all-2,nyear=2,
+                                             N=MSE.options$N,
+                                             recfunc=MSE.options$recfunc,
+                                             rec.arg=MSE.options$rec.arg,
+                                             Pope=Pope,HCR=HCR,plus.group=plus.group,lag=min.age)
+                    y <- colSums(naa[,i,] * waa[,i,])
+                    ABC.tmp <- ifelse(ABC.tmp>y*MSE.options$max.ER,y*MSE.options$max.ER,ABC.tmp)
+                    ABC.mat[i,] <- ABC.tmp
+                    ####
+                    saa.tmp <- sweep(faa[,i,],2,apply(faa[,i,],2,max),FUN="/")
+                    est.result <- lapply(1:dim(naa)[[3]],
+                                  function(x) caa.est.mat(naa[,i,x],saa.tmp[,x],
+                                                          waa.catch[,i,x],M[,i,x],ABC.tmp[x],Pope=Pope))
+                    fmulti_to_saa <- sapply(est.result,function(x) x$x)
+                    faa.new2 <- sweep(saa.tmp,2,fmulti_to_saa,FUN="*")
+                    caa[,i,] <- sapply(est.result,function(x) x$caa)
+                    faa[,i,] <- faa_all[,i_all,] <- faa.new2
+                    ####                    
+                    }
             }
             
             ## 漁獲して１年分前進（加入はまだいれていない）
@@ -723,6 +789,14 @@ future.vpa <-
             naa.tmp <- naa[,i+1,]
             naa.tmp[is.na(naa.tmp)] <- tmp[is.na(naa.tmp)]          
             naa[,i+1, ] <- naa_all[,i_all+1,] <- naa.tmp
+
+            # naaを更新するタイミングですかさずwaaを更新するようにしないといけない
+            if(waa.fun){
+                # 動的なwaaは対応する年のwaaを書き換えた上で使う？
+                waa[2:nage,i+1,] <- waa.catch[2:nage,i+1,] <- 
+                    waa_all[2:nage,i_all+1,] <-
+                    t(sapply(2:nage, function(ii) as.numeric(exp(WAA.b0[ii]+WAA.b1[ii]*log(naa[ii,i+1,])+waa.rand[ii,i+1,]))))
+            }            
             
             ## 当年の加入の計算
             if(fyears[i+1]-min.age < start.year){
@@ -733,11 +807,6 @@ future.vpa <-
             }
             else{
                 # そうでない場合
-                if(waa.fun){
-                    # 動的なwaaは対応する年のwaaを書き換えた上で使う？
-                    waa[2:nage,i+1-min.age,] <- t(sapply(2:nage, function(ii) as.numeric(exp(WAA.b0[ii]+WAA.b1[ii]*log(naa[ii,i+1-min.age,])+waa.rand[ii,i+1-min.age,]))))
-
-                }
                 thisyear.ssb[i+1,] <- colSums(naa[,i+1-min.age,]*waa[,i+1-min.age,]*maa[,i+1-min.age,],na.rm=T)*res0$input$unit.waa/res0$input$unit.biom            
             }
 
@@ -745,15 +814,16 @@ future.vpa <-
             rec.tmp <- recfunc(thisyear.ssb[i+1,],res0,
                                rec.resample=rec.tmp$rec.resample,
                                rec.arg=rec.arg)
-            if(is.na(naa[1,i+1,1]))  naa[1,i+1,] <- naa_all[1,i_all+1,] <- rec.tmp$rec
+            if(is.na(naa[1,i+1,1]))  naa[1,i+1,] <- naa_all[1,i_all+1,] <- rec.tmp$rec          
+            #          if(!is.null(rec.tmp$rec.arg)) rec.arg <- rec.tmp$rec.arg
             if (waa.fun) {
-                waa[1,i+1,] <- as.numeric(exp(WAA.b0[1]+WAA.b1[1]*log(naa[1,i+1,])+waa.rand[1,i+1,])) 
-            }            
-            #          if(!is.null(rec.tmp$rec.arg)) rec.arg <- rec.tmp$rec.arg      
+                waa[1,i+1,] <- waa.catch[1,i+1,] <- waa_all[1,i_all+1,] <- 
+                    as.numeric(exp(WAA.b0[1]+WAA.b1[1]*log(naa[1,i+1,])+waa.rand[1,i+1,])) 
+            }                        
             rps.mat[i+1,] <- naa[1,i+1,]/thisyear.ssb[i+1,]
             eaa[i+1,] <- rec.tmp$rec.resample[1:N]
             rec.arg$resid <- rec.tmp$rec.resample # ARオプションに対応
-
+            
             i_all <- i_all+1
         }
         
@@ -765,15 +835,13 @@ future.vpa <-
         else{
             caa[] <- naa*(1-exp(-faa-M))*faa/(faa+M)
         }
-
-        
         
         caa <- caa[,-ntime,,drop=F]
         if(isTRUE(waa.fun)){ ## アドホックな対応！ waa.fun=TRUEかつwaa.catchが与えられているとき動かない。また、pre.catchが与えられていてwaa.fun=TRUEの場合も不具合おこる！
-            waa.catch <- waa[,-ntime,,drop=F]
+            waa.catch <- waa[,-ntime,,drop=F]            
         }
         else{
-            waa.catch <- waa.catch[,-ntime,,drop=F]            
+            waa.catch <- waa.catch[,-ntime,,drop=F]           
             }
         thisyear.ssb <- thisyear.ssb[-ntime,,drop=F]      
         waa <- waa[,-ntime,,drop=F]
@@ -794,9 +862,8 @@ future.vpa <-
 
         if(!is.null(rec.arg$resample)) if(rec.arg$resample==TRUE) eaa[] <- NA # resamplingする場合にはeaaにはなにも入れない
         
-        fres <- list(faa=faa,naa=naa,biom=biom,baa=biom,ssb=ssb,wcaa=wcaa,caa=caa,M=M,rps=rps.mat,
+        fres <- list(faa=faa,naa=naa,biom=biom,baa=biom,ssb=ssb,wcaa=wcaa,caa=caa,M=M,rps=rps.mat,recruit=naa[1,,],
                      maa=maa,vbiom=apply(biom,c(2,3),sum,na.rm=T),
-                     recruit=naa[1,,],
                      eaa=eaa,alpha=alpha,thisyear.ssb=thisyear.ssb,
                      waa=waa,waa.catch=waa.catch,currentF=currentF,
                      futureF=futureF,
@@ -818,16 +885,17 @@ future.vpa <-
                          waa=waa[,,1],waa.catch=waa.catch[,,1],currentF=currentF,
                          vssb=apply(ssb,c(2,3),sum,na.rm=T),vwcaa=vwcaa,alpha=alpha,
                          years=fyears,fyear.year=fyear.year,ABC=ABC,recfunc=recfunc,
-                         futureF=futureF,                         
+                         futureF=futureF,                                                  
                          waa.year=waa.year,maa.year=maa.year,multi=multi,multi.year=multi.year,
                          Frec=Frec,rec.new=rec.new,pre.catch=pre.catch,input=arglist)
         }
 
         if(outtype=="short"){
-            fres <- list(recruit=naa[1,,],eaa=eaa,#baa=biom,
+            fres <- list(recruit=naa[1,,],eaa=eaa,alpha=alpha,
+                         Fsakugen=-(1-faa[1,,]/currentF[1]),ABC.mat=ABC.mat,
                          vbiom=apply(biom,c(2,3),sum,na.rm=T),
                          currentF=currentF,alpha=alpha,
-                         futureF=futureF,                         
+                         futureF=futureF,  
                          vssb=apply(ssb,c(2,3),sum,na.rm=T),vwcaa=vwcaa,
                          years=fyears,fyear.year=fyear.year,ABC=ABC,
                          waa.year=waa.year,maa.year=maa.year,multi=multi,multi.year=multi.year,
@@ -851,6 +919,150 @@ future.vpa <-
 
         invisible(fres)
     }
+
+
+get_ABC_inMSE <- function(naa_all,waa_all,maa_all,faa_all,M,res0,start_year,nyear,N,recfunc,rec.arg,Pope,HCR,
+                          plus.group=plus.group,lag=0){
+    ABC.all <- numeric()
+#    N <- dim(naa_all)[[3]]
+#    naa_dummy <- naa_all
+    #    naa_dummy[] <- NA
+    naa_dummy <- array(NA,c(dim(naa_all)[[1]],dim(naa_all)[[2]],N))
+    faa_dummy <- array(NA,c(dim(faa_all)[[1]],dim(faa_all)[[2]],N))
+    M_dummy <- array(M,c(dim(naa_all)[[1]],dim(naa_all)[[2]],N))
+
+#    faa_all_dummy <- faa
+#    waa_dummy <- waa_all    
+    rec.tmp <- list(rec.resample=NULL,tmparg=NULL)
+    
+    for(s in 1:dim(naa_all)[[3]]){
+        naa_dummy[,1:start_year,] <- naa_all[,1:start_year,s]
+        faa_dummy[] <- faa_all[,,s]
+        #        waa_dummy[,,s] <- waa_all[,,s]
+        #        waa_dummy[] <- waa_all[]        
+        for(j in 1:nyear){
+            sj <- start_year+j
+            naa_dummy[,sj,] <- forward.calc.mat2(faa_dummy[,sj-1,],naa_dummy[,sj-1,],M_dummy[,sj-1,],
+                                                 plus.group=plus.group)
+            thisyear.ssb <- colSums(naa_dummy[,sj-lag,] * waa_all[,sj-lag,s] *
+                                    maa_all[,sj-lag,s],na.rm=T)
+            naa_dummy[1,sj,] <- recfunc(thisyear.ssb,res0,
+                                        rec.resample=rec.tmp$rec.resample,
+                                        rec.arg=rec.arg)$rec
+        }
+
+        lastyear <- start_year+nyear
+        ssb.tmp <-  colSums(naa_dummy[,lastyear,]*
+                           waa_all[,lastyear,s]*
+                           maa_all[,lastyear,s],na.rm=T)*
+            res0$input$unit.waa/res0$input$unit.biom    
+        alpha <- ifelse(ssb.tmp<HCR$Blim,HCR$beta*(ssb.tmp-HCR$Bban)/(HCR$Blim-HCR$Bban),HCR$beta)
+        alpha <- ifelse(alpha<0,0,alpha)        
+        #faa_dummy[,lastyear,] <- sweep(faa_all[,lastyear,],2,alpha,FUN="*")
+        faa_dummy[,lastyear,] <- sweep(faa_dummy[,lastyear,],2,alpha,FUN="*")
+
+    
+        if(Pope){
+            ABC <- naa_dummy[,lastyear,]*(1-exp(-faa_dummy[,lastyear,]))*exp(-M_dummy[,lastyear,]/2)*waa_all[,lastyear,s]
+        }
+        else{
+            ABC <- naa_dummy[,lastyear,]*(1-exp(-faa_dummy[,lastyear,]-M_dummy[,lastyear,]))*faa_dummy[,lastyear,]/(faa_dummy[,lastyear,]+M_dummy[,lastyear,])*waa_all[,lastyear,s] 
+        }
+        
+        ABC.all[s] <- mean(colSums(ABC))
+
+        if(0){
+            boxplot(t(apply(naa_dummy*waa_all*maa_all,c(2,3),sum)),ylim=c(0,200000),col=2)
+            locator(1)
+#            if(Pope){
+#                ABC <- naa_dummy*(1-exp(-faa_dummy))*exp(-M[,nyear,]/2)*waa_all
+#            }
+#            else{
+#                ABC <- naa_dummy*(1-exp(-faa_dummy-M[,nyear,]))*faa_dummy/(faa_dummy+M[,nyear,])*waa_all 
+#            }
+#            boxplot(t(apply(ABC,c(2,3),sum)),col=2)            
+        }
+    }
+    
+    return(ABC.all)
+
+}
+
+
+#' 再生産optiond
+
+set_SR_options <- function(rec.arg,N=100, silent=TRUE,eaa0=NULL, det.run=TRUE){
+        ##---- set S-R functin option -----
+        ## 使う関数によっては必要ないオプションもあるが、使わないオプションを入れてもエラーは出ないので、
+        # rec.arg$resampleがNULLかどうかで、パラメトリックな誤差分布かそうでないか（残差リサンプリング）を判別する
+        if(is.null(rec.arg$rho)){
+            rec.arg$rho <- 0
+            if(!silent) cat("rec.arg$rho is assumed to be 0...\n")
+        }
+        if(is.null(rec.arg$sd2)) rec.arg$sd2 <- sqrt(rec.arg$sd^2/(1-rec.arg$rho^2)) #rho込み平均補正用SD # HS.recAR
+
+        ## resampling optionを使わない場合
+        if(is.null(rec.arg$resample)|!isTRUE(rec.arg$resample)){
+            if(is.null(rec.arg$bias.correction)) rec.arg$bias.correction <- TRUE # HS.recAR, HS.rec0
+            if(is.null(rec.arg$rho)){
+                rec.arg$rho <- 0 # HS.recAR, HS.rec0
+                rec.arg$resid <- 0
+            }
+            if(!is.null(rec.arg$rho)){
+                if(rec.arg$rho>0){
+                    if(is.null(eaa0)){
+                        if(is.null(rec.arg$resid.year)) rec.arg$resid <- rep(rev(rec.arg$resid)[1],N)
+                        else rec.arg$resid <- rep(mean(rev(rec.arg$resid)[1:rec.arg$resid.year]),N)
+                    }
+                    else{
+                        rec.arg$resid <- eaa0
+                    }
+                }
+                else{
+                    rec.arg$resid <- rep(0,N)
+                }
+            }
+        }
+        else{
+            if(rec.arg$rho>0) stop("You set rho is >0. You cannot use resample=TRUE option when rho>0") # resamplingの場合に自己相関は考慮できないのでrhoは強制的にゼロ
+        }
+        
+    if(!is.null(rec.arg$sd) & isTRUE(det.run)) rec.arg$sd <- c(0,rep(rec.arg$sd,N-1))
+    if(!is.null(rec.arg$sd2)  & isTRUE(det.run)) rec.arg$sd2 <- c(0,rep(rec.arg$sd2,N-1))    
+    return(rec.arg)
+}
+
+# リサンプリングする残差の年数をどんどん増やしていく
+resample_backward.rec <- function(ssb,vpares,#deterministic=FALSE,
+                   rec.resample=NULL,
+                   rec.arg=list(a=1000,b=1000,sd=0.1, 
+                                resid=0,duration=5,
+                                resid.list=list(),
+                                SR="HS",# or "BH","RI"
+                                bias.correction=TRUE)){
+
+    rec.arg$resid[1] <- rec.arg$resid[1]+1
+    bias.factor <- mean(exp(unlist(rec.arg$resid.list)))
+    
+    if(rec.arg$SR=="HS") rec0 <- ifelse(ssb>rec.arg$b,rec.arg$a*rec.arg$b,rec.arg$a*ssb)
+    if(rec.arg$SR=="BH") rec0 <- rec.arg$a*ssb/(1+rec.arg$b*ssb)
+    if(rec.arg$SR=="RI") rec0 <- rec.arg$a*ssb*exp(-rec.arg$b*ssb)
+
+    if(rec.arg$resid[1]%%5==1){
+        max.sample <- min(ceiling(rec.arg$resid[1]/5),6)
+        rec.arg$resid[-1] <- sample(1:max.sample,length(rec.arg$resid)-1,replace=TRUE)
+    }
+
+    resampled.resid <- sapply(rec.arg$resid[-1],function(x) sample(rec.arg$resid.list[[x]],1))
+    
+    if(isTRUE(rec.arg$bias.correction)){
+        rec <- c(rec0[1],exp(log(rec0[-1])+resampled.resid)/bias.factor)
+    }
+    else{
+        rec <- c(rec0[1],exp(log(rec0[-1])+resampled.resid))
+    }
+  return(list(rec=rec,rec.resample=rec.arg$resid))
+}
 
 
 forward.calc.mat2 <- function(fav,nav,Mv,plus.group=TRUE){
@@ -1345,22 +1557,25 @@ get.data <- function(tfile){
 
 
 #' VPA結果をcsvファイルに出力する
-#' @param res VPAの結果
-#' @param rres ref.Fの結果
-#' @param fres future.vpaの結果
+#' @param res  VPAの結果
+#' @param srres fit.SRの結果
+#' @param msyres est.MSYの結果
+#' @param fres_current future.vpaの結果(Fcurrent)
+#' @param fres_HCR future.vpaの結果(F with HCR)
+#' @param kobeII kobeII.matrixの結果
 #'
 #' @export
 
-out.vpa <- function(res=NULL, # VPA result 
-                    rres=NULL, # reference point 
-                    fres=NULL, # future projection result (not nessesarily)
-                    ABC=NULL,
+out.vpa <- function(res=NULL,    # VPA result
+                    srres=NULL,  # fit.SR result
+                    msyres=NULL, # est.MSY result
+                    fres_current=NULL,   # future projection result
+                    fres_HCR=NULL,   # future projection result                    
+                    kobeII=NULL, # kobeII result
                     filename="vpa" # filename without extension
                     ){
   old.par <- par()  
   exit.func <- function(){
-#    par(old.par)    
-
     dev.off()
     options(warn=0)      
   }
@@ -1394,7 +1609,7 @@ out.vpa <- function(res=NULL, # VPA result
     write.table(tmp,append=T,sep=",",quote=FALSE,file=csvname,col.names=F,row.names=F,...)
   }
 
-  write(paste("# RVPA outputs at ",date()," & ",getwd()),file=csvname)  
+  write(paste("# frasyr outputs at ",date()," & ",getwd()),file=csvname)  
   
   if(!is.null(res)){
     write("# VPA results",file=csvname, append=T)
@@ -1412,7 +1627,6 @@ out.vpa <- function(res=NULL, # VPA result
     write("\n# weight at age for catch calculation",file=csvname,append=T)    
     write.table2(res$input$dat$waa.catch,title.tmp="Weight at age (for catch)")    
     }
-    
 
     write("\n# M at age",file=csvname,append=T)    
     write.table2(res$input$dat$M,title.tmp="M at age")          
@@ -1430,38 +1644,67 @@ out.vpa <- function(res=NULL, # VPA result
     x <- rbind(colSums(res$ssb),colSums(res$baa),colSums(res$wcaa))
     rownames(x) <- c("Spawning biomass","Total biomass","Catch biomass")
     write.table2(x,title.tmp="Total and spawning biomass")
-  }  
-  
-  if(!is.null(rres)){
-    write("\n# Reference points",file=csvname,append=T)
-    write.table2(rres$summary,title.tmp="Future F at age",is.plot=F)
   }
 
+  if(!is.null(srres)){
+      sr_summary <- 
+          as_tibble(srres$pars) %>% mutate(AIC   =srres$AIC,
+                                           method=srres$input$method,
+                                           type  =srres$input$SR)      
+      write("\n# SR fit resutls",file=csvname,append=T)
+      write_csv(res_summary,file=csvname,append=T)
+  }  
+  
+  if(!is.null(msyres)){
+    write("\n# MSY Reference points",file=csvname,append=T)
+    write_csv(msyres$summary,file=csvname,append=T)
+  }
+
+  
   if(!is.null(fres)){
-    write("\n# future projection results",file=csvname,append=T)  
+    write("\n# future projection under F current (average)",file=csvname,append=T)  
     write("\n# future F at age",file=csvname,append=T)
-    write.table2(fres$faa[,,1],title.tmp="Future F at age")
+    write.table2(apply(res_future_current$faa,c(1,2),mean),title.tmp="Future F at age")
     
     write("\n# future numbers at age",file=csvname,append=T)
-    write.table2(fres$naa[,,1],title.tmp="Future numbers at age")
+    write.table2(apply(res_future_current$naa,c(1,2),mean),title.tmp="Future numbers at age")
 
     write("\n# future total and spawning biomass",file=csvname,append=T)
-    x <- rbind(fres$vssb[,1],fres$vbiom[,1],fres$vwcaa[,1])
+    x <- rbind(apply(fres$vssb, 1,mean),
+               apply(fres$vbiom,1,mean),
+               apply(fres$vwcaa,1,mean))
     rownames(x) <- c("Spawning biomass","Total biomass","Catch biomass")
     write.table2(x,title.tmp="Future total, spawning and catch biomass")    
   }
-  
-  if(!is.null(ABC)){
-    write("\n# ABC summary",file=csvname,append=T)
-    write.table2(ABC$ABC,title.tmp="Future F at age",is.plot=F)
-    write("\n# Kobe matrix",file=csvname,append=T)
-    for(i in 1:dim(ABC$kobe.matrix)[[3]]){
-        write(paste("\n# ",dimnames(ABC$kobe.matrix)[[3]][i]),
-              file=csvname,append=T)        
-        write.table2(ABC$kobe.matrix[,,i],
-                     title.tmp=dimnames(ABC$kobe.matrix)[[3]][i],is.plot=T)        
-    }
+
+  if(!is.null(fres_HCR)){
+    write("\n# future projection under F current (average)",file=csvname,append=T)  
+    write("\n# future F at age",file=csvname,append=T)
+    write.table2(apply(res_future_current$faa,c(1,2),mean),title.tmp="Future F at age")
+    
+    write("\n# future numbers at age",file=csvname,append=T)
+    write.table2(apply(res_future_current$naa,c(1,2),mean),title.tmp="Future numbers at age")
+
+    write("\n# future total and spawning biomass",file=csvname,append=T)
+    x <- rbind(apply(fres_HCR$vssb, 1,mean),
+               apply(fres_HCR$vbiom,1,mean),
+               apply(fres_HCR$vwcaa,1,mean))
+    rownames(x) <- c("Spawning biomass","Total biomass","Catch biomass")
+    write.table2(x,title.tmp="Future total, spawning and catch biomass")    
   }  
+  
+  ## if(!is.null(ABC)){
+  ##   write("\n# ABC summary",file=csvname,append=T)
+  ##   write.table2(ABC$ABC,title.tmp="Future F at age",is.plot=F)
+  ##   write("\n# Kobe matrix",file=csvname,append=T)
+  ##   for(i in 1:dim(ABC$kobe.matrix)[[3]]){
+  ##       write(paste("\n# ",dimnames(ABC$kobe.matrix)[[3]][i]),
+  ##             file=csvname,append=T)        
+  ##       write.table2(ABC$kobe.matrix[,,i],
+  ##                    title.tmp=dimnames(ABC$kobe.matrix)[[3]][i],is.plot=T)        
+  ##   }
+  ## }
+  
 }
 
 #' csvファイルとしてまとめられた資源計算結果を読み込んでRのオブジェクトにする
@@ -1520,7 +1763,9 @@ read.vpa <- function(tfile,
   dres$naa <- tmpfunc(tmpdata,naa.label)
   dres$faa <- tmpfunc(tmpdata,faa.label)
     
-  dres$Fc.at.age <- tmpfunc(tmpdata,Fc.label,type="Fc")
+    dres$Fc.at.age <- tmpfunc(tmpdata,Fc.label,type="Fc")
+    dres$Fc.at.age <- dres$Fc.at.age[!is.na(dres$Fc.at.age)]
+    if(length(dres$Fc.at.age)!=nrow(dres$naa)) stop("Dimension of Fc.at.age and numbers at age is differerent.")
     
   dres$input <- list()
   dres$input$dat <- list()
@@ -1567,6 +1812,9 @@ read.vpa <- function(tfile,
       dres$input$Pope <- Pope
   }    
     if(is.null(dres$Fc.at.age) && !is.null(fc.year)) dres$Fc.at.age <- apply(dres$faa[,colnames(dres$faa)%in%fc.year],1,mean)
+
+    # その他、他関数で必要になるVPAへのインプット
+    dres$input$last.catch.zero <- FALSE
     
   return(dres)
 }
@@ -1704,7 +1952,8 @@ get.stat <- function(fout,eyear=0,hsp=NULL,tmp.year=NULL){
         a$ssb.CV <- a$ssb.sd/a$ssb.mean
         a$biom.CV <- a$biom.sd/a$biom.mean
 
-        Faa <- as.data.frame(t(fout$multi * fout$input$res0$Fc.at.age))
+    #        Faa <- as.data.frame(t(fout$multi * fout$input$res0$Fc.at.age))
+        Faa <- as.data.frame(t(fout$multi * fout$currentF))    
         colnames(Faa) <- paste("F",dimnames(fout$naa)[[1]],sep="")
         a <- cbind(a,Faa)
         return(a)
@@ -1807,7 +2056,8 @@ get.stat3 <- function(fout,eyear=0,hsp=NULL,tmp.year=NULL,unit.waa=1){
     a$biom.CV <- a$biom.sd/a$biom.mean
     a$rec.CV <- a$rec.sd/a$rec.mean
 
-    Faa <- as.data.frame(t(fout$multi * fout$input$res0$Fc.at.age))
+    #    Faa <- as.data.frame(t(fout$multi * fout$input$res0$Fc.at.age))
+    Faa <- as.data.frame(t(fout$multi * fout$currentF))    
     colnames(Faa) <- paste("F",dimnames(fout$naa)[[1]],sep="")
     res.stat1 <- cbind(a,Faa) # ここまで、get.stat
 
@@ -1872,6 +2122,15 @@ show.likeprof <- function(res){
 }
 
 
+#'
+#' VPA計算結果を入れると、毎年のF at ageがどのくらいのSPR, YPRに相当するかを返す
+#'
+#' @param dres vpa関数の返り値
+#' @param target.SPR 目標とするSPR。この値を入れると、結果の$ysdataでその年のFが目標とするSPRを達成するためのFの何倍になっているかを返す。デフォルトは30が入っている
+#' @param Fmax 上の計算をするときに探索するFの乗数の最大値
+#' @param max.age SPRやYPRの計算をするときに最大何歳まで考慮するか（デフォルトは無限大) 
+#'
+#' @export 
 get.SPR <- function(dres,target.SPR=30,Fmax=10,max.age=Inf){
     # Fの歴史的な%SPRを見てみる                                                                             
     # 毎年異なるFや生物パラメータに対して、YPR,SPR、SPR0がどのくらい変わっているのか見る(Rコード例2)
@@ -1888,7 +2147,7 @@ get.SPR <- function(dres,target.SPR=30,Fmax=10,max.age=Inf){
             a <- ref.F(dres,waa.year=byear,maa.year=byear,M.year=byear,rps.year=2000:2011,
                        pSPR=round(target.SPR),
                        F.range=c(seq(from=0,to=ceiling(max(dres$Fc.at.age,na.rm=T)*Fmax),
-                                     length=101),max(dres$Fc.at.age,na.rm=T)),plot=FALSE,max.age=max.age)
+                                     length=301),max(dres$Fc.at.age,na.rm=T)),plot=FALSE,max.age=max.age)
             # YPRと%SPR
             dres$ysdata[i,1:2] <- (as.numeric(rev(a$ypr.spr[which(a$ypr.spr$Frange2Fcurrent==1)[1],2:3])))
             # SPR                                                                                               
@@ -1930,7 +2189,8 @@ plot_SRdata <- function(SRdata){
 #'
 #' @export
 
-est.MSY <- function(vpares,farg,
+est.MSY <- function(vpares,
+                    farg,
                    seed=farg$seed,
                    nyear=NULL,
                    eyear=0, # 将来予測の最後のeyear+1年分を平衡状態とする
@@ -1949,8 +2209,10 @@ est.MSY <- function(vpares,farg,
                    Bempirical=NULL, # 特定の親魚量をターゲットにする場合
                    long.term=20, # 世代時間の何倍年後の状態を平衡状態と仮定するか
                    GT=NULL, # 世代時間を外から与える場合(世代時間の計算は将来予測で使われる年齢別成熟率・自然死亡係数を使っているが、別のパラメータを与えたい場合など、外で計算してここに入れる)
-                   mY=5, # 自己相関を考慮して管理基準値を計算する場合、平衡状態から何年進めるか                   
-                   resid.year=0, # ARありの場合、最近年何年分の残差を平均するか
+                   mY=5, # 自己相関を考慮して管理基準値を計算する場合、平衡状態から何年進めるか
+
+                   estAR.RP=FALSE, # 平衡状態から近年の残差を考慮した将来予測をおこなったときの管理基準値を計算するか
+                   resid.year=0,   # ARありの場合、最近年何年分の残差を平均するか
                    current.resid=NULL # 残差の値を直接入れる場合。上の年数が設定されていてもこちらが設定されたらこの値を使う
                    ){
 
@@ -2096,7 +2358,7 @@ est.MSY <- function(vpares,farg,
                                                     fmulti=tmp$minimum+c(-0.025,-0.05,-0.075,0,0.025,0.05,0.075))$table)
             trace$table <- trace$table[order(trace$table$fmulti),]
         }
-        F.msy <- fout.msy$input$multi*vpares$Fc.at.age
+        F.msy <- fout.msy$input$multi*fout.msy$currentF
     }
     # optimizeでなくgridでやる場合
     else{
@@ -2114,7 +2376,9 @@ est.MSY <- function(vpares,farg,
 #    MSY <- cbind(MSY,get.stat2(fout.msy,eyear=eyear))
     rownames(MSY) <- "MSY"
 #    cat(" SSB=",MSY$"ssb.mean","\n")    
-    
+	
+    gc(); gc();
+	
     ## PGYの計算
     fout.PGY <- list()
     PGYstat <- NULL
@@ -2143,7 +2407,9 @@ est.MSY <- function(vpares,farg,
                                                                 fmulti=fout.PGY[[s]]$multi+c(-0.025,-0.05,-0.075,0,0.025,0.05,0.075))$table)
                     trace$table <- trace$table[order(trace$table$fmulti),]
                 }
-                s <- s+1                
+                fout.PGY[[s]][names(fout.PGY[[s]])!="input"] <- NULL  
+                s <- s+1
+		gc(); gc();
             }
         }
 #        PGYstat <- as.data.frame(t(sapply(fout.PGY,get.stat3,eyear=eyear,hsp=Blimit)))
@@ -2177,7 +2443,9 @@ est.MSY <- function(vpares,farg,
                 trace$table <- rbind(trace$table,trace.func(farg.msy,eyear,hsp=Blimit,trace.N=trace.N,
                                                             fmulti=fout.B0percent[[j]]$multi+c(-0.025,-0.05,-0.075,0,0.025,0.05,0.075))$table)
                     trace$table <- trace$table[order(trace$table$fmulti),]
-            }                
+            }
+            fout.B0percent[[j]][names(fout.B0percent[[j]])!="input"] <- NULL            
+            gc(); gc();
         }
         rownames(B0stat) <- names(fout.B0percent) <- paste("B0-",B0percent*100,"%",sep="")
     }
@@ -2208,7 +2476,9 @@ est.MSY <- function(vpares,farg,
                 trace$table <- rbind(trace$table,trace.func(farg.msy,eyear,hsp=Blimit,trace.N=trace.N,
                                                             fmulti=fout.Bempirical[[j]]$multi+c(-0.025,-0.05,-0.075,0,0.025,0.05,0.075))$table)
                     trace$table <- trace$table[order(trace$table$fmulti),]
-            }                            
+            } 
+            fout.Bempirical[[j]][names(fout.Bempirical[[j]])!="input"] <- NULL
+            gc(); gc();            
         }
         rownames(Bempirical.stat) <- names(fout.Bempirical) <- paste("Ben-",round(Bempirical),"",sep="")
     }
@@ -2228,70 +2498,76 @@ est.MSY <- function(vpares,farg,
     
 
 ### ARありの場合の管理基準値の計算（平衡状態から5年分進めたときの値）
-
-    if(resid.year > 0 && is.null(current.resid)){
-        current.resid <- mean(rev(fout.msy$input$rec.arg$resid)[1:resid.year]) 
-        cat("Residuals of ",resid.year," years are averaged as, ",current.resid,"\n")
-    }
-    else{
-        if(resid.year==0){
-            current.resid <- 0
+    if(isTRUE(estAR.RP)){
+        if(resid.year > 0 && is.null(current.resid)){
+            current.resid <- mean(rev(fout.msy$input$rec.arg$resid)[1:resid.year]) 
+            cat("Residuals of ",resid.year," years are averaged as, ",current.resid,"\n")
         }
+        else{
+            if(resid.year==0){
+                current.resid <- 0
+            }
+        }
+
+        lag <- as.numeric(rownames(fout.msy$naa))[1]            
+        eyear <- mY+(lag > 0)*(lag-1)
+        
+        MSY2 <- target.func(fout.msy,mY=mY,seed=seed,N=N,eyear=mY,current.resid=current.resid)
+        B02 <- target.func(fout0,mY=mY,seed=seed,N=N,eyear=mY,current.resid=current.resid)
+        if(!is.null(PGY)){
+            PGYstat2 <- lapply(1:length(fout.PGY),
+                               function(x) target.func(fout.PGY[[x]],mY=mY,seed=seed,N=N,eyear=mY,current.resid=current.resid))
+        }
+        else{
+            PGYstat2 <- NULL
+        }
+
+        if(!is.null(B0percent)){
+            B0stat2 <- lapply(1:length(fout.B0percent),
+                              function(x) target.func(fout.B0percent[[x]],mY=mY,seed=seed,N=N,eyear=mY,current.resid=current.resid)
+                              )
+        }
+        else{
+            B0stat2 <- NULL
+        }
+
+        if(!is.null(Bempirical)){
+            Bempirical.stat2 <- lapply(1:length(fout.Bempirical),
+                                       function(x) target.func(fout.Bempirical[[x]],mY=mY,seed=seed,N=N,eyear=mY,current.resid=current.resid)
+                                       )
+        }
+        else{
+            Bempirical.stat2 <- NULL
+        }    
+
+        refvalue2 <- bind_rows(MSY2[[1]],B02[[1]],
+                               purrr::map_dfr(PGYstat2,function(x) x[[1]]),
+                               purrr::map_dfr(B0stat2,function(x) x[[1]]),
+                               purrr::map_dfr(Bempirical.stat2,function(x) x[[1]])) %>% as_tibble() %>%
+            mutate(RP_name=refvalue$RP_name,AR=TRUE)
+
+        refvalue2 <-  refvalue2 %>%
+            mutate(SSB2SSB0=refvalue$ssb.mean/refvalue$ssb.mean[2])
+        
+        sumvalue2 <- refvalue2 %>% select(RP_name,AR,ssb.mean,SSB2SSB0,biom.mean,U.mean,catch.mean,catch.CV,Fref2Fcurrent)
+        colnames(sumvalue2) <- c("RP_name","AR","SSB","SSB2SSB0","B","U","Catch","Catch.CV","Fref/Fcur")
+        sumvalue2 <- bind_cols(sumvalue2,refvalue2[,substr(colnames(refvalue2),1,1)=="F"])
+
+
+        ssb.ar.mean <- cbind(apply(MSY2[[2]]$vssb,1,mean),
+                             apply(B02[[2]]$vssb,1,mean),
+                             sapply(PGYstat2,function(x) apply(x[[2]]$vssb,1,mean)),
+                             sapply(B0stat2,function(x) apply(x[[2]]$vssb,1,mean)),
+                             sapply(Bempirical.stat2,function(x) apply(x[[2]]$vssb,1,mean)))
+        ssb.ar.mean <- sweep(matrix(as.numeric(ssb.ar.mean),nrow(ssb.ar.mean),ncol(ssb.ar.mean)),
+                             2,unlist(sumvalue$SSB),FUN="/")
+        colnames(ssb.ar.mean) <- rownames(sumvalue$SSB)
     }
-
-    lag <- as.numeric(rownames(fout.msy$naa))[1]            
-    eyear <- mY+(lag > 0)*(lag-1)
-    
-    MSY2 <- target.func(fout.msy,mY=mY,seed=seed,N=N,eyear=mY,current.resid=current.resid)
-    B02 <- target.func(fout0,mY=mY,seed=seed,N=N,eyear=mY,current.resid=current.resid)
-    if(!is.null(PGY)){
-        PGYstat2 <- lapply(1:length(fout.PGY),
-                             function(x) target.func(fout.PGY[[x]],mY=mY,seed=seed,N=N,eyear=mY,current.resid=current.resid))
+    else{ # estAR.RP==FALSEのとき
+        ssb.ar.mean <- NULL
+        sumvalue2 <- NULL
+        refvalue2 <- NULL
     }
-    else{
-        PGYstat2 <- NULL
-    }
-
-    if(!is.null(B0percent)){
-        B0stat2 <- lapply(1:length(fout.B0percent),
-                       function(x) target.func(fout.B0percent[[x]],mY=mY,seed=seed,N=N,eyear=mY,current.resid=current.resid)
-                       )
-    }
-    else{
-        B0stat2 <- NULL
-    }
-
-    if(!is.null(Bempirical)){
-        Bempirical.stat2 <- lapply(1:length(fout.Bempirical),
-                       function(x) target.func(fout.Bempirical[[x]],mY=mY,seed=seed,N=N,eyear=mY,current.resid=current.resid)
-                       )
-    }
-    else{
-        Bempirical.stat2 <- NULL
-    }    
-
-    refvalue2 <- bind_rows(MSY2[[1]],B02[[1]],
-                       purrr::map_dfr(PGYstat2,function(x) x[[1]]),
-                       purrr::map_dfr(B0stat2,function(x) x[[1]]),
-                       purrr::map_dfr(Bempirical.stat2,function(x) x[[1]])) %>% as_tibble() %>%
-        mutate(RP_name=refvalue$RP_name,AR=TRUE)
-
-    refvalue2 <-  refvalue2 %>%
-        mutate(SSB2SSB0=refvalue$ssb.mean/refvalue$ssb.mean[2])
-    
-    sumvalue2 <- refvalue2 %>% select(RP_name,AR,ssb.mean,SSB2SSB0,biom.mean,U.mean,catch.mean,catch.CV,Fref2Fcurrent)
-    colnames(sumvalue2) <- c("RP_name","AR","SSB","SSB2SSB0","B","U","Catch","Catch.CV","Fref/Fcur")
-    sumvalue2 <- bind_cols(sumvalue2,refvalue2[,substr(colnames(refvalue2),1,1)=="F"])
-
-
-    ssb.ar.mean <- cbind(apply(MSY2[[2]]$vssb,1,mean),
-                         apply(B02[[2]]$vssb,1,mean),
-                         sapply(PGYstat2,function(x) apply(x[[2]]$vssb,1,mean)),
-                         sapply(B0stat2,function(x) apply(x[[2]]$vssb,1,mean)),
-                         sapply(Bempirical.stat2,function(x) apply(x[[2]]$vssb,1,mean)))
-    ssb.ar.mean <- sweep(matrix(as.numeric(ssb.ar.mean),nrow(ssb.ar.mean),ncol(ssb.ar.mean)),
-              2,unlist(sumvalue$SSB),FUN="/")
-    colnames(ssb.ar.mean) <- rownames(sumvalue$SSB)
     
     ### 結果のプロットなど
 
@@ -2312,9 +2588,11 @@ est.MSY <- function(vpares,farg,
         title("Equiribrium Catch (Yield curve)")        
 
         # plot of the effect of AR
-        matplot(ssb.ar.mean,type="b",ylab="SSB_MSY_AR/SSB_MSY",xlab="Years from Equiribrium")
-        legend("topright",col=1:ncol(ssb.ar.mean),legend=rownames(sumvalue),lty=1:ncol(ssb.ar.mean))
-        title("plot of the effect of AR")
+        if(isTRUE(estAR.RP)){
+            matplot(ssb.ar.mean,type="b",ylab="SSB_MSY_AR/SSB_MSY",xlab="Years from Equiribrium")
+            legend("topright",col=1:ncol(ssb.ar.mean),legend=rownames(sumvalue),lty=1:ncol(ssb.ar.mean))
+            title("plot of the effect of AR")
+        }
     }
 
     ## kobe II matrix
@@ -2333,19 +2611,28 @@ est.MSY <- function(vpares,farg,
     allsum <- bind_rows(sumvalue,sumvalue2)
     allsum$RP.definition <- NA
     allsum$RP.definition[allsum$AR==FALSE&allsum$RP_name=="MSY"] <- "Btarget0"
-    allsum$RP.definition[allsum$AR==FALSE&allsum$RP_name=="PGY_0.9_lower"] <- "Blow0"
+#    allsum$RP.definition[allsum$AR==FALSE&allsum$RP_name=="PGY_0.9_lower"] <- "Blow0"
     allsum$RP.definition[allsum$AR==FALSE&allsum$RP_name=="PGY_0.6_lower"] <- "Blimit0"    
     allsum$RP.definition[allsum$AR==FALSE&allsum$RP_name=="PGY_0.1_lower"] <- "Bban0"
+    allsum <- allsum %>% select(1,ncol(allsum),2:(ncol(allsum)-1))    
 
-    output <- list(summary=as.data.frame(as.matrix(sumvalue)),
-                   summaryAR=as.data.frame(as.matrix(sumvalue2)),
+    Fvector <- select(allsum,num_range("F",0:40))
+
+    output <- list(summary =allsum,#as.data.frame(as.matrix(sumvalue)),
                    summary_tb=allsum,
-                   F.msy=F.msy,
-                   all.stat=as.data.frame(as.matrix(refvalue)),
-                   all.statAR=as.data.frame(as.matrix(refvalue2)),
-                   all.stat_tb=bind_rows(refvalue,refvalue2),                   
-                   trace=trace$table,input.list=input.list,
-                   ssb.ar.mean=ssb.ar.mean)
+#                   summary_tb=allsum,
+#                   all.stat=as.data.frame(as.matrix(refvalue)),
+                   all.stat=bind_rows(refvalue,refvalue2),                   
+                   trace   =trace$table,
+                   input.list=input.list,
+                   Fvector =Fvector,
+                   F.msy   =F.msy)
+    
+    if(isTRUE(estAR.RP)){
+        output$summaryAR   <- as.data.frame(as.matrix(sumvalue2))
+        output$all.statAR  <- as.data.frame(as.matrix(refvalue2))
+        output$ssb.ar.mean <- ssb.ar.mean
+        }
     output$SPR.msy <- calc_MSY_spr(output)
     
     invisible(output)    
@@ -2636,9 +2923,10 @@ draw.refline <- function(reftable,horiz=TRUE,scale=1000,lwd=3){
         }
 }
 
+#' 期間内のRPSをサンプリングするときの加入関数
+#'
 #' @export
 
-#---- 期間内のRPSをサンプリング。平均値と中央値の差を補正するかどうか？など 
 RPS.simple.rec <- function(ssb,vpares,
                            rec.arg=list(rps.year=NULL, # 点推定値のrpsを計算する期間
                              upper.ssb=Inf, # 親魚資源量の上限（単位はトン？）
@@ -2711,3 +2999,39 @@ menplot2 <- function(xy,probs=c(0.1,0.9),new=FALSE,xlab=NULL,ylab=NULL,...){
     if(isTRUE(new)) matplot(xx,yy,type="n",xlab=xlab,ylab=ylab)
     menplot(xx,yy,...)
 }
+
+
+#' 期間内の残差をサンプリングするときの加入関数
+#'
+#' @export
+
+resample.rec <- function(ssb,vpares,#deterministic=FALSE,
+                   rec.resample=NULL,
+                   rec.arg=list(a=1000,b=1000,sd=0.1, 
+                                resid=0, # 残差リサンプリングする場合、resample=TRUEにして、residにリサンプリングする残差（対数）を入れる
+                                SR="HS",# or "BH","RI"
+                                bias.correction=TRUE)){
+
+    if(rec.arg$SR=="HS") rec0 <- ifelse(ssb>rec.arg$b,rec.arg$a*rec.arg$b,rec.arg$a*ssb)
+    if(rec.arg$SR=="BH") rec0 <- rec.arg$a*ssb/(1+rec.arg$b*ssb)
+    if(rec.arg$SR=="RI") rec0 <- rec.arg$a*ssb*exp(-rec.arg$b*ssb)
+    
+    if(!isTRUE(rec.arg$resample)){
+        if(isTRUE(rec.arg$bias.correction)){
+            rec <- rec0*exp(rnorm(length(ssb),-0.5*(rec.arg$sd)^2,rec.arg$sd))
+        }
+        else{
+            rec <- rec0*exp(rnorm(length(ssb),0,rec.arg$sd))
+        }
+    }
+    else{
+        if(isTRUE(rec.arg$bias.correction)){
+            rec <- c(rec0[1],exp(log(rec0[-1])+sample(rec.arg$resid,length(ssb)-1,replace=TRUE))/mean(exp(rec.arg$resid)))
+        }
+        else{
+            rec <- c(rec0[1],exp(log(rec0[-1])+sample(rec.arg$resid,length(ssb)-1,replace=TRUE)))
+        }
+    }
+  return(list(rec=rec,rec.resample=rec.arg$resid)) # 暫定的変更
+}
+

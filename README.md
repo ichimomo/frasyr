@@ -5,6 +5,7 @@
 # 使い方
 
 ```
+
 # install.package("devtools") # <-- devtoolsをインストールしていない人はインストールする
 
 # マスター版（最新・安定版）をインストールする場合
@@ -20,6 +21,7 @@ devtools::install_github("ichimomo/frasyr@v1.00")
 
 # 以上の操作をしてfrasyrをインストールしてから、以下のコマンドで呼び出します
 library(frasyr) 
+
 ```
 
 # リリースバージョン
@@ -42,6 +44,7 @@ library(frasyr)
 ## ワークフロー
 1. 本レポジトリを直接cloneするか，自分のところにfolkしてからcloneする
 2. 自分の環境下でコードを修正
+   - インポートするパッケージの追加などは，自分の関数の近くに @import パッケージ名，または@importFrom パッケージ名 関数名として定義しておくと，checkのときにroxygen2が自動的にNAMESPACEを置き換えてくれるので，NAMESPACEは直接いじらない
 3. パッケージをビルド，テスト，インストール
 ```{r}
 devtools::load_all() 
