@@ -27,7 +27,7 @@ test_that("oututput value check",{
   res_ref_f_F01_pma_check <- read.csv(system.file("extdata","future_ref_F_F01_check.csv",package="frasyr"),row.names=1)
   res_ref_f_Fmean_pma_check <- read.csv(system.file("extdata","future_ref_F_Fmean_check.csv",package="frasyr"),row.names=1)
   res_ref_f_rpsdata_pma_check <- read.csv(system.file("extdata","future_ref_F_rps-data_check.csv",package="frasyr"),row.names=1)
-  res_ref_f_FpSPR_pma_check <- read.csv(system.file("extdata","future_ref_F_FpSPR_check.csv",package="frasyr"),row.names=1)
+  res_ref_f_FpSPR_pma_check <- read.csv(system.file("extdata","future_ref_F_FpSPR_check.csv",package="frasyr"),row.names=1) # summaryとFpSPRの内容は全く同じなので、本来ならテストは必要ない
   res_ref_f_summary_pma_check <- read.csv(system.file("extdata","future_ref_F_summary_check.csv",package="frasyr"),row.names=1)
   res_ref_f_ypr_spr_pma_check <- read.csv(system.file("extdata","future_ref_F_ypr-spr_check.csv",package="frasyr"),row.names=1)
   res_ref_f_waa_pma_check <- read.csv(system.file("extdata","future_ref_F_waa_check.csv",package="frasyr"),row.names=1)
@@ -305,7 +305,8 @@ test_that("oututput value check",{
   }
   expect_equal(BH.par1$opt$value,as.numeric(BHpar1_opt_value_pma_check))
   for(i in 1:nrow(BHpar1_opt_counts_pma_check)){
-    expect_equal(as.numeric(BH.par1$opt$counts[i]),BHpar1_opt_counts_pma_check[i,])
+      #    expect_equal(as.numeric(BH.par1$opt$counts[i]),BHpar1_opt_counts_pma_check[i,])
+      # 環境が変わるとこのカウント数が変わるので、とりあえずコメントアウト
   }
   expect_equal(BH.par1$opt$convergence,as.numeric(BHpar1_opt_convergence_pma_check))
   for(i in 1:nrow(BHpar1_resid_pma_check)){
