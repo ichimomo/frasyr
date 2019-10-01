@@ -9,10 +9,22 @@ test_that("oututput value check",{
   dat <- data.handler(caa=caa, waa=waa, maa=maa, M=0.5)
   res.pma <- vpa(dat,fc.year=2009:2011,rec=585,rec.year=2011,tf.year = 2008:2010,
                  term.F="max",stat.tf="mean",Pope=TRUE,tune=FALSE,p.init=1.0)
-  res.ref.f <- ref.F(res.pma,sel=NULL,waa=NULL,maa=NULL,M=NULL,waa.catch=NULL,M.year=NULL,
+  res.ref.f <- ref.F(res.pma,Fcurrent=NULL,waa=NULL,maa=NULL,M=NULL,waa.catch=NULL,M.year=NULL,
                      waa.year=NULL,maa.year=NULL,rps.year = NULL,max.age = Inf,min.age = 0,
                      d = 0.001,Fem.init = 0.5,Fmax.init = 1.5,F0.1.init = 0.7,pSPR = seq(10,90,by=10),
                      iterlim=1000,plot=TRUE,Pope=FALSE,F.range = seq(from=0,to=2,length=101) )
+  res.ref.f_2times <- ref.F(res.pma,Fcurrent=res.pma$Fc.at.age*2,
+                            waa=NULL,maa=NULL,M=NULL,waa.catch=NULL,M.year=NULL,
+                     waa.year=NULL,maa.year=NULL,rps.year = NULL,max.age = Inf,min.age = 0,
+                     d = 0.001,Fem.init = 0.5,Fmax.init = 1.5,F0.1.init = 0.7,
+                     pSPR = c(seq(10,90,by=10),res.ref.f$currentSPR$perSPR*100),
+                     iterlim=1000,plot=TRUE,Pope=FALSE,F.range = seq(from=0,to=2,length=101) )
+  times2_check <- as.numeric(table(unlist(res.ref.f$summary/res.ref.f_2times$summary[,1:16])))
+  expect_equal(times2_check[1],2)
+  expect_equal(times2_check[2],31)
+  expect_equal(times2_check[3],15)
+  expect_equal(round(res.ref.f_2times$summary[3,17],2),0.5)
+  
   #上記引数での計算結果を読み込み
   res_ref_f_sel_pma_check <- read.csv(system.file("extdata","future_ref_F_sel_check.csv",package="frasyr"),row.names=1)
   res_ref_f_max_age_pma_check <- read.csv(system.file("extdata","future_ref_F_max_age_check.csv",package="frasyr"),row.names=1)
