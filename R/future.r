@@ -431,7 +431,6 @@ future.vpa <-
         rec.arg <- set_SR_options(rec.arg,N=N,silent=silent,eaa0=eaa0,det.run=det.run)
 
         ##------------- set HCR options
-        
         if(!is.null(HCR) && is.null(HCR$year.lag)) HCR$year.lag <- 0
         if(!is.null(beta)){
             HCR$beta <- beta
@@ -457,18 +456,18 @@ future.vpa <-
         
         fyears <- seq(from=start.year,to=start.year+nyear+add.year,by=1)
         
-        fyear.year <- floor(fyears)
+        fyear.year <- floor(fyears) #??
         ntime <- length(fyears)
         ages <- as.numeric(dimnames(res0$naa)[[1]]) # ages:VPAで考慮される最大年齢数
         min.age <- min(as.numeric(ages))
 
         year.overlap <- years %in% start.year   
-                 {if(sum(year.overlap)==0){
-                      nage <- sum(!is.na(res0$naa[,ncol(res0$naa)])) # nage:将来予測で考慮すべき年の数
-                  }
-                  else{
-                      nage <- sum(!is.na(res0$naa[,year.overlap])) 
-                  }}
+        {if(sum(year.overlap)==0){
+             nage <- sum(!is.na(res0$naa[,ncol(res0$naa)])) # nage:将来予測で考慮すべき年の数
+         }
+         else{
+             nage <- sum(!is.na(res0$naa[,year.overlap])) 
+         }}
         
         if(!silent){
             arglist.tmp <-  arglist
