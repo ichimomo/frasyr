@@ -42,7 +42,8 @@ NULL
 # ref.F
 ref.F <- function(
   res, # VPAの結果のオブジェクト
-  sel=NULL, # 仮定する選択率．NULLの場合，res$Fc.at.ageが使われる
+  #  sel=NULL, # 仮定する選択率．NULLの場合，res$Fc.at.ageが使われる
+  Fcurrent=NULL, # Fcurrentの仮定．NULLの場合，res$Fc.at.ageが使われる  
   waa=NULL, # 仮定する生物パラメータ．直接の値を入れるか，年を指定するやり方のどちらでも動く。直接指定するほうが優先。
   maa=NULL,
   M=NULL,
@@ -76,16 +77,11 @@ ref.F <- function(
   years <- dimnames(naa)[[2]]
   ages <- dimnames(naa)[[1]]
 
-  if(is.null(sel)){
-    Fc.at.age <- res$Fc.at.age
-    sel <- Fc.at.age/max(Fc.at.age,na.rm=TRUE)
+  if(is.null(Fcurrent)){
+    Fcurrent <- res$Fc.at.age
   }
-  else{
-    Fc.at.age <- sel
-  }
-  sel <- sel/max(sel,na.rm=T)
-    
-  na <- sum(!is.na(sel))
+  sel <- Fcurrent/max(Fcurrent,na.rm=TRUE)
+  na <- sum(!is.na(Fcurrent))
 
   if(is.null(waa.year)) waa.year <- rev(years)[1]
   if(is.null(maa.year)) maa.year <- rev(years)[1]
@@ -124,25 +120,25 @@ ref.F <- function(
   names(rps.q)[4] <- "mean"
     spr.q <- 1/rps.q
 
-  original.spr <- calc.rel.abund(sel,1,na,M,waa,waa.catch,maa,min.age=min.age,
+  original.spr <- calc.rel.abund(Fcurrent,1,na,M,waa,waa.catch,maa,min.age=min.age,
                                  max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)
-  original.spr0 <- calc.rel.abund(sel,0,na,M,waa,waa.catch,maa,min.age=min.age,
+  original.spr0 <- calc.rel.abund(Fcurrent,0,na,M,waa,waa.catch,maa,min.age=min.age,
                                   max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)
   original.perspr <- sum(original.spr$spr)/sum(original.spr0$spr)
     
 
     # Fcurrent
-    Fcurrent <- c(max(Fc.at.age,na.rm=T), mean(Fc.at.age,na.rm=T))
+    Fcurrent_max_mean <- c(max(Fcurrent,na.rm=T), mean(Fcurrent,na.rm=T))
     
     # grid search
-    F_current <- Fcurrent[1]
-    F.range <- sort(c(F.range,  F_current))
-    spr0 <- sum(calc.rel.abund(sel,0,na,M,waa,waa.catch,maa,min.age=min.age,max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)$spr)  
+    Fcurrent_max <- Fcurrent_max_mean[1]
+    F.range <- sort(c(F.range,  Fcurrent_max))
+    spr0 <- sum(calc.rel.abund(Fcurrent,0,na,M,waa,waa.catch,maa,min.age=min.age,max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)$spr)  
     tmp <- lapply(F.range, function(x) calc.rel.abund(sel,x,na,M,waa,waa.catch,maa,min.age=min.age,max.age=max.age,Pope=Pope,ssb.coef=ssb.coef))
     ypr <- sapply(tmp,function(x) sum(x$ypr))
     pspr <- sapply(tmp,function(x) sum(x$spr))/spr0*100
     ypr.spr <- data.frame(F.range=F.range,ypr=ypr,pspr=pspr)
-    ypr.spr$Frange2Fcurrent  <- ypr.spr$F.range/F_current    
+    ypr.spr$Frange2Fcurrent  <- ypr.spr$F.range/Fcurrent_max
     
   # F.spr
 
@@ -245,9 +241,9 @@ ref.F <- function(
   Fmax <- c(Fmax, f.mean(Fmax))
   F0.1 <- c(F0.1, f.mean(F0.1))
 
-  names(Fcurrent) <- names(Fmed) <- names(Fmean) <- names(Flow) <- names(Fhigh) <- names(Fmax) <- names(F0.1) <- c("max","mean")
-
-  Res <- list(sel=sel, min.age=min.age, max.age=max.age, rps.q=rps.q, spr.q=spr.q, Fcurrent=Fcurrent, Fmed=Fmed, Flow=Flow, Fhigh=Fhigh, Fmax=Fmax, F0.1=F0.1, Fmean=Fmean,rps.data=rps.data)
+  names(Fcurrent_max_mean) <- names(Fmed) <- names(Fmean) <- names(Flow) <- names(Fhigh) <- names(Fmax) <- names(F0.1) <- c("max","mean")
+    Res <- list(min.age=min.age, max.age=max.age, rps.q=rps.q, spr.q=spr.q, Fcurrent=Fcurrent_max_mean,
+                sel=sel, Fmed=Fmed, Flow=Flow, Fhigh=Fhigh, Fmax=Fmax, F0.1=F0.1, Fmean=Fmean,rps.data=rps.data)
   
   if (!is.null(pSPR)){
     FpSPR <- rbind(FpSPR, sapply(FpSPR, f.mean))
@@ -262,8 +258,9 @@ ref.F <- function(
 
   Res$currentSPR <- list(SPR=sum(original.spr$spr),
                          perSPR=original.perspr,
-                       YPR=sum(original.spr$spr))
- 
+                         YPR=sum(original.spr$spr),
+                         Fcurrent=Fcurrent)
+
   Res$ypr.spr  <- ypr.spr #data.frame(F.range=F.range,ypr=ypr,spr=spr)
   Res$waa <- waa
   Res$waa.catch <- waa.catch  
