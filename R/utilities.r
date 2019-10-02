@@ -482,7 +482,7 @@ calc_kobeII_matrix <- function(fres_base,
 #' @export
 #' 
 
-make_kobeII_table <- function(kobeII_data,
+make_kobeII_table0 <- function(kobeII_data,
                               res_vpa,
                               year.catch,
                               year.ssb,                              
@@ -493,6 +493,127 @@ make_kobeII_table <- function(kobeII_data,
                               year.ssbmin,
                               year.ssbmax,                              
                               year.aav){
+    # 平均漁獲量
+    (catch.table <- kobeII.data %>%
+         dplyr::filter(year%in%year.catch,stat=="catch") %>% # 取り出す年とラベル("catch")を選ぶ
+         group_by(HCR_name,beta,year) %>%
+         summarise(catch.mean=round(mean(value))) %>%  # 値の計算方法を指定（漁獲量の平均ならmean(value)）
+         # "-3"とかの値で桁数を指定
+         spread(key=year,value=catch.mean) %>% ungroup() %>%
+         arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
+         mutate(stat_name="catch.mean"))
+
+    # 平均親魚
+    (ssb.table <- kobeII.data %>%
+         dplyr::filter(year%in%year.ssb,stat=="SSB") %>% 
+         group_by(HCR_name,beta,year) %>%
+         summarise(ssb.mean=round(mean(value))) %>%  
+         spread(key=year,value=ssb.mean) %>% ungroup() %>%
+         arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
+         mutate(stat_name="ssb.mean"))    
+
+    # 1-currentFに乗じる値=currentFからの努力量の削減率の平均値（実際には確率分布になっている）
+    (Fsakugen.table <- kobeII.data %>%
+         dplyr::filter(year%in%year.Fsakugen,stat=="Fsakugen") %>% # 取り出す年とラベル("catch")を選ぶ
+         group_by(HCR_name,beta,year) %>%
+         summarise(Fsakugen=round(mean(value),2)) %>%
+         spread(key=year,value=Fsakugen) %>% ungroup() %>%
+         arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
+         mutate(stat_name="Fsakugen"))
+
+    # SSB>SSBtargetとなる確率
+    ssbtarget.table <- kobeII.data %>%
+        dplyr::filter(year%in%year.ssbtarget,stat=="SSB") %>%
+        group_by(HCR_name,beta,year) %>%
+        summarise(ssb.over=round(100*mean(value>Btarget))) %>%
+        spread(key=year,value=ssb.over) %>%
+        ungroup() %>%
+        arrange(HCR_name,desc(beta))%>%
+        mutate(stat_name="Pr(SSB>SSBtarget)")
+
+    # SSB>SSBlimとなる確率
+    ssblimit.table <- kobeII.data %>%
+        dplyr::filter(year%in%year.ssblimit,stat=="SSB") %>%
+        group_by(HCR_name,beta,year) %>%
+        summarise(ssb.over=round(100*mean(value>Blimit))) %>%
+        spread(key=year,value=ssb.over)%>%
+        ungroup() %>%
+        arrange(HCR_name,desc(beta))%>%
+        mutate(stat_name="Pr(SSB>SSBlim)")
+
+    # SSB>SSBbanとなる確率
+    ssbban.table <- kobeII.data %>%
+        dplyr::filter(year%in%year.ssbban,stat=="SSB") %>%
+        group_by(HCR_name,beta,year) %>%
+        summarise(ssb.over=round(100*mean(value>Bban))) %>%
+        spread(key=year,value=ssb.over)%>%
+        ungroup() %>%
+        arrange(HCR_name,desc(beta))%>%
+        mutate(stat_name="Pr(SSB>SSBban)")    
+
+    # SSB>SSBmin(過去最低親魚量を上回る確率)
+    ssb.min <- min(unlist(colSums(res_vpa$ssb)))
+    ssbmin.table <- kobeII.data %>%
+        dplyr::filter(year%in%year.ssbmin,stat=="SSB") %>%
+        group_by(HCR_name,beta,year) %>%
+        summarise(ssb.over=round(100*mean(value>ssb.min))) %>%
+        spread(key=year,value=ssb.over)%>%
+        ungroup() %>%
+        arrange(HCR_name,desc(beta))%>%
+        mutate(stat_name="Pr(SSB>SSBmin)")
+
+    # SSB>SSBmax(過去最低親魚量を上回る確率)
+    ssb.max <- max(unlist(colSums(res_vpa$ssb)))
+    ssbmax.table <- kobeII.data %>%
+        dplyr::filter(year%in%year.ssbmax,stat=="SSB") %>%
+        group_by(HCR_name,beta,year) %>%
+        summarise(ssb.over=round(100*mean(value>ssb.max))) %>%
+        spread(key=year,value=ssb.over)%>%
+        ungroup() %>%
+        arrange(HCR_name,desc(beta))%>%
+        mutate(stat_name="Pr(SSB>SSBmax)")    
+
+    # オプション: Catch AAV mean 
+    calc.aav <- function(x)sum(abs(diff(x)))/sum(x[-1])
+    catch.aav.table <- kobeII.data %>%
+        dplyr::filter(year%in%year.aav,stat=="catch") %>%
+        group_by(HCR_name,beta,sim) %>%
+        dplyr::summarise(catch.aav=(calc.aav(value))) %>%
+        group_by(HCR_name,beta) %>%
+        summarise(catch.aav.mean=mean(catch.aav)) %>%
+        arrange(HCR_name,desc(beta))%>%
+        mutate(stat_name="catch.csv (recent 5 year)")
+
+    res_list <- list(average.catch   = catch.table,
+                     average.ssb     = ssb.table,
+                     prob.ssbtarget  = ssbtarget.table,
+                     prob.ssblimit   = ssblimit.table,
+                     prob.ssbban     = ssbban.table,                     
+                     prob.ssbmin     = ssbmin.table,
+                     prob.ssbmax     = ssbmax.table,                     
+                     catch.aav       = catch.aav.table)    
+    return(res_list)
+                
+}
+
+#'
+#' @export
+#' 
+
+make_kobeII_table <- function(kobeII_data,
+                              res_vpa,
+                              year.catch,
+                              year.ssb,                              
+                              year.Fsakugen,
+                              year.ssbtarget,
+                              year.ssblimit,
+                              year.ssbban,
+                              year.ssbmin,
+                              year.ssbmax,                              
+                              year.aav,
+                              Btarget=0,
+                              Blimit=0,
+                              Bban=0){
     # 平均漁獲量
     (catch.table <- kobeII.data %>%
          dplyr::filter(year%in%year.catch,stat=="catch") %>% # 取り出す年とラベル("catch")を選ぶ
@@ -614,7 +735,30 @@ HCR.simulation <- function(finput,HCRtable,year.lag=year.lag){
         tmp$beta <- HCR_base$beta
         tb <- bind_rows(tb,tmp)
     }
-    tb <- tb %>% mutate(scenario=str_c(HCR_name,beta))
+    tb <- tb %>% mutate(HCR_name=str_c("beta",beta)) %>%
+        mutate(scenario=HCR_name)
+    return(tb)
+}
+
+#' kobeII matrixの簡易版（Btarget, Blimitは決め打ちでβのみ変える)
+#'
+#' @export
+#'
+#' 
+
+beta.simulation <- function(finput,beta_vector,year.lag=0){
+    
+    tb <- NULL
+    
+    for(i in 1:length(beta_vector)){
+        finput$HCR$beta <- beta_vector[i]
+        finput$is.plot <- FALSE
+        finput$silent <- TRUE
+        fres_base <- do.call(future.vpa,finput) # デフォルトルールの結果→図示などに使う
+        tmp <- convert_future_table(fres_base,label=beta_vector[i]) %>%
+            rename(HCR_name=label)  %>% mutate(beta=beta_vector[i])
+        tb <- bind_rows(tb,tmp)
+    }
     return(tb)
 }
 
@@ -1189,26 +1333,28 @@ plot_HCR <- function(SBtarget,SBlim,SBban,Ftarget,
 #Fig_Fish_Manage_Rule(SBtarget,SBlim,SBban,Ftarget,col.multi2currf = "#093d86", col.SBtarget = "#00533E", col.SBlim = "#edb918",col.SBban = "#C73C2E",col.Ftarget = "#714C99", col.betaFtarget = "#505596")
 # function;ruri-rio, sbtarget;moegi-iro, sblim;koki-ki; sbban;hi-iro, ftarget;sumire-iro, betaftarget;kikyou-iro
 
-
-# MSYを達成するときの%SPRを計算する
-calc_MSY_spr <- function(MSYres,Fmax=10,max.age=Inf){
-    dres <- MSYres$input$msy$res0
+#' MSYを達成するときの%SPRを計算する
+#' @export
+calc_perspr <- function(finput, # 将来予測インプット
+                         Fvector, # Fのベクトル
+                         Fmax=10,max.age=Inf){
+    res_vpa <- finput$res0
     # MSYにおける将来予測計算をやりなおし
-    MSYres$input.list$msy$outtype <- "FULL"
-    fout.msy <- do.call(future.vpa,MSYres$input.list$msy)
+    finput$outtype <- "FULL"
+    fout.tmp <- do.call(future.vpa,finput)
     # 生物パラメータはその将来予測で使われているものを使う
-    waa.msy <- fout.msy$waa[,dim(fout.msy$waa)[[2]],1]
-    waa.catch.msy <- fout.msy$waa.catch[,dim(fout.msy$waa)[[2]],1]    
-    maa.msy <- fout.msy$maa[,dim(fout.msy$maa)[[2]],1]
-    M.msy <- fout.msy$M[,dim(fout.msy$M)[[2]],1]
+    waa.tmp <- fout.tmp$waa[,dim(fout.tmp$waa)[[2]],1]
+    waa.catch.tmp <- fout.tmp$waa.catch[,dim(fout.tmp$waa)[[2]],1]    
+    maa.tmp <- fout.tmp$maa[,dim(fout.tmp$maa)[[2]],1]
+    M.tmp <- fout.tmp$M[,dim(fout.tmp$M)[[2]],1]
 
     # SPRを計算
-    dres$Fc.at.age <- MSYres$F.msy
-    spr.msy <- ref.F(dres,waa=waa.msy,
-                     waa.catch=waa.catch.msy,
-                     maa=maa.msy,M=M.msy,rps.year=as.numeric(colnames(dres$naa)),
-                     F.range=c(seq(from=0,to=ceiling(max(dres$Fc.at.age,na.rm=T)*Fmax),
-                                   length=101),max(dres$Fc.at.age,na.rm=T)),plot=FALSE,max.age=max.age)$ypr.spr
-    target.SPR <- spr.msy[spr.msy$Frange2Fcurrent==1,]$spr[1]
-    target.SPR
+    spr.current <- ref.F(res_vpa,Fcurrent=as.numeric(Fvector),
+                         waa=waa.tmp,
+                         waa.catch=waa.catch.tmp,pSPR=NULL,
+                         maa=maa.tmp,M=M.tmp,rps.year=as.numeric(colnames(res_vpa$naa)),
+                         F.range=c(seq(from=0,to=ceiling(max(res_vpa$Fc.at.age,na.rm=T)*Fmax),
+                                       length=101),max(res_vpa$Fc.at.age,na.rm=T)),
+                         plot=FALSE,max.age=max.age)$currentSPR$perSPR
+    spr.current
 }
