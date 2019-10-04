@@ -6,7 +6,7 @@
 \usage{
 out.vpa(res = NULL, srres = NULL, msyres = NULL,
   fres_current = NULL, fres_HCR = NULL, kobeII = NULL,
-  filename = "vpa")
+  filename = "vpa", csvname = NULL, pdfname = NULL)
 }
 \arguments{
 \item{res}{VPAの結果}
@@ -20,6 +20,12 @@ out.vpa(res = NULL, srres = NULL, msyres = NULL,
 \item{fres_HCR}{future.vpaの結果(F with HCR)}
 
 \item{kobeII}{kobeII.matrixの結果}
+
+\item{filename}{csvファイルとpdfファイルの両方のファイル名を指定する場合（拡張子なしで指定）}
+
+\item{csvname}{csvファイルのファイル名}
+
+\item{pdfname}{pdfファイルのファイル名}
 }
 \description{
 VPA結果をcsvファイルに出力する

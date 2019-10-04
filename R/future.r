@@ -42,7 +42,8 @@ NULL
 # ref.F
 ref.F <- function(
   res, # VPAの結果のオブジェクト
-  sel=NULL, # 仮定する選択率．NULLの場合，res$Fc.at.ageが使われる
+  #  sel=NULL, # 仮定する選択率．NULLの場合，res$Fc.at.ageが使われる
+  Fcurrent=NULL, # Fcurrentの仮定．NULLの場合，res$Fc.at.ageが使われる  
   waa=NULL, # 仮定する生物パラメータ．直接の値を入れるか，年を指定するやり方のどちらでも動く。直接指定するほうが優先。
   maa=NULL,
   M=NULL,
@@ -76,32 +77,27 @@ ref.F <- function(
   years <- dimnames(naa)[[2]]
   ages <- dimnames(naa)[[1]]
 
-  if(is.null(sel)){
-    Fc.at.age <- res$Fc.at.age
-    sel <- Fc.at.age/max(Fc.at.age,na.rm=TRUE)
+  if(is.null(Fcurrent)){
+    Fcurrent <- res$Fc.at.age
   }
-  else{
-    Fc.at.age <- sel
-  }
-  sel <- sel/max(sel,na.rm=T)
-    
-  na <- sum(!is.na(sel))
+  sel <- Fcurrent/max(Fcurrent,na.rm=TRUE)
+  na <- sum(!is.na(Fcurrent))
 
   if(is.null(waa.year)) waa.year <- rev(years)[1]
   if(is.null(maa.year)) maa.year <- rev(years)[1]
   if(is.null(M.year)) M.year <- rev(years)[1]
   if(is.null(rps.year)) rps.year <- as.numeric(colnames(res$naa))
   
-  if(is.null(waa))  waa <- apply(as.matrix(as.data.frame(res$input$dat$waa)[as.character(waa.year)]),1,mean)
-  if(is.null(M))  M <- apply(as.matrix(as.data.frame(res$input$dat$M)[as.character(M.year)]),1,mean)
-  if(is.null(maa))  maa <- apply(as.matrix(as.data.frame(res$input$dat$maa)[as.character(maa.year)]),1,mean)
+  if(is.null(waa))  waa <- apply_year_colum(res$input$dat$waa,waa.year)#apply(as.matrix(as.data.frame(res$input$dat$waa)[as.character(waa.year)]),1,mean)
+  if(is.null(M))  M <- apply_year_colum(res$input$dat$M,M.year)#apply(as.matrix(as.data.frame(res$input$dat$M)[as.character(M.year)]),1,mean)
+  if(is.null(maa))  maa <- apply_year_colum(res$input$dat$maa,maa.year)#apply(as.matrix(as.data.frame(res$input$dat$maa)[as.character(maa.year)]),1,mean)
 
   if(is.null(waa.catch)){
       if(is.null(res$input$dat$waa.catch)){
           waa.catch <- waa
       }
       else{
-          waa.catch <- apply(as.matrix(as.data.frame(res$input$dat$waa.catch)[as.character(waa.year)]),1,mean)
+          waa.catch <- apply_year_colum(res$input$dat$waa.catch,waa.year)#apply(as.matrix(as.data.frame(res$input$dat$waa.catch)[as.character(waa.year)]),1,mean)
           }
   }
 
@@ -124,25 +120,25 @@ ref.F <- function(
   names(rps.q)[4] <- "mean"
     spr.q <- 1/rps.q
 
-  original.spr <- calc.rel.abund(sel,1,na,M,waa,waa.catch,maa,min.age=min.age,
+  original.spr <- calc.rel.abund(Fcurrent,1,na,M,waa,waa.catch,maa,min.age=min.age,
                                  max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)
-  original.spr0 <- calc.rel.abund(sel,0,na,M,waa,waa.catch,maa,min.age=min.age,
+  original.spr0 <- calc.rel.abund(Fcurrent,0,na,M,waa,waa.catch,maa,min.age=min.age,
                                   max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)
   original.perspr <- sum(original.spr$spr)/sum(original.spr0$spr)
     
 
     # Fcurrent
-    Fcurrent <- c(max(Fc.at.age,na.rm=T), mean(Fc.at.age,na.rm=T))
+    Fcurrent_max_mean <- c(max(Fcurrent,na.rm=T), mean(Fcurrent,na.rm=T))
     
     # grid search
-    F_current <- Fcurrent[1]
-    F.range <- sort(c(F.range,  F_current))
-    spr0 <- sum(calc.rel.abund(sel,0,na,M,waa,waa.catch,maa,min.age=min.age,max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)$spr)  
+    Fcurrent_max <- Fcurrent_max_mean[1]
+    F.range <- sort(c(F.range,  Fcurrent_max))
+    spr0 <- sum(calc.rel.abund(Fcurrent,0,na,M,waa,waa.catch,maa,min.age=min.age,max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)$spr)  
     tmp <- lapply(F.range, function(x) calc.rel.abund(sel,x,na,M,waa,waa.catch,maa,min.age=min.age,max.age=max.age,Pope=Pope,ssb.coef=ssb.coef))
     ypr <- sapply(tmp,function(x) sum(x$ypr))
     pspr <- sapply(tmp,function(x) sum(x$spr))/spr0*100
     ypr.spr <- data.frame(F.range=F.range,ypr=ypr,pspr=pspr)
-    ypr.spr$Frange2Fcurrent  <- ypr.spr$F.range/F_current    
+    ypr.spr$Frange2Fcurrent  <- ypr.spr$F.range/Fcurrent_max
     
   # F.spr
 
@@ -245,9 +241,9 @@ ref.F <- function(
   Fmax <- c(Fmax, f.mean(Fmax))
   F0.1 <- c(F0.1, f.mean(F0.1))
 
-  names(Fcurrent) <- names(Fmed) <- names(Fmean) <- names(Flow) <- names(Fhigh) <- names(Fmax) <- names(F0.1) <- c("max","mean")
-
-  Res <- list(sel=sel, min.age=min.age, max.age=max.age, rps.q=rps.q, spr.q=spr.q, Fcurrent=Fcurrent, Fmed=Fmed, Flow=Flow, Fhigh=Fhigh, Fmax=Fmax, F0.1=F0.1, Fmean=Fmean,rps.data=rps.data)
+  names(Fcurrent_max_mean) <- names(Fmed) <- names(Fmean) <- names(Flow) <- names(Fhigh) <- names(Fmax) <- names(F0.1) <- c("max","mean")
+    Res <- list(min.age=min.age, max.age=max.age, rps.q=rps.q, spr.q=spr.q, Fcurrent=Fcurrent_max_mean,
+                sel=sel, Fmed=Fmed, Flow=Flow, Fhigh=Fhigh, Fmax=Fmax, F0.1=F0.1, Fmean=Fmean,rps.data=rps.data)
   
   if (!is.null(pSPR)){
     FpSPR <- rbind(FpSPR, sapply(FpSPR, f.mean))
@@ -262,8 +258,9 @@ ref.F <- function(
 
   Res$currentSPR <- list(SPR=sum(original.spr$spr),
                          perSPR=original.perspr,
-                       YPR=sum(original.spr$spr))
- 
+                         YPR=sum(original.spr$spr),
+                         Fcurrent=Fcurrent)
+
   Res$ypr.spr  <- ypr.spr #data.frame(F.range=F.range,ypr=ypr,spr=spr)
   Res$waa <- waa
   Res$waa.catch <- waa.catch  
@@ -1563,7 +1560,9 @@ get.data <- function(tfile){
 #' @param fres_current future.vpaの結果(Fcurrent)
 #' @param fres_HCR future.vpaの結果(F with HCR)
 #' @param kobeII kobeII.matrixの結果
-#'
+#' @param filename csvファイルとpdfファイルの両方のファイル名を指定する場合（拡張子なしで指定）
+#' @param csvname csvファイルのファイル名
+#' @param pdfname pdfファイルのファイル名
 #' @export
 
 out.vpa <- function(res=NULL,    # VPA result
@@ -1572,7 +1571,9 @@ out.vpa <- function(res=NULL,    # VPA result
                     fres_current=NULL,   # future projection result
                     fres_HCR=NULL,   # future projection result                    
                     kobeII=NULL, # kobeII result
-                    filename="vpa" # filename without extension
+                    filename="vpa", # filename without extension
+                    csvname=NULL,
+                    pdfname=NULL
                     ){
   old.par <- par()  
   exit.func <- function(){
@@ -1581,8 +1582,11 @@ out.vpa <- function(res=NULL,    # VPA result
   }
   on.exit(exit.func())
 
-  csvname <- paste(filename,".csv",sep="")
-  pdfname <- paste(filename,".pdf",sep="")
+  if(!is.null(filename)){
+      csvname <- paste(filename,".csv",sep="")
+      pdfname <- paste(filename,".pdf",sep="")
+  }
+  
   pdf(pdfname)
   par(mfrow=c(3,2),mar=c(3,3,2,1))  
   options(warn=-1)
@@ -1652,38 +1656,38 @@ out.vpa <- function(res=NULL,    # VPA result
                                            method=srres$input$method,
                                            type  =srres$input$SR)      
       write("\n# SR fit resutls",file=csvname,append=T)
-      write_csv(res_summary,file=csvname,append=T)
+      write_csv(res_summary,path=csvname,append=T)
   }  
   
   if(!is.null(msyres)){
     write("\n# MSY Reference points",file=csvname,append=T)
-    write_csv(msyres$summary,file=csvname,append=T)
+    write_csv(msyres$summary,path=csvname,append=T)
   }
 
   
-  if(!is.null(fres)){
+  if(!is.null(fres_current)){
     write("\n# future projection under F current (average)",file=csvname,append=T)  
     write("\n# future F at age",file=csvname,append=T)
-    write.table2(apply(res_future_current$faa,c(1,2),mean),title.tmp="Future F at age")
+    write.table2(apply(fres_current$faa,c(1,2),mean),title.tmp="Future F at age")
     
     write("\n# future numbers at age",file=csvname,append=T)
-    write.table2(apply(res_future_current$naa,c(1,2),mean),title.tmp="Future numbers at age")
+    write.table2(apply(fres_current$naa,c(1,2),mean),title.tmp="Future numbers at age")
 
     write("\n# future total and spawning biomass",file=csvname,append=T)
-    x <- rbind(apply(fres$vssb, 1,mean),
-               apply(fres$vbiom,1,mean),
-               apply(fres$vwcaa,1,mean))
+    x <- rbind(apply(fres_current$vssb, 1,mean),
+               apply(fres_current$vbiom,1,mean),
+               apply(fres_current$vwcaa,1,mean))
     rownames(x) <- c("Spawning biomass","Total biomass","Catch biomass")
     write.table2(x,title.tmp="Future total, spawning and catch biomass")    
   }
 
   if(!is.null(fres_HCR)){
-    write("\n# future projection under F current (average)",file=csvname,append=T)  
+    write("\n# future projection under default HCR (average)",file=csvname,append=T)  
     write("\n# future F at age",file=csvname,append=T)
-    write.table2(apply(res_future_current$faa,c(1,2),mean),title.tmp="Future F at age")
+    write.table2(apply(fres_HCR$faa,c(1,2),mean),title.tmp="Future F at age")
     
     write("\n# future numbers at age",file=csvname,append=T)
-    write.table2(apply(res_future_current$naa,c(1,2),mean),title.tmp="Future numbers at age")
+    write.table2(apply(fres_HCR$naa,c(1,2),mean),title.tmp="Future numbers at age")
 
     write("\n# future total and spawning biomass",file=csvname,append=T)
     x <- rbind(apply(fres_HCR$vssb, 1,mean),
@@ -1691,7 +1695,16 @@ out.vpa <- function(res=NULL,    # VPA result
                apply(fres_HCR$vwcaa,1,mean))
     rownames(x) <- c("Spawning biomass","Total biomass","Catch biomass")
     write.table2(x,title.tmp="Future total, spawning and catch biomass")    
-  }  
+  }
+
+  if(!is.null(kobeII)){
+    write("\n# Kobe II table",file=csvname,append=T)  
+    kobeII.table_name <- names(kobeII.table)
+    for(i in 1:length(kobeII.table_name)){
+        write(str_c("\n# ",kobeII.table_name[i]),file=csvname,append=T)        
+        write_csv(kobeII.table[kobeII.table_name[i]][[1]],path=csvname,append=TRUE)
+    }
+  }
   
   ## if(!is.null(ABC)){
   ##   write("\n# ABC summary",file=csvname,append=T)
@@ -2618,6 +2631,11 @@ est.MSY <- function(vpares,
 
     Fvector <- select(allsum,num_range("F",0:40))
 
+    allsum$perSPR <- NA
+    for(i in 1:nrow(Fvector)){
+        allsum$perSPR[i] <- calc_perspr(input.list[[1]],Fvector[i,])
+    }
+
     output <- list(summary =allsum,#as.data.frame(as.matrix(sumvalue)),
                    summary_tb=allsum,
 #                   summary_tb=allsum,
@@ -2633,7 +2651,7 @@ est.MSY <- function(vpares,
         output$all.statAR  <- as.data.frame(as.matrix(refvalue2))
         output$ssb.ar.mean <- ssb.ar.mean
         }
-    output$SPR.msy <- calc_MSY_spr(output)
+#    output$SPR.msy <- calc_MSY_spr(output)
     
     invisible(output)    
 }
@@ -3035,3 +3053,52 @@ resample.rec <- function(ssb,vpares,#deterministic=FALSE,
   return(list(rec=rec,rec.resample=rec.arg$resid)) # 暫定的変更
 }
 
+
+#' vpaデータ, 選択率の参照年1, 漁獲圧の参照年2を与えて、参照年2の漁獲圧のもとで参照年1の選択率となるF at ageを作成する関数。漁獲圧の変換は％SPR換算
+#'
+#'
+#' @export
+
+convert_faa_perSPR <- function(res_vpa, sel_year, faa_year, Fcurrent_MSY=NULL, Fsel_MSY=NULL){
+    if(is.null(Fcurrent_MSY)){
+        Fcurrent_MSY <- apply_year_colum(res_vpa$faa,target_year=faa_year)
+    }
+    Fcurrent.per.spr <- ref.F(res_vpa,Fcurrent=Fcurrent_MSY,waa.year=faa_year,M.year=faa_year,
+                              maa.year=faa_year,plot=FALSE,pSPR=NULL)$currentSPR$perSPR
+    cat("%SPR in Fcurrent ",Fcurrent.per.spr,"\n")
+    if(is.null(Fsel_MSY)){
+        Fsel_MSY <- apply_year_colum(res_vpa$faa,target_year=sel_year)
+    }
+
+    Fmultiplier <- ref.F(res_vpa,Fcurrent=Fsel_MSY,waa.year=faa_year,M.year=faa_year,
+                         maa.year=faa_year,pSPR=Fcurrent.per.spr*100,plot=FALSE)
+    cat("----------------------------- \n ")                
+    cat("%SPR in Fsel_MSY",Fmultiplier$currentSPR$perSPR," = ")        
+    Fmultiplier <- rev(Fmultiplier$summary)[3,1] %>% unlist()
+    cat("(F multiplier=",Fmultiplier,")\n")
+    Fcurrent_MSY_new <- Fsel_MSY * Fmultiplier
+    Fref_tmp <- ref.F(res_vpa,Fcurrent=Fcurrent_MSY_new,waa.year=faa_year,
+                      M.year=faa_year,maa.year=faa_year,
+                      pSPR=Fcurrent.per.spr*100,plot=FALSE)
+    cat("%SPR in new-Fcurrent",Fref_tmp$currentSPR$perSPR,"\n")
+    cat("----------------------------- \n ")                        
+    matplot(cbind(Fcurrent_MSY_new,Fcurrent_MSY,Fsel_MSY),type="b",pch=1:3,ylab="F",xlab="Age (recruit age=1)")
+    legend("bottomright",pch=1:3,col=1:3,c("Fcurrent","Fsel_MSY","new-Fcurrent"))        
+    return(Fcurrent_MSY_new)
+}
+
+
+#' 列が年である行列に対して、年を指定するとその年のあいだの平均値（等）を返す関数
+#'
+#' @export
+#'
+#' 
+
+apply_year_colum <- function(mat,target_year,stat="mean"){
+    if(target_year[1]<0){
+        target_year <- rev(colnames(mat))[-target_year] %>%
+            as.numeric() %>% sort()
+    }
+    mat <- as.data.frame(mat)
+    apply(mat[as.character(target_year)],1,get(stat))
+}
