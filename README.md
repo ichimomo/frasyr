@@ -26,10 +26,13 @@ library(frasyr)
 
 # リリースバージョン
 - v1.00 : future-rvpaから移動してきたほぼそのままのバージョン
+- v1.10 : future.vpaにuse.MSEオプションを追加
 
 # マニュアル
 - VPAによる資源量推定　https://ichimomo.github.io/frasyr/doc/vpa.html
 - 新ルールのもとでの将来予測計算 https://ichimomo.github.io/frasyr/doc/future.html
+- 管理基準値の計算 https://ichimomo.github.io/frasyr/doc/estMSY.html
+- 再生産関係決定ガイドライン https://ichimomo.github.io/frasyr/doc/SRR-guidline.html
 - 今後追加予定
 
 
