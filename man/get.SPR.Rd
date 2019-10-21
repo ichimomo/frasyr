@@ -9,7 +9,7 @@ get.SPR(dres, target.SPR = 30, Fmax = 10, max.age = Inf)
 \arguments{
 \item{dres}{vpa関数の返り値}
 
-\item{target.SPR}{目標とするSPR。この値を入れると、結果の$ysdata$"F/Ftarget"で、その年のFが目標としたSPR(%)を達成するためのF（Ftarget）の何倍になっているかを返す。デフォルトは30が入っている。このとき、SPRを計算するための生物パラメータ（年齢別体重・成熟率・死亡率）はそれぞれの年で仮定されているものを用いる。}
+\item{target.SPR}{目標とするSPR。この値を入れると、結果の$ysdata$"F/Ftarget"で、その年のFが目標としたSPR(％)を達成するためのF（Ftarget）の何倍になっているかを返す。デフォルトは30が入っている。このとき、SPRを計算するための生物パラメータ（年齢別体重・成熟率・死亡率）はそれぞれの年で仮定されているものを用いる。}
 
 \item{Fmax}{上の計算をするときに探索するFの乗数の最大値}
 
