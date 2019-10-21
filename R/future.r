@@ -1656,7 +1656,7 @@ out.vpa <- function(res=NULL,    # VPA result
                                            method=srres$input$method,
                                            type  =srres$input$SR)      
       write("\n# SR fit resutls",file=csvname,append=T)
-      write_csv(res_summary,path=csvname,append=T)
+      write_csv(sr_summary,path=csvname,append=T)
   }  
   
   if(!is.null(msyres)){
@@ -2136,27 +2136,28 @@ show.likeprof <- function(res){
 
 
 #'
-#' VPA計算結果を入れると、毎年のF at ageがどのくらいのSPR, YPRに相当するかを返す
+#' VPA計算結果を使って毎年のF at ageがどのくらいのSPR, YPRに相当するかを計算する。また、各年のFが、目標としたSPR（target.SPR）を達成するためのF(Ftarget)の何倍に相当するかも計算する。
 #'
 #' @param dres vpa関数の返り値
-#' @param target.SPR 目標とするSPR。この値を入れると、結果の$ysdataでその年のFが目標とするSPRを達成するためのFの何倍になっているかを返す。デフォルトは30が入っている
+#' @param target.SPR 目標とするSPR。この値を入れると、結果の$ysdata$"F/Ftarget"で、その年のFが目標としたSPR(%)を達成するためのF（Ftarget）の何倍になっているかを返す。デフォルトは30が入っている。このとき、SPRを計算するための生物パラメータ（年齢別体重・成熟率・死亡率）はそれぞれの年で仮定されているものを用いる。
 #' @param Fmax 上の計算をするときに探索するFの乗数の最大値
-#' @param max.age SPRやYPRの計算をするときに最大何歳まで考慮するか（デフォルトは無限大) 
+#' @param max.age SPRやYPRの計算をするときに最大何歳まで考慮するか（デフォルトは無限大)
+#'
+#' @examples
+#' data(res_vpa)
+#' Fratio <- get.SPR(res_vpa,target.SPR=12)$ysdata$"F/Ftarget"
+#' plot(colnames(res_vpa$naa),Fratio,type="b")
+#' 
 #'
 #' @export 
 get.SPR <- function(dres,target.SPR=30,Fmax=10,max.age=Inf){
-    # Fの歴史的な%SPRを見てみる                                                                             
-    # 毎年異なるFや生物パラメータに対して、YPR,SPR、SPR0がどのくらい変わっているのか見る(Rコード例2)
-    # target.SPRが与えられると、target.SPR（％）として与えた数字に対応するSPR値に対するFの乗数も出力する(与えない場合は30%とする)
-
     dres$ysdata <- matrix(0,ncol(dres$faa),5)
     dimnames(dres$ysdata) <- list(colnames(dres$faa),c("perSPR","YPR","SPR","SPR0","F/Ftarget"))
     for(i in 1:ncol(dres$faa)){
 	dres$Fc.at.age <- dres$faa[,i] # Fc.at.ageに対象年のFAAを入れる
         if(all(dres$Fc.at.age>0)){
-            byear <- colnames(dres$faa)[i] # 何年の生物パラメータを使うか                                       
-            # RVPAのref.F関数でYPRなどを計算。                                                                  
-            # 配布している1.3から1.4にアップデートしているので、新しいほうの関数を使うこと(返り値がちょっと違う)
+            byear <- colnames(dres$faa)[i] # 何年の生物パラメータを使うか
+            
             a <- ref.F(dres,waa.year=byear,maa.year=byear,M.year=byear,rps.year=2000:2011,
                        pSPR=round(target.SPR),
                        F.range=c(seq(from=0,to=ceiling(max(dres$Fc.at.age,na.rm=T)*Fmax),
@@ -3056,6 +3057,8 @@ resample.rec <- function(ssb,vpares,#deterministic=FALSE,
 
 #' vpaデータ, 選択率の参照年1, 漁獲圧の参照年2を与えて、参照年2の漁獲圧のもとで参照年1の選択率となるF at ageを作成する関数。漁獲圧の変換は％SPR換算
 #'
+#' sel_year 選択率の参照年
+#' faa_year 漁獲圧の参照年
 #'
 #' @export
 
