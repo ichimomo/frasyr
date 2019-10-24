@@ -333,11 +333,32 @@ calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=
 #'
 #' @param res0 VPAの出力結果
 #' @param currentF ABC算定年-1年目までに用いるF at age。NULLの場合、VPA結果のres0$Fc.at.ageを用いる
-#' @param multi ABC算定年以降にcurrentFに乗じる係数
 #' @param futureF ABC算定年以降に用いられるF at age。NULLの場合にはcurrentFをそのまま用いる。currentF, multi, futureFをあわせて、将来のF at ageはABC算定年-1年まではcurrentF, ABC算定年以降はmulti x futureF (NULLの場合、currentF)が用いられる
+#' @param multi ABC算定年以降にcurrentFに乗じる係数
+#' @param multi.year ある特定の年だけFを変えたい場合。デフォルトは1。変える場合は、指定した年またはタイムステップの要素数のベクトルで指定。
+#' @param start.year  将来予測の開始年，NULLの場合はVPA計算の最終年の次の年
+#' @param ABC.year ABC yearを計算する年。NULLの場合はVPA計算の最終年の次の次の年
+#' @param waa.year VPA結果から生物パラメータをもってきて平均する期間。maa.year, waa.catch.year, M.yearも同じ。NULLの場合，VPAの最終年のパラメータを持ってくる。
+#' @param waa 年齢別体重を直接指定する場合(waa.yearよりも優先される)
+#' @param maa　年齢別成熟率を直接指定する場合(maa.yearよりも優先される)
+#' @param waa.catch　漁獲量計算用の年齢別体重を直接指定する場合(waa.catch.yearよりも優先される)
+#' @param waa.fun 年齢別体重を年齢別資源尾数の関数とするか(waa.catchが別に与えられているときには機能しない)
+#' @param M　自然死亡係数を直接指定する場合(M.yearよりも優先される)
+#' @param strategy # F: 漁獲係数一定, E: 漁獲割合一定、C: 漁獲量一定（pre.catchで漁獲量を指定）。もう使われていない引数？
+#' @param Pope 漁獲量計算にPopeの近似式を使うか。指定しない場合はvpa関数への引数がそのまま受け継がれる。
+#' @param add.year =1で1年分余分に計算する（通常は使わない）
+#' @param seed 乱数のシード。将来予測の実行前にset.seed(seed)でシードを固定する。NULLの場合は、ランダムな数が用いられる。
+#' @param HCRを使う場合、list(Blim=154500, Bban=49400,beta=1,year.lag=0)のように指定する。year.lag=0で将来予測年の予測SSBを使う。-2の場合は２年遅れのSSBを使う。
+#' @param N 確率的なシミュレーションをする場合の繰り返し回数。N+1の結果が返され、1列目に決定論的な結果が与えられる。0を与えると決定論的な結果のみが出力される。
+#' @param silent 計算条件を出力、プロットするか。デフォルトはFALSE。
+#' @param pre.catch 漁獲重量をgivenで与える場合の引数。list(year=2012,wcatch=13000)として指定。
+#' @param rec.new 指定した年の加入量を固定する。年を指定しないで与える場合は、自動的にスタート年の加入になる。list(year=, rec=)で与える場合は、対応する年の加入を置き換える。
+#' @param recfunc 再生産関係の関数
+#' @param rec.arg 加入の各種設定
+#' @param Frec Frecオプション。Frec計算のための設定リストを与えると、指定された設定でのFrecに対応するFで将来予測を行う。例；Frec=list(stochastic=TRUE,future.year=2018,Blimit=450*1000,scenario="catch.mean",Frange=c(0.01,2*mult))。stochastic; TRUEの場合、stochastic simulationで50%の確率でBlimitを越す。FALSEの場合、RPS固定のprojectionがBilmitと一致する。future.year; 何年の資源量を見るか？ Blimit; 参照とする親魚量。scenario; scenario; "catch.mean"の場合漁獲量の平均値を見る。"blimit"の場合、親魚量を見る。デフォルトは"blimit"。Frange; Fの探索範囲（Fcurrentに対する乗数）
 #' @param use.MSE 簡易MSEを実施するかどうか
 #' @param MSE.option 簡易MSEのoption
-#' 
+#' @param det.run 1回めのランは決定論的将来予測をする。デフォルトはTRUE。#' 
 #'
 #' @export
 
@@ -345,58 +366,42 @@ calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=
 ## multiのオプションは管理後のFのmultiplier（管理前後でselectivityが同じ）
 future.vpa <-
     function(res0,
-             currentF=NULL, # 管理前のF
-             multi=1, # 管理後（ABC.yearから）のF (current F x multi)
+             currentF=NULL, 
+             multi=1, 
              futureF=NULL,              
              nyear=10,Pope=res0$input$Pope,
              outtype="FULL",
-             multi.year=1,#ある特定の年だけFを変えたい場合。デフォルトは1。変える場合は、指定した年またはタイムステップの要素数のベクトルで指定。
-             # 年数の指定
-             start.year=NULL, # 将来予測の開始年，NULLの場合はVPA計算の最終年の次の年
-             ABC.year=NULL, # ABC yearを計算する年。NULLの場合はVPA計算の最終年の次の次の年
-             waa.year=NULL, # VPA結果から生物パラメータをもってきて平均する期間
-             waa.catch.year=NULL, # VPA結果から生物パラメータをもってきて平均する期間             
-             # NULLの場合，VPAの最終年のパラメータを持ってくる
-             maa.year=NULL, # VPA結果から生物パラメータをもってきて平均する期間
-             M.year=NULL, # VPA結果から生物パラメータをもってきて平均する期間
+             multi.year=1,
+             start.year=NULL, 
+             ABC.year=NULL, 
+             waa.year=NULL, 
+             waa.catch.year=NULL, 
+             maa.year=NULL, 
+             M.year=NULL, 
              seed=NULL,
-             strategy="F", # F: 漁獲係数一定, E: 漁獲割合一定、C: 漁獲量一定（pre.catchで漁獲量を指定）
-             HCR=NULL,# HCRを使う場合、list(Blim=154500, Bban=49400,beta=1,year.lag=0)のように指定するか、以下の引数をセットする,year.lag=0で将来予測年の予測SSBを使う。-2の場合は２年遅れのSSBを使う
+             strategy="F", 
+             HCR=NULL,
              use.MSE=FALSE,MSE.options=NULL,
              beta=NULL,delta=NULL,Blim=0,Bban=0,
              plus.group=res0$input$plus.group,
-             N=1000,# 確率的なシミュレーションをする場合の繰り返し回数。
-             # N+1の結果が返され、1列目に決定論的な結果が                       
-             # 0を与えると決定論的な結果のみを出力
-             silent=FALSE, is.plot=TRUE, # 計算条件を出力、プロットするか
-             random.select=NULL, # 選択率をランダムリサンプリングする場合、ランダムリサンプリングする年を入れる
-             # strategy="C"または"E"のときのみ有効
-             pre.catch=NULL, # list(year=2012,wcatch=13000), 漁獲重量をgivenで与える場合
-             # list(year=2012:2017,E=rep(0.5,6)), 漁獲割合をgivenで与える場合                       
-             ##-------- 加入に関する設定 -----------------
-             rec.new=NULL, # 指定した年の加入量
-             # 年を指定しないで与える場合は、自動的にスタート年の加入になる。
-             # list(year=, rec=)で与える場合は、対応する年の加入を置き換える。
-             ##--- 加入関数
-             recfunc=HS.recAR, # 再生産関係の関数
+             N=1000, 
+             silent=FALSE, is.plot=TRUE, 
+             pre.catch=NULL, 
+             rec.new=NULL, 
+             recfunc=HS.recAR, 
              rec.arg=list(a=1,b=1,rho=0,sd=0,c=1,bias.correction=TRUE,
-                          resample=FALSE,resid=0,resid.year=NULL), # 加入の各種設定
-             ##--- Frecオプション；Frec計算のための設定リストを与えると、指定された設定でのFrecに対応するFで将来予測を行う
+                          resample=FALSE,resid=0,resid.year=NULL), 
              Frec=NULL,
-             # list(stochastic=TRUE, # TRUEの場合、stochastic simulationで50%の確率でBlimitを越す(PMS, TMI)
-             # FALSEの場合、RPS固定のprojectionがBilmitと一致する(NSK)
-             #      future.year=2018, # 何年の資源量を見るか？
-             #      Blimit=450*1000,  # Blimit (xトン)
-             #      scenario="catch.mean" or "blimit" (デフォルトはblimit; "catch.mean"とするとstochastic simulationにおける平均漁獲量がBlimitで指定した値と一致するようになる)
-             #      Frange=c(0.01,2*mult)) # Fの探索範囲
-             waa=NULL,waa.catch=NULL,maa=NULL,M=NULL, # 季節毎の生物パラメータ、または、生物パラメータを外から与える場合
-             waa.fun=FALSE, #waaをnaaのfunctionとするか(waa.catchが別に与えられているときには機能しない)
+             waa=NULL,
+             waa.catch=NULL,
+             maa=NULL,
+             M=NULL, 
+             waa.fun=FALSE, 
              naa0=NULL,eaa0=NULL,ssb0=NULL,faa0=NULL,
-             add.year=0, # 岡村オプションに対応。=1で1年分余計に計算する
-             det.run=TRUE # 1回めのランは決定論的将来予測をする（完璧には対応していない）
+             add.year=0, 
+             det.run=TRUE 
              ){
 
-        
         argname <- ls()
         arglist <- lapply(argname,function(x) eval(parse(text=x)))
         names(arglist) <- argname
@@ -426,7 +431,6 @@ future.vpa <-
         rec.arg <- set_SR_options(rec.arg,N=N,silent=silent,eaa0=eaa0,det.run=det.run)
 
         ##------------- set HCR options
-        
         if(!is.null(HCR) && is.null(HCR$year.lag)) HCR$year.lag <- 0
         if(!is.null(beta)){
             HCR$beta <- beta
@@ -450,21 +454,20 @@ future.vpa <-
         }
         ##-------------        
         
-        #  fyears <- seq(from=start.year,to=start.year+nyear-1,by=1/ts)
         fyears <- seq(from=start.year,to=start.year+nyear+add.year,by=1)
         
-        fyear.year <- floor(fyears)
+        fyear.year <- floor(fyears) #??
         ntime <- length(fyears)
         ages <- as.numeric(dimnames(res0$naa)[[1]]) # ages:VPAで考慮される最大年齢数
         min.age <- min(as.numeric(ages))
 
         year.overlap <- years %in% start.year   
-                 {if(sum(year.overlap)==0){
-                      nage <- sum(!is.na(res0$naa[,ncol(res0$naa)])) # nage:将来予測で考慮すべき年の数
-                  }
-                  else{
-                      nage <- sum(!is.na(res0$naa[,year.overlap])) 
-                  }}
+        {if(sum(year.overlap)==0){
+             nage <- sum(!is.na(res0$naa[,ncol(res0$naa)])) # nage:将来予測で考慮すべき年の数
+         }
+         else{
+             nage <- sum(!is.na(res0$naa[,year.overlap])) 
+         }}
         
         if(!silent){
             arglist.tmp <-  arglist
@@ -481,10 +484,9 @@ future.vpa <-
             multi.org <- multi
             if(is.null(Frec$stochastic)) Frec$stochastice <- TRUE
             if(is.null(Frec$target.probs)) Frec$target.probs <- 50
-            if(is.null(Frec$scenario)) Frec$scenario <- "blimit" # 2017/12/25追記 
-            if(is.null(Frec$Frange)) Frec$Frange <- c(0.01,multi.org*2)   # 2017/12/25追記(探索するFの範囲の指定)
+            if(is.null(Frec$scenario)) Frec$scenario <- "blimit" 
+            if(is.null(Frec$Frange)) Frec$Frange <- c(0.01,multi.org*2) 
             if(is.null(Frec$future.year)) Frec$future.year <- fyears[length(fyears)]-1
-            #      arglist$Frec <- Frec
             
             getFrec <- function(x,arglist){
                 set.seed(arglist$seed)
@@ -564,7 +566,7 @@ future.vpa <-
             if(!is.null(res0$input$dat$waa.catch)) waa.catch.org <- apply(as.matrix(res0$input$dat$waa.catch[,years %in% waa.catch.year]),1,mean)
             else waa.catch.org <- waa.org
         }
-        
+
         M[] <- M.org
         waa[] <- waa.org
         waa_all[,(length(years)+1):dim(waa_all)[[2]],] <- waa.org
@@ -899,19 +901,6 @@ future.vpa <-
                          Frec=Frec,rec.new=rec.new,pre.catch=pre.catch,input=arglist)
         }      
 
-        ## if(non.det==TRUE){
-        ##     fres <- list(faa=faa[,,-1,drop=F],naa=naa[,,-1,drop=F],biom=biom[,,-1,drop=F],
-        ##                  ssb=ssb[,,-1,drop=F],wcaa=wcaa[,,-1,drop=F],caa=caa[,,-1,drop=F],
-        ##                  M=M[,,-1,drop=F],rps=rps.mat[,-1,drop=F],
-        ##                  maa=maa[,,-1,drop=F],vbiom=apply(biom[,,-1,drop=F],c(2,3),sum,na.rm=T),
-        ##                  eaa=eaa[,-1,drop=F],
-        ##                  waa=waa[,,-1,drop=F],waa.catch=waa.catch[,,-1,drop=F],currentF=currentF,
-        ##                  vssb=apply(ssb[,,-1,drop=F],c(2,3),sum,na.rm=T),vwcaa=vwcaa[,-1,drop=F],
-        ##                  years=fyears,fyear.year=fyear.year,ABC=ABC,recfunc=recfunc,rec.arg=rec.arg,
-        ##                  waa.year=waa.year,maa.year=maa.year,multi=multi,multi.year=multi.year,
-        ##                  Frec=Frec,rec.new=rec.new,pre.catch=pre.catch,input=arglist)
-        ## }
-        
         class(fres) <- "future"
 
         invisible(fres)
