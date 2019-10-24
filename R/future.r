@@ -342,11 +342,11 @@ calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=
 #' @param start.year  将来予測の開始年，NULLの場合はVPA計算の最終年の次の年
 #' @param ABC.year ABC yearを計算する年。NULLの場合はVPA計算の最終年の次の次の年
 #' @param waa.year VPA結果から生物パラメータをもってきて平均する期間。maa.year, waa.catch.year, M.yearも同じ。NULLの場合，VPAの最終年のパラメータを持ってくる。
-#' @param waa 年齢別体重を直接指定する場合
-#' @param maa　年齢別成熟率を直接指定する場合
-#' @param waa.catch　漁獲量計算用の年齢別体重を直接指定する場合
+#' @param waa 年齢別体重を直接指定する場合(waa.yearよりも優先される)
+#' @param maa　年齢別成熟率を直接指定する場合(maa.yearよりも優先される)
+#' @param waa.catch　漁獲量計算用の年齢別体重を直接指定する場合(waa.catch.yearよりも優先される)
 #' @param waa.fun 年齢別体重を年齢別資源尾数の関数とするか(waa.catchが別に与えられているときには機能しない)
-#' @param M　自然死亡係数を直接指定する場合
+#' @param M　自然死亡係数を直接指定する場合(M.yearよりも優先される)
 #' @param strategy # F: 漁獲係数一定, E: 漁獲割合一定、C: 漁獲量一定（pre.catchで漁獲量を指定）。もう使われていない引数？
 #' @param Pope 漁獲量計算にPopeの近似式を使うか。指定しない場合はvpa関数への引数がそのまま受け継がれる。
 #' @param add.year =1で1年分余分に計算する（通常は使わない）
@@ -395,7 +395,10 @@ future.vpa <-
              rec.arg=list(a=1,b=1,rho=0,sd=0,c=1,bias.correction=TRUE,
                           resample=FALSE,resid=0,resid.year=NULL), 
              Frec=NULL,
-             waa=NULL,waa.catch=NULL,maa=NULL,M=NULL, 
+             waa=NULL,
+             waa.catch=NULL,
+             maa=NULL,
+             M=NULL, 
              waa.fun=FALSE, 
              naa0=NULL,eaa0=NULL,ssb0=NULL,faa0=NULL,
              add.year=0, 
@@ -566,7 +569,7 @@ future.vpa <-
             if(!is.null(res0$input$dat$waa.catch)) waa.catch.org <- apply(as.matrix(res0$input$dat$waa.catch[,years %in% waa.catch.year]),1,mean)
             else waa.catch.org <- waa.org
         }
-        
+
         M[] <- M.org
         waa[] <- waa.org
         waa_all[,(length(years)+1):dim(waa_all)[[2]],] <- waa.org
