@@ -1,12 +1,11 @@
-
-col.SBtarget <- "#00533E"
-col.SBlim <- "#edb918"
-col.SBlimit <- "#edb918"
-col.SBban <- "#C73C2E"
-col.Ftarget <- "#714C99"
+col.SBtarget    <- "#00533E"
+col.SBlim       <- "#edb918"
+col.SBlimit     <- "#edb918"
+col.SBban       <- "#C73C2E"
+col.Ftarget     <- "#714C99"
 col.betaFtarget <- "#505596"
 
-pt1 <- 0.3528
+pt1             <- 0.3528
 
 
 convert_df <- function(df,name){
