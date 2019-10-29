@@ -328,7 +328,11 @@ fit.SR2 <- function(SRdata,
   return(Res)
 }
 
-### parametric bootstrap usnig fit.SR
+#' parametric bootstrap usnig fit.SR
+#' 
+#' @export
+#' 
+
 boot.SR <- function(Res,n=100,seed=1){
   N <- length(Res$input$SRdata$year)
   
@@ -362,7 +366,11 @@ boot.SR <- function(Res,n=100,seed=1){
   })
 }
 
-### profile likelihood
+#'  profile likelihood
+#' 
+#' @export
+#' 
+
 prof.lik <- function(Res,a=Res$pars$a,b=Res$pars$b,sd=Res$pars$sd,rho=Res$pars$rho) {
   SRdata <- Res$input$SRdata
   rec <- SRdata$R

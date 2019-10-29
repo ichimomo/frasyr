@@ -2,6 +2,13 @@ library(frasyr)
 
 context("future MSE option")
 
+test_that("utility function check",{
+    tmpres <- as.numeric(apply_year_colum(matrix(1:20,4,5,dimnames=list(1:4,1:5)),target_year=-1:-2))
+    for(i in 1:4) expect_equal(tmpres[i],i+14)
+    tmpres <- as.numeric(apply_year_colum(matrix(1:20,4,5,dimnames=list(1:4,1:5)),target_year=4:5))
+    for(i in 1:4) expect_equal(tmpres[i],i+14)    
+})
+
 ## test_that("MSE option check",{
 ##     data(res_vpa)
 
