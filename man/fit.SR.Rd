@@ -8,10 +8,18 @@ TMB = TRUEでmarginal likelihood (.cppファイルが必要)}
 \usage{
 fit.SR(SRdata, SR = "HS", method = "L2", AR = 1, TMB = FALSE,
   hessian = FALSE, w = rep(1, length(SRdata$year)), length = 20,
-  max.ssb.pred = 1.3, p0 = NULL, out.AR = FALSE)
+  max.ssb.pred = 1.3, p0 = NULL, out.AR = TRUE, rep.opt = FALSE)
 }
 \arguments{
 \item{SRdata}{get.SRdataで作成した再生産関係データ}
+
+\item{SR}{再生産関係 (HS: Hockey-stick, BH: Beverton-Holt, RI: Ricker)}
+
+\item{method}{最適化法（L2: 最小二乗法, L1: 最小絶対値法）}
+
+\item{AR}{自己相関を推定するか(1), しないか(0)}
+
+\item{out.AR}{自己相関係数を一度再生産関係を推定したのちに、外部から推定するか（1), 内部で推定するか(0)}
 }
 \description{
 加入の残差の自己相関を考慮した再生産関係の推定
