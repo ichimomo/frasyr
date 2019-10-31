@@ -39,6 +39,10 @@ get.SRdata <- function(vpares,R.dat=NULL,SSB.dat=NULL,years=as.numeric(colnames(
 #' TMB = TRUEでmarginal likelihood (.cppファイルが必要)
 #'
 #' @param SRdata get.SRdataで作成した再生産関係データ
+#' @param SR 再生産関係 (HS: Hockey-stick, BH: Beverton-Holt, RI: Ricker)
+#' @param method 最適化法（L2: 最小二乗法, L1: 最小絶対値法）
+#' @param AR 自己相関を推定するか(1), しないか(0)
+#' @param out.AR 自己相関係数を一度再生産関係を推定したのちに、外部から推定するか（1), 内部で推定するか(0)
 #'
 #' @export
 
@@ -123,9 +127,13 @@ fit.SR <- function(SRdata,
   }
   
   opt <- optim(init,obj.f2)
+  for (i in 1:100) {
+    opt2 <- optim(opt$par,obj.f2)
+    if (abs(opt$value-opt2$value)<1e-6) break
+    opt <- opt2
+  }
   opt <- optim(opt$par,obj.f2,method="BFGS",hessian=hessian)
     
-  
   Res <- list()
   Res$input <- arglist
   Res$opt <- opt
