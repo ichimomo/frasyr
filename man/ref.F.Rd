@@ -4,7 +4,7 @@
 \alias{ref.F}
 \title{再生産関係を仮定しない管理基準値計算(SPR,YPR,F0.1,Fmax)のための関数}
 \usage{
-ref.F(res, sel = NULL, waa = NULL, maa = NULL, M = NULL,
+ref.F(res, Fcurrent = NULL, waa = NULL, maa = NULL, M = NULL,
   waa.catch = NULL, M.year = NULL, waa.year = NULL,
   maa.year = NULL, rps.year = NULL, max.age = Inf, min.age = 0,
   d = 0.001, Fem.init = 0.5, Fmax.init = 1.5, F0.1.init = 0.7,
@@ -13,8 +13,6 @@ ref.F(res, sel = NULL, waa = NULL, maa = NULL, M = NULL,
 }
 \arguments{
 \item{res}{VPAの出力結果}
-
-\item{sel}{仮定する選択率．NULLの場合，res$Fc.at.ageが使われる}
 
 \item{waa}{仮定する年齢別体重。直接の値を入れるか，waa.yearで年を指定するやり方のどちらでも動く。直接指定するほうが優先。}
 
@@ -53,6 +51,8 @@ ref.F(res, sel = NULL, waa = NULL, maa = NULL, M = NULL,
 \item{Pope}{Popeの式を使うか}
 
 \item{F.range}{YPR, SPR曲線を書くときのFの範囲（Fの最大値のスケール）、かつ、F%SPRを計算するときの初期値を決めるために利用される。F%SPRの推定がうまくいかない場合はこの範囲を調整してください。}
+
+\item{sel}{仮定する選択率．NULLの場合，res$Fc.at.ageが使われる}
 }
 \description{
 再生産関係を仮定しない管理基準値計算(SPR,YPR,F0.1,Fmax)のための関数
