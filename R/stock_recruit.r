@@ -54,7 +54,8 @@ fit.SR <- function(SRdata,
                    length=20,
                    max.ssb.pred=1.3, # 予測値を計算するSSBの最大値（観測された最大値への乗数）
                    p0=NULL,
-                   out.AR = FALSE #自己相関係数rhoを外で推定するか
+                   out.AR = TRUE, #自己相関係数rhoを外で推定するか
+                   rep.opt = FALSE
 ){ 
   
   argname <- ls()
@@ -127,10 +128,12 @@ fit.SR <- function(SRdata,
   }
   
   opt <- optim(init,obj.f2)
-  for (i in 1:100) {
-    opt2 <- optim(opt$par,obj.f2)
-    if (abs(opt$value-opt2$value)<1e-6) break
-    opt <- opt2
+  if (rep.opt) {
+    for (i in 1:100) {
+      opt2 <- optim(opt$par,obj.f2)
+      if (abs(opt$value-opt2$value)<1e-6) break
+      opt <- opt2
+    }
   }
   opt <- optim(opt$par,obj.f2,method="BFGS",hessian=hessian)
     
