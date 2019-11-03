@@ -1645,12 +1645,14 @@ out.vpa <- function(res=NULL,    # VPA result
                                            method=srres$input$method,
                                            type  =srres$input$SR)      
       write("\n# SR fit resutls",file=csvname,append=T)
-      write_csv(sr_summary,path=csvname,append=T)
+      write_csv(sr_summary,path=csvname,append=T,
+                col_names=TRUE)
   }  
   
   if(!is.null(msyres)){
     write("\n# MSY Reference points",file=csvname,append=T)
-    write_csv(msyres$summary,path=csvname,append=T)
+    write_csv(msyres$summary,path=csvname,append=T,
+                  col_names=TRUE)
   }
 
   
@@ -1690,8 +1692,9 @@ out.vpa <- function(res=NULL,    # VPA result
     write("\n# Kobe II table",file=csvname,append=T)  
     kobeII.table_name <- names(kobeII.table)
     for(i in 1:length(kobeII.table_name)){
-        write(str_c("\n# ",kobeII.table_name[i]),file=csvname,append=T)        
-        write_csv(kobeII.table[kobeII.table_name[i]][[1]],path=csvname,append=TRUE)
+        write(str_c("\n# ",kobeII.table_name[i]),file=csvname,append=TRUE)        
+        write_csv(kobeII.table[kobeII.table_name[i]][[1]],path=csvname,append=TRUE,
+                  col_names=TRUE)
     }
   }
   
