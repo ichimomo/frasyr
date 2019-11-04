@@ -146,11 +146,12 @@ test_that("oututput value check",{
   SRdata <- get.SRdata(res.pma)
 
   HS.par0 <- fit.SR(SRdata,SR="HS",method="L2",AR=0,hessian=FALSE)
-  HS.par1 <- fit.SR(SRdata,SR="HS",method="L2",AR=1,hessian=FALSE)
+  HS.par1 <- fit.SR(SRdata,SR="HS",method="L2",AR=1,hessian=FALSE, out.AR=FALSE)
+  HS.par2 <- fit.SR(SRdata,SR="HS",method="L2",AR=1,hessian=FALSE, out.AR=TRUE)  
   BH.par0 <- fit.SR(SRdata,SR="BH",method="L2",AR=0,hessian=FALSE)
-  BH.par1 <- fit.SR(SRdata,SR="BH",method="L2",AR=1,hessian=FALSE)
+  BH.par1 <- fit.SR(SRdata,SR="BH",method="L2",AR=1,hessian=FALSE, out.AR=FALSE)
   RI.par0 <- fit.SR(SRdata,SR="RI",method="L2",AR=0,hessian=FALSE)
-  RI.par1 <- fit.SR(SRdata,SR="RI",method="L2",AR=1,hessian=FALSE)
+  RI.par1 <- fit.SR(SRdata,SR="RI",method="L2",AR=1,hessian=FALSE, out.AR=FALSE)
 
   #上記引数での計算結果を読み込み
   HSpar0_opt_par_pma_check <- read.csv(system.file("extdata","future_HSpar0_opt_par_pma_check.csv",package="frasyr"),row.names=1)
@@ -285,6 +286,12 @@ test_that("oututput value check",{
   expect_equal(HS.par1$k,as.numeric(HSpar1_k_pma_check))
   expect_equal(HS.par1$AIC,as.numeric(HSpar1_AIC_pma_check))
   expect_equal(HS.par1$AICc,as.numeric(HSpar1_AICc_pma_check))
+
+  # HSpar2
+  estimated_logpars <- c(-3.55,10.86,-1.36,-3.05)
+  for(i in 1:length(estimated_logpars)){
+      expect_equal(as.numeric(round(log(HS.par2$par[i]),2)),estimated_logpars[i])
+  }
 
   #BHpar0
 
