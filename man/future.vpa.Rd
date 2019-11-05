@@ -57,13 +57,13 @@ future.vpa(res0, currentF = NULL, multi = 1, futureF = NULL,
 
 \item{Frec}{Frecオプション。Frec計算のための設定リストを与えると、指定された設定でのFrecに対応するFで将来予測を行う。例；Frec=list(stochastic=TRUE,future.year=2018,Blimit=450*1000,scenario="catch.mean",Frange=c(0.01,2*mult))。stochastic; TRUEの場合、stochastic simulationで50%の確率でBlimitを越す。FALSEの場合、RPS固定のprojectionがBilmitと一致する。future.year; 何年の資源量を見るか？ Blimit; 参照とする親魚量。scenario; scenario; "catch.mean"の場合漁獲量の平均値を見る。"blimit"の場合、親魚量を見る。デフォルトは"blimit"。Frange; Fの探索範囲（Fcurrentに対する乗数）}
 
-\item{waa}{年齢別体重を直接指定する場合}
+\item{waa}{年齢別体重を直接指定する場合(waa.yearよりも優先される)}
 
-\item{waa.catch}{漁獲量計算用の年齢別体重を直接指定する場合}
+\item{waa.catch}{漁獲量計算用の年齢別体重を直接指定する場合(waa.catch.yearよりも優先される)}
 
-\item{maa}{年齢別成熟率を直接指定する場合}
+\item{maa}{年齢別成熟率を直接指定する場合(maa.yearよりも優先される)}
 
-\item{M}{自然死亡係数を直接指定する場合}
+\item{M}{自然死亡係数を直接指定する場合(M.yearよりも優先される)}
 
 \item{waa.fun}{年齢別体重を年齢別資源尾数の関数とするか(waa.catchが別に与えられているときには機能しない)}
 
