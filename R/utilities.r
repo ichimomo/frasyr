@@ -812,6 +812,7 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
                          Bban=c("Bban0"),write.vline=TRUE,
                          ylab.type="U", # or "U"
                          labeling.year=NULL,
+                         RP.label=c("目標管理基準値","限界管理基準値","禁漁水準"),
                          Fratio=NULL, # ylab.type=="F"のとき
                          yscale=1.2,xscale=1.2,
                          HCR.label.position=c(1,1), # デフォルトはx軸方向が1, y軸方向が1の相対値です。様子を見ながら調整してください
@@ -904,12 +905,12 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
          
         g6 <- g6 + geom_text(data=tibble(x=c(ban.ratio,limit.ratio,1),
                                          y=max.U*c(1.05,1,1.05),
-                                         label=c("禁漁水準","限界管理基準値","目標管理基準値")),
+                                         label=RP.label),
                              aes(x=x,y=y,label=label))
         g4 <- g4 + geom_vline(xintercept=c(1,limit.ratio,ban.ratio),color=refs.color,lty="41",lwd=0.7)+
          ggrepel::geom_label_repel(data=tibble(x=c(1,limit.ratio,ban.ratio),
                                           y=max.U*0.85,
-                                          label=c("目標管理基準値","限界管理基準値","禁漁水準")),
+                                          label=RP.label),
                               aes(x=x,y=y,label=label),
                               direction="x",nudge_y=max.U*0.9,size=11*0.282)
     }}    
