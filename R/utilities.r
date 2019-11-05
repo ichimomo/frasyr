@@ -812,6 +812,7 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
                          Bban=c("Bban0"),write.vline=TRUE,
                          ylab.type="U", # or "U"
                          labeling.year=NULL,
+                         RP.label=c("目標管理基準値","限界管理基準値","禁漁水準"),
                          Fratio=NULL, # ylab.type=="F"のとき
                          yscale=1.2,xscale=1.2,
                          HCR.label.position=c(1,1), # デフォルトはx軸方向が1, y軸方向が1の相対値です。様子を見ながら調整してください
@@ -831,18 +832,6 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
     limit.ratio <- limit.RP$SSB/target.RP$SSB
     ban.ratio <- ban.RP$SSB/target.RP$SSB
 
-    ### HCRのプロット用の設定
-    #Setting of the function to multiply current F for SSB
-    multi2currF = function(x){ 
-        if(x > limit.ratio) {multi2currF=beta}
-        else if (x < ban.ratio) {multi2currF=0}
-        else { multi2currF = beta*(x - ban.ratio)/(limit.ratio - ban.ratio) }
-        return(multi2currF)
-    }
-  
-    #Function setting for drawing.
-    h=Vectorize(multi2currF)
-    ####
     
 #    require(RcppRoll)
     vpa_tb <- convert_vpa_tibble(vpares)
@@ -916,21 +905,29 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
          
         g6 <- g6 + geom_text(data=tibble(x=c(ban.ratio,limit.ratio,1),
                                          y=max.U*c(1.05,1,1.05),
-                                         label=c("禁漁水準","限界管理基準値","目標管理基準値")),
+                                         label=RP.label),
                              aes(x=x,y=y,label=label))
         g4 <- g4 + geom_vline(xintercept=c(1,limit.ratio,ban.ratio),color=refs.color,lty="41",lwd=0.7)+
-#            geom_text(data=tibble(x=c(1,limit.ratio,ban.ratio),
-#                                  y=max.U*c(1.05,1.1,1.05),
-#                                  label=c("目標管理基準値","限界管理基準値","禁漁水準")),
-    #                      aes(x=x,y=y,label=label),hjust=0)
          ggrepel::geom_label_repel(data=tibble(x=c(1,limit.ratio,ban.ratio),
                                           y=max.U*0.85,
-                                          label=c("目標管理基準値","限界管理基準値","禁漁水準")),
+                                          label=RP.label),
                               aes(x=x,y=y,label=label),
                               direction="x",nudge_y=max.U*0.9,size=11*0.282)
     }}    
 
     if(!is.null(beta)){
+        ### HCRのプロット用の設定
+        #Setting of the function to multiply current F for SSB
+        multi2currF = function(x){ 
+            if(x > limit.ratio) {multi2currF=beta}
+            else if (x < ban.ratio) {multi2currF=0}
+            else { multi2currF = beta*(x - ban.ratio)/(limit.ratio - ban.ratio) }
+            return(multi2currF)
+        }
+  
+        #Function setting for drawing.
+        h=Vectorize(multi2currF)
+        ####        
         x.pos <- max.B*HCR.label.position[1]
         y.pos <- multi2currF(1.05)*HCR.label.position[2]
         g6 <- g6+stat_function(fun = h,lwd=1.5,color=1,n=1000)+
@@ -939,12 +936,6 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
         g4 <- g4+stat_function(fun = h,lwd=1.5,color=1,n=1000)+
             annotate("text",x=x.pos,y=y.pos,
                      label=str_c("漁獲管理規則\n(β=",beta,")"))
-#        if(abs(HCR.label.position[1]-1)+abs(HCR.label.position[2]-1)>0.3){
-#            label.line <- tibble(x=c(max.B,x.pos),
-#                                 y=c(multi2currF(1.05),y.pos))
-#            g6 <- g6 + geom_path(data=label.line,mapping=aes(x=x,y=y),color="gray")
-#            g4 <- g4 + geom_path(data=label.line,mapping=aes(x=x,y=y),color="gray")
-#        }
     }
    
     g6 <- g6 +

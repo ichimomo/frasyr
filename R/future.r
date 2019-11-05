@@ -1542,6 +1542,16 @@ get.data <- function(tfile){
 }
 
 
+#' @export
+make_summary_table <- function(mat_data,side=1,probs=c(0.1,0.5,0.8)){
+    res_mat <- cbind(apply(mat_data,side,mean),
+                     t(apply(mat_data,side,quantile,probs=probs)))
+    colnames(res_mat)[1] <- "average"
+    res_mat %>% as_tibble()
+}
+
+
+#'
 #' VPA結果をcsvファイルに出力する
 #' @param res  VPAの結果
 #' @param srres fit.SRの結果
@@ -1637,6 +1647,10 @@ out.vpa <- function(res=NULL,    # VPA result
     x <- rbind(colSums(res$ssb),colSums(res$baa),colSums(res$wcaa))
     rownames(x) <- c("Spawning biomass","Total biomass","Catch biomass")
     write.table2(x,title.tmp="Total and spawning biomass")
+
+    write("\n# YPR & SPR history ",file=csvname,append=T)    
+    get.SPR(res)$ysdata %>% as_tibble() %>% select(-"F/Ftarget") %>%
+                   write_csv(path=csvname,append=T, col_names=TRUE)                   
   }
 
   if(!is.null(srres)){
@@ -1645,45 +1659,49 @@ out.vpa <- function(res=NULL,    # VPA result
                                            method=srres$input$method,
                                            type  =srres$input$SR)      
       write("\n# SR fit resutls",file=csvname,append=T)
-      write_csv(sr_summary,path=csvname,append=T)
+      write_csv(sr_summary,path=csvname,append=T,
+                col_names=TRUE)
   }  
   
   if(!is.null(msyres)){
     write("\n# MSY Reference points",file=csvname,append=T)
-    write_csv(msyres$summary,path=csvname,append=T)
+    write_csv(msyres$summary,path=csvname,append=T,
+                  col_names=TRUE)
   }
 
-  
-  if(!is.null(fres_current)){
-    write("\n# future projection under F current (average)",file=csvname,append=T)  
+      tmpfunc <- function(fres){
+          write("\n# future projection under F current (average)",file=csvname,append=T)  
     write("\n# future F at age",file=csvname,append=T)
-    write.table2(apply(fres_current$faa,c(1,2),mean),title.tmp="Future F at age")
-    
-    write("\n# future numbers at age",file=csvname,append=T)
-    write.table2(apply(fres_current$naa,c(1,2),mean),title.tmp="Future numbers at age")
+    write.table2(apply(fres$faa,c(1,2),mean),title.tmp="Average future F at age")
+          
+          write("\n# future numbers at age",file=csvname,append=T)
+          write.table2(apply(fres$naa,c(1,2),mean),title.tmp="Average future numbers at age")
+          
+          write("\n# future maturity at age",file=csvname,append=T)
+          write.table2(apply(fres$maa,c(1,2),mean),title.tmp="Average future numbers at age")
+          
+          write("\n# future weight at age",file=csvname,append=T)
+          write.table2(apply(fres$waa,c(1,2),mean),title.tmp="Average future numbers at age")
 
-    write("\n# future total and spawning biomass",file=csvname,append=T)
-    x <- rbind(apply(fres_current$vssb, 1,mean),
-               apply(fres_current$vbiom,1,mean),
-               apply(fres_current$vwcaa,1,mean))
-    rownames(x) <- c("Spawning biomass","Total biomass","Catch biomass")
-    write.table2(x,title.tmp="Future total, spawning and catch biomass")    
+          write("\n# future total spawning biomass",file=csvname,append=T)    
+          make_summary_table(fres$vssb,1,probs=c(0.1,0.5,0.8)) %>%
+              write_csv(path=csvname,append=TRUE, col_names = TRUE)
+
+          write("\n# future total biomass",file=csvname,append=T)    
+          make_summary_table(fres$vbiom,1,probs=c(0.1,0.5,0.8)) %>%
+              write_csv(path=csvname,append=TRUE, col_names = TRUE)
+          
+          write("\n# future total catch",file=csvname,append=T)    
+          make_summary_table(fres$vwcaa,1,probs=c(0.1,0.5,0.8)) %>%
+              write_csv(path=csvname,append=TRUE, col_names = TRUE)
+      }  
+
+  if(!is.null(fres_current)){
+      tmpfunc(fres_current)
   }
 
   if(!is.null(fres_HCR)){
-    write("\n# future projection under default HCR (average)",file=csvname,append=T)  
-    write("\n# future F at age",file=csvname,append=T)
-    write.table2(apply(fres_HCR$faa,c(1,2),mean),title.tmp="Future F at age")
-    
-    write("\n# future numbers at age",file=csvname,append=T)
-    write.table2(apply(fres_HCR$naa,c(1,2),mean),title.tmp="Future numbers at age")
-
-    write("\n# future total and spawning biomass",file=csvname,append=T)
-    x <- rbind(apply(fres_HCR$vssb, 1,mean),
-               apply(fres_HCR$vbiom,1,mean),
-               apply(fres_HCR$vwcaa,1,mean))
-    rownames(x) <- c("Spawning biomass","Total biomass","Catch biomass")
-    write.table2(x,title.tmp="Future total, spawning and catch biomass")    
+      tmpfunc(fres_HCR)
   }
 
   if(!is.null(kobeII)){
@@ -1691,21 +1709,11 @@ out.vpa <- function(res=NULL,    # VPA result
     kobeII.table_name <- names(kobeII.table)
     for(i in 1:length(kobeII.table_name)){
         write(str_c("\n# ",kobeII.table_name[i]),file=csvname,append=T)        
-        write_csv(kobeII.table[kobeII.table_name[i]][[1]],path=csvname,append=TRUE)
+        write_csv(kobeII.table[kobeII.table_name[i]][[1]],path=csvname,append=TRUE,
+                  col_names = TRUE)
     }
   }
   
-  ## if(!is.null(ABC)){
-  ##   write("\n# ABC summary",file=csvname,append=T)
-  ##   write.table2(ABC$ABC,title.tmp="Future F at age",is.plot=F)
-  ##   write("\n# Kobe matrix",file=csvname,append=T)
-  ##   for(i in 1:dim(ABC$kobe.matrix)[[3]]){
-  ##       write(paste("\n# ",dimnames(ABC$kobe.matrix)[[3]][i]),
-  ##             file=csvname,append=T)        
-  ##       write.table2(ABC$kobe.matrix[,,i],
-  ##                    title.tmp=dimnames(ABC$kobe.matrix)[[3]][i],is.plot=T)        
-  ##   }
-  ## }
   
 }
 
