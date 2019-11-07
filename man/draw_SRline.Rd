@@ -2,17 +2,21 @@
 % Please edit documentation in R/sr_selection.R
 \name{draw_SRline}
 \alias{draw_SRline}
-\title{Draw fitted SR line over observed stock-recruitment plots}
+\title{Draw fitted SR line(s) over observed stock-recruitment plots}
 \usage{
-draw_SRline(fitted, observed, show.year)
+draw_SRline(vpares, SR, method, show.year = FALSE)
 }
 \arguments{
-\item{fitted}{Fitted SR data created by fit.SR()}
+\item{SR}{Vector of multiple SR model described in \code{\link{fit.SR}}}
 
-\item{observed}{Observed data in format data.frame(year, SSB, R)}
-
-\item{show.year}{If TRUE, show year label on each points}
+\item{method}{Vector of multiple method described in \code{\link{fit.SR}}}
 }
 \description{
-Draw fitted SR line over observed stock-recruitment plots
+Draw fitted SR line(s) over observed stock-recruitment plots
+}
+\examples{
+
+draw_SRline(vpares = res_vpa,
+            SR = c("HS", "RI", "BH"),
+            method = c("L1", "L2"))
 }

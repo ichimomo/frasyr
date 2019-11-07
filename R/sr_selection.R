@@ -40,3 +40,28 @@ draw_SRline_ <- function(fitted, observed, show.year) {
                                     group = name,
                                     color = name))
 }
+
+#' Draw fitted SR line(s) over observed stock-recruitment plots
+#'
+#' @inheritParams get.SRdata
+#' #' @inheritParams draw_SRline
+#' @param SR Vector of multiple SR model described in \code{\link{fit.SR}}
+#' @param method Vector of multiple method described in \code{\link{fit.SR}}
+#' @examples
+#'
+#' draw_SRline(vpares = res_vpa,
+#'             SR = c("HS", "RI", "BH"),
+#'             method = c("L1", "L2"))
+#' @export
+draw_SRline <- function(vpares, SR, method, show.year = FALSE) {
+  rawdata <- get.SRdata(vpares = vpares, return.df = TRUE)
+  models  <- expand.grid(model = SR,
+                         method = method,
+                         stringsAsFactors = FALSE)
+
+  purrr::pmap_df(list(SR = models$model,
+                      method = models$method),
+                 make_SR_dframe,
+                 vpares = vpares) %>%
+    draw_SRline_(observed = rawdata, show.year = show.year)
+}
