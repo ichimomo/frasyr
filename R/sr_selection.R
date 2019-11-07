@@ -19,12 +19,13 @@ make_SR_dframe <- function(SR, method, vpares) {
     dplyr::mutate(name = paste0(SR, "_", method))
 }
 
-#' Draw fitted SR line over observed stock-recruitment plots
+#' Draw fitted SR line(s) over observed stock-recruitment plots
 #'
 #' @param fitted Fitted SR data created by fit.SR()
 #' @param observed Observed data in format data.frame(year, SSB, R)
 #' @param show.year If TRUE, show year label on each points
-draw_SRline_ <- function(fitted, observed, show.year) {
+#' @export
+draw_SRline <- function(fitted, observed, show.year) {
   label <- ""
   if (show.year == TRUE) label <- observed$year
   ggplot2::ggplot(data = observed,
@@ -41,7 +42,7 @@ draw_SRline_ <- function(fitted, observed, show.year) {
                                     color = name))
 }
 
-#' Draw fitted SR line(s) over observed stock-recruitment plots
+#' Fit and draw SR line(s) over observed stock-recruitment plots
 #'
 #' @inheritParams get.SRdata
 #' #' @inheritParams draw_SRline
@@ -53,7 +54,7 @@ draw_SRline_ <- function(fitted, observed, show.year) {
 #'             SR = c("HS", "RI", "BH"),
 #'             method = c("L1", "L2"))
 #' @export
-draw_SRline <- function(vpares, SR, method, show.year = FALSE) {
+fit_draw_SRline <- function(vpares, SR, method, show.year = FALSE) {
   rawdata <- get.SRdata(vpares = vpares, return.df = TRUE)
   models  <- expand.grid(model = SR,
                          method = method,
@@ -63,5 +64,5 @@ draw_SRline <- function(vpares, SR, method, show.year = FALSE) {
                       method = models$method),
                  make_SR_dframe,
                  vpares = vpares) %>%
-    draw_SRline_(observed = rawdata, show.year = show.year)
+    draw_SRline(observed = rawdata, show.year = show.year)
 }
