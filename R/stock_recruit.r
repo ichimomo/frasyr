@@ -5,13 +5,13 @@
 #'
 #' @export
 
-get.SRdata <- function(vpares,R.dat=NULL,
-                       SSB.dat=NULL,
-                       years=as.numeric(colnames(vpares$naa)),
-                       return.df=FALSE){
+get.SRdata <- function(vpares,R.dat = NULL,
+                       SSB.dat = NULL,
+                       years = as.numeric(colnames(vpares$naa)),
+                       return.df = FALSE){
     # R.datとSSB.datだけが与えられた場合、それを使ってシンプルにフィットする
     if(!is.null(R.dat) & !is.null(SSB.dat)){
-        dat <- data.frame(R=R.dat,SSB=SSB.dat,year=1:length(R.dat))
+        dat <- data.frame(R = R.dat,SSB = SSB.dat,year = 1:length(R.dat))
     }
     else{
     # データの整形
@@ -20,7 +20,7 @@ get.SRdata <- function(vpares,R.dat=NULL,
 
         dat <- list()
         dat$R <- as.numeric(vpares$naa[1,])
-        dat$SSB <- as.numeric(colSums(vpares$ssb,na.rm=TRUE))
+        dat$SSB <- as.numeric(colSums(vpares$ssb,na.rm = TRUE))
         dat$year <- as.numeric(colnames(vpares$ssb))
     # 加入年齢分だけずらす
         dat$R <- dat$R[(L+1):n]
