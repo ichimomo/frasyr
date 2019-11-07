@@ -18,13 +18,13 @@ get.SRdata <- function(vpares,R.dat = NULL,
         n <- ncol(vpares$naa)
         L <- as.numeric(rownames(vpares$naa)[1])
 
-        dat <- list()
-        dat$R <- as.numeric(vpares$naa[1,])
-        dat$SSB <- as.numeric(colSums(vpares$ssb,na.rm = TRUE))
+        dat      <- list()
+        dat$R    <- as.numeric(vpares$naa[1,])
+        dat$SSB  <- as.numeric(colSums(vpares$ssb,na.rm = TRUE))
         dat$year <- as.numeric(colnames(vpares$ssb))
     # 加入年齢分だけずらす
-        dat$R <- dat$R[(L+1):n]
-        dat$SSB <- dat$SSB[1:(n-L)]
+        dat$R    <- dat$R[(L+1):n]
+        dat$SSB  <- dat$SSB[1:(n-L)]
         dat$year <- dat$year[(L+1):n]
 
                                         # データの抽出
