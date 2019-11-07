@@ -23,6 +23,5 @@ Suggests:
     knitr,
     rmarkdown,
     testthat,
-    tidyverse,
     TMB
 VignetteBuilder: knitr
