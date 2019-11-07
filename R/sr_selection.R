@@ -8,3 +8,13 @@ pull_df_from_list <- function(list, dfname) {
   list[dfname] %>%
     as.data.frame()
 }
+
+#' Get fitted SR data with model names
+#'
+#' @inheritParams fit.SR
+#' @inheritParams get.SRdata
+make_SR_dframe <- function(SR, method, vpares) {
+  fit.SR(SRdata = get.SRdata(vpares = vpares), SR = SR, method = method) %>%
+    pull_df_from_list(dfname = "pred") %>%
+    dplyr::mutate(name = paste0(SR, "_", method))
+}
