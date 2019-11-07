@@ -476,13 +476,13 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param penalty 
 #' @param ssb.def  i: 年はじめ，m: 年中央, l: 年最後
 #' @param ssb.lag  0: no lag, 1: lag 1
-#' @param TMB
-#' @param TMB.compile
+#' @param TMB  TMBで高速計算する場合TMB=TRUE (事前にuse_rvpa_tmb()を実行)
 #' @param sel.rank
 #' @param p.init 
 #' @param sigma.constraint
-#' @param eta Fのpenaltyを分けて与えるときにeta.ageで指定した年齢への相対的なpenalty (0~1)
-#' @param eta.age Fのpenaltyを分けるときにetaを与える年齢(0 = 0歳（加入）,0:1 = 0~1歳)
+#' @param eta  Fのpenaltyを分けて与えるときにeta.ageで指定した年齢への相対的なpenalty (0~1)
+#' @param eta.age  Fのpenaltyを分けるときにetaを与える年齢(0 = 0歳（加入）,0:1 = 0~1歳)
+#' @param tmb.file  TMB=TRUEのとき使用するcppファイルの名前
 #' 
 #' @export
 #' 
@@ -984,6 +984,8 @@ vpa <- function(
     }
     if (est.method=="ml")
     {
+      if (use.index[1] != "all") sigma.constraint <- sigma.constraint[use.index]
+      
         if(!(length(sigma.constraint)==nindex))
         {
             stop("length of sigma constraint does not match the number of indices!!!!")#sigma.constraintの長さがindexの本数と異なる場合にはエラーを出して停止。
@@ -1174,36 +1176,47 @@ vpa <- function(
 #    log.p.hat <- log(summary.p.est$estimate)
 #  } else {
   if (isTRUE(TMB)){
+    # stop("tentative stop")
     index2 <- as.matrix(t(apply(index,1,function(x) ifelse(is.na(x),0,x))))
  
     Ab_type <- ifelse(abund=="SSB", 1, ifelse(abund=="N", 2, 3))
     Ab_type_age <- ifelse(is.na(min.age),0,min.age)
+    Ab_type_max_age <- ifelse(is.na(max.age),0,max.age)+1
     
     if(is.null(dat$maa.tune)) MAA <- as.matrix(dat$maa) else MAA <- as.matrix(dat$maa.tune)
     if (is.na(af[1])) af <- rep(0,nindex)
     
     if (isTRUE(b.est)) b_fix <- rep(0,nindex) else b_fix <- rep(1,nindex)
-    b_fix <- ifelse(is.na(b.fix),b_fix,b.fix)
-    if (!(length(sigma.constraint)==nindex)) {
-      stop("length of sigma constraint does not match the number of indices!!!!")#sigma.constraintの長さがindexの本数と異なる場合にはエラーを出して停止。
-    }
+    if (!is.null(b.fix)) b_fix <- ifelse(is.na(b.fix),0,b.fix)
+    # if (use.index[1] != "all") b_fix <- b_fix[use.index]
+
+    # if (!(length(sigma.constraint)==nindex)) {
+    #   stop("length of sigma constraint does not match the number of indices!!!!")#sigma.constraintの長さがindexの本数と異なる場合にはエラーを出して停止。
+    # }
     unique.sigma.constraint <- unique(sigma.constraint)
-    nsigma <- length(unique.sigma.constraint)
     sigma_constraint <- sigma.constraint
+    if (use.index[1] != "all") {
+      unique.sigma.constraint <- unique.sigma.constraint[use.index]
+      sigma_constraint <- sigma_constraint[use.index]
+      }
+    nsigma <- length(unique.sigma.constraint)
     for (i in 1:nsigma) {
-      pos <- which(sigma.constraint == unique.sigma.constraint[i])
+      pos <- which(sigma_constraint == unique.sigma.constraint[i])
       sigma_constraint[pos] <- i-1
     }
     if (is.null(eta)) eta <- -1.0
     eta_age <- rep(1,length(p.init))
     eta_age[eta.age+1] <- 0
-    data2 <- list(Est=ifelse(est.method=="ls",0,1),b_fix=as.numeric(b_fix),alpha=alpha,lambda=lambda,beta=beta,Ab_type=Ab_type,Ab_type_age=Ab_type_age,w=index.w,af=af,CATCH=t(as.matrix(dat$caa)),WEI=t(as.matrix(dat$waa)),MAT=t(MAA),M=t(as.matrix(dat$M)),CPUE=t(index2),MISS=t(ifelse(index2==0,1,0)),Last_Catch_Zero=ifelse(isTRUE(last.catch.zero),1,0),sigma_constraint=sigma_constraint,eta=eta,eta_age=eta_age)
+    data2 <- list(Est=ifelse(est.method=="ls",0,1),b_fix=as.numeric(b_fix),alpha=alpha,lambda=lambda,beta=beta,Ab_type=Ab_type,Ab_type_age=Ab_type_age,Ab_type_max_age=Ab_type_max_age,w=index.w,af=af,CATCH=t(as.matrix(dat$caa)),WEI=t(as.matrix(dat$waa)),MAT=t(MAA),M=t(as.matrix(dat$M)),CPUE=t(index2),MISS=t(ifelse(index2==0,1,0)),Last_Catch_Zero=ifelse(isTRUE(last.catch.zero),1,0),sigma_constraint=sigma_constraint,eta=eta,eta_age=eta_age)
     
     parameters <- list(
       log_F=log(p.init)
     )
     
-    obj <- MakeADFun(data2, parameters, DLL=tmb.file)
+    obj <- try(MakeADFun(data2, parameters, DLL=tmb.file))
+    if (class(obj) == "try-error") {
+      stop("Please run use_rvpa_tmb() first!")
+    }
     opt <- nlm(obj$fn, obj$par, gradient=obj$gr, hessian=hessian)
     
     summary.p.est <- list()

@@ -11,7 +11,7 @@ plot_futures(vpares, future.list = NULL,
   "biomass", "catch", "Fsakugen", "Fsakugen_ratio"), biomass.unit = 1,
   RP_name = c("Btarget", "Blimit", "Bban"), Btarget = 0, Blimit = 0,
   Bban = 0, MSY = 0, exclude.japanese.font = FALSE, n_example = 3,
-  future.replicate = NULL, seed = 1)
+  example_width = 0.7, future.replicate = NULL, seed = 1)
 }
 \arguments{
 \item{vpares}{VPAの結果のオブジェクト}
@@ -21,6 +21,8 @@ plot_futures(vpares, future.list = NULL,
 \item{n_example}{個々のシミュレーションの例を示す数}
 
 \item{future.replicate}{どのreplicateを選ぶかを選択する。この場合n_exampleによる指定は無効になる}
+
+\item{width_example}{個々のシミュレーションをプロットする場合の線の太さ (default=0.7)}
 }
 \description{
 将来予測の複数の結果をggplotで重ね書きする

@@ -78,7 +78,7 @@ res_MSY <- est.MSY(res_vpa, # VPAの計算結果
 ## ----summary-------------------------------------------------------------
 # 結果の表示(tibbleという形式で表示され、最初の10行以外は省略されます)
 options(tibble.width = Inf)
-(refs.all <- res_MSY$summary_tb)
+(refs.all <- res_MSY$summary)
 
 # 全データをじっくり見たい場合
 # View(refs.all)
@@ -94,13 +94,13 @@ refs.all$RP.definition[refs.all$RP_name=="Ben-24000" & refs.all$AR==FALSE] <- "B
 refs.all$RP.definition[refs.all$RP_name=="Ben-51882" & refs.all$AR==FALSE] <- "B_HS"
 
 # 定義した結果を見る
-refs.all %>% select(RP_name,RP.definition)
+refs.all %>% dplyr::select(RP_name,RP.definition)
 
 # refs.allの中からRP.definitionで指定された行だけを抜き出す
 (refs.base <- refs.all %>%
     dplyr::filter(!is.na(RP.definition)) %>% # RP.definitionがNAでないものを抽出
     arrange(desc(SSB)) %>% # SSBを大きい順に並び替え
-    select(RP.definition,RP_name,SSB,SSB2SSB0,Catch,Catch.CV,U,Fref2Fcurrent)) #　列を並び替え
+    dplyr::select(RP.definition,RP_name,SSB,SSB2SSB0,Catch,Catch.CV,U,Fref2Fcurrent)) #　列を並び替え
 
 
 ## ------------------------------------------------------------------------

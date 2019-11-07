@@ -3,10 +3,16 @@ title: "再生産関係チェックリスト"
 author: "Shota Nishijima"
 date: "`r Sys.Date()`"
 output:
-  rmdformats::readthedown:
+  md_document:
     highlight: kate
-    md_extensions: -ascii_identifiers    
----
+    toc: yes
+    toc_float: yes
+vignette: >
+  %\VignetteIndexEntry{再生産関係チェックリスト}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---      
+
 
 ```{r setup, include=FALSE, warning=FALSE,eval=FALSE,echo=FALSE}
 # ここのチャンクはもう必要ないので，削除してもOKです
@@ -20,19 +26,9 @@ opts_chunk$set(echo=TRUE,
                comment=NA,
                message=FALSE,
                warning=FALSE)
-
-
-
-caa <- read.csv("../simple/caa_pma.csv",row.names=1)
-waa <- read.csv("../simple/waa_pma.csv",row.names=1)
-maa <- read.csv("../simple/maa_pma.csv",row.names=1)
-dat <- data.handler(caa=caa, waa=waa, maa=maa, M=0.5)
-
-# VPAによる資源量推定
-res.pma <- vpa(dat,fc.year=2009:2011,rec=585,rec.year=2011,tf.year = 2008:2010,
-               term.F="max",stat.tf="mean",Pope=TRUE,tune=FALSE,p.init=1.0)
 ```
-再生産関係の選択・診断を行うためのチェックリストです。ここで、将来予測・管理基準値計算チュートリアル (../docs/future-doc-abc.html) の例を使って説明します。
+
+	再生産関係の選択・診断を行うためのチェックリストです。ここで、将来予測・管理基準値計算チュートリアル (../docs/future-doc-abc.html) の例を使って説明します。
   
 <!-- ## 0. 使用データ・解析コード等 -->
 
@@ -47,9 +43,8 @@ Hockey-Stick型/Beverton-Holt型/Ricker型の再生産関係を比較します�
 
 ```{r, warning=FALSE}
 library(frasyr)
-data(res.pma) #res.pma: vpaの結果
-
-SRdata <- get.SRdata(res.pma) 
+data(res_vpa)
+SRdata <- get.SRdata(res_vpa) 
 
 resHS <- fit.SR(SRdata,SR="HS",method="L2",AR=0)
 resBH <- fit.SR(SRdata,SR="BH",method="L2",AR=0)

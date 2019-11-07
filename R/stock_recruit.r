@@ -39,6 +39,10 @@ get.SRdata <- function(vpares,R.dat=NULL,SSB.dat=NULL,years=as.numeric(colnames(
 #' TMB = TRUEでmarginal likelihood (.cppファイルが必要)
 #'
 #' @param SRdata get.SRdataで作成した再生産関係データ
+#' @param SR 再生産関係 (HS: Hockey-stick, BH: Beverton-Holt, RI: Ricker)
+#' @param method 最適化法（L2: 最小二乗法, L1: 最小絶対値法）
+#' @param AR 自己相関を推定するか(1), しないか(0)
+#' @param out.AR 自己相関係数を一度再生産関係を推定したのちに、外部から推定するか（1), 内部で推定するか(0)
 #'
 #' @export
 
@@ -50,7 +54,8 @@ fit.SR <- function(SRdata,
                    length=20,
                    max.ssb.pred=1.3, # 予測値を計算するSSBの最大値（観測された最大値への乗数）
                    p0=NULL,
-                   out.AR = FALSE #自己相関係数rhoを外で推定するか
+                   out.AR = TRUE, #自己相関係数rhoを外で推定するか
+                   rep.opt = FALSE
 ){ 
   
   argname <- ls()
@@ -123,9 +128,15 @@ fit.SR <- function(SRdata,
   }
   
   opt <- optim(init,obj.f2)
+  if (rep.opt) {
+    for (i in 1:100) {
+      opt2 <- optim(opt$par,obj.f2)
+      if (abs(opt$value-opt2$value)<1e-6) break
+      opt <- opt2
+    }
+  }
   opt <- optim(opt$par,obj.f2,method="BFGS",hessian=hessian)
     
-  
   Res <- list()
   Res$input <- arglist
   Res$opt <- opt
@@ -328,7 +339,11 @@ fit.SR2 <- function(SRdata,
   return(Res)
 }
 
-### parametric bootstrap usnig fit.SR
+#' parametric bootstrap usnig fit.SR
+#' 
+#' @export
+#' 
+
 boot.SR <- function(Res,n=100,seed=1){
   N <- length(Res$input$SRdata$year)
   
@@ -362,7 +377,11 @@ boot.SR <- function(Res,n=100,seed=1){
   })
 }
 
-### profile likelihood
+#'  profile likelihood
+#' 
+#' @export
+#' 
+
 prof.lik <- function(Res,a=Res$pars$a,b=Res$pars$b,sd=Res$pars$sd,rho=Res$pars$rho) {
   SRdata <- Res$input$SRdata
   rec <- SRdata$R

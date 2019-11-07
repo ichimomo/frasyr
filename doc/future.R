@@ -205,8 +205,7 @@ res_bref <- ref.F(res_vpa, # VPAの計算結果
                   waa.year=byear, maa.year=byear, M.year=byear, 
                   rps.year=2000:2017, # Fmedを計算するときに用いるRPSの範囲
                   max.age=Inf, # SPR計算で仮定する年齢の最大値 
-                  pSPR=c(10,20,30,35,40), # F_%SPRを計算するときに，何パーセントのSPRを計算するか
-                  Fspr.init=1)
+                  pSPR=c(10,20,30,35,40)) # F_%SPRを計算するときに，何パーセントのSPRを計算するか
 
 ## ----ref.F2--------------------------------------------------------------
 res_bref$summary
