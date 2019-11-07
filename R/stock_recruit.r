@@ -10,10 +10,9 @@ get.SRdata <- function(vpares,R.dat = NULL,
                        years = as.numeric(colnames(vpares$naa)),
                        return.df = FALSE){
     # R.datとSSB.datだけが与えられた場合、それを使ってシンプルにフィットする
-    if(!is.null(R.dat) & !is.null(SSB.dat)){
+    if (!is.null(R.dat) & !is.null(SSB.dat)) {
         dat <- data.frame(R = R.dat,SSB = SSB.dat,year = 1:length(R.dat))
-    }
-    else{
+    } else {
     # データの整形
         n <- ncol(vpares$naa)
         L <- as.numeric(rownames(vpares$naa)[1])
