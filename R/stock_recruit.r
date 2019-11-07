@@ -27,7 +27,7 @@ get.SRdata <- function(vpares,R.dat = NULL,
         dat$SSB  <- dat$SSB[1:(n-L)]
         dat$year <- dat$year[(L+1):n]
 
-                                        # データの抽出
+    # データの抽出
         dat <- as.data.frame(dat)
         dat <- dat[dat$year%in%years,]
     }
