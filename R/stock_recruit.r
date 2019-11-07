@@ -5,7 +5,10 @@
 #'
 #' @export
 
-get.SRdata <- function(vpares,R.dat=NULL,SSB.dat=NULL,years=as.numeric(colnames(vpares$naa)),return.df=FALSE){
+get.SRdata <- function(vpares,R.dat=NULL,
+                       SSB.dat=NULL,
+                       years=as.numeric(colnames(vpares$naa)),
+                       return.df=FALSE){
     # R.datとSSB.datだけが与えられた場合、それを使ってシンプルにフィットする
     if(!is.null(R.dat) & !is.null(SSB.dat)){
         dat <- data.frame(R=R.dat,SSB=SSB.dat,year=1:length(R.dat))
