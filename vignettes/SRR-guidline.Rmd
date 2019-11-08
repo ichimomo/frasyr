@@ -3,7 +3,7 @@ title: "再生産関係チェックリスト"
 author: "Shota Nishijima"
 date: "`r Sys.Date()`"
 output:
-  md_document:
+  html_document:
     highlight: kate
     toc: yes
     toc_float: yes
