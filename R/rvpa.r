@@ -573,7 +573,7 @@ vpa <- function(
   # }
     
   # inputデータをリスト化
-
+  
   argname <- ls()  # 関数が呼び出されたばかりのときのls()は引数のみが入っている
   arglist <- lapply(argname,function(xx) eval(parse(text=xx)))
   names(arglist) <- argname
@@ -1176,7 +1176,6 @@ vpa <- function(
 #    log.p.hat <- log(summary.p.est$estimate)
 #  } else {
   if (isTRUE(TMB)){
-    # stop("tentative stop")
     index2 <- as.matrix(t(apply(index,1,function(x) ifelse(is.na(x),0,x))))
  
     Ab_type <- ifelse(abund=="SSB", 1, ifelse(abund=="N", 2, 3))
