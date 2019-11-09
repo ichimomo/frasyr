@@ -1,10 +1,8 @@
 #' VPAの結果から再生産関係推定用のデータを作成する
 #'
 #' @param vpares VPAの結果のオブジェクト
-#' 
-#'
+#' @encoding UTF-8
 #' @export
-
 get.SRdata <- function(vpares,R.dat = NULL,
                        SSB.dat = NULL,
                        years = as.numeric(colnames(vpares$naa)),
@@ -48,6 +46,7 @@ get.SRdata <- function(vpares,R.dat = NULL,
 #' @param method 最適化法（L2: 最小二乗法, L1: 最小絶対値法）
 #' @param AR 自己相関を推定するか(1), しないか(0)
 #' @param out.AR 自己相関係数を一度再生産関係を推定したのちに、外部から推定するか（1), 内部で推定するか(0)
+#' @encoding UTF-8
 #'
 #' @export
 
@@ -346,6 +345,7 @@ fit.SR2 <- function(SRdata,
 
 #' parametric bootstrap usnig fit.SR
 #' 
+#' @encoding UTF-8
 #' @export
 #' 
 
@@ -384,6 +384,7 @@ boot.SR <- function(Res,n=100,seed=1){
 
 #'  profile likelihood
 #' 
+#' @encoding UTF-8
 #' @export
 #' 
 

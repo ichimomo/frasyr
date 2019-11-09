@@ -33,6 +33,7 @@
 #' @param caa catch at age
 #' @param waa weight at age
 #' @param maa maturity at age
+#' @encoding UTF-8
 #'
 #' @export
 
@@ -483,6 +484,7 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param eta  Fのpenaltyを分けて与えるときにeta.ageで指定した年齢への相対的なpenalty (0~1)
 #' @param eta.age  Fのpenaltyを分けるときにetaを与える年齢(0 = 0歳（加入）,0:1 = 0~1歳)
 #' @param tmb.file  TMB=TRUEのとき使用するcppファイルの名前
+#' @encoding UTF-8
 #' 
 #' @export
 #' 
@@ -1302,6 +1304,7 @@ Ft <- mean(faa[,ny],na.rm=TRUE)
 #' VPAの推定値についてprofile likelihood (one parameter)を実施する
 #'
 #' @param res vpa関数の出力値
+#' @encoding UTF-8
 #'
 #' @export
 #' 
@@ -1444,6 +1447,7 @@ profile.likelihood.vpa.B <- function(res,Alpha=0.95,min.p=1.0E-6,max.p=1,L=20,me
 #' bootstrapを実施する
 #'
 #' @param res vpaの出力値
+#' @encoding UTF-8
 #'
 #' @export
 
@@ -1536,6 +1540,7 @@ cv.est <- function(res,n=5){
 #' レトロスペクティブ解析の実施
 #'
 #' @param res VPAの出力
+#' @encoding UTF-8
 #' @export
 #' 
 

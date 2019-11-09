@@ -24,7 +24,7 @@ NULL
 #' @param rps.year Fmedの計算に使うRPSの年の範囲．NULLの場合，全範囲が用いられる
 #' @param max.age 加入年齢を０歳としたときに、SPR計算で考慮される最大の年齢（年齢の数ではないことに注意, デフォルトはInf）。加入年齢が１歳以上のときは、SPR計算で考慮したい年齢-加入年齢を入力する、またはmin.ageの引数に加入年齢を設定する。
 #' @param min.age  加入年齢が0歳でないときに指定できる(デフォルトは0)
-#' @param  pSPR = seq(10,90,by=10), # F%SPRを計算するときの％SPR
+#' @param  pSPR = seq(10,90,by=10), # F\%SPRを計算するときの％SPR
 #' @param d 0.001
 #' @param  Fem.init 経験的管理基準値(Fmed, Fmean, Fhigh, Flow)の初期値 (default=0.5)
 #' @param  Fmax.init Fmaxの初期値 (default=1.5)
@@ -32,7 +32,8 @@ NULL
 #' @param  iterlim 
 #' @param  plot 結果のプロットを表示するかどうか
 #' @param  Pope Popeの式を使うか
-#' @param  F.range YPR, SPR曲線を書くときのFの範囲（Fの最大値のスケール）、かつ、F%SPRを計算するときの初期値を決めるために利用される。F%SPRの推定がうまくいかない場合はこの範囲を調整してください。
+#' @param  F.range YPR, SPR曲線を書くときのFの範囲（Fの最大値のスケール）、かつ、F\%SPRを計算するときの初期値を決めるために利用される。F\%SPRの推定がうまくいかない場合はこの範囲を調整してください。
+#' @encoding UTF-8
 #'
 #' @note F_SPRのF管理基準値の初期値は　与えられたFのもとでのSPR/目的のSPR　を初期値とするように調整されるので不要。
 #'
@@ -281,6 +282,7 @@ ref.F <- function(
 #' ref.Fの出力をプロットするための関数
 #'
 #' @param rres ref.Fの出力結果
+#' @encoding UTF-8
 #'
 #' @export
 
@@ -355,10 +357,11 @@ calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=
 #' @param rec.new 指定した年の加入量を固定する。年を指定しないで与える場合は、自動的にスタート年の加入になる。list(year=, rec=)で与える場合は、対応する年の加入を置き換える。
 #' @param recfunc 再生産関係の関数
 #' @param rec.arg 加入の各種設定
-#' @param Frec Frecオプション。Frec計算のための設定リストを与えると、指定された設定でのFrecに対応するFで将来予測を行う。例；Frec=list(stochastic=TRUE,future.year=2018,Blimit=450*1000,scenario="catch.mean",Frange=c(0.01,2*mult))。stochastic; TRUEの場合、stochastic simulationで50%の確率でBlimitを越す。FALSEの場合、RPS固定のprojectionがBilmitと一致する。future.year; 何年の資源量を見るか？ Blimit; 参照とする親魚量。scenario; scenario; "catch.mean"の場合漁獲量の平均値を見る。"blimit"の場合、親魚量を見る。デフォルトは"blimit"。Frange; Fの探索範囲（Fcurrentに対する乗数）
+#' @param Frec Frecオプション。Frec計算のための設定リストを与えると、指定された設定でのFrecに対応するFで将来予測を行う。例；Frec=list(stochastic=TRUE,future.year=2018,Blimit=450*1000,scenario="catch.mean",Frange=c(0.01,2*mult))。stochastic; TRUEの場合、stochastic simulationで50\%の確率でBlimitを越す。FALSEの場合、RPS固定のprojectionがBilmitと一致する。future.year; 何年の資源量を見るか？ Blimit; 参照とする親魚量。scenario; scenario; "catch.mean"の場合漁獲量の平均値を見る。"blimit"の場合、親魚量を見る。デフォルトは"blimit"。Frange; Fの探索範囲（Fcurrentに対する乗数）
 #' @param use.MSE 簡易MSEを実施するかどうか
 #' @param MSE.option 簡易MSEのoption
 #' @param det.run 1回めのランは決定論的将来予測をする。デフォルトはTRUE。#' 
+#' @encoding UTF-8
 #'
 #' @export
 
@@ -1146,6 +1149,7 @@ resample_2block.rec <- function(ssb,vpares,#deterministic=FALSE,
 #'
 #' @param ssb 親魚資源量
 #' @param vpares VPAの出力結果
+#' @encoding UTF-8
 #' 
 #'
 #' @export
@@ -1170,6 +1174,7 @@ HS.recAR <- function(ssb,vpares,#deterministic=FALSE,
 #'
 #' @param ssb 親魚資源量
 #' @param vpares VPAの出力結果
+#' @encoding UTF-8
 #' 
 #'
 #' @export
@@ -1188,6 +1193,7 @@ BH.recAR <- function(ssb,vpares,deterministic=FALSE,rec.resample=NULL,
 #'
 #' @param ssb 親魚資源量
 #' @param vpares VPAの出力結果
+#' @encoding UTF-8
 #'
 #' 
 #'
@@ -1257,6 +1263,7 @@ RI.recAR2 <- function(ssb,vpares,deterministic=FALSE,rec.resample=NULL,
 #' 複数の将来予測の結果をプロットする（ggplotは使わず）
 #'
 #' @param fres.list future.vpaからの出力結果をリストで並べたもの
+#' @encoding UTF-8
 #' 
 #' 
 #'
@@ -1282,6 +1289,7 @@ plot.futures <- function(fres.list,conf=c(0.1,0.5,0.9),target="SSB",legend.text=
 #' 一つの将来予測の結果をプロットする（ggplotは使わず）
 #'
 #' @param fres0 future.vpaからの出力結果
+#' @encoding UTF-8
 #' 
 #' 
 #'
@@ -1562,6 +1570,7 @@ make_summary_table <- function(mat_data,side=1,probs=c(0.1,0.5,0.8)){
 #' @param filename csvファイルとpdfファイルの両方のファイル名を指定する場合（拡張子なしで指定）
 #' @param csvname csvファイルのファイル名
 #' @param pdfname pdfファイルのファイル名
+#' @encoding UTF-8
 #' @export
 
 out.vpa <- function(res=NULL,    # VPA result
@@ -1719,6 +1728,7 @@ out.vpa <- function(res=NULL,    # VPA result
 
 #' csvファイルとしてまとめられた資源計算結果を読み込んでRのオブジェクトにする
 #' @param tfile 資源計算結果がまとめられたcsvファイルの名前
+#' @encoding UTF-8
 #'
 #' @export
 
@@ -2132,7 +2142,7 @@ show.likeprof <- function(res){
 }
 
 
-#' 毎年のFの%SPRやターゲットした%SPRに相当するFの大きさを計算する
+#' 毎年のFの\%SPRやターゲットした\%SPRに相当するFの大きさを計算する
 #' 
 #' VPA計算結果を使って毎年のF at ageがどのくらいのSPR, YPRに相当するかを計算する。また、各年のFが、目標としたSPR（target.SPR）を達成するためのF(Ftarget)の何倍(F/Ftarget)に相当するかも計算する。F/Ftargetは数値的に探索するが、そのときのF/Ftargetの上限をFmaxにて指定する。十分大きい値（デフォルトは１０）を与えておけば大丈夫だが、Ftargetが非常に小さい数字になりそうな場合にはこの値をもっと大きくとるなどする。また、SPRの計算は、デフォルトでは等比級数の和の公式を使って、無限大の年齢までSPRを足しているが、max.ageを指定することで、有限の年齢までの和も計算できる。
 #'
@@ -2140,6 +2150,7 @@ show.likeprof <- function(res){
 #' @param target.SPR 目標とするSPR。この値を入れると、結果の$ysdata$"F/Ftarget"で、その年のFが目標としたSPR(％)を達成するためのF（Ftarget）の何倍になっているかを返す。デフォルトは30が入っている。このとき、SPRを計算するための生物パラメータ（年齢別体重・成熟率・死亡率）はそれぞれの年で仮定されているものを用いる。
 #' @param Fmax F/Ftargetを推定するときに探索するFの乗数の最大値
 #' @param max.age SPRやYPRの計算をするときに最大何歳まで考慮するか（デフォルトは無限大)。値の指定の仕方はhelp(ref.F)を参照のこと
+#' @encoding UTF-8
 #'
 #' @examples
 #' data(res_vpa)
@@ -2183,6 +2194,7 @@ get.SPR <- function(dres,target.SPR=30,Fmax=10,max.age=Inf){
 #'
 #' @param vpares VPAの結果のオブジェクト
 #' @param frag   MSY計算時の将来予測で用いる引数のリスト
+#' @encoding UTF-8
 #' 
 #'
 #' @export
@@ -2197,6 +2209,7 @@ plot_SRdata <- function(SRdata){
 #'
 #' @param vpares VPAの結果のオブジェクト
 #' @param frag   MSY計算時の将来予測で用いる引数のリスト
+#' @encoding UTF-8
 #' 
 #'
 #' @export
@@ -2942,6 +2955,7 @@ draw.refline <- function(reftable,horiz=TRUE,scale=1000,lwd=3){
 
 #' 期間内のRPSをサンプリングするときの加入関数
 #'
+#' @encoding UTF-8
 #' @export
 
 RPS.simple.rec <- function(ssb,vpares,
@@ -3020,6 +3034,7 @@ menplot2 <- function(xy,probs=c(0.1,0.9),new=FALSE,xlab=NULL,ylab=NULL,...){
 
 #' 期間内の残差をサンプリングするときの加入関数
 #'
+#' @encoding UTF-8
 #' @export
 
 resample.rec <- function(ssb,vpares,#deterministic=FALSE,
@@ -3058,6 +3073,7 @@ resample.rec <- function(ssb,vpares,#deterministic=FALSE,
 #' sel_year 選択率の参照年
 #' faa_year 漁獲圧の参照年
 #'
+#' @encoding UTF-8
 #' @export
 
 convert_faa_perSPR <- function(res_vpa, sel_year, faa_year, Fcurrent_MSY=NULL, Fsel_MSY=NULL){
@@ -3091,6 +3107,7 @@ convert_faa_perSPR <- function(res_vpa, sel_year, faa_year, Fcurrent_MSY=NULL, F
 
 #' 列が年である行列に対して、年を指定するとその年のあいだの平均値（等）を返す関数
 #'
+#' @encoding UTF-8
 #' @export
 #'
 #' 
