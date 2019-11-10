@@ -75,6 +75,7 @@ convert_vector <- function(vector,name){
 #' VPAの結果オブジェクトをtibble形式に変換する関数
 #'
 #' @param vpares vpaの結果のオブジェクト
+#' @encoding UTF-8
 #' 
 #'
 #' @export
@@ -109,6 +110,7 @@ convert_vpa_tibble <- function(vpares){
 #' 再生産関係をプロットする関数
 #'
 #' @param SR_result fit.SRの結果のオブジェクト
+#' @encoding UTF-8
 #'
 #' @export
 #' 
@@ -193,6 +195,7 @@ get.trace <- function(trace){
 #' @param future 将来予測結果のリスト。与えられると将来予測の結果を重ね書きする
 #' @param future.replicat 将来予測結果から特定のreplicateのみを示す。futureで与えたリストの長さのベクトルを与える。
 #' @param past  VPA結果。与えられると過去の推定値を重ね書きする
+#' @encoding UTF-8
 #' 
 #' @export
 
@@ -369,6 +372,7 @@ plot_yield <- function(MSY_obj,refs_base,
 #' 管理基準値の表を作成する
 #'
 #' @param refs_base est.MSYから得られる管理基準値の表
+#' @encoding UTF-8
 #'
 #' @export
 #'
@@ -403,6 +407,7 @@ make_RP_table <- function(refs_base){
 #'
 #' @param refs_base est.MSYから得られる管理基準値の表
 #' @param RP_name 取り出したい管理基準値の名前
+#' @encoding UTF-8
 #'
 #' @export
 #' 
@@ -417,6 +422,7 @@ derive_RP_value <- function(refs_base,RP_name){
 #'
 #' @param fres_base future.vpaの結果のオブジェクト
 #' @param refs_base est.MSYから得られる管理基準値の表
+#' @encoding UTF-8
 #'
 #' @export
 
@@ -741,6 +747,7 @@ HCR.simulation <- function(finput,HCRtable,year.lag=year.lag){
 
 #' kobeII matrixの簡易版（Btarget, Blimitは決め打ちでβのみ変える)
 #'
+#' @encoding UTF-8
 #' @export
 #'
 #' 
@@ -799,6 +806,7 @@ get.stat4 <- function(fout,Brefs,
 #'
 #' @param vpares VPAの結果のオブジェクト
 #' @param refs_base est.MSYから得られる管理基準値の表
+#' @encoding UTF-8
 #'
 #' @export
 #' 
@@ -975,6 +983,7 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
 #' @param n_example 個々のシミュレーションの例を示す数
 #' @param width_example 個々のシミュレーションをプロットする場合の線の太さ (default=0.7)
 #' @param future.replicate どのreplicateを選ぶかを選択する。この場合n_exampleによる指定は無効になる
+#' @encoding UTF-8
 #' @export
 
 plot_futures <- function(vpares,
@@ -1180,6 +1189,7 @@ plot_futures <- function(vpares,
 #' F currentをプロットする
 #'
 #' @param vpares VPAの結果のオブジェクト
+#' @encoding UTF-8
 #'
 #' @export
 
@@ -1237,6 +1247,7 @@ library(ggplot2)
 #' @param SBlim    限界管理基準値
 #' @param SBlim    禁漁水準
 #' @param Ftarget  Ftarget
+#' @encoding UTF-8
 #'
 #' @export
 
@@ -1328,11 +1339,13 @@ plot_HCR <- function(SBtarget,SBlim,SBban,Ftarget,
 #Fig_Fish_Manage_Rule(SBtarget,SBlim,SBban,Ftarget,col.multi2currf = "#093d86", col.SBtarget = "#00533E", col.SBlim = "#edb918",col.SBban = "#C73C2E",col.Ftarget = "#714C99", col.betaFtarget = "#505596")
 # function;ruri-rio, sbtarget;moegi-iro, sblim;koki-ki; sbban;hi-iro, ftarget;sumire-iro, betaftarget;kikyou-iro
 
-#' MSYを達成するときの%SPRを計算する
+#' MSYを達成するときの\%SPRを計算する
+#'
+#' @param finput 将来予測インプット
+#' @param Fvector Fのベクトル
+#' @encoding UTF-8
 #' @export
-calc_perspr <- function(finput, # 将来予測インプット
-                         Fvector, # Fのベクトル
-                         Fmax=10,max.age=Inf){
+calc_perspr <- function(finput, Fvector, Fmax=10, max.age=Inf){
     res_vpa <- finput$res0
     # MSYにおける将来予測計算をやりなおし
     finput$outtype <- "FULL"
