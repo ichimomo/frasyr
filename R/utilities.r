@@ -816,7 +816,8 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
                          yscale=1.2,xscale=1.2,
                          HCR.label.position=c(1,1), # デフォルトはx軸方向が1, y軸方向が1の相対値です。様子を見ながら調整してください
                          refs.color=c("#00533E","#edb918","#C73C2E"),
-                         beta=NULL){
+                         beta=NULL,
+                         plot.year="all"){
 
    
 #    require(tidyverse,quietly=TRUE)
@@ -848,6 +849,10 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
 
     UBdata <- UBdata %>%
         mutate(year.label=ifelse(year%in%labeling.year,year,""))
+    
+    if (plot.year[1]!="all") {
+      UBdata <- UBdata %>% filter(year %in% plot.year)
+    }
 
     max.B <- max(c(UBdata$Bratio,xscale),na.rm=T)
     max.U <- max(c(UBdata$Uratio,yscale),na.rm=T)
