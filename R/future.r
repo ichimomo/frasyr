@@ -1581,7 +1581,8 @@ out.vpa <- function(res=NULL,    # VPA result
                     kobeII=NULL, # kobeII result
                     filename="vpa", # filename without extension
                     csvname=NULL,
-                    pdfname=NULL
+                    pdfname=NULL,
+                    ci.future=c(0.1,0.5,0.9)
                     ){
   old.par <- par()  
   exit.func <- function(){
@@ -1679,7 +1680,6 @@ out.vpa <- function(res=NULL,    # VPA result
   }
 
       tmpfunc <- function(fres){
-          write("\n# future projection under F current (average)",file=csvname,append=T)  
     write("\n# future F at age",file=csvname,append=T)
     write.table2(apply(fres$faa,c(1,2),mean),title.tmp="Average future F at age")
           
@@ -1693,23 +1693,25 @@ out.vpa <- function(res=NULL,    # VPA result
           write.table2(apply(fres$waa,c(1,2),mean),title.tmp="Average future numbers at age")
 
           write("\n# future total spawning biomass",file=csvname,append=T)    
-          make_summary_table(fres$vssb,1,probs=c(0.1,0.5,0.8)) %>%
+          make_summary_table(fres$vssb,1,probs=ci.future) %>%
               write_csv(path=csvname,append=TRUE, col_names = TRUE)
 
           write("\n# future total biomass",file=csvname,append=T)    
-          make_summary_table(fres$vbiom,1,probs=c(0.1,0.5,0.8)) %>%
+          make_summary_table(fres$vbiom,1,probs=ci.future) %>%
               write_csv(path=csvname,append=TRUE, col_names = TRUE)
           
           write("\n# future total catch",file=csvname,append=T)    
-          make_summary_table(fres$vwcaa,1,probs=c(0.1,0.5,0.8)) %>%
+          make_summary_table(fres$vwcaa,1,probs=ci.future) %>%
               write_csv(path=csvname,append=TRUE, col_names = TRUE)
       }  
 
   if(!is.null(fres_current)){
+      write("\n# future projection under F current",file=csvname,append=T)  
       tmpfunc(fres_current)
   }
 
   if(!is.null(fres_HCR)){
+      write("\n# future projection under HCR",file=csvname,append=T)  
       tmpfunc(fres_HCR)
   }
 
