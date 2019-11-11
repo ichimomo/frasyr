@@ -39,7 +39,7 @@ future.vpa(res0, currentF = NULL, multi = 1, futureF = NULL,
 
 \item{seed}{乱数のシード。将来予測の実行前にset.seed(seed)でシードを固定する。NULLの場合は、ランダムな数が用いられる。}
 
-\item{strategy}{# F: 漁獲係数一定, E: 漁獲割合一定、C: 漁獲量一定（pre.catchで漁獲量を指定）。もう使われていない引数？}
+\item{strategy}{F: 漁獲係数一定, E: 漁獲割合一定、C: 漁獲量一定（pre.catchで漁獲量を指定）。もう使われていない引数？}
 
 \item{use.MSE}{簡易MSEを実施するかどうか}
 
@@ -55,7 +55,7 @@ future.vpa(res0, currentF = NULL, multi = 1, futureF = NULL,
 
 \item{rec.arg}{加入の各種設定}
 
-\item{Frec}{Frecオプション。Frec計算のための設定リストを与えると、指定された設定でのFrecに対応するFで将来予測を行う。例；Frec=list(stochastic=TRUE,future.year=2018,Blimit=450*1000,scenario="catch.mean",Frange=c(0.01,2*mult))。stochastic; TRUEの場合、stochastic simulationで50%の確率でBlimitを越す。FALSEの場合、RPS固定のprojectionがBilmitと一致する。future.year; 何年の資源量を見るか？ Blimit; 参照とする親魚量。scenario; scenario; "catch.mean"の場合漁獲量の平均値を見る。"blimit"の場合、親魚量を見る。デフォルトは"blimit"。Frange; Fの探索範囲（Fcurrentに対する乗数）}
+\item{Frec}{Frecオプション。Frec計算のための設定リストを与えると、指定された設定でのFrecに対応するFで将来予測を行う。例；Frec=list(stochastic=TRUE,future.year=2018,Blimit=450*1000,scenario="catch.mean",Frange=c(0.01,2*mult))。stochastic; TRUEの場合、stochastic simulationで50\%の確率でBlimitを越す。FALSEの場合、RPS固定のprojectionがBilmitと一致する。future.year; 何年の資源量を見るか？ Blimit; 参照とする親魚量。scenario; scenario; "catch.mean"の場合漁獲量の平均値を見る。"blimit"の場合、親魚量を見る。デフォルトは"blimit"。Frange; Fの探索範囲（Fcurrentに対する乗数）}
 
 \item{waa}{年齢別体重を直接指定する場合(waa.yearよりも優先される)}
 

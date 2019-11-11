@@ -24,7 +24,7 @@ NULL
 #' @param rps.year Fmedの計算に使うRPSの年の範囲．NULLの場合，全範囲が用いられる
 #' @param max.age 加入年齢を０歳としたときに、SPR計算で考慮される最大の年齢（年齢の数ではないことに注意, デフォルトはInf）。加入年齢が１歳以上のときは、SPR計算で考慮したい年齢-加入年齢を入力する、またはmin.ageの引数に加入年齢を設定する。
 #' @param min.age  加入年齢が0歳でないときに指定できる(デフォルトは0)
-#' @param  pSPR = seq(10,90,by=10), # F%SPRを計算するときの％SPR
+#' @param  pSPR   F\%SPRを計算するときの\％SPR(デフォルトはseq(10,90,by=10))
 #' @param d 0.001
 #' @param  Fem.init 経験的管理基準値(Fmed, Fmean, Fhigh, Flow)の初期値 (default=0.5)
 #' @param  Fmax.init Fmaxの初期値 (default=1.5)
@@ -32,7 +32,7 @@ NULL
 #' @param  iterlim 
 #' @param  plot 結果のプロットを表示するかどうか
 #' @param  Pope Popeの式を使うか
-#' @param  F.range YPR, SPR曲線を書くときのFの範囲（Fの最大値のスケール）、かつ、F%SPRを計算するときの初期値を決めるために利用される。F%SPRの推定がうまくいかない場合はこの範囲を調整してください。
+#' @param  F.range YPR, SPR曲線を書くときのFの範囲（Fの最大値のスケール）、かつ、F\%SPRを計算するときの初期値を決めるために利用される。F\%SPRの推定がうまくいかない場合はこの範囲を調整してください。
 #'
 #' @note F_SPRのF管理基準値の初期値は　与えられたFのもとでのSPR/目的のSPR　を初期値とするように調整されるので不要。
 #'
@@ -42,27 +42,26 @@ NULL
 # ref.F
 ref.F <- function(
   res, # VPAの結果のオブジェクト
-  #  sel=NULL, # 仮定する選択率．NULLの場合，res$Fc.at.ageが使われる
-  Fcurrent=NULL, # Fcurrentの仮定．NULLの場合，res$Fc.at.ageが使われる  
-  waa=NULL, # 仮定する生物パラメータ．直接の値を入れるか，年を指定するやり方のどちらでも動く。直接指定するほうが優先。
+  Fcurrent=NULL, 
+  waa=NULL, 
   maa=NULL,
   M=NULL,
   waa.catch=NULL,
   M.year=NULL, 
-  waa.year=NULL, # 年を指定して生物パラメータを仮定する場合．年の範囲の平均値が用いられる．NULLの場合，VPA最終年の値が使われる
+  waa.year=NULL, 
   maa.year=NULL,
-  rps.year = NULL, # Fmedの計算に使うRPSの年の範囲．NULLの場合，全範囲が用いられる
-  max.age = Inf, # 加入年齢を０歳としたときに、SPR計算で考慮される最大の年齢（年齢の数ではないことに注意）。加入年齢が１歳以上のときは、SPR計算で考慮したい年齢-加入年齢を入力する、またはmin.ageの引数に加入年齢を設定する。
-  min.age = 0, # 加入年齢が0歳でないときに指定できる
+  rps.year = NULL, 
+  max.age = Inf, 
+  min.age = 0, 
   d = 0.001,
   Fem.init = 0.5, 
-  Fmax.init = 1.5, # Fmaxの初期値
-  F0.1.init = 0.7, # F0.1の初期値
-  pSPR = seq(10,90,by=10), # F%SPRを計算するときの％SPR
+  Fmax.init = 1.5, 
+  F0.1.init = 0.7, 
+  pSPR = seq(10,90,by=10), 
   iterlim=1000,
   plot=TRUE,
-  Pope=NULL, # 2014.7.4追加
-  F.range = seq(from=0,to=2,length=101)  # YPR, SPR曲線を書くときのFの範囲
+  Pope=NULL, 
+  F.range = seq(from=0,to=2,length=101)  
 ){
 
     argname <- ls()
@@ -344,7 +343,7 @@ calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=
 #' @param waa.catch　漁獲量計算用の年齢別体重を直接指定する場合(waa.catch.yearよりも優先される)
 #' @param waa.fun 年齢別体重を年齢別資源尾数の関数とするか(waa.catchが別に与えられているときには機能しない)
 #' @param M　自然死亡係数を直接指定する場合(M.yearよりも優先される)
-#' @param strategy # F: 漁獲係数一定, E: 漁獲割合一定、C: 漁獲量一定（pre.catchで漁獲量を指定）。もう使われていない引数？
+#' @param strategy  F: 漁獲係数一定, E: 漁獲割合一定、C: 漁獲量一定（pre.catchで漁獲量を指定）。もう使われていない引数？
 #' @param Pope 漁獲量計算にPopeの近似式を使うか。指定しない場合はvpa関数への引数がそのまま受け継がれる。
 #' @param add.year =1で1年分余分に計算する（通常は使わない）
 #' @param seed 乱数のシード。将来予測の実行前にset.seed(seed)でシードを固定する。NULLの場合は、ランダムな数が用いられる。
@@ -355,7 +354,7 @@ calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=
 #' @param rec.new 指定した年の加入量を固定する。年を指定しないで与える場合は、自動的にスタート年の加入になる。list(year=, rec=)で与える場合は、対応する年の加入を置き換える。
 #' @param recfunc 再生産関係の関数
 #' @param rec.arg 加入の各種設定
-#' @param Frec Frecオプション。Frec計算のための設定リストを与えると、指定された設定でのFrecに対応するFで将来予測を行う。例；Frec=list(stochastic=TRUE,future.year=2018,Blimit=450*1000,scenario="catch.mean",Frange=c(0.01,2*mult))。stochastic; TRUEの場合、stochastic simulationで50%の確率でBlimitを越す。FALSEの場合、RPS固定のprojectionがBilmitと一致する。future.year; 何年の資源量を見るか？ Blimit; 参照とする親魚量。scenario; scenario; "catch.mean"の場合漁獲量の平均値を見る。"blimit"の場合、親魚量を見る。デフォルトは"blimit"。Frange; Fの探索範囲（Fcurrentに対する乗数）
+#' @param Frec Frecオプション。Frec計算のための設定リストを与えると、指定された設定でのFrecに対応するFで将来予測を行う。例；Frec=list(stochastic=TRUE,future.year=2018,Blimit=450*1000,scenario="catch.mean",Frange=c(0.01,2*mult))。stochastic; TRUEの場合、stochastic simulationで50\%の確率でBlimitを越す。FALSEの場合、RPS固定のprojectionがBilmitと一致する。future.year; 何年の資源量を見るか？ Blimit; 参照とする親魚量。scenario; scenario; "catch.mean"の場合漁獲量の平均値を見る。"blimit"の場合、親魚量を見る。デフォルトは"blimit"。Frange; Fの探索範囲（Fcurrentに対する乗数）
 #' @param use.MSE 簡易MSEを実施するかどうか
 #' @param MSE.option 簡易MSEのoption
 #' @param det.run 1回めのランは決定論的将来予測をする。デフォルトはTRUE。#' 
@@ -2134,12 +2133,12 @@ show.likeprof <- function(res){
 }
 
 
-#' 毎年のFの%SPRやターゲットした%SPRに相当するFの大きさを計算する
+#' 毎年のFの\%SPRやターゲットした\%SPRに相当するFの大きさを計算する
 #' 
 #' VPA計算結果を使って毎年のF at ageがどのくらいのSPR, YPRに相当するかを計算する。また、各年のFが、目標としたSPR（target.SPR）を達成するためのF(Ftarget)の何倍(F/Ftarget)に相当するかも計算する。F/Ftargetは数値的に探索するが、そのときのF/Ftargetの上限をFmaxにて指定する。十分大きい値（デフォルトは１０）を与えておけば大丈夫だが、Ftargetが非常に小さい数字になりそうな場合にはこの値をもっと大きくとるなどする。また、SPRの計算は、デフォルトでは等比級数の和の公式を使って、無限大の年齢までSPRを足しているが、max.ageを指定することで、有限の年齢までの和も計算できる。
 #'
 #' @param dres vpa関数の返り値
-#' @param target.SPR 目標とするSPR。この値を入れると、結果の$ysdata$"F/Ftarget"で、その年のFが目標としたSPR(％)を達成するためのF（Ftarget）の何倍になっているかを返す。デフォルトは30が入っている。このとき、SPRを計算するための生物パラメータ（年齢別体重・成熟率・死亡率）はそれぞれの年で仮定されているものを用いる。
+#' @param target.SPR 目標とするSPR。この値を入れると、結果のysdata\$"F/Ftarget"で、その年のFが目標としたSPR(\%)を達成するためのF（Ftarget）の何倍になっているかを返す。デフォルトは30が入っている。このとき、SPRを計算するための生物パラメータ（年齢別体重・成熟率・死亡率）はそれぞれの年で仮定されているものを用いる。
 #' @param Fmax F/Ftargetを推定するときに探索するFの乗数の最大値
 #' @param max.age SPRやYPRの計算をするときに最大何歳まで考慮するか（デフォルトは無限大)。値の指定の仕方はhelp(ref.F)を参照のこと
 #'

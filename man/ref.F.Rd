@@ -42,7 +42,7 @@ ref.F(res, Fcurrent = NULL, waa = NULL, maa = NULL, M = NULL,
 
 \item{F0.1.init}{F0.1の初期値 (default=0.7)}
 
-\item{pSPR}{= seq(10,90,by=10), # F%SPRを計算するときの％SPR}
+\item{pSPR}{F\%SPRを計算するときの\％SPR(デフォルトはseq(10,90,by=10))}
 
 \item{iterlim}{}
 
@@ -50,7 +50,7 @@ ref.F(res, Fcurrent = NULL, waa = NULL, maa = NULL, M = NULL,
 
 \item{Pope}{Popeの式を使うか}
 
-\item{F.range}{YPR, SPR曲線を書くときのFの範囲（Fの最大値のスケール）、かつ、F%SPRを計算するときの初期値を決めるために利用される。F%SPRの推定がうまくいかない場合はこの範囲を調整してください。}
+\item{F.range}{YPR, SPR曲線を書くときのFの範囲（Fの最大値のスケール）、かつ、F\%SPRを計算するときの初期値を決めるために利用される。F\%SPRの推定がうまくいかない場合はこの範囲を調整してください。}
 
 \item{sel}{仮定する選択率．NULLの場合，res$Fc.at.ageが使われる}
 }
