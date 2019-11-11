@@ -179,7 +179,7 @@ ref.F <- function(
     for (i in pSPR){
       Fspr.init <- ypr.spr$F.range[which.min(abs(ypr.spr$pspr-i))] #original.perspr/i*100
       FpSPR.res <- nlm(spr.f.est, Fspr.init, out=FALSE, sub=i, spr0=spr0, iterlim=iterlim)
-      cat("Estimate F%spr: initial value=", Fspr.init," : estimated value=",exp(FpSPR.res$estimate),"\n")
+#      cat("Estimate F%spr: initial value=", Fspr.init," : estimated value=",exp(FpSPR.res$estimate),"\n")
       FpSPR <- c(FpSPR, exp(FpSPR.res$estimate))
     }
     names(FpSPR) <- paste(pSPR,"%SPR",sep="")

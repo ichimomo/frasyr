@@ -614,23 +614,41 @@ make_kobeII_table <- function(kobeII_data,
                               Blimit=0,
                               Bban=0){
     # 平均漁獲量
-    (catch.table <- kobeII.data %>%
+    (catch.mean <- kobeII.data %>%
          dplyr::filter(year%in%year.catch,stat=="catch") %>% # 取り出す年とラベル("catch")を選ぶ
          group_by(HCR_name,beta,year) %>%
-         summarise(catch.mean=round(mean(value))) %>%  # 値の計算方法を指定（漁獲量の平均ならmean(value)）
+         summarise(catch.mean=mean(value)) %>%  # 値の計算方法を指定（漁獲量の平均ならmean(value)）
          # "-3"とかの値で桁数を指定
          spread(key=year,value=catch.mean) %>% ungroup() %>%
          arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
          mutate(stat_name="catch.mean"))
 
     # 平均親魚
-    (ssb.table <- kobeII.data %>%
+    (ssb.mean <- kobeII.data %>%
          dplyr::filter(year%in%year.ssb,stat=="SSB") %>% 
          group_by(HCR_name,beta,year) %>%
-         summarise(ssb.mean=round(mean(value))) %>%  
+         summarise(ssb.mean=mean(value)) %>%  
          spread(key=year,value=ssb.mean) %>% ungroup() %>%
          arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
-         mutate(stat_name="ssb.mean"))    
+         mutate(stat_name="ssb.mean"))
+
+    # 親魚, 下10%
+    (ssb.ci10 <- kobeII.data %>%
+         dplyr::filter(year%in%year.ssb,stat=="SSB") %>% 
+         group_by(HCR_name,beta,year) %>%
+         summarise(ssb.ci10=quantile(value,probs=0.1)) %>%  
+         spread(key=year,value=ssb.ci10) %>% ungroup() %>%
+         arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
+         mutate(stat_name="ssb.ci10"))
+
+    # 親魚, 上10%
+    (ssb.ci90 <- kobeII.data %>%
+         dplyr::filter(year%in%year.ssb,stat=="SSB") %>% 
+         group_by(HCR_name,beta,year) %>%
+         summarise(ssb.ci90=quantile(value,probs=0.9)) %>%  
+         spread(key=year,value=ssb.ci90) %>% ungroup() %>%
+         arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
+         mutate(stat_name="ssb.ci90"))            
 
     # 1-currentFに乗じる値=currentFからの努力量の削減率の平均値（実際には確率分布になっている）
     (Fsakugen.table <- kobeII.data %>%
@@ -704,13 +722,15 @@ make_kobeII_table <- function(kobeII_data,
         arrange(HCR_name,desc(beta))%>%
         mutate(stat_name="catch.csv (recent 5 year)")
 
-    res_list <- list(average.catch   = catch.table,
-                     average.ssb     = ssb.table,
-                     prob.ssbtarget  = ssbtarget.table,
-                     prob.ssblimit   = ssblimit.table,
-                     prob.ssbban     = ssbban.table,                     
-                     prob.ssbmin     = ssbmin.table,
-                     prob.ssbmax     = ssbmax.table,                     
+    res_list <- list(catch.mean   = catch.mean,
+                     ssb.mean         = ssb.mean,
+                     ssb.lower10percent            = ssb.ci10,
+                     ssb.upper90percent            = ssb.ci90,
+                     prob.over.ssbtarget  = ssbtarget.table,
+                     prob.over.ssblimit   = ssblimit.table,
+                     prob.over.ssbban     = ssbban.table,                     
+                     prob.over.ssbmin     = ssbmin.table,
+                     prob.over.ssbmax     = ssbmax.table,                     
                      catch.aav       = catch.aav.table)    
     return(res_list)
                 
