@@ -49,10 +49,11 @@ draw_SRline <- function(fitted, observed, show.year) {
 #' @param SR Vector of multiple SR model described in \code{\link{fit.SR}}
 #' @param method Vector of multiple method described in \code{\link{fit.SR}}
 #' @examples
-#'
+#' \dontrun{
 #' draw_SRline(vpares = res_vpa,
 #'             SR = c("HS", "RI", "BH"),
 #'             method = c("L1", "L2"))
+#' }
 #' @export
 fit_draw_SRline <- function(vpares, SR, method, show.year = FALSE) {
   rawdata <- get.SRdata(vpares = vpares, return.df = TRUE)

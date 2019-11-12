@@ -15,8 +15,9 @@ fit_draw_SRline(vpares, SR, method, show.year = FALSE)
 Fit and draw SR line(s) over observed stock-recruitment plots
 }
 \examples{
-
+\dontrun{
 draw_SRline(vpares = res_vpa,
             SR = c("HS", "RI", "BH"),
             method = c("L1", "L2"))
+}
 }
