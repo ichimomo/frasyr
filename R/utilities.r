@@ -832,24 +832,21 @@ get.stat4 <- function(fout,Brefs,
 #' 
 
 plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
-                         category=4,# 4区分か、6区分か
+                         category=4,# 削除予定オプション
                          Btarget=c("Btarget0"),
                          Blimit=c("Blimit0"),
-                         Blow=c("Blow0"),
-                         Bban=c("Bban0"),write.vline=TRUE,
+                         Blow=c("Blow0"), # 削除予定オプション
+                         Bban=c("Bban0"), 
+                         write.vline=TRUE,
                          ylab.type="U", # or "U"
                          labeling.year=NULL,
                          RP.label=c("目標管理基準値","限界管理基準値","禁漁水準"),
-                         Fratio=NULL, # ylab.type=="F"のとき
+                         refs.color=c("#00533E","#edb918","#C73C2E"),                         
+                         Fratio=NULL, 
                          yscale=1.2,xscale=1.2,
-                         HCR.label.position=c(1,1), # デフォルトはx軸方向が1, y軸方向が1の相対値です。様子を見ながら調整してください
-                         refs.color=c("#00533E","#edb918","#C73C2E"),
+                         HCR.label.position=c(1,1),  
                          beta=NULL,
                          plot.year="all"){
-
-   
-#    require(tidyverse,quietly=TRUE)
-#    require(ggrepel,quietly=TRUE)    
 
     target.RP <- derive_RP_value(refs_base,Btarget)
     limit.RP <- derive_RP_value(refs_base,Blimit)
@@ -860,8 +857,6 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
     limit.ratio <- limit.RP$SSB/target.RP$SSB
     ban.ratio <- ban.RP$SSB/target.RP$SSB
 
-    
-#    require(RcppRoll)
     vpa_tb <- convert_vpa_tibble(vpares)
     UBdata <- vpa_tb %>% dplyr::filter(stat=="U" | stat=="SSB") %>%
         spread(key=stat,value=value) %>%
@@ -885,29 +880,8 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
     max.B <- max(c(UBdata$Bratio,xscale),na.rm=T)
     max.U <- max(c(UBdata$Uratio,yscale),na.rm=T)
 
-    g6 <- ggplot(data=UBdata) + theme(legend.position="none")+
-        geom_polygon(data=tibble(x=c(-1,low.ratio,low.ratio,-1),
-                                 y=c(-1,-1,1,1)),
-                     aes(x=x,y=y),fill="khaki1")+
-        geom_polygon(data=tibble(x=c(low.ratio,20,20,low.ratio),
-                                 y=c(-1,-1,1,1)),
-                     aes(x=x,y=y),fill="olivedrab2")+
-        geom_polygon(data=tibble(x=c(low.ratio,20,20,low.ratio),
-                                 y=c(1,1,20,20)),
-                     aes(x=x,y=y),fill="khaki1")+
-        geom_polygon(data=tibble(x=c(-1,limit.ratio,limit.ratio,-1),
-                                 y=c(1,1,20,20)),
-                     aes(x=x,y=y),fill="indianred1") +
-        geom_polygon(data=tibble(x=c(limit.ratio,low.ratio,low.ratio,limit.ratio),
-                                 y=c(1,1,20,20)),aes(x=x,y=y),fill="tan1") +
-        geom_polygon(data=tibble(x=c(-1,limit.ratio,limit.ratio,-1),
-                                 y=c(-1,-1,1,1)),aes(x=x,y=y),fill="khaki2") +
-        geom_polygon(data=tibble(x=c(limit.ratio,low.ratio,low.ratio,limit.ratio),
-                                 y=c(-1,-1,1,1)),aes(x=x,y=y),fill="khaki1")+
-        geom_vline(xintercept=c(1,ban.ratio),linetype=2)   
-
     g4 <- ggplot(data=UBdata) +theme(legend.position="none")+
-        geom_polygon(data=tibble(x=c(-1,low.ratio,low.ratio,-1),
+        geom_polygon(data=tibble(x=c(-1,1,1,-1),
                                  y=c(-1,-1,1,1)),
                      aes(x=x,y=y),fill="khaki1")+
         geom_polygon(data=tibble(x=c(1,20,20,1),
@@ -923,29 +897,13 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
                                  y=c(-1,-1,1,1)),aes(x=x,y=y),fill="khaki1")
 
     if(write.vline){
-     if(low.ratio<1){
-        g6 <- g6 + geom_text(data=tibble(x=c(ban.ratio,limit.ratio,low.ratio,1),
-                              y=rep(0.1,4),
-                              label=c("Bban","Blimit","Blow","Btarget")),
-                             aes(x=x,y=y,label=label))
-        g4 <- g4 + geom_vline(xintercept=c(ban.ratio,limit.ratio,low.ratio,1),linetype=2)+
-        geom_text(data=tibble(x=c(ban.ratio,limit.ratio,low.ratio,1),
-                              y=rep(0.1,4),
-                              label=c("Bban","Blimit","Blow","Btarget")),
-                  aes(x=x,y=y,label=label))
-     }else{
-         
-        g6 <- g6 + geom_text(data=tibble(x=c(ban.ratio,limit.ratio,1),
-                                         y=max.U*c(1.05,1,1.05),
-                                         label=RP.label),
-                             aes(x=x,y=y,label=label))
         g4 <- g4 + geom_vline(xintercept=c(1,limit.ratio,ban.ratio),color=refs.color,lty="41",lwd=0.7)+
          ggrepel::geom_label_repel(data=tibble(x=c(1,limit.ratio,ban.ratio),
                                           y=max.U*0.85,
                                           label=RP.label),
                               aes(x=x,y=y,label=label),
                               direction="x",nudge_y=max.U*0.9,size=11*0.282)
-    }}    
+    }   
 
     if(!is.null(beta)){
         ### HCRのプロット用の設定
@@ -962,23 +920,11 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
         ####        
         x.pos <- max.B*HCR.label.position[1]
         y.pos <- multi2currF(1.05)*HCR.label.position[2]
-        g6 <- g6+stat_function(fun = h,lwd=1.5,color=1,n=1000)+
-            annotate("text",x=x.pos,y=y.pos,            
-                     label=str_c("漁獲管理規則\n(β=",beta,")"))            
         g4 <- g4+stat_function(fun = h,lwd=1.5,color=1,n=1000)+
             annotate("text",x=x.pos,y=y.pos,
                      label=str_c("漁獲管理規則\n(β=",beta,")"))
     }
    
-    g6 <- g6 +
-        geom_path(mapping=aes(x=Bratio,y=Uratio)) +
-        geom_point(mapping=aes(x=Bratio,y=Uratio),shape=21,fill="white") +        
-        coord_cartesian(xlim=c(0,max.B*1.1),ylim=c(0,max.U*1.15),expand=0) +
-        ylab("漁獲率の比 (U/Umsy)") + xlab("親魚量の比 (SB/SBmsy)")  +
-        ggrepel::geom_text_repel(#data=dplyr::filter(UBdata,year%in%labeling.year),
-                         aes(x=Bratio,y=Uratio,label=year.label),
-                         size=4,box.padding=0.5,segment.color="gray")
-
     g4 <- g4 +
         geom_path(mapping=aes(x=Bratio,y=Uratio)) +        
         geom_point(mapping=aes(x=Bratio,y=Uratio),shape=21,fill="white") +
@@ -989,11 +935,12 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
                          size=4,box.padding=0.5,segment.color="gray")
 
     if(ylab.type=="F"){
-        g6 <- g6 + ylab("漁獲圧の比 (F/Fmsy)")
         g4 <- g4 + ylab("漁獲圧の比 (F/Fmsy)")        
     }
     
-    if(category==4) return(g4) else return(g6)
+    g4 <- g4 + theme_SH()
+    
+    return(g4) 
 }
 
 #' 将来予測の複数の結果をggplotで重ね書きする
