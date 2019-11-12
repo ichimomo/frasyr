@@ -5,7 +5,8 @@
 \alias{calc_perspr}
 \title{MSYを達成するときの\%SPRを計算する}
 \usage{
-calc_perspr(finput, Fvector, Fmax = 10, max.age = Inf)
+calc_perspr(finput, Fvector, Fmax = 10, max.age = Inf,
+  target.col = NULL)
 }
 \arguments{
 \item{finput}{将来予測インプット}
