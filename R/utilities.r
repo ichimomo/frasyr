@@ -18,6 +18,14 @@ convert_df <- function(df,name){
         mutate(type="VPA",sim="s0",stat=name)    
 }
 
+#' future.vpaの結果オブジェクトをtibble形式に変換する関数
+#'
+#' @param fout future.vpaの結果のオブジェクト
+#' 
+#' @encoding UTF-8
+#' @export
+#' 
+
 convert_future_table <- function(fout,label="tmp"){
     ssb <- fout$vssb %>%
         as_tibble %>%
