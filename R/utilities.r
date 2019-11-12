@@ -1247,6 +1247,7 @@ library(ggplot2)
 #' @param SBlim    限界管理基準値
 #' @param SBlim    禁漁水準
 #' @param Ftarget  Ftarget
+#' @param is.text ラベルを記入するかどうか（FALSEにすると後で自分で書き換えられる）
 #' @encoding UTF-8
 #'
 #' @export
@@ -1255,7 +1256,7 @@ plot_HCR <- function(SBtarget,SBlim,SBban,Ftarget,
                      biomass.unit=1,
                      beta=0.8,col.multi2currf="black",col.SBtarget="#00533E",
                      col.SBlim="#edb918",col.SBban="#C73C2E",col.Ftarget="black",
-                     col.betaFtarget="gray"){
+                     col.betaFtarget="gray",is.text = TRUE){
     
   # Arguments; SBtarget,SBlim,SBban,Ftarget,beta,col.multi2currf,col.SBtarget,col.SBlim,col.SBban,col.Ftarget,col.betaFtarget.
   # col.xx means the line color for xx on figure.
@@ -1289,14 +1290,17 @@ plot_HCR <- function(SBtarget,SBlim,SBban,Ftarget,
         geom_hline(yintercept = beta*Ftarget, size = 0.7, linetype = "43", color = col.betaFtarget) +
         labs(title = "",subtitle = "", caption =  "", x = str_c("親魚量 (",junit,"トン)"),
              y = "努力量の乗数",color = "") +
+        theme_bw(base_size=12)+
+        theme(legend.position="none",panel.grid = element_blank())+
+        stat_function(fun = h,lwd=1.5,color=col.multi2currf)
+    if (is.text) {
+      g <- g +
         annotate("text", label="目標水準", x=SBtarget, y=1.2*Ftarget) +
         annotate("text", label="限界水準", x=SBlim, y=1.1*Ftarget) +
         annotate("text", label="禁漁水準", x=SBban, y=1.2*Ftarget)+
         annotate("text", label="Ftarget", x=SBtarget/15, y=0.95*Ftarget)+
-        annotate("text", label=str_c(beta,"Ftarget"), x=SBtarget/15, y=0.95*beta*Ftarget)+
-        theme_bw(base_size=12)+
-        theme(legend.position="none",panel.grid = element_blank())+
-        stat_function(fun = h,lwd=1.5,color=col.multi2currf)        
+        annotate("text", label=str_c(beta,"Ftarget"), x=SBtarget/15, y=0.95*beta*Ftarget)
+    }
 
     return(g)
   
