@@ -1386,3 +1386,110 @@ calc_perspr <- function(finput, Fvector, Fmax=10, max.age=Inf){
                          plot=FALSE,max.age=max.age)$currentSPR$perSPR
     spr.current
 }
+
+#' kobeIItable から任意の表を指名して取り出す
+#'
+#' @param kobeII_table \code{make_kobeII_table}の出力
+#' @param name \code{kobeII_table}の要素名
+#'
+#' @encoding UTF-8
+pull_var_from_kobeII_table <- function(kobeII_table, name) {
+  table <- kobeII.table[[name]]
+  table %>%
+    dplyr::arrange(desc(beta)) %>%
+    dplyr::select(-HCR_name, -stat_name)
+}
+
+#' kobeIItableから取り出した表を整形
+#'
+#' - 報告書に不要な列を除去する
+#' - 単位を千トンに変換
+#' @param beta_table \code{pull_var_from_kobeII_table}で取得した表
+#' @param divide_by 表の値をこの値で除する．トンを千トンにする場合には1000
+#' @param round TRUEなら値を丸める．漁獲量は現状整数表示なのでデフォルトはTRUE
+format_beta_table <- function(beta_table, divide_by = 1, round = TRUE) {
+  beta   <- beta_table %>%
+    dplyr::select(beta) %>%
+    magrittr::set_colnames("\u03B2") # greek beta in unicode
+  values <- beta_table %>%
+    dplyr::select(-beta) / divide_by
+  if (round == TRUE) return(cbind(beta, round(values)))
+  cbind(beta, values)
+}
+
+#' 値の大小に応じて表の背景にグラデーションをつける
+#' @param beta_table \code{format_beta_table}で整形したβの表
+#' @param color 表の背景となる任意の色
+colorize_table <- function(beta_table, color) {
+  beta_table %>%
+    formattable::formattable(list(formattable::area(col = -1) ~
+                                    formattable::color_tile("white", color)))
+}
+
+#' 表を画像として保存
+#'
+#' @inheritParams \code{\link{formattable::as.htmlwidget}}
+#' @inheritParams \code{\link{htmltools::html_print}}
+#' @inheritParams \code{\link{webshot::webshot}}
+#' @param table ファイルとして保存したい表
+#' @examples
+#' \dontrun{
+#' your_table %>%
+#'  export_formattable(file = "foo.png")
+#' }
+#' @export
+export_formattable <- function(table, file, width = "100%", height = NULL,
+                               background = "white", delay = 0.1) {
+  widget <- formattable::as.htmlwidget(table, width = width, height = height)
+  path   <- htmltools::html_print(widget, background = background, viewer = NULL)
+  url    <- paste0("file:///", gsub("\\\\", "/", normalizePath(path)))
+  webshot::webshot(url,
+                   file = file,
+                   selector = ".formattable_widget",
+                   delay = delay)
+}
+
+#' kobeIItableから任意の表を取得し画像として保存
+#'
+#' @inheritParams \code{\link{pull_var_from_kobeII_table}}
+#' @inheritParams \code{\link{format_beta_table}}
+#' @inheritParams \code{\link{colorize_table}}
+#' @inheritParams \code{\link{export_formattable}}
+export_kobeII_table <- function(name, divide_by, color, fname, kobeII_table) {
+  kobeII_table %>%
+    pull_var_from_kobeII_table(name) %>%
+    format_beta_table(divide_by = divide_by) %>%
+    colorize_table(color) %>%
+    export_formattable(fname)
+}
+
+#' β調整による管理効果を比較する表を画像として一括保存
+#'
+#' @inheritParams \code{\link{pull_var_from_kobeII_table}}
+#' @param fname_ssb 「平均親魚量」の保存先ファイル名
+#' @param fname_catch 「平均漁獲量」の保存先ファイル名
+#' @param fname_ssb_above_target 「親魚量が目標管理基準値を上回る確率」の保存先ファイル名
+#' @param fname_ssb_above_limit 「親魚量が限界管理基準値を上回る確率」の保存先ファイル名
+#' @examples
+#' \dontrun{
+#' export_kobeII_tables(kobeII.table)
+#' }
+#' @export
+export_kobeII_tables <- function(kobeII_table,
+                                 fname_ssb = "tbl_ssb.png",
+                                 fname_catch = "tbl_catch.png",
+                                 fname_ssb_above_target = "tbl_ssb>target.png",
+                                 fname_ssb_above_limit = "tbl_ssb>limit.png") {
+  blue   <- "#96A9D8"
+  green  <- "#B3CE94"
+  yellow <- "#F1C040"
+
+  purrr::pmap(list(name = c("ssb.mean", "catch.mean",
+                            "prob.over.ssbtarget", "prob.over.ssblimit"),
+                   divide_by = c(1000, 1000, 1, 1),
+                   color = c(blue, green, yellow, yellow),
+                   fname = c(fname_ssb, fname_catch,
+                             fname_ssb_above_target, fname_ssb_above_limit)),
+              .f = export_kobeII_table,
+              kobeII_table = kobeII_table)
+}
