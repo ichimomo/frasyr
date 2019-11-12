@@ -37,6 +37,12 @@ convert_future_table <- function(fout,label="tmp"){
         gather(key=sim, value=value, -year, convert=TRUE) %>%
         mutate(year=as.numeric(year),stat="biomass",label=label)
 
+    U_table <- fout$vwcaa/fout$vbiom %>% as_tibble
+    U_table <- U_table %>%
+        mutate(year=rownames(fout$vbiom)) %>%
+        gather(key=sim, value=value, -year, convert=TRUE) %>%
+        mutate(year=as.numeric(year),stat="U",label=label)
+    
     alpha_value <- fout$alpha %>%
         as_tibble %>%
         mutate(year=rownames(fout$alpha)) %>%
@@ -59,9 +65,9 @@ convert_future_table <- function(fout,label="tmp"){
         as_tibble %>%                                                   #追加
         mutate(year=rownames(fout$recruit)) %>%                             #追加
         gather(key=sim, value=value, -year, convert=TRUE) %>%           #追加
-        mutate(year=as.numeric(year),stat="Recruitment",label=label)   
+        mutate(year=as.numeric(year),stat="Recruitment",label=label)
     
-    bind_rows(ssb,catch,biomass,alpha_value,Fsakugen,Fsakugen_ratio,Recruitment)
+    bind_rows(ssb,catch,biomass,alpha_value,Fsakugen,Fsakugen_ratio,Recruitment, U_table)
 }
         
     
@@ -1316,16 +1322,29 @@ plot_HCR <- function(SBtarget,SBlim,SBban,Ftarget,
 #' @param Fvector Fのベクトル
 #' @encoding UTF-8
 #' @export
-calc_perspr <- function(finput, Fvector, Fmax=10, max.age=Inf){
+calc_perspr <- function(finput,
+                        Fvector,
+                        Fmax=10,
+                        max.age=Inf,
+                        target.col=NULL
+                        ){
     res_vpa <- finput$res0
     # MSYにおける将来予測計算をやりなおし
     finput$outtype <- "FULL"
     fout.tmp <- do.call(future.vpa,finput)
     # 生物パラメータはその将来予測で使われているものを使う
-    waa.tmp <- fout.tmp$waa[,dim(fout.tmp$waa)[[2]],1]
-    waa.catch.tmp <- fout.tmp$waa.catch[,dim(fout.tmp$waa)[[2]],1]    
-    maa.tmp <- fout.tmp$maa[,dim(fout.tmp$maa)[[2]],1]
-    M.tmp <- fout.tmp$M[,dim(fout.tmp$M)[[2]],1]
+    if(is.null(target.col)){
+        waa.tmp           <- fout.tmp$waa[,dim(fout.tmp$waa)[[2]],1]
+        waa.catch.tmp <- fout.tmp$waa.catch[,dim(fout.tmp$waa.catch)[[2]],1]    
+        maa.tmp           <- fout.tmp$maa[,dim(fout.tmp$maa)[[2]],1]
+        M.tmp                <- fout.tmp$M[,dim(fout.tmp$M)[[2]],1]
+    }
+    else{
+        waa.tmp           <- fout.tmp$waa[,target.col,1]
+        waa.catch.tmp <- fout.tmp$waa.catch[,target.col,1]    
+        maa.tmp           <- fout.tmp$maa[,target.col,1]
+        M.tmp               <- fout.tmp$M[,target.col,1]
+    }
 
     # SPRを計算
     spr.current <- ref.F(res_vpa,Fcurrent=as.numeric(Fvector),
