@@ -33,6 +33,7 @@ NULL
 #' @param  plot 結果のプロットを表示するかどうか
 #' @param  Pope Popeの式を使うか
 #' @param  F.range YPR, SPR曲線を書くときのFの範囲（Fの最大値のスケール）、かつ、F\%SPRを計算するときの初期値を決めるために利用される。F\%SPRの推定がうまくいかない場合はこの範囲を調整してください。
+#' @encoding UTF-8
 #'
 #' @note F_SPRのF管理基準値の初期値は　与えられたFのもとでのSPR/目的のSPR　を初期値とするように調整されるので不要。
 #'
@@ -280,6 +281,7 @@ ref.F <- function(
 #' ref.Fの出力をプロットするための関数
 #'
 #' @param rres ref.Fの出力結果
+#' @encoding UTF-8
 #'
 #' @export
 
@@ -358,6 +360,7 @@ calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=
 #' @param use.MSE 簡易MSEを実施するかどうか
 #' @param MSE.option 簡易MSEのoption
 #' @param det.run 1回めのランは決定論的将来予測をする。デフォルトはTRUE。#' 
+#' @encoding UTF-8
 #'
 #' @export
 
@@ -1145,6 +1148,7 @@ resample_2block.rec <- function(ssb,vpares,#deterministic=FALSE,
 #'
 #' @param ssb 親魚資源量
 #' @param vpares VPAの出力結果
+#' @encoding UTF-8
 #' 
 #'
 #' @export
@@ -1169,6 +1173,7 @@ HS.recAR <- function(ssb,vpares,#deterministic=FALSE,
 #'
 #' @param ssb 親魚資源量
 #' @param vpares VPAの出力結果
+#' @encoding UTF-8
 #' 
 #'
 #' @export
@@ -1187,6 +1192,7 @@ BH.recAR <- function(ssb,vpares,deterministic=FALSE,rec.resample=NULL,
 #'
 #' @param ssb 親魚資源量
 #' @param vpares VPAの出力結果
+#' @encoding UTF-8
 #'
 #' 
 #'
@@ -1256,6 +1262,7 @@ RI.recAR2 <- function(ssb,vpares,deterministic=FALSE,rec.resample=NULL,
 #' 複数の将来予測の結果をプロットする（ggplotは使わず）
 #'
 #' @param fres.list future.vpaからの出力結果をリストで並べたもの
+#' @encoding UTF-8
 #' 
 #' 
 #'
@@ -1281,6 +1288,7 @@ plot.futures <- function(fres.list,conf=c(0.1,0.5,0.9),target="SSB",legend.text=
 #' 一つの将来予測の結果をプロットする（ggplotは使わず）
 #'
 #' @param fres0 future.vpaからの出力結果
+#' @encoding UTF-8
 #' 
 #' 
 #'
@@ -1561,6 +1569,7 @@ make_summary_table <- function(mat_data,side=1,probs=c(0.1,0.5,0.8)){
 #' @param filename csvファイルとpdfファイルの両方のファイル名を指定する場合（拡張子なしで指定）
 #' @param csvname csvファイルのファイル名
 #' @param pdfname pdfファイルのファイル名
+#' @encoding UTF-8
 #' @export
 
 out.vpa <- function(res=NULL,    # VPA result
@@ -1720,6 +1729,7 @@ out.vpa <- function(res=NULL,    # VPA result
 
 #' csvファイルとしてまとめられた資源計算結果を読み込んでRのオブジェクトにする
 #' @param tfile 資源計算結果がまとめられたcsvファイルの名前
+#' @encoding UTF-8
 #'
 #' @export
 
@@ -2141,6 +2151,7 @@ show.likeprof <- function(res){
 #' @param target.SPR 目標とするSPR。この値を入れると、結果のysdata\$"F/Ftarget"で、その年のFが目標としたSPR(\%)を達成するためのF（Ftarget）の何倍になっているかを返す。デフォルトは30が入っている。このとき、SPRを計算するための生物パラメータ（年齢別体重・成熟率・死亡率）はそれぞれの年で仮定されているものを用いる。
 #' @param Fmax F/Ftargetを推定するときに探索するFの乗数の最大値
 #' @param max.age SPRやYPRの計算をするときに最大何歳まで考慮するか（デフォルトは無限大)。値の指定の仕方はhelp(ref.F)を参照のこと
+#' @encoding UTF-8
 #'
 #' @examples
 #' data(res_vpa)
@@ -2184,6 +2195,7 @@ get.SPR <- function(dres,target.SPR=30,Fmax=10,max.age=Inf){
 #'
 #' @param vpares VPAの結果のオブジェクト
 #' @param frag   MSY計算時の将来予測で用いる引数のリスト
+#' @encoding UTF-8
 #' 
 #'
 #' @export
@@ -2198,6 +2210,7 @@ plot_SRdata <- function(SRdata){
 #'
 #' @param vpares VPAの結果のオブジェクト
 #' @param frag   MSY計算時の将来予測で用いる引数のリスト
+#' @encoding UTF-8
 #' 
 #'
 #' @export
@@ -2943,6 +2956,7 @@ draw.refline <- function(reftable,horiz=TRUE,scale=1000,lwd=3){
 
 #' 期間内のRPSをサンプリングするときの加入関数
 #'
+#' @encoding UTF-8
 #' @export
 
 RPS.simple.rec <- function(ssb,vpares,
@@ -3021,6 +3035,7 @@ menplot2 <- function(xy,probs=c(0.1,0.9),new=FALSE,xlab=NULL,ylab=NULL,...){
 
 #' 期間内の残差をサンプリングするときの加入関数
 #'
+#' @encoding UTF-8
 #' @export
 
 resample.rec <- function(ssb,vpares,#deterministic=FALSE,
@@ -3059,6 +3074,7 @@ resample.rec <- function(ssb,vpares,#deterministic=FALSE,
 #' sel_year 選択率の参照年
 #' faa_year 漁獲圧の参照年
 #'
+#' @encoding UTF-8
 #' @export
 
 convert_faa_perSPR <- function(res_vpa, sel_year, faa_year, Fcurrent_MSY=NULL, Fsel_MSY=NULL){
@@ -3092,6 +3108,7 @@ convert_faa_perSPR <- function(res_vpa, sel_year, faa_year, Fcurrent_MSY=NULL, F
 
 #' 列が年である行列に対して、年を指定するとその年のあいだの平均値（等）を返す関数
 #'
+#' @encoding UTF-8
 #' @export
 #'
 #' 
