@@ -96,7 +96,7 @@ convert_vector <- function(vector,name){
 
 convert_vpa_tibble <- function(vpares){
 
-    total.catch <- colSums(vpares$input$dat$caa*vpares$input$dat$waa,na.rm=T)
+    total.catch <- colSums(vpares$input$dat$caa*vpares$input$dat$waa.catch,na.rm=T)
     U <- total.catch/colSums(vpares$baa)
 
     SSB <- convert_vector(colSums(vpares$ssb,na.rm=T),"SSB") %>%
@@ -1471,3 +1471,37 @@ export_kobeII_tables <- function(kobeII_table,
               .f = export_kobeII_table,
               kobeII_table = kobeII_table)
 }
+
+#' 会議用の図のフォーマット
+#'
+#' @export
+#' 
+
+theme_SH <- function(){
+    theme_bw(base_size=12) +
+    theme(panel.grid = element_blank(),
+          axis.text.x=element_text(size=11,color="black"),
+          axis.text.y=element_text(size=11,color="black"),
+          axis.line.x=element_line(size= 0.3528),
+          axis.line.y=element_line(size= 0.3528),
+          legend.position="none")
+}
+
+#' 会議用の図の出力関数（大きさ・サイズの指定済）：通常サイズ
+#'
+#' @export
+#' 
+
+ggsave_SH <- function(...){
+    ggsave(width=150,height=85,dpi=600,units="mm",...)
+}
+
+#' 会議用の図の出力関数（大きさ・サイズの指定済）：大きいサイズ
+#'
+#' @export
+#' 
+
+ggsave_SH_large <- function(...){
+    ggsave(width=150,height=120,dpi=600,units="mm",...)
+}
+
