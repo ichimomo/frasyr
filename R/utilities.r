@@ -96,7 +96,7 @@ convert_vector <- function(vector,name){
 
 convert_vpa_tibble <- function(vpares){
 
-    total.catch <- colSums(vpares$input$dat$caa*vpares$input$dat$waa,na.rm=T)
+    total.catch <- colSums(vpares$input$dat$caa*vpares$input$dat$waa.catch,na.rm=T)
     U <- total.catch/colSums(vpares$baa)
 
     SSB <- convert_vector(colSums(vpares$ssb,na.rm=T),"SSB") %>%
