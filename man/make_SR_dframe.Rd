@@ -7,9 +7,9 @@
 make_SR_dframe(SR, method, vpares)
 }
 \arguments{
-\item{SR}{再生産関係 (HS: Hockey-stick, BH: Beverton-Holt, RI: Ricker)}
+\item{SR}{再生産関係 (\code{"HS"}: Hockey-stick, \code{"BH"}: Beverton-Holt, \code{"RI"}: Ricker)}
 
-\item{method}{最適化法（L2: 最小二乗法, L1: 最小絶対値法）}
+\item{method}{最適化法（\code{"L2"}: 最小二乗法, \code{"L1"}: 最小絶対値法）}
 
 \item{vpares}{VPAの結果のオブジェクト}
 }

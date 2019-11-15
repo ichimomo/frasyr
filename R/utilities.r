@@ -1505,3 +1505,65 @@ ggsave_SH_large <- function(...){
     ggsave(width=150,height=120,dpi=600,units="mm",...)
 }
 
+#' fit.SRregimeの結果で得られた再生産関係をプロットするための関数
+#'
+#' レジームごとの観察値と予測線が描かれる
+#' @param resSRregime \code{fit.SRregime}の結果
+#' @param xscale X軸のスケーリングの値（親魚量をこの値で除す）
+#' @param xlabel X軸のラベル
+#' @param yscale Y軸のスケーリングの値（加入量をこの値で除す）
+#' @param ylabel Y軸のラベル
+#' @param labeling.year ラベルに使われる年
+#' @param show.legend 凡例を描くかどうか
+#' @param legend.title 凡例のタイトル（初期設定は\code{"Regime"}）
+#' @param regime.name 凡例に描かれる各レジームの名前（レジームの数だけ必要）
+#' @param base_size \code{ggplot}のベースサイズ
+#' @param add.info \code{AICc}や\code{regime.year}, \code{regime.key}などの情報を加えるかどうか
+#' @examples 
+#' \dontrun{
+#' data(res_vpa)
+#' SRdata <- get.SRdata(res_vpa)
+#' resSRregime <- fit.SRregime(SRdata, SR="HS", method="L2", 
+#'                             regime.year=c(1977,1989), regime.key=c(0,1,0),
+#'                             regime.par = c("a","b","sd")[2:3])
+#' g1 <- SRregime_plot(resSRregime, regime.name=c("Low","High"))
+#' g1
+#' }
+#' @encoding UTF-8
+#' @export
+#' 
+
+SRregime_plot <- function (resSRregime,xscale=1000,xlabel="SSB",yscale=1,ylabel="R",
+                           labeling.year = NULL, show.legend = TRUE, legend.title = "Regime",regime.name = NULL,
+                           base_size = 16, add.info = TRUE) {
+  pred_data = SRregime_result$pred %>% mutate(Category = "Pred")
+  obs_data = select(SRregime_result$pred_to_obs, -Pred, -resid) %>% mutate(Category = "Obs")
+  combined_data = full_join(pred_data, obs_data)
+  if (is.null(labeling.year)) labeling.year <- c(min(obs_data$Year),obs_data$Year[obs_data$Year %% 5 == 0],max(obs_data$Year))
+  combined_data = combined_data %>% 
+    mutate(label=if_else(is.na(Year),as.numeric(NA),if_else(Year %in% labeling.year, Year, as.numeric(NA)))) %>%
+    mutate(SSB = SSB/xscale, R = R/yscale)
+  g1 = ggplot(combined_data, aes(x=SSB,y=R,label=label)) + 
+    geom_path(data=dplyr::filter(combined_data, Category=="Pred"),aes(group=Regime,colour=Regime,linetype=Regime),size=2, show.legend = show.legend)+
+    geom_point(data=dplyr::filter(combined_data, Category=="Obs"),aes(group=Regime,colour=Regime),size=3, show.legend = show.legend)+
+    geom_path(data=dplyr::filter(combined_data, Category=="Obs"),colour="darkgray",size=1)+
+    xlab(xlabel)+ylab(ylabel)+
+    ggrepel::geom_label_repel()+
+    theme_bw(base_size=base_size)+
+    coord_cartesian(ylim=c(0,combined_data$R*1.05),expand=0)
+  if (show.legend) {
+    if (is.null(regime.name)) {
+      regime.name = unique(combined_data$Regime)
+    }
+    g1 = g1 + scale_colour_hue(name=legend.title, labels = regime.name) +
+      scale_linetype_discrete(name=legend.title, labels = regime.name)
+  }
+  if (add.info) {
+    g1 = g1 + 
+      labs(caption=str_c(resSRregime$input$SR,"(",resSRregime$input$method,
+                         "), regime_year: ", paste0(resSRregime$input$regime.year,collapse="&"), 
+                         ", regime_key: ",paste0(resSRregime$input$regime.key,collapse="->"),", AICc: ",round(resSRregime$AICc,2)))
+  }
+  g1
+}
+
