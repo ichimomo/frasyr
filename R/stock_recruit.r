@@ -671,6 +671,7 @@ fit.SRregime <- function(
     mutate(Pred = exp(log(R)-resid)) %>%
     select(Year,SSB,R,Regime,Pred,resid)
   Res$pred_to_obs <- pred_to_obs
+  # Res$summary_tbl
   
   return(Res)
 }
