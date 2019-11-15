@@ -503,6 +503,7 @@ prof.lik <- function(Res,a=Res$pars$a,b=Res$pars$b,sd=Res$pars$sd,rho=Res$pars$r
 #' \item{\code{regime_resid}}{レジームごとの残差}
 #' \item{\code{pred}}{レジームごとの各親魚量に対する加入量の予測値}
 #' \item{\code{pred_to_obs}}{観測値に対する予測値}
+#' \item{\code{summary_tbl}}{観測値と予測値を合わせた表}
 #' }
 #'
 #' @export
@@ -671,7 +672,7 @@ fit.SRregime <- function(
     mutate(Pred = exp(log(R)-resid)) %>%
     select(Year,SSB,R,Regime,Pred,resid)
   Res$pred_to_obs <- pred_to_obs
-  # Res$summary_tbl
+  Res$summary_tbl
   
   return(Res)
 }

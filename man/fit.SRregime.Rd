@@ -43,6 +43,7 @@ fit.SRregime(SRdata, SR = "HS", method = "L2", regime.year = NULL,
 \item{\code{regime_resid}}{レジームごとの残差}
 \item{\code{pred}}{レジームごとの各親魚量に対する加入量の予測値}
 \item{\code{pred_to_obs}}{観測値に対する予測値}
+\item{\code{summary_tbl}}{観測値と予測値を合わせた表}
 }
 }
 \description{

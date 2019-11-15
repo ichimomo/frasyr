@@ -1518,6 +1518,7 @@ ggsave_SH_large <- function(...){
 #' @param legend.title 凡例のタイトル（初期設定は\code{"Regime"}）
 #' @param regime.name 凡例に描かれる各レジームの名前（レジームの数だけ必要）
 #' @param base_size \code{ggplot}のベースサイズ
+#' @param add.info \code{AICc}や\code{regime.year}, \code{regime.key}などの情報を加えるかどうか
 #' @examples 
 #' \dontrun{
 #' data(res_vpa)
@@ -1528,13 +1529,13 @@ ggsave_SH_large <- function(...){
 #' g1 <- SRregime_plot(resSRregime, regime.name=c("Low","High"))
 #' g1
 #' }
-
+#' @encoding UTF-8
 #' @export
 #' 
 
 SRregime_plot <- function (resSRregime,xscale=1000,xlabel="SSB",yscale=1,ylabel="R",
                            labeling.year = NULL, show.legend = TRUE, legend.title = "Regime",regime.name = NULL,
-                           base_size = 16) {
+                           base_size = 16, add.info = TRUE) {
   pred_data = SRregime_result$pred %>% mutate(Category = "Pred")
   obs_data = select(SRregime_result$pred_to_obs, -Pred, -resid) %>% mutate(Category = "Obs")
   combined_data = full_join(pred_data, obs_data)
@@ -1556,6 +1557,12 @@ SRregime_plot <- function (resSRregime,xscale=1000,xlabel="SSB",yscale=1,ylabel=
     }
     g1 = g1 + scale_colour_hue(name=legend.title, labels = regime.name) +
       scale_linetype_discrete(name=legend.title, labels = regime.name)
+  }
+  if (add.info) {
+    g1 = g1 + 
+      labs(caption=str_c(resSRregime$input$SR,"(",resSRregime$input$method,
+                         "), regime_year: ", paste0(resSRregime$input$regime.year,collapse="&"), 
+                         ", regime_key: ",paste0(resSRregime$input$regime.key,collapse="->"),", AICc: ",round(resSRregime$AICc,2)))
   }
   g1
 }
