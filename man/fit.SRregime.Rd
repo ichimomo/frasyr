@@ -7,8 +7,8 @@
 \usage{
 fit.SRregime(SRdata, SR = "HS", method = "L2", regime.year = NULL,
   regime.key = 0:length(regime.year), regime.par = c("a", "b", "sd"),
-  length = 10, p0 = NULL, w = rep(1, length(SRdata$year)),
-  max.ssb.pred = 1.3)
+  use.fit.SR = TRUE, length = 10, p0 = NULL, w = rep(1,
+  length(SRdata$year)), max.ssb.pred = 1.3)
 }
 \arguments{
 \item{SRdata}{\code{get.SRdata}で作成した再生産関係データ}

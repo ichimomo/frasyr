@@ -1519,6 +1519,7 @@ ggsave_SH_large <- function(...){
 #' @param regime.name 凡例に描かれる各レジームの名前（レジームの数だけ必要）
 #' @param base_size \code{ggplot}のベースサイズ
 #' @param add.info \code{AICc}や\code{regime.year}, \code{regime.key}などの情報を加えるかどうか
+#' @param use.fit.SR パラメータの初期値を決めるのに\code{frasyr::fit.SR}を使う（時間の短縮になる）
 #' @examples 
 #' \dontrun{
 #' data(res_vpa)
@@ -1533,7 +1534,7 @@ ggsave_SH_large <- function(...){
 #' @export
 #' 
 
-SRregime_plot <- function (resSRregime,xscale=1000,xlabel="SSB",yscale=1,ylabel="R",
+SRregime_plot <- function (SRregime_result,xscale=1000,xlabel="SSB",yscale=1,ylabel="R",
                            labeling.year = NULL, show.legend = TRUE, legend.title = "Regime",regime.name = NULL,
                            base_size = 16, add.info = TRUE) {
   pred_data = SRregime_result$pred %>% mutate(Category = "Pred")
@@ -1559,11 +1560,27 @@ SRregime_plot <- function (resSRregime,xscale=1000,xlabel="SSB",yscale=1,ylabel=
       scale_linetype_discrete(name=legend.title, labels = regime.name)
   }
   if (add.info) {
-    g1 = g1 + 
-      labs(caption=str_c(resSRregime$input$SR,"(",resSRregime$input$method,
-                         "), regime_year: ", paste0(resSRregime$input$regime.year,collapse="&"), 
-                         ", regime_key: ",paste0(resSRregime$input$regime.key,collapse="->"),", AICc: ",round(resSRregime$AICc,2)))
+    if (is.null(SRregime_result$input$regime.year)) {
+      g1 = g1 + 
+        # labs(caption=str_c(SRregime_result$input$SR,"(",SRregime_result$input$method,
+        #                    "), regime_year: ", paste0(SRregime_result$input$regime.year,collapse="&"), 
+        #                    ", regime_key: ",paste0(SRregime_result$input$regime.key,collapse="->"),", AICc: ",round(SRregime_result$AICc,2)))
+        labs(caption=str_c(SRregime_result$input$SR,"(",SRregime_result$input$method,
+                           "), No Regime", ", AICc: ",round(SRregime_result$AICc,2))
+        )
+      
+    }  else {
+      g1 = g1 + 
+      # labs(caption=str_c(SRregime_result$input$SR,"(",SRregime_result$input$method,
+      #                    "), regime_year: ", paste0(SRregime_result$input$regime.year,collapse="&"), 
+      #                    ", regime_key: ",paste0(SRregime_result$input$regime.key,collapse="->"),", AICc: ",round(SRregime_result$AICc,2)))
+    labs(caption=str_c(SRregime_result$input$SR,"(",SRregime_result$input$method,
+                       "), ", ", regime_par: ", paste0(SRregime_result$input$regime.par,collapse="&"),", ",
+                       paste0(SRregime_result$input$regime.year,collapse="&"), 
+                       ", ",paste0(SRregime_result$input$regime.key,collapse="->"),
+                       ", AICc: ",round(SRregime_result$AICc,2))
+         )
+    
   }
   g1
-}
-
+}}

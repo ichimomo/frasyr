@@ -32,6 +32,8 @@ SRregime_plot(resSRregime, xscale = 1000, xlabel = "SSB", yscale = 1,
 \item{base_size}{\code{ggplot}のベースサイズ}
 
 \item{add.info}{\code{AICc}や\code{regime.year}, \code{regime.key}などの情報を加えるかどうか}
+
+\item{use.fit.SR}{パラメータの初期値を決めるのに\code{frasyr::fit.SR}を使う（時間の短縮になる）}
 }
 \description{
 レジームごとの観察値と予測線が描かれる
