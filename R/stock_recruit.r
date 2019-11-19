@@ -478,6 +478,7 @@ prof.lik <- function(Res,a=Res$pars$a,b=Res$pars$b,sd=Res$pars$sd,rho=Res$pars$r
 #' @param regime.par レジームによって変化するパラメータ(\code{c("a","b","sd")}の中から選ぶ)
 #' @param length 初期値を決める際のgridの長さ
 #' @param p0 \code{optim}で設定する初期値
+#' @inheritParams fit.SR
 #' @encoding UTF-8
 #' @examples 
 #' \dontrun{
@@ -513,9 +514,10 @@ fit.SRregime <- function(
   SRdata,
   SR = "HS",
   method = "L2",
-  regime.year =NULL,
+  regime.year = NULL,
   regime.key = 0:length(regime.year),
   regime.par = c("a","b","sd"),
+  use.fit.SR = TRUE,
   length=10,  # parameter (a,b) の初期値を決めるときにgrid searchする数
   p0 = NULL,  # 初期値
   w = rep(1,length(SRdata$year)),
@@ -591,18 +593,23 @@ fit.SRregime <- function(
   b_range <- apply(b_grid,2,range)
   
   if (is.null(p0)) {
-    init_list <- sapply(1:nrow(ab_grid), function(j) {
-      obj.f(a=ab_grid[j,1:max(a_key)],b=ab_grid[j,(1+max(a_key)):(max(a_key)+max(b_key))])
-    })
-    
-    ab_init <- as.numeric(ab_grid[which.min(init_list),])
-    init <- log(ab_init[1:max(a_key)])
-    if (SR=="HS") {
-      for(i in unique(b_key)) {
-        init <- c(init,-log(max(0.000001,(max(ssb[b_key==i])-min(ssb[b_key==i]))/max(0.000001,(ab_init[max(a_key)+i]-min(ssb[b_key==i])))-1)))
-      }
+    if (use.fit.SR) {
+      fit_SR_res = fit.SR(SRdata, SR = SR, method = method, w = w)
+      init <- c(rep(fit_SR_res$opt$par[1],max(a_key)),rep(fit_SR_res$opt$par[2],max(b_key)))
     } else {
-      init <- c(init, log(ab_init[(max(a_key)+1):(max(a_key)+max(b_key))]))
+      init_list <- sapply(1:nrow(ab_grid), function(j) {
+        obj.f(a=ab_grid[j,1:max(a_key)],b=ab_grid[j,(1+max(a_key)):(max(a_key)+max(b_key))])
+      })
+      
+      ab_init <- as.numeric(ab_grid[which.min(init_list),])
+      init <- log(ab_init[1:max(a_key)])
+      if (SR=="HS") {
+        for(i in unique(b_key)) {
+          init <- c(init,-log(max(0.000001,(max(ssb[b_key==i])-min(ssb[b_key==i]))/max(0.000001,(ab_init[max(a_key)+i]-min(ssb[b_key==i])))-1)))
+        }
+      } else {
+        init <- c(init, log(ab_init[(max(a_key)+1):(max(a_key)+max(b_key))]))
+      }
     }
   } else {
     init <- p0
@@ -670,7 +677,7 @@ fit.SRregime <- function(
     dplyr::select(-Category) %>%
     mutate(resid = resid) %>%
     mutate(Pred = exp(log(R)-resid)) %>%
-    select(Year,SSB,R,Regime,Pred,resid)
+    dplyr::select(Year,SSB,R,Regime,Pred,resid)
   Res$pred_to_obs <- pred_to_obs
   Res$summary_tbl
   
