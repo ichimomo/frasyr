@@ -5,14 +5,12 @@
 \alias{SRregime_plot}
 \title{fit.SRregimeの結果で得られた再生産関係をプロットするための関数}
 \usage{
-SRregime_plot(resSRregime, xscale = 1000, xlabel = "SSB", yscale = 1,
-  ylabel = "R", labeling.year = NULL, show.legend = TRUE,
-  legend.title = "Regime", regime.name = NULL, base_size = 16,
-  add.info = TRUE)
+SRregime_plot(SRregime_result, xscale = 1000, xlabel = "SSB",
+  yscale = 1, ylabel = "R", labeling.year = NULL,
+  show.legend = TRUE, legend.title = "Regime", regime.name = NULL,
+  base_size = 16, add.info = TRUE)
 }
 \arguments{
-\item{resSRregime}{\code{fit.SRregime}の結果}
-
 \item{xscale}{X軸のスケーリングの値（親魚量をこの値で除す）}
 
 \item{xlabel}{X軸のラベル}
@@ -32,6 +30,8 @@ SRregime_plot(resSRregime, xscale = 1000, xlabel = "SSB", yscale = 1,
 \item{base_size}{\code{ggplot}のベースサイズ}
 
 \item{add.info}{\code{AICc}や\code{regime.year}, \code{regime.key}などの情報を加えるかどうか}
+
+\item{resSRregime}{\code{fit.SRregime}の結果}
 
 \item{use.fit.SR}{パラメータの初期値を決めるのに\code{frasyr::fit.SR}を使う（時間の短縮になる）}
 }

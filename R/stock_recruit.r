@@ -419,12 +419,12 @@ boot.SR <- function(Res,n=100,seed=1){
 }
 
 #'  profile likelihood
-#' 
+#' @param Res 再生産関係（\code{fit.SR()}）の結果オブジェクト
 #' @encoding UTF-8
 #' @export
 #' 
 
-prof.lik <- function(Res,a=Res$pars$a,b=Res$pars$b,sd=Res$pars$sd,rho=Res$pars$rho) {
+prof.lik <- function(Res,a=Res$pars$a,b=Res$pars$b,sd=Res$pars$sd,rho=ifelse(Res$input$out.AR,0,Res$pars$rho)) {
   SRdata <- Res$input$SRdata
   rec <- SRdata$R
   ssb <- SRdata$SSB
