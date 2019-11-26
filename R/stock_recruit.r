@@ -209,7 +209,8 @@ fit.SR <- function(SRdata,
   
   if (method!="L2") {
     if (AR!=0) {
-      arres <- ar(resid,aic=FALSE,order.max=1)
+      message("L1 & out.AR=FALSE is NOT recommended")
+      arres <- ar(resid,aic=FALSE,order.max=1,demean=FALSE,method="mle")
       Res$pars[3] <- ifelse(arres$ar<0,sd,sqrt(arres$var.pred))
       Res$pars[4] <- ifelse(arres$ar<0,0,arres$ar)
     }
