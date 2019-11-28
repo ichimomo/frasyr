@@ -1067,7 +1067,7 @@ vpa <- function(
         }
       }     
       
-      if (penalty=="s") obj <- (1-lambda)*obj + lambda*sum((abs(saa[,ny]-apply(saa[, years %in% tf.year],1,get(stat.tf))))^beta)
+      if (penalty=="f") obj <- (1-lambda)*obj + lambda*sum((abs(faa[1:(na[ny]-1),ny]-apply(faa[1:(na[ny]-1), years %in% tf.year],1,get(stat.tf))))^beta)
       
       if (!is.null(sel.rank)) obj <- obj+1000000*sum((rank(saa[,ny])-sel.rank)^2)
       
