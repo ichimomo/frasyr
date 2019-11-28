@@ -1202,10 +1202,12 @@ vpa <- function(
       pos <- which(sigma_constraint == unique.sigma.constraint[i])
       sigma_constraint[pos] <- i-1
     }
+    pf <- as.numeric(isTRUE(penalty=="f"))
+    tfy <- length(tf.year)      
     if (is.null(eta)) eta <- -1.0
     eta_age <- rep(1,length(p.init))
     eta_age[eta.age+1] <- 0
-    data2 <- list(Est=ifelse(est.method=="ls",0,1),b_fix=as.numeric(b_fix),alpha=alpha,lambda=lambda,beta=beta,Ab_type=Ab_type,Ab_type_age=Ab_type_age,w=index.w,af=af,CATCH=t(as.matrix(dat$caa)),WEI=t(as.matrix(dat$waa)),MAT=t(MAA),M=t(as.matrix(dat$M)),CPUE=t(index2),MISS=t(ifelse(index2==0,1,0)),Last_Catch_Zero=ifelse(isTRUE(last.catch.zero),1,0),sigma_constraint=sigma_constraint,eta=eta,eta_age=eta_age)
+    data2 <- list(Est=ifelse(est.method=="ls",0,1),b_fix=as.numeric(b_fix),alpha=alpha,lambda=lambda,pf=pf,tfy=tfy,beta=beta,Ab_type=Ab_type,Ab_type_age=Ab_type_age,w=index.w,af=af,CATCH=t(as.matrix(dat$caa)),WEI=t(as.matrix(dat$waa)),MAT=t(MAA),M=t(as.matrix(dat$M)),CPUE=t(index2),MISS=t(ifelse(index2==0,1,0)),Last_Catch_Zero=ifelse(isTRUE(last.catch.zero),1,0),sigma_constraint=sigma_constraint,eta=eta,eta_age=eta_age)
     
     parameters <- list(
       log_F=log(p.init)
