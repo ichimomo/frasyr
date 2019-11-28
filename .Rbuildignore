@@ -6,3 +6,4 @@
 vignettes/future-old.Rmd
 
 
+^\.travis\.yml$

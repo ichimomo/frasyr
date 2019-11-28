@@ -24,7 +24,7 @@ NULL
 #' @param rps.year Fmedの計算に使うRPSの年の範囲．NULLの場合，全範囲が用いられる
 #' @param max.age 加入年齢を０歳としたときに、SPR計算で考慮される最大の年齢（年齢の数ではないことに注意, デフォルトはInf）。加入年齢が１歳以上のときは、SPR計算で考慮したい年齢-加入年齢を入力する、またはmin.ageの引数に加入年齢を設定する。
 #' @param min.age  加入年齢が0歳でないときに指定できる(デフォルトは0)
-#' @param  pSPR = seq(10,90,by=10), # F%SPRを計算するときの％SPR
+#' @param  pSPR = seq(10,90,by=10), # F\%SPRを計算するときの％SPR
 #' @param d 0.001
 #' @param  Fem.init 経験的管理基準値(Fmed, Fmean, Fhigh, Flow)の初期値 (default=0.5)
 #' @param  Fmax.init Fmaxの初期値 (default=1.5)
@@ -32,7 +32,8 @@ NULL
 #' @param  iterlim 
 #' @param  plot 結果のプロットを表示するかどうか
 #' @param  Pope Popeの式を使うか
-#' @param  F.range YPR, SPR曲線を書くときのFの範囲（Fの最大値のスケール）、かつ、F%SPRを計算するときの初期値を決めるために利用される。F%SPRの推定がうまくいかない場合はこの範囲を調整してください。
+#' @param  F.range YPR, SPR曲線を書くときのFの範囲（Fの最大値のスケール）、かつ、F\%SPRを計算するときの初期値を決めるために利用される。F\%SPRの推定がうまくいかない場合はこの範囲を調整してください。
+#' @encoding UTF-8
 #'
 #' @note F_SPRのF管理基準値の初期値は　与えられたFのもとでのSPR/目的のSPR　を初期値とするように調整されるので不要。
 #'
@@ -179,7 +180,7 @@ ref.F <- function(
     for (i in pSPR){
       Fspr.init <- ypr.spr$F.range[which.min(abs(ypr.spr$pspr-i))] #original.perspr/i*100
       FpSPR.res <- nlm(spr.f.est, Fspr.init, out=FALSE, sub=i, spr0=spr0, iterlim=iterlim)
-      cat("Estimate F%spr: initial value=", Fspr.init," : estimated value=",exp(FpSPR.res$estimate),"\n")
+#      cat("Estimate F%spr: initial value=", Fspr.init," : estimated value=",exp(FpSPR.res$estimate),"\n")
       FpSPR <- c(FpSPR, exp(FpSPR.res$estimate))
     }
     names(FpSPR) <- paste(pSPR,"%SPR",sep="")
@@ -281,6 +282,7 @@ ref.F <- function(
 #' ref.Fの出力をプロットするための関数
 #'
 #' @param rres ref.Fの出力結果
+#' @encoding UTF-8
 #'
 #' @export
 
@@ -333,11 +335,33 @@ calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=
 #'
 #' @param res0 VPAの出力結果
 #' @param currentF ABC算定年-1年目までに用いるF at age。NULLの場合、VPA結果のres0$Fc.at.ageを用いる
-#' @param multi ABC算定年以降にcurrentFに乗じる係数
 #' @param futureF ABC算定年以降に用いられるF at age。NULLの場合にはcurrentFをそのまま用いる。currentF, multi, futureFをあわせて、将来のF at ageはABC算定年-1年まではcurrentF, ABC算定年以降はmulti x futureF (NULLの場合、currentF)が用いられる
+#' @param multi ABC算定年以降にcurrentFに乗じる係数
+#' @param multi.year ある特定の年だけFを変えたい場合。デフォルトは1。変える場合は、指定した年またはタイムステップの要素数のベクトルで指定。
+#' @param start.year  将来予測の開始年，NULLの場合はVPA計算の最終年の次の年
+#' @param ABC.year ABC yearを計算する年。NULLの場合はVPA計算の最終年の次の次の年
+#' @param waa.year VPA結果から生物パラメータをもってきて平均する期間。maa.year, waa.catch.year, M.yearも同じ。NULLの場合，VPAの最終年のパラメータを持ってくる。
+#' @param waa 年齢別体重を直接指定する場合(waa.yearよりも優先される)
+#' @param maa　年齢別成熟率を直接指定する場合(maa.yearよりも優先される)
+#' @param waa.catch　漁獲量計算用の年齢別体重を直接指定する場合(waa.catch.yearよりも優先される)
+#' @param waa.fun 年齢別体重を年齢別資源尾数の関数とするか(waa.catchが別に与えられているときには機能しない)
+#' @param M　自然死亡係数を直接指定する場合(M.yearよりも優先される)
+#' @param strategy # F: 漁獲係数一定, E: 漁獲割合一定、C: 漁獲量一定（pre.catchで漁獲量を指定）。もう使われていない引数？
+#' @param Pope 漁獲量計算にPopeの近似式を使うか。指定しない場合はvpa関数への引数がそのまま受け継がれる。
+#' @param add.year =1で1年分余分に計算する（通常は使わない）
+#' @param seed 乱数のシード。将来予測の実行前にset.seed(seed)でシードを固定する。NULLの場合は、ランダムな数が用いられる。
+#' @param HCRを使う場合、list(Blim=154500, Bban=49400,beta=1,year.lag=0)のように指定する。year.lag=0で将来予測年の予測SSBを使う。-2の場合は２年遅れのSSBを使う。
+#' @param N 確率的なシミュレーションをする場合の繰り返し回数。N+1の結果が返され、1列目に決定論的な結果が与えられる。0を与えると決定論的な結果のみが出力される。
+#' @param silent 計算条件を出力、プロットするか。デフォルトはFALSE。
+#' @param pre.catch 漁獲重量をgivenで与える場合の引数。list(year=2012,wcatch=13000)として指定。
+#' @param rec.new 指定した年の加入量を固定する。年を指定しないで与える場合は、自動的にスタート年の加入になる。list(year=, rec=)で与える場合は、対応する年の加入を置き換える。
+#' @param recfunc 再生産関係の関数
+#' @param rec.arg 加入の各種設定
+#' @param Frec Frecオプション。Frec計算のための設定リストを与えると、指定された設定でのFrecに対応するFで将来予測を行う。例；Frec=list(stochastic=TRUE,future.year=2018,Blimit=450*1000,scenario="catch.mean",Frange=c(0.01,2*mult))。stochastic; TRUEの場合、stochastic simulationで50\%の確率でBlimitを越す。FALSEの場合、RPS固定のprojectionがBilmitと一致する。future.year; 何年の資源量を見るか？ Blimit; 参照とする親魚量。scenario; scenario; "catch.mean"の場合漁獲量の平均値を見る。"blimit"の場合、親魚量を見る。デフォルトは"blimit"。Frange; Fの探索範囲（Fcurrentに対する乗数）
 #' @param use.MSE 簡易MSEを実施するかどうか
 #' @param MSE.option 簡易MSEのoption
-#' 
+#' @param det.run 1回めのランは決定論的将来予測をする。デフォルトはTRUE。#' 
+#' @encoding UTF-8
 #'
 #' @export
 
@@ -345,58 +369,42 @@ calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=
 ## multiのオプションは管理後のFのmultiplier（管理前後でselectivityが同じ）
 future.vpa <-
     function(res0,
-             currentF=NULL, # 管理前のF
-             multi=1, # 管理後（ABC.yearから）のF (current F x multi)
+             currentF=NULL, 
+             multi=1, 
              futureF=NULL,              
              nyear=10,Pope=res0$input$Pope,
              outtype="FULL",
-             multi.year=1,#ある特定の年だけFを変えたい場合。デフォルトは1。変える場合は、指定した年またはタイムステップの要素数のベクトルで指定。
-             # 年数の指定
-             start.year=NULL, # 将来予測の開始年，NULLの場合はVPA計算の最終年の次の年
-             ABC.year=NULL, # ABC yearを計算する年。NULLの場合はVPA計算の最終年の次の次の年
-             waa.year=NULL, # VPA結果から生物パラメータをもってきて平均する期間
-             waa.catch.year=NULL, # VPA結果から生物パラメータをもってきて平均する期間             
-             # NULLの場合，VPAの最終年のパラメータを持ってくる
-             maa.year=NULL, # VPA結果から生物パラメータをもってきて平均する期間
-             M.year=NULL, # VPA結果から生物パラメータをもってきて平均する期間
+             multi.year=1,
+             start.year=NULL, 
+             ABC.year=NULL, 
+             waa.year=NULL, 
+             waa.catch.year=NULL, 
+             maa.year=NULL, 
+             M.year=NULL, 
              seed=NULL,
-             strategy="F", # F: 漁獲係数一定, E: 漁獲割合一定、C: 漁獲量一定（pre.catchで漁獲量を指定）
-             HCR=NULL,# HCRを使う場合、list(Blim=154500, Bban=49400,beta=1,year.lag=0)のように指定するか、以下の引数をセットする,year.lag=0で将来予測年の予測SSBを使う。-2の場合は２年遅れのSSBを使う
+             strategy="F", 
+             HCR=NULL,
              use.MSE=FALSE,MSE.options=NULL,
              beta=NULL,delta=NULL,Blim=0,Bban=0,
              plus.group=res0$input$plus.group,
-             N=1000,# 確率的なシミュレーションをする場合の繰り返し回数。
-             # N+1の結果が返され、1列目に決定論的な結果が                       
-             # 0を与えると決定論的な結果のみを出力
-             silent=FALSE, is.plot=TRUE, # 計算条件を出力、プロットするか
-             random.select=NULL, # 選択率をランダムリサンプリングする場合、ランダムリサンプリングする年を入れる
-             # strategy="C"または"E"のときのみ有効
-             pre.catch=NULL, # list(year=2012,wcatch=13000), 漁獲重量をgivenで与える場合
-             # list(year=2012:2017,E=rep(0.5,6)), 漁獲割合をgivenで与える場合                       
-             ##-------- 加入に関する設定 -----------------
-             rec.new=NULL, # 指定した年の加入量
-             # 年を指定しないで与える場合は、自動的にスタート年の加入になる。
-             # list(year=, rec=)で与える場合は、対応する年の加入を置き換える。
-             ##--- 加入関数
-             recfunc=HS.recAR, # 再生産関係の関数
+             N=1000, 
+             silent=FALSE, is.plot=TRUE, 
+             pre.catch=NULL, 
+             rec.new=NULL, 
+             recfunc=HS.recAR, 
              rec.arg=list(a=1,b=1,rho=0,sd=0,c=1,bias.correction=TRUE,
-                          resample=FALSE,resid=0,resid.year=NULL), # 加入の各種設定
-             ##--- Frecオプション；Frec計算のための設定リストを与えると、指定された設定でのFrecに対応するFで将来予測を行う
+                          resample=FALSE,resid=0,resid.year=NULL), 
              Frec=NULL,
-             # list(stochastic=TRUE, # TRUEの場合、stochastic simulationで50%の確率でBlimitを越す(PMS, TMI)
-             # FALSEの場合、RPS固定のprojectionがBilmitと一致する(NSK)
-             #      future.year=2018, # 何年の資源量を見るか？
-             #      Blimit=450*1000,  # Blimit (xトン)
-             #      scenario="catch.mean" or "blimit" (デフォルトはblimit; "catch.mean"とするとstochastic simulationにおける平均漁獲量がBlimitで指定した値と一致するようになる)
-             #      Frange=c(0.01,2*mult)) # Fの探索範囲
-             waa=NULL,waa.catch=NULL,maa=NULL,M=NULL, # 季節毎の生物パラメータ、または、生物パラメータを外から与える場合
-             waa.fun=FALSE, #waaをnaaのfunctionとするか(waa.catchが別に与えられているときには機能しない)
+             waa=NULL,
+             waa.catch=NULL,
+             maa=NULL,
+             M=NULL, 
+             waa.fun=FALSE, 
              naa0=NULL,eaa0=NULL,ssb0=NULL,faa0=NULL,
-             add.year=0, # 岡村オプションに対応。=1で1年分余計に計算する
-             det.run=TRUE # 1回めのランは決定論的将来予測をする（完璧には対応していない）
+             add.year=0, 
+             det.run=TRUE 
              ){
 
-        
         argname <- ls()
         arglist <- lapply(argname,function(x) eval(parse(text=x)))
         names(arglist) <- argname
@@ -426,7 +434,6 @@ future.vpa <-
         rec.arg <- set_SR_options(rec.arg,N=N,silent=silent,eaa0=eaa0,det.run=det.run)
 
         ##------------- set HCR options
-        
         if(!is.null(HCR) && is.null(HCR$year.lag)) HCR$year.lag <- 0
         if(!is.null(beta)){
             HCR$beta <- beta
@@ -450,21 +457,20 @@ future.vpa <-
         }
         ##-------------        
         
-        #  fyears <- seq(from=start.year,to=start.year+nyear-1,by=1/ts)
         fyears <- seq(from=start.year,to=start.year+nyear+add.year,by=1)
         
-        fyear.year <- floor(fyears)
+        fyear.year <- floor(fyears) #??
         ntime <- length(fyears)
         ages <- as.numeric(dimnames(res0$naa)[[1]]) # ages:VPAで考慮される最大年齢数
         min.age <- min(as.numeric(ages))
 
         year.overlap <- years %in% start.year   
-                 {if(sum(year.overlap)==0){
-                      nage <- sum(!is.na(res0$naa[,ncol(res0$naa)])) # nage:将来予測で考慮すべき年の数
-                  }
-                  else{
-                      nage <- sum(!is.na(res0$naa[,year.overlap])) 
-                  }}
+        {if(sum(year.overlap)==0){
+             nage <- sum(!is.na(res0$naa[,ncol(res0$naa)])) # nage:将来予測で考慮すべき年の数
+         }
+         else{
+             nage <- sum(!is.na(res0$naa[,year.overlap])) 
+         }}
         
         if(!silent){
             arglist.tmp <-  arglist
@@ -481,10 +487,9 @@ future.vpa <-
             multi.org <- multi
             if(is.null(Frec$stochastic)) Frec$stochastice <- TRUE
             if(is.null(Frec$target.probs)) Frec$target.probs <- 50
-            if(is.null(Frec$scenario)) Frec$scenario <- "blimit" # 2017/12/25追記 
-            if(is.null(Frec$Frange)) Frec$Frange <- c(0.01,multi.org*2)   # 2017/12/25追記(探索するFの範囲の指定)
+            if(is.null(Frec$scenario)) Frec$scenario <- "blimit" 
+            if(is.null(Frec$Frange)) Frec$Frange <- c(0.01,multi.org*2) 
             if(is.null(Frec$future.year)) Frec$future.year <- fyears[length(fyears)]-1
-            #      arglist$Frec <- Frec
             
             getFrec <- function(x,arglist){
                 set.seed(arglist$seed)
@@ -564,7 +569,7 @@ future.vpa <-
             if(!is.null(res0$input$dat$waa.catch)) waa.catch.org <- apply(as.matrix(res0$input$dat$waa.catch[,years %in% waa.catch.year]),1,mean)
             else waa.catch.org <- waa.org
         }
-        
+
         M[] <- M.org
         waa[] <- waa.org
         waa_all[,(length(years)+1):dim(waa_all)[[2]],] <- waa.org
@@ -899,19 +904,6 @@ future.vpa <-
                          Frec=Frec,rec.new=rec.new,pre.catch=pre.catch,input=arglist)
         }      
 
-        ## if(non.det==TRUE){
-        ##     fres <- list(faa=faa[,,-1,drop=F],naa=naa[,,-1,drop=F],biom=biom[,,-1,drop=F],
-        ##                  ssb=ssb[,,-1,drop=F],wcaa=wcaa[,,-1,drop=F],caa=caa[,,-1,drop=F],
-        ##                  M=M[,,-1,drop=F],rps=rps.mat[,-1,drop=F],
-        ##                  maa=maa[,,-1,drop=F],vbiom=apply(biom[,,-1,drop=F],c(2,3),sum,na.rm=T),
-        ##                  eaa=eaa[,-1,drop=F],
-        ##                  waa=waa[,,-1,drop=F],waa.catch=waa.catch[,,-1,drop=F],currentF=currentF,
-        ##                  vssb=apply(ssb[,,-1,drop=F],c(2,3),sum,na.rm=T),vwcaa=vwcaa[,-1,drop=F],
-        ##                  years=fyears,fyear.year=fyear.year,ABC=ABC,recfunc=recfunc,rec.arg=rec.arg,
-        ##                  waa.year=waa.year,maa.year=maa.year,multi=multi,multi.year=multi.year,
-        ##                  Frec=Frec,rec.new=rec.new,pre.catch=pre.catch,input=arglist)
-        ## }
-        
         class(fres) <- "future"
 
         invisible(fres)
@@ -1157,6 +1149,7 @@ resample_2block.rec <- function(ssb,vpares,#deterministic=FALSE,
 #'
 #' @param ssb 親魚資源量
 #' @param vpares VPAの出力結果
+#' @encoding UTF-8
 #' 
 #'
 #' @export
@@ -1181,6 +1174,7 @@ HS.recAR <- function(ssb,vpares,#deterministic=FALSE,
 #'
 #' @param ssb 親魚資源量
 #' @param vpares VPAの出力結果
+#' @encoding UTF-8
 #' 
 #'
 #' @export
@@ -1199,6 +1193,7 @@ BH.recAR <- function(ssb,vpares,deterministic=FALSE,rec.resample=NULL,
 #'
 #' @param ssb 親魚資源量
 #' @param vpares VPAの出力結果
+#' @encoding UTF-8
 #'
 #' 
 #'
@@ -1268,6 +1263,7 @@ RI.recAR2 <- function(ssb,vpares,deterministic=FALSE,rec.resample=NULL,
 #' 複数の将来予測の結果をプロットする（ggplotは使わず）
 #'
 #' @param fres.list future.vpaからの出力結果をリストで並べたもの
+#' @encoding UTF-8
 #' 
 #' 
 #'
@@ -1293,6 +1289,7 @@ plot.futures <- function(fres.list,conf=c(0.1,0.5,0.9),target="SSB",legend.text=
 #' 一つの将来予測の結果をプロットする（ggplotは使わず）
 #'
 #' @param fres0 future.vpaからの出力結果
+#' @encoding UTF-8
 #' 
 #' 
 #'
@@ -1553,6 +1550,16 @@ get.data <- function(tfile){
 }
 
 
+#' @export
+make_summary_table <- function(mat_data,side=1,probs=c(0.1,0.5,0.8)){
+    res_mat <- cbind(apply(mat_data,side,mean),
+                     t(apply(mat_data,side,quantile,probs=probs)))
+    colnames(res_mat)[1] <- "average"
+    res_mat %>% as_tibble()
+}
+
+
+#'
 #' VPA結果をcsvファイルに出力する
 #' @param res  VPAの結果
 #' @param srres fit.SRの結果
@@ -1563,6 +1570,7 @@ get.data <- function(tfile){
 #' @param filename csvファイルとpdfファイルの両方のファイル名を指定する場合（拡張子なしで指定）
 #' @param csvname csvファイルのファイル名
 #' @param pdfname pdfファイルのファイル名
+#' @encoding UTF-8
 #' @export
 
 out.vpa <- function(res=NULL,    # VPA result
@@ -1573,7 +1581,8 @@ out.vpa <- function(res=NULL,    # VPA result
                     kobeII=NULL, # kobeII result
                     filename="vpa", # filename without extension
                     csvname=NULL,
-                    pdfname=NULL
+                    pdfname=NULL,
+                    ci.future=c(0.1,0.5,0.9)
                     ){
   old.par <- par()  
   exit.func <- function(){
@@ -1648,6 +1657,10 @@ out.vpa <- function(res=NULL,    # VPA result
     x <- rbind(colSums(res$ssb),colSums(res$baa),colSums(res$wcaa))
     rownames(x) <- c("Spawning biomass","Total biomass","Catch biomass")
     write.table2(x,title.tmp="Total and spawning biomass")
+
+    write("\n# YPR & SPR history ",file=csvname,append=T)    
+    get.SPR(res)$ysdata %>% as_tibble() %>% select(-"F/Ftarget") %>%
+                   write_csv(path=csvname,append=T, col_names=TRUE)                   
   }
 
   if(!is.null(srres)){
@@ -1656,45 +1669,50 @@ out.vpa <- function(res=NULL,    # VPA result
                                            method=srres$input$method,
                                            type  =srres$input$SR)      
       write("\n# SR fit resutls",file=csvname,append=T)
-      write_csv(res_summary,path=csvname,append=T)
+      write_csv(sr_summary,path=csvname,append=T,
+                col_names=TRUE)
   }  
   
   if(!is.null(msyres)){
     write("\n# MSY Reference points",file=csvname,append=T)
-    write_csv(msyres$summary,path=csvname,append=T)
+    write_csv(msyres$summary,path=csvname,append=T,
+                  col_names=TRUE)
   }
 
-  
-  if(!is.null(fres_current)){
-    write("\n# future projection under F current (average)",file=csvname,append=T)  
+      tmpfunc <- function(fres){
     write("\n# future F at age",file=csvname,append=T)
-    write.table2(apply(fres_current$faa,c(1,2),mean),title.tmp="Future F at age")
-    
-    write("\n# future numbers at age",file=csvname,append=T)
-    write.table2(apply(fres_current$naa,c(1,2),mean),title.tmp="Future numbers at age")
+    write.table2(apply(fres$faa,c(1,2),mean),title.tmp="Average future F at age")
+          
+          write("\n# future numbers at age",file=csvname,append=T)
+          write.table2(apply(fres$naa,c(1,2),mean),title.tmp="Average future numbers at age")
+          
+          write("\n# future maturity at age",file=csvname,append=T)
+          write.table2(apply(fres$maa,c(1,2),mean),title.tmp="Average future numbers at age")
+          
+          write("\n# future weight at age",file=csvname,append=T)
+          write.table2(apply(fres$waa,c(1,2),mean),title.tmp="Average future numbers at age")
 
-    write("\n# future total and spawning biomass",file=csvname,append=T)
-    x <- rbind(apply(fres_current$vssb, 1,mean),
-               apply(fres_current$vbiom,1,mean),
-               apply(fres_current$vwcaa,1,mean))
-    rownames(x) <- c("Spawning biomass","Total biomass","Catch biomass")
-    write.table2(x,title.tmp="Future total, spawning and catch biomass")    
+          write("\n# future total spawning biomass",file=csvname,append=T)    
+          make_summary_table(fres$vssb,1,probs=ci.future) %>%
+              write_csv(path=csvname,append=TRUE, col_names = TRUE)
+
+          write("\n# future total biomass",file=csvname,append=T)    
+          make_summary_table(fres$vbiom,1,probs=ci.future) %>%
+              write_csv(path=csvname,append=TRUE, col_names = TRUE)
+          
+          write("\n# future total catch",file=csvname,append=T)    
+          make_summary_table(fres$vwcaa,1,probs=ci.future) %>%
+              write_csv(path=csvname,append=TRUE, col_names = TRUE)
+      }  
+
+  if(!is.null(fres_current)){
+      write("\n# future projection under F current",file=csvname,append=T)  
+      tmpfunc(fres_current)
   }
 
   if(!is.null(fres_HCR)){
-    write("\n# future projection under default HCR (average)",file=csvname,append=T)  
-    write("\n# future F at age",file=csvname,append=T)
-    write.table2(apply(fres_HCR$faa,c(1,2),mean),title.tmp="Future F at age")
-    
-    write("\n# future numbers at age",file=csvname,append=T)
-    write.table2(apply(fres_HCR$naa,c(1,2),mean),title.tmp="Future numbers at age")
-
-    write("\n# future total and spawning biomass",file=csvname,append=T)
-    x <- rbind(apply(fres_HCR$vssb, 1,mean),
-               apply(fres_HCR$vbiom,1,mean),
-               apply(fres_HCR$vwcaa,1,mean))
-    rownames(x) <- c("Spawning biomass","Total biomass","Catch biomass")
-    write.table2(x,title.tmp="Future total, spawning and catch biomass")    
+      write("\n# future projection under HCR",file=csvname,append=T)  
+      tmpfunc(fres_HCR)
   }
 
   if(!is.null(kobeII)){
@@ -1702,26 +1720,17 @@ out.vpa <- function(res=NULL,    # VPA result
     kobeII.table_name <- names(kobeII.table)
     for(i in 1:length(kobeII.table_name)){
         write(str_c("\n# ",kobeII.table_name[i]),file=csvname,append=T)        
-        write_csv(kobeII.table[kobeII.table_name[i]][[1]],path=csvname,append=TRUE)
+        write_csv(kobeII.table[kobeII.table_name[i]][[1]],path=csvname,append=TRUE,
+                  col_names = TRUE)
     }
   }
   
-  ## if(!is.null(ABC)){
-  ##   write("\n# ABC summary",file=csvname,append=T)
-  ##   write.table2(ABC$ABC,title.tmp="Future F at age",is.plot=F)
-  ##   write("\n# Kobe matrix",file=csvname,append=T)
-  ##   for(i in 1:dim(ABC$kobe.matrix)[[3]]){
-  ##       write(paste("\n# ",dimnames(ABC$kobe.matrix)[[3]][i]),
-  ##             file=csvname,append=T)        
-  ##       write.table2(ABC$kobe.matrix[,,i],
-  ##                    title.tmp=dimnames(ABC$kobe.matrix)[[3]][i],is.plot=T)        
-  ##   }
-  ## }
   
 }
 
 #' csvファイルとしてまとめられた資源計算結果を読み込んでRのオブジェクトにする
 #' @param tfile 資源計算結果がまとめられたcsvファイルの名前
+#' @encoding UTF-8
 #'
 #' @export
 
@@ -2135,28 +2144,31 @@ show.likeprof <- function(res){
 }
 
 
-#'
-#' VPA計算結果を入れると、毎年のF at ageがどのくらいのSPR, YPRに相当するかを返す
+#' 毎年のFの\%SPRやターゲットした\%SPRに相当するFの大きさを計算する
+#' 
+#' VPA計算結果を使って毎年のF at ageがどのくらいのSPR, YPRに相当するかを計算する。また、各年のFが、目標としたSPR（target.SPR）を達成するためのF(Ftarget)の何倍(F/Ftarget)に相当するかも計算する。F/Ftargetは数値的に探索するが、そのときのF/Ftargetの上限をFmaxにて指定する。十分大きい値（デフォルトは１０）を与えておけば大丈夫だが、Ftargetが非常に小さい数字になりそうな場合にはこの値をもっと大きくとるなどする。また、SPRの計算は、デフォルトでは等比級数の和の公式を使って、無限大の年齢までSPRを足しているが、max.ageを指定することで、有限の年齢までの和も計算できる。
 #'
 #' @param dres vpa関数の返り値
-#' @param target.SPR 目標とするSPR。この値を入れると、結果の$ysdataでその年のFが目標とするSPRを達成するためのFの何倍になっているかを返す。デフォルトは30が入っている
-#' @param Fmax 上の計算をするときに探索するFの乗数の最大値
-#' @param max.age SPRやYPRの計算をするときに最大何歳まで考慮するか（デフォルトは無限大) 
+#' @param target.SPR 目標とするSPR。この値を入れると、結果の$ysdata$"F/Ftarget"で、その年のFが目標としたSPR(％)を達成するためのF（Ftarget）の何倍になっているかを返す。デフォルトは30が入っている。このとき、SPRを計算するための生物パラメータ（年齢別体重・成熟率・死亡率）はそれぞれの年で仮定されているものを用いる。
+#' @param Fmax F/Ftargetを推定するときに探索するFの乗数の最大値
+#' @param max.age SPRやYPRの計算をするときに最大何歳まで考慮するか（デフォルトは無限大)。値の指定の仕方はhelp(ref.F)を参照のこと
+#' @encoding UTF-8
+#'
+#' @examples
+#' data(res_vpa)
+#' Fratio <- get.SPR(res_vpa,target.SPR=12)$ysdata$"F/Ftarget"
+#' plot(colnames(res_vpa$naa),Fratio,type="b")
+#' 
 #'
 #' @export 
 get.SPR <- function(dres,target.SPR=30,Fmax=10,max.age=Inf){
-    # Fの歴史的な%SPRを見てみる                                                                             
-    # 毎年異なるFや生物パラメータに対して、YPR,SPR、SPR0がどのくらい変わっているのか見る(Rコード例2)
-    # target.SPRが与えられると、target.SPR（％）として与えた数字に対応するSPR値に対するFの乗数も出力する(与えない場合は30%とする)
-
     dres$ysdata <- matrix(0,ncol(dres$faa),5)
     dimnames(dres$ysdata) <- list(colnames(dres$faa),c("perSPR","YPR","SPR","SPR0","F/Ftarget"))
     for(i in 1:ncol(dres$faa)){
 	dres$Fc.at.age <- dres$faa[,i] # Fc.at.ageに対象年のFAAを入れる
         if(all(dres$Fc.at.age>0)){
-            byear <- colnames(dres$faa)[i] # 何年の生物パラメータを使うか                                       
-            # RVPAのref.F関数でYPRなどを計算。                                                                  
-            # 配布している1.3から1.4にアップデートしているので、新しいほうの関数を使うこと(返り値がちょっと違う)
+            byear <- colnames(dres$faa)[i] # 何年の生物パラメータを使うか
+            
             a <- ref.F(dres,waa.year=byear,maa.year=byear,M.year=byear,rps.year=2000:2011,
                        pSPR=round(target.SPR),
                        F.range=c(seq(from=0,to=ceiling(max(dres$Fc.at.age,na.rm=T)*Fmax),
@@ -2184,6 +2196,7 @@ get.SPR <- function(dres,target.SPR=30,Fmax=10,max.age=Inf){
 #'
 #' @param vpares VPAの結果のオブジェクト
 #' @param frag   MSY計算時の将来予測で用いる引数のリスト
+#' @encoding UTF-8
 #' 
 #'
 #' @export
@@ -2198,6 +2211,7 @@ plot_SRdata <- function(SRdata){
 #'
 #' @param vpares VPAの結果のオブジェクト
 #' @param frag   MSY計算時の将来予測で用いる引数のリスト
+#' @encoding UTF-8
 #' 
 #'
 #' @export
@@ -2943,6 +2957,7 @@ draw.refline <- function(reftable,horiz=TRUE,scale=1000,lwd=3){
 
 #' 期間内のRPSをサンプリングするときの加入関数
 #'
+#' @encoding UTF-8
 #' @export
 
 RPS.simple.rec <- function(ssb,vpares,
@@ -3021,6 +3036,7 @@ menplot2 <- function(xy,probs=c(0.1,0.9),new=FALSE,xlab=NULL,ylab=NULL,...){
 
 #' 期間内の残差をサンプリングするときの加入関数
 #'
+#' @encoding UTF-8
 #' @export
 
 resample.rec <- function(ssb,vpares,#deterministic=FALSE,
@@ -3056,7 +3072,10 @@ resample.rec <- function(ssb,vpares,#deterministic=FALSE,
 
 #' vpaデータ, 選択率の参照年1, 漁獲圧の参照年2を与えて、参照年2の漁獲圧のもとで参照年1の選択率となるF at ageを作成する関数。漁獲圧の変換は％SPR換算
 #'
+#' sel_year 選択率の参照年
+#' faa_year 漁獲圧の参照年
 #'
+#' @encoding UTF-8
 #' @export
 
 convert_faa_perSPR <- function(res_vpa, sel_year, faa_year, Fcurrent_MSY=NULL, Fsel_MSY=NULL){
@@ -3090,6 +3109,7 @@ convert_faa_perSPR <- function(res_vpa, sel_year, faa_year, Fcurrent_MSY=NULL, F
 
 #' 列が年である行列に対して、年を指定するとその年のあいだの平均値（等）を返す関数
 #'
+#' @encoding UTF-8
 #' @export
 #'
 #' 
