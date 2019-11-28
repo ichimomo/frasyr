@@ -12,6 +12,8 @@ Type objective_function<Type>::operator() ()
   DATA_VECTOR(b_fix);  //
   DATA_SCALAR(alpha);
   DATA_SCALAR(lambda);
+  DATA_SCALAR(pf);
+  DATA_INTEGER(tfy);
   DATA_SCALAR(beta);  
   DATA_IVECTOR(Ab_type);  // Ab_type = 1: SSB, Ab_type = 2: number at age, Ab_type = 3: biomass at age
   DATA_IVECTOR(Ab_type_age);
@@ -242,7 +244,7 @@ Type objective_function<Type>::operator() ()
   //   }
   // }
   // sigma2 = Residual of sum of square
-  
+   
   if (Est==0){
     for (int k=0;k<K;k++){
       f += w(k)*sigma2(k);
@@ -264,17 +266,29 @@ Type objective_function<Type>::operator() ()
       f += Type(0.5)*nI(k)*log(Type(2.0)*PI*sigma(k))+Type(0.5)*sigma2(k)/sigma(k);
     }
   }
+
+  vector<Type> AF(A-1);
+  AF.fill(0.0);
+  
+  if (pf == 1){
+    for (int i=0;i<=A-2;i++){
+      for (int j=0;j<=tfy-1;j++){
+        AF(i) += F(Y-2-j,i)/tfy;
+      }
+    }
+  }
+   
   f *= (1-lambda);
   if (eta==-1) {
     for (int k=0;k<log_F.size();k++) {
-      f += lambda*pow(exp(log_F(k)),beta);
+      f += lambda*pow(exp(log_F(k))-AF(k),beta);
     }
   } else {
     for (int k=0;k<log_F.size();k++){
       if (eta_age(k) == 0) {
-        f += lambda*eta*pow(exp(log_F(k)),beta);
+        f += lambda*eta*pow(exp(log_F(k))-AF(k),beta);
       } else {
-        f += lambda*(1-eta)*pow(exp(log_F(k)),beta);
+        f += lambda*(1-eta)*pow(exp(log_F(k))-AF(k),beta);
       }
     }
   }
