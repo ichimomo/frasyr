@@ -1481,14 +1481,14 @@ export_kobeII_tables <- function(kobeII_table,
 #' @export
 #' 
 
-theme_SH <- function(){
+theme_SH <- function(legend.position="none"){
     theme_bw(base_size=12) +
     theme(panel.grid = element_blank(),
           axis.text.x=element_text(size=11,color="black"),
           axis.text.y=element_text(size=11,color="black"),
           axis.line.x=element_line(size= 0.3528),
           axis.line.y=element_line(size= 0.3528),
-          legend.position="none")
+          legend.position=legend.position)
 }
 
 #' 会議用の図の出力関数（大きさ・サイズの指定済）：通常サイズ
@@ -1587,4 +1587,71 @@ SRregime_plot <- function (SRregime_result,xscale=1000,xlabel="SSB",yscale=1,yla
     
   }
   g1
-}}
+  }}
+
+#' 複数のVPAの結果を重ね書きする
+#'
+#' @param vpalist vpaの返り値をリストにしたもの; 単独でも可
+#' @param what.plot 何の値をプロットするか. NULLの場合、全て（SSB, biomass, U, catch, Recruitment, fish_number, fishing_mortality, weight, maturity, catch_number）をプロットする。what.plot=c("SSB","Recruitment")とすると一部のみプロット。ここで指定された順番にプロットされる。
+#' @param legend.position 凡例の位置。"top" (上部), "bottom" (下部), "left" (左), "right" (右), "none" (なし)。
+#' @param vpaname 凡例につけるVPAのケースの名前。vpalistと同じ長さにしないとエラーとなる
+#' @param ncol 図の列数
+#' 
+#' @examples 
+#' \dontrun{
+#' data(res_vpa)
+#' res_vpa2 <- res_vpa
+#' res_vpa2$naa <- res_vpa2$naa*1.2
+#'
+#' plot_vpa(list(res_vpa, res_vpa2), vpaname=c("True","Dummy"))
+#' plot_vpa(list(res_vpa, res_vpa2), vpaname=c("True","Dummy"),
+#'                  what.plot=c("SSB","fish_number"))
+#' 
+#' }
+#' 
+#' @encoding UTF-8
+#' @export
+#' 
+
+plot_vpa <- function(vpalist, what.plot=NULL, legend.position="top",
+                     vpaname=NULL){
+
+    if(!is.null(vpaname)){
+        if(length(vpaname)!=length(vpalist)) stop("Length of vpalist and vpaname is different")
+        names(vpalist) <- vpaname
+    }
+    if(isTRUE("naa" %in% names(vpalist))) vpalist <- list(vpalist)
+
+    vpadata <- vpalist %>% purrr::map_dfr(convert_vpa_tibble ,.id="id") %>%
+        mutate(age=factor(age))
+    if(!is.null(what.plot)) vpadata <- vpadata %>%  dplyr::filter(stat%in%what.plot)
+
+    biomass_factor <- vpadata %>% dplyr::filter(is.na(age)) %>%
+        select(stat) %>% unique() %>% unlist()
+    age_factor <- vpadata %>% dplyr::filter(!is.na(age)) %>%
+        select(stat) %>% unique() %>% unlist()
+
+    if(!is.null(what.plot)){
+        vpadata <- vpadata %>%
+            mutate(stat=factor(stat,levels=what.plot))
+    }
+    else{
+        vpadata <- vpadata %>%
+            mutate(stat=factor(stat,levels=c(biomass_factor, age_factor)))
+    }
+
+    g1 <- vpadata %>% ggplot()    
+    if(all(is.na(vpadata$age))){
+        g1 <- g1+ geom_line(aes(x=year, y=value,lty=id))
+    }
+    else{
+        g1 <- g1+ geom_line(aes(x=year, y=value,color=age,lty=id))
+    }
+
+    g1 <- g1 +
+        facet_wrap(~stat, scale="free_y", ncol=ncol) + ylim(0,NA) +
+        theme_SH(legend.position=legend.position) +
+        ylab("Year") + xlab("Value")
+    
+    g1
+}
