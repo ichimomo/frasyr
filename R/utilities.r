@@ -1671,17 +1671,11 @@ plot_vpa <- function(vpalist, vpatibble=NULL,
 #' 複数のMSYの推定結果を重ね書きする
 #'
 #' @param MSYlist est.MSYの返り値をリストにしたもの; 単独でも可
-#' @param what.plot デフォルトはc("yield","RP")。yieldは漁獲量曲線、RPは管理基準値
+#' @param MSYname 凡例につけるMSYのケースの名前。MSYlistと同じ長さにしないとエラーとなる
 #' @examples 
 #' \dontrun{
-#' data(res_vpa)
-#' res_vpa2 <- res_vpa
-#' res_vpa2$naa <- res_vpa2$naa*1.2
-#'
-#' plot_vpa(list(res_vpa, res_vpa2), vpaname=c("True","Dummy"))
-#' plot_vpa(list(res_vpa, res_vpa2), vpaname=c("True","Dummy"),
-#'                  what.plot=c("SSB","fish_number"))
-#' 
+#' data(res_MSY)
+#' compare_MSY(list(res_MSY, res_MSY))
 #' }
 #' 
 #' @encoding UTF-8
@@ -1703,7 +1697,7 @@ compare_MSY <- function(MSYlist,
     data_yield <- purrr::map_dfr(MSYlist, function(x) x$trace, .id="id")
     data_summary <- purrr::map_dfr(MSYlist, function(x) x$summary, .id="id")   %>%
         dplyr::filter(!is.na(RP.definition)) %>%
-        mutate(label=str_c(id, RP.definition, sep="-"))
+        mutate(label=stringr::str_c(id, RP.definition, sep="-"))
 
     g1 <- data_yield %>% ggplot()+
         geom_line(aes(x=ssb.mean, y=catch.mean, color=id))+
