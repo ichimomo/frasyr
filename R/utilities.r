@@ -101,7 +101,7 @@ convert_vpa_tibble <- function(vpares){
   } else {
     total.catch <- colSums(vpares$input$dat$caa*vpares$input$dat$waa.catch,na.rm=T)
   }
-    U <- total.catch/colSums(vpares$baa)
+    U <- total.catch/colSums(vpares$baa, na.rm=T)
 
     SSB <- convert_vector(colSums(vpares$ssb,na.rm=T),"SSB") %>%
         dplyr::filter(value>0&!is.na(value))
@@ -240,7 +240,8 @@ plot_yield <- function(MSY_obj,refs_base,
 #    require(ggrepel)    
 
     trace <- get.trace(trace.msy) %>%
-        mutate("年齢"=age,ssb.mean=ssb.mean/biomass.unit,value=value/biomass.unit)
+        mutate("年齢"=age,ssb.mean=ssb.mean/biomass.unit,value=value/biomass.unit) %>%
+        dplyr::filter(!is.na(value))
 
     refs_base <- refs_base %>%
         mutate(RP.definition=ifelse(is.na(RP.definition),"",RP.definition)) %>%
@@ -339,13 +340,13 @@ plot_yield <- function(MSY_obj,refs_base,
     }
     
     if(!is.null(past)){
-      catch.past = unlist(colSums(past$input$dat$caa*past$input$dat$waa)/biomass.unit)
+      catch.past = unlist(colSums(past$input$dat$caa*past$input$dat$waa, na.rm=T)/biomass.unit)
       if (past$input$last.catch.zero && !is.null(future)) {
         catch.past[length(catch.past)] = apply(future[[1]]$vwcaa[,-1],1,mean)[1]/biomass.unit
       }
         tmpdata <- tibble(
             year      =as.numeric(colnames(past$ssb)),
-            ssb.past  =unlist(colSums(past$ssb))/biomass.unit,
+            ssb.past  =unlist(colSums(past$ssb, na.rm=T))/biomass.unit,
             catch.past=catch.past
         )
 
@@ -575,7 +576,7 @@ make_kobeII_table0 <- function(kobeII_data,
         mutate(stat_name="Pr(SSB>SSBban)")    
 
     # SSB>SSBmin(過去最低親魚量を上回る確率)
-    ssb.min <- min(unlist(colSums(res_vpa$ssb)))
+    ssb.min <- min(unlist(colSums(res_vpa$ssb, na.rm=T)))
     ssbmin.table <- kobeII.data %>%
         dplyr::filter(year%in%year.ssbmin,stat=="SSB") %>%
         group_by(HCR_name,beta,year) %>%
@@ -586,7 +587,7 @@ make_kobeII_table0 <- function(kobeII_data,
         mutate(stat_name="Pr(SSB>SSBmin)")
 
     # SSB>SSBmax(過去最低親魚量を上回る確率)
-    ssb.max <- max(unlist(colSums(res_vpa$ssb)))
+    ssb.max <- max(unlist(colSums(res_vpa$ssb, na.rm=T)))
     ssbmax.table <- kobeII.data %>%
         dplyr::filter(year%in%year.ssbmax,stat=="SSB") %>%
         group_by(HCR_name,beta,year) %>%
@@ -714,7 +715,7 @@ make_kobeII_table <- function(kobeII_data,
         mutate(stat_name="Pr(SSB>SSBban)")    
 
     # SSB>SSBmin(過去最低親魚量を上回る確率)
-    ssb.min <- min(unlist(colSums(res_vpa$ssb)))
+    ssb.min <- min(unlist(colSums(res_vpa$ssb, na.rm=T)))
     ssbmin.table <- kobeII.data %>%
         dplyr::filter(year%in%year.ssbmin,stat=="SSB") %>%
         group_by(HCR_name,beta,year) %>%
@@ -725,7 +726,7 @@ make_kobeII_table <- function(kobeII_data,
         mutate(stat_name="Pr(SSB>SSBmin)")
 
     # SSB>SSBmax(過去最低親魚量を上回る確率)
-    ssb.max <- max(unlist(colSums(res_vpa$ssb)))
+    ssb.max <- max(unlist(colSums(res_vpa$ssb, na.rm=T)))
     ssbmax.table <- kobeII.data %>%
         dplyr::filter(year%in%year.ssbmax,stat=="SSB") %>%
         group_by(HCR_name,beta,year) %>%

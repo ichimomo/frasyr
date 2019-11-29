@@ -581,7 +581,8 @@ future.vpa <-
         if(is.null(futureF)) futureF <- currentF         
         # future F matrix
         faa[] <- futureF*multi # *exp(rnorm(length(faa),0,F.sigma))
-        faa_all[is.na(faa_all)] <- futureF*multi
+        #        faa_all[is.na(faa_all)] <- futureF*multi
+        faa_all[] <- futureF*multi        
         # ABCyear以前はcurrent Fを使う。
         faa[,fyears<min(ABC.year),] <- currentF
         faa_all[,allyears%in%fyears[fyears<min(ABC.year)],] <- currentF
@@ -2166,7 +2167,7 @@ get.SPR <- function(dres,target.SPR=30,Fmax=10,max.age=Inf){
     dimnames(dres$ysdata) <- list(colnames(dres$faa),c("perSPR","YPR","SPR","SPR0","F/Ftarget"))
     for(i in 1:ncol(dres$faa)){
 	dres$Fc.at.age <- dres$faa[,i] # Fc.at.ageに対象年のFAAを入れる
-        if(all(dres$Fc.at.age>0)){
+        if(all(dres$Fc.at.age>0, na.rm=T)){
             byear <- colnames(dres$faa)[i] # 何年の生物パラメータを使うか
             
             a <- ref.F(dres,waa.year=byear,maa.year=byear,M.year=byear,rps.year=2000:2011,
