@@ -5,11 +5,13 @@
 \alias{plot_vpa}
 \title{複数のVPAの結果を重ね書きする}
 \usage{
-plot_vpa(vpalist, what.plot = NULL, legend.position = "top",
-  vpaname = NULL)
+plot_vpa(vpalist, vpatibble = NULL, what.plot = NULL,
+  legend.position = "top", vpaname = NULL, ncol = 2)
 }
 \arguments{
 \item{vpalist}{vpaの返り値をリストにしたもの; 単独でも可}
+
+\item{vpatibble}{tibble形式のVPA結果も可。この場合、convert_vpa_tibble関数の出力に準じる。複数のVPA結果がrbindされている場合は、列名"id"で区別する。}
 
 \item{what.plot}{何の値をプロットするか. NULLの場合、全て（SSB, biomass, U, catch, Recruitment, fish_number, fishing_mortality, weight, maturity, catch_number）をプロットする。what.plot=c("SSB","Recruitment")とすると一部のみプロット。ここで指定された順番にプロットされる。}
 

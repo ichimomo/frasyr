@@ -1592,6 +1592,7 @@ SRregime_plot <- function (SRregime_result,xscale=1000,xlabel="SSB",yscale=1,yla
 #' 複数のVPAの結果を重ね書きする
 #'
 #' @param vpalist vpaの返り値をリストにしたもの; 単独でも可
+#' @param vpatibble tibble形式のVPA結果も可。この場合、convert_vpa_tibble関数の出力に準じる。複数のVPA結果がrbindされている場合は、列名"id"で区別する。
 #' @param what.plot 何の値をプロットするか. NULLの場合、全て（SSB, biomass, U, catch, Recruitment, fish_number, fishing_mortality, weight, maturity, catch_number）をプロットする。what.plot=c("SSB","Recruitment")とすると一部のみプロット。ここで指定された順番にプロットされる。
 #' @param legend.position 凡例の位置。"top" (上部), "bottom" (下部), "left" (左), "right" (右), "none" (なし)。
 #' @param vpaname 凡例につけるVPAのケースの名前。vpalistと同じ長さにしないとエラーとなる
@@ -1610,20 +1611,29 @@ SRregime_plot <- function (SRregime_result,xscale=1000,xlabel="SSB",yscale=1,yla
 #' }
 #' 
 #' @encoding UTF-8
+#' 
 #' @export
 #' 
 
-plot_vpa <- function(vpalist, what.plot=NULL, legend.position="top",
-                     vpaname=NULL){
+plot_vpa <- function(vpalist, vpatibble=NULL,
+                     what.plot=NULL, legend.position="top",
+                     vpaname=NULL, ncol=2){
 
     if(!is.null(vpaname)){
         if(length(vpaname)!=length(vpalist)) stop("Length of vpalist and vpaname is different")
         names(vpalist) <- vpaname
     }
-    if(isTRUE("naa" %in% names(vpalist))) vpalist <- list(vpalist)
 
-    vpadata <- vpalist %>% purrr::map_dfr(convert_vpa_tibble ,.id="id") %>%
-        mutate(age=factor(age))
+    if(is.null(vpatibble)){
+        if(isTRUE("naa" %in% names(vpalist))) vpalist <- list(vpalist)                
+        vpadata <- vpalist %>% purrr::map_dfr(convert_vpa_tibble ,.id="id") %>%
+            mutate(age=factor(age))
+    }
+    else{
+        vpadata <- vpatibble %>%
+            mutate(age=factor(age))
+        if("id" %in% !names(vpadata)) vpadata$id <- "vpa1"
+    }
     if(!is.null(what.plot)) vpadata <- vpadata %>%  dplyr::filter(stat%in%what.plot)
 
     biomass_factor <- vpadata %>% dplyr::filter(is.na(age)) %>%
