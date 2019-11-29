@@ -4,7 +4,7 @@
 \alias{theme_SH}
 \title{会議用の図のフォーマット}
 \usage{
-theme_SH()
+theme_SH(legend.position = "none")
 }
 \description{
 会議用の図のフォーマット
