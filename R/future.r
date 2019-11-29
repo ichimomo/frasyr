@@ -2237,11 +2237,11 @@ est.MSY <- function(vpares,
                    Bempirical=NULL, # 特定の親魚量をターゲットにする場合
                    long.term=20, # 世代時間の何倍年後の状態を平衡状態と仮定するか
                    GT=NULL, # 世代時間を外から与える場合(世代時間の計算は将来予測で使われる年齢別成熟率・自然死亡係数を使っているが、別のパラメータを与えたい場合など、外で計算してここに入れる)
-                   mY=5, # 自己相関を考慮して管理基準値を計算する場合、平衡状態から何年進めるか
+                   mY=5, # (廃止) 自己相関を考慮して管理基準値を計算する場合、平衡状態から何年進めるか
 
-                   estAR.RP=FALSE, # 平衡状態から近年の残差を考慮した将来予測をおこなったときの管理基準値を計算するか
-                   resid.year=0,   # ARありの場合、最近年何年分の残差を平均するか
-                   current.resid=NULL # 残差の値を直接入れる場合。上の年数が設定されていてもこちらが設定されたらこの値を使う
+                   estAR.RP=FALSE, # (廃止) 平衡状態から近年の残差を考慮した将来予測をおこなったときの管理基準値を計算するか
+                   resid.year=0,   # (廃止) ARありの場合、最近年何年分の残差を平均するか
+                   current.resid=NULL # (廃止) 残差の値を直接入れる場合。上の年数が設定されていてもこちらが設定されたらこの値を使う
                    ){
 
 #    require(tidyverse)
@@ -2525,78 +2525,6 @@ est.MSY <- function(vpares,
     sumvalue <- bind_cols(sumvalue,refvalue[,substr(colnames(refvalue),1,1)=="F"])
     
 
-### ARありの場合の管理基準値の計算（平衡状態から5年分進めたときの値）
-    if(isTRUE(estAR.RP)){
-        if(resid.year > 0 && is.null(current.resid)){
-            current.resid <- mean(rev(fout.msy$input$rec.arg$resid)[1:resid.year]) 
-            cat("Residuals of ",resid.year," years are averaged as, ",current.resid,"\n")
-        }
-        else{
-            if(resid.year==0){
-                current.resid <- 0
-            }
-        }
-
-        lag <- as.numeric(rownames(fout.msy$naa))[1]            
-        eyear <- mY+(lag > 0)*(lag-1)
-        
-        MSY2 <- target.func(fout.msy,mY=mY,seed=seed,N=N,eyear=mY,current.resid=current.resid)
-        B02 <- target.func(fout0,mY=mY,seed=seed,N=N,eyear=mY,current.resid=current.resid)
-        if(!is.null(PGY)){
-            PGYstat2 <- lapply(1:length(fout.PGY),
-                               function(x) target.func(fout.PGY[[x]],mY=mY,seed=seed,N=N,eyear=mY,current.resid=current.resid))
-        }
-        else{
-            PGYstat2 <- NULL
-        }
-
-        if(!is.null(B0percent)){
-            B0stat2 <- lapply(1:length(fout.B0percent),
-                              function(x) target.func(fout.B0percent[[x]],mY=mY,seed=seed,N=N,eyear=mY,current.resid=current.resid)
-                              )
-        }
-        else{
-            B0stat2 <- NULL
-        }
-
-        if(!is.null(Bempirical)){
-            Bempirical.stat2 <- lapply(1:length(fout.Bempirical),
-                                       function(x) target.func(fout.Bempirical[[x]],mY=mY,seed=seed,N=N,eyear=mY,current.resid=current.resid)
-                                       )
-        }
-        else{
-            Bempirical.stat2 <- NULL
-        }    
-
-        refvalue2 <- bind_rows(MSY2[[1]],B02[[1]],
-                               purrr::map_dfr(PGYstat2,function(x) x[[1]]),
-                               purrr::map_dfr(B0stat2,function(x) x[[1]]),
-                               purrr::map_dfr(Bempirical.stat2,function(x) x[[1]])) %>% as_tibble() %>%
-            mutate(RP_name=refvalue$RP_name,AR=TRUE)
-
-        refvalue2 <-  refvalue2 %>%
-            mutate(SSB2SSB0=refvalue$ssb.mean/refvalue$ssb.mean[2])
-        
-        sumvalue2 <- refvalue2 %>% select(RP_name,AR,ssb.mean,SSB2SSB0,biom.mean,U.mean,catch.mean,catch.CV,Fref2Fcurrent)
-        colnames(sumvalue2) <- c("RP_name","AR","SSB","SSB2SSB0","B","U","Catch","Catch.CV","Fref/Fcur")
-        sumvalue2 <- bind_cols(sumvalue2,refvalue2[,substr(colnames(refvalue2),1,1)=="F"])
-
-
-        ssb.ar.mean <- cbind(apply(MSY2[[2]]$vssb,1,mean),
-                             apply(B02[[2]]$vssb,1,mean),
-                             sapply(PGYstat2,function(x) apply(x[[2]]$vssb,1,mean)),
-                             sapply(B0stat2,function(x) apply(x[[2]]$vssb,1,mean)),
-                             sapply(Bempirical.stat2,function(x) apply(x[[2]]$vssb,1,mean)))
-        ssb.ar.mean <- sweep(matrix(as.numeric(ssb.ar.mean),nrow(ssb.ar.mean),ncol(ssb.ar.mean)),
-                             2,unlist(sumvalue$SSB),FUN="/")
-        colnames(ssb.ar.mean) <- rownames(sumvalue$SSB)
-    }
-    else{ # estAR.RP==FALSEのとき
-        ssb.ar.mean <- NULL
-        sumvalue2 <- NULL
-        refvalue2 <- NULL
-    }
-    
     ### 結果のプロットなど
 
     trace$table <- subset(trace$table,fmulti>0)
@@ -2623,50 +2551,31 @@ est.MSY <- function(vpares,
         }
     }
 
-    ## kobe II matrix
-    #kobe2 <- array(0,dim=c(dim(trace$array)[[1]],dim(trace$array)[[2]],length(sumvalue$SSb)))
-    #for(i in 1:length(sumvalue$SSB)){
-    #tmp <- trace$array > sumvalue$SSB[i]
-    #kobe2[,,i] <- cbind(kobe2,apply(tmp,c(1,2),mean))
-    #  }
-    #dimnames(kobe2) <- list()
-
     input.list <- list(B0=fout0$input,
                        msy=fout.msy$input,
                        pgy=lapply(fout.PGY,function(x) x$input),
                        B0percent=lapply(fout.B0percent,function(x) x$input))
 
-    allsum <- bind_rows(sumvalue,sumvalue2)
-    allsum$RP.definition <- NA
-    allsum$RP.definition[allsum$AR==FALSE&allsum$RP_name=="MSY"] <- "Btarget0"
-#    allsum$RP.definition[allsum$AR==FALSE&allsum$RP_name=="PGY_0.9_lower"] <- "Blow0"
-    allsum$RP.definition[allsum$AR==FALSE&allsum$RP_name=="PGY_0.6_lower"] <- "Blimit0"    
-    allsum$RP.definition[allsum$AR==FALSE&allsum$RP_name=="PGY_0.1_lower"] <- "Bban0"
-    allsum <- allsum %>% select(1,ncol(allsum),2:(ncol(allsum)-1))    
+    sumvalue$RP.definition <- NA
+    sumvalue$RP.definition[sumvalue$AR==FALSE&sumvalue$RP_name=="MSY"] <- "Btarget0"
+    sumvalue$RP.definition[sumvalue$AR==FALSE&sumvalue$RP_name=="PGY_0.6_lower"] <- "Blimit0"    
+    sumvalue$RP.definition[sumvalue$AR==FALSE&sumvalue$RP_name=="PGY_0.1_lower"] <- "Bban0"
+    sumvalue <- sumvalue %>% select(1,ncol(sumvalue),2:(ncol(sumvalue)-1))    
 
-    Fvector <- select(allsum,num_range("F",0:40))
+    Fvector <- select(sumvalue,num_range("F",0:40))
 
-    allsum$perSPR <- NA
+    sumvalue$perSPR <- NA
     for(i in 1:nrow(Fvector)){
-        allsum$perSPR[i] <- calc_perspr(input.list[[1]],Fvector[i,])
+        sumvalue$perSPR[i] <- calc_perspr(input.list[[1]],Fvector[i,])
     }
 
-    output <- list(summary =allsum,#as.data.frame(as.matrix(sumvalue)),
-                   summary_tb=allsum,
-#                   summary_tb=allsum,
-#                   all.stat=as.data.frame(as.matrix(refvalue)),
-                   all.stat=bind_rows(refvalue,refvalue2),                   
+    output <- list(summary =sumvalue,
+                   summary_tb=sumvalue,
+                   all.stat=refvalue,
                    trace   =trace$table,
                    input.list=input.list,
                    Fvector =Fvector,
                    F.msy   =F.msy)
-    
-    if(isTRUE(estAR.RP)){
-        output$summaryAR   <- as.data.frame(as.matrix(sumvalue2))
-        output$all.statAR  <- as.data.frame(as.matrix(refvalue2))
-        output$ssb.ar.mean <- ssb.ar.mean
-        }
-#    output$SPR.msy <- calc_MSY_spr(output)
     
     invisible(output)    
 }
