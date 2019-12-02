@@ -33,7 +33,7 @@ test_that("oututput value check",{
 
 context("future future.vpa HS")
 
-test_that("oututput value check (iteration for future sim is fixed as 2) ",{#このテストはfutrue.rにおいてHS.recAR関数内１行目にset.seed(0)を設定した結果を参照する。デフォルト設定では一致しない。
+test_that("oututput value check (iteration # of future sim is fixed as 2) ",{#このテストはfutrue.rにおいてHS.recAR関数内１行目にset.seed(0)を設定した結果を参照する。デフォルト設定では一致しない。
   load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
   load(system.file("extdata","SRpma_HS_L1_AR0.rda",package = "frasyr"))
   load(system.file("extdata","SRpma_HS_L1_AR1.rda",package = "frasyr"))
@@ -142,7 +142,7 @@ test_that("oututput value check (iteration for future sim is fixed as 2) ",{#こ
 
 context("future future.vpa BH")
 
-test_that("oututput value check (iteration for future sim is fixed as 2) ",{
+test_that("oututput value check (iteration # of future sim is fixed as 2) ",{
   load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
   load(system.file("extdata","SRpma_BH_L1_AR0.rda",package = "frasyr"))
   load(system.file("extdata","SRpma_BH_L1_AR1.rda",package = "frasyr"))
@@ -251,7 +251,7 @@ test_that("oututput value check (iteration for future sim is fixed as 2) ",{
 
 context("future future.vpa RI")
 
-test_that("oututput value check (iteration for future sim is fixed as 2) ",{
+test_that("oututput value check (iteration # of future sim is fixed as 2) ",{
   load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
   load(system.file("extdata","SRpma_RI_L1_AR0.rda",package = "frasyr"))
   load(system.file("extdata","SRpma_RI_L1_AR1.rda",package = "frasyr"))
@@ -360,7 +360,7 @@ test_that("oututput value check (iteration for future sim is fixed as 2) ",{
 
 context("future future.vpa (option of futureF)")
 
-test_that("oututput value check (iteration for future sim is fixed as 2) ",{
+test_that("oututput value check (iteration # of future sim is fixed as 2) ",{
   caa <- read.csv(system.file("extdata","caa_pma.csv",package="frasyr"),row.names=1)
   waa <- read.csv(system.file("extdata","waa_pma.csv",package="frasyr"),row.names=1)
   maa <- read.csv(system.file("extdata","maa_pma.csv",package="frasyr"),row.names=1)
