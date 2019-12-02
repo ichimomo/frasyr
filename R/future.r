@@ -581,8 +581,7 @@ future.vpa <-
         if(is.null(futureF)) futureF <- currentF
         # future F matrix
         faa[] <- futureF*multi # *exp(rnorm(length(faa),0,F.sigma))
-        #        faa_all[is.na(faa_all)] <- futureF*multi
-        faa_all[] <- futureF*multi
+        faa_all[is.na(faa_all)] <- futureF*multi
         # ABCyear以前はcurrent Fを使う。
         faa[,fyears<min(ABC.year),] <- currentF
         faa_all[,allyears%in%fyears[fyears<min(ABC.year)],] <- currentF
@@ -1156,7 +1155,6 @@ resample_2block.rec <- function(ssb,vpares,#deterministic=FALSE,
 #' @export
 
 HS.recAR <- function(ssb,vpares,#deterministic=FALSE,
-                     seed=NULL, #set.seed for test run,
                       rec.resample=NULL,
                       rec.arg=list(a=1000,b=1000,#gamma=0.01,
                                    sd=0.1, rho=0,
@@ -1166,7 +1164,7 @@ HS.recAR <- function(ssb,vpares,#deterministic=FALSE,
 #    rec0 <- rec.arg$a*(ssb+sqrt(rec.arg$b^2+(rec.arg$gamma^2)/4)-sqrt((ssb-rec.arg$b)^2+(rec.arg$gamma^2)/4))
     rec0 <- ifelse(ssb>rec.arg$b,rec.arg$a*rec.arg$b,rec.arg$a*ssb)
     rec <- rec0*exp(rec.arg$rho*rec.arg$resid) # 自己相関込みの予測値
-    set.seed(seed)
+
     rec <- rec*exp(rnorm(length(ssb),-0.5*rec.arg$sd2^2,rec.arg$sd))
     new.resid <- log(rec/rec0)+0.5*rec.arg$sd2^2
     return(list(rec=rec,rec.resample=new.resid))
@@ -1182,12 +1180,10 @@ HS.recAR <- function(ssb,vpares,#deterministic=FALSE,
 #' @export
 
 # Beverton-Holt
-BH.recAR <- function(ssb,vpares,deterministic=FALSE,seed=NULL,
-                     rec.resample=NULL,
+BH.recAR <- function(ssb,vpares,deterministic=FALSE,rec.resample=NULL,
                    rec.arg=list(a=1000,b=1000,sd=0.1,bias.correction=TRUE)){
   rec0 <- rec.arg$a*ssb/(1+rec.arg$b*ssb)
   rec <- rec0*exp(rec.arg$rho*rec.arg$resid) # 自己相関込みの予測値
-  set.seed(seed)
   rec <- rec*exp(rnorm(length(ssb),-0.5*rec.arg$sd2^2,rec.arg$sd))
   new.resid <- log(rec/rec0)+0.5*rec.arg$sd2^2
   return(list(rec=rec,rec.resample=new.resid))
@@ -1203,12 +1199,10 @@ BH.recAR <- function(ssb,vpares,deterministic=FALSE,seed=NULL,
 #'
 #' @export
 
-RI.recAR <- function(ssb,vpares,deterministic=FALSE,seed=NULL,
-                     rec.resample=NULL,
+RI.recAR <- function(ssb,vpares,deterministic=FALSE,rec.resample=NULL,
                    rec.arg=list(a=1000,b=1000,sd=0.1,bias.correction=TRUE)){
     rec0 <- rec.arg$a*ssb*exp(-rec.arg$b*ssb)
     rec <- rec0*exp(rec.arg$rho*rec.arg$resid) # 自己相関込みの予測値
-    set.seed(seed)
     rec <- rec*exp(rnorm(length(ssb),-0.5*rec.arg$sd2^2,rec.arg$sd))
     new.resid <- log(rec/rec0)+0.5*rec.arg$sd2^2
     return(list(rec=rec,rec.resample=new.resid))
@@ -1217,7 +1211,6 @@ RI.recAR <- function(ssb,vpares,deterministic=FALSE,seed=NULL,
 ## Allee effect (depensation) ありの再生産関係
 # Hockey-stick
 HS.recAR2 <- function(ssb,vpares,#deterministic=FALSE,
-                      seed=NULL,
                      rec.resample=NULL,
                      rec.arg=list(a=1000,b=1000,
                                   sd=0.1, rho=0, c=1,
@@ -1231,7 +1224,7 @@ HS.recAR2 <- function(ssb,vpares,#deterministic=FALSE,
   rec0 <- ifelse(ssb>b,b*a,a*b*(ssb/b)^c)
   # rec0 <- ifelse(ssb>rec.arg$b,rec.arg$a*rec.arg$b,rec.arg$a*ssb)
   rec <- rec0*exp(rec.arg$rho*rec.arg$resid) # 自己相関込みの予測値
-  set.seed(seed)
+
   rec <- rec*exp(rnorm(length(ssb),-0.5*rec.arg$sd2^2,rec.arg$sd))
   new.resid <- log(rec/rec0)+0.5*rec.arg$sd2^2
   return(list(rec=rec,rec.resample=new.resid))
@@ -1239,8 +1232,7 @@ HS.recAR2 <- function(ssb,vpares,#deterministic=FALSE,
 
 
 # Beverton-Holt
-BH.recAR2 <- function(ssb,vpares,deterministic=FALSE,seed=NULL,
-                      rec.resample=NULL,
+BH.recAR2 <- function(ssb,vpares,deterministic=FALSE,rec.resample=NULL,
                      rec.arg=list(a=1000,b=1000,sd=0.1,rho=0,c=1,bias.correction=TRUE)){
   a <- rec.arg$a
   b <- rec.arg$b
@@ -1248,15 +1240,13 @@ BH.recAR2 <- function(ssb,vpares,deterministic=FALSE,seed=NULL,
   rec0 <- (a/b)/(1+1/(b*ssb)^c)
   # rec0 <- rec.arg$a*ssb/(1+rec.arg$b*ssb)
   rec <- rec0*exp(rec.arg$rho*rec.arg$resid) # 自己相関込みの予測値
-  set.seed(seed)
   rec <- rec*exp(rnorm(length(ssb),-0.5*rec.arg$sd2^2,rec.arg$sd))
   new.resid <- log(rec/rec0)+0.5*rec.arg$sd2^2
   return(list(rec=rec,rec.resample=new.resid))
 }
 
 # Ricker
-RI.recAR2 <- function(ssb,vpares,deterministic=FALSE,seed=NULL,
-                      rec.resample=NULL,
+RI.recAR2 <- function(ssb,vpares,deterministic=FALSE,rec.resample=NULL,
                      rec.arg=list(a=1000,b=1000,sd=0.1,rho=0,c=1,bias.correction=TRUE)){
   a <- rec.arg$a
   b <- rec.arg$b
@@ -1264,7 +1254,6 @@ RI.recAR2 <- function(ssb,vpares,deterministic=FALSE,seed=NULL,
   rec0 <- a/(b*exp(1))*(b*ssb)^c*exp(c*(1-b*ssb))
   # rec0 <- rec.arg$a*ssb*exp(-rec.arg$b*ssb)
   rec <- rec0*exp(rec.arg$rho*rec.arg$resid) # 自己相関込みの予測値
-  set.seed(seed)
   rec <- rec*exp(rnorm(length(ssb),-0.5*rec.arg$sd2^2,rec.arg$sd))
   new.resid <- log(rec/rec0)+0.5*rec.arg$sd2^2
   return(list(rec=rec,rec.resample=new.resid))
@@ -2177,7 +2166,7 @@ get.SPR <- function(dres,target.SPR=30,Fmax=10,max.age=Inf){
     dimnames(dres$ysdata) <- list(colnames(dres$faa),c("perSPR","YPR","SPR","SPR0","F/Ftarget"))
     for(i in 1:ncol(dres$faa)){
 	dres$Fc.at.age <- dres$faa[,i] # Fc.at.ageに対象年のFAAを入れる
-        if(all(dres$Fc.at.age>0, na.rm=T)){
+        if(all(dres$Fc.at.age>0)){
             byear <- colnames(dres$faa)[i] # 何年の生物パラメータを使うか
 
             a <- ref.F(dres,waa.year=byear,maa.year=byear,M.year=byear,rps.year=2000:2011,
@@ -2247,11 +2236,11 @@ est.MSY <- function(vpares,
                    Bempirical=NULL, # 特定の親魚量をターゲットにする場合
                    long.term=20, # 世代時間の何倍年後の状態を平衡状態と仮定するか
                    GT=NULL, # 世代時間を外から与える場合(世代時間の計算は将来予測で使われる年齢別成熟率・自然死亡係数を使っているが、別のパラメータを与えたい場合など、外で計算してここに入れる)
-                   mY=5, # (廃止) 自己相関を考慮して管理基準値を計算する場合、平衡状態から何年進めるか
+                   mY=5, # 自己相関を考慮して管理基準値を計算する場合、平衡状態から何年進めるか
 
-                   estAR.RP=FALSE, # (廃止) 平衡状態から近年の残差を考慮した将来予測をおこなったときの管理基準値を計算するか
-                   resid.year=0,   # (廃止) ARありの場合、最近年何年分の残差を平均するか
-                   current.resid=NULL # (廃止) 残差の値を直接入れる場合。上の年数が設定されていてもこちらが設定されたらこの値を使う
+                   estAR.RP=FALSE, # 平衡状態から近年の残差を考慮した将来予測をおこなったときの管理基準値を計算するか
+                   resid.year=0,   # ARありの場合、最近年何年分の残差を平均するか
+                   current.resid=NULL # 残差の値を直接入れる場合。上の年数が設定されていてもこちらが設定されたらこの値を使う
                    ){
 
 #    require(tidyverse)
@@ -2535,6 +2524,78 @@ est.MSY <- function(vpares,
     sumvalue <- bind_cols(sumvalue,refvalue[,substr(colnames(refvalue),1,1)=="F"])
 
 
+### ARありの場合の管理基準値の計算（平衡状態から5年分進めたときの値）
+    if(isTRUE(estAR.RP)){
+        if(resid.year > 0 && is.null(current.resid)){
+            current.resid <- mean(rev(fout.msy$input$rec.arg$resid)[1:resid.year])
+            cat("Residuals of ",resid.year," years are averaged as, ",current.resid,"\n")
+        }
+        else{
+            if(resid.year==0){
+                current.resid <- 0
+            }
+        }
+
+        lag <- as.numeric(rownames(fout.msy$naa))[1]
+        eyear <- mY+(lag > 0)*(lag-1)
+
+        MSY2 <- target.func(fout.msy,mY=mY,seed=seed,N=N,eyear=mY,current.resid=current.resid)
+        B02 <- target.func(fout0,mY=mY,seed=seed,N=N,eyear=mY,current.resid=current.resid)
+        if(!is.null(PGY)){
+            PGYstat2 <- lapply(1:length(fout.PGY),
+                               function(x) target.func(fout.PGY[[x]],mY=mY,seed=seed,N=N,eyear=mY,current.resid=current.resid))
+        }
+        else{
+            PGYstat2 <- NULL
+        }
+
+        if(!is.null(B0percent)){
+            B0stat2 <- lapply(1:length(fout.B0percent),
+                              function(x) target.func(fout.B0percent[[x]],mY=mY,seed=seed,N=N,eyear=mY,current.resid=current.resid)
+                              )
+        }
+        else{
+            B0stat2 <- NULL
+        }
+
+        if(!is.null(Bempirical)){
+            Bempirical.stat2 <- lapply(1:length(fout.Bempirical),
+                                       function(x) target.func(fout.Bempirical[[x]],mY=mY,seed=seed,N=N,eyear=mY,current.resid=current.resid)
+                                       )
+        }
+        else{
+            Bempirical.stat2 <- NULL
+        }
+
+        refvalue2 <- bind_rows(MSY2[[1]],B02[[1]],
+                               purrr::map_dfr(PGYstat2,function(x) x[[1]]),
+                               purrr::map_dfr(B0stat2,function(x) x[[1]]),
+                               purrr::map_dfr(Bempirical.stat2,function(x) x[[1]])) %>% as_tibble() %>%
+            mutate(RP_name=refvalue$RP_name,AR=TRUE)
+
+        refvalue2 <-  refvalue2 %>%
+            mutate(SSB2SSB0=refvalue$ssb.mean/refvalue$ssb.mean[2])
+
+        sumvalue2 <- refvalue2 %>% select(RP_name,AR,ssb.mean,SSB2SSB0,biom.mean,U.mean,catch.mean,catch.CV,Fref2Fcurrent)
+        colnames(sumvalue2) <- c("RP_name","AR","SSB","SSB2SSB0","B","U","Catch","Catch.CV","Fref/Fcur")
+        sumvalue2 <- bind_cols(sumvalue2,refvalue2[,substr(colnames(refvalue2),1,1)=="F"])
+
+
+        ssb.ar.mean <- cbind(apply(MSY2[[2]]$vssb,1,mean),
+                             apply(B02[[2]]$vssb,1,mean),
+                             sapply(PGYstat2,function(x) apply(x[[2]]$vssb,1,mean)),
+                             sapply(B0stat2,function(x) apply(x[[2]]$vssb,1,mean)),
+                             sapply(Bempirical.stat2,function(x) apply(x[[2]]$vssb,1,mean)))
+        ssb.ar.mean <- sweep(matrix(as.numeric(ssb.ar.mean),nrow(ssb.ar.mean),ncol(ssb.ar.mean)),
+                             2,unlist(sumvalue$SSB),FUN="/")
+        colnames(ssb.ar.mean) <- rownames(sumvalue$SSB)
+    }
+    else{ # estAR.RP==FALSEのとき
+        ssb.ar.mean <- NULL
+        sumvalue2 <- NULL
+        refvalue2 <- NULL
+    }
+
     ### 結果のプロットなど
 
     trace$table <- subset(trace$table,fmulti>0)
@@ -2561,31 +2622,50 @@ est.MSY <- function(vpares,
         }
     }
 
+    ## kobe II matrix
+    #kobe2 <- array(0,dim=c(dim(trace$array)[[1]],dim(trace$array)[[2]],length(sumvalue$SSb)))
+    #for(i in 1:length(sumvalue$SSB)){
+    #tmp <- trace$array > sumvalue$SSB[i]
+    #kobe2[,,i] <- cbind(kobe2,apply(tmp,c(1,2),mean))
+    #  }
+    #dimnames(kobe2) <- list()
+
     input.list <- list(B0=fout0$input,
                        msy=fout.msy$input,
                        pgy=lapply(fout.PGY,function(x) x$input),
                        B0percent=lapply(fout.B0percent,function(x) x$input))
 
-    sumvalue$RP.definition <- NA
-    sumvalue$RP.definition[sumvalue$AR==FALSE&sumvalue$RP_name=="MSY"] <- "Btarget0"
-    sumvalue$RP.definition[sumvalue$AR==FALSE&sumvalue$RP_name=="PGY_0.6_lower"] <- "Blimit0"
-    sumvalue$RP.definition[sumvalue$AR==FALSE&sumvalue$RP_name=="PGY_0.1_lower"] <- "Bban0"
-    sumvalue <- sumvalue %>% select(1,ncol(sumvalue),2:(ncol(sumvalue)-1))
+    allsum <- bind_rows(sumvalue,sumvalue2)
+    allsum$RP.definition <- NA
+    allsum$RP.definition[allsum$AR==FALSE&allsum$RP_name=="MSY"] <- "Btarget0"
+#    allsum$RP.definition[allsum$AR==FALSE&allsum$RP_name=="PGY_0.9_lower"] <- "Blow0"
+    allsum$RP.definition[allsum$AR==FALSE&allsum$RP_name=="PGY_0.6_lower"] <- "Blimit0"
+    allsum$RP.definition[allsum$AR==FALSE&allsum$RP_name=="PGY_0.1_lower"] <- "Bban0"
+    allsum <- allsum %>% select(1,ncol(allsum),2:(ncol(allsum)-1))
 
-    Fvector <- select(sumvalue,num_range("F",0:40))
+    Fvector <- select(allsum,num_range("F",0:40))
 
-    sumvalue$perSPR <- NA
+    allsum$perSPR <- NA
     for(i in 1:nrow(Fvector)){
-        sumvalue$perSPR[i] <- calc_perspr(input.list[[1]],Fvector[i,])
+        allsum$perSPR[i] <- calc_perspr(input.list[[1]],Fvector[i,])
     }
 
-    output <- list(summary =sumvalue,
-                   summary_tb=sumvalue,
-                   all.stat=refvalue,
+    output <- list(summary =allsum,#as.data.frame(as.matrix(sumvalue)),
+                   summary_tb=allsum,
+#                   summary_tb=allsum,
+#                   all.stat=as.data.frame(as.matrix(refvalue)),
+                   all.stat=bind_rows(refvalue,refvalue2),
                    trace   =trace$table,
                    input.list=input.list,
                    Fvector =Fvector,
                    F.msy   =F.msy)
+
+    if(isTRUE(estAR.RP)){
+        output$summaryAR   <- as.data.frame(as.matrix(sumvalue2))
+        output$all.statAR  <- as.data.frame(as.matrix(refvalue2))
+        output$ssb.ar.mean <- ssb.ar.mean
+        }
+#    output$SPR.msy <- calc_MSY_spr(output)
 
     invisible(output)
 }
