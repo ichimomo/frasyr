@@ -18,7 +18,8 @@ Type objective_function<Type>::operator() ()
   DATA_ARRAY(faa_mat);  
   DATA_INTEGER(Pope);
   DATA_INTEGER(total_nyear);  
-  DATA_INTEGER(future_initial_year);  
+  DATA_INTEGER(future_initial_year);
+  DATA_INTEGER(start_F_year);    
   DATA_INTEGER(nsim);
   DATA_INTEGER(nage);
   DATA_INTEGER(recruit_age);    
@@ -47,28 +48,36 @@ Type objective_function<Type>::operator() ()
     for(int t=0; t<future_initial_year+1; t++){ // この時点で、future_initial_year前までにnaaがデータがあることを確認
       for(int iage=0; iage<nage; iage++) {
 	N_mat(iage,t,i) = naa_mat(iage,t,i);
-	F_mat(iage,t,i) = faa_mat(iage,t,i);
+	//	F_mat(iage,t,i) = faa_mat(iage,t,i);
 	spawner_mat(t,i) += N_mat(iage,t,i)*waa_mat(iage,t,i)*maa_mat(iage,t,i); 
       }
     }}
 
-  // Matrix of Fishing mortality
+  // Matrix of Fishing mortality (use VPA estimation)
   for(int i=0; i<nsim; i++) { //replication of simulation 
-     for(int t=future_initial_year+1; t<total_nyear; t++) {
-       for(int a=0; a<nage; a++) {
-	 F_mat(a,t,i) = exp(x)*faa_mat(a,t,i);
+    for(int t=0; t<start_F_year-1; t++) {
+       for(int iage=0; iage<nage; iage++) {
+	 F_mat(iage,t,i) = faa_mat(iage, t, i);
+       }}}  
+
+  // Matrix of Fishing mortality (use future value)
+  for(int i=0; i<nsim; i++) { //replication of simulation 
+     for(int t=start_F_year-1; t<total_nyear; t++) {
+       for(int iage=0; iage<nage; iage++) {
+	 F_mat(iage,t,i) = exp(x)*faa_mat(iage,t,i);
        }}}
   
   // Population dynamics
   for(int i=0; i<nsim; i++) {
     for(int t=future_initial_year-1; t<total_nyear; t++) {
+
+      // summing up spawners
+      for(int a=1; a<nage; a++) {
+	spawner_mat(t,i) += N_mat(a,t,i)*waa_mat(a,t,i)*maa_mat(a,t,i); 
+      }
+	
       // update recruitment except for t=initial year (t=0)
-      if(t>future_initial_year){      
-	// summing up spawners
-	for(int a=1; a<nage; a++) {
-	  spawner_mat(t,i) += N_mat(a,t,i)*waa_mat(a,t,i)*maa_mat(a,t,i); 
-	}
-    
+      if(t>future_initial_year-1){      
 	if(SR == 0) { //Hockey-stick
 	  vector<Type> rec_pred(2);
 	  rec_pred(0) = spawner_mat(t-recruit_age,i)*rec_par_a;
