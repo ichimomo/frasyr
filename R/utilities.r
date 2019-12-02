@@ -101,7 +101,7 @@ convert_vpa_tibble <- function(vpares){
   } else {
     total.catch <- colSums(vpares$input$dat$caa*vpares$input$dat$waa.catch,na.rm=T)
   }
-    U <- total.catch/colSums(vpares$baa)
+    U <- total.catch/colSums(vpares$baa, na.rm=T)
 
     SSB <- convert_vector(colSums(vpares$ssb,na.rm=T),"SSB") %>%
         dplyr::filter(value>0&!is.na(value))
@@ -240,7 +240,8 @@ plot_yield <- function(MSY_obj,refs_base,
 #    require(ggrepel)    
 
     trace <- get.trace(trace.msy) %>%
-        mutate("年齢"=age,ssb.mean=ssb.mean/biomass.unit,value=value/biomass.unit)
+        mutate("年齢"=age,ssb.mean=ssb.mean/biomass.unit,value=value/biomass.unit) %>%
+        dplyr::filter(!is.na(value))
 
     refs_base <- refs_base %>%
         mutate(RP.definition=ifelse(is.na(RP.definition),"",RP.definition)) %>%
@@ -339,13 +340,13 @@ plot_yield <- function(MSY_obj,refs_base,
     }
     
     if(!is.null(past)){
-      catch.past = unlist(colSums(past$input$dat$caa*past$input$dat$waa)/biomass.unit)
+      catch.past = unlist(colSums(past$input$dat$caa*past$input$dat$waa, na.rm=T)/biomass.unit)
       if (past$input$last.catch.zero && !is.null(future)) {
         catch.past[length(catch.past)] = apply(future[[1]]$vwcaa[,-1],1,mean)[1]/biomass.unit
       }
         tmpdata <- tibble(
             year      =as.numeric(colnames(past$ssb)),
-            ssb.past  =unlist(colSums(past$ssb))/biomass.unit,
+            ssb.past  =unlist(colSums(past$ssb, na.rm=T))/biomass.unit,
             catch.past=catch.past
         )
 
@@ -575,7 +576,7 @@ make_kobeII_table0 <- function(kobeII_data,
         mutate(stat_name="Pr(SSB>SSBban)")    
 
     # SSB>SSBmin(過去最低親魚量を上回る確率)
-    ssb.min <- min(unlist(colSums(res_vpa$ssb)))
+    ssb.min <- min(unlist(colSums(res_vpa$ssb, na.rm=T)))
     ssbmin.table <- kobeII.data %>%
         dplyr::filter(year%in%year.ssbmin,stat=="SSB") %>%
         group_by(HCR_name,beta,year) %>%
@@ -586,7 +587,7 @@ make_kobeII_table0 <- function(kobeII_data,
         mutate(stat_name="Pr(SSB>SSBmin)")
 
     # SSB>SSBmax(過去最低親魚量を上回る確率)
-    ssb.max <- max(unlist(colSums(res_vpa$ssb)))
+    ssb.max <- max(unlist(colSums(res_vpa$ssb, na.rm=T)))
     ssbmax.table <- kobeII.data %>%
         dplyr::filter(year%in%year.ssbmax,stat=="SSB") %>%
         group_by(HCR_name,beta,year) %>%
@@ -714,7 +715,7 @@ make_kobeII_table <- function(kobeII_data,
         mutate(stat_name="Pr(SSB>SSBban)")    
 
     # SSB>SSBmin(過去最低親魚量を上回る確率)
-    ssb.min <- min(unlist(colSums(res_vpa$ssb)))
+    ssb.min <- min(unlist(colSums(res_vpa$ssb, na.rm=T)))
     ssbmin.table <- kobeII.data %>%
         dplyr::filter(year%in%year.ssbmin,stat=="SSB") %>%
         group_by(HCR_name,beta,year) %>%
@@ -725,7 +726,7 @@ make_kobeII_table <- function(kobeII_data,
         mutate(stat_name="Pr(SSB>SSBmin)")
 
     # SSB>SSBmax(過去最低親魚量を上回る確率)
-    ssb.max <- max(unlist(colSums(res_vpa$ssb)))
+    ssb.max <- max(unlist(colSums(res_vpa$ssb, na.rm=T)))
     ssbmax.table <- kobeII.data %>%
         dplyr::filter(year%in%year.ssbmax,stat=="SSB") %>%
         group_by(HCR_name,beta,year) %>%
@@ -1481,14 +1482,14 @@ export_kobeII_tables <- function(kobeII_table,
 #' @export
 #' 
 
-theme_SH <- function(){
+theme_SH <- function(legend.position="none"){
     theme_bw(base_size=12) +
     theme(panel.grid = element_blank(),
           axis.text.x=element_text(size=11,color="black"),
           axis.text.y=element_text(size=11,color="black"),
           axis.line.x=element_line(size= 0.3528),
           axis.line.y=element_line(size= 0.3528),
-          legend.position="none")
+          legend.position=legend.position)
 }
 
 #' 会議用の図の出力関数（大きさ・サイズの指定済）：通常サイズ
@@ -1587,4 +1588,127 @@ SRregime_plot <- function (SRregime_result,xscale=1000,xlabel="SSB",yscale=1,yla
     
   }
   g1
-}}
+  }}
+
+#' 複数のVPAの結果を重ね書きする
+#'
+#' @param vpalist vpaの返り値をリストにしたもの; 単独でも可
+#' @param vpatibble tibble形式のVPA結果も可。この場合、convert_vpa_tibble関数の出力に準じる。複数のVPA結果がrbindされている場合は、列名"id"で区別する。
+#' @param what.plot 何の値をプロットするか. NULLの場合、全て（SSB, biomass, U, catch, Recruitment, fish_number, fishing_mortality, weight, maturity, catch_number）をプロットする。what.plot=c("SSB","Recruitment")とすると一部のみプロット。ここで指定された順番にプロットされる。
+#' @param legend.position 凡例の位置。"top" (上部), "bottom" (下部), "left" (左), "right" (右), "none" (なし)。
+#' @param vpaname 凡例につけるVPAのケースの名前。vpalistと同じ長さにしないとエラーとなる
+#' @param ncol 図の列数
+#' 
+#' @examples 
+#' \dontrun{
+#' data(res_vpa)
+#' res_vpa2 <- res_vpa
+#' res_vpa2$naa <- res_vpa2$naa*1.2
+#'
+#' plot_vpa(list(res_vpa, res_vpa2), vpaname=c("True","Dummy"))
+#' plot_vpa(list(res_vpa, res_vpa2), vpaname=c("True","Dummy"),
+#'                  what.plot=c("SSB","fish_number"))
+#' 
+#' }
+#' 
+#' @encoding UTF-8
+#' 
+#' @export
+#' 
+
+plot_vpa <- function(vpalist, vpatibble=NULL,
+                     what.plot=NULL, legend.position="top",
+                     vpaname=NULL, ncol=2){
+
+    if(!is.null(vpaname)){
+        if(length(vpaname)!=length(vpalist)) stop("Length of vpalist and vpaname is different")
+        names(vpalist) <- vpaname
+    }
+
+    if(is.null(vpatibble)){
+        if(isTRUE("naa" %in% names(vpalist))) vpalist <- list(vpalist)                
+        vpadata <- vpalist %>% purrr::map_dfr(convert_vpa_tibble ,.id="id") %>%
+            mutate(age=factor(age))
+    }
+    else{
+        vpadata <- vpatibble %>%
+            mutate(age=factor(age))
+        if("id" %in% !names(vpadata)) vpadata$id <- "vpa1"
+    }
+    if(!is.null(what.plot)) vpadata <- vpadata %>%  dplyr::filter(stat%in%what.plot)
+
+    biomass_factor <- vpadata %>% dplyr::filter(is.na(age)) %>%
+        select(stat) %>% unique() %>% unlist()
+    age_factor <- vpadata %>% dplyr::filter(!is.na(age)) %>%
+        select(stat) %>% unique() %>% unlist()
+
+    if(!is.null(what.plot)){
+        vpadata <- vpadata %>%
+            mutate(stat=factor(stat,levels=what.plot))
+    }
+    else{
+        vpadata <- vpadata %>%
+            mutate(stat=factor(stat,levels=c(biomass_factor, age_factor)))
+    }
+
+    g1 <- vpadata %>% ggplot()    
+    if(all(is.na(vpadata$age))){
+        g1 <- g1+ geom_line(aes(x=year, y=value,lty=id))
+    }
+    else{
+        g1 <- g1+ geom_line(aes(x=year, y=value,color=age,lty=id))
+    }
+
+    g1 <- g1 +
+        facet_wrap(~stat, scale="free_y", ncol=ncol) + ylim(0,NA) +
+        theme_SH(legend.position=legend.position) +
+        ylab("Year") + xlab("Value")
+    
+    g1
+}
+
+
+#' 複数のMSYの推定結果を重ね書きする
+#'
+#' @param MSYlist est.MSYの返り値をリストにしたもの; 単独でも可
+#' @param MSYname 凡例につけるMSYのケースの名前。MSYlistと同じ長さにしないとエラーとなる
+#' @examples 
+#' \dontrun{
+#' data(res_MSY)
+#' compare_MSY(list(res_MSY, res_MSY))
+#' }
+#' 
+#' @encoding UTF-8
+#' 
+#' @export
+#' 
+
+compare_MSY <- function(MSYlist, 
+                        legend.position="top",
+                        MSYname=NULL, ncol=2){
+
+    if(!is.null(MSYname)){
+        if(length(MSYname)!=length(MSYlist)) stop("Length of MSYlist and MSYname is different")
+        names(MSYlist) <- MSYname
+    }
+
+    if(isTRUE("summary" %in% names(MSYlist))) MSYlist <- list(MSYlist)
+
+    data_yield <- purrr::map_dfr(MSYlist, function(x) x$trace, .id="id")
+    data_summary <- purrr::map_dfr(MSYlist, function(x) x$summary, .id="id")   %>%
+        dplyr::filter(!is.na(RP.definition)) %>%
+        mutate(label=stringr::str_c(id, RP.definition, sep="-"))
+
+    g1 <- data_yield %>% ggplot()+
+        geom_line(aes(x=ssb.mean, y=catch.mean, color=id))+
+        theme_SH(legend.position=legend.position)
+
+    g2 <- data_summary %>% ggplot()+
+        geom_point(aes(x=SSB, y=Fref2Fcurrent, color=id))+
+        ggrepel::geom_label_repel(aes(x=SSB, y=Fref2Fcurrent, color=id, label=label))+
+        theme_SH(legend.position=legend.position)
+
+    gridExtra::grid.arrange(g1,g2)
+}
+  
+    

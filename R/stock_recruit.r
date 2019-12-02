@@ -595,7 +595,7 @@ fit.SRregime <- function(
   
   if (is.null(p0)) {
     if (use.fit.SR) {
-      fit_SR_res = fit.SR(SRdata, SR = SR, method = method, w = w)
+      fit_SR_res = fit.SR(SRdata, SR = SR, method = method, w = w, AR = 0)
       init <- c(rep(fit_SR_res$opt$par[1],max(a_key)),rep(fit_SR_res$opt$par[2],max(b_key)))
     } else {
       init_list <- sapply(1:nrow(ab_grid), function(j) {
