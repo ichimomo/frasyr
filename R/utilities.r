@@ -18,6 +18,16 @@ convert_df <- function(df,name){
         mutate(type="VPA",sim="s0",stat=name)    
 }
 
+#'
+#' @export
+convert_2d_future <- function(df, name, label="tmp"){
+    df %>%
+        as_tibble %>%
+        mutate(year=rownames(df)) %>%
+        gather(key=sim, value=value, -year, convert=TRUE) %>%
+        mutate(year=as.numeric(year), stat=name, label=label)    
+}
+
 #' future.vpaの結果オブジェクトをtibble形式に変換する関数
 #'
 #' @param fout future.vpaの結果のオブジェクト
@@ -27,55 +37,24 @@ convert_df <- function(df,name){
 #' 
 
 convert_future_table <- function(fout,label="tmp"){
-    ssb <- fout$vssb %>%
-        as_tibble %>%
-        mutate(year=rownames(fout$vssb)) %>%
-        gather(key=sim, value=value, -year, convert=TRUE) %>%
-        mutate(year=as.numeric(year),stat="SSB",label=label)
-
-    catch <- fout$vwcaa %>%
-        as_tibble %>%
-        mutate(year=rownames(fout$vssb)) %>%
-        gather(key=sim, value=value, -year, convert=TRUE) %>%
-        mutate(year=as.numeric(year),stat="catch",label=label)
-
-    biomass <- fout$vbiom %>%
-        as_tibble %>%
-        mutate(year=rownames(fout$vbiom)) %>%
-        gather(key=sim, value=value, -year, convert=TRUE) %>%
-        mutate(year=as.numeric(year),stat="biomass",label=label)
-
-    U_table <- fout$vwcaa/fout$vbiom %>% as_tibble
-    U_table <- U_table %>%
-        mutate(year=rownames(fout$vbiom)) %>%
-        gather(key=sim, value=value, -year, convert=TRUE) %>%
-        mutate(year=as.numeric(year),stat="U",label=label)
     
-    alpha_value <- fout$alpha %>%
-        as_tibble %>%
-        mutate(year=rownames(fout$alpha)) %>%
-        gather(key=sim, value=value, -year, convert=TRUE) %>%
-        mutate(year=as.numeric(year),stat="alpha",label=label)
-
+    U_table <- fout$vwcaa/fout$vbiom %>% as_tibble
     if(is.null(fout$Fsakugen)) fout$Fsakugen <- -(1-fout$faa[1,,]/fout$input$res0$Fc.at.age[1])
-    Fsakugen <- fout$Fsakugen %>%
-        as_tibble %>%
-        mutate(year=rownames(fout$Fsakugen)) %>%
-        gather(key=sim, value=value, -year, convert=TRUE) %>%
-        mutate(year=as.numeric(year),stat="Fsakugen",label=label)
-
+    if(is.null(fout$recruit))  fout$recruit <- fout$naa[1,,]    
+    
+    ssb      <- convert_2d_future(df=fout$vssb,   name="SSB",     label=label)
+    catch    <- convert_2d_future(df=fout$vwcaa,  name="catch",   label=label)    
+    biomass  <- convert_2d_future(df=fout$vbiom,  name="biomass", label=label)
+    U_table  <- convert_2d_future(df=U_table,     name="U",       label=label)
+    alpha    <- convert_2d_future(df=fout$alpha,  name="alpha",   label=label)        
+    Fsakugen <- convert_2d_future(df=fout$Fsakugen, name="Fsakugen",   label=label)
+    recruit  <- convert_2d_future(df=fout$recruit, name="Recruitment",   label=label)
+    
     Fsakugen_ratio <- Fsakugen %>%
         mutate(value=value+1)
     Fsakugen_ratio$stat <- "Fsakugen_ratio"
 
-    if(is.null(fout$recruit)) fout$recruit <- fout$naa[1,,]
-    Recruitment <- fout$recruit %>%                                    #追加
-        as_tibble %>%                                                   #追加
-        mutate(year=rownames(fout$recruit)) %>%                             #追加
-        gather(key=sim, value=value, -year, convert=TRUE) %>%           #追加
-        mutate(year=as.numeric(year),stat="Recruitment",label=label)
-    
-    bind_rows(ssb,catch,biomass,alpha_value,Fsakugen,Fsakugen_ratio,Recruitment, U_table)
+    bind_rows(ssb,catch,biomass,alpha,Fsakugen,Fsakugen_ratio,recruit, U_table)
 }
         
     

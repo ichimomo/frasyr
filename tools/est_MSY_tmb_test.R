@@ -62,15 +62,88 @@ R_time <- system.time(res_MSY <- est.MSY(res_vpa, # VPAの計算結果
 
 devtools::load_all()
 
-res1 <- tmb_future(res_vpa, future_initial_year_name=2017,nsim=1000,nyear=30)
+# 2017年をinitial valueにして、2018年からF, 加入について将来予測する場合
+res1 <- tmb_future(res_vpa,nsim=1000,nyear=30,
+                   SRmodel=SRmodel.base,                   
+                   future_initial_year_name=2017,
+                   start_F_year_name=2018,
+                   start_random_rec_year_name=2018)
 
-res2 <- tmb_future(res_vpa, future_initial_year_name=2000,nsim=1000,nyear=60,
-                   start_F_year_name=2001, start_random_rec_year_name=2017)
+# 同じシミュレーションをもう一回できるかどうか=>完全に再現できる
+res1_replicate <- tmb_future(res_vpa,skip_setting=TRUE,tmb_data=res1$tmb_data)
 
-res3 <- tmb_future(res_vpa, future_initial_year_name=1995,
-                   start_F_year_name=2017,nsim=1000,nyear=60,compile=FALSE,
-                   start_random_rec_year_name=2017)
+# 一部の設定を変えてできるか？
+tmb_data_dummy <- res1$tmb_data
+tmb_data_dummy$naa_mat[] <- res1$naa[,,1]
+tmb_data_dummy$rec_resid_mat[] <- res1$tmb_data$rec_resid_mat[,1]
+tmb_data_dummy$rec_resid_mat[35:nrow(tmb_data_dummy$rec_resid_mat),] <- rnorm(100)
+tmb_data_dummy$future_initial_year <- 35
+tmb_data_dummy$start_F_year <- 35
+res1_replicate2 <- tmb_future(res_vpa,skip_setting=TRUE,tmb_data=tmb_data_dummy)
+
+# 一部の設定を変えてできるか？
+a1 <- system.time(res1.n10 <- tmb_future(res_vpa,nsim=10000,nyear=30,
+                   SRmodel=SRmodel.base,                   
+                   future_initial_year_name=2017,
+                   start_F_year_name=2018,
+                   start_random_rec_year_name=2018,
+                   x_init=0,x_upper=0,x_lower=0))
+
+tmb_data_dummy <- res1.n10$tmb_data
+tmb_data_dummy$x <- 0
+tmb_data_dummy$what_return <- "stat"
+a2 <- system.time(res1_replicate3 <- do.call(est_MSY_R,tmb_data_dummy))
+
+# n=1でうまく動くかどうか
+res1_n1 <- tmb_future(res_vpa,nsim=1,nyear=30,
+                      SRmodel=SRmodel.base,
+                      future_initial_year_name=2017,
+                      start_F_year_name=2018,
+                      start_random_rec_year_name=2018)
+
+# 2000年をinitial valueにして過去のFに従って漁獲, 加入も将来予測=>同じになった
+res2 <- tmb_future(res_vpa,nsim=1000,nyear=47,
+                   SRmodel=SRmodel.base,                                      
+                   future_initial_year_name=2000,
+                   start_F_year_name=2018,
+                   start_random_rec_year_name=2018)
+
+# 2000年をinitial valueにして過去のFは変えるが、残差は固定。
+res3 <- tmb_future(res_vpa,nsim=1000,nyear=47,
+                   SRmodel=SRmodel.base,                                      
+                   future_initial_year_name=2000,
+                   start_F_year_name=2001,
+                   start_random_rec_year_name=2018)
+
+# 2000年をinitial valueにして、過去のFを変えずに、残差を変動。
+res4 <- tmb_future(res_vpa,nsim=1000,nyear=47,
+                   SRmodel=SRmodel.base,                                      
+                   future_initial_year_name=2000,
+                   start_F_year_name=2018,
+                   start_random_rec_year_name=2001)
+
+# res1と同じ設定だが、パラメータの範囲を固定する(current Fでの予測)
+res1_fix <- tmb_future(res_vpa,nsim=1000,nyear=30,
+                   SRmodel=SRmodel.base,                                          
+                   future_initial_year_name=2017,
+                   start_F_year_name=2018,
+                   start_random_rec_year_name=2018,
+                   x_lower=0, x_upper=0, x_init=0)
+
 
 plot(rownames(res1$ssb), rowMeans(res1$ssb),type="l")
-points(rowMeans(res2$ssb),type="l",col=2)
+points(rowMeans(res2$ssb),rowMeans(res1$ssb), type="l",col=2)
 points(rownames(res3$ssb), rowMeans(res3$ssb),type="l",col=3)
+points(rownames(res4$ssb), rowMeans(res4$ssb),type="l",col=4)
+points(rownames(res1_fix$ssb), rowMeans(res1_fix$ssb),type="l",col=5)
+
+all_ssb <- bind_rows(convert_2d_future(res1$ssb, "SSB", label="res1"),
+                     convert_2d_future(res2$ssb, "SSB", label="res2"),
+                     convert_2d_future(res3$ssb, "SSB", label="res3"),
+                     convert_2d_future(res4$ssb, "SSB", label="res4"))
+
+
+all_ssb %>% ggplot() +
+    geom_boxplot(aes(x=factor(year),y=value,fill=label)) +
+    facet_wrap(.~label)
+          

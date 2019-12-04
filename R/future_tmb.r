@@ -1,55 +1,76 @@
 #### --- age-structured
 tmb_future <- function(res_vpa,
+                       SRmodel,
                        nsim = 1000, # number of simulation
                        nyear = 50, # number of future year
+                       use_tmb = TRUE,
                        future_initial_year_name = 2017,
                        start_F_year_name = 2018,
                        start_random_rec_year_name = 2018,
-                       compile=FALSE) ## ここはvpa_nyear以下、任意
+                       x_init = 0,
+                       x_lower = -3,
+                       x_upper = 4,
+                       compile=FALSE,
+                       skip_setting=FALSE,
+                       tmb_data=NULL
+                       ) ## ここはvpa_nyear以下、任意
 {
 
-    # define year
-    nage  <- nrow(res_vpa$naa)
-    vpa_nyear <- ncol(res_vpa$naa)
-    future_initial_year <- which(colnames(res_vpa$naa)==future_initial_year_name)
-    total_nyear <- future_initial_year + nyear
-    allyear_name <- min(as.numeric(colnames(res_vpa$naa)))+c(0:(total_nyear-1))
-    allyear_label <- c(rep("VPA",future_initial_year),rep("future",nyear))
-    start_F_year <- which(allyear_name==start_F_year_name)
-    start_random_rec_year <- which(allyear_name==start_random_rec_year_name)    
-    age_name <- as.numeric(rownames(res_vpa$naa))
-    print(tibble(allyear_name, allyear_label))
-
+    # define age
+    nage        <- nrow(res_vpa$naa)
+    age_name    <- as.numeric(rownames(res_vpa$naa))
     recruit_age <- min(as.numeric(rownames(res_vpa$naa)))
 
-    waa_mat <- M_mat <- maa_mat <- naa_mat <- faa_mat <- array(0, dim=c(nage, total_nyear, nsim), dimnames=list(age=age_name, year=allyear_name, nsim=1:nsim)) 
-    resid_mat <- array(0, dim=c(total_nyear, nsim))
+   
+    if(!isTRUE(skip_setting)){
+        # define year
+        vpa_nyear           <- ncol(res_vpa$naa)
+        future_initial_year <- which(colnames(res_vpa$naa)==future_initial_year_name)
+        total_nyear         <- future_initial_year + nyear
+        allyear_name        <- min(as.numeric(colnames(res_vpa$naa)))+c(0:(total_nyear-1))
+        allyear_label       <- c(rep("VPA",future_initial_year),rep("future",nyear))
+        print(tibble(allyear_name, allyear_label))
 
-    # input VPA part parameter (VPA設定を使うか将来予測設定を使うか、２つのオプションあり。ここではデータがある年のものはそれを使うやりかた)
-    waa_mat[,1:vpa_nyear,] <- as.matrix(res_vpa$input$dat$waa)
-    maa_mat[,1:vpa_nyear,] <- as.matrix(res_vpa$input$dat$maa)
-    M_mat  [,1:vpa_nyear,] <- as.matrix(res_vpa$input$dat$M)
-    naa_mat[,1:vpa_nyear,] <- as.matrix(res_vpa$naa)
-    faa_mat[,1:vpa_nyear,] <- as.matrix(res_vpa$faa)
-    resid_mat[1:future_initial_year,] <- SRmodel.base$resid[1:future_initial_year]
+        # define empty array
+        waa_mat <- M_mat <- maa_mat <- naa_mat <- faa_mat <-
+            array(0, dim=c(nage, total_nyear, nsim),
+                  dimnames=list(age=age_name, year=allyear_name, nsim=1:nsim)) 
+        resid_mat <- array(0, dim=c(total_nyear, nsim))
 
-    # assume future parameter（いろいろオプションがあるが、最終年のものを使う）
-    random_rec_year_period <- (start_random_rec_year):total_nyear
-    waa_mat[,(vpa_nyear+1):total_nyear,] <- waa_mat[,vpa_nyear,]
-    maa_mat[,(vpa_nyear+1):total_nyear,] <- maa_mat[,vpa_nyear,]
-    M_mat  [,(vpa_nyear+1):total_nyear,] <- M_mat  [,vpa_nyear,]
-    faa_mat[,start_F_year:total_nyear,] <- faa_mat[,vpa_nyear,]
-    resid_mat[random_rec_year_period,] <-
-        rnorm(nsim*length(random_rec_year_period),
-              mean=-0.5 * (SRmodel.base$pars$sd)^2, sd=SRmodel.base$pars$sd)
+        # define biologial parameter
+        waa_mat[,1:vpa_nyear,] <- as.matrix(res_vpa$input$dat$waa)
+        maa_mat[,1:vpa_nyear,] <- as.matrix(res_vpa$input$dat$maa)
+        M_mat  [,1:vpa_nyear,] <- as.matrix(res_vpa$input$dat$M)
+        
+        # assume future parameter（いろいろオプションがあるが、最終年のものを使う）
+        waa_mat[,(vpa_nyear+1):total_nyear,] <- waa_mat[,vpa_nyear,]
+        maa_mat[,(vpa_nyear+1):total_nyear,] <- maa_mat[,vpa_nyear,]
+        M_mat  [,(vpa_nyear+1):total_nyear,] <- M_mat  [,vpa_nyear,]
 
-    tmb_data_msy <- list(naa_mat=naa_mat,
+        # define F scenario
+        start_F_year <- which(allyear_name==start_F_year_name)    
+        faa_mat[,1:vpa_nyear,] <- as.matrix(res_vpa$faa)    
+        faa_mat[,start_F_year:total_nyear,] <- faa_mat[,vpa_nyear,]
+
+        # define recruitment deviation
+        start_random_rec_year <- which(allyear_name==start_random_rec_year_name)        
+        random_rec_year_period <- (start_random_rec_year):total_nyear
+        resid_mat[1:future_initial_year,] <- SRmodel$resid[1:future_initial_year]    
+        resid_mat[random_rec_year_period,] <-
+            rnorm(nsim*length(random_rec_year_period),
+                  mean=-0.5 * (SRmodel$pars$sd)^2, sd=SRmodel$pars$sd)
+
+        # define naa
+        naa_mat[,1:vpa_nyear,] <- as.matrix(res_vpa$naa)
+
+        # set data and parameter
+        tmb_data <- list(naa_mat=naa_mat,
                          #                     deviance_init=0,
                          SR = 0,
-                         rec_par_a = SRmodel.base$pars$a,
-                         rec_par_b = SRmodel.base$pars$b,
+                         rec_par_a = SRmodel$pars$a,
+                         rec_par_b = SRmodel$pars$b,
                          rec_par_rho = 0,
-                         bias_corrected_mean = -0.5 * (SRmodel.base$pars$sd)^2, # bias correction factorを入れる
+                         bias_corrected_mean = -0.5 * (SRmodel$pars$sd)^2, # bias correction factorを入れる
                          rec_resid_mat = resid_mat,
                          waa_mat = waa_mat,
                          maa_mat = maa_mat,                     
@@ -64,45 +85,141 @@ tmb_future <- function(res_vpa,
                          recruit_age = recruit_age,                                          
                          obj_catch = 0, # 0: mean, 1:geomean
                          objective = 0, # 0: MSY, 1: PGY, 2: percentB0 or Bempirical
-                         objective_value = 12000,
-                         num_to_mass_scale = 1
+                         objective_value = 12000
                          )
-    x_init <- 0; x_lower <- -3; x_upper <- 4
+    }
 
-    # comple & load cpp file
-    use_rvpa_tmb(TmbFile = "est_MSY_tmb",
-                 CppDir = system.file("executable",package="frasyr"),
-                 RunDir = getwd(), overwrite=compile) 
+    if(isTRUE(use_tmb)){
+        # comple & load cpp file
+        use_rvpa_tmb(TmbFile = "est_MSY_tmb",
+                     CppDir = system.file("executable",package="frasyr"),
+                     RunDir = getwd(), overwrite=compile) 
 
-    objAD <- TMB::MakeADFun(tmb_data_msy, list(x=x_init), DLL="est_MSY_tmb")
+        objAD <- TMB::MakeADFun(tmb_data, list(x=x_init), DLL="est_MSY_tmb")
+        
+        msy_optim <- nlminb(objAD$par, objAD$fn, gr=objAD$gr,
+                            lower=list(x=x_lower), upper=list(x=x_upper))#,contol=nlminb_control)
 
-    msy_optim <- nlminb(objAD$par, objAD$fn, gr=objAD$gr,
-                        lower=list(x=x_lower), upper=list(x=x_upper))#,contol=nlminb_control)
+        multi_msy <- as.numeric(exp(msy_optim$par))
+        msy <- exp(-msy_optim$objective)
+        ad_report <- objAD$report()
 
-    multi_msy <- as.numeric(exp(msy_optim$par))
-    ssb_msy <- 
-    msy <- exp(-msy_optim$objective)
+        ssb <- ad_report$spawner_mat
+        caa <- ad_report$catch_mat
+        naa <- ad_report$N_mat
+        faa <- ad_report$F_mat
 
-    #    dimnames(N_mat) <- dimnames(F_mat) <- list()
-
-    ssb <- objAD$report()$spawner_mat
-    naa <- objAD$report()$N_mat
-    faa <- objAD$report()$F_mat
-
-    dimnames(ssb) <- list(year=allyear_name, nsim=1:nsim)
-    dimnames(naa) <- dimnames(faa) <-
-        list(age=age_name, year=allyear_name, nsim=1:nsim)
+        dimnames(ssb) <- list(year=allyear_name, nsim=1:nsim)
+        dimnames(naa) <- dimnames(faa) <- dimnames(caa) <- 
+            list(age=age_name, year=allyear_name, nsim=1:nsim)
+    }
+    else{
+        obj <- do.call(est_MSY_R, tmb_data)
+    }
     
     # F=0, sd=0の場合の平衡状態のnumbers at age= 1486.19  901.42  546.74  842.79 一致
     # F=0, sd=0の場合の平衡状態のssb= 491083.1 一致
     #objAD$report()$spawner_mat[100,1] 
     #objAD$report()$spawner_mat[100,1]
     # sd=0のときのFmultiplier　frasyr; F multiplier= 0.5268391 , tmb= 0.5268342 (6桁目でずれるがまあまあOK)
+    
     list(multi_msy=multi_msy,
          msy=msy,         
          ssb=ssb,
          naa=naa,
-         faa=faa)
+         faa=faa,
+         tmb_data=tmb_data)
 }
 
+est_MSY_R <- function(naa_mat,
+                      SR,
+                      rec_par_a,
+                      rec_par_b,
+                      rec_par_rho,
+                      bias_corrected_mean,
+                      rec_resid_mat,
+                      waa_mat,
+                      M_mat,
+                      maa_mat,                      
+                      faa_mat,
+                      Pope,
+                      total_nyear,
+                      future_initial_year,
+                      start_F_year,
+                      nsim,
+                      nage,
+                      recruit_age,
+                      obj_catch,
+                      objective,
+                      objective_value,
+                      x,
+                      what_return="obj"
+                      ){
+
+    F_mat <- N_mat <- catch_mat <- naa_mat
+    F_mat[] <- N_mat[] <- catch_mat <- 0
+    rec_deviance_mat <- array(0, dim=c(total_nyear, nsim))
+    
+    N_mat[,1:future_initial_year,] <- naa_mat[,1:future_initial_year,]
+    spawner_mat <- apply(N_mat * waa_mat * maa_mat, c(2,3) , sum)
+
+    F_mat[,1:(start_F_year-1),] <- faa_mat[,1:(start_F_year-1),]
+    F_mat[,start_F_year:total_nyear,] <- faa_mat[,start_F_year:total_nyear,] * exp(x)
+
+    for(i in 1:nsim){
+        for(t in future_initial_year:total_nyear){
+            spawner_mat[t,i] <- sum(N_mat[,t,i] * waa_mat[,t,i] * maa_mat[,t,i])
+
+            if(t>future_initial_year){
+                if(SR == 0) { # Hockey-stick
+                    rec_pred1 <- spawner_mat[t-recruit_age,i]*rec_par_a
+                    rec_pred2 <- rec_par_b*rec_par_a
+                    N_mat[1,t,i] <- min(rec_pred1, rec_pred2)
+                }
+                if(SR == 1) { # Beverton-Holt
+                    N_mat[1,t,i] <- rec_par_a*spawner_mat[t-recruit_age,i]/
+                        (1+rec_par_b*spawner_mat[t-recruit_age,i]);
+                }
+                if(SR == 2) { # Ricker
+                    N_mat[1,t,i] <- rec_par_a*spawner_mat[t-recruit_age,i]*exp(-rec_par_b*spawner_mat[t-recruit_age,i]);
+                }
+                N_mat[1,t,i] <- N_mat[1,t,i]*exp(rec_par_rho*rec_deviance_mat[t,i])*
+                    exp(rec_resid_mat[t,i]);
+            }
+
+            # forward calculation 
+            if(t<total_nyear){
+                for(iage in 1:(nage-1)) {
+                    N_mat[iage+1,t+1,i] <- N_mat[iage,t,i]*exp(-M_mat[iage,t,i]-F_mat[iage,t,i])
+                }
+                N_mat[nage,t+1,i] <- N_mat[nage,t+1,i] + N_mat[nage,t,i]*exp(-M_mat[nage,t,i]-F_mat[nage,t,i])
+            }
+        }
+    }
+
+    if(Pope){
+        catch_mat <- N_mat*(1-exp(-F_mat))*exp(-M_mat/2) * waa_mat
+    }
+    else{
+        catch_mat <- naa*(1-exp(-faa-M))*faa/(faa+M) * waa_mat
+    }
+
+    if(objective<2){
+        if(obj_catch==0) obj <- sum(catch_mat[,total_nyear,])/nsim
+        if(obj_catch==1) obj <- geomean(catch_mat[,total_nyear,])
+    }
+    else{
+        if(obj_catch==0) obj <- mean(spawner_mat[,total_nyear,])
+        if(obj_catch==1) obj <- geomean(spawner_mat[,total_nyear,])
+    }
+
+    if(objective==0) obj <- -log(obj)
+    else{
+        obj = (log(obj/objective_value))^2
+    }
+
+    if(what_return=="obj")  return(obj)
+    if(what_return=="stat")  return(list(naa=N_mat, faa=F_mat,
+                                         ssb=spawner_mat))    
+}
 

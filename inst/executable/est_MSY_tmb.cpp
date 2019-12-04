@@ -72,6 +72,7 @@ Type objective_function<Type>::operator() ()
     for(int t=future_initial_year-1; t<total_nyear; t++) {
 
       // summing up spawners
+      spawner_mat(t,i) = 0; 
       for(int a=1; a<nage; a++) {
 	spawner_mat(t,i) += N_mat(a,t,i)*waa_mat(a,t,i)*maa_mat(a,t,i); 
       }
