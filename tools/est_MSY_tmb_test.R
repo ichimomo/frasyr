@@ -98,11 +98,12 @@ a2 <- system.time(res1_replicate3 <- do.call(est_MSY_R,tmb_data_dummy))
 # オプションuse_tmbがうまく動くか
 res1_R <- tmb_future(res_vpa,nsim=1000,nyear=30,
                      SRmodel=SRmodel.base,
-                     use_tmb=FALSE,
+                     optim_method="both",
                      future_initial_year_name=2017,
                      start_F_year_name=2018,
                      start_random_rec_year_name=2018,
-                     x_init=0,x_upper=0,x_lower=0) 
+                     x_init=0,x_upper=3,x_lower=-5) 
+round(res1_R$tmb$multi_msy,4)==round(res1_R$R$multi_msy,4)
 
 # n=1でうまく動くかどうか
 res1_n1 <- tmb_future(res_vpa,nsim=1,nyear=30,

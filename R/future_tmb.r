@@ -3,7 +3,7 @@ tmb_future <- function(res_vpa,
                        SRmodel,
                        nsim = 1000, # number of simulation
                        nyear = 50, # number of future year
-                       use_tmb = TRUE,
+                       optim_method = "tmb", # or "R" or "both"
                        future_initial_year_name = 2017,
                        start_F_year_name = 2018,
                        start_random_rec_year_name = 2018,
@@ -12,7 +12,8 @@ tmb_future <- function(res_vpa,
                        x_upper = 4,
                        compile=FALSE,
                        skip_setting=FALSE,
-                       tmb_data=NULL
+                       tmb_data=NULL,
+                       seed_number=1
                        ) ## ここはvpa_nyear以下、任意
 {
 
@@ -20,7 +21,7 @@ tmb_future <- function(res_vpa,
     nage        <- nrow(res_vpa$naa)
     age_name    <- as.numeric(rownames(res_vpa$naa))
     recruit_age <- min(as.numeric(rownames(res_vpa$naa)))
-
+    
    
     if(!isTRUE(skip_setting)){
         # define year
@@ -53,7 +54,8 @@ tmb_future <- function(res_vpa,
         faa_mat[,start_F_year:total_nyear,] <- faa_mat[,vpa_nyear,]
 
         # define recruitment deviation
-        start_random_rec_year  <- which(allyear_name==start_random_rec_year_name)        
+        set.seed(seed_number)
+        start_random_rec_year  <- which(allyear_name==start_random_rec_year_name)
         random_rec_year_period <- (start_random_rec_year):total_nyear
         resid_mat[1:future_initial_year,] <- SRmodel$resid[1:future_initial_year]    
         resid_mat[random_rec_year_period,] <-
@@ -89,7 +91,7 @@ tmb_future <- function(res_vpa,
                          )
     }
 
-    if(isTRUE(use_tmb)){
+    if(optim_method=="tmb" | optim_method=="both"){
         
         # comple & load cpp file
         use_rvpa_tmb(TmbFile = "est_MSY_tmb",
@@ -113,26 +115,31 @@ tmb_future <- function(res_vpa,
         dimnames(ssb) <- list(year=allyear_name, nsim=1:nsim)
         dimnames(naa) <- dimnames(faa) <- dimnames(caa) <- 
             list(age=age_name, year=allyear_name, nsim=1:nsim)
+        
+        res_future_tmb <- tibble::lst(multi_msy,msy,ssb,naa,faa,tmb_data)
     }
-    else{
-        R_obj_fun <- function(x, tmb_data){
+
+    if(optim_method=="R" | optim_method=="both"){
+        R_obj_fun <- function(x, tmb_data, what_return="obj"){
             tmb_data$x <- x
-            tmb_data$what_return <- "obj"
+            tmb_data$what_return <- what_return
             obj <- do.call(est_MSY_R, tmb_data)
             return(obj)
         }
         msy_optim <- nlminb(start=0, objective=R_obj_fun, tmb_data=tmb_data,
                             lower=list(x=x_lower), upper=list(x=x_upper))
-        
+
+#        msy_optim <- optimize(f=R_obj_fun, tmb_data=tmb_data,
+        #                            lower=x_lower, upper=x_upper)
+        multi_msy <- exp(msy_optim$par)
+        res_future_R <- R_obj_fun(msy_optim$par, tmb_data=tmb_data,
+                                  what_return="stat")
+        res_future_R$multi_msy <- multi_msy
     }
-    
-    # F=0, sd=0の場合の平衡状態のnumbers at age= 1486.19  901.42  546.74  842.79 一致
-    # F=0, sd=0の場合の平衡状態のssb= 491083.1 一致
-    #objAD$report()$spawner_mat[100,1] 
-    #objAD$report()$spawner_mat[100,1]
-    # sd=0のときのFmultiplier　frasyr; F multiplier= 0.5268391 , tmb= 0.5268342 (6桁目でずれるがまあまあOK)
-    
-    tibble::lst(multi_msy,msy,ssb,naa,faa,tmb_data)
+
+    if(optim_method=="tmb") return(res_future_tmb)
+    if(optim_method=="R")   return(res_future_R)
+    if(optim_method=="both") return(list(tmb=res_future_tmb, R=res_future_R))
 }
 
 est_MSY_R <- function(naa_mat,
@@ -209,7 +216,7 @@ est_MSY_R <- function(naa_mat,
     }
 
     if(objective<2){
-        if(obj_catch==0) obj <- sum(catch_mat[,total_nyear,])/nsim
+        if(obj_catch==0) obj <- mean(catch_mat[,total_nyear,])
         if(obj_catch==1) obj <- geomean(catch_mat[,total_nyear,])
     }
     else{
