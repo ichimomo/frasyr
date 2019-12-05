@@ -1647,14 +1647,76 @@ plot_vpa <- function(vpalist, vpatibble=NULL,
 }
 
 
-#' 複数のMSYの推定結果を重ね書きする
+#' F一定の場合で平衡状態になったときの統計量をx軸、y軸にプロットして比較する
+#'
+#'
+#' 例えば、横軸を平均親魚量(ssb.mean)、縦軸を平均漁獲量(catch.mean)にすると漁獲量曲線が得られる。どの統計量がプロットできるかはest.MSYの返り値res_MSYの$trace以下の名前を参照(names(res_MSY$trace))。
 #'
 #' @param MSYlist est.MSYの返り値をリストにしたもの; 単独でも可
 #' @param MSYname 凡例につけるMSYのケースの名前。MSYlistと同じ長さにしないとエラーとなる
+#' @param x_axis_name x軸になにをとるか？("ssb.mean": 親魚の平均資源量, "fmulti": current Fに対する乗数、など)
+#'  @param y_axis_name y軸になにをとるか？("ssb.mean": 親魚の平均資源量, "catch.mean": 平均漁獲量、など）
+#' 
+#' @examples 
+#' \dontrun{
+#' data(res_MSY_HSL1)
+#' data(res_MSY_HSL2)
+#' MSY_list <- tibble::lst(res_MSY_HSL1, res_MSY_HSL2)
+#' # 縦軸を漁獲量、横軸をFの大きさ
+#' g1 <- compare_eq_stat(MSY_list,x_axis_name="fmulti",y_axis_name="catch.mean")
+#' # 縦軸を親魚量にする
+#' g2 <- compare_eq_stat(MSY_list,x_axis_name="fmulti",y_axis_name="ssb.mean")
+#' # 縦軸を加入量
+#' g3 <- compare_eq_stat(MSY_list,x_axis_name="fmulti",y_axis_name="rec.mean")
+#' gridExtra::grid.arrange(g1,g2,g3,ncol=1)
+#' 
+#' }
+#' 
+#' @encoding UTF-8
+#' 
+#' @export
+#' 
+
+compare_eq_stat <- function(MSYlist,
+                           x_axis_name="ssb.mean",
+                           y_axis_name="catch.mean", 
+                           legend.position="top",
+                           is_MSY_line=TRUE,
+                           MSYname=NULL){
+
+    if(!is.null(MSYname)){
+        if(length(MSYname)!=length(MSYlist)) stop("Length of MSYlist and MSYname is different")
+        names(MSYlist) <- MSYname
+    }
+    if(isTRUE("summary" %in% names(MSYlist))) MSYlist <- list(MSYlist)
+
+    data_yield <- purrr::map_dfr(MSYlist, function(x){
+        x$trace %>% mutate(catch.order=rank(-catch.mean))
+        }
+       ,.id="id")
+
+    g1 <- data_yield %>% ggplot()+
+        geom_line(aes(x=get(x_axis_name), y=get(y_axis_name[1]), color=id))+
+        theme_SH(legend.position=legend.position)+
+        xlab(x_axis_name)+ylab(str_c(y_axis_name))+
+        geom_vline(data=dplyr::filter(data_yield,catch.order==1),
+                   aes(xintercept=get(x_axis_name),color=id),lty=2)
+
+    return(g1)
+}
+
+
+#' 複数の管理基準値の推定結果を重ね書きする
+#'
+#' @param MSYlist est.MSYの返り値をリストにしたもの; 単独でも可
+#' @param MSYname 凡例につけるMSYのケースの名前。MSYlistと同じ長さにしないとエラーとなる
+#' @param 凡例の位置
+#' 
 #' @examples 
 #' \dontrun{
 #' data(res_MSY)
-#' compare_MSY(list(res_MSY, res_MSY))
+#' MSY_list <- tibble::lst(res_MSY_HSL1, res_MSY_HSL2)
+#' g1 <- compare_MSY(list(res_MSY, res_MSY))
 #' }
 #' 
 #' @encoding UTF-8
@@ -1664,7 +1726,7 @@ plot_vpa <- function(vpalist, vpatibble=NULL,
 
 compare_MSY <- function(MSYlist, 
                         legend.position="top",
-                        MSYname=NULL, ncol=2){
+                        MSYname=NULL){
 
     if(!is.null(MSYname)){
         if(length(MSYname)!=length(MSYlist)) stop("Length of MSYlist and MSYname is different")
@@ -1673,21 +1735,16 @@ compare_MSY <- function(MSYlist,
 
     if(isTRUE("summary" %in% names(MSYlist))) MSYlist <- list(MSYlist)
 
-    data_yield <- purrr::map_dfr(MSYlist, function(x) x$trace, .id="id")
     data_summary <- purrr::map_dfr(MSYlist, function(x) x$summary, .id="id")   %>%
         dplyr::filter(!is.na(RP.definition)) %>%
         mutate(label=stringr::str_c(id, RP.definition, sep="-"))
 
-    g1 <- data_yield %>% ggplot()+
-        geom_line(aes(x=ssb.mean, y=catch.mean, color=id))+
-        theme_SH(legend.position=legend.position)
-
-    g2 <- data_summary %>% ggplot()+
+    g1 <- data_summary %>% ggplot()+
         geom_point(aes(x=SSB, y=Fref2Fcurrent, color=id))+
         ggrepel::geom_label_repel(aes(x=SSB, y=Fref2Fcurrent, color=id, label=label))+
         theme_SH(legend.position=legend.position)
 
-    gridExtra::grid.arrange(g1,g2)
+    return(g1)
 }
-  
+
     
