@@ -53,7 +53,7 @@ tmb_future <- function(res_vpa,
         faa_mat[,start_F_year:total_nyear,] <- faa_mat[,vpa_nyear,]
 
         # define recruitment deviation
-        start_random_rec_year <- which(allyear_name==start_random_rec_year_name)        
+        start_random_rec_year  <- which(allyear_name==start_random_rec_year_name)        
         random_rec_year_period <- (start_random_rec_year):total_nyear
         resid_mat[1:future_initial_year,] <- SRmodel$resid[1:future_initial_year]    
         resid_mat[random_rec_year_period,] <-
@@ -90,6 +90,7 @@ tmb_future <- function(res_vpa,
     }
 
     if(isTRUE(use_tmb)){
+        
         # comple & load cpp file
         use_rvpa_tmb(TmbFile = "est_MSY_tmb",
                      CppDir = system.file("executable",package="frasyr"),
@@ -114,7 +115,15 @@ tmb_future <- function(res_vpa,
             list(age=age_name, year=allyear_name, nsim=1:nsim)
     }
     else{
-        obj <- do.call(est_MSY_R, tmb_data)
+        R_obj_fun <- function(x, tmb_data){
+            tmb_data$x <- x
+            tmb_data$what_return <- "obj"
+            obj <- do.call(est_MSY_R, tmb_data)
+            return(obj)
+        }
+        msy_optim <- nlminb(start=0, objective=R_obj_fun, tmb_data=tmb_data,
+                            lower=list(x=x_lower), upper=list(x=x_upper))
+        
     }
     
     # F=0, sd=0の場合の平衡状態のnumbers at age= 1486.19  901.42  546.74  842.79 一致
@@ -123,12 +132,7 @@ tmb_future <- function(res_vpa,
     #objAD$report()$spawner_mat[100,1]
     # sd=0のときのFmultiplier　frasyr; F multiplier= 0.5268391 , tmb= 0.5268342 (6桁目でずれるがまあまあOK)
     
-    list(multi_msy=multi_msy,
-         msy=msy,         
-         ssb=ssb,
-         naa=naa,
-         faa=faa,
-         tmb_data=tmb_data)
+    tibble::lst(multi_msy,msy,ssb,naa,faa,tmb_data)
 }
 
 est_MSY_R <- function(naa_mat,
@@ -215,11 +219,10 @@ est_MSY_R <- function(naa_mat,
 
     if(objective==0) obj <- -log(obj)
     else{
-        obj = (log(obj/objective_value))^2
+        obj <- (log(obj/objective_value))^2
     }
 
     if(what_return=="obj")  return(obj)
-    if(what_return=="stat")  return(list(naa=N_mat, faa=F_mat,
-                                         ssb=spawner_mat))    
+    if(what_return=="stat")  return(list(naa=N_mat, faa=F_mat,ssb=spawner_mat))    
 }
 

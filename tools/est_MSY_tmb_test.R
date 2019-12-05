@@ -23,11 +23,12 @@ for(i in 1:nrow(SRmodel.list)){
 
 ## 将来予測の実施
 SRmodel.base <- SR.list[[1]] # AIC最小モデルを今後使っていく
-res_future_Fcurrent <- future.vpa(res_vpa,
+# 5万回、100年で43秒
+a3 <- system.time(res_future_Fcurrent <- future.vpa(res_vpa,
                       multi=1,
                       nyear=100, # 将来予測の年数
                       start.year=2017, # 将来予測の開始年
-                      N=100, # 確率的計算の繰り返し回数=>実際の計算では1000~5000回くらいやってください
+                      N=50000, # 確率的計算の繰り返し回数=>実際の計算では1000~5000回くらいやってください
                       ABC.year=2016, # ABCを計算する年
                       waa.year=2015:2017, # 生物パラメータの参照年
                       maa.year=2015:2017,
@@ -40,7 +41,7 @@ res_future_Fcurrent <- future.vpa(res_vpa,
                       rec.arg=list(a=SRmodel.base$pars$a,b=SRmodel.base$pars$b,
                                    rho=SRmodel.base$pars$rho, # ここではrho=0なので指定しなくてもOK
                                    sd=SRmodel.base$pars$sd,
-                                   resid=SRmodel.base$resid))
+                                   resid=SRmodel.base$resid)))
 
 ## MSY管理基準値の計算
 R_time <- system.time(res_MSY <- est.MSY(res_vpa, # VPAの計算結果
@@ -81,18 +82,27 @@ tmb_data_dummy$future_initial_year <- 35
 tmb_data_dummy$start_F_year <- 35
 res1_replicate2 <- tmb_future(res_vpa,skip_setting=TRUE,tmb_data=tmb_data_dummy)
 
-# 一部の設定を変えてできるか？
-a1 <- system.time(res1.n10 <- tmb_future(res_vpa,nsim=10000,nyear=30,
+# R関数と同じ結果が出るか？
+a1 <- system.time(res1.n10 <- tmb_future(res_vpa,nsim=50000,nyear=100,
                    SRmodel=SRmodel.base,                   
                    future_initial_year_name=2017,
                    start_F_year_name=2018,
                    start_random_rec_year_name=2018,
-                   x_init=0,x_upper=0,x_lower=0))
+                   x_init=0,x_upper=0,x_lower=0)) # 5万回30年で73秒
 
-tmb_data_dummy <- res1.n10$tmb_data
+tmb_data_dummy <- res1.n10$tmb_data # 5万回30年で61秒 => future.vpaのほうが全然速い。ベクトル化か
 tmb_data_dummy$x <- 0
 tmb_data_dummy$what_return <- "stat"
 a2 <- system.time(res1_replicate3 <- do.call(est_MSY_R,tmb_data_dummy))
+
+# オプションuse_tmbがうまく動くか
+res1_R <- tmb_future(res_vpa,nsim=1000,nyear=30,
+                     SRmodel=SRmodel.base,
+                     use_tmb=FALSE,
+                     future_initial_year_name=2017,
+                     start_F_year_name=2018,
+                     start_random_rec_year_name=2018,
+                     x_init=0,x_upper=0,x_lower=0) 
 
 # n=1でうまく動くかどうか
 res1_n1 <- tmb_future(res_vpa,nsim=1,nyear=30,
@@ -108,11 +118,11 @@ res2 <- tmb_future(res_vpa,nsim=1000,nyear=47,
                    start_F_year_name=2018,
                    start_random_rec_year_name=2018)
 
-# 2000年をinitial valueにして過去のFは変えるが、残差は固定。
+# 2000年をinitial valueにして過去のFは変えるが、残差は固定=>うまくいっていない。
 res3 <- tmb_future(res_vpa,nsim=1000,nyear=47,
                    SRmodel=SRmodel.base,                                      
-                   future_initial_year_name=2000,
-                   start_F_year_name=2001,
+                   future_initial_year_name=1989,
+                   start_F_year_name=1989,
                    start_random_rec_year_name=2018)
 
 # 2000年をinitial valueにして、過去のFを変えずに、残差を変動。
