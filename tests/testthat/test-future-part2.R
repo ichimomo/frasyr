@@ -39,14 +39,10 @@ test_that("oututput value check",{
   SRdata0usingPeriodFrom1990To2000 <- get.SRdata(res_pma,years=1990:2000)
 
   #上記引数での計算結果を読み込み
-  load(system.file("extdata","SRdata_pma.rda",package = "frasyr"))
-
   SRdata0_pma_check <- read.csv(system.file("extdata","future_SRdata0_pma_check.csv",package="frasyr"),row.names=1)
   SRdata0usingPeriodFrom1990To2000_pma_check <- read.csv(system.file("extdata","future_SRdata0usingPeriodFrom1990To2000_pma_check.csv",package="frasyr"),row.names=1)
 
   #結果の数値を照合
-  expect_equal(SRdata_pma_check, SRdata_pma)
-
   expect_equal(SRdata0$year, SRdata0_pma_check$year)
   #expect_equal(SRdata0$SSB, SRdata0_pma_check$SSB)
   #expect_equal(SRdata0$R, SRdata0_pma_check$R)
@@ -57,395 +53,94 @@ test_that("oututput value check",{
 
 })
 
-context("future fitSR")
+context("future future.vpa")
 
-test_that("oututput value check",{
-  load(system.file("extdata","SRdata_pma.rda",package = "frasyr"))
+test_that("oututput value check (iteration for future sim is fixed as 2) ",{#デフォルト設定では将来予測でHS.recAR関数の乱数生成により一致しない。
 
-  pmaHS_L1_AR0_check <- fit.SR(SRdata_pma,SR="HS",method="L1",AR=0,hessian=FALSE)
-  pmaHS_L1_AR1_check <- fit.SR(SRdata_pma,SR="HS",method="L1",AR=1,hessian=FALSE)
-  pmaHS_L2_AR0_check <- fit.SR(SRdata_pma,SR="HS",method="L2",AR=0,hessian=FALSE)
-  pmaHS_L2_AR1_check <- fit.SR(SRdata_pma,SR="HS",method="L2",AR=1,hessian=FALSE)
-  pmaBH_L1_AR0_check <- fit.SR(SRdata_pma,SR="BH",method="L1",AR=0,hessian=FALSE)
-  pmaBH_L1_AR1_check <- fit.SR(SRdata_pma,SR="BH",method="L1",AR=1,hessian=FALSE)
-  pmaBH_L2_AR0_check <- fit.SR(SRdata_pma,SR="BH",method="L2",AR=0,hessian=FALSE)
-  pmaBH_L2_AR1_check <- fit.SR(SRdata_pma,SR="BH",method="L2",AR=1,hessian=FALSE)
-  pmaRI_L1_AR0_check <- fit.SR(SRdata_pma,SR="RI",method="L1",AR=0,hessian=FALSE)
-  pmaRI_L1_AR1_check <- fit.SR(SRdata_pma,SR="RI",method="L1",AR=1,hessian=FALSE)
-  pmaRI_L2_AR0_check <- fit.SR(SRdata_pma,SR="RI",method="L2",AR=0,hessian=FALSE)
-  pmaRI_L2_AR1_check <- fit.SR(SRdata_pma,SR="RI",method="L2",AR=1,hessian=FALSE)
-
-  #上記引数での計算結果を読み込み
-  load(system.file("extdata","SRpma_HS_L1_AR0.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_HS_L1_AR1.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_HS_L2_AR0.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_HS_L2_AR1.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_BH_L1_AR0.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_BH_L1_AR1.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_BH_L2_AR0.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_BH_L2_AR1.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_RI_L1_AR0.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_RI_L1_AR1.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_RI_L2_AR0.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_RI_L2_AR1.rda",package = "frasyr"))
-
-
-  #結果の数値を照合
-  #HS.L1.AR0
-  expect_equal(pmaHS_L1_AR0_check, SRpma_HS_L1_AR0)
-  #HS.L1.AR1
-  expect_equal(pmaHS_L1_AR1_check, SRpma_HS_L1_AR1)
-  #HS.L2.AR0
-  expect_equal(pmaHS_L2_AR0_check, SRpma_HS_L2_AR0)
-  #HS.L2.AR1
-  expect_equal(pmaHS_L2_AR1_check, SRpma_HS_L2_AR1)
-
-  #BH.L1.AR0
-  expect_equal(pmaBH_L1_AR0_check, SRpma_BH_L1_AR0)
-  #BH.L1.AR1
-  expect_equal(pmaBH_L1_AR1_check, SRpma_BH_L1_AR1)
-  #BH.L2.AR0
-  expect_equal(pmaBH_L2_AR0_check, SRpma_BH_L2_AR0)
-  #BH.L2.AR1
-  expect_equal(pmaBH_L2_AR1_check, SRpma_BH_L2_AR1)
-
-  #RI.L1.AR0
-  expect_equal(pmaRI_L1_AR0_check, SRpma_RI_L1_AR0)
-  #RI.L1.AR1
-  expect_equal(pmaRI_L1_AR1_check, SRpma_RI_L1_AR1)
-  #RI.L2.AR0
-  expect_equal(pmaRI_L2_AR0_check, SRpma_RI_L2_AR0)
-  #RI.L2.AR1
-  expect_equal(pmaRI_L2_AR1_check, SRpma_RI_L2_AR1)
-
-})
-
-context("future future.vpa HS")
-
-test_that("oututput value check (iteration for future sim is fixed as 2) ",{#このテストはfutrue.rにおいてHS.recAR関数内１行目にset.seed(0)を設定した結果を参照する。デフォルト設定では一致しない。
   load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_HS_L1_AR0.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_HS_L1_AR1.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_HS_L2_AR0.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_HS_L2_AR1.rda",package = "frasyr"))
 
-  fres_pma_HS_L1_AR0_check <- future.vpa(res0=res_pma,
-                        multi=1, # res.pma$Fc.at.ageに掛ける乗数
-                        nyear=50, # 将来予測の年数
-                        start.year=2012, # 将来予測の開始年
-                        N=2, # 確率的計算の繰り返し回数
-                        ABC.year=2013, # ABCを計算する年
-                        waa.year=2009:2011, # 生物パラメータの参照年
-                        maa.year=2009:2011,
-                        M.year=2009:2011,
-                        is.plot=TRUE, # 結果をプロットするかどうか
-                        seed=1,
-                        silent=TRUE,
-                        recfunc=HS.recAR, # 再生産関係の関数
-                        # recfuncに対する引数
-                        rec.arg=list(a=SRpma_HS_L1_AR0$pars$a,b=SRpma_HS_L1_AR0$pars$b,
-                                     rho=SRpma_HS_L1_AR0$pars$rho, # ここではrho=0なので指定しなくてもOK
-                                     sd=SRpma_HS_L1_AR0$pars$sd,resid=SRpma_HS_L1_AR0$resid)
-                        )
+for(i in 1:3){ # SR function type
+  if(i==1) SRtype = "HS"
+  if(i==2) SRtype = "BH"
+  if(i==3) SRtype = "RI"
+  for(j in 1:2){ # Estimation method
+    if(j==1) Est="L1"
+    if(j==2) Est="L2"
+    for(k in 1:2){ # AR option
+      if(k==1) ARopt="AR0"
+      if(k==2) ARopt="AR1"
+      if(k==3) ARopt="AR1_outAR_F"
 
-  fres_pma_HS_L2_AR0_check <- future.vpa(res0=res_pma,
-                                         multi=1, # res.pma$Fc.at.ageに掛ける乗数
-                                         nyear=50, # 将来予測の年数
-                                         start.year=2012, # 将来予測の開始年
-                                         N=2, # 確率的計算の繰り返し回数
-                                         ABC.year=2013, # ABCを計算する年
-                                         waa.year=2009:2011, # 生物パラメータの参照年
-                                         maa.year=2009:2011,
-                                         M.year=2009:2011,
-                                         is.plot=TRUE, # 結果をプロットするかどうか
-                                         seed=1,
-                                         silent=TRUE,
-                                         recfunc=HS.recAR, # 再生産関係の関数
-                                         # recfuncに対する引数
-                                         rec.arg=list(a=SRpma_HS_L2_AR0$pars$a,b=SRpma_HS_L2_AR0$pars$b,
-                                                      rho=SRpma_HS_L2_AR0$pars$rho, # ここではrho=0なので指定しなくてもOK
-                                                      sd=SRpma_HS_L2_AR0$pars$sd,resid=SRpma_HS_L2_AR0$resid)
-  )
+      infile.name <- sprintf("SRpma_%s_%s_%s.rda",SRtype,Est,ARopt)
+      resfitSR <- load(system.file("extdata",infile.name,package = "frasyr"))
+      fittedSR <- eval(parse(text=resfitSR)
+      )
 
-  fres_pma_HS_L1_AR1_check <- future.vpa(res0=res_pma,
-                                         multi=1, # res.pma$Fc.at.ageに掛ける乗数
-                                         nyear=50, # 将来予測の年数
-                                         start.year=2012, # 将来予測の開始年
-                                         N=2, # 確率的計算の繰り返し回数
-                                         ABC.year=2013, # ABCを計算する年
-                                         waa.year=2009:2011, # 生物パラメータの参照年
-                                         maa.year=2009:2011,
-                                         M.year=2009:2011,
-                                         is.plot=TRUE, # 結果をプロットするかどうか
-                                         seed=1,
-                                         silent=TRUE,
-                                         recfunc=HS.recAR, # 再生産関係の関数
-                                         # recfuncに対する引数
-                                         rec.arg=list(a=SRpma_HS_L1_AR1$pars$a,b=SRpma_HS_L1_AR1$pars$b,
-                                                      rho=SRpma_HS_L1_AR1$pars$rho, # ここではrho=0なので指定しなくてもOK
-                                                      sd=SRpma_HS_L1_AR1$pars$sd,resid=SRpma_HS_L1_AR1$resid)
-  )
+      fres_pma_recarg_list <-list(a=fittedSR$pars$a,b=fittedSR$pars$b,
+                                  rho=fittedSR$pars$rho, # ここではrho=0なので指定しなくてもOK
+                                  sd=fittedSR$pars$sd,resid=fittedSR$resid)
 
-  fres_pma_HS_L2_AR1_check <- future.vpa(res0=res_pma,
-                                         multi=1, # res.pma$Fc.at.ageに掛ける乗数
-                                         nyear=50, # 将来予測の年数
-                                         start.year=2012, # 将来予測の開始年
-                                         N=2, # 確率的計算の繰り返し回数
-                                         ABC.year=2013, # ABCを計算する年
-                                         waa.year=2009:2011, # 生物パラメータの参照年
-                                         maa.year=2009:2011,
-                                         M.year=2009:2011,
-                                         is.plot=TRUE, # 結果をプロットするかどうか
-                                         seed=1,
-                                         silent=TRUE,
-                                         recfunc=HS.recAR, # 再生産関係の関数
-                                         # recfuncに対する引数
-                                         rec.arg=list(a=SRpma_HS_L2_AR1$pars$a,b=SRpma_HS_L2_AR1$pars$b,
-                                                      rho=SRpma_HS_L2_AR1$pars$rho, # ここではrho=0なので指定しなくてもOK
-                                                      sd=SRpma_HS_L2_AR1$pars$sd,resid=SRpma_HS_L2_AR1$resid)
-  )
+      fres_pma_check <-future.vpa(res0=res_pma,
+                                  multi=1, # res.pma$Fc.at.ageに掛ける乗数
+                                  nyear=50, # 将来予測の年数
+                                  start.year=2012, # 将来予測の開始年
+                                  N=2, # 確率的計算の繰り返し回数
+                                  ABC.year=2013, # ABCを計算する年
+                                  waa.year=2009:2011, # 生物パラメータの参照年
+                                  maa.year=2009:2011,
+                                  M.year=2009:2011,
+                                  is.plot=TRUE, # 結果をプロットするかどうか
+                                  seed=1,
+                                  silent=TRUE,
+                                  recfunc=HS.recAR, # 再生産関係の関数
+                                  # recfuncに対する引数
+                                  rec.arg=fres_pma_recarg_list)
 
-  #上記引数での計算結果を読み込み
-  # HS L1
-  load(system.file("extdata","fres_pma_HS_L1_AR0.rda",package = "frasyr"))
-  # HS L2
-  load(system.file("extdata","fres_pma_HS_L2_AR0.rda",package = "frasyr"))
+      checkfile.name <- sprintf("fres_pma_%s_%s_%s.rda",SRtype,Est,ARopt)
+      resfuturevpa <- load(system.file("extdata",checkfile.name,package = "frasyr"))
+      fres_pma <- eval(parse(text=resfuturevpa))
 
-  # HS.AR L1
-  load(system.file("extdata","fres_pma_HS_L1_AR1.rda",package = "frasyr"))
-  # HS.AR L2
-  load(system.file("extdata","fres_pma_HS_L2_AR1.rda",package = "frasyr"))
-
-  #結果の数値を照合
-  # HS L1
-  #expect_equal(fres_pma_HS_L1_AR0, fres_pma_HS_L1_AR0_check)
-  # HS L2
-  #expect_equal(fres_pma_HS_L2_AR0, fres_pma_HS_L2_AR0_check)
-
-  # HS.AR L1
-  #expect_equal(fres_pma_HS_L1_AR1, fres_pma_HS_L1_AR1_check)
-  # HS.AR L2
-  #expect_equal(fres_pma_HS_L2_AR1, fres_pma_HS_L2_AR1_check)
+      expect_equal(fres_pma$faa, fres_pma_check$faa)
+      #expect_equal(fres_pma$naa, fres_pma_check$naa)
+      #expect_equal(fres_pma$biom, fres_pma_check$biom)
+      #expect_equal(fres_pma$baa, fres_pma_check$baa)
+      #expect_equal(fres_pma$ssb, fres_pma_check$ssb)
+      #expect_equal(fres_pma$wcaa, fres_pma_check$wcaa)
+      #expect_equal(fres_pma$caa, fres_pma_check$caa)
+      expect_equal(fres_pma$M, fres_pma_check$M)
+      #expect_equal(fres_pma$rps, fres_pma_check$rps)
+      #expect_equal(fres_pma$recruit, fres_pma_check$recurit)
+      expect_equal(fres_pma$maa, fres_pma_check$maa)
+      #expect_equal(fres_pma$vbiom, fres_pma_check$vbiom)
+      #expect_equal(fres_pma$eaa, fres_pma_check$eaa)
+      expect_equal(fres_pma$alpha, fres_pma_check$alpha)
+      #expect_equal(fres_pma$thisyear.ssb, fres_pma_check$thisyear.ssb)
+      expect_equal(fres_pma$waa, fres_pma_check$waa)
+      expect_equal(fres_pma$waa.catch, fres_pma_check$waa.catch)
+      expect_equal(fres_pma$currentF, fres_pma_check$currentF)
+      expect_equal(fres_pma$futureF, fres_pma_check$futureF)
+      #expect_equal(fres_pma$vssb, fres_pma_check$vssb)
+      #expect_equal(fres_pma$vwcaa, fres_pma_check$vwcaa)
+      #expect_equal(fres_pma$naa_all, fres_pma_check$naa_all)
+      expect_equal(fres_pma$years, fres_pma_check$years)
+      expect_equal(fres_pma$fyear.year, fres_pma_check$fyear.year)
+      #expect_equal(fres_pma$ABC, fres_pma_check$ABC)
+      #expect_equal(fres_pma$recfunc, fres_pma_check$recfunc)
+      #expect_equal(fres_pma$rec.arg, fres_pma_check$rec.arg)
+      expect_equal(fres_pma$waa.year, fres_pma_check$waa.year)
+      expect_equal(fres_pma$maa.year, fres_pma_check$maa.year)
+      expect_equal(fres_pma$multi, fres_pma_check$multi)
+      expect_equal(fres_pma$multi.year, fres_pma_check$multi.year)
+      expect_equal(fres_pma$Frec, fres_pma_check$Frec)
+      expect_equal(fres_pma$rec.new, fres_pma_check$rec.new)
+      expect_equal(fres_pma$pre.catch, fres_pma_check$pre.catch)
+      #expect_equal(fres_pma$input, fres_pma_check$input)
+    }
+  }
+}
 
 })
 
-context("future future.vpa BH")
-
-test_that("oututput value check (iteration for future sim is fixed as 2) ",{
-  load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_BH_L1_AR0.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_BH_L1_AR1.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_BH_L2_AR0.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_BH_L2_AR1.rda",package = "frasyr"))
-
-  fres_pma_BH_L1_AR0_check <- future.vpa(res0=res_pma,
-                                         multi=1, # res.pma$Fc.at.ageに掛ける乗数
-                                         nyear=50, # 将来予測の年数
-                                         start.year=2012, # 将来予測の開始年
-                                         N=2, # 確率的計算の繰り返し回数
-                                         ABC.year=2013, # ABCを計算する年
-                                         waa.year=2009:2011, # 生物パラメータの参照年
-                                         maa.year=2009:2011,
-                                         M.year=2009:2011,
-                                         is.plot=TRUE, # 結果をプロットするかどうか
-                                         seed=1,
-                                         silent=TRUE,
-                                         recfunc=BH.recAR, # 再生産関係の関数
-                                         # recfuncに対する引数
-                                         rec.arg=list(a=SRpma_BH_L1_AR0$pars$a,b=SRpma_BH_L1_AR0$pars$b,
-                                                      rho=SRpma_BH_L1_AR0$pars$rho, # ここではrho=0なので指定しなくてもOK
-                                                      sd=SRpma_BH_L1_AR0$pars$sd,resid=SRpma_BH_L1_AR0$resid)
-  )
-
-  fres_pma_BH_L2_AR0_check <- future.vpa(res0=res_pma,
-                                         multi=1, # res.pma$Fc.at.ageに掛ける乗数
-                                         nyear=50, # 将来予測の年数
-                                         start.year=2012, # 将来予測の開始年
-                                         N=2, # 確率的計算の繰り返し回数
-                                         ABC.year=2013, # ABCを計算する年
-                                         waa.year=2009:2011, # 生物パラメータの参照年
-                                         maa.year=2009:2011,
-                                         M.year=2009:2011,
-                                         is.plot=TRUE, # 結果をプロットするかどうか
-                                         seed=1,
-                                         silent=TRUE,
-                                         recfunc=BH.recAR, # 再生産関係の関数
-                                         # recfuncに対する引数
-                                         rec.arg=list(a=SRpma_BH_L2_AR0$pars$a,b=SRpma_BH_L2_AR0$pars$b,
-                                                      rho=SRpma_BH_L2_AR0$pars$rho, # ここではrho=0なので指定しなくてもOK
-                                                      sd=SRpma_BH_L2_AR0$pars$sd,resid=SRpma_BH_L2_AR0$resid)
-  )
-
-  fres_pma_BH_L1_AR1_check <- future.vpa(res0=res_pma,
-                                         multi=1, # res.pma$Fc.at.ageに掛ける乗数
-                                         nyear=50, # 将来予測の年数
-                                         start.year=2012, # 将来予測の開始年
-                                         N=2, # 確率的計算の繰り返し回数
-                                         ABC.year=2013, # ABCを計算する年
-                                         waa.year=2009:2011, # 生物パラメータの参照年
-                                         maa.year=2009:2011,
-                                         M.year=2009:2011,
-                                         is.plot=TRUE, # 結果をプロットするかどうか
-                                         seed=1,
-                                         silent=TRUE,
-                                         recfunc=BH.recAR, # 再生産関係の関数
-                                         # recfuncに対する引数
-                                         rec.arg=list(a=SRpma_BH_L1_AR1$pars$a,b=SRpma_BH_L1_AR1$pars$b,
-                                                      rho=SRpma_BH_L1_AR1$pars$rho, # ここではrho=0なので指定しなくてもOK
-                                                      sd=SRpma_BH_L1_AR1$pars$sd,resid=SRpma_BH_L1_AR1$resid)
-  )
-
-  fres_pma_BH_L2_AR1_check <- future.vpa(res0=res_pma,
-                                         multi=1, # res.pma$Fc.at.ageに掛ける乗数
-                                         nyear=50, # 将来予測の年数
-                                         start.year=2012, # 将来予測の開始年
-                                         N=2, # 確率的計算の繰り返し回数
-                                         ABC.year=2013, # ABCを計算する年
-                                         waa.year=2009:2011, # 生物パラメータの参照年
-                                         maa.year=2009:2011,
-                                         M.year=2009:2011,
-                                         is.plot=TRUE, # 結果をプロットするかどうか
-                                         seed=1,
-                                         silent=TRUE,
-                                         recfunc=BH.recAR, # 再生産関係の関数
-                                         # recfuncに対する引数
-                                         rec.arg=list(a=SRpma_BH_L2_AR1$pars$a,b=SRpma_BH_L2_AR1$pars$b,
-                                                      rho=SRpma_BH_L2_AR1$pars$rho, # ここではrho=0なので指定しなくてもOK
-                                                      sd=SRpma_BH_L2_AR1$pars$sd,resid=SRpma_BH_L2_AR1$resid)
-  )
-
-  #上記引数での計算結果を読み込み
-  # BH L1
-  load(system.file("extdata","fres_pma_BH_L1_AR0.rda",package = "frasyr"))
-  # BH L2
-  load(system.file("extdata","fres_pma_BH_L2_AR0.rda",package = "frasyr"))
-
-  # BH AR L1
-  load(system.file("extdata","fres_pma_BH_L1_AR1.rda",package = "frasyr"))
-  # BH AR L2
-  load(system.file("extdata","fres_pma_BH_L2_AR1.rda",package = "frasyr"))
-
-  #結果の数値を照合
-  # BH L1
-  #expect_equal(fres_pma_BH_L1_AR0, fres_pma_BH_L1_AR0_check)
-  # BH L2
-  #expect_equal(fres_pma_BH_L2_AR0, fres_pma_BH_L2_AR0_check)
-
-  # BH AR L1
-  #expect_equal(fres_pma_BH_L1_AR1, fres_pma_BH_L1_AR1_check)
-  # BH L2
-  #expect_equal(fres_pma_BH_L2_AR1, fres_pma_BH_L2_AR1_check)
-
-})
-
-context("future future.vpa RI")
-
-test_that("oututput value check (iteration for future sim is fixed as 2) ",{
-  load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_RI_L1_AR0.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_RI_L1_AR1.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_RI_L2_AR0.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_RI_L2_AR1.rda",package = "frasyr"))
-
-  fres_pma_RI_L1_AR0_check <- future.vpa(res0=res_pma,
-                                         multi=1, # res.pma$Fc.at.ageに掛ける乗数
-                                         nyear=50, # 将来予測の年数
-                                         start.year=2012, # 将来予測の開始年
-                                         N=2, # 確率的計算の繰り返し回数
-                                         ABC.year=2013, # ABCを計算する年
-                                         waa.year=2009:2011, # 生物パラメータの参照年
-                                         maa.year=2009:2011,
-                                         M.year=2009:2011,
-                                         is.plot=TRUE, # 結果をプロットするかどうか
-                                         seed=1,
-                                         silent=TRUE,
-                                         recfunc=RI.recAR, # 再生産関係の関数
-                                         # recfuncに対する引数
-                                         rec.arg=list(a=SRpma_RI_L1_AR0$pars$a,b=SRpma_RI_L1_AR0$pars$b,
-                                                      rho=SRpma_RI_L1_AR0$pars$rho, # ここではrho=0なので指定しなくてもOK
-                                                      sd=SRpma_RI_L1_AR0$pars$sd,resid=SRpma_RI_L1_AR0$resid)
-  )
-
-  fres_pma_RI_L2_AR0_check <- future.vpa(res0=res_pma,
-                                         multi=1, # res.pma$Fc.at.ageに掛ける乗数
-                                         nyear=50, # 将来予測の年数
-                                         start.year=2012, # 将来予測の開始年
-                                         N=2, # 確率的計算の繰り返し回数
-                                         ABC.year=2013, # ABCを計算する年
-                                         waa.year=2009:2011, # 生物パラメータの参照年
-                                         maa.year=2009:2011,
-                                         M.year=2009:2011,
-                                         is.plot=TRUE, # 結果をプロットするかどうか
-                                         seed=1,
-                                         silent=TRUE,
-                                         recfunc=RI.recAR, # 再生産関係の関数
-                                         # recfuncに対する引数
-                                         rec.arg=list(a=SRpma_RI_L2_AR0$pars$a,b=SRpma_RI_L2_AR0$pars$b,
-                                                      rho=SRpma_RI_L2_AR0$pars$rho, # ここではrho=0なので指定しなくてもOK
-                                                      sd=SRpma_RI_L2_AR0$pars$sd,resid=SRpma_RI_L2_AR0$resid)
-  )
-
-  fres_pma_RI_L1_AR1_check <- future.vpa(res0=res_pma,
-                                         multi=1, # res.pma$Fc.at.ageに掛ける乗数
-                                         nyear=50, # 将来予測の年数
-                                         start.year=2012, # 将来予測の開始年
-                                         N=2, # 確率的計算の繰り返し回数
-                                         ABC.year=2013, # ABCを計算する年
-                                         waa.year=2009:2011, # 生物パラメータの参照年
-                                         maa.year=2009:2011,
-                                         M.year=2009:2011,
-                                         is.plot=TRUE, # 結果をプロットするかどうか
-                                         seed=1,
-                                         silent=TRUE,
-                                         recfunc=RI.recAR, # 再生産関係の関数
-                                         # recfuncに対する引数
-                                         rec.arg=list(a=SRpma_RI_L1_AR1$pars$a,b=SRpma_RI_L1_AR1$pars$b,
-                                                      rho=SRpma_RI_L1_AR1$pars$rho, # ここではrho=0なので指定しなくてもOK
-                                                      sd=SRpma_RI_L1_AR1$pars$sd,resid=SRpma_RI_L1_AR1$resid)
-  )
-
-  fres_pma_RI_L2_AR1_check <- future.vpa(res0=res_pma,
-                                         multi=1, # res.pma$Fc.at.ageに掛ける乗数
-                                         nyear=50, # 将来予測の年数
-                                         start.year=2012, # 将来予測の開始年
-                                         N=2, # 確率的計算の繰り返し回数
-                                         ABC.year=2013, # ABCを計算する年
-                                         waa.year=2009:2011, # 生物パラメータの参照年
-                                         maa.year=2009:2011,
-                                         M.year=2009:2011,
-                                         is.plot=TRUE, # 結果をプロットするかどうか
-                                         seed=1,
-                                         silent=TRUE,
-                                         recfunc=RI.recAR, # 再生産関係の関数
-                                         # recfuncに対する引数
-                                         rec.arg=list(a=SRpma_RI_L2_AR1$pars$a,b=SRpma_RI_L2_AR1$pars$b,
-                                                      rho=SRpma_RI_L2_AR1$pars$rho, # ここではrho=0なので指定しなくてもOK
-                                                      sd=SRpma_RI_L2_AR1$pars$sd,resid=SRpma_RI_L2_AR1$resid)
-  )
-
-  #上記引数での計算結果を読み込み
-  # RI L1
-  load(system.file("extdata","fres_pma_RI_L1_AR0.rda",package = "frasyr"))
-  # RI L2
-  load(system.file("extdata","fres_pma_RI_L2_AR0.rda",package = "frasyr"))
-
-  # RI AR L1
-  load(system.file("extdata","fres_pma_RI_L1_AR1.rda",package = "frasyr"))
-  # RI AR L2
-  load(system.file("extdata","fres_pma_RI_L2_AR1.rda",package = "frasyr"))
-
-  #結果の数値を照合
-  # RI L1
-  #expect_equal(fres_pma_RI_L1_AR0, fres_pma_RI_L1_AR0_check)
-  # RI L2
-  #expect_equal(fres_pma_RI_L2_AR0, fres_pma_RI_L2_AR0_check)
-
-  # RI AR L1
-  #expect_equal(fres_pma_RI_L1_AR1, fres_pma_RI_L1_AR1_check)
-  # RI L2
-  #expect_equal(fres_pma_RI_L2_AR1, fres_pma_RI_L2_AR1_check)
-
-})
 
 context("future future.vpa (option of futureF)")
 
