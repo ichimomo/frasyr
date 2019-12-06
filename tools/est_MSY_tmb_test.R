@@ -1,4 +1,5 @@
-library(frasyr)
+#library(frasyr)
+devtools::load_all()
 data(res_vpa)
 SRdata <- get.SRdata(res_vpa)
 
@@ -63,12 +64,13 @@ R_time <- system.time(res_MSY <- est.MSY(res_vpa, # VPAの計算結果
 
 devtools::load_all()
 
+
 # 2017年をinitial valueにして、2018年からF, 加入について将来予測する場合
-res1 <- tmb_future(res_vpa,nsim=1000,nyear=30,
+res1 <- tmb_future(res_vpa,nsim=1000_nsim,nyear=30,
                    SRmodel=SRmodel.base,                   
                    future_initial_year_name=2017,
                    start_F_year_name=2018,
-                   start_random_rec_year_name=2018)
+                   start_random_rec_year_name=2018, compile=TRUE)
 
 # 同じシミュレーションをもう一回できるかどうか=>完全に再現できる
 res1_replicate <- tmb_future(res_vpa,skip_setting=TRUE,tmb_data=res1$tmb_data)
@@ -158,3 +160,6 @@ all_ssb %>% ggplot() +
     geom_boxplot(aes(x=factor(year),y=value,fill=label)) +
     facet_wrap(.~label)
           
+
+#--------------
+

@@ -5,13 +5,13 @@ Type objective_function<Type>::operator() ()
 {
   DATA_ARRAY(naa_mat);
   //  DATA_SCALAR(deviance_init);
-  DATA_INTEGER(SR); // 0: HS, 1: BH, 2: RI
-  DATA_SCALAR(rec_par_a);
-  DATA_SCALAR(rec_par_b);
-  // DATA_SCALAR(rec_par_sd);
-  DATA_SCALAR(rec_par_rho);
+  //  DATA_INTEGER(SR); // 0: HS, 1: BH, 2: RI
+  DATA_ARRAY(SR_mat); // 1: HS, 2: BH, 3: RI
+  DATA_ARRAY(rec_par_a_mat);
+  DATA_ARRAY(rec_par_b_mat); 
+  DATA_ARRAY(rec_par_rho_mat);
   DATA_SCALAR(bias_corrected_mean);
-  DATA_ARRAY(rec_resid_mat);
+  DATA_ARRAY(rec_resid_mat); 
   DATA_ARRAY(waa_mat);
   DATA_ARRAY(maa_mat);  
   DATA_ARRAY(M_mat);
@@ -35,13 +35,13 @@ Type objective_function<Type>::operator() ()
   // Type bias_corrected_mean = -Type(0.5)*pow(rec_par_sd,Type(2.0))/(Type(1.0)-pow(rec_par_rho, Type(2.0)));
   array<Type> F_mat(nage,total_nyear,nsim);
   array<Type> N_mat(nage,total_nyear,nsim);
-  array<Type> rec_deviance_mat(total_nyear,nsim);
+  //  array<Type> rec_deviance_mat(total_nyear,nsim);
   array<Type> spawner_mat(total_nyear,nsim);
   array<Type> catch_mat(nage,total_nyear,nsim);
   F_mat.setZero();  
   N_mat.setZero();
   spawner_mat.setZero();
-  rec_deviance_mat.setZero();  
+  //  rec_deviance_mat.setZero();  
   catch_mat.setZero();      
   
   for(int i=0; i<nsim; i++) { // input initial number
@@ -49,7 +49,8 @@ Type objective_function<Type>::operator() ()
       for(int iage=0; iage<nage; iage++) {
 	N_mat(iage,t,i) = naa_mat(iage,t,i);
 	//	F_mat(iage,t,i) = faa_mat(iage,t,i);
-	spawner_mat(t,i) += N_mat(iage,t,i)*waa_mat(iage,t,i)*maa_mat(iage,t,i); 
+	spawner_mat(t,i) += N_mat(iage,t,i)*waa_mat(iage,t,i)*maa_mat(iage,t,i);
+	//	rec_devinace_mat(t,i) = rec_resid_mat(t,i)
       }
     }}
 
@@ -79,21 +80,20 @@ Type objective_function<Type>::operator() ()
 	
       // update recruitment except for t=initial year (t=0)
       if(t>future_initial_year-1){      
-	if(SR == 0) { //Hockey-stick
+	if(SR_mat(t,i) == 1) { //Hockey-stick
 	  vector<Type> rec_pred(2);
-	  rec_pred(0) = spawner_mat(t-recruit_age,i)*rec_par_a;
-	  rec_pred(1) = rec_par_b*rec_par_a;
+	  rec_pred(0) = spawner_mat(t-recruit_age,i)*rec_par_a_mat(t,i);
+	  rec_pred(1) = rec_par_b_mat(t,i)*rec_par_a_mat(t,i);
 	  N_mat(0,t,i) = min(rec_pred);
 	}
-	if(SR == 1) { //Beverton-Holt
-	  N_mat(0,t,i) = rec_par_a*spawner_mat(t-recruit_age,i)/(1+rec_par_b*spawner_mat(t-recruit_age,i));
+	if(SR_mat(t,i) == 2) { //Beverton-Holt
+	  N_mat(0,t,i) = rec_par_a_mat(t,i)*spawner_mat(t-recruit_age,i)/(1+rec_par_b_mat(t,i)*spawner_mat(t-recruit_age,i));
 	}
-	if(SR == 2) { //Ricker
-	  N_mat(0,t,i) = rec_par_a*spawner_mat(t-recruit_age,i)*exp(-rec_par_b*spawner_mat(t-recruit_age,i));
+	if(SR_mat(t,i) == 3) { //Ricker
+	  N_mat(0,t,i) = rec_par_a_mat(t,i)*spawner_mat(t-recruit_age,i)*exp(-rec_par_b_mat(t,i)*spawner_mat(t-recruit_age,i));
 	}
-	N_mat(0,t,i) = N_mat(0,t,i)*exp(rec_par_rho*rec_deviance_mat(t,i))*
-	  exp(rec_resid_mat(t,i));
-	//      rec_deviance_mat(t,i) = log(N_mat(t,i)/N_mat(t,i))-bias_corrected_mean;
+	N_mat(0,t,i) = N_mat(0,t,i)*exp(rec_par_rho_mat(t-1,i)*rec_resid_mat(t-1,i)+
+					rec_resid_mat(t,i)+bias_corrected_mean);
       }
 
       // forward calculation 
