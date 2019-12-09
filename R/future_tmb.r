@@ -201,7 +201,7 @@ future_tmb <- function(tmb_data,
         dimnames(naa) <- dimnames(faa) <- dimnames(caa) <- 
             dimnames(tmb_data$naa_mat)
         
-        res_future_tmb <- tibble::lst(multi_msy,msy,ssb,naa,faa,tmb_data)
+        res_future_tmb <- tibble::lst(multi_msy,msy,ssb,naa,faa,caa,tmb_data)
     }
 
     if(optim_method=="R" | optim_method=="both"){
