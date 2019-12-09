@@ -5,7 +5,6 @@ Type objective_function<Type>::operator() ()
 {
   DATA_ARRAY(naa_mat);
   //  DATA_SCALAR(deviance_init);
-  //  DATA_INTEGER(SR); // 0: HS, 1: BH, 2: RI
   DATA_ARRAY(SR_mat); // 1: HS, 2: BH, 3: RI
   DATA_ARRAY(rec_par_a_mat);
   DATA_ARRAY(rec_par_b_mat); 
@@ -92,8 +91,9 @@ Type objective_function<Type>::operator() ()
 	if(SR_mat(t,i) == 3) { //Ricker
 	  N_mat(0,t,i) = rec_par_a_mat(t,i)*spawner_mat(t-recruit_age,i)*exp(-rec_par_b_mat(t,i)*spawner_mat(t-recruit_age,i));
 	}
-	N_mat(0,t,i) = N_mat(0,t,i)*exp(rec_par_rho_mat(t-1,i)*rec_resid_mat(t-1,i)+
-					rec_resid_mat(t,i)+bias_corrected_mean);
+	//	N_mat(0,t,i) = N_mat(0,t,i)*exp(rec_par_rho_mat(t-1,i)*rec_resid_mat(t-1,i)+
+	//					rec_resid_mat(t,i)+bias_corrected_mean);
+	N_mat(0,t,i) = N_mat(0,t,i)*exp(rec_resid_mat(t,i));	
       }
 
       // forward calculation 

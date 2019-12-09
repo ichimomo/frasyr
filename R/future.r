@@ -1226,7 +1226,7 @@ HS.recAR2 <- function(ssb,vpares,#deterministic=FALSE,
   # rec0 <- ifelse(ssb>rec.arg$b,rec.arg$a*rec.arg$b,rec.arg$a*ssb)     
   rec <- rec0*exp(rec.arg$rho*rec.arg$resid) # 自己相関込みの予測値
   
-  rec <- rec*exp(rnorm(length(ssb),-0.5*rec.arg$sd2^2,rec.arg$sd))
+    rec <- rec*exp(rnorm(length(ssb),-0.5*rec.arg$sd2^2,rec.arg$sd))
   new.resid <- log(rec/rec0)+0.5*rec.arg$sd2^2
   return(list(rec=rec,rec.resample=new.resid))
 }

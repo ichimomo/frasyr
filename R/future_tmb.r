@@ -1,3 +1,7 @@
+SRF_HS <- function(x,a,b) ifelse(x>b,b*a,x*a)
+SRF_BH <- function(x,a,b) a*x/(1+b*x)
+SRF_RI <- function(x,a,b) a*x*exp(-b*x)
+
 make_array <- function(d3_mat, pars, pars.year, year_replace_future){
     years <- dimnames(d3_mat)[[2]]
     if(is.null(pars)){
@@ -11,7 +15,12 @@ make_array <- function(d3_mat, pars, pars.year, year_replace_future){
     d3_mat
 }
 
-set_SR_mat_lognormal <- function(res_vpa, res_SR, SR_mat, seed_number, start_random_rec_year_name, future_initial_year){
+set_SR_mat_lognormal <- function(res_vpa,
+                                 res_SR,
+                                 SR_mat,
+                                 seed_number,
+                                 start_random_rec_year_name,
+                                 future_initial_year){
     
     allyear_name <- dimnames(SR_mat)[[1]]
     start_random_rec_year  <- which(allyear_name==start_random_rec_year_name)
@@ -19,23 +28,42 @@ set_SR_mat_lognormal <- function(res_vpa, res_SR, SR_mat, seed_number, start_ran
     
   
     # define SR function
-    if(res_SR$input$SR=="HS") SR_mat[random_rec_year_period,,"SR_type"] <- 1
-    if(res_SR$input$SR=="BH") SR_mat[random_rec_year_period,,"SR_type"] <- 2
-    if(res_SR$input$SR=="RI") SR_mat[random_rec_year_period,,"SR_type"] <- 3
+    if(res_SR$input$SR=="HS"){
+        SR_mat[random_rec_year_period,,"SR_type"] <- 1
+        SRF <- SRF_HS
+    }
+    if(res_SR$input$SR=="BH"){
+        SR_mat[random_rec_year_period,,"SR_type"] <- 2
+        SRF <- SRF_BH        
+    }
+    if(res_SR$input$SR=="RI"){
+        SR_mat[random_rec_year_period,,"SR_type"] <- 3
+        SRF <- SRF_RI                
+    }
 
     # define SR parameter
-    SR_mat[random_rec_year_period,,"a"] <- res_SR$pars$a
-    SR_mat[random_rec_year_period,,"b"] <- res_SR$pars$b
-    SR_mat[random_rec_year_period,,"rho"] <- res_SR$pars$rho
+    SR_mat[,,"a"] <- res_SR$pars$a
+    SR_mat[,,"b"] <- res_SR$pars$b
+    SR_mat[,,"rho"] <- res_SR$pars$rho
 
-    # define recruitment deviation
-    # あとはバイアス補正をすること
+    # re-culcurate recruitment deviation
+    SR_mat[1:(start_random_rec_year-1),,"ssb"] <- as.numeric(colSums(res_vpa$ssb))[1:(start_random_rec_year-1)]
+    SR_mat[1:(start_random_rec_year-1),,"recruit"] <- as.numeric(res_vpa$naa[1,1:(start_random_rec_year-1)])
+    SR_mat[1:(start_random_rec_year-1),,"deviance"] <- #res_SR$resid[1:(start_random_rec_year-1)]
+        log(SR_mat[1:(start_random_rec_year-1),,"recruit"]) -
+        log(SRF(SR_mat[1:(start_random_rec_year-1),,"ssb"],
+                SR_mat[1:(start_random_rec_year-1),,"a"],
+                SR_mat[1:(start_random_rec_year-1),,"b"]))
+
+    # defint future recruitment deviation
     set.seed(seed_number)
-    sd_with_AR <- res_SR$pars$sd/(1-res_SR$pars$rho^2)
-    SR_mat[1:(start_random_rec_year-1),,"deviance"] <- res_SR$resid[1:(start_random_rec_year-1)]    
-    SR_mat[random_rec_year_period,,"rand_resid"] <- rnorm(dim(SR_mat)[[2]]*length(random_rec_year_period), mean=0, sd=res_SR$pars$sd)
+    sd_with_AR <- sqrt(res_SR$pars$sd^2/(1-res_SR$pars$rho^2))    
+    tmp_SR <- t(SR_mat[random_rec_year_period,,"rand_resid"])
+    tmp_SR[] <- rnorm(dim(SR_mat)[[2]]*length(random_rec_year_period), mean=0, sd=res_SR$pars$sd)
+    SR_mat[random_rec_year_period,,"rand_resid"] <- t(tmp_SR)
+   
     for(t in random_rec_year_period){
-        SR_mat[t, ,"deviance"] <- SR_mat[t-1, ,"deviance"]*SR_mat[t,,"rho"] + SR_mat[t, ,"rand_resid"] - - 0.5* sd_with_AR^2
+        SR_mat[t, ,"deviance"] <- SR_mat[t-1, ,"deviance"]*SR_mat[t,,"rho"] + SR_mat[t, ,"rand_resid"] 
     }
     SR_mat[random_rec_year_period,,"deviance"]   <- SR_mat[random_rec_year_period,,"deviance"] - 0.5* sd_with_AR^2
     ### バイアス補正のやりかたがよくわからない。。。じっくり考えること
@@ -84,8 +112,9 @@ make_tmb_data <- function(res_vpa,
     waa_mat <- M_mat <- maa_mat <- naa_mat <- faa_mat <-
         array(0, dim=c(nage, total_nyear, nsim),
               dimnames=list(age=age_name, year=allyear_name, nsim=1:nsim)) 
-    SR_mat <- array(0, dim=c(total_nyear, nsim, 6),
-                    dimnames=list(year=allyear_name, nsim=1:nsim, par=c("rand_resid","deviance","SR_type","a","b","rho")))
+    SR_mat <- array(0, dim=c(total_nyear, nsim, 8),
+                    dimnames=list(year=allyear_name, nsim=1:nsim,
+                                  par=c("rand_resid","deviance","SR_type","a","b","rho","recruit","ssb")))
 
     # fill vpa data 
     waa_mat[,1:vpa_nyear,] <- as.matrix(res_vpa$input$dat$waa)
@@ -136,10 +165,12 @@ make_tmb_data <- function(res_vpa,
     return(tibble::lst(data=tmb_data,input=input))
 }
 
-future_tmb <- function(tmb_data,optim_method="tmb",
+future_tmb <- function(tmb_data,
+                       optim_method="tmb",
                        x_init = 0,
                        x_lower = -3,
                        x_upper = 4,
+                       trace.multi=c(seq(from=0,to=0.9,by=0.1),1,seq(from=1.1,to=2,by=0.1),3:5,7,20,100),
                        compile=FALSE){
                            
     if(optim_method=="tmb" | optim_method=="both"){
@@ -149,10 +180,13 @@ future_tmb <- function(tmb_data,optim_method="tmb",
                      CppDir = system.file("executable",package="frasyr"),
                      RunDir = getwd(), overwrite=compile) 
 
+        # estimate MSY
+        tmb_data$obj_catch <- 0
+        tmb_data$objective <- 0
         objAD <- TMB::MakeADFun(tmb_data, list(x=x_init), DLL="est_MSY_tmb")
-        
         msy_optim <- nlminb(objAD$par, objAD$fn, gr=objAD$gr,
-                            lower=list(x=x_lower), upper=list(x=x_upper))#,contol=nlminb_control)
+                            lower=list(x=x_lower),
+                            upper=list(x=x_upper))#,contol=nlminb_control)
 
         multi_msy <- as.numeric(exp(msy_optim$par))
         msy <- exp(-msy_optim$objective)
@@ -180,8 +214,6 @@ future_tmb <- function(tmb_data,optim_method="tmb",
         msy_optim <- nlminb(start=0, objective=R_obj_fun, tmb_data=tmb_data,
                             lower=list(x=x_lower), upper=list(x=x_upper))
 
-#        msy_optim <- optimize(f=R_obj_fun, tmb_data=tmb_data,
-        #                            lower=x_lower, upper=x_upper)
         multi_msy <- exp(msy_optim$par)
         res_future_R <- R_obj_fun(msy_optim$par, tmb_data=tmb_data,
                                   what_return="stat")
