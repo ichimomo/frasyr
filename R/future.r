@@ -1928,13 +1928,7 @@ forward.calc.mat <- function(fav,nav,Mv,plus.group=TRUE){
   return(naa)
 }
 
-
-pred.RI <- function(SSB,a,b) a*SSB*exp(-b*SSB)
-pred.BH <- function(SSB,a,b) a*SSB/(1+b*SSB)
-pred.HS <- function(SSB,a,b,gamma) a*(SSB+sqrt(b^2+gamma^2/4)-sqrt((SSB-b)^2+gamma^2/4))
-pred.SL <- function(SSB,a) a*SSB
-
-get.stat <- get.stat3 <- function(fout,eyear=0,hsp=NULL,tmp.year=NULL, use_tmb_output=FALSE){
+get.stat <- get.stat3 <- function(fout,eyear=0,tmp.year=NULL, use_tmb_output=FALSE){
 
     if(isTRUE(use_tmb_output)){
         fout$vssb <- fout$ssb
@@ -1950,20 +1944,17 @@ get.stat <- get.stat3 <- function(fout,eyear=0,hsp=NULL,tmp.year=NULL, use_tmb_o
         col.target <- ifelse(fout$input$N==0,1,-1)
     }
     tmp <- as.numeric(fout$vssb[(nrow(fout$vssb)-eyear):nrow(fout$vssb),col.target])
-    lhs <- sum(tmp<hsp)/length(tmp)
     if(is.null(tmp.year)) tmp.year <- (nrow(fout$vwcaa)-eyear):nrow(fout$vwcaa)
     a <- data.frame("catch.mean"=mean(fout$vwcaa[tmp.year,col.target]),
                     "catch.sd"=sd(fout$vwcaa[tmp.year,col.target]),
                     "catch.geomean"=geomean(fout$vwcaa[tmp.year,col.target]),
                     "catch.median"=median(fout$vwcaa[tmp.year,col.target],na.rm=T),
-                    "catch.det"=mean(fout$vwcaa[tmp.year,1],na.rm=T),
                     "catch.L10"=quantile(fout$vwcaa[tmp.year,col.target],na.rm=T,probs=0.1),
                     "catch.H10"=quantile(fout$vwcaa[tmp.year,col.target],na.rm=T,probs=0.9),
                     "ssb.mean"=mean(fout$vssb[tmp.year,col.target]),
                     "ssb.sd"=sd(fout$vssb[tmp.year,col.target]),                        
                     "ssb.geomean"=geomean(fout$vssb[tmp.year,col.target]),
                     "ssb.median"=median(fout$vssb[tmp.year,col.target],na.rm=T),
-                    "ssb.det"=mean(fout$vssb[tmp.year,1],na.rm=T),
                     "ssb.L10"=quantile(fout$vssb[tmp.year,col.target],na.rm=T,probs=0.1),
                     "ssb.H10"=quantile(fout$vssb[tmp.year,col.target],na.rm=T,probs=0.9),
 
@@ -1971,7 +1962,6 @@ get.stat <- get.stat3 <- function(fout,eyear=0,hsp=NULL,tmp.year=NULL, use_tmb_o
                     "biom.sd"=sd(fout$vbiom[tmp.year,col.target]),                        
                     "biom.geomean"=geomean(fout$vbiom[tmp.year,col.target]),
                     "biom.median"=median(fout$vbiom[tmp.year,col.target],na.rm=T),
-                    "biom.det"=mean(fout$vbiom[tmp.year,1],na.rm=T),
                     "biom.L10"=quantile(fout$vbiom[tmp.year,col.target],na.rm=T,probs=0.1),
                     "biom.H10"=quantile(fout$vbiom[tmp.year,col.target],na.rm=T,probs=0.9),
                     
@@ -1979,17 +1969,15 @@ get.stat <- get.stat3 <- function(fout,eyear=0,hsp=NULL,tmp.year=NULL, use_tmb_o
                     "rec.sd"=sd(unlist(fout$naa[1,,])[tmp.year,col.target]),
                     "rec.geomean"=geomean(unlist(fout$naa[1,,])[tmp.year,col.target]),
                     "rec.median"=median(unlist(fout$naa[1,,])[tmp.year,col.target],na.rm=T),
-                    "rec.det"=mean(unlist(fout$naa[1,,])[tmp.year,1],na.rm=T),
                     "rec.L10"=quantile(unlist(fout$naa[1,,])[tmp.year,col.target],na.rm=T,probs=0.1),
                     "rec.H10"=quantile(unlist(fout$naa[1,,])[tmp.year,col.target],na.rm=T,probs=0.9),
                     
-                    "lower.HSpoint"=lhs,
+#                    "lower.HSpoint"=lhs,
                     "Fref2Fcurrent"=fout$multi
                     )
     a$U.mean <- a$catch.mean/a$biom.mean
     a$U.median <- a$catch.median/a$biom.median
     a$U.geomean <- a$catch.geomean/a$biom.geomean
-    a$U.det <- a$catch.det/a$biom.det
 
     a$catch.CV <- a$catch.sd/a$catch.mean
     a$ssb.CV <- a$ssb.sd/a$ssb.mean
@@ -2137,35 +2125,24 @@ plot_SRdata <- function(SRdata){
 est.MSY <- function(vpares,
                     farg,
                    seed=farg$seed,
-                   nyear=NULL,
                    eyear=0, # 将来予測の最後のeyear+1年分を平衡状態とする
 #                   FUN=median, # 漁獲量の何を最大化するか？
                    FUN=mean, # 漁獲量の何を最大化するか？                   
                    N=1000, # stochastic計算するときの繰り返し回数
                    onlylower.pgy=FALSE,# PGY計算するとき下限のみ計算する（計算時間省略のため）
                    optim.method="optimize", # gridは廃止
-                   max.target="catch.mean", # method="optimize"以外を使うとき、どの指標を最大化するか。他のオプションとしては"catch.median" (漁獲量のmedianの最大化)
                    calc.yieldcurve=TRUE, # yield curveを正確に計算するかどうか。TRUEだと計算時間が余計にかかる。FALSEだと、yield curveは正確ではない
-                   Blimit=0, 
                    trace.multi=c(seq(from=0,to=0.9,by=0.1),1,seq(from=1.1,to=2,by=0.1),3:5,7,20,100), # Fmsyを探索したり、Yield curveを書くときにグリッドサーチをするときのFの刻み。Fcurrentに対する乗数。Fが異常に大きい場合、親魚=0になって加入＝NA
                    is.plot=TRUE,
                    PGY=NULL, # PGY管理基準値を計算するかどうか。計算しない場合はNULLを、計算する場合はc(0.8,0.9,0.95)のように割合を入れる
                    B0percent=NULL, # B0_XX%の管理基準値を計算するかどうか
                    Bempirical=NULL, # 特定の親魚量をターゲットにする場合
-                   long.term=20, # 世代時間の何倍年後の状態を平衡状態と仮定するか
-                   GT=NULL, # 世代時間を外から与える場合(世代時間の計算は将来予測で使われる年齢別成熟率・自然死亡係数を使っているが、別のパラメータを与えたい場合など、外で計算してここに入れる)
-                   mY=5, # (廃止) 自己相関を考慮して管理基準値を計算する場合、平衡状態から何年進めるか
-
-                   estAR.RP=FALSE, # (廃止) 平衡状態から近年の残差を考慮した将来予測をおこなったときの管理基準値を計算するか
-                   resid.year=0,   # (廃止) ARありの場合、最近年何年分の残差を平均するか
-                   current.resid=NULL # (廃止) 残差の値を直接入れる場合。上の年数が設定されていてもこちらが設定されたらこの値を使う
+                   nyear=NULL,                   
                    ){
 
-#    require(tidyverse)
-  
     farg$seed <- seed
 
-### 内部で使うための関数定義
+    ### 内部で使うための関数定義
     ## 最小化のための関数
     ## シミュレーション回数ぶんの漁獲量のFUN（mean, geomean, median）を最大化するFを選ぶ
     msy.objfun <- function(x,f.arg,FUN=FUN,eyear=eyear){
@@ -2174,17 +2151,14 @@ est.MSY <- function(vpares,
       return(-FUN(fout$vwcaa[(nrow(fout$vwcaa)-eyear):nrow(fout$vwcaa),-1]))
     }
 
-    trace.func <- function(farg,eyear,hsp=0,trace.N=farg$N,
-                           fmulti=c(seq(from=0,to=0.9,by=0.1),1,seq(from=1.1,to=2,by=0.1),3:5,7,20,100)){
+    trace.func <- function(farg,eyear,trace.N=farg$N,fmulti=c(-3, 0, 3)){
         trace.res <- NULL
-#        ssb.array <- array(0,dim=c(farg$nyear,farg$N+1,length(fmulti)))
         farg$outtype <- "FULL"
         farg$N <- trace.N
         for(i in 1:length(fmulti)){
             farg$multi <- fmulti[i]
             tmp <- do.call(future.vpa,farg)
-#            ssb.array[,,i] <- tmp$vssb
-            tmp2 <- get.stat3(tmp,eyear=eyear,hsp=hsp)
+            tmp2 <- get.stat3(tmp,eyear=eyear)
             trace.res <- rbind(trace.res,tmp2)
             if(tmp2$"ssb.mean"<trace.res$"ssb.mean"[1]/1000){
                 fmulti <- fmulti[1:i]
@@ -2195,25 +2169,8 @@ est.MSY <- function(vpares,
         trace.res$fmulti <- fmulti
         return(list(table=trace.res))
     }
-
-    which.min2 <- function(x){
-        max(which(min(x)==x))
-    }
-
-
     ### 関数定義おわり
-    ## 世代時間を計算
-    if(is.null(GT)){
-        GT <- Generation.Time(vpares,maa.year=farg$maa.year,
-                              M.year=farg$M.year)  # Generation Time
-    }
-    if(is.null(nyear)){
-        nyear <- round(GT*long.term)
-    }
-    trace.N <- N        
-    years <- sort(as.numeric(rev(names(vpares$naa))[1:5]))
-    nY <- nyear+1    # これ必要？？
-
+    
     ## 引数の調整
     b0 <- numeric() # B0
     fout <- fout0 <- trace <- Fhist <- fout.HS.5par <- list()
@@ -2224,7 +2181,7 @@ est.MSY <- function(vpares,
     farg.tmp$N <- N
     farg.tmp$silent <- TRUE
     farg.tmp$is.plot <- FALSE
-    farg.tmp$ABC.year <- max(years)+1
+    farg.tmp$ABC.year <- max(as.numeric(names(vpares$naa)))+1
     farg.tmp$add.year <- 1
     farg.tmp$det.run <- FALSE
 
@@ -2240,11 +2197,11 @@ est.MSY <- function(vpares,
     # B0の計算
     farg.tmp$multi <- 0
     fout0 <- do.call(future.vpa,farg.tmp)
-    B0 <- get.stat3(fout0,eyear=eyear,hsp=Blimit)
+    B0 <- get.stat3(fout0,eyear=eyear)
 #    B0 <- cbind(B0,get.stat2(fout0,eyear=eyear,hsp=Blimit))
     rownames(B0) <- "B0"    
     
-    trace <- trace.func(farg.tmp,eyear,hsp=Blimit,fmulti=trace.multi,trace.N=trace.N)
+    trace <- trace.func(farg.tmp,eyear,fmulti=trace.multi,trace.N=N)
 
     xx <- which.max(trace$table$catch.mean)+c(-1,1)
     range.tmp <- trace$table$fmulti[xx]
@@ -2387,7 +2344,7 @@ est.MSY <- function(vpares,
                               sapply(fout.Bempirical,function(x) x$input$multi+fdiff)) %>%
             unlist()
         trace$table <- rbind(trace$table,
-                             trace.func(farg.msy,eyear,hsp=Blimit,trace.N=trace.N,
+                             trace.func(farg.msy,eyear,trace.N=N,
                                         fmulti=fmulti_for_yield)$table)
         trace$table <- trace$table[order(trace$table$fmulti),]
     }
@@ -2597,34 +2554,38 @@ get.kobemat2 <- function(fouts,brefs,xlim=NULL,target.prob=0.5){
 }
 
 
+#'
+#' @export
+#' 
 
 Generation.Time <- function(vpares,
-  maa.year=2014:2015,
-  M.year=2014:2015,
-  Plus = 19
+                            maa.year=2014:2015,
+                            maa=NULL,
+                            M.year=2014:2015,
+                            M=NULL,
+                            Plus = 19
 ){
 
-  maa <- vpares$input$dat$maa
-  maa <- rowMeans(maa[,colnames(maa) %in% maa.year,drop=F],na.rm=T)
-  maa <- maa[!is.na(maa)]    
-  M <- vpares$input$dat$M
-  M <- rowMeans(M[,colnames(M) %in% M.year,drop=F],na.rm=T)
-  M <- M[!is.na(M)]
+    if(is.null(maa)){
+        maa <- vpares$input$dat$maa
+        maa <- rowMeans(maa[,colnames(maa) %in% maa.year,drop=F],na.rm=T)
+        maa <- maa[!is.na(maa)]
+    }
+    if(is.null(M)){
+        M <- vpares$input$dat$M
+        M <- rowMeans(M[,colnames(M) %in% M.year,drop=F],na.rm=T)
+        M <- M[!is.na(M)]
+    }
     
-  age <- as.numeric(names(maa))
+    age <- as.numeric(names(maa))
+    maa <- c(maa, rep(1,Plus))
+    M <- c(M, rep(M[length(M)],Plus))
+    age <- c(age, max(age)+1:Plus)
+    A <- length(M)
+    L <- c(1,exp(-cumsum(M[-A])))
+    G <- sum(age*L*maa)/sum(L*maa)
   
-  maa <- c(maa, rep(1,Plus))
-  M <- c(M, rep(M[length(M)],Plus))
-  
-  age <- c(age, max(age)+1:Plus)
-  
-  A <- length(M)
-    
-  L <- c(1,exp(-cumsum(M[-A])))
-  
-  G <- sum(age*L*maa)/sum(L*maa)
-  
-  return(G)
+    return(G)
 }
 
 
