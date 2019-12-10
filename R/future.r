@@ -369,10 +369,14 @@ calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=
 ## multiのオプションは管理後のFのmultiplier（管理前後でselectivityが同じ）
 future.vpa <-
     function(res0,
+             multi=1,              
              currentF=NULL, 
-             multi=1, 
-             futureF=NULL,              
-             nyear=10,Pope=res0$input$Pope,
+             futureF=NULL,
+             N=1000,              
+             nyear=10,
+             Pope=res0$input$Pope,
+             plus.group=res0$input$plus.group,             
+             seed=NULL,             
              outtype="FULL",
              multi.year=1,
              start.year=NULL, 
@@ -380,14 +384,18 @@ future.vpa <-
              waa.year=NULL, 
              waa.catch.year=NULL, 
              maa.year=NULL, 
-             M.year=NULL, 
-             seed=NULL,
-             strategy="F", 
-             HCR=NULL,
+             M.year=NULL,
+             waa=NULL,
+             waa.catch=NULL,
+             maa=NULL,
+             M=NULL, 
+             waa.fun=FALSE,              
              use.MSE=FALSE,MSE.options=NULL,
-             beta=NULL,delta=NULL,Blim=0,Bban=0,
-             plus.group=res0$input$plus.group,
-             N=1000, 
+             # setting HCR
+             HCR_beta=1,
+             HCR_Blimit=-1,
+             HCR_Bban=-1,
+             HCR_year_lag=0,
              silent=FALSE, is.plot=TRUE, 
              pre.catch=NULL, 
              rec.new=NULL, 
@@ -395,11 +403,6 @@ future.vpa <-
              rec.arg=list(a=1,b=1,rho=0,sd=0,c=1,bias.correction=TRUE,
                           resample=FALSE,resid=0,resid.year=NULL), 
              Frec=NULL,
-             waa=NULL,
-             waa.catch=NULL,
-             maa=NULL,
-             M=NULL, 
-             waa.fun=FALSE, 
              naa0=NULL,eaa0=NULL,ssb0=NULL,faa0=NULL,
              add.year=0, 
              det.run=TRUE 
@@ -409,9 +412,6 @@ future.vpa <-
         arglist <- lapply(argname,function(x) eval(parse(text=x)))
         names(arglist) <- argname
         
-        if(is.null(res0$input$unit.waa)) res0$input$unit.waa <- 1
-        if(is.null(res0$input$unit.caa)) res0$input$unit.caa <- 1
-        if(is.null(res0$input$unit.biom)) res0$input$unit.biom <- 1  
         if(is.null(plus.group)) plus.group <- TRUE
         if(is.null(Pope)) Pope <- FALSE
         
@@ -433,13 +433,6 @@ future.vpa <-
         rec.arg.org <- rec.arg
         rec.arg <- set_SR_options(rec.arg,N=N,silent=silent,eaa0=eaa0,det.run=det.run)
 
-        ##------------- set HCR options
-        if(!is.null(HCR) && is.null(HCR$year.lag)) HCR$year.lag <- 0
-        if(!is.null(beta)){
-            HCR$beta <- beta
-            HCR$Blim <- Blim
-            HCR$Bban <- Bban
-        }
 
         ##------------- set options for MSE
         if(isTRUE(use.MSE)){
@@ -475,7 +468,7 @@ future.vpa <-
         if(!silent){
             arglist.tmp <-  arglist
             arglist.tmp$res0 <- NULL
-            arglist.tmp$Bban <- arglist.tmp$Bblim <- arglist.tmp$beta <- arglist.tmp$ssb0 <- arglist.tmp$strategy <- NULL
+            arglist.tmp$Bban <- arglist.tmp$Bblim <- arglist.tmp$beta <- arglist.tmp$ssb0  <- NULL
             print(arglist.tmp)
         }
         
@@ -537,8 +530,6 @@ future.vpa <-
         waa.catch.org <- waa.catch
         maa.org <- maa
         M.org <- M
-        
-        if(strategy=="C"|strategy=="E") multi.catch <- multi else multi.catch <- 1
         
         faa <- naa <- waa <- waa.catch <- maa <- M <- caa <- 
             array(NA,dim=c(length(ages),ntime,N),dimnames=list(age=ages,year=fyears,nsim=1:N))
@@ -663,7 +654,8 @@ future.vpa <-
                     waa[2:nage,1,] <- waa_all[2:nage,i_all,] <-
                         t(sapply(2:nage, function(ii) as.numeric(exp(WAA.b0[ii]+WAA.b1[ii]*log(naa[ii,1,])+waa.rand[ii,1,]))))
                 }
-                thisyear.ssb[1,] <- colSums(naa[,1,]*waa[,1,]*maa[,1,],na.rm=T)*res0$input$unit.waa/res0$input$unit.biom                           }
+                thisyear.ssb[1,] <- colSums(naa[,1,]*waa[,1,]*maa[,1,],na.rm=T)
+            }
             
             thisyear.ssb[1,] <- thisyear.ssb[1,]+(1e-10)
             
@@ -721,7 +713,7 @@ future.vpa <-
                     }
                 }
                 if(!is.null(pre.catch$E)){
-                    biom <- sum(naa[,i,]*waa[,i,]*res0$input$unit.waa/res0$input$unit.biom)
+                    biom <- sum(naa[,i,]*waa[,i,])
                     if(fyears[i]<ABC.year){
                         tmpcatch <- as.numeric(pre.catch$E[pre.catch$year==fyears[i]])  * biom
                     }
@@ -744,20 +736,20 @@ future.vpa <-
             }
             
             ## HCRを使う場合(当年の資源量から当年のFを変更する)
-            if(!is.null(HCR) && fyears[i]>=ABC.year
-               && is.null(faa.new)) # <- pre.catchで漁獲量をセットしていない
+            if(fyears[i]>=ABC.year && is.null(faa.new)) # <- pre.catchで漁獲量をセットしていない
             {
                 if(!isTRUE(use.MSE)){
-                    tmp <- i+HCR$year.lag
+                    tmp <- i+HCR_year_lag
                     if(tmp>0){
-                        ssb.tmp <- colSums(naa[,tmp,]*waa[,tmp,]*maa[,tmp,],na.rm=T)*
-                            res0$input$unit.waa/res0$input$unit.biom
+                        ssb.tmp <- colSums(naa[,tmp,]*waa[,tmp,]*maa[,tmp,],na.rm=T)
                     }
                     else{
-                        vpayear <- fyears[i]+HCR$year.lag
+                        vpayear <- fyears[i]+HCR_year_lag
                         ssb.tmp <- sum(res0$ssb[as.character(vpayear)])
                     }
-                    alpha[i,] <- ifelse(ssb.tmp<HCR$Blim,HCR$beta*(ssb.tmp-HCR$Bban)/(HCR$Blim-HCR$Bban),HCR$beta)
+                    alpha[i,] <- ifelse(ssb.tmp<HCR_Blimit,
+                                        HCR_beta*(ssb.tmp-HCR_Bban)/(HCR_Blim-HCR_Bban),
+                                        HCR_beta)
                     alpha[i,] <- ifelse(alpha[i,]<0,0,alpha[i,])
                     faa[,i,] <- sweep(faa[,i,],2,alpha[i,],FUN="*")
                     faa[,i,] <- faa_all[,i,] <- ifelse(faa[,i,]<0,0,faa[,i,])
@@ -769,7 +761,9 @@ future.vpa <-
                                              N=MSE.options$N,
                                              recfunc=MSE.options$recfunc,
                                              rec.arg=MSE.options$rec.arg,
-                                             Pope=Pope,HCR=HCR,plus.group=plus.group,lag=min.age)
+                                             Pope=Pope,
+                                             HCR=list(beta=HCR_beta, Blim=HCR_Blimit, year.lag=HCR_year_lag, Bban=HCR_Bban),
+                                             plus.group=plus.group,lag=min.age)
                     y <- colSums(naa[,i,] * waa[,i,])
                     ABC.tmp <- ifelse(ABC.tmp>y*MSE.options$max.ER,y*MSE.options$max.ER,ABC.tmp)
                     ABC.mat[i,] <- ABC.tmp
@@ -804,13 +798,13 @@ future.vpa <-
             ## 当年の加入の計算
             if(fyears[i+1]-min.age < start.year){
                 # 参照する親魚資源量がVPA期間である場合、VPA期間のSSBをとってくる
-                thisyear.ssb[i+1,] <- sum(res0$ssb[,as.character(fyears[i+1]-min.age)],na.rm=T)*res0$input$unit.waa/res0$input$unit.biom
+                thisyear.ssb[i+1,] <- sum(res0$ssb[,as.character(fyears[i+1]-min.age)],na.rm=T)
                 #              thisyear.ssb <- rep(thisyear.ssb,N)              
                 if(!is.null(ssb0)) thisyear.ssb[i+1,] <- colSums(ssb0)
             }
             else{
                 # そうでない場合
-                thisyear.ssb[i+1,] <- colSums(naa[,i+1-min.age,]*waa[,i+1-min.age,]*maa[,i+1-min.age,],na.rm=T)*res0$input$unit.waa/res0$input$unit.biom            
+                thisyear.ssb[i+1,] <- colSums(naa[,i+1-min.age,]*waa[,i+1-min.age,]*maa[,i+1-min.age,],na.rm=T)  
             }
 
             thisyear.ssb[i+1,] <- thisyear.ssb[i+1,]+(1e-10)
@@ -855,22 +849,23 @@ future.vpa <-
         M <- M[,-ntime,,drop=F]
         fyears <- fyears[-ntime]
         
-        biom <- naa*waa*res0$input$unit.waa/res0$input$unit.biom
-        ssb <- naa*waa*maa*res0$input$unit.waa/res0$input$unit.biom
+        biom <- naa*waa
+        ssb <- naa*waa*maa
         
-        wcaa <- caa*waa.catch*res0$input$unit.waa/res0$input$unit.biom
+        wcaa <- caa*waa.catch
         vwcaa <- apply(wcaa,c(2,3),sum,na.rm=T)
         
         ABC <- apply(as.matrix(vwcaa[fyears%in%ABC.year,,drop=F]),2,sum)
 
         if(!is.null(rec.arg$resample)) if(rec.arg$resample==TRUE) eaa[] <- NA # resamplingする場合にはeaaにはなにも入れない
-        
-        fres <- list(faa=faa,naa=naa,biom=biom,baa=biom,ssb=ssb,wcaa=wcaa,caa=caa,M=M,rps=rps.mat,recruit=naa[1,,],
-                     maa=maa,vbiom=apply(biom,c(2,3),sum,na.rm=T),
-                     eaa=eaa,alpha=alpha,thisyear.ssb=thisyear.ssb,
+
+        fres <- list(faa=faa,naa=naa,caa=caa,M=M,recruit=naa[1,,],
+                     maa=maa,eaa=eaa,alpha=alpha,thisyear.ssb=thisyear.ssb,
                      waa=waa,waa.catch=waa.catch,currentF=currentF,
                      futureF=futureF,
-                     vssb=apply(ssb,c(2,3),sum,na.rm=T),vwcaa=vwcaa,naa_all=naa_all,
+                     vbiom=apply(biom,c(2,3),sum,na.rm=T),
+                     vssb=apply(ssb,c(2,3),sum,na.rm=T),
+                     vwcaa=vwcaa,
                      years=fyears,fyear.year=fyear.year,ABC=ABC,recfunc=recfunc,rec.arg=rec.arg,
                      waa.year=waa.year,maa.year=maa.year,multi=multi,multi.year=multi.year,
                      Frec=Frec,rec.new=rec.new,pre.catch=pre.catch,input=arglist)
@@ -911,7 +906,7 @@ future.vpa <-
     }
 
 
-get_ABC_inMSE <- function(naa_all,waa_all,maa_all,faa_all,M,res0,start_year,nyear,N,recfunc,rec.arg,Pope,HCR,
+devget_ABC_inMSE <- function(naa_all,waa_all,maa_all,faa_all,M,res0,start_year,nyear,N,recfunc,rec.arg,Pope,HCR,
                           plus.group=plus.group,lag=0){
     ABC.all <- numeric()
 #    N <- dim(naa_all)[[3]]
@@ -944,8 +939,7 @@ get_ABC_inMSE <- function(naa_all,waa_all,maa_all,faa_all,M,res0,start_year,nyea
         lastyear <- start_year+nyear
         ssb.tmp <-  colSums(naa_dummy[,lastyear,]*
                            waa_all[,lastyear,s]*
-                           maa_all[,lastyear,s],na.rm=T)*
-            res0$input$unit.waa/res0$input$unit.biom    
+                           maa_all[,lastyear,s],na.rm=T)
         alpha <- ifelse(ssb.tmp<HCR$Blim,HCR$beta*(ssb.tmp-HCR$Bban)/(HCR$Blim-HCR$Bban),HCR$beta)
         alpha <- ifelse(alpha<0,0,alpha)        
         #faa_dummy[,lastyear,] <- sweep(faa_all[,lastyear,],2,alpha,FUN="*")
@@ -1936,7 +1930,6 @@ get.stat <- get.stat3 <- function(fout,eyear=0,tmp.year=NULL, use_tmb_output=FAL
         fout$vwcaa <- apply(fout$caa,c(2,3),sum)
         fout$waa <- fout$tmb_data$waa_mat
         fout$maa <- fout$tmb_data$maa
-        fout$multi <- fout$multi_msy
         fout$currentF <- fout$faa[,1,1] # ここは適当
         col.target <- TRUE
     }
@@ -2137,7 +2130,7 @@ est.MSY <- function(vpares,
                    PGY=NULL, # PGY管理基準値を計算するかどうか。計算しない場合はNULLを、計算する場合はc(0.8,0.9,0.95)のように割合を入れる
                    B0percent=NULL, # B0_XX%の管理基準値を計算するかどうか
                    Bempirical=NULL, # 特定の親魚量をターゲットにする場合
-                   nyear=NULL,                   
+                   nyear=NULL                   
                    ){
 
     farg$seed <- seed
@@ -2352,7 +2345,7 @@ est.MSY <- function(vpares,
     
     if(isTRUE(is.plot)){
         # plot of yield curve
-        par(mfrow=c(1,3),mar=c(4,4,2,1))
+        par(mfrow=c(1,2),mar=c(4,4,2,1))
         plot(trace$table$fmulti,trace$table$"ssb.mean"*1.2,type="n",xlab="Fref/Fcurrent",ylab="SSB")
         abline(v=sumvalue$Fref2Fcurrent,col="gray")
         text(sumvalue$Fref2Fcurrent,max(trace$table$"ssb.mean")*seq(from=1.1,to=0.8,length=nrow(sumvalue)),rownames(sumvalue))
@@ -2363,13 +2356,6 @@ est.MSY <- function(vpares,
         abline(v=sumvalue$Fref2Fcurrent,col="gray")        
         menplot(trace$table$fmulti,cbind(0,trace$table$"catch.mean"),col="lightgreen",line.col="darkgreen")
         title("Equiribrium Catch (Yield curve)")        
-
-        # plot of the effect of AR
-        if(isTRUE(estAR.RP)){
-            matplot(ssb.ar.mean,type="b",ylab="SSB_MSY_AR/SSB_MSY",xlab="Years from Equiribrium")
-            legend("topright",col=1:ncol(ssb.ar.mean),legend=rownames(sumvalue),lty=1:ncol(ssb.ar.mean))
-            title("plot of the effect of AR")
-        }
     }
 
     input.list <- list(B0=fout0$input,

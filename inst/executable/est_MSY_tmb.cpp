@@ -9,8 +9,9 @@ Type objective_function<Type>::operator() ()
   DATA_ARRAY(rec_par_a_mat);
   DATA_ARRAY(rec_par_b_mat); 
   DATA_ARRAY(rec_par_rho_mat);
-  DATA_SCALAR(bias_corrected_mean);
-  DATA_ARRAY(rec_resid_mat); 
+  //  DATA_SCALAR(bias_corrected_mean);
+  DATA_ARRAY(rec_resid_mat);
+  DATA_ARRAY(HCR_mat);   // just dummy
   DATA_ARRAY(waa_mat);
   DATA_ARRAY(maa_mat);  
   DATA_ARRAY(M_mat);
@@ -153,7 +154,7 @@ Type objective_function<Type>::operator() ()
   REPORT(N_mat);
   REPORT(spawner_mat);
   REPORT(catch_mat);
-  REPORT(future_initial_year);    
+  REPORT(future_initial_year);
   //  ADREPORT(obj);
 
   return obj;

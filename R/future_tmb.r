@@ -2,6 +2,10 @@ SRF_HS <- function(x,a,b) ifelse(x>b,b*a,x*a)
 SRF_BH <- function(x,a,b) a*x/(1+b*x)
 SRF_RI <- function(x,a,b) a*x*exp(-b*x)
 
+#'
+#' 将来予測用の三次元行列を与えられたら, pars.year間のパラメータを平均するか与えられたparをyear_replace_futureに入れる
+#' 
+
 make_array <- function(d3_mat, pars, pars.year, year_replace_future){
     years <- dimnames(d3_mat)[[2]]
     if(is.null(pars)){
@@ -14,6 +18,10 @@ make_array <- function(d3_mat, pars, pars.year, year_replace_future){
     d3_mat[,which(year_replace_future==years):length(years),] <- pars.future
     d3_mat
 }
+
+#'
+#' 対数正規分布の残差分布を作る関数
+#' 
 
 set_SR_mat_lognormal <- function(res_vpa,
                                  res_SR,
@@ -71,23 +79,28 @@ set_SR_mat_lognormal <- function(res_vpa,
 }
 
 #### make data for future projection
-make_tmb_data <- function(res_vpa,
+make_future_data <- function(res_vpa,
                           nsim = 1000, # number of simulation
                           nyear = 50, # number of future year
-                          future_initial_year_name = 2017,                          
+                          future_initial_year_name = 2017,
+                          start_F_year_name = 2018,
+                          start_biopar_year_name=2018,
+                          start_random_rec_year_name = 2018,                          
                           # biopar setting
                           waa_year, waa=NULL,
                           waa.catch_year, waa.catch=NULL,
                           maa_year, maa=NULL,
                           M_year, M=NULL,
-                          start_biopar_year_name=2018,
                           # faa setting
                           faa_year, faa=NULL,
-                          start_F_year_name = 2018,                          
-                          
+                          # HCR setting (not work when using TMB)
+                          start_ABC_year_name=2019,
+                          HCR_beta=1,
+                          HCR_Blimit=-1,
+                          HCR_Bban=-1,
+                          HCR_year_lag=0,
                           # SR setting
                           res_SR=NULL,                       
-                          start_random_rec_year_name = 2018,
                           seed_number=1
                           ) 
 {
@@ -109,13 +122,19 @@ make_tmb_data <- function(res_vpa,
     print(tibble(allyear_name, allyear_label))
 
     # define empty array
-    waa_mat <- M_mat <- maa_mat <- naa_mat <- faa_mat <-
+    waa_mat <- M_mat <- maa_mat <- naa_mat <- faa_mat <- 
         array(0, dim=c(nage, total_nyear, nsim),
               dimnames=list(age=age_name, year=allyear_name, nsim=1:nsim)) 
     SR_mat <- array(0, dim=c(total_nyear, nsim, 8),
                     dimnames=list(year=allyear_name, nsim=1:nsim,
                                   par=c("rand_resid","deviance","SR_type","a","b","rho","recruit","ssb")))
-
+    HCR_mat <- array(0, dim=c(total_nyear, nsim, 8),
+                    dimnames=list(year=allyear_name, nsim=1:nsim,
+                                  par=c("beta","Blimit","Bban","gamma","year_lag", #1-5
+                                        "alpha","par2","par3"))) # 6-8
+    HCR_mat[,,"Blimit"] <- HCR_mat[,,"Bban"] <- -1
+    HCR_mat[,,"beta"] <- HCR_mat[,,"alpha"] <- 1
+    
     # fill vpa data 
     waa_mat[,1:vpa_nyear,] <- as.matrix(res_vpa$input$dat$waa)
     maa_mat[,1:vpa_nyear,] <- as.matrix(res_vpa$input$dat$maa)
@@ -130,17 +149,25 @@ make_tmb_data <- function(res_vpa,
     start_F_year <- which(allyear_name==start_F_year_name)
     #    waa.catch_mat <- make_array(waa.catch_mat, waa.catch, waa.catch_year)
 
-    SR_mat <- set_SR_mat_lognormal(res_vpa, res_SR, SR_mat, seed_number, start_random_rec_year_name, future_initial_year)    
+    # set SR parameter
+    SR_mat <- set_SR_mat_lognormal(res_vpa, res_SR, SR_mat, seed_number,
+                                   start_random_rec_year_name, future_initial_year)
 
-    sd_with_AR <- res_SR$pars$sd/(1-res_SR$pars$rho^2)
+    # set HCR parameter
+    start_ABC_year <- which(allyear_name==start_ABC_year_name)
+    HCR_mat[start_ABC_year:total_nyear,,"beta"    ] <- HCR_beta
+    HCR_mat[start_ABC_year:total_nyear,,"Blimit"  ] <- HCR_Blimit
+    HCR_mat[start_ABC_year:total_nyear,,"Bban"    ] <- HCR_Bban    
+    HCR_mat[start_ABC_year:total_nyear,,"year_lag"] <- HCR_year_lag
     
-    # set data and parameter
+    
+    # set data and parameter for TMB
     tmb_data <- list(naa_mat=naa_mat,
                      SR_mat = SR_mat[,,"SR_type"],
                      rec_par_a_mat =  SR_mat[,,"a"],
                      rec_par_b_mat =  SR_mat[,,"b"],
                      rec_par_rho_mat =  SR_mat[,,"rho"],
-                     bias_corrected_mean = -0.5 * (sd_with_AR)^2, # bias correction factorを入れる
+#                     bias_corrected_mean = -0.5 * (sd_with_AR)^2, # bias correction factorを入れる
                      rec_resid_mat = SR_mat[,,"deviance"],
                      waa_mat = waa_mat,
                      maa_mat = maa_mat,                     
@@ -152,7 +179,8 @@ make_tmb_data <- function(res_vpa,
                      start_F_year=start_F_year,
                      nsim = nsim,
                      nage = nage,
-                     recruit_age = recruit_age,                                          
+                     recruit_age = recruit_age,
+                     HCR_mat = HCR_mat,
                      obj_catch = 0, # 0: mean, 1:geomean
                      objective = 0, # 0: MSY, 1: PGY, 2: percentB0 or Bempirical
                      objective_value = 12000
@@ -165,7 +193,19 @@ make_tmb_data <- function(res_vpa,
     return(tibble::lst(data=tmb_data,input=input))
 }
 
-future_tmb <- function(tmb_data,
+naming_adreport <- function(tmb_data, ad_report){
+    ssb <- ad_report$spawner_mat
+    caa <- ad_report$catch_mat
+    naa <- ad_report$N_mat
+    faa <- ad_report$F_mat
+
+    dimnames(ssb) <- dimnames(tmb_data$naa_mat)[2:3]
+    dimnames(naa) <- dimnames(faa) <- dimnames(caa) <- 
+        dimnames(tmb_data$naa_mat)
+    return(tibble::lst(ssb,naa,faa,caa,tmb_data))
+}
+
+future_vpa <- function(tmb_data,
                        optim_method="tmb",
                        x_init = 0,
                        x_lower = -3,
@@ -192,45 +232,49 @@ future_tmb <- function(tmb_data,
         msy <- exp(-msy_optim$objective)
         ad_report <- objAD$report()
 
-        ssb <- ad_report$spawner_mat
-        caa <- ad_report$catch_mat
-        naa <- ad_report$N_mat
-        faa <- ad_report$F_mat
-
-        dimnames(ssb) <- dimnames(tmb_data$naa_mat)[2:3]
-        dimnames(naa) <- dimnames(faa) <- dimnames(caa) <- 
-            dimnames(tmb_data$naa_mat)
-        
-        res_future_tmb <- tibble::lst(multi_msy,msy,ssb,naa,faa,caa,tmb_data)
+        res_stat <- naming_adreport(tmb_data, ad_report)
+        trace <- purrr::map_dfr(trace.multi, function(x)
+            naming_adreport(tmb_data=tmb_data, ad_report=objAD$report(x)) %>%
+            purrr::list_modify(multi=x) %>%
+            get.stat(use_tmb_output=TRUE))
+        res_future_tmb <- purrr::list_modify(res_stat, multi=multi_msy,msy=msy,trace=trace)
     }
 
     if(optim_method=="R" | optim_method=="both"){
         R_obj_fun <- function(x, tmb_data, what_return="obj"){
             tmb_data$x <- x
             tmb_data$what_return <- what_return
-            obj <- do.call(est_MSY_R, tmb_data)
+            obj <- do.call(future_vpa_R, tmb_data)
             return(obj)
         }
         msy_optim <- nlminb(start=0, objective=R_obj_fun, tmb_data=tmb_data,
                             lower=list(x=x_lower), upper=list(x=x_upper))
 
-        multi_msy <- exp(msy_optim$par)
+        multi <- exp(msy_optim$par)
         res_future_R <- R_obj_fun(msy_optim$par, tmb_data=tmb_data,
                                   what_return="stat")
-        res_future_R$multi_msy <- multi_msy
+        trace <- purrr::map_dfr(trace.multi, function(x)
+            R_obj_fun(x=x, tmb_data <- tmb_data, what_return="stat") %>%
+            purrr::list_modify(multi=x) %>%
+            get.stat(use_tmb_output=TRUE))       
+        res_future_R <- purrr::list_modify(res_future_R, multi=multi, trace=trace)
+    }
+    if(optim_method=="none"){
+        tmb_data$x <- x_init
+        tmb_data$what_return <- "stat"
+        res_future_R <- do.call(future_vpa_R, tmb_data)
     }
 
     if(optim_method=="tmb") return(res_future_tmb)
-    if(optim_method=="R")   return(res_future_R)
+    if(optim_method=="R"|optim_method=="none")   return(res_future_R)
     if(optim_method=="both") return(list(tmb=res_future_tmb, R=res_future_R))
 }
 
-est_MSY_R <- function(naa_mat,
-                      SR,
-                      rec_par_a,
-                      rec_par_b,
-                      rec_par_rho,
-                      bias_corrected_mean,
+future_vpa_R <- function(naa_mat,
+                      SR_mat,
+                      rec_par_a_mat,
+                      rec_par_b_mat,
+                      rec_par_rho_mat,
                       rec_resid_mat,
                       waa_mat,
                       M_mat,
@@ -239,7 +283,7 @@ est_MSY_R <- function(naa_mat,
                       Pope,
                       total_nyear,
                       future_initial_year,
-                      start_F_year,
+                      start_F_year, # the year for estimating multiplier F
                       nsim,
                       nage,
                       recruit_age,
@@ -247,12 +291,12 @@ est_MSY_R <- function(naa_mat,
                       objective,
                       objective_value,
                       x,
-                      what_return="obj"
+                      what_return="obj",
+                      HCR_mat                      
                       ){
 
     F_mat <- N_mat <- catch_mat <- naa_mat
     F_mat[] <- N_mat[] <- catch_mat <- 0
-    rec_deviance_mat <- array(0, dim=c(total_nyear, nsim))
     
     N_mat[,1:future_initial_year,] <- naa_mat[,1:future_initial_year,]
     spawner_mat <- apply(N_mat * waa_mat * maa_mat, c(2,3) , sum)
@@ -265,24 +309,31 @@ est_MSY_R <- function(naa_mat,
             spawner_mat[t,i] <- sum(N_mat[,t,i] * waa_mat[,t,i] * maa_mat[,t,i])
 
             if(t>future_initial_year){
-                if(SR == 0) { # Hockey-stick
-                    rec_pred1 <- spawner_mat[t-recruit_age,i]*rec_par_a
-                    rec_pred2 <- rec_par_b*rec_par_a
+                if(SR_mat[t,i] == 1) { # Hockey-stick
+                    rec_pred1 <- spawner_mat[t-recruit_age,i]*rec_par_a_mat[t,i]
+                    rec_pred2 <- rec_par_b_mat[t,i]*rec_par_a_mat[t,i]
                     N_mat[1,t,i] <- min(rec_pred1, rec_pred2)
                 }
-                if(SR == 1) { # Beverton-Holt
-                    N_mat[1,t,i] <- rec_par_a*spawner_mat[t-recruit_age,i]/
-                        (1+rec_par_b*spawner_mat[t-recruit_age,i]);
+                if(SR_mat[t,i] == 2) { # Beverton-Holt
+                    N_mat[1,t,i] <- rec_par_a_mat[t,i]*spawner_mat[t-recruit_age,i]/
+                        (1+rec_par_b_mat[t,i]*spawner_mat[t-recruit_age,i]);
                 }
-                if(SR == 2) { # Ricker
-                    N_mat[1,t,i] <- rec_par_a*spawner_mat[t-recruit_age,i]*exp(-rec_par_b*spawner_mat[t-recruit_age,i]);
+                if(SR_mat[t,i] == 3) { # Ricker
+                    N_mat[1,t,i] <- rec_par_a_mat[t,i]*spawner_mat[t-recruit_age,i]*exp(-rec_par_b_mat[t,i]*spawner_mat[t-recruit_age,i]);
                 }
-                N_mat[1,t,i] <- N_mat[1,t,i]*exp(rec_par_rho*rec_deviance_mat[t,i])*
-                    exp(rec_resid_mat[t,i]);
+                N_mat[1,t,i] <- N_mat[1,t,i]*exp(rec_resid_mat[t,i]);
             }
 
-            # forward calculation 
+            # harvest control rule
+            ssb_tmp <- spawner_mat[t-HCR_mat[t,i,"year_lag"],i]
+            if(ssb_tmp<HCR_mat[t,i,"Blimit"]) HCR_mat[t,i,"alpha"] <- HCR_mat[t,i,"beta"]*(ssb_tmp-HCR_mat[t,i,"Bban"])/(HCR_mat[t,i,"Blimit"]-HCR_mat[t,i,"Bban"])
+            if(ssb_tmp>HCR_mat[t,i,"Blimit"]) HCR_mat[t,i,"alpha"] <- HCR_mat[t,i,"beta"]
+            if(HCR_mat[t,i,"alpha"]<0) HCR_mat[t,i,"alpha"] <- 0
+
+            F_mat[,t,i] <- F_mat[,t,i]*HCR_mat[t,i,"alpha"]
+
             if(t<total_nyear){
+                # forward calculation                 
                 for(iage in 1:(nage-1)) {
                     N_mat[iage+1,t+1,i] <- N_mat[iage,t,i]*exp(-M_mat[iage,t,i]-F_mat[iage,t,i])
                 }
@@ -313,6 +364,10 @@ est_MSY_R <- function(naa_mat,
     }
 
     if(what_return=="obj")  return(obj)
-    if(what_return=="stat")  return(list(naa=N_mat, faa=F_mat,ssb=spawner_mat))    
+    if(what_return=="stat"){
+        return(list(naa=N_mat, faa=F_mat, caa=catch_mat,
+                    M=M_mat, maa=maa_mat, waa=waa_mat,
+                    vbiom=spawner_mat, HCR_mat=HCR_mat))
+    }
 }
 

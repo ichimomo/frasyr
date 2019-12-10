@@ -62,16 +62,73 @@ R_time <- system.time(res_MSY <- est.MSY(res_vpa, # VPAの計算結果
             
 #------------ TMB
 
-devtools::load_all()
-
-
 # 2017年をinitial valueにして、2018年からF, 加入について将来予測する場合
-res1 <- tmb_future(res_vpa,nsim=1000_nsim,nyear=30,
-                   SRmodel=SRmodel.base,                   
-                   future_initial_year_name=2017,
-                   start_F_year_name=2018,
-                   start_random_rec_year_name=2018, compile=TRUE)
+devtools::load_all()
+future_data1 <- make_future_data(res_vpa,
+                      nsim = 1000, # number of simulation
+                      nyear = 50, # number of future year
+                      future_initial_year_name = 2017,
+                              start_F_year_name = 2018,
+                              start_biopar_year_name=2018,
+                              start_random_rec_year_name = 2018,                                # biopar setting
+                          waa_year=2016:2018, waa=NULL,
+                          waa.catch_year=2016:2018, waa.catch=NULL,
+                          maa_year=2016:2018, maa=NULL,
+                          M_year=2016:2018, M=NULL,
+                          # faa setting
+                          faa_year=2016:2018, faa=NULL,
+                          # HCR setting
+                          HCR_beta=1,
+                          HCR_Blimit=-1,
+                          HCR_Bban=-1,
+                          HCR_year_lag=0,
+                          # SR setting
+                          res_SR=SRmodel.base,                       
+                          seed_number=1
+                      )
 
+res_future_tmb <- future_vpa(future_data1$data, optim_method="tmb",
+                             x_init = 0,
+                             x_lower = -3,
+                             x_upper = 3,
+                             trace.multi=c(seq(from=0,to=0.9,by=0.1),1,seq(from=1.1,to=2,by=0.1),3:5,7,20,100),
+                             compile=TRUE)
+
+future_data1 <- make_future_data(res_vpa,
+                      nsim = 1000, # number of simulation
+                      nyear = 50, # number of future year
+                      future_initial_year_name = 2017,
+                              start_F_year_name = 2018,
+                              start_biopar_year_name=2018,
+                              start_random_rec_year_name = 2018,                                # biopar setting
+                          waa_year=2016:2018, waa=NULL,
+                          waa.catch_year=2016:2018, waa.catch=NULL,
+                          maa_year=2016:2018, maa=NULL,
+                          M_year=2016:2018, M=NULL,
+                          # faa setting
+                          faa_year=2016:2018, faa=NULL,
+                          # HCR setting
+                          HCR_beta=1,
+                          HCR_Blimit=20000,
+                          HCR_Bban=-1,
+                          HCR_year_lag=0,
+                          # SR setting
+                          res_SR=SRmodel.base,                       
+                          seed_number=1
+                      )
+
+res_future_tmb <- future_vpa(future_data1$data,
+                             optim_method="none",
+                             x_init = 0,
+                             x_lower = -3,
+                             x_upper = 3,
+                             trace.multi=c(seq(from=0,to=0.9,by=0.1),1,seq(from=1.1,to=2,by=0.1),3:5,7,20,100),
+                             compile=TRUE)
+
+#> res_future_tmb$multi
+#[1] 0.5402367
+
+## 以下、もう動かない
 # 同じシミュレーションをもう一回できるかどうか=>完全に再現できる
 res1_replicate <- tmb_future(res_vpa,skip_setting=TRUE,tmb_data=res1$tmb_data)
 
