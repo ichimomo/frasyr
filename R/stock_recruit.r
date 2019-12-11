@@ -209,7 +209,8 @@ fit.SR <- function(SRdata,
   
   if (method!="L2") {
     if (AR!=0) {
-      arres <- ar(resid,aic=FALSE,order.max=1)
+      message("L1 & out.AR=FALSE is NOT recommended")
+      arres <- ar(resid,aic=FALSE,order.max=1,demean=FALSE,method="mle")
       Res$pars[3] <- ifelse(arres$ar<0,sd,sqrt(arres$var.pred))
       Res$pars[4] <- ifelse(arres$ar<0,0,arres$ar)
     }
@@ -594,7 +595,7 @@ fit.SRregime <- function(
   
   if (is.null(p0)) {
     if (use.fit.SR) {
-      fit_SR_res = fit.SR(SRdata, SR = SR, method = method, w = w)
+      fit_SR_res = fit.SR(SRdata, SR = SR, method = method, w = w, AR = 0)
       init <- c(rep(fit_SR_res$opt$par[1],max(a_key)),rep(fit_SR_res$opt$par[2],max(b_key)))
     } else {
       init_list <- sapply(1:nrow(ab_grid), function(j) {

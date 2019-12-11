@@ -26,6 +26,7 @@
 # rvpa1.9 - maa.tune（tuning時だけ使用のmaa）, waa.catch（資源と漁獲でwaaが違う場合に対応）を使用可能に．index=NULLでtune=FALSEのときエラーが出ないように修正．
 # rvpa1.9.2 - 各indexに対する分散に制約をかけられるように修正。例えばindexが５本ある場合、sigma.constraint=c(1,2,2,3,3)とすると2,3本めと4,5本目のindexに対する分散は等しいとして推定する。180522中山
 # rvpa1.9.3 - Popeの近似式を一般化
+# rvpa1.9.4 - ridge vpaにF centering optionを追加 (penalty = "p")
 ##
 
 #' csvデータを読み込んでvpa用のデータを作成する関数
@@ -1069,7 +1070,9 @@ vpa <- function(
         }
       }     
       
-      if (penalty=="s") obj <- (1-lambda)*obj + lambda*sum((abs(saa[,ny]-apply(saa[, years %in% tf.year],1,get(stat.tf))))^beta)
+      if (penalty=="f") obj <- (1-lambda)*obj + lambda*sum((abs(faa[1:(na[ny]-1),ny]-apply(faa[1:(na[ny]-1), years %in% tf.year],1,get(stat.tf))))^beta)
+       
+      if (penalty=="s") obj <- (1-lambda)*obj + lambda*sum((abs(saa[1:(na[ny]-1),ny]-apply(saa[1:(na[ny]-1), years %in% tf.year],1,get(stat.tf))))^beta)
       
       if (!is.null(sel.rank)) obj <- obj+1000000*sum((rank(saa[,ny])-sel.rank)^2)
       
