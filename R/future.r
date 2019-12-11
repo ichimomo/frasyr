@@ -1922,15 +1922,16 @@ forward.calc.mat <- function(fav,nav,Mv,plus.group=TRUE){
   return(naa)
 }
 
-get.stat <- get.stat3 <- function(fout,eyear=0,tmp.year=NULL, use_tmb_output=FALSE){
+get.stat <- get.stat3 <- function(fout,eyear=0,tmp.year=NULL, use_tmb_output=FALSE, multi=NULL){
 
     if(isTRUE(use_tmb_output)){
-        fout$vssb <- fout$ssb
-        fout$vbiom <- apply(fout$naa * fout$tmb_data$waa_mat,c(2,3),sum)
-        fout$vwcaa <- apply(fout$caa,c(2,3),sum)
-        fout$waa <- fout$tmb_data$waa_mat
-        fout$maa <- fout$tmb_data$maa
-        fout$currentF <- fout$faa[,1,1] # ここは適当
+        fout$vssb <- apply(fout$naa_mat * fout$waa_mat * fout$maa_mat, c(2,3), sum)
+        fout$vbiom <- apply(fout$naa_mat * fout$waa_mat, c(2,3),sum)
+        fout$vwcaa <- apply(fout$caa_mat,c(2,3),sum)
+        fout$waa <- fout$waa_mat
+        fout$maa <- fout$maa_mat
+        fout$currentF <- fout$faa[,fout$start_F_year,1]
+        fout$multi <- multi
         col.target <- TRUE
     }
     else{
@@ -1966,7 +1967,8 @@ get.stat <- get.stat3 <- function(fout,eyear=0,tmp.year=NULL, use_tmb_output=FAL
                     "rec.H10"=quantile(unlist(fout$naa[1,,])[tmp.year,col.target],na.rm=T,probs=0.9),
                     
 #                    "lower.HSpoint"=lhs,
-                    "Fref2Fcurrent"=fout$multi
+                    "Fref2Fcurrent"=fout$multi,
+                    fmulti=fout$multi
                     )
     a$U.mean <- a$catch.mean/a$biom.mean
     a$U.median <- a$catch.median/a$biom.median
@@ -2023,7 +2025,7 @@ get.stat <- get.stat3 <- function(fout,eyear=0,tmp.year=NULL, use_tmb_output=FAL
                             paste("SSB-geomean-A",agename,sep=""),paste("SSB-det-A",agename,sep=""),
                             paste("SSB-L10-A",agename,sep=""),paste("SSB-H10-A",agename,sep=""))
     res.stat2 <- as.data.frame(t(c(tb.mat,tc.mat,ssb.mat)))
-    res.stat <- cbind(res.stat1,res.stat2)
+    res.stat <- cbind(res.stat1,res.stat2) %>% as_tibble()
     return(res.stat)    
 }    
 

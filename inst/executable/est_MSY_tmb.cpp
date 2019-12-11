@@ -4,6 +4,7 @@ template<class Type>
 Type objective_function<Type>::operator() ()
 {
   DATA_ARRAY(naa_mat);
+  DATA_ARRAY(caa_mat);  
   //  DATA_SCALAR(deviance_init);
   DATA_ARRAY(SR_mat); // 1: HS, 2: BH, 3: RI
   DATA_ARRAY(rec_par_a_mat);
@@ -23,9 +24,9 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(nsim);
   DATA_INTEGER(nage);
   DATA_INTEGER(recruit_age);    
-  DATA_INTEGER(obj_catch); // 0: mean, 1: geomean
+  DATA_INTEGER(obj_stat); // 0: mean, 1: geomean
   DATA_INTEGER(objective); // 0: MSY, 1: PGY, 2: percentB0 or Bempirical
-  DATA_SCALAR(objective_value); // Used for objective 1-2
+  DATA_SCALAR(obj_value); // Used for objective 1-2
   //  DATA_VECTOR(Fcurrent);
   //  DATA_INTEGER(Fcurrent_year);
   //  DATA_SCALAR(num_to_mass_scale);
@@ -48,6 +49,7 @@ Type objective_function<Type>::operator() ()
     for(int t=0; t<future_initial_year+1; t++){ // この時点で、future_initial_year前までにnaaがデータがあることを確認
       for(int iage=0; iage<nage; iage++) {
 	N_mat(iage,t,i) = naa_mat(iage,t,i);
+	catch_mat(iage,t,i) = caa_mat(iage,t,i);	
 	//	F_mat(iage,t,i) = faa_mat(iage,t,i);
 	spawner_mat(t,i) += N_mat(iage,t,i)*waa_mat(iage,t,i)*maa_mat(iage,t,i);
 	//	rec_devinace_mat(t,i) = rec_resid_mat(t,i)
@@ -124,13 +126,13 @@ Type objective_function<Type>::operator() ()
     for(int i=0; i<nsim; i++) {
       for(int a=0; a<nage; a++) {    
         if(objective < 2) {
-    	if(obj_catch == 0) {
+    	if(obj_stat == 0) {
     	  obj += catch_mat(a,total_nyear-1,i);
     	}else{
     	  obj += log(catch_mat(a,total_nyear-1,i));
     	}
         }else{
-    	if(obj_catch == 0) {
+    	if(obj_stat == 0) {
     	  obj += spawner_mat(total_nyear-1,i);
     	}else{
     	  obj += log(spawner_mat(total_nyear-1,i));
@@ -139,7 +141,7 @@ Type objective_function<Type>::operator() ()
       }}
    obj /= nsim;
 
-  if(obj_catch == 1) { 
+  if(obj_stat == 1) { 
     obj = exp(obj); // geomean
   }
   
@@ -147,13 +149,13 @@ Type objective_function<Type>::operator() ()
     obj = log(obj);
     obj *= -1; // negative log catch
   }else{ // PGY, percentB0, and Bempirical
-    obj = pow(log(obj/objective_value), Type(2.0));
+    obj = pow(log(obj/obj_value), Type(2.0));
   }
 
-  REPORT(F_mat);
-  REPORT(N_mat);
-  REPORT(spawner_mat);
-  REPORT(catch_mat);
+  REPORT(F_mat); // faa
+  REPORT(N_mat); // naa
+  REPORT(spawner_mat); // ssb
+  REPORT(catch_mat); // caa
   REPORT(future_initial_year);
   //  ADREPORT(obj);
 

@@ -78,6 +78,11 @@ set_SR_mat_lognormal <- function(res_vpa,
     return(SR_mat)
 }
 
+
+#' @export
+print.myarray <- function(x) cat("array :", dim(x),"\n")
+
+
 #### make data for future projection
 make_future_data <- function(res_vpa,
                           nsim = 1000, # number of simulation
@@ -101,7 +106,9 @@ make_future_data <- function(res_vpa,
                           HCR_year_lag=0,
                           # SR setting
                           res_SR=NULL,                       
-                          seed_number=1
+                          seed_number=1, 
+                          # Other
+                          Pope=res_vpa$input$Pope
                           ) 
 {
 
@@ -122,16 +129,21 @@ make_future_data <- function(res_vpa,
     print(tibble(allyear_name, allyear_label))
 
     # define empty array
-    waa_mat <- M_mat <- maa_mat <- naa_mat <- faa_mat <- 
+    waa_mat <- M_mat <- maa_mat <- naa_mat <- faa_mat <- caa_mat <- 
         array(0, dim=c(nage, total_nyear, nsim),
-              dimnames=list(age=age_name, year=allyear_name, nsim=1:nsim)) 
+              dimnames=list(age=age_name, year=allyear_name, nsim=1:nsim))
+    class(waa_mat) <- class(M_mat) <- class(maa_mat) <- class(naa_mat) <- class(faa_mat) <- class(caa_mat) <- "myarray"                                                                                  
     SR_mat <- array(0, dim=c(total_nyear, nsim, 8),
                     dimnames=list(year=allyear_name, nsim=1:nsim,
-                                  par=c("rand_resid","deviance","SR_type","a","b","rho","recruit","ssb")))
+                                  par=c("rand_resid","deviance",
+                                        "SR_type","a","b","rho","recruit","ssb"))) 
     HCR_mat <- array(0, dim=c(total_nyear, nsim, 8),
                     dimnames=list(year=allyear_name, nsim=1:nsim,
                                   par=c("beta","Blimit","Bban","gamma","year_lag", #1-5
-                                        "alpha","par2","par3"))) # 6-8
+                                        "alpha","par2","par3")))  # 6-8
+    class(SR_mat)  <- "myarray"
+    class(HCR_mat) <- "myarray"
+
     HCR_mat[,,"Blimit"] <- HCR_mat[,,"Bban"] <- -1
     HCR_mat[,,"beta"] <- HCR_mat[,,"alpha"] <- 1
     
@@ -141,6 +153,7 @@ make_future_data <- function(res_vpa,
     M_mat  [,1:vpa_nyear,] <- as.matrix(res_vpa$input$dat$M)
     faa_mat[,1:vpa_nyear,] <- as.matrix(res_vpa$faa)
     naa_mat[,1:vpa_nyear,] <- as.matrix(res_vpa$naa)
+    caa_mat[,1:vpa_nyear,] <- as.matrix(res_vpa$input$dat$caa)    
 
     waa_mat <- make_array(waa_mat, waa, waa_year, start_biopar_year_name)
     maa_mat <- make_array(maa_mat, maa, maa_year, start_biopar_year_name)
@@ -163,6 +176,7 @@ make_future_data <- function(res_vpa,
     
     # set data and parameter for TMB
     tmb_data <- list(naa_mat=naa_mat,
+                     caa_mat=caa_mat,
                      SR_mat = SR_mat[,,"SR_type"],
                      rec_par_a_mat =  SR_mat[,,"a"],
                      rec_par_b_mat =  SR_mat[,,"b"],
@@ -173,7 +187,7 @@ make_future_data <- function(res_vpa,
                      maa_mat = maa_mat,                     
                      M_mat = M_mat,
                      faa_mat = faa_mat,                     
-                     Pope = ifelse(isTRUE(res_vpa$input$Pope),1,0),
+                     Pope = as.numeric(Pope),
                      total_nyear = total_nyear,                     
                      future_initial_year = future_initial_year,
                      start_F_year=start_F_year,
@@ -181,36 +195,37 @@ make_future_data <- function(res_vpa,
                      nage = nage,
                      recruit_age = recruit_age,
                      HCR_mat = HCR_mat,
-                     obj_catch = 0, # 0: mean, 1:geomean
+                     obj_stat = 0, # 0: mean, 1:geomean
                      objective = 0, # 0: MSY, 1: PGY, 2: percentB0 or Bempirical
-                     objective_value = 12000
+                     obj_value = -1
                      )
 
-    argname <- ls()
-    arglist <- lapply(argname,function(x) eval(parse(text=x)))
-    names(arglist) <- argname    
-    
     return(tibble::lst(data=tmb_data,input=input))
 }
 
 naming_adreport <- function(tmb_data, ad_report){
-    ssb <- ad_report$spawner_mat
-    caa <- ad_report$catch_mat
-    naa <- ad_report$N_mat
-    faa <- ad_report$F_mat
+#    ssb <- ad_report$spawner_mat
+#    caa <- ad_report$catch_mat
+#    naa <- ad_report$N_mat
+    #    faa <- ad_report$F_mat
 
-    dimnames(ssb) <- dimnames(tmb_data$naa_mat)[2:3]
-    dimnames(naa) <- dimnames(faa) <- dimnames(caa) <- 
-        dimnames(tmb_data$naa_mat)
-    return(tibble::lst(ssb,naa,faa,caa,tmb_data))
+    tmb_data$caa_mat[] <- ad_report$catch_mat
+    tmb_data$naa_mat[] <- ad_report$N_mat
+    tmb_data$faa_mat[] <- ad_report$F_mat
+    tmb_data$ssb_mat <- ad_report$spawner_mat    
+
+    return(tmb_data)
 }
 
 future_vpa <- function(tmb_data,
                        optim_method="tmb",
-                       x_init = 0,
-                       x_lower = -3,
-                       x_upper = 4,
+                       multi_init = 0,
+                       multi_lower = -3,
+                       multi_upper = 4,
                        trace.multi=c(seq(from=0,to=0.9,by=0.1),1,seq(from=1.1,to=2,by=0.1),3:5,7,20,100),
+                       objective ="MSY", # or PGY, percentB0, Bempirical
+                       obj_value = 0,                         
+                       obj_stat  ="mean", 
                        compile=FALSE){
                            
     if(optim_method=="tmb" | optim_method=="both"){
@@ -220,26 +235,38 @@ future_vpa <- function(tmb_data,
                      CppDir = system.file("executable",package="frasyr"),
                      RunDir = getwd(), overwrite=compile) 
 
-        # estimate MSY
-        tmb_data$obj_catch <- 0
-        tmb_data$objective <- 0
-        objAD <- TMB::MakeADFun(tmb_data, list(x=x_init), DLL="est_MSY_tmb")
+        # estimation option
+        tmb_data$objective <-
+            dplyr::case_when(objective=="MSY"   ~ 0,
+                             objective=="PGY"   ~ 1,
+                             objective=="SSB"   ~ 2)        
+        tmb_data$obj_stat <-
+            dplyr::case_when(obj_stat=="mean"   ~ 0,
+                             obj_stat=="median" ~ 1)
+        tmb_data$obj_value <- obj_value
+        ##
+        
+        objAD <- TMB::MakeADFun(tmb_data, list(x=multi_init), DLL="est_MSY_tmb")
         msy_optim <- nlminb(objAD$par, objAD$fn, gr=objAD$gr,
-                            lower=list(x=x_lower),
-                            upper=list(x=x_upper))#,contol=nlminb_control)
+                            lower=list(x=multi_lower),
+                            upper=list(x=multi_upper))#,contol=nlminb_control)
 
-        multi_msy <- as.numeric(exp(msy_optim$par))
+        multi <- as.numeric(exp(msy_optim$par))
         msy <- exp(-msy_optim$objective)
         ad_report <- objAD$report()
 
-        res_stat <- naming_adreport(tmb_data, ad_report)
-        trace <- purrr::map_dfr(trace.multi, function(x)
-            naming_adreport(tmb_data=tmb_data, ad_report=objAD$report(x)) %>%
-            purrr::list_modify(multi=x) %>%
-            get.stat(use_tmb_output=TRUE))
-        res_future_tmb <- purrr::list_modify(res_stat, multi=multi_msy,msy=msy,trace=trace)
+        tmb_data_new <- naming_adreport(tmb_data, ad_report)
+        stat <- get.stat(tmb_data_new, use_tmb_output=TRUE, multi=multi)
+
+        trace <- purrr::map_dfr(log(trace.multi), function(x)
+            naming_adreport(tmb_data=tmb_data,
+                            ad_report=objAD$report(x)) %>%
+            get.stat(use_tmb_output=TRUE, multi=x))
+        
+        res_future_tmb <- tibble::lst(fout=tmb_data_new, multi,msy,trace, stat)
     }
 
+    #--- R ----
     if(optim_method=="R" | optim_method=="both"){
         R_obj_fun <- function(x, tmb_data, what_return="obj"){
             tmb_data$x <- x
@@ -248,19 +275,22 @@ future_vpa <- function(tmb_data,
             return(obj)
         }
         msy_optim <- nlminb(start=0, objective=R_obj_fun, tmb_data=tmb_data,
-                            lower=list(x=x_lower), upper=list(x=x_upper))
-
+                            lower=list(x=multi_lower), upper=list(x=multi_upper))
+        msy <- exp(-msy_optim$objective)
         multi <- exp(msy_optim$par)
-        res_future_R <- R_obj_fun(msy_optim$par, tmb_data=tmb_data,
+        tmb_data_new <- R_obj_fun(msy_optim$par, tmb_data=tmb_data,
                                   what_return="stat")
-        trace <- purrr::map_dfr(trace.multi, function(x)
-            R_obj_fun(x=x, tmb_data <- tmb_data, what_return="stat") %>%
-            purrr::list_modify(multi=x) %>%
-            get.stat(use_tmb_output=TRUE))       
-        res_future_R <- purrr::list_modify(res_future_R, multi=multi, trace=trace)
+        
+        stat <- get.stat(tmb_data_new, eyear=0, tmp.year=NULL, use_tmb_output=TRUE, multi=multi)
+        
+        trace <- purrr::map_dfr(log(trace.multi), function(x)
+            R_obj_fun(x=x, tmb_data = tmb_data, what_return="stat") %>%
+            get.stat(use_tmb_output=TRUE, multi=x)) 
+        
+        res_future_R <- tibble::lst(fout=tmb_data_new, multi,msy,trace, stat)
     }
     if(optim_method=="none"){
-        tmb_data$x <- x_init
+        tmb_data$x <- multi_init
         tmb_data$what_return <- "stat"
         res_future_R <- do.call(future_vpa_R, tmb_data)
     }
@@ -268,9 +298,17 @@ future_vpa <- function(tmb_data,
     if(optim_method=="tmb") return(res_future_tmb)
     if(optim_method=="R"|optim_method=="none")   return(res_future_R)
     if(optim_method=="both") return(list(tmb=res_future_tmb, R=res_future_R))
+
+    # 足りないもの
+    # 推定結果の簡易的グラフ(MSY_est_plot)
+    # waa.fun
+    # waa.catch
+    # 生産関係の細かい設定
+    # SR_matの名前の整理
 }
 
 future_vpa_R <- function(naa_mat,
+                         caa_mat,
                       SR_mat,
                       rec_par_a_mat,
                       rec_par_b_mat,
@@ -287,13 +325,17 @@ future_vpa_R <- function(naa_mat,
                       nsim,
                       nage,
                       recruit_age,
-                      obj_catch,
+                      obj_stat,
                       objective,
-                      objective_value,
+                      obj_value,
                       x,
                       what_return="obj",
                       HCR_mat                      
                       ){
+
+    argname <- ls()
+    tmb_data <- lapply(argname,function(x) eval(parse(text=x)))
+    names(tmb_data) <- argname    
 
     F_mat <- N_mat <- catch_mat <- naa_mat
     F_mat[] <- N_mat[] <- catch_mat <- 0
@@ -326,8 +368,12 @@ future_vpa_R <- function(naa_mat,
 
             # harvest control rule
             ssb_tmp <- spawner_mat[t-HCR_mat[t,i,"year_lag"],i]
-            if(ssb_tmp<HCR_mat[t,i,"Blimit"]) HCR_mat[t,i,"alpha"] <- HCR_mat[t,i,"beta"]*(ssb_tmp-HCR_mat[t,i,"Bban"])/(HCR_mat[t,i,"Blimit"]-HCR_mat[t,i,"Bban"])
-            if(ssb_tmp>HCR_mat[t,i,"Blimit"]) HCR_mat[t,i,"alpha"] <- HCR_mat[t,i,"beta"]
+            if(ssb_tmp<HCR_mat[t,i,"Blimit"]){
+                HCR_mat[t,i,"alpha"] <- HCR_mat[t,i,"beta"]*(ssb_tmp-HCR_mat[t,i,"Bban"])/(HCR_mat[t,i,"Blimit"]-HCR_mat[t,i,"Bban"])
+            }
+            else{
+                HCR_mat[t,i,"alpha"] <- HCR_mat[t,i,"beta"]
+            }
             if(HCR_mat[t,i,"alpha"]<0) HCR_mat[t,i,"alpha"] <- 0
 
             F_mat[,t,i] <- F_mat[,t,i]*HCR_mat[t,i,"alpha"]
@@ -342,7 +388,7 @@ future_vpa_R <- function(naa_mat,
         }
     }
 
-    if(Pope){
+    if(Pope==1){
         catch_mat <- N_mat*(1-exp(-F_mat))*exp(-M_mat/2) * waa_mat
     }
     else{
@@ -350,24 +396,28 @@ future_vpa_R <- function(naa_mat,
     }
 
     if(objective<2){
-        if(obj_catch==0) obj <- mean(catch_mat[,total_nyear,])
-        if(obj_catch==1) obj <- geomean(catch_mat[,total_nyear,])
+        if(obj_stat==0) obj <- mean(catch_mat[,total_nyear,])
+        if(obj_stat==1) obj <- geomean(catch_mat[,total_nyear,])
     }
     else{
-        if(obj_catch==0) obj <- mean(spawner_mat[,total_nyear,])
-        if(obj_catch==1) obj <- geomean(spawner_mat[,total_nyear,])
+        if(obj_stat==0) obj <- mean(spawner_mat[,total_nyear,])
+        if(obj_stat==1) obj <- geomean(spawner_mat[,total_nyear,])
     }
 
     if(objective==0) obj <- -log(obj)
     else{
-        obj <- (log(obj/objective_value))^2
+        obj <- (log(obj/obj_value))^2
     }
 
     if(what_return=="obj")  return(obj)
     if(what_return=="stat"){
-        return(list(naa=N_mat, faa=F_mat, caa=catch_mat,
-                    M=M_mat, maa=maa_mat, waa=waa_mat,
-                    vbiom=spawner_mat, HCR_mat=HCR_mat))
+        tmb_data$caa_mat[] <- catch_mat
+        tmb_data$naa_mat[] <- N_mat
+        tmb_data$faa_mat[] <- F_mat
+        tmb_data$ssb  <- spawner_mat %>% as_tibble()
+        return(tmb_data)
     }
+
+
 }
 
