@@ -222,7 +222,6 @@ future_vpa <- function(tmb_data,
                        multi_init = 0,
                        multi_lower = -3,
                        multi_upper = 4,
-                       trace.multi=c(seq(from=0,to=0.9,by=0.1),1,seq(from=1.1,to=2,by=0.1),3:5,7,20,100),
                        objective ="MSY", # or PGY, percentB0, Bempirical
                        obj_value = 0,                         
                        obj_stat  ="mean", 
@@ -258,12 +257,12 @@ future_vpa <- function(tmb_data,
         tmb_data_new <- naming_adreport(tmb_data, ad_report)
         stat <- get.stat(tmb_data_new, use_tmb_output=TRUE, multi=multi)
 
-        trace <- purrr::map_dfr(log(trace.multi), function(x)
-            naming_adreport(tmb_data=tmb_data,
-                            ad_report=objAD$report(x)) %>%
-            get.stat(use_tmb_output=TRUE, multi=x))
+#        trace <- purrr::map_dfr(log(trace.multi), function(x)
+#            naming_adreport(tmb_data=tmb_data,
+#                            ad_report=objAD$report(x)) %>%
+#            get.stat(use_tmb_output=TRUE, multi=x))
         
-        res_future_tmb <- tibble::lst(fout=tmb_data_new, multi,msy,trace, stat)
+        res_future_tmb <- tibble::lst(fout=tmb_data_new, multi,msy,stat)
     }
 
     #--- R ----
@@ -280,12 +279,9 @@ future_vpa <- function(tmb_data,
         multi <- exp(msy_optim$par)
         tmb_data_new <- R_obj_fun(msy_optim$par, tmb_data=tmb_data,
                                   what_return="stat")
-        
         stat <- get.stat(tmb_data_new, eyear=0, tmp.year=NULL, use_tmb_output=TRUE, multi=multi)
         
-        trace <- purrr::map_dfr(log(trace.multi), function(x)
-            R_obj_fun(x=x, tmb_data = tmb_data, what_return="stat") %>%
-            get.stat(use_tmb_output=TRUE, multi=x)) 
+        
         
         res_future_R <- tibble::lst(fout=tmb_data_new, multi,msy,trace, stat)
     }
@@ -421,3 +417,18 @@ future_vpa_R <- function(naa_mat,
 
 }
 
+trace_future <- function(tmb_data,
+                         trace.multi=c(seq(from=0,to=0.9,by=0.1),1,seq(from=1.1,to=2,by=0.1),3:5,7,20,100)){
+    R_obj_fun <- function(x, tmb_data, what_return="obj"){
+        tmb_data$x <- x
+        tmb_data$what_return <- what_return
+        obj <- do.call(future_vpa_R, tmb_data)
+        return(obj)
+    }    
+
+    trace <- purrr::map_dfr(log(trace.multi), function(x)
+        R_obj_fun(x=x, tmb_data = tmb_data, what_return="stat") %>%
+        get.stat(use_tmb_output=TRUE, multi=exp(x))) %>% as_tibble()
+    
+    return(trace)
+}
