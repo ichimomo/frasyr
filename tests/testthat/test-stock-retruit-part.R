@@ -18,12 +18,12 @@ context("stock-recruitment fitSR")
 test_that("oututput value check",{
   load(system.file("extdata","SRdata_pma.rda",package = "frasyr"))
 
-  SRmodel.list <- expand.grid(SR.rel = c("HS","BH","RI"), AR.type = c(0, 1, 1), out.AR=c(TRUE,TRUE,FALSE), L.type = c("L1", "L2"))
+  SRmodel.list <- expand.grid(SR.rel = c("HS","BH","RI"), AR.type = c(0, 1), out.AR=c(TRUE,FALSE), L.type = c("L1", "L2"))
   SR.list <- list()
-  for (i in 1:nrow(SRmodel.list)) {
 
+  for (i in 1:nrow(SRmodel.list)) {
     SR.list[[i]] <- fit.SR(SRdata_pma, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],
-                           AR = SRmodel.list$AR.type[i], out.AR =SRmodel.list$out.AR[i], hessian = FALSE)
+                           AR = SRmodel.list$AR.type[i], out.AR=SRmodel.list$out.AR[i], hessian = FALSE)
   }
 
   # SRタイプ、L1L2、自己相関タイプごとに異なるオブジェクトへ格納
