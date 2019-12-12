@@ -1,6 +1,6 @@
 library(frasyr)
 
-context("future SRdata")
+context("stock-recruitment SRdata")
 
 test_that("oututput value check",{
   load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
@@ -13,158 +13,36 @@ test_that("oututput value check",{
   expect_equal(SRdata_pma_check, SRdata_pma)
 })
 
-context("future fitSR")
+context("stock-recruitment fitSR")
 
 test_that("oututput value check",{
   load(system.file("extdata","SRdata_pma.rda",package = "frasyr"))
 
-  SRpma_HS_L1_AR0_check <- fit.SR(SRdata_pma,SR="HS",method="L1",AR=0,hessian=FALSE)
-  SRpma_HS_L1_AR1_check <- fit.SR(SRdata_pma,SR="HS",method="L1",AR=1,hessian=FALSE,out.AR = TRUE)
-  SRpma_HS_L1_AR1_outAR_F_check <- fit.SR(SRdata_pma,SR="HS",method="L1",AR=1,hessian=FALSE,out.AR = FALSE)
-  SRpma_HS_L2_AR0_check <- fit.SR(SRdata_pma,SR="HS",method="L2",AR=0,hessian=FALSE)
-  SRpma_HS_L2_AR1_check <- fit.SR(SRdata_pma,SR="HS",method="L2",AR=1,hessian=FALSE,out.AR = TRUE)
-  SRpma_HS_L2_AR1_outAR_F_check <- fit.SR(SRdata_pma,SR="HS",method="L2",AR=1,hessian=FALSE,out.AR = FALSE)
-  SRpma_BH_L1_AR0_check <- fit.SR(SRdata_pma,SR="BH",method="L1",AR=0,hessian=FALSE)
-  SRpma_BH_L1_AR1_check <- fit.SR(SRdata_pma,SR="BH",method="L1",AR=1,hessian=FALSE,out.AR = TRUE)
-  SRpma_BH_L1_AR1_outAR_F_check <- fit.SR(SRdata_pma,SR="BH",method="L1",AR=1,hessian=FALSE,out.AR = FALSE)
-  SRpma_BH_L2_AR0_check <- fit.SR(SRdata_pma,SR="BH",method="L2",AR=0,hessian=FALSE)
-  SRpma_BH_L2_AR1_check <- fit.SR(SRdata_pma,SR="BH",method="L2",AR=1,hessian=FALSE,out.AR = TRUE)
-  SRpma_BH_L2_AR1_outAR_F_check <- fit.SR(SRdata_pma,SR="BH",method="L2",AR=1,hessian=FALSE,out.AR = FALSE)
-  SRpma_RI_L1_AR0_check <- fit.SR(SRdata_pma,SR="RI",method="L1",AR=0,hessian=FALSE)
-  SRpma_RI_L1_AR1_check <- fit.SR(SRdata_pma,SR="RI",method="L1",AR=1,hessian=FALSE,out.AR = TRUE)
-  SRpma_RI_L1_AR1_outAR_F_check <- fit.SR(SRdata_pma,SR="RI",method="L1",AR=1,hessian=FALSE,out.AR = FALSE)
-  SRpma_RI_L2_AR0_check <- fit.SR(SRdata_pma,SR="RI",method="L2",AR=0,hessian=FALSE)
-  SRpma_RI_L2_AR1_check <- fit.SR(SRdata_pma,SR="RI",method="L2",AR=1,hessian=FALSE,out.AR = TRUE)
-  SRpma_RI_L2_AR1_outAR_F_check <- fit.SR(SRdata_pma,SR="RI",method="L2",AR=1,hessian=FALSE,out.AR = FALSE)
+  SRmodel.list <- expand.grid(SR.rel = c("HS","BH","RI"), AR.type = c(0, 1, 1), out.AR=c(TRUE,TRUE,FALSE), L.type = c("L1", "L2"))
+  SR.list <- list()
+  for (i in 1:nrow(SRmodel.list)) {
+
+    SR.list[[i]] <- fit.SR(SRdata_pma, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],
+                           AR = SRmodel.list$AR.type[i], out.AR =SRmodel.list$out.AR[i], hessian = FALSE)
+  }
+
+  # SRタイプ、L1L2、自己相関タイプごとに異なるオブジェクトへ格納
+  for (i in 1:nrow(SRmodel.list)) {
+    assign(sprintf("SRpma_%s_%s_AR%d_outAR%d_check",SRmodel.list$SR.rel[i],SRmodel.list$L.type[i], SRmodel.list$AR.type[i],SRmodel.list$out.AR[i]),SR.list[[i]])
+  }
 
   #上記引数での計算結果を読み込み
-  load(system.file("extdata","SRpma_HS_L1_AR0.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_HS_L1_AR1.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_HS_L2_AR0.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_HS_L2_AR1.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_BH_L1_AR0.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_BH_L1_AR1.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_BH_L2_AR0.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_BH_L2_AR1.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_RI_L1_AR0.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_RI_L1_AR1.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_RI_L2_AR0.rda",package = "frasyr"))
-  load(system.file("extdata","SRpma_RI_L2_AR1.rda",package = "frasyr"))
+  for(i in 1:nrow(SRmodel.list)){
+    checkfile.name <- sprintf("SRpma_%s_%s_AR%d_outAR%d.rda",SRmodel.list$SR.rel[i],SRmodel.list$L.type[i],SRmodel.list$AR.type[i],SRmodel.list$out.AR[i])
 
+    resfitSR <- load(system.file("extdata",checkfile.name,package = "frasyr"))
+    fitSR <- eval(parse(text=resfitSR))
 
-  #結果の数値を照合($par)----
-  #HS.L1.AR0
-  expect_equal(SRpma_HS_L1_AR0_check$par, SRpma_HS_L1_AR0$par)
-  #HS.L1.AR1
-  expect_equal(SRpma_HS_L1_AR1_outAR_F_check$par, SRpma_HS_L1_AR1$par)
-  #HS.L2.AR0
-  expect_equal(SRpma_HS_L2_AR0_check$par, SRpma_HS_L2_AR0$par)
-  #HS.L2.AR1
-  expect_equal(SRpma_HS_L2_AR1_outAR_F_check$par, SRpma_HS_L2_AR1$par)
+    resfitSR_check =paste("SRpma_",SRmodel.list$SR.rel[i],"_",SRmodel.list$L.type[i],"_AR", SRmodel.list$AR.type[i],"_outAR",as.numeric(SRmodel.list$out.AR[i]), sep="")
+    fitSR_check <- eval(parse(text=resfitSR_check))
 
-  #BH.L1.AR0
-  expect_equal(SRpma_BH_L1_AR0_check$par, SRpma_BH_L1_AR0$par)
-  #BH.L1.AR1
-  expect_equal(SRpma_BH_L1_AR1_outAR_F_check$par, SRpma_BH_L1_AR1$par)
-  #BH.L2.AR0
-  expect_equal(SRpma_BH_L2_AR0_check$par, SRpma_BH_L2_AR0$par)
-  #BH.L2.AR1
-  expect_equal(SRpma_BH_L2_AR1_outAR_F_check$par, SRpma_BH_L2_AR1$par)
-
-  #RI.L1.AR0
-  expect_equal(SRpma_RI_L1_AR0_check$par, SRpma_RI_L1_AR0$par)
-  #RI.L1.AR1
-  expect_equal(SRpma_RI_L1_AR1_outAR_F_check$par, SRpma_RI_L1_AR1$par)
-  #RI.L2.AR0
-  expect_equal(SRpma_RI_L2_AR0_check$par, SRpma_RI_L2_AR0$par)
-  #RI.L2.AR1
-  expect_equal(SRpma_RI_L2_AR1_outAR_F_check$par, SRpma_RI_L2_AR1$par)
-
-  #結果の数値を照合($resid)----
-  #HS.L1.AR0
-  expect_equal(SRpma_HS_L1_AR0_check$resid, SRpma_HS_L1_AR0$resid)
-  #HS.L1.AR1
-  expect_equal(SRpma_HS_L1_AR1_outAR_F_check$resid, SRpma_HS_L1_AR1$resid)
-  #HS.L2.AR0
-  expect_equal(SRpma_HS_L2_AR0_check$resid, SRpma_HS_L2_AR0$resid)
-  #HS.L2.AR1
-  expect_equal(SRpma_HS_L2_AR1_outAR_F_check$resid, SRpma_HS_L2_AR1$resid)
-
-  #BH.L1.AR0
-  expect_equal(SRpma_BH_L1_AR0_check$resid, SRpma_BH_L1_AR0$resid)
-  #BH.L1.AR1
-  expect_equal(SRpma_BH_L1_AR1_outAR_F_check$resid, SRpma_BH_L1_AR1$resid)
-  #BH.L2.AR0
-  expect_equal(SRpma_BH_L2_AR0_check$resid, SRpma_BH_L2_AR0$resid)
-  #BH.L2.AR1
-  expect_equal(SRpma_BH_L2_AR1_outAR_F_check$resid, SRpma_BH_L2_AR1$resid)
-
-  #RI.L1.AR0
-  expect_equal(SRpma_RI_L1_AR0_check$resid, SRpma_RI_L1_AR0$resid)
-  #RI.L1.AR1
-  expect_equal(SRpma_RI_L1_AR1_outAR_F_check$resid, SRpma_RI_L1_AR1$resid)
-  #RI.L2.AR0
-  expect_equal(SRpma_RI_L2_AR0_check$resid, SRpma_RI_L2_AR0$resid)
-  #RI.L2.AR1
-  expect_equal(SRpma_RI_L2_AR1_outAR_F_check$resid, SRpma_RI_L2_AR1$resid)
-
-
-  #結果の数値を照合($resid2)----
-  #HS.L1.AR0
-  expect_equal(SRpma_HS_L1_AR0_check$resid2, SRpma_HS_L1_AR0$resid2)
-  #HS.L1.AR1
-  expect_equal(SRpma_HS_L1_AR1_outAR_F_check$resid2, SRpma_HS_L1_AR1$resid2)
-  #HS.L2.AR0
-  expect_equal(SRpma_HS_L2_AR0_check$resid2, SRpma_HS_L2_AR0$resid2)
-  #HS.L2.AR1
-  expect_equal(SRpma_HS_L2_AR1_outAR_F_check$resid2, SRpma_HS_L2_AR1$resid2)
-
-  #BH.L1.AR0
-  expect_equal(SRpma_BH_L1_AR0_check$resid2, SRpma_BH_L1_AR0$resid2)
-  #BH.L1.AR1
-  expect_equal(SRpma_BH_L1_AR1_outAR_F_check$resid2, SRpma_BH_L1_AR1$resid2)
-  #BH.L2.AR0
-  expect_equal(SRpma_BH_L2_AR0_check$resid2, SRpma_BH_L2_AR0$resid2)
-  #BH.L2.AR1
-  expect_equal(SRpma_BH_L2_AR1_outAR_F_check$resid2, SRpma_BH_L2_AR1$resid2)
-
-  #RI.L1.AR0
-  expect_equal(SRpma_RI_L1_AR0_check$resid2, SRpma_RI_L1_AR0$resid2)
-  #RI.L1.AR1
-  expect_equal(SRpma_RI_L1_AR1_outAR_F_check$resid2, SRpma_RI_L1_AR1$resid2)
-  #RI.L2.AR0
-  expect_equal(SRpma_RI_L2_AR0_check$resid2, SRpma_RI_L2_AR0$resid2)
-  #RI.L2.AR1
-  expect_equal(SRpma_RI_L2_AR1_outAR_F_check$resid2, SRpma_RI_L2_AR1$resid2)
-
-
-  #結果の数値を照合($opt)----
-  #HS.L1.AR0
-  expect_equal(SRpma_HS_L1_AR0_check$opt, SRpma_HS_L1_AR0$opt)
-  #HS.L1.AR1
-  expect_equal(SRpma_HS_L1_AR1_outAR_F_check$opt, SRpma_HS_L1_AR1$opt)
-  #HS.L2.AR0
-  expect_equal(SRpma_HS_L2_AR0_check$opt, SRpma_HS_L2_AR0$opt)
-  #HS.L2.AR1
-  expect_equal(SRpma_HS_L2_AR1_outAR_F_check$opt, SRpma_HS_L2_AR1$opt)
-
-  #BH.L1.AR0
-  expect_equal(SRpma_BH_L1_AR0_check$opt, SRpma_BH_L1_AR0$opt)
-  #BH.L1.AR1
-  expect_equal(SRpma_BH_L1_AR1_outAR_F_check$opt, SRpma_BH_L1_AR1$opt)
-  #BH.L2.AR0
-  expect_equal(SRpma_BH_L2_AR0_check$opt, SRpma_BH_L2_AR0$opt)
-  #BH.L2.AR1
-  expect_equal(SRpma_BH_L2_AR1_outAR_F_check$opt, SRpma_BH_L2_AR1$opt)
-
-  #RI.L1.AR0
-  expect_equal(SRpma_RI_L1_AR0_check$opt, SRpma_RI_L1_AR0$opt)
-  #RI.L1.AR1
-  expect_equal(SRpma_RI_L1_AR1_outAR_F_check$opt, SRpma_RI_L1_AR1$opt)
-  #RI.L2.AR0
-  expect_equal(SRpma_RI_L2_AR0_check$opt, SRpma_RI_L2_AR0$opt)
-  #RI.L2.AR1
-  expect_equal(SRpma_RI_L2_AR1_outAR_F_check$opt, SRpma_RI_L2_AR1$opt)
+    expect_equal(fitSR,fitSR_check)
+   }
 
 
 })
