@@ -1655,7 +1655,7 @@ out.vpa <- function(res=NULL,    # VPA result
     write.table2(res$naa,title.tmp="Numbers at age")
 
     write("\n# total and spawning biomass ",file=csvname,append=T)
-    x <- rbind(colSums(res$ssb),colSums(res$baa),colSums(res$wcaa))
+    x <- rbind(colSums(res$ssb, na.rm=T),colSums(res$baa, na.rm=T),colSums(res$wcaa, na.rm=T))
     rownames(x) <- c("Spawning biomass","Total biomass","Catch biomass")
     write.table2(x,title.tmp="Total and spawning biomass")
 
