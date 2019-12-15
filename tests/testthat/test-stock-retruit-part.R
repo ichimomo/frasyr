@@ -44,6 +44,5 @@ test_that("oututput value check",{
     expect_equal(fitSR,fitSR_check)
    }
 
-
 })
 

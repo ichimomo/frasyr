@@ -61,7 +61,7 @@ test_that("oututput value check",{
 
 context("future future.vpa")
 
-test_that("oututput value check (iteration for future sim is fixed as 2) ",{#デフォルト設定では将来予測でSR.recAR関数の乱数生成により一致しない。
+test_that("oututput value check (iteration for future sim is fixed as 2) ",{#デフォルト設定では将来予測でHS.recAR関数の乱数生成により一致しない。
 
   load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
   load(system.file("extdata","SRdata_pma.rda",package = "frasyr"))
@@ -83,7 +83,7 @@ test_that("oututput value check (iteration for future sim is fixed as 2) ",{#デ
                                 rho=fittedSR$pars$rho, # ここではrho=0なので指定しなくてもOK
                                 sd=fittedSR$pars$sd,resid=fittedSR$resid)
 
-    selectedrecSR <- sprintf("%s.recAR",SRmodel.list$SR.rel[i])
+    selectedrecSR <- sprintf("%s.recAR",fittedSR$input$SR[1])
 
     fres_pma_check <-future.vpa(res0=res_pma,
                                 multi=1, # res.pma$Fc.at.ageに掛ける乗数
@@ -101,14 +101,64 @@ test_that("oututput value check (iteration for future sim is fixed as 2) ",{#デ
                                 # recfuncに対する引数
                                 rec.arg=fres_pma_recarg_list)
 
-    checkfile.name <- sprintf("fres_pma_%s_%s_AR%d_outAR%d.rda",SRmodel.list$SR.rel[i],SRmodel.list$L.type[i], SRmodel.list$AR.type[i],SRmodel.list$out.AR[i])
+
+        checkfile.name <- sprintf("fres_pma_%s_%s_AR%d_outAR%d.rda",SRmodel.list$SR.rel[i],SRmodel.list$L.type[i], SRmodel.list$AR.type[i],SRmodel.list$out.AR[i])
     resfuturevpa <- load(system.file("extdata",checkfile.name,package = "frasyr"))
     fres_pma <- eval(parse(text=resfuturevpa))
 
-    #expect_equal(fres_pma, fres_pma_check)
-
+    expect_equal(fres_pma, fres_pma_check)
   }
 })
+
+context("future future.vpa Fcurrent")
+
+test_that("oututput value check",{
+  load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
+  load(system.file("extdata","SRdata_pma.rda",package = "frasyr"))
+
+  SRmodel.list <- expand.grid(SR.rel = c("HS","BH","RI"), AR.type = c(0, 1), out.AR=c(TRUE,FALSE), L.type = c("L1", "L2"))
+  SR.list <- list()
+
+  for (i in 1:nrow(SRmodel.list)) {
+    SR.list[[i]] <- fit.SR(SRdata_pma, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],
+                           AR = SRmodel.list$AR.type[i], out.AR =SRmodel.list$out.AR[i], hessian = FALSE)
+  }
+
+  SRmodel.list$AICc <- sapply(SR.list, function(x) x$AICc)
+  SRmodel.list$delta.AIC <- SRmodel.list$AICc - min(SRmodel.list$AICc)
+  SR.list <- SR.list[order(SRmodel.list$AICc)]  # AICの小さい順に並べたもの
+  (SRmodel.list <- SRmodel.list[order(SRmodel.list$AICc), ]) # 結果
+
+  SRmodel.base <- SR.list[[1]] # AIC最小モデルを今後使っていく
+
+  selectedSR <- sprintf("%s.recAR",SRmodel.base$input$SR[1])
+
+  res_future_Fcurrent_pma_check <- future.vpa(res_pma,
+                                        multi=1,
+                                        nyear=50, # 将来予測の年数
+                                        start.year=2012, # 将来予測の開始年
+                                        N=100, # 確率的計算の繰り返し回数
+                                        ABC.year=2013, # ABCを計算する年
+                                        waa.year=2009:2011, # 生物パラメータの参照年
+                                        maa.year=2009:2011,
+                                        M.year=2009:2011,
+                                        is.plot=TRUE, # 結果をプロットするかどうか
+                                        seed=1,
+                                        silent=TRUE,
+                                        recfunc=eval(parse(text=selectedSR))
+                                        , # 再生産関係の関数
+                                        # recfuncに対する引数
+                                        rec.arg=list(a=SRmodel.base$pars$a,b=SRmodel.base$pars$b,
+                                                     rho=SRmodel.base$pars$rho, # ここではrho=0なので指定しなくてもOK
+                                                     sd=SRmodel.base$pars$sd,resid=SRmodel.base$resid))
+
+  #save(res_future_Fcurrent_pma,file = "/Users/fshin3/Desktop/res_future_Fcurrent_pma.rda")
+  load(system.file("extdata","res_future_Fcurrent_pma.rda",package = "frasyr"))
+
+  expect_equal(res_future_Fcurrent_pma,res_future_Fcurrent_pma_check)
+
+})
+
 
 context("future est MSY")
 
@@ -116,8 +166,7 @@ test_that("oututput value check",{
   load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
   load(system.file("extdata","SRdata_pma.rda",package = "frasyr"))
 
-  SRmodel.list <- expand.grid(SR.rel = c("HS","BH","RI"), AR.type = c(0, 1, 1), out.AR=c(TRUE,TRUE,FALSE), L.type = c("L1", "L2"))
-
+  SRmodel.list <- expand.grid(SR.rel = c("HS","BH","RI"), AR.type = c(0, 1), out.AR=c(TRUE,FALSE), L.type = c("L1", "L2"))
   SR.list <- list()
 
   for (i in 1:nrow(SRmodel.list)) {
