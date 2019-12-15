@@ -1,4 +1,4 @@
-## ----setup, include = FALSE----------------------------------------------
+## ----setup, include = FALSE---------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
@@ -6,7 +6,7 @@ knitr::opts_chunk$set(
   fig.height=5
 )
 
-## ----SRdata--------------------------------------------------------------
+## ----SRdata-------------------------------------------------------------------
 # ライブラリとデータの読み出し
 library(frasyr)
 data(res_vpa)
@@ -14,13 +14,13 @@ data(res_vpa)
 SRdata <- get.SRdata(res_vpa)
 head(SRdata)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 # SSBとRのデータだけを持っている場合
 SRdata0 <- get.SRdata(R.dat=exp(rnorm(10)),SSB.dat=exp(rnorm(10)))
 # 特定の期間のデータだけを使う場合
 SRdata0 <- get.SRdata(res_vpa,years=1990:2000) 
 
-## ----SRfit---------------------------------------------------------------
+## ----SRfit--------------------------------------------------------------------
 HS.par0 <- fit.SR(SRdata,SR="HS",method="L2",AR=0,hessian=FALSE)
 HS.par1 <- fit.SR(SRdata,SR="HS",method="L2",AR=1,hessian=FALSE)
 BH.par0 <- fit.SR(SRdata,SR="BH",method="L2",AR=0,hessian=FALSE)
@@ -35,7 +35,7 @@ lines(HS.par0$pred,col=2,type="l",lwd=3)
 lines(BH.par0$pred,col=3,type="l",lwd=3)    
 lines(RI.par0$pred,col=4,type="l",lwd=3)
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  # install.packages("TMB")　#TMBがインストールされてなければ
 #  #library(TMB)
 #  #compile("autoregressiveSR2.cpp")
@@ -61,7 +61,7 @@ fres.HS <- future.vpa(res_vpa,
                                    rho=HS.par0$pars$rho, # ここではrho=0なので指定しなくてもOK
                                    sd=HS.par0$pars$sd,resid=HS.par0$resid))
 
-## ----future.vpaAR--------------------------------------------------------
+## ----future.vpaAR-------------------------------------------------------------
 fres.HS.AR <- future.vpa(res_vpa,
                       multi=1,
                       nyear=50, # 将来予測の年数
@@ -99,23 +99,23 @@ fres.BH <- future.vpa(res_vpa,
                       rec.arg=list(a=BH.par0$pars$a,b=BH.par0$pars$b,rho=BH.par0$rho,
                                    sd=BH.par0$pars$sd,resid=BH.par0$resid))
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 fres.HS2 <- do.call(future.vpa,fres.HS$input)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 # 引数をinput.tmpに代入．
 input.tmp <- fres.HS2$input
 # 引数の一部を変える
 input.tmp$multi <- 0.5 # current Fの1/2で漁獲
 fres.HS3 <- do.call(future.vpa,input.tmp)
 
-## ---- fig.cap="図：plot.futures関数の結果"-------------------------------
+## ---- fig.cap="図：plot.futures関数の結果"------------------------------------
 par(mfrow=c(2,2))
 #plot.futures(list(fres.HS,fres.HS3),legend.text=c("F=Fcurrent","F=0.5Fcurrent"),target="SSB")
 #plot.futures(list(fres.HS,fres.HS3),legend.text=c("F=Fcurrent","F=0.5Fcurrent"),target="Catch")
 #plot.futures(list(fres.HS,fres.HS3),legend.text=c("F=Fcurrent","F=0.5Fcurrent"),target="Biomass") 
 
-## ---- fig.cap="図：plot.futures関数の結果"-------------------------------
+## ---- fig.cap="図：plot.futures関数の結果"------------------------------------
 byear <- 2015:2017 # 生物パラメータを平均する期間を2009年から2011年とする
 rps.year <- 2001:2011
 fout.rps <- future.vpa(res_vpa,currentF=NULL, multi=1, 
@@ -128,7 +128,7 @@ fout.rps <- future.vpa(res_vpa,currentF=NULL, multi=1,
                       upper.recruit=Inf))
                     
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 # 残差リサンプリングによる将来予測
 fres.HS4 <- future.vpa(res_vpa,
                           multi=1,
@@ -147,7 +147,7 @@ fres.HS4 <- future.vpa(res_vpa,
                                        sd=HS.par0$pars$sd,bias.correction=TRUE,
                                        resample=TRUE,resid=HS.par0$resid))
 
-## ----eval=FALSE----------------------------------------------------------
+## ----eval=FALSE---------------------------------------------------------------
 #  par(mfrow=c(2,2))
 #  plot(fres.HS$vssb[,-1],fres.HS$naa[1,,-1],xlab="SSB",ylab="Recruits")
 #  plot(fres.HS4$vssb[,-1],fres.HS4$naa[1,,-1],xlab="SSB",ylab="Recruits")
@@ -172,7 +172,7 @@ fres.currentSSB <- future.vpa(res_vpa,
                                    rho=HS.par0$pars$rho,                                    
                                    sd=HS.par0$pars$sd,bias.corrected=TRUE))
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 lm.res <- plot_waa(res_vpa) # weight at ageが資源尾数の関数になっているかどうか，確認してみる．この例の場合は特に有意な関係はない
 # lm.resの中に回帰した結果が年齢分だけ入っています
 fres.HS6 <- fres.HS
@@ -180,7 +180,7 @@ fres.HS6$input$waa.fun <- TRUE
 fres.HS6$input$N <- 1000
 fres.HS6 <- do.call(future.vpa, fres.HS6$input)
 
-## ----options-------------------------------------------------------------
+## ----options------------------------------------------------------------------
 fres.HS5 <- future.vpa(res_vpa,
                        multi=1,
                        nyear=50, # 将来予測の年数
@@ -199,7 +199,7 @@ fres.HS5 <- future.vpa(res_vpa,
                        pre.catch=list(year=2013,wcatch=100)
                        )
 
-## ----ref.F, fig.cap="図：YPR, SPR曲線"-----------------------------------
+## ----ref.F, fig.cap="図：YPR, SPR曲線"----------------------------------------
 byear <- 2015:2017 # 生物パラメータを平均する期間を2009年から2011年とする
 res_bref <- ref.F(res_vpa, # VPAの計算結果
                   waa.year=byear, maa.year=byear, M.year=byear, 
@@ -207,10 +207,10 @@ res_bref <- ref.F(res_vpa, # VPAの計算結果
                   max.age=Inf, # SPR計算で仮定する年齢の最大値 
                   pSPR=c(10,20,30,35,40)) # F_%SPRを計算するときに，何パーセントのSPRを計算するか
 
-## ----ref.F2--------------------------------------------------------------
+## ----ref.F2-------------------------------------------------------------------
 res_bref$summary
 
-## ----ref.F3, fig.cap="図：YPR, SPR曲線 (x軸などを変更した場合)"----------
+## ----ref.F3, fig.cap="図：YPR, SPR曲線 (x軸などを変更した場合)"---------------
 # 横軸や縦線で示す管理基準値を調整する場合、plot_Fref関数を使う
 # x.labelは res_bref$summaryの行名、vline.textは res_bref$summaryの列名前に対応させて指定する
 plot_Fref(res_bref,xlabel="Fref/Fcur", vline.text=c("FpSPR.20.SPR","FpSPR.30.SPR","FpSPR.40.SPR"))

@@ -1,4 +1,4 @@
-## ----setup, include=FALSE, warning=FALSE,eval=FALSE,echo=FALSE-----------
+## ----setup, include=FALSE, warning=FALSE,eval=FALSE,echo=FALSE----------------
 #  # ここのチャンクはもう必要ないので，削除してもOKです
 #  library(rmdformats)
 #  ## Global options
@@ -11,7 +11,7 @@
 #                 message=FALSE,
 #                 warning=FALSE)
 
-## ---- warning=FALSE------------------------------------------------------
+## ---- warning=FALSE-----------------------------------------------------------
 library(frasyr)
 data(res_vpa)
 SRdata <- get.SRdata(res_vpa) 
@@ -32,7 +32,7 @@ legend("topleft",
 
 resSR <- resHS #HSを選択
 
-## ----message=FALSE,warning=FALSE-----------------------------------------
+## ----message=FALSE,warning=FALSE----------------------------------------------
 resAR1 <- fit.SR(SRdata,SR="HS",method="L2",AR=1)
 resL1 <- fit.SR(SRdata,SR="HS",method="L1",AR=0)
 
@@ -48,7 +48,7 @@ legend("topleft",
 
 resSR <- resL1 #L1 normを採用
 
-## ----warning=FALSE-------------------------------------------------------
+## ----warning=FALSE------------------------------------------------------------
 check1 <- shapiro.test(resSR$resid)
 check2 <- ks.test(resSR$resid,y="pnorm",sd=resSR$pars$sd)
 
@@ -63,7 +63,7 @@ mtext(text=sprintf(" KS: %1.3f",check2$p.value),adj=1,line=-3)
 qqnorm(resSR$resid2,cex=2)
 qqline(resSR$resid2,lwd=3)
 
-## ----warning=FALSE-------------------------------------------------------
+## ----warning=FALSE------------------------------------------------------------
 par(mfrow=c(1,2),mar=c(4,4,2,2))
 plot(SRdata$year, resSR$resid2,pch=16,main="",xlab="Year",ylab="Residual")
 abline(0,0,lty=2)
@@ -72,7 +72,7 @@ scatter.smooth(SRdata$year, resSR$resid2, lpars=list(col="red", lwd=2),ann=F,axe
 ac.res <- acf(resSR$resid2,plot=FALSE)
 plot(ac.res,main="",lwd=3)
 
-## ----warning=FALSE-------------------------------------------------------
+## ----warning=FALSE------------------------------------------------------------
 boot.res <- boot.SR(resSR)
 
 par(mfrow=c(2,2),mar=c(4,4,2,2))
@@ -117,7 +117,7 @@ for (i in 1:length(boot.res)) {
 }
 points(resSR$pred$SSB,resSR$pred$R,col=2,type="l",lwd=3)
 
-## ----warning=FALSE-------------------------------------------------------
+## ----warning=FALSE------------------------------------------------------------
 jack.res <- lapply(1:length(SRdata$year), function(i){
   jack <- resSR
   jack$input$w[i] <- 0
@@ -153,7 +153,7 @@ for (i in 1:length(jack.res)) {
 points(resSR$pred$SSB,resSR$pred$R,col=2,type="l",lwd=3)
 
 
-## ----warning=FALSE-------------------------------------------------------
+## ----warning=FALSE------------------------------------------------------------
 ngrid <- 100
 a.grid <- seq(resSR$pars$a*0.5,resSR$pars$a*1.5,length=ngrid)
 b.grid <- seq(min(SRdata$SSB),max(SRdata$SSB),length=ngrid)
