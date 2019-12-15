@@ -152,7 +152,6 @@ test_that("oututput value check",{
                                                      rho=SRmodel.base$pars$rho, # ここではrho=0なので指定しなくてもOK
                                                      sd=SRmodel.base$pars$sd,resid=SRmodel.base$resid))
 
-  #save(res_future_Fcurrent_pma,file = "/Users/fshin3/Desktop/res_future_Fcurrent_pma.rda")
   load(system.file("extdata","res_future_Fcurrent_pma.rda",package = "frasyr"))
 
   expect_equal(res_future_Fcurrent_pma,res_future_Fcurrent_pma_check)
@@ -202,7 +201,6 @@ test_that("oututput value check",{
                                                      rho=SRmodel.base$pars$rho, # ここではrho=0なので指定しなくてもOK
                                                      sd=SRmodel.base$pars$sd,resid=SRmodel.base$resid))
 
-
   res_MSY_pma_check <- est.MSY(res_pma, # VPAの計算結果
                                res_future_Fcurrent_pma$input, # 将来予測で使用した引数
                                resid.year=0, # ARありの場合、最近何年分の残差を平均するかをここで指定する。ARありの設定を反映させたい場合必ずここを１以上とすること（とりあえず１としておいてください）。
@@ -219,9 +217,9 @@ test_that("oututput value check",{
 
   load(system.file("extdata","res_MSY_pma.rda",package = "frasyr"))
 
-  #expect_equal(res_MSY_pma,res_MSY_pma_check)
+  expect_equal(res_MSY_pma,res_MSY_pma_check)
 
-})
+ })
 
 context("future HCR")
 
@@ -246,7 +244,6 @@ test_that("oututput value check",{
   load(system.file("extdata","refs_base_pma.rda",package = "frasyr"))
 
   expect_equal(refs_base_pma,refs_base_pma_check)
-
 
 })
 
