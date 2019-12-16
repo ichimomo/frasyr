@@ -1,4 +1,4 @@
-## ----setup, include = FALSE----------------------------------------------
+## ----setup, include = FALSE---------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
@@ -6,7 +6,7 @@ knitr::opts_chunk$set(
   fig.height=10
 )
 
-## ----data-read-----------------------------------------------------------
+## ----data-read----------------------------------------------------------------
 library(frasyr)
 library(tidyverse)
 
@@ -17,7 +17,7 @@ plot(res_vpa$Fc.at.age,type="b",xlab="Age",ylab="F",ylim=c(0,max(res_vpa$Fc.at.a
 # 独自のFc.at.ageを使いたい場合は以下のようにここで指定する
 # res_vpa$Fc.at.age[] <- c(1,1,2,2)
 
-## ----SRdata--------------------------------------------------------------
+## ----SRdata-------------------------------------------------------------------
 # VPA結果を使って再生産データを作る
 SRdata <- get.SRdata(res_vpa, years=1988:2016) 
 head(SRdata)
@@ -75,7 +75,7 @@ res_MSY <- est.MSY(res_vpa, # VPAの計算結果
                               SRmodel.base$pars$b) # HSの折れ点
                  ) # 計算したいB0%レベル
 
-## ----summary-------------------------------------------------------------
+## ----summary------------------------------------------------------------------
 # 結果の表示(tibbleという形式で表示され、最初の10行以外は省略されます)
 options(tibble.width = Inf)
 (refs.all <- res_MSY$summary)
@@ -84,7 +84,7 @@ options(tibble.width = Inf)
 # View(refs.all)
 
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 # どの管理基準値をどのように定義するか。デフォルトから外れる場合はここで定義する
 refs.all$RP.definition[refs.all$RP_name=="B0-20%" & refs.all$AR==FALSE] <- "Btarget1"  # たとえばBtargetの代替値としてB020%も候補に残しておきたい場合
 refs.all$RP.definition[refs.all$RP_name=="PGY_0.95_lower" & refs.all$AR==FALSE] <- "Btarget2" 
@@ -103,7 +103,7 @@ refs.all %>% dplyr::select(RP_name,RP.definition)
     dplyr::select(RP.definition,RP_name,SSB,SSB2SSB0,Catch,Catch.CV,U,Fref2Fcurrent)) #　列を並び替え
 
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 # デフォルトのHCRはBtarget0,Blimit0,Bban0のセットになるので、それを使って将来予測する
 input.abc <- res_future_Fcurrent$input # Fcurrentにおける将来予測の引数をベースに将来予測します
 input.abc$multi <- derive_RP_value(refs.base,"Btarget0")$Fref2Fcurrent # currentFへの乗数を"Btarget0"で指定した値に
