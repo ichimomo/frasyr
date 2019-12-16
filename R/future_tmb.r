@@ -21,6 +21,8 @@ make_array <- function(d3_mat, pars, pars.year, year_replace_future){
 
 #'
 #' 対数正規分布の残差分布を作る関数
+#'
+#' 再生産関係は一定
 #' 
 
 set_SR_mat_lognormal <- function(res_vpa,
@@ -57,7 +59,7 @@ set_SR_mat_lognormal <- function(res_vpa,
     # re-culcurate recruitment deviation
     SR_mat[1:(start_random_rec_year-1),,"ssb"] <- as.numeric(colSums(res_vpa$ssb))[1:(start_random_rec_year-1)]
     SR_mat[1:(start_random_rec_year-1),,"recruit"] <- as.numeric(res_vpa$naa[1,1:(start_random_rec_year-1)])
-    SR_mat[1:(start_random_rec_year-1),,"deviance"] <- #res_SR$resid[1:(start_random_rec_year-1)]
+    SR_mat[1:(start_random_rec_year-1),,"deviance"] <- 
         log(SR_mat[1:(start_random_rec_year-1),,"recruit"]) -
         log(SRF(SR_mat[1:(start_random_rec_year-1),,"ssb"],
                 SR_mat[1:(start_random_rec_year-1),,"a"],
@@ -73,8 +75,7 @@ set_SR_mat_lognormal <- function(res_vpa,
     for(t in random_rec_year_period){
         SR_mat[t, ,"deviance"] <- SR_mat[t-1, ,"deviance"]*SR_mat[t,,"rho"] + SR_mat[t, ,"rand_resid"] 
     }
-    SR_mat[random_rec_year_period,,"deviance"]   <- SR_mat[random_rec_year_period,,"deviance"] - 0.5* sd_with_AR^2
-    ### バイアス補正のやりかたがよくわからない。。。じっくり考えること
+    SR_mat[random_rec_year_period,,"deviance"] <- SR_mat[random_rec_year_period,,"deviance"] - 0.5* sd_with_AR^2
     return(SR_mat)
 }
 
@@ -135,8 +136,11 @@ make_future_data <- function(res_vpa,
     class(waa_mat) <- class(M_mat) <- class(maa_mat) <- class(naa_mat) <- class(faa_mat) <- class(caa_mat) <- "myarray"                                                                                  
     SR_mat <- array(0, dim=c(total_nyear, nsim, 8),
                     dimnames=list(year=allyear_name, nsim=1:nsim,
-                                  par=c("rand_resid","deviance",
-                                        "SR_type","a","b","rho","recruit","ssb"))) 
+                                  par=c("a","b","rho", #1-3
+                                        "SR_type", # 4
+                                        "rand_resid", # 5
+                                        "deviance", #6
+                                        "recruit","ssb"))) 
     HCR_mat <- array(0, dim=c(total_nyear, nsim, 8),
                     dimnames=list(year=allyear_name, nsim=1:nsim,
                                   par=c("beta","Blimit","Bban","gamma","year_lag", #1-5
@@ -177,12 +181,13 @@ make_future_data <- function(res_vpa,
     # set data and parameter for TMB
     tmb_data <- list(naa_mat=naa_mat,
                      caa_mat=caa_mat,
-                     SR_mat = SR_mat[,,"SR_type"],
-                     rec_par_a_mat =  SR_mat[,,"a"],
-                     rec_par_b_mat =  SR_mat[,,"b"],
-                     rec_par_rho_mat =  SR_mat[,,"rho"],
-#                     bias_corrected_mean = -0.5 * (sd_with_AR)^2, # bias correction factorを入れる
-                     rec_resid_mat = SR_mat[,,"deviance"],
+                     SR_mat=SR_mat,
+#                     SR_type=SR_mat[,,"SR_type"],
+#                     SR_mat = SR_mat[,,"SR_type"],
+#                     rec_par_a_mat =  SR_mat[,,"a"],
+#                     rec_par_b_mat =  SR_mat[,,"b"],
+#                     rec_par_rho_mat =  SR_mat[,,"rho"],
+#                     rec_resid_mat = SR_mat[,,"deviance"],
                      waa_mat = waa_mat,
                      maa_mat = maa_mat,                     
                      M_mat = M_mat,
@@ -212,43 +217,42 @@ naming_adreport <- function(tmb_data, ad_report){
     tmb_data$caa_mat[] <- ad_report$catch_mat
     tmb_data$naa_mat[] <- ad_report$N_mat
     tmb_data$faa_mat[] <- ad_report$F_mat
-    tmb_data$ssb_mat <- ad_report$spawner_mat    
+    tmb_data$ssb_mat <- ad_report$spawner_mat %>% as_tibble()
 
     return(tmb_data)
 }
 
 future_vpa <- function(tmb_data,
                        optim_method="tmb",
-                       multi_init = 0,
-                       multi_lower = -3,
-                       multi_upper = 4,
+                       multi_init = 1,
+                       multi_lower = 0,
+                       multi_upper = 10,
                        objective ="MSY", # or PGY, percentB0, Bempirical
                        obj_value = 0,                         
                        obj_stat  ="mean", 
                        compile=FALSE){
-                           
+
+    # conversion of estimation option
+    tmb_data$objective <-
+        dplyr::case_when(objective=="MSY"   ~ 0,
+                         objective=="PGY"   ~ 1,
+                         objective=="SSB"   ~ 2)        
+    tmb_data$obj_stat <-
+        dplyr::case_when(obj_stat=="mean"   ~ 0,
+                         obj_stat=="median" ~ 1)
+    tmb_data$obj_value <- obj_value
+    
     if(optim_method=="tmb" | optim_method=="both"){
         
         # comple & load cpp file
         use_rvpa_tmb(TmbFile = "est_MSY_tmb",
                      CppDir = system.file("executable",package="frasyr"),
                      RunDir = getwd(), overwrite=compile) 
-
-        # estimation option
-        tmb_data$objective <-
-            dplyr::case_when(objective=="MSY"   ~ 0,
-                             objective=="PGY"   ~ 1,
-                             objective=="SSB"   ~ 2)        
-        tmb_data$obj_stat <-
-            dplyr::case_when(obj_stat=="mean"   ~ 0,
-                             obj_stat=="median" ~ 1)
-        tmb_data$obj_value <- obj_value
-        ##
-        
-        objAD <- TMB::MakeADFun(tmb_data, list(x=multi_init), DLL="est_MSY_tmb")
+       
+        objAD <- TMB::MakeADFun(tmb_data, list(x=log(multi_init)), DLL="est_MSY_tmb")
         msy_optim <- nlminb(objAD$par, objAD$fn, gr=objAD$gr,
-                            lower=list(x=multi_lower),
-                            upper=list(x=multi_upper))#,contol=nlminb_control)
+                            lower=list(x=log(multi_lower)),
+                            upper=list(x=log(multi_upper)))#,contol=nlminb_control)
 
         multi <- as.numeric(exp(msy_optim$par))
         msy <- exp(-msy_optim$objective)
@@ -274,19 +278,16 @@ future_vpa <- function(tmb_data,
             return(obj)
         }
         msy_optim <- nlminb(start=0, objective=R_obj_fun, tmb_data=tmb_data,
-                            lower=list(x=multi_lower), upper=list(x=multi_upper))
+                            lower=list(x=log(multi_lower)), upper=list(x=log(multi_upper)))
         msy <- exp(-msy_optim$objective)
         multi <- exp(msy_optim$par)
         tmb_data_new <- R_obj_fun(msy_optim$par, tmb_data=tmb_data,
                                   what_return="stat")
         stat <- get.stat(tmb_data_new, eyear=0, tmp.year=NULL, use_tmb_output=TRUE, multi=multi)
-        
-        
-        
-        res_future_R <- tibble::lst(fout=tmb_data_new, multi,msy,trace, stat)
+        res_future_R <- tibble::lst(fout=tmb_data_new, multi,msy,stat)
     }
     if(optim_method=="none"){
-        tmb_data$x <- multi_init
+        tmb_data$x <- log(multi_init)
         tmb_data$what_return <- "stat"
         res_future_R <- do.call(future_vpa_R, tmb_data)
     }
@@ -301,15 +302,12 @@ future_vpa <- function(tmb_data,
     # waa.catch
     # 生産関係の細かい設定
     # SR_matの名前の整理
+    # FperSPRの計算結果を出力する
 }
 
 future_vpa_R <- function(naa_mat,
                          caa_mat,
                       SR_mat,
-                      rec_par_a_mat,
-                      rec_par_b_mat,
-                      rec_par_rho_mat,
-                      rec_resid_mat,
                       waa_mat,
                       M_mat,
                       maa_mat,                      
@@ -333,8 +331,8 @@ future_vpa_R <- function(naa_mat,
     tmb_data <- lapply(argname,function(x) eval(parse(text=x)))
     names(tmb_data) <- argname    
 
-    F_mat <- N_mat <- catch_mat <- naa_mat
-    F_mat[] <- N_mat[] <- catch_mat <- 0
+    F_mat <- N_mat <-  naa_mat
+    F_mat[] <- N_mat[] <-  0
     
     N_mat[,1:future_initial_year,] <- naa_mat[,1:future_initial_year,]
     spawner_mat <- apply(N_mat * waa_mat * maa_mat, c(2,3) , sum)
@@ -342,80 +340,75 @@ future_vpa_R <- function(naa_mat,
     F_mat[,1:(start_F_year-1),] <- faa_mat[,1:(start_F_year-1),]
     F_mat[,start_F_year:total_nyear,] <- faa_mat[,start_F_year:total_nyear,] * exp(x)
 
-    for(i in 1:nsim){
-        for(t in future_initial_year:total_nyear){
-            spawner_mat[t,i] <- sum(N_mat[,t,i] * waa_mat[,t,i] * maa_mat[,t,i])
+    for(t in future_initial_year:total_nyear){
+        spawner_mat[t,] <- colSums(N_mat[,t,] * waa_mat[,t,] * maa_mat[,t,])
+        if(t>future_initial_year){
+            spawn_t <- t-recruit_age
+            N_mat[1,t,] <- purrr::pmap_dbl(tibble(x=SR_mat[t,,"SR_type"],
+                             ssb=spawner_mat[spawn_t,],
+                             a=SR_mat[t,,"a"],b=SR_mat[t,,"b"]),
+                      function(x,ssb,a,b){
+                          fun <- list(SRF_HS,SRF_BH,SRF_RI)[[x]];
+                          fun(ssb,a,b)
+                      })
+            N_mat[1,t,] <- N_mat[1,t,]*exp(SR_mat[t,,"deviance"]);            
+        }
 
-            if(t>future_initial_year){
-                if(SR_mat[t,i] == 1) { # Hockey-stick
-                    rec_pred1 <- spawner_mat[t-recruit_age,i]*rec_par_a_mat[t,i]
-                    rec_pred2 <- rec_par_b_mat[t,i]*rec_par_a_mat[t,i]
-                    N_mat[1,t,i] <- min(rec_pred1, rec_pred2)
-                }
-                if(SR_mat[t,i] == 2) { # Beverton-Holt
-                    N_mat[1,t,i] <- rec_par_a_mat[t,i]*spawner_mat[t-recruit_age,i]/
-                        (1+rec_par_b_mat[t,i]*spawner_mat[t-recruit_age,i]);
-                }
-                if(SR_mat[t,i] == 3) { # Ricker
-                    N_mat[1,t,i] <- rec_par_a_mat[t,i]*spawner_mat[t-recruit_age,i]*exp(-rec_par_b_mat[t,i]*spawner_mat[t-recruit_age,i]);
-                }
-                N_mat[1,t,i] <- N_mat[1,t,i]*exp(rec_resid_mat[t,i]);
-            }
+        # harvest control rule
+        ssb_tmp <- spawner_mat[cbind(t-HCR_mat[t,,"year_lag"],1:nsim)]
+        Blimit <- HCR_mat[t,,"Blimit"]
+        HCR_mat[t, ,"alpha"] <- HCR_mat[t, ,"beta"]
+        tmp <- ssb_tmp < Blimit
+        HCR_mat[t, tmp ,"alpha"] <- HCR_mat[t,tmp,"beta"]*(ssb_tmp[tmp]-HCR_mat[t,tmp,"Bban"])/
+            (HCR_mat[t,tmp,"Blimit"]-HCR_mat[t,tmp,"Bban"])
+        HCR_mat[t, HCR_mat[t,,"alpha"]<0 ,"alpha"] <- 0
 
-            # harvest control rule
-            ssb_tmp <- spawner_mat[t-HCR_mat[t,i,"year_lag"],i]
-            if(ssb_tmp<HCR_mat[t,i,"Blimit"]){
-                HCR_mat[t,i,"alpha"] <- HCR_mat[t,i,"beta"]*(ssb_tmp-HCR_mat[t,i,"Bban"])/(HCR_mat[t,i,"Blimit"]-HCR_mat[t,i,"Bban"])
-            }
-            else{
-                HCR_mat[t,i,"alpha"] <- HCR_mat[t,i,"beta"]
-            }
-            if(HCR_mat[t,i,"alpha"]<0) HCR_mat[t,i,"alpha"] <- 0
+        F_mat[,t,] <- F_mat[,t,]*HCR_mat[t,,"alpha"]
 
-            F_mat[,t,i] <- F_mat[,t,i]*HCR_mat[t,i,"alpha"]
-
-            if(t<total_nyear){
-                # forward calculation                 
-                for(iage in 1:(nage-1)) {
-                    N_mat[iage+1,t+1,i] <- N_mat[iage,t,i]*exp(-M_mat[iage,t,i]-F_mat[iage,t,i])
-                }
-                N_mat[nage,t+1,i] <- N_mat[nage,t+1,i] + N_mat[nage,t,i]*exp(-M_mat[nage,t,i]-F_mat[nage,t,i])
+        if(t<total_nyear){
+            # forward calculation                 
+            for(iage in 1:(nage-1)) {
+                N_mat[iage+1,t+1,] <- N_mat[iage,t,]*exp(-M_mat[iage,t,]-F_mat[iage,t,])
             }
+            N_mat[nage,t+1,] <- N_mat[nage,t+1,] + N_mat[nage,t,]*exp(-M_mat[nage,t,]-F_mat[nage,t,])
         }
     }
 
     if(Pope==1){
-        catch_mat <- N_mat*(1-exp(-F_mat))*exp(-M_mat/2) * waa_mat
+        caa_mat <- N_mat*(1-exp(-F_mat))*exp(-M_mat/2) * waa_mat
     }
     else{
-        catch_mat <- naa*(1-exp(-faa-M))*faa/(faa+M) * waa_mat
+        caa_mat <- N_mat*(1-exp(-F_mat-M))*F_mat/(F_mat+M) * waa_mat
     }
 
     if(objective<2){
-        if(obj_stat==0) obj <- mean(catch_mat[,total_nyear,])
-        if(obj_stat==1) obj <- geomean(catch_mat[,total_nyear,])
+        last_catch <- colSums(caa_mat[,total_nyear,])
+        if(obj_stat==0) obj <- mean(last_catch)
+        if(obj_stat==1) obj <- geomean(last_catch)
     }
     else{
-        if(obj_stat==0) obj <- mean(spawner_mat[,total_nyear,])
-        if(obj_stat==1) obj <- geomean(spawner_mat[,total_nyear,])
+        if(obj_stat==0) obj <- mean(spawner_mat[total_nyear,])
+        if(obj_stat==1) obj <- geomean(spawner_mat[total_nyear,])
     }
 
-    if(objective==0) obj <- -log(obj)
-    else{
-        obj <- (log(obj/obj_value))^2
+
+    {if(objective==0) obj <- -log(obj)
+     else{
+         obj <- (log(obj/obj_value))^2
+     }
     }
 
     if(what_return=="obj")  return(obj)
     if(what_return=="stat"){
-        tmb_data$caa_mat[] <- catch_mat
+        tmb_data$caa_mat <- caa_mat
         tmb_data$naa_mat[] <- N_mat
         tmb_data$faa_mat[] <- F_mat
         tmb_data$ssb  <- spawner_mat %>% as_tibble()
         return(tmb_data)
     }
 
-
 }
+
 
 trace_future <- function(tmb_data,
                          trace.multi=c(seq(from=0,to=0.9,by=0.1),1,seq(from=1.1,to=2,by=0.1),3:5,7,20,100)){
@@ -431,4 +424,30 @@ trace_future <- function(tmb_data,
         get.stat(use_tmb_output=TRUE, multi=exp(x))) %>% as_tibble()
     
     return(trace)
+}
+
+get_summary_stat <- function(all.stat){
+    
+    sumvalue <- all.stat %>% as_tibble %>%
+        mutate(SSB2SSB0=all.stat$ssb.mean/all.stat$ssb.mean[2]) %>%
+        select(RP_name,ssb.mean,SSB2SSB0,biom.mean,U.mean,catch.mean,catch.CV,Fref2Fcurrent)
+    colnames(sumvalue) <- c("RP_name","SSB","SSB2SSB0","B","U","Catch","Catch.CV","Fref/Fcur")
+    
+    sumvalue <- bind_cols(sumvalue,all.stat[,substr(colnames(all.stat),1,1)=="F"])
+
+    sumvalue$RP.definition <- NA
+    sumvalue$RP.definition[sumvalue$RP_name=="MSY"]           <- "Btarget0"
+    sumvalue$RP.definition[sumvalue$RP_name=="PGY_0.6_lower"] <- "Blimit0"    
+    sumvalue$RP.definition[sumvalue$RP_name=="PGY_0.1_lower"] <- "Bban0"
+    sumvalue <- sumvalue %>% select(1,ncol(sumvalue),2:(ncol(sumvalue)-1))    
+
+    Fvector <- select(sumvalue,num_range("F",0:40))
+
+#    sumvalue$perSPR <- NA
+#    for(i in 1:nrow(Fvector)){
+#        sumvalue$perSPR[i] <- calc_perspr(input.list[[1]],Fvector[i,])
+    #    }
+
+    tibble::lst(sumvalue,Fvector)
+    
 }

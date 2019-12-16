@@ -2,7 +2,9 @@
 
 S3method(plot,future)
 S3method(plot,futures)
+S3method(print,myarray)
 export(BH.recAR)
+export(Generation.Time)
 export(HS.recAR)
 export(RI.recAR)
 export(RPS.simple.rec)

@@ -4,14 +4,14 @@ template<class Type>
 Type objective_function<Type>::operator() ()
 {
   DATA_ARRAY(naa_mat);
-  DATA_ARRAY(caa_mat);  
-  //  DATA_SCALAR(deviance_init);
-  DATA_ARRAY(SR_mat); // 1: HS, 2: BH, 3: RI
-  DATA_ARRAY(rec_par_a_mat);
-  DATA_ARRAY(rec_par_b_mat); 
-  DATA_ARRAY(rec_par_rho_mat);
-  //  DATA_SCALAR(bias_corrected_mean);
-  DATA_ARRAY(rec_resid_mat);
+  DATA_ARRAY(caa_mat);
+  //  DATA_ARRAY(SR_mat); // 1: HS, 2: BH, 3: RI
+  //  DATA_ARRAY(rec_par_a_mat);
+  //  DATA_ARRAY(rec_par_b_mat); 
+  //  DATA_ARRAY(rec_par_rho_mat);
+  //  DATA_ARRAY(rec_resid_mat);
+  DATA_ARRAY(SR_mat);
+  //  DATA_ARRAY(SR_type);   
   DATA_ARRAY(HCR_mat);   // just dummy
   DATA_ARRAY(waa_mat);
   DATA_ARRAY(maa_mat);  
@@ -27,22 +27,16 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(obj_stat); // 0: mean, 1: geomean
   DATA_INTEGER(objective); // 0: MSY, 1: PGY, 2: percentB0 or Bempirical
   DATA_SCALAR(obj_value); // Used for objective 1-2
-  //  DATA_VECTOR(Fcurrent);
-  //  DATA_INTEGER(Fcurrent_year);
-  //  DATA_SCALAR(num_to_mass_scale);
 
   PARAMETER(x); //x = log(multiplier)
   
-  // Type bias_corrected_mean = -Type(0.5)*pow(rec_par_sd,Type(2.0))/(Type(1.0)-pow(rec_par_rho, Type(2.0)));
   array<Type> F_mat(nage,total_nyear,nsim);
   array<Type> N_mat(nage,total_nyear,nsim);
-  //  array<Type> rec_deviance_mat(total_nyear,nsim);
   array<Type> spawner_mat(total_nyear,nsim);
   array<Type> catch_mat(nage,total_nyear,nsim);
   F_mat.setZero();  
   N_mat.setZero();
   spawner_mat.setZero();
-  //  rec_deviance_mat.setZero();  
   catch_mat.setZero();      
   
   for(int i=0; i<nsim; i++) { // input initial number
@@ -50,9 +44,7 @@ Type objective_function<Type>::operator() ()
       for(int iage=0; iage<nage; iage++) {
 	N_mat(iage,t,i) = naa_mat(iage,t,i);
 	catch_mat(iage,t,i) = caa_mat(iage,t,i);	
-	//	F_mat(iage,t,i) = faa_mat(iage,t,i);
 	spawner_mat(t,i) += N_mat(iage,t,i)*waa_mat(iage,t,i)*maa_mat(iage,t,i);
-	//	rec_devinace_mat(t,i) = rec_resid_mat(t,i)
       }
     }}
 
@@ -82,21 +74,20 @@ Type objective_function<Type>::operator() ()
 	
       // update recruitment except for t=initial year (t=0)
       if(t>future_initial_year-1){      
-	if(SR_mat(t,i) == 1) { //Hockey-stick
+	if(SR_mat(t,i,3) == 1) { //Hockey-stick
 	  vector<Type> rec_pred(2);
-	  rec_pred(0) = spawner_mat(t-recruit_age,i)*rec_par_a_mat(t,i);
-	  rec_pred(1) = rec_par_b_mat(t,i)*rec_par_a_mat(t,i);
+	  rec_pred(0) = spawner_mat(t-recruit_age,i)*SR_mat(t,i,0);
+	  rec_pred(1) = SR_mat(t,i,0)*SR_mat(t,i,1);
 	  N_mat(0,t,i) = min(rec_pred);
 	}
-	if(SR_mat(t,i) == 2) { //Beverton-Holt
-	  N_mat(0,t,i) = rec_par_a_mat(t,i)*spawner_mat(t-recruit_age,i)/(1+rec_par_b_mat(t,i)*spawner_mat(t-recruit_age,i));
+	if(SR_mat(t,i,3) == 2) { //Beverton-Holt
+	  N_mat(0,t,i) = SR_mat(t,i,0)*spawner_mat(t-recruit_age,i)/(1+SR_mat(t,i,1)*spawner_mat(t-recruit_age,i));
 	}
-	if(SR_mat(t,i) == 3) { //Ricker
-	  N_mat(0,t,i) = rec_par_a_mat(t,i)*spawner_mat(t-recruit_age,i)*exp(-rec_par_b_mat(t,i)*spawner_mat(t-recruit_age,i));
-	}
-	//	N_mat(0,t,i) = N_mat(0,t,i)*exp(rec_par_rho_mat(t-1,i)*rec_resid_mat(t-1,i)+
-	//					rec_resid_mat(t,i)+bias_corrected_mean);
-	N_mat(0,t,i) = N_mat(0,t,i)*exp(rec_resid_mat(t,i));	
+	if(SR_mat(t,i,3) == 3) { //Ricker
+	  N_mat(0,t,i) = SR_mat(t,i,0)*spawner_mat(t-recruit_age,i)*exp(-SR_mat(t,i,1)*spawner_mat(t-recruit_age,i));
+	 }
+	
+	N_mat(0,t,i) = N_mat(0,t,i)*exp(SR_mat(t,i,5));	
       }
 
       // forward calculation 
@@ -120,26 +111,29 @@ Type objective_function<Type>::operator() ()
 	}
       }
     }}
-  
+
+  Type obj = 0;      
   // Get Catch or SSB in the final year
-  Type obj = 0;
+  if(objective < 2){
     for(int i=0; i<nsim; i++) {
       for(int a=0; a<nage; a++) {    
-        if(objective < 2) {
-    	if(obj_stat == 0) {
-    	  obj += catch_mat(a,total_nyear-1,i);
-    	}else{
-    	  obj += log(catch_mat(a,total_nyear-1,i));
-    	}
-        }else{
-    	if(obj_stat == 0) {
-    	  obj += spawner_mat(total_nyear-1,i);
-    	}else{
-    	  obj += log(spawner_mat(total_nyear-1,i));
-    	}
-        }
+	  if(obj_stat == 0) {
+	    obj += catch_mat(a,total_nyear-1,i);
+	  }else{
+	    obj += log(catch_mat(a,total_nyear-1,i));
+	  }
       }}
-   obj /= nsim;
+  }else{
+    for(int i=0; i<nsim; i++) {
+      if(obj_stat == 0) {
+	obj += spawner_mat(total_nyear-1,i);
+      }else{
+	obj += log(spawner_mat(total_nyear-1,i));
+      }
+    }
+  }
+    
+  obj /= nsim;
 
   if(obj_stat == 1) { 
     obj = exp(obj); // geomean

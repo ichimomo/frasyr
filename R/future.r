@@ -866,6 +866,7 @@ future.vpa <-
                      vbiom=apply(biom,c(2,3),sum,na.rm=T),
                      vssb=apply(ssb,c(2,3),sum,na.rm=T),
                      vwcaa=vwcaa,
+                     #naa_all=naa_all,wcaa=wcaa,
                      years=fyears,fyear.year=fyear.year,ABC=ABC,recfunc=recfunc,rec.arg=rec.arg,
                      waa.year=waa.year,maa.year=maa.year,multi=multi,multi.year=multi.year,
                      Frec=Frec,rec.new=rec.new,pre.catch=pre.catch,input=arglist)
