@@ -65,7 +65,6 @@ SRmodel.base <- SR.list[[1]] # AIC最小モデルを今後使っていく
 
 
 # currentFによる将来予測
->>>>>>> 07acd67cd1b870e640bfc8cb56065a43521ba244
 - 細かい設定の解説は[こちら](https://ichimomo.github.io/frasyr/docs/future.html)
     - 自己相関を考慮する場合
     - Frecオプション（目標の年に指定した確率で漁獲する）
