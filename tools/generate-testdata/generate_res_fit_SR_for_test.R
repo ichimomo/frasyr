@@ -1,3 +1,4 @@
+#source("rvpa1.9.4.r")
 source("./R/stock_recruit.r")
 
 caa <- read.csv(system.file("extdata","caa_pma.csv",package="frasyr"),row.names=1)
@@ -13,7 +14,6 @@ SRdata_pma <- get.SRdata(res_vpa_pma)
 SRmodel.list <- expand.grid(SR.rel = c("HS","BH","RI"), AR.type = c(0, 1), out.AR=c(TRUE,FALSE), L.type = c("L1", "L2"))
 SR.list <- list()
 for (i in 1:nrow(SRmodel.list)) {
-
   SR.list[[i]] <- fit.SR(SRdata_pma, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],
                          AR = SRmodel.list$AR.type[i], out.AR =SRmodel.list$out.AR[i], hessian = FALSE)
 }
@@ -24,7 +24,6 @@ for (i in 1:nrow(SRmodel.list)) {
 }
 
 for(i in 1:nrow(SRmodel.list)){
-
   assign(sprintf("SRpma_%s_%s_AR%d_outAR%d",SRmodel.list$SR.rel[i],SRmodel.list$L.type[i], SRmodel.list$AR.type[i],SRmodel.list$out.AR[i]),SR.list[[i]])
 
   savefilenameresfres <- sprintf("./inst/extdata/SRpma_%s_%s_AR%d_outAR%d.rda",SRmodel.list$SR.rel[i],SRmodel.list$L.type[i], SRmodel.list$AR.type[i],SRmodel.list$out.AR[i])

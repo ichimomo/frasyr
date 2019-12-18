@@ -1195,10 +1195,6 @@ test_that("oututput value check (iteration for future sim is fixed as 2) ",{
 
   expect_equal(fres_pma_HS_L2_AR1_outAR1$multi.year, fres_pma_HS_L2_AR1_outAR1_check$multi.year)
 
-
-
-
-
    })
 
 context("future est MSY")
@@ -1298,6 +1294,7 @@ test_that("oututput value check",{
   expect_equal(refs_base_pma,refs_base_pma_check)
 
 })
+
 
 context("future future.vpa (option of futureF)")
 
