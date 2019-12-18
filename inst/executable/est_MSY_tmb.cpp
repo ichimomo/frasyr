@@ -21,7 +21,7 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(Pope);
   DATA_INTEGER(total_nyear);  
   DATA_INTEGER(future_initial_year);
-  DATA_INTEGER(start_F_year);    
+  DATA_INTEGER(start_ABC_year);    
   DATA_INTEGER(nsim);
   DATA_INTEGER(nage);
   DATA_INTEGER(recruit_age);    
@@ -51,14 +51,14 @@ Type objective_function<Type>::operator() ()
 
   // Matrix of Fishing mortality (use VPA estimation)
   for(int i=0; i<nsim; i++) { //replication of simulation 
-    for(int t=0; t<start_F_year-1; t++) {
+    for(int t=0; t<start_ABC_year-1; t++) {
        for(int iage=0; iage<nage; iage++) {
 	 F_mat(iage,t,i) = faa_mat(iage, t, i);
        }}}  
 
   // Matrix of Fishing mortality (use future value)
   for(int i=0; i<nsim; i++) { //replication of simulation 
-     for(int t=start_F_year-1; t<total_nyear; t++) {
+     for(int t=start_ABC_year-1; t<total_nyear; t++) {
        for(int iage=0; iage<nage; iage++) {
 	 F_mat(iage,t,i) = exp(x)*faa_mat(iage,t,i);
        }}}

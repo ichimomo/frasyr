@@ -98,7 +98,8 @@ make_future_data <- function(res_vpa,
                           maa_year, maa=NULL,
                           M_year, M=NULL,
                           # faa setting
-                          faa_year, faa=NULL,
+                          faa_year,
+                          currentF=NULL,futureF=NULL,
                           # HCR setting (not work when using TMB)
                           start_ABC_year_name=2019,
                           HCR_beta=1,
@@ -162,8 +163,6 @@ make_future_data <- function(res_vpa,
     waa_mat <- make_array(waa_mat, waa, waa_year, start_biopar_year_name)
     maa_mat <- make_array(maa_mat, maa, maa_year, start_biopar_year_name)
     M_mat   <- make_array(M_mat  , M  , M_year  , start_biopar_year_name)
-    faa_mat <- make_array(faa_mat, faa, faa_year, start_F_year_name)
-    start_F_year <- which(allyear_name==start_F_year_name)
 
     if(is.null(res_vpa$input$dat$waa_catch)){
         waa_catch_mat <- waa_mat
@@ -177,8 +176,12 @@ make_future_data <- function(res_vpa,
     SR_mat <- set_SR_mat_lognormal(res_vpa, res_SR, SR_mat, seed_number,
                                    start_random_rec_year_name, future_initial_year)
 
-    # set HCR parameter
-    start_ABC_year <- which(allyear_name==start_ABC_year_name)
+    # set F & HCR parameter
+    start_F_year <- which(allyear_name==start_F_year_name)
+    start_ABC_year <- which(allyear_name==start_ABC_year_name)    
+    faa_mat <- make_array(faa_mat, currentF, faa_year, start_F_year_name)
+    faa_mat <- make_array(faa_mat, futureF,  faa_year, start_ABC_year_name)
+    
     HCR_mat[start_ABC_year:total_nyear,,"beta"    ] <- HCR_beta
     HCR_mat[start_ABC_year:total_nyear,,"Blimit"  ] <- HCR_Blimit
     HCR_mat[start_ABC_year:total_nyear,,"Bban"    ] <- HCR_Bban    
@@ -197,7 +200,7 @@ make_future_data <- function(res_vpa,
                      Pope = as.numeric(Pope),
                      total_nyear = total_nyear,                     
                      future_initial_year = future_initial_year,
-                     start_F_year=start_F_year,
+                     start_ABC_year=start_ABC_year,
                      nsim = nsim,
                      nage = nage,
                      recruit_age = recruit_age,
@@ -302,6 +305,8 @@ future_vpa <- function(tmb_data,
     # 生産関係の細かい設定
     # FperSPRの計算結果を出力する
     # yield curveが変
+    # do_MSE option
+    # 2do_futureで、SR関数を置き換えるオプション
 }
 
 future_vpa_R <- function(naa_mat,
@@ -315,7 +320,7 @@ future_vpa_R <- function(naa_mat,
                       Pope,
                       total_nyear,
                       future_initial_year,
-                      start_F_year, # the year for estimating multiplier F
+                      start_ABC_year, # the year for estimating multiplier F
                       nsim,
                       nage,
                       recruit_age,
@@ -338,8 +343,8 @@ future_vpa_R <- function(naa_mat,
     N_mat[,1:future_initial_year,] <- naa_mat[,1:future_initial_year,]
     spawner_mat <- apply(N_mat * waa_mat * maa_mat, c(2,3) , sum)
 
-    F_mat[,1:(start_F_year-1),] <- faa_mat[,1:(start_F_year-1),]
-    F_mat[,start_F_year:total_nyear,] <- faa_mat[,start_F_year:total_nyear,] * exp(x)
+    F_mat[,1:(start_ABC_year-1),] <- faa_mat[,1:(start_ABC_year-1),]
+    F_mat[,start_ABC_year:total_nyear,] <- faa_mat[,start_ABC_year:total_nyear,] * exp(x)
 
     for(t in future_initial_year:total_nyear){
         spawner_mat[t,] <- colSums(N_mat[,t,] * waa_mat[,t,] * maa_mat[,t,])
@@ -404,7 +409,7 @@ future_vpa_R <- function(naa_mat,
         tmb_data$SR_mat[,,"ssb"]  <- spawner_mat
         tmb_data$SR_mat[,,"recruit"]  <- N_mat[1,,]
         list(naa=N_mat, wcaa=wcaa_mat, faa=F_mat, SR_mat=tmb_data$SR_mat,
-             multi=exp(x))
+             alpha=HCR_mat[,,"alpha"],multi=exp(x))
     }
 
 }
@@ -458,15 +463,18 @@ get_summary_stat <- function(all.stat){
 }
 
 format_to_old_future <- function(fout){
-    fout_old <- fout[c("naa","faa","multi")]
-    fout_old$waa <- fout$input$tmb_data$waa_mat
+    fout_old <- fout[c("naa","faa","multi","alpha")]
+    fout_old$waa       <- fout$input$tmb_data$waa_mat
     fout_old$waa.catch <- fout$input$tmb_data$waa_catch_mat        
-    fout_old$maa <- fout$input$tmb_data$maa_mat
-    fout_old$vssb <- apply(fout$naa * fout_old$waa * fout_old$maa, c(2,3), sum)
-    fout_old$vbiom <- apply(fout$naa * fout_old$waa, c(2,3),sum)
-    fout_old$vwcaa <- apply(fout$wcaa,c(2,3),sum)
-    fout_old$currentF <- fout$faa[,fout$input$tmb_data$start_F_year,1]
-    fout_old$caa  <- fout$wcaa/fout_old$waa
-    fout_old$multi <- fout$multi
+    fout_old$maa       <- fout$input$tmb_data$maa_mat
+    fout_old$M         <- fout$input$tmb_data$M_mat        
+    fout_old$vssb      <- apply(fout$naa * fout_old$waa * fout_old$maa, c(2,3), sum)
+    fout_old$vbiom     <- apply(fout$naa * fout_old$waa, c(2,3),sum)
+    fout_old$vwcaa     <- apply(fout$wcaa,c(2,3),sum)
+    fout_old$currentF  <- fout$faa[,fout$input$tmb_data$start_ABC_year-1,1]
+    fout_old$futureF   <- fout$faa[,fout$input$tmb_data$start_ABC_year,1]    
+    fout_old$caa       <- fout$wcaa/fout_old$waa
+    fout_old$multi     <- fout$multi
+    fout_old$recruit   <- fout$SR_mat[,,"recruit"]
     return(fout_old)
 }
