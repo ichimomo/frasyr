@@ -8,5 +8,5 @@ set_SR_mat_lognormal(res_vpa, res_SR, SR_mat, seed_number,
   start_random_rec_year_name, future_initial_year)
 }
 \description{
-対数正規分布の残差分布を作る関数
+再生産関係は一定
 }

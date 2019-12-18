@@ -94,7 +94,7 @@ make_future_data <- function(res_vpa,
                           start_random_rec_year_name = 2018,                          
                           # biopar setting
                           waa_year, waa=NULL,
-                          waa.catch_year, waa.catch=NULL,
+                          waa_catch_year, waa_catch=NULL,
                           maa_year, maa=NULL,
                           M_year, M=NULL,
                           # faa setting
@@ -130,7 +130,7 @@ make_future_data <- function(res_vpa,
     print(tibble(allyear_name, allyear_label))
 
     # define empty array
-    waa_mat <- M_mat <- maa_mat <- naa_mat <- faa_mat <- caa_mat <- 
+    waa_mat <- waa_catch_mat <- M_mat <- maa_mat <- naa_mat <- faa_mat <- caa_mat <- 
         array(0, dim=c(nage, total_nyear, nsim),
               dimnames=list(age=age_name, year=allyear_name, nsim=1:nsim))
     class(waa_mat) <- class(M_mat) <- class(maa_mat) <- class(naa_mat) <- class(faa_mat) <- class(caa_mat) <- "myarray"                                                                                  
@@ -157,14 +157,21 @@ make_future_data <- function(res_vpa,
     M_mat  [,1:vpa_nyear,] <- as.matrix(res_vpa$input$dat$M)
     faa_mat[,1:vpa_nyear,] <- as.matrix(res_vpa$faa)
     naa_mat[,1:vpa_nyear,] <- as.matrix(res_vpa$naa)
-    caa_mat[,1:vpa_nyear,] <- as.matrix(res_vpa$input$dat$caa)    
+    caa_mat[,1:vpa_nyear,] <- as.matrix(res_vpa$input$dat$caa)
 
     waa_mat <- make_array(waa_mat, waa, waa_year, start_biopar_year_name)
     maa_mat <- make_array(maa_mat, maa, maa_year, start_biopar_year_name)
     M_mat   <- make_array(M_mat  , M  , M_year  , start_biopar_year_name)
     faa_mat <- make_array(faa_mat, faa, faa_year, start_F_year_name)
     start_F_year <- which(allyear_name==start_F_year_name)
-    #    waa.catch_mat <- make_array(waa.catch_mat, waa.catch, waa.catch_year)
+
+    if(is.null(res_vpa$input$dat$waa_catch)){
+        waa_catch_mat <- waa_mat
+    }
+    else{
+        waa_catch_mat[,1:vpa_nyear,] <- as.matrix(res_vpa$input$dat$waa_catch)
+        waa_catch_mat <- make_array(waa_catch_mat, waa_catch, waa_catch_year)
+    }    
 
     # set SR parameter
     SR_mat <- set_SR_mat_lognormal(res_vpa, res_SR, SR_mat, seed_number,
@@ -182,13 +189,8 @@ make_future_data <- function(res_vpa,
     tmb_data <- list(naa_mat=naa_mat,
                      caa_mat=caa_mat,
                      SR_mat=SR_mat,
-#                     SR_type=SR_mat[,,"SR_type"],
-#                     SR_mat = SR_mat[,,"SR_type"],
-#                     rec_par_a_mat =  SR_mat[,,"a"],
-#                     rec_par_b_mat =  SR_mat[,,"b"],
-#                     rec_par_rho_mat =  SR_mat[,,"rho"],
-#                     rec_resid_mat = SR_mat[,,"deviance"],
                      waa_mat = waa_mat,
+                     waa_catch_mat = waa_catch_mat,                     
                      maa_mat = maa_mat,                     
                      M_mat = M_mat,
                      faa_mat = faa_mat,                     
@@ -210,20 +212,21 @@ make_future_data <- function(res_vpa,
 
 naming_adreport <- function(tmb_data, ad_report){
 #    ssb <- ad_report$spawner_mat
-#    caa <- ad_report$catch_mat
-#    naa <- ad_report$N_mat
-    #    faa <- ad_report$F_mat
+    wcaa <- ad_report$catch_mat
+    naa <- ad_report$N_mat
+    faa <- ad_report$F_mat
+    dimnames(wcaa) <- dimnames(naa) <- dimnames(faa) <-
+        dimnames(tmb_data$naa)
+    class(wcaa) <- class(naa) <- class(faa) <- "myarray"
 
-    tmb_data$caa_mat[] <- ad_report$catch_mat
-    tmb_data$naa_mat[] <- ad_report$N_mat
-    tmb_data$faa_mat[] <- ad_report$F_mat
-    tmb_data$ssb_mat <- ad_report$spawner_mat %>% as_tibble()
-
-    return(tmb_data)
+    tmb_data$SR_mat[,,"ssb"] <- ad_report$spawner_mat
+    tmb_data$SR_mat[,,"recruit"] <- ad_report$N_mat[1,,]
+    
+    return(list(wcaa=wcaa, naa=naa, faa=faa, SR_mat=tmb_data$SR_mat))
 }
 
 future_vpa <- function(tmb_data,
-                       optim_method="tmb",
+                       optim_method="tmb", # or "R" or "none"
                        multi_init = 1,
                        multi_lower = 0,
                        multi_upper = 10,
@@ -231,6 +234,10 @@ future_vpa <- function(tmb_data,
                        obj_value = 0,                         
                        obj_stat  ="mean", 
                        compile=FALSE){
+
+    argname <- ls()
+    input <- lapply(argname,function(x) eval(parse(text=x)))
+    names(input) <- argname    
 
     # conversion of estimation option
     tmb_data$objective <-
@@ -258,57 +265,50 @@ future_vpa <- function(tmb_data,
         msy <- exp(-msy_optim$objective)
         ad_report <- objAD$report()
 
-        tmb_data_new <- naming_adreport(tmb_data, ad_report)
-        stat <- get.stat(tmb_data_new, use_tmb_output=TRUE, multi=multi)
-
-#        trace <- purrr::map_dfr(log(trace.multi), function(x)
-#            naming_adreport(tmb_data=tmb_data,
-#                            ad_report=objAD$report(x)) %>%
-#            get.stat(use_tmb_output=TRUE, multi=x))
-        
-        res_future_tmb <- tibble::lst(fout=tmb_data_new, multi,msy,stat)
+        res_future <- naming_adreport(tmb_data, ad_report)
+        res_future$multi <- multi
     }
 
     #--- R ----
-    if(optim_method=="R" | optim_method=="both"){
+    if(optim_method=="R" | optim_method=="none"){
         R_obj_fun <- function(x, tmb_data, what_return="obj"){
             tmb_data$x <- x
             tmb_data$what_return <- what_return
             obj <- do.call(future_vpa_R, tmb_data)
             return(obj)
         }
-        msy_optim <- nlminb(start=0, objective=R_obj_fun, tmb_data=tmb_data,
-                            lower=list(x=log(multi_lower)), upper=list(x=log(multi_upper)))
-        msy <- exp(-msy_optim$objective)
-        multi <- exp(msy_optim$par)
-        tmb_data_new <- R_obj_fun(msy_optim$par, tmb_data=tmb_data,
-                                  what_return="stat")
-        stat <- get.stat(tmb_data_new, eyear=0, tmp.year=NULL, use_tmb_output=TRUE, multi=multi)
-        res_future_R <- tibble::lst(fout=tmb_data_new, multi,msy,stat)
-    }
-    if(optim_method=="none"){
-        tmb_data$x <- log(multi_init)
+        
+        if(optim_method=="R"){
+            msy_optim <- nlminb(start=0, objective=R_obj_fun, tmb_data=tmb_data,
+                                lower=list(x=log(multi_lower)), upper=list(x=log(multi_upper)))
+            msy <- exp(-msy_optim$objective)
+            multi <- exp(msy_optim$par)
+            tmb_data$x <- log(multi)
+        }
+        else{
+            tmb_data$x <- log(multi_init)            
+        }
         tmb_data$what_return <- "stat"
-        res_future_R <- do.call(future_vpa_R, tmb_data)
+        res_future <- do.call(future_vpa_R, tmb_data)
     }
 
-    if(optim_method=="tmb") return(res_future_tmb)
-    if(optim_method=="R"|optim_method=="none")   return(res_future_R)
-    if(optim_method=="both") return(list(tmb=res_future_tmb, R=res_future_R))
+    res_future$input <- input
+
+    return(res_future)
 
     # 足りないもの
     # 推定結果の簡易的グラフ(MSY_est_plot)
     # waa.fun
-    # waa.catch
     # 生産関係の細かい設定
-    # SR_matの名前の整理
     # FperSPRの計算結果を出力する
+    # yield curveが変
 }
 
 future_vpa_R <- function(naa_mat,
                          caa_mat,
                       SR_mat,
                       waa_mat,
+                      waa_catch_mat,
                       M_mat,
                       maa_mat,                      
                       faa_mat,
@@ -333,6 +333,7 @@ future_vpa_R <- function(naa_mat,
 
     F_mat <- N_mat <-  naa_mat
     F_mat[] <- N_mat[] <-  0
+    class(F_mat) <- class(N_mat) <- "myarray"
     
     N_mat[,1:future_initial_year,] <- naa_mat[,1:future_initial_year,]
     spawner_mat <- apply(N_mat * waa_mat * maa_mat, c(2,3) , sum)
@@ -375,14 +376,14 @@ future_vpa_R <- function(naa_mat,
     }
 
     if(Pope==1){
-        caa_mat <- N_mat*(1-exp(-F_mat))*exp(-M_mat/2) * waa_mat
+        wcaa_mat <- N_mat*(1-exp(-F_mat))*exp(-M_mat/2) * waa_catch_mat
     }
     else{
-        caa_mat <- N_mat*(1-exp(-F_mat-M))*F_mat/(F_mat+M) * waa_mat
+        wcaa_mat <- N_mat*(1-exp(-F_mat-M))*F_mat/(F_mat+M) * waa_catch_mat
     }
 
     if(objective<2){
-        last_catch <- colSums(caa_mat[,total_nyear,])
+        last_catch <- colSums(wcaa_mat[,total_nyear,])
         if(obj_stat==0) obj <- mean(last_catch)
         if(obj_stat==1) obj <- geomean(last_catch)
     }
@@ -400,11 +401,10 @@ future_vpa_R <- function(naa_mat,
 
     if(what_return=="obj")  return(obj)
     if(what_return=="stat"){
-        tmb_data$caa_mat <- caa_mat
-        tmb_data$naa_mat[] <- N_mat
-        tmb_data$faa_mat[] <- F_mat
-        tmb_data$ssb  <- spawner_mat %>% as_tibble()
-        return(tmb_data)
+        tmb_data$SR_mat[,,"ssb"]  <- spawner_mat
+        tmb_data$SR_mat[,,"recruit"]  <- N_mat[1,,]
+        list(naa=N_mat, wcaa=wcaa_mat, faa=F_mat, SR_mat=tmb_data$SR_mat,
+             multi=exp(x))
     }
 
 }
@@ -412,16 +412,21 @@ future_vpa_R <- function(naa_mat,
 
 trace_future <- function(tmb_data,
                          trace.multi=c(seq(from=0,to=0.9,by=0.1),1,seq(from=1.1,to=2,by=0.1),3:5,7,20,100)){
-    R_obj_fun <- function(x, tmb_data, what_return="obj"){
-        tmb_data$x <- x
-        tmb_data$what_return <- what_return
-        obj <- do.call(future_vpa_R, tmb_data)
-        return(obj)
-    }    
+#    R_obj_fun <- function(x, tmb_data, what_return="obj"){
+#        tmb_data$x <- x
+#        tmb_data$what_return <- what_return
+#        obj <- do.call(future_vpa_R, tmb_data)
+#        return(obj)
+#    }    
 
-    trace <- purrr::map_dfr(log(trace.multi), function(x)
-        R_obj_fun(x=x, tmb_data = tmb_data, what_return="stat") %>%
-        get.stat(use_tmb_output=TRUE, multi=exp(x))) %>% as_tibble()
+    trace <- purrr::map_dfr(trace.multi, function(x)
+        #       R_obj_fun(x=x, tmb_data = tmb_data, what_return="stat") %>%
+        future_vpa(tmb_data,
+                   optim_method="none",
+                   multi_init=x,
+                   multi_lower=x,
+                   multi_upper=x) %>%
+        get.stat(use_new_output=TRUE) %>% as_tibble())
     
     return(trace)
 }
@@ -450,4 +455,18 @@ get_summary_stat <- function(all.stat){
 
     tibble::lst(sumvalue,Fvector)
     
+}
+
+format_to_old_future <- function(fout){
+    fout_old <- fout[c("naa","faa","multi")]
+    fout_old$waa <- fout$input$tmb_data$waa_mat
+    fout_old$waa.catch <- fout$input$tmb_data$waa_catch_mat        
+    fout_old$maa <- fout$input$tmb_data$maa_mat
+    fout_old$vssb <- apply(fout$naa * fout_old$waa * fout_old$maa, c(2,3), sum)
+    fout_old$vbiom <- apply(fout$naa * fout_old$waa, c(2,3),sum)
+    fout_old$vwcaa <- apply(fout$wcaa,c(2,3),sum)
+    fout_old$currentF <- fout$faa[,fout$input$tmb_data$start_F_year,1]
+    fout_old$caa  <- fout$wcaa/fout_old$waa
+    fout_old$multi <- fout$multi
+    return(fout_old)
 }

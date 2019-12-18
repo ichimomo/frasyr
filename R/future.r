@@ -1923,21 +1923,16 @@ forward.calc.mat <- function(fav,nav,Mv,plus.group=TRUE){
   return(naa)
 }
 
-get.stat <- get.stat3 <- function(fout,eyear=0,tmp.year=NULL, use_tmb_output=FALSE, multi=NULL){
+get.stat <- get.stat3 <- function(fout,eyear=0,tmp.year=NULL, use_new_output=FALSE){
 
-    if(isTRUE(use_tmb_output)){
-        fout$vssb <- apply(fout$naa_mat * fout$waa_mat * fout$maa_mat, c(2,3), sum)
-        fout$vbiom <- apply(fout$naa_mat * fout$waa_mat, c(2,3),sum)
-        fout$vwcaa <- apply(fout$caa_mat,c(2,3),sum)
-        fout$waa <- fout$waa_mat
-        fout$maa <- fout$maa_mat
-        fout$currentF <- fout$faa[,fout$start_F_year,1]
-        fout$multi <- multi
+    if(isTRUE(use_new_output)){
+        fout <- format_to_old_future(fout)
         col.target <- TRUE
     }
     else{
         col.target <- ifelse(fout$input$N==0,1,-1)
     }
+    tc <- fout$caa * fout$waa.catch     
     tmp <- as.numeric(fout$vssb[(nrow(fout$vssb)-eyear):nrow(fout$vssb),col.target])
     if(is.null(tmp.year)) tmp.year <- (nrow(fout$vwcaa)-eyear):nrow(fout$vwcaa)
     a <- data.frame("catch.mean"=mean(fout$vwcaa[tmp.year,col.target]),
@@ -1952,21 +1947,18 @@ get.stat <- get.stat3 <- function(fout,eyear=0,tmp.year=NULL, use_tmb_output=FAL
                     "ssb.median"=median(fout$vssb[tmp.year,col.target],na.rm=T),
                     "ssb.L10"=quantile(fout$vssb[tmp.year,col.target],na.rm=T,probs=0.1),
                     "ssb.H10"=quantile(fout$vssb[tmp.year,col.target],na.rm=T,probs=0.9),
-
                     "biom.mean"=mean(fout$vbiom[tmp.year,col.target]),
                     "biom.sd"=sd(fout$vbiom[tmp.year,col.target]),                        
                     "biom.geomean"=geomean(fout$vbiom[tmp.year,col.target]),
                     "biom.median"=median(fout$vbiom[tmp.year,col.target],na.rm=T),
                     "biom.L10"=quantile(fout$vbiom[tmp.year,col.target],na.rm=T,probs=0.1),
                     "biom.H10"=quantile(fout$vbiom[tmp.year,col.target],na.rm=T,probs=0.9),
-                    
                     "rec.mean"=mean(unlist(fout$naa[1,,])[tmp.year,col.target]),
                     "rec.sd"=sd(unlist(fout$naa[1,,])[tmp.year,col.target]),
                     "rec.geomean"=geomean(unlist(fout$naa[1,,])[tmp.year,col.target]),
                     "rec.median"=median(unlist(fout$naa[1,,])[tmp.year,col.target],na.rm=T),
                     "rec.L10"=quantile(unlist(fout$naa[1,,])[tmp.year,col.target],na.rm=T,probs=0.1),
                     "rec.H10"=quantile(unlist(fout$naa[1,,])[tmp.year,col.target],na.rm=T,probs=0.9),
-                    
 #                    "lower.HSpoint"=lhs,
                     "Fref2Fcurrent"=fout$multi,
                     fmulti=fout$multi
@@ -1989,7 +1981,6 @@ get.stat <- get.stat3 <- function(fout,eyear=0,tmp.year=NULL, use_tmb_output=FAL
     nage <- dim(fout$naa)[[1]]    
     tb <- fout$naa * fout$waa 
     if(is.null(fout$waa.catch)) fout$waa.catch <- fout$waa
-    tc <- fout$caa * fout$waa.catch 
     ssb <- fout$naa * fout$waa *fout$maa  
     tb.mat <- tc.mat <- ssb.mat <- matrix(0,nage,6)
     for(i in 1:nage){

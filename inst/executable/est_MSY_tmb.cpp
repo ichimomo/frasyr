@@ -14,6 +14,7 @@ Type objective_function<Type>::operator() ()
   //  DATA_ARRAY(SR_type);   
   DATA_ARRAY(HCR_mat);   // just dummy
   DATA_ARRAY(waa_mat);
+  DATA_ARRAY(waa_catch_mat);  
   DATA_ARRAY(maa_mat);  
   DATA_ARRAY(M_mat);
   DATA_ARRAY(faa_mat);  
@@ -105,9 +106,9 @@ Type objective_function<Type>::operator() ()
     for(int t=0; t<total_nyear; t++) {
       for(int a=0; a<nage; a++){
    	if(Pope) {
-   	  catch_mat(a,t,i) = waa_mat(a,t,i)*N_mat(a,t,i)*exp(-Type(0.5)*M_mat(a,t,i))*(1-exp(-F_mat(a,t,i)));
+   	  catch_mat(a,t,i) = waa_catch_mat(a,t,i)*N_mat(a,t,i)*exp(-Type(0.5)*M_mat(a,t,i))*(1-exp(-F_mat(a,t,i)));
    	}else{
-   	  catch_mat(a,t,i) = waa_mat(a,t,i)*N_mat(a,t,i)*(1-exp(-M_mat(a,t,i)-F_mat(a,t,i)))*F_mat(a,t,i)/(M_mat(a,t,i)+F_mat(a,t,i));
+   	  catch_mat(a,t,i) = waa_catch_mat(a,t,i)*N_mat(a,t,i)*(1-exp(-M_mat(a,t,i)-F_mat(a,t,i)))*F_mat(a,t,i)/(M_mat(a,t,i)+F_mat(a,t,i));
 	}
       }
     }}
