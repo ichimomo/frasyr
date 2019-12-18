@@ -39,7 +39,7 @@ convert_2d_future <- function(df, name, label="tmp"){
 convert_future_table <- function(fout,label="tmp"){
     
     U_table <- fout$vwcaa/fout$vbiom %>% as_tibble
-    if(is.null(fout$Fsakugen)) fout$Fsakugen <- -(1-fout$faa[1,,]/fout$input$res0$Fc.at.age[1])
+    if(is.null(fout$Fsakugen)) fout$Fsakugen <- -(1-fout$faa[1,,]/fout$currentF)
     if(is.null(fout$recruit))  fout$recruit <- fout$naa[1,,]    
     
     ssb      <- convert_2d_future(df=fout$vssb,   name="SSB",     label=label)
@@ -770,15 +770,22 @@ HCR.simulation <- function(finput,HCRtable,year.lag=year.lag){
 #'
 #' 
 
-beta.simulation <- function(finput,beta_vector,year.lag=0){
+beta.simulation <- function(finput,beta_vector,year.lag=0, type="old"){
     
     tb <- NULL
     
     for(i in 1:length(beta_vector)){
-        finput$HCR$beta <- beta_vector[i]
-        finput$is.plot <- FALSE
-        finput$silent <- TRUE
-        fres_base <- do.call(future.vpa,finput) # デフォルトルールの結果→図示などに使う
+        if(type=="old"){
+            finput$HCR$beta <- beta_vector[i]
+            finput$is.plot <- FALSE
+            finput$silent <- TRUE
+            fres_base <- do.call(future.vpa,finput) # デフォルトルールの結果→図示などに使う
+        }
+        else{
+            finput$tmb_data$HCR_mat[,,"beta"] <- beta_vector[i]
+            fres_base <- do.call(future_vpa,finput) # デフォルトルールの結果→図示などに使う
+            fres_base <- format_to_old_future(fres_base)
+            }
         tmp <- convert_future_table(fres_base,label=beta_vector[i]) %>%
             rename(HCR_name=label)  %>% mutate(beta=beta_vector[i])
         tb <- bind_rows(tb,tmp)
@@ -1311,19 +1318,27 @@ plot_HCR <- function(SBtarget,SBlim,SBban,Ftarget,
 #' MSYを達成するときの\%SPRを計算する
 #'
 #' @param finput 将来予測インプット
+#' @param fout 将来予測のアウトプット（finputがない場合)
 #' @param Fvector Fのベクトル
 #' @encoding UTF-8
 #' @export
-calc_perspr <- function(finput,
+calc_perspr <- function(finput=NULL,
+                        fout=NULL,
+                        res_vpa=NULL,
                         Fvector,
                         Fmax=10,
                         max.age=Inf,
                         target.col=NULL
                         ){
-    res_vpa <- finput$res0
-    # MSYにおける将来予測計算をやりなおし
-    finput$outtype <- "FULL"
-    fout.tmp <- do.call(future.vpa,finput)
+    if(!is.null(finput)){
+        # MSYにおける将来予測計算をやりなおし
+        finput$outtype <- "FULL"
+        fout.tmp <- do.call(future.vpa,finput)
+        res_vpa <- finput$res0        
+    }
+    else{
+        fout.tmp <- fout
+        }
     # 生物パラメータはその将来予測で使われているものを使う
     if(is.null(target.col)){
         waa.tmp           <- fout.tmp$waa[,dim(fout.tmp$waa)[[2]],1]
