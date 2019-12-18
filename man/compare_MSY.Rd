@@ -21,7 +21,7 @@ compare_MSY(MSYlist, legend.position = "top", MSYname = NULL)
 \dontrun{
 data(res_MSY)
 MSY_list <- tibble::lst(res_MSY_HSL1, res_MSY_HSL2)
-compare_MSY(list(res_MSY, res_MSY))
+g1 <- compare_MSY(list(res_MSY, res_MSY))
 }
 
 }
