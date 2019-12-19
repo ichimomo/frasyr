@@ -392,10 +392,11 @@ future.vpa <-
              waa.fun=FALSE,              
              use.MSE=FALSE,MSE.options=NULL,
              # setting HCR
-             HCR_beta=1,
-             HCR_Blimit=-1,
-             HCR_Bban=-1,
-             HCR_year_lag=0,
+             HCR=list(Blim=154500, Bban=49400,beta=1,year.lag=0),
+             HCR_beta=NULL,
+             HCR_Blimit=NULL,
+             HCR_Bban=NULL,
+             HCR_year_lag=NULL,
              silent=FALSE, is.plot=TRUE, 
              pre.catch=NULL, 
              rec.new=NULL, 
@@ -414,6 +415,14 @@ future.vpa <-
         
         if(is.null(plus.group)) plus.group <- TRUE
         if(is.null(Pope)) Pope <- FALSE
+
+        if(!is.null(HCR)){
+            HCR_Blimit <- HCR$Blim
+            HCR_Bban <- HCR$Bban
+            HCR_year_lag <- HCR$year.lag
+            HCR_beta <- HCR$beta
+        }
+        if(!"year.lag"%in%names(HCR)) HCR_year_lag <- 0
         
         ##--------------------------------------------------
         if(isTRUE(det.run)) N <- N + 1
@@ -530,6 +539,8 @@ future.vpa <-
         waa.catch.org <- waa.catch
         maa.org <- maa
         M.org <- M
+
+        
         
         faa <- naa <- waa <- waa.catch <- maa <- M <- caa <- 
             array(NA,dim=c(length(ages),ntime,N),dimnames=list(age=ages,year=fyears,nsim=1:N))
@@ -709,7 +720,7 @@ future.vpa <-
                         tmpcatch <- as.numeric(pre.catch$wcatch[pre.catch$year==fyears[i]]) 
                     }
                     else{
-                        tmpcatch <- as.numeric(pre.catch$wcatch[pre.catch$year==fyears[i]]) * multi.catch                  
+                        tmpcatch <- as.numeric(pre.catch$wcatch[pre.catch$year==fyears[i]]) 
                     }
                 }
                 if(!is.null(pre.catch$E)){
@@ -718,7 +729,7 @@ future.vpa <-
                         tmpcatch <- as.numeric(pre.catch$E[pre.catch$year==fyears[i]])  * biom
                     }
                     else{
-                        tmpcatch <- as.numeric(pre.catch$E[pre.catch$year==fyears[i]]) * biom * multi.catch                  
+                        tmpcatch <- as.numeric(pre.catch$E[pre.catch$year==fyears[i]]) * biom 
                     }
                 }
                 
@@ -748,7 +759,7 @@ future.vpa <-
                         ssb.tmp <- sum(res0$ssb[as.character(vpayear)])
                     }
                     alpha[i,] <- ifelse(ssb.tmp<HCR_Blimit,
-                                        HCR_beta*(ssb.tmp-HCR_Bban)/(HCR_Blim-HCR_Bban),
+                                        HCR_beta*(ssb.tmp-HCR_Bban)/(HCR_Blimit-HCR_Bban),
                                         HCR_beta)
                     alpha[i,] <- ifelse(alpha[i,]<0,0,alpha[i,])
                     faa[,i,] <- sweep(faa[,i,],2,alpha[i,],FUN="*")
@@ -2367,7 +2378,7 @@ est.MSY <- function(vpares,
 
     sumvalue$perSPR <- NA
     for(i in 1:nrow(Fvector)){
-        sumvalue$perSPR[i] <- calc_perspr(input.list[[1]],Fvector[i,])
+        sumvalue$perSPR[i] <- calc_perspr(finput=input.list[[1]],Fvector=Fvector[i,])
     }
 
     output <- list(summary =sumvalue,

@@ -5,8 +5,19 @@
 \title{対数正規分布の残差分布を作る関数}
 \usage{
 set_SR_mat_lognormal(res_vpa, res_SR, SR_mat, seed_number,
-  start_random_rec_year_name, future_initial_year)
+  start_random_rec_year_name)
+}
+\arguments{
+\item{res_vpa}{VPAの推定結果}
+
+\item{res_SR}{再生産関係の推定結果}
+
+\item{SR_mat}{将来予測用の再生産関係パラメータが格納されている３次元行列}
+
+\item{seed_number}{シード番号}
+
+\item{start_random_rec_year_name}{ランダム加入を仮定する最初の年}
 }
 \description{
-再生産関係は一定
+再生産関係をres_SRで与えると、res_vpaを見ながら残差を再計算したのち、start_random_rec_year_name以降の加入のdeviationを計算しSR_mat[,,"deviance"]に入れる。
 }
