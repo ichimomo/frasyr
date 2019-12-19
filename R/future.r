@@ -392,7 +392,7 @@ future.vpa <-
              waa.fun=FALSE,              
              use.MSE=FALSE,MSE.options=NULL,
              # setting HCR
-             HCR=list(Blim=154500, Bban=49400,beta=1,year.lag=0),
+             HCR=list(Blim=-1, Bban=-1,beta=1,year.lag=0),
              HCR_beta=NULL,
              HCR_Blimit=NULL,
              HCR_Bban=NULL,
