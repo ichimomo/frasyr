@@ -41,15 +41,20 @@ make_array <- function(d3_mat, pars, pars.year, year_replace_future){
 #' @param SR_mat 将来予測用の再生産関係パラメータが格納されている３次元行列
 #' @param seed_number シード番号
 #' @param start_random_rec_year_name ランダム加入を仮定する最初の年
-#'
+#' @param resid_type 残差の発生パターン；対数正規分布は"lognormal"、単純リサンプリングは"resampling"
+#' @param resample_year_range 0の場合、推定に使ったデータから計算される残差を用いる。年の範囲を入れると、対象とした年の範囲で計算される残差を用いる
+#' 
 #' @export
 #' 
 
-set_SR_mat_lognormal <- function(res_vpa,
-                                 res_SR,
-                                 SR_mat,
-                                 seed_number,
-                                 start_random_rec_year_name){
+set_SR_mat <- function(res_vpa,
+                       res_SR,
+                       SR_mat,
+                       seed_number,
+                       start_random_rec_year_name,
+                       resid_type="lognormal",
+                       resample_year_range=0,
+                       bias_correction=TRUE){
     
     allyear_name <- dimnames(SR_mat)[[1]]
     start_random_rec_year  <- which(allyear_name==start_random_rec_year_name)
@@ -78,23 +83,57 @@ set_SR_mat_lognormal <- function(res_vpa,
     # re-culcurate recruitment deviation
     SR_mat[1:(start_random_rec_year-1),,"ssb"] <- as.numeric(colSums(res_vpa$ssb))[1:(start_random_rec_year-1)]
     SR_mat[1:(start_random_rec_year-1),,"recruit"] <- as.numeric(res_vpa$naa[1,1:(start_random_rec_year-1)])
-    SR_mat[1:(start_random_rec_year-1),,"deviance"] <- 
+    SR_mat[1:(start_random_rec_year-1),,"deviance"] <- SR_mat[1:(start_random_rec_year-1),,"rand_resid"] <- 
         log(SR_mat[1:(start_random_rec_year-1),,"recruit"]) -
         log(SRF(SR_mat[1:(start_random_rec_year-1),,"ssb"],
                 SR_mat[1:(start_random_rec_year-1),,"a"],
                 SR_mat[1:(start_random_rec_year-1),,"b"]))
 
-    # defint future recruitment deviation
+    # define future recruitment deviation
     set.seed(seed_number)
-    sd_with_AR <- sqrt(res_SR$pars$sd^2/(1-res_SR$pars$rho^2))    
-    tmp_SR <- t(SR_mat[random_rec_year_period,,"rand_resid"])
-    tmp_SR[] <- rnorm(dim(SR_mat)[[2]]*length(random_rec_year_period), mean=0, sd=res_SR$pars$sd)
-    SR_mat[random_rec_year_period,,"rand_resid"] <- t(tmp_SR)
+    if(resid_type=="lognormal"){
+        if(isTRUE(bias_correction)){
+            sd_with_AR <- sqrt(res_SR$pars$sd^2/(1-res_SR$pars$rho^2))
+            bias_factor <- 0.5* sd_with_AR^2
+        }
+        else{
+            bias_factor <- 0
+        }
+        tmp_SR <- t(SR_mat[random_rec_year_period,,"rand_resid"])
+        tmp_SR[] <- rnorm(dim(SR_mat)[[2]]*length(random_rec_year_period), mean=0, sd=res_SR$pars$sd)
+        SR_mat[random_rec_year_period,,"rand_resid"] <- t(tmp_SR)
    
-    for(t in random_rec_year_period){
-        SR_mat[t, ,"deviance"] <- SR_mat[t-1, ,"deviance"]*SR_mat[t,,"rho"] + SR_mat[t, ,"rand_resid"] 
+        for(t in random_rec_year_period){
+            SR_mat[t, ,"deviance"] <- SR_mat[t-1, ,"deviance"]*SR_mat[t,,"rho"] + SR_mat[t, ,"rand_resid"] 
+        }
+        SR_mat[random_rec_year_period,,"deviance"] <- SR_mat[random_rec_year_period,,"deviance"] - bias_factor
     }
-    SR_mat[random_rec_year_period,,"deviance"] <- SR_mat[random_rec_year_period,,"deviance"] - 0.5* sd_with_AR^2
+    if(resid_type=="resample"){
+        # 推定された残差をそのまま使う
+        if(resample_year_range==0){
+            sampled_residual <- res_SR$resid[res_SR$input$w==1]
+            if(isTRUE(bias_correction)) bias_factor <- log(mean(exp(sampled_residual))) else bias_factor <- 0
+            SR_mat[random_rec_year_period,,"rand_resid"] <- sample(sampled_residual, dim(SR_mat)[[2]]*length(random_rec_year_period), replace=TRUE)
+            SR_mat[random_rec_year_period,,"deviance"] <- SR_mat[random_rec_year_period,,"rand_resid"]-bias_factor
+        }
+        else{ # VPA結果から計算しなおした残差を使う
+            sampled_residual <- SR_mat[as.character(resample_year_range),,"rand_resid"]
+            if(isTRUE(bias_correction)){
+                bias_factor <- log(colMeans(exp(sampled_residual)))
+            }
+            else{
+                bias_factor <- rep(0,ncol(sampled_residual))
+                }
+            for(i in 1:ncol(sampled_residual)){
+                SR_mat[random_rec_year_period,i,"rand_resid"] <- sample(sampled_residual[,i], length(random_rec_year_period), replace=TRUE)
+                SR_mat[random_rec_year_period,i,"deviance"] <- SR_mat[random_rec_year_period,,"rand_resid"]-bias_factor[i]
+            }
+        }
+    }
+    if(resid_type=="backward"){
+        ## coming soon
+    }
+    
     return(SR_mat)
 }
 
@@ -139,7 +178,10 @@ make_future_data <- function(res_vpa,
                           HCR_year_lag=0,
                           # SR setting
                           res_SR=NULL,                       
-                          seed_number=1, 
+                          seed_number=1,
+                          resid_type="lognormal", # or resample
+                          resample_year_range=0, # only when "resample"
+                          bias_correction=TRUE, 
                           # Other
                           Pope=res_vpa$input$Pope
                           ) 
@@ -204,8 +246,10 @@ make_future_data <- function(res_vpa,
     }    
 
     # set SR parameter
-    SR_mat <- set_SR_mat_lognormal(res_vpa, res_SR, SR_mat, seed_number,
-                                   start_random_rec_year_name)
+    SR_mat <- set_SR_mat(res_vpa, res_SR, SR_mat, seed_number,
+                         start_random_rec_year_name, resid_type=resid_type,
+                         resample_year_range=resample_year_range,
+                         bias_correction=bias_correction)
 
     # set F & HCR parameter
     start_F_year <- which(allyear_name==start_F_year_name)
@@ -365,7 +409,7 @@ future_vpa_R <- function(naa_mat,
                       Pope,
                       total_nyear,
                       future_initial_year,
-                      start_ABC_year, # the year for estimating multiplier F
+                      start_ABC_year, # the year for estimating multiplier F & conduct HCR
                       nsim,
                       nage,
                       recruit_age,
