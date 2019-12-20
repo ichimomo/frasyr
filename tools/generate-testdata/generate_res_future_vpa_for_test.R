@@ -1,5 +1,5 @@
-#source("rvpa1.9.4.r")
-#source("future2.1.r")
+source("./tools/generate-testdata/rvpa1.9.4.r")
+source("./tools/generate-testdata/future2.1.r")
 
 load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
 load(system.file("extdata","SRdata_pma.rda",package = "frasyr"))

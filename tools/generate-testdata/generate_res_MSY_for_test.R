@@ -1,6 +1,6 @@
-#source("rvpa1.9.4.r")
-#source("../R/stock-recruit.r")
-#source("utilities.r")
+source("./tools/generate-testdata/rvpa1.9.4.r")
+source("./tools/generate-testdata/future2.1.r")
+source("./tools/generate-testdata/utilities.r")
 
 caa <- read.csv(system.file("extdata","caa_pma.csv",package="frasyr"),row.names=1)
 waa <- read.csv(system.file("extdata","waa_pma.csv",package="frasyr"),row.names=1)
@@ -29,7 +29,7 @@ SRmodel.base <- SR.list[[1]] # AIC最小モデルを今後使っていく
 
 selectedSR <- sprintf("%s.recAR",SRmodel.base$input$SR[1])
 
-#source("../R/future.r")----
+# future fcurrent ----
 res_future_Fcurrent_pma <- future.vpa(res_vpa_pma,
                                             multi=1,
                                             nyear=50, # 将来予測の年数
@@ -51,9 +51,10 @@ res_future_Fcurrent_pma <- future.vpa(res_vpa_pma,
 
 save(res_future_Fcurrent_pma,file = "./inst/extdata/res_future_Fcurrent_pma.rda")
 
+# est MSY----
 res_MSY_pma <- est.MSY(res_vpa_pma, # VPAの計算結果
                              res_future_Fcurrent_pma$input, # 将来予測で使用した引数
-                        seed=res_future_Fcurrent_pma$input$seed,
+                             seed=res_future_Fcurrent_pma$input$seed,
                              resid.year=0, # ARありの場合、最近何年分の残差を平均するかをここで指定する。ARありの設定を反映させたい場合必ずここを１以上とすること（とりあえず１としておいてください）。
                              N=100, # 確率的計算の繰り返し回数=>実際の計算では1000~5000回くらいやってください
                              calc.yieldcurve=TRUE,
@@ -66,23 +67,6 @@ res_MSY_pma <- est.MSY(res_vpa_pma, # VPAの計算結果
                                           SRmodel.base$pars$b) # HSの折れ点
 )
 save(res_MSY_pma,file = "./inst/extdata/res_MSY_pma.rda")
-
-#source("future2.1.r")----
-res_MSY_pma_old <- est.MSY(res_vpa_pma, # VPAの計算結果
-                           res_future_Fcurrent_pma$input, # 将来予測で使用した引数
-                           seed=res_future_Fcurrent_pma$input$seed,
-                           resid.year=0, # ARありの場合、最近何年分の残差を平均するかをここで指定する。ARありの設定を反映させたい場合必ずここを１以上とすること（とりあえず１としておいてください）。
-                           N=100, # 確率的計算の繰り返し回数=>実際の計算では1000~5000回くらいやってください
-                           calc.yieldcurve=TRUE,
-                           PGY=c(0.95,0.9,0.6,0.1), # 計算したいPGYレベル。上限と下限の両方が計算される
-                           onlylower.pgy=FALSE, # TRUEにするとPGYレベルの上限は計算しない（計算時間の節約になる）
-                           B0percent=c(0.2,0.3,0.4),
-                           Bempirical=c(round(tail(colSums(res_vpa_pma$ssb),n=1)),
-                                        round(max(colSums(res_vpa_pma$ssb))),
-                                        24000, # 現行Blimit
-                                        SRmodel.base$pars$b) # HSの折れ点
-)
-save(res_MSY_pma_old,file = "./inst/extdata/res_MSY_pma_old.rda")
 
 # base ----
 refs_all_pma <- res_MSY_pma$summary

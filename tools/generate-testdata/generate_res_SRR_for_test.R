@@ -1,5 +1,5 @@
-#source("rvpa1.9.4.r")
-source("./R/stock_recruit.r")
+source("./tools/generate-testdata/rvpa1.9.4.r")
+source("./tools/generate-testdata/future2.1.r")
 
 caa <- read.csv(system.file("extdata","caa_pma.csv",package="frasyr"),row.names=1)
 waa <- read.csv(system.file("extdata","waa_pma.csv",package="frasyr"),row.names=1)
@@ -119,12 +119,13 @@ boot_res_pma_median_pars <- cbind(boot_res_pma_median_pars_a,boot_res_pma_median
 
 save(boot_res_pma_median_pars,file = "./inst/extdata/boot_res_pma_median_pars.rda")
 
-# jack knife ----
-jack_res_pma <- lapply(1:length(SRdata_pma$year), function(i){
-  jack_pma <- SRmodel.select
-  jack_pma$input$w[i] <- 0
-  do.call(fit.SR,jack_pma$input)
-})
+# jack knife (関数を定義しているわけではないので無視)----
+
+#jack_res_pma <- lapply(1:length(SRdata_pma$year), function(i){
+#  jack_pma <- SRmodel.select
+#  jack_pma$input$w[i] <- 0
+#  do.call(fit.SR,jack_pma$input)
+#})
 
 # ignore plot
 #par(mfrow=c(2,2),mar=c(4,4,2,2))
@@ -147,21 +148,21 @@ jack_res_pma <- lapply(1:length(SRdata_pma$year), function(i){
 #}
 #par(mfrow=c(1,1))
 
-jack_res_pma_pars <- c()
-for(i in 1:length(SRdata_pma$year)){
-  jack_res_pma_pars <- rbind(jack_res_pma_pars,jack_res_pma[[i]]$pars)
-}
-save(jack_res_pma_pars,file="./inst/extdata/jack_res_pma_pars.rda")
+#jack_res_pma_pars <- c()
+#for(i in 1:length(SRdata_pma$year)){
+#  jack_res_pma_pars <- rbind(jack_res_pma_pars,jack_res_pma[[i]]$pars)
+#}
+#save(jack_res_pma_pars,file="./inst/extdata/jack_res_pma_pars.rda")
 
-# profile likelihood----
+# profile likelihood (関数を定義しているわけではないので無視)----
 
-ngrid <- 100
-a.grid <- seq(SRmodel.select$pars$a*0.5,SRmodel.select$pars$a*1.5,length=ngrid)
-b.grid <- seq(min(SRdata_pma$SSB),max(SRdata_pma$SSB),length=ngrid)
-ba.grids <- expand.grid(b.grid,a.grid)
-prof_lik_res_pma <- sapply(1:nrow(ba.grids),function(i) prof.lik(SRmodel.select,a=as.numeric(ba.grids[i,2]),b=as.numeric(ba.grids[i,1])))
+#ngrid <- 100
+#a.grid <- seq(SRmodel.select$pars$a*0.5,SRmodel.select$pars$a*1.5,length=ngrid)
+#b.grid <- seq(min(SRdata_pma$SSB),max(SRdata_pma$SSB),length=ngrid)
+#ba.grids <- expand.grid(b.grid,a.grid)
+#prof_lik_res_pma <- sapply(1:nrow(ba.grids),function(i) prof.lik(SRmodel.select,a=as.numeric(ba.grids[i,2]),b=as.numeric(ba.grids[i,1])))
 
-save(prof_lik_res_pma,file = "./inst/extdata/prof_lik_res_pma.rda")
+#save(prof_lik_res_pma,file = "./inst/extdata/prof_lik_res_pma.rda")
 
 # ignore plot----
 #image(b.grid,a.grid,matrix(prof_lik_res_pma,nrow=ngrid),ann=F,col=cm.colors(12),
