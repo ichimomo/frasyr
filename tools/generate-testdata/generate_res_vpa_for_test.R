@@ -1,4 +1,4 @@
-#source("rvpa1.9.4.r")
+source("./rvpa1.9.4.r")
 
 caa <- read.csv(system.file("extdata","caa_pma.csv",package="frasyr"),row.names=1)
 waa <- read.csv(system.file("extdata","waa_pma.csv",package="frasyr"),row.names=1)
