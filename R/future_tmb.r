@@ -1,9 +1,21 @@
+#' @export
 SRF_HS <- function(x,a,b) ifelse(x>b,b*a,x*a)
+
+#' @export
 SRF_BH <- function(x,a,b) a*x/(1+b*x)
+
+#' @export
 SRF_RI <- function(x,a,b) a*x*exp(-b*x)
 
 #'
-#' 将来予測用の三次元行列を与えられたら, pars.year間のパラメータを平均するか与えられたparをyear_replace_futureに入れる
+#' 将来予測用の三次元行列（年齢×年×シミュレーション）を与えられたら, pars.yearで指定された期間のパラメータを平均するか、parで指定されたパラメータを、year_replace_future以降の年で置き換える
+#'
+#' @param d3_mat 将来予測用の３次元行列
+#' @param pars 置き換えるべき生物パラメータ
+#' @param pars.year この期間の生物パラメータを平均して、将来のパラメータとする
+#' @param year_replace_future 生物パラメータを置き換える最初の年
+#'
+#' @export
 #' 
 
 make_array <- function(d3_mat, pars, pars.year, year_replace_future){
@@ -22,15 +34,27 @@ make_array <- function(d3_mat, pars, pars.year, year_replace_future){
 #'
 #' 対数正規分布の残差分布を作る関数
 #'
-#' 再生産関係は一定
+#' 再生産関係をres_SRで与えると、res_vpaを見ながら残差を再計算したのち、start_random_rec_year_name以降の加入のdeviationを計算しSR_mat[,,"deviance"]に入れる。
+#'
+#' @param res_vpa VPAの推定結果
+#' @param res_SR 再生産関係の推定結果
+#' @param SR_mat 将来予測用の再生産関係パラメータが格納されている３次元行列
+#' @param seed_number シード番号
+#' @param start_random_rec_year_name ランダム加入を仮定する最初の年
+#' @param resid_type 残差の発生パターン；対数正規分布は"lognormal"、単純リサンプリングは"resampling"
+#' @param resample_year_range 0の場合、推定に使ったデータから計算される残差を用いる。年の範囲を入れると、対象とした年の範囲で計算される残差を用いる
+#' 
+#' @export
 #' 
 
-set_SR_mat_lognormal <- function(res_vpa,
-                                 res_SR,
-                                 SR_mat,
-                                 seed_number,
-                                 start_random_rec_year_name,
-                                 future_initial_year){
+set_SR_mat <- function(res_vpa,
+                       res_SR,
+                       SR_mat,
+                       seed_number,
+                       start_random_rec_year_name,
+                       resid_type="lognormal",
+                       resample_year_range=0,
+                       bias_correction=TRUE){
     
     allyear_name <- dimnames(SR_mat)[[1]]
     start_random_rec_year  <- which(allyear_name==start_random_rec_year_name)
@@ -59,23 +83,57 @@ set_SR_mat_lognormal <- function(res_vpa,
     # re-culcurate recruitment deviation
     SR_mat[1:(start_random_rec_year-1),,"ssb"] <- as.numeric(colSums(res_vpa$ssb))[1:(start_random_rec_year-1)]
     SR_mat[1:(start_random_rec_year-1),,"recruit"] <- as.numeric(res_vpa$naa[1,1:(start_random_rec_year-1)])
-    SR_mat[1:(start_random_rec_year-1),,"deviance"] <- 
+    SR_mat[1:(start_random_rec_year-1),,"deviance"] <- SR_mat[1:(start_random_rec_year-1),,"rand_resid"] <- 
         log(SR_mat[1:(start_random_rec_year-1),,"recruit"]) -
         log(SRF(SR_mat[1:(start_random_rec_year-1),,"ssb"],
                 SR_mat[1:(start_random_rec_year-1),,"a"],
                 SR_mat[1:(start_random_rec_year-1),,"b"]))
 
-    # defint future recruitment deviation
+    # define future recruitment deviation
     set.seed(seed_number)
-    sd_with_AR <- sqrt(res_SR$pars$sd^2/(1-res_SR$pars$rho^2))    
-    tmp_SR <- t(SR_mat[random_rec_year_period,,"rand_resid"])
-    tmp_SR[] <- rnorm(dim(SR_mat)[[2]]*length(random_rec_year_period), mean=0, sd=res_SR$pars$sd)
-    SR_mat[random_rec_year_period,,"rand_resid"] <- t(tmp_SR)
+    if(resid_type=="lognormal"){
+        if(isTRUE(bias_correction)){
+            sd_with_AR <- sqrt(res_SR$pars$sd^2/(1-res_SR$pars$rho^2))
+            bias_factor <- 0.5* sd_with_AR^2
+        }
+        else{
+            bias_factor <- 0
+        }
+        tmp_SR <- t(SR_mat[random_rec_year_period,,"rand_resid"])
+        tmp_SR[] <- rnorm(dim(SR_mat)[[2]]*length(random_rec_year_period), mean=0, sd=res_SR$pars$sd)
+        SR_mat[random_rec_year_period,,"rand_resid"] <- t(tmp_SR)
    
-    for(t in random_rec_year_period){
-        SR_mat[t, ,"deviance"] <- SR_mat[t-1, ,"deviance"]*SR_mat[t,,"rho"] + SR_mat[t, ,"rand_resid"] 
+        for(t in random_rec_year_period){
+            SR_mat[t, ,"deviance"] <- SR_mat[t-1, ,"deviance"]*SR_mat[t,,"rho"] + SR_mat[t, ,"rand_resid"] 
+        }
+        SR_mat[random_rec_year_period,,"deviance"] <- SR_mat[random_rec_year_period,,"deviance"] - bias_factor
     }
-    SR_mat[random_rec_year_period,,"deviance"] <- SR_mat[random_rec_year_period,,"deviance"] - 0.5* sd_with_AR^2
+    if(resid_type=="resample"){
+        # 推定された残差をそのまま使う
+        if(resample_year_range==0){
+            sampled_residual <- res_SR$resid[res_SR$input$w==1]
+            if(isTRUE(bias_correction)) bias_factor <- log(mean(exp(sampled_residual))) else bias_factor <- 0
+            SR_mat[random_rec_year_period,,"rand_resid"] <- sample(sampled_residual, dim(SR_mat)[[2]]*length(random_rec_year_period), replace=TRUE)
+            SR_mat[random_rec_year_period,,"deviance"] <- SR_mat[random_rec_year_period,,"rand_resid"]-bias_factor
+        }
+        else{ # VPA結果から計算しなおした残差を使う
+            sampled_residual <- SR_mat[as.character(resample_year_range),,"rand_resid"]
+            if(isTRUE(bias_correction)){
+                bias_factor <- log(colMeans(exp(sampled_residual)))
+            }
+            else{
+                bias_factor <- rep(0,ncol(sampled_residual))
+                }
+            for(i in 1:ncol(sampled_residual)){
+                SR_mat[random_rec_year_period,i,"rand_resid"] <- sample(sampled_residual[,i], length(random_rec_year_period), replace=TRUE)
+                SR_mat[random_rec_year_period,i,"deviance"] <- SR_mat[random_rec_year_period,,"rand_resid"]-bias_factor[i]
+            }
+        }
+    }
+    if(resid_type=="backward"){
+        ## coming soon
+    }
+    
     return(SR_mat)
 }
 
@@ -84,7 +142,19 @@ set_SR_mat_lognormal <- function(res_vpa,
 print.myarray <- function(x) cat("array :", dim(x),"\n")
 
 
-#### make data for future projection
+#'
+#' future_vpaにインプットとして入れる将来予測の空のarrayを生成する関数
+#' 
+#' @param nsim シミュレーションの繰り返し回数
+#' @param nyear 将来予測の実施年数
+#' @param future_initial_year_name 将来予測の「初期値となる」年齢別資源尾数を参照する年。この年のFを使って翌年の個体群動態が将来予測で決定される
+#' @param start_biopar_year_name 将来の生物パラメータとして生物パラメータを置き換える年の最初の年
+#' @param start_random_rec_year_name 将来の加入を再生産関係から予測する最初の年
+#' @param waa_year 将来の年齢別体重を過去の平均値とする場合、過去のパラメータを平均する期間
+#' @param waa 将来の年齢別体重を直接与える場合
+#' 
+#' @export
+
 make_future_data <- function(res_vpa,
                           nsim = 1000, # number of simulation
                           nyear = 50, # number of future year
@@ -108,7 +178,10 @@ make_future_data <- function(res_vpa,
                           HCR_year_lag=0,
                           # SR setting
                           res_SR=NULL,                       
-                          seed_number=1, 
+                          seed_number=1,
+                          resid_type="lognormal", # or resample
+                          resample_year_range=0, # only when "resample"
+                          bias_correction=TRUE, 
                           # Other
                           Pope=res_vpa$input$Pope
                           ) 
@@ -173,8 +246,10 @@ make_future_data <- function(res_vpa,
     }    
 
     # set SR parameter
-    SR_mat <- set_SR_mat_lognormal(res_vpa, res_SR, SR_mat, seed_number,
-                                   start_random_rec_year_name, future_initial_year)
+    SR_mat <- set_SR_mat(res_vpa, res_SR, SR_mat, seed_number,
+                         start_random_rec_year_name, resid_type=resid_type,
+                         resample_year_range=resample_year_range,
+                         bias_correction=bias_correction)
 
     # set F & HCR parameter
     start_F_year <- which(allyear_name==start_F_year_name)
@@ -213,6 +288,11 @@ make_future_data <- function(res_vpa,
     return(tibble::lst(data=tmb_data,input=input))
 }
 
+#'
+#' @export
+#' 
+
+
 naming_adreport <- function(tmb_data, ad_report){
 #    ssb <- ad_report$spawner_mat
     wcaa <- ad_report$catch_mat
@@ -227,6 +307,13 @@ naming_adreport <- function(tmb_data, ad_report){
     
     return(list(wcaa=wcaa, naa=naa, faa=faa, SR_mat=tmb_data$SR_mat))
 }
+
+#' 将来予測の実施関数
+#'
+#' @param tmb_data make_future_dataの返り値
+#'
+#' @export
+#'
 
 future_vpa <- function(tmb_data,
                        optim_method="tmb", # or "R" or "none"
@@ -309,6 +396,8 @@ future_vpa <- function(tmb_data,
     # 2do_futureで、SR関数を置き換えるオプション
 }
 
+#' @export
+
 future_vpa_R <- function(naa_mat,
                          caa_mat,
                       SR_mat,
@@ -320,7 +409,7 @@ future_vpa_R <- function(naa_mat,
                       Pope,
                       total_nyear,
                       future_initial_year,
-                      start_ABC_year, # the year for estimating multiplier F
+                      start_ABC_year, # the year for estimating multiplier F & conduct HCR
                       nsim,
                       nage,
                       recruit_age,
@@ -414,6 +503,10 @@ future_vpa_R <- function(naa_mat,
 
 }
 
+#'
+#' @export
+#' 
+
 
 trace_future <- function(tmb_data,
                          trace.multi=c(seq(from=0,to=0.9,by=0.1),1,seq(from=1.1,to=2,by=0.1),3:5,7,20,100)){
@@ -435,6 +528,10 @@ trace_future <- function(tmb_data,
     
     return(trace)
 }
+
+#'
+#' @export
+#' 
 
 get_summary_stat <- function(all.stat){
     
@@ -461,6 +558,11 @@ get_summary_stat <- function(all.stat){
     tibble::lst(sumvalue,Fvector)
     
 }
+
+#'
+#' @export
+#' 
+
 
 format_to_old_future <- function(fout){
     fout_old <- fout[c("naa","faa","multi","alpha")]

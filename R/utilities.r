@@ -39,9 +39,9 @@ convert_2d_future <- function(df, name, label="tmp"){
 convert_future_table <- function(fout,label="tmp"){
     
     U_table <- fout$vwcaa/fout$vbiom %>% as_tibble
-    if(is.null(fout$Fsakugen)) fout$Fsakugen <- -(1-fout$faa[1,,]/fout$currentF)
-    if(is.null(fout$recruit))  fout$recruit <- fout$naa[1,,]    
-    
+    if(is.null(fout$Fsakugen)) fout$Fsakugen <- -(1-fout$faa[1,,]/fout$currentF[1])
+    if(is.null(fout$recruit))  fout$recruit <- fout$naa[1,,]
+
     ssb      <- convert_2d_future(df=fout$vssb,   name="SSB",     label=label)
     catch    <- convert_2d_future(df=fout$vwcaa,  name="catch",   label=label)    
     biomass  <- convert_2d_future(df=fout$vbiom,  name="biomass", label=label)
@@ -487,15 +487,16 @@ calc_kobeII_matrix <- function(fres_base,
 
 make_kobeII_table0 <- function(kobeII_data,
                               res_vpa,
-                              year.catch,
-                              year.ssb,                              
-                              year.Fsakugen,
-                              year.ssbtarget,
-                              year.ssblimit,
-                              year.ssbban,
-                              year.ssbmin,
-                              year.ssbmax,                              
-                              year.aav){
+                              year.catch=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              year.ssb=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              year.Fsakugen=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              year.ssbtarget=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              year.ssblimit=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              year.ssbban=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              year.ssbmin=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              year.ssbmax=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              year.aav=(max(as.numeric(colnames(res_vpa$naa)))+1:10))
+{
     # 平均漁獲量
     (catch.table <- kobeII.data %>%
          dplyr::filter(year%in%year.catch,stat=="catch") %>% # 取り出す年とラベル("catch")を選ぶ
@@ -605,15 +606,15 @@ make_kobeII_table0 <- function(kobeII_data,
 
 make_kobeII_table <- function(kobeII_data,
                               res_vpa,
-                              year.catch,
-                              year.ssb,                              
-                              year.Fsakugen,
-                              year.ssbtarget,
-                              year.ssblimit,
-                              year.ssbban,
-                              year.ssbmin,
-                              year.ssbmax,                              
-                              year.aav,
+                              year.catch=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              year.ssb=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              year.Fsakugen=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              year.ssbtarget=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              year.ssblimit=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              year.ssbban=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              year.ssbmin=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              year.ssbmax=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              year.aav=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
                               Btarget=0,
                               Blimit=0,
                               Bban=0){

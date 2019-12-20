@@ -12,12 +12,14 @@ future.vpa(res0, multi = 1, currentF = NULL, futureF = NULL,
   waa.year = NULL, waa.catch.year = NULL, maa.year = NULL,
   M.year = NULL, waa = NULL, waa.catch = NULL, maa = NULL,
   M = NULL, waa.fun = FALSE, use.MSE = FALSE, MSE.options = NULL,
-  HCR_beta = 1, HCR_Blimit = -1, HCR_Bban = -1, HCR_year_lag = 0,
-  silent = FALSE, is.plot = TRUE, pre.catch = NULL, rec.new = NULL,
-  recfunc = HS.recAR, rec.arg = list(a = 1, b = 1, rho = 0, sd = 0, c =
-  1, bias.correction = TRUE, resample = FALSE, resid = 0, resid.year =
-  NULL), Frec = NULL, naa0 = NULL, eaa0 = NULL, ssb0 = NULL,
-  faa0 = NULL, add.year = 0, det.run = TRUE)
+  HCR = list(Blim = -1, Bban = -1, beta = 1, year.lag = 0),
+  HCR_beta = NULL, HCR_Blimit = NULL, HCR_Bban = NULL,
+  HCR_year_lag = NULL, silent = FALSE, is.plot = TRUE,
+  pre.catch = NULL, rec.new = NULL, recfunc = HS.recAR,
+  rec.arg = list(a = 1, b = 1, rho = 0, sd = 0, c = 1, bias.correction =
+  TRUE, resample = FALSE, resid = 0, resid.year = NULL), Frec = NULL,
+  naa0 = NULL, eaa0 = NULL, ssb0 = NULL, faa0 = NULL,
+  add.year = 0, det.run = TRUE)
 }
 \arguments{
 \item{res0}{VPAの出力結果}
