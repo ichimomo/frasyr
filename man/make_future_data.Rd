@@ -11,7 +11,8 @@ make_future_data(res_vpa, nsim = 1000, nyear = 50,
   maa = NULL, M_year, M = NULL, faa_year, currentF = NULL,
   futureF = NULL, start_ABC_year_name = 2019, HCR_beta = 1,
   HCR_Blimit = -1, HCR_Bban = -1, HCR_year_lag = 0, res_SR = NULL,
-  seed_number = 1, Pope = res_vpa$input$Pope)
+  seed_number = 1, resid_type = "lognormal", resample_year_range = 0,
+  bias_correction = TRUE, Pope = res_vpa$input$Pope)
 }
 \arguments{
 \item{nsim}{シミュレーションの繰り返し回数}

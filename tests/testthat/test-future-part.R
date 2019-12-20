@@ -32,7 +32,7 @@ test_that("oututput value check",{
   testcontents <-c("sel","max.age","min.age","rps.q","spr.q","Fcurrent","Fmed","Flow","Fhigh","Fmax","F0.1","Fmean","rps.data","FpSPR","summary","ypr.spr","waa","waa.catch","maa","spr0")
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("res_ref_f_pma$",testcontents[i]))),eval(parse(text=paste("res_ref_f_pma_check$",testcontents[i]))))
   }
 
@@ -109,29 +109,31 @@ test_that("oututput value check (iteration for future sim is fixed as 2) ",{
   }
 
   #照合内容
-  testcontents <-c("faa","naa","biom","baa","ssb","wcaa","M","rps","maa","vbiom","recruit","eaa","alpha","thisyear.ssb","waa","waa.catch","currentF","vssb","vwcaa","naa_all","years","fyear.year","ABC","waa.year","maa.year","multi","multi.year")
+  testcontents <-c("faa","naa","wcaa","M","maa","vbiom","recruit","eaa","alpha","thisyear.ssb","waa","waa.catch","currentF","vssb","vwcaa","naa_all","years","fyear.year","ABC","waa.year","maa.year","multi","multi.year")
 
   # HS L1 AR0 ----
   load(system.file("extdata","fres_pma_HS_L1_AR0_outAR0.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
-    expect_equal(eval(parse(text=paste("fres_pma_HS_L1_AR0_outAR0$",testcontents[i]))),eval(parse(text=paste("fres_pma_HS_L1_AR0_outAR0_check$",testcontents[i]))))
+  for(i in 1:length(testcontents)){
+    expect_equal(eval(parse(text=paste("fres_pma_HS_L1_AR0_outAR0$",testcontents[i]))),eval(parse(text=paste("fres_pma_HS_L1_AR0_outAR0_check$",testcontents[i]))), label=testcontents[i])
   }
 
   # HS L1 AR1 outAR F(0) ----
   load(system.file("extdata","fres_pma_HS_L1_AR1_outAR0.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
-    expect_equal(eval(parse(text=paste("fres_pma_HS_L1_AR1_outAR0$",testcontents[i]))),eval(parse(text=paste("fres_pma_HS_L1_AR1_outAR0_check$",testcontents[i]))))
+  for(i in 1:length(testcontents)){
+      expect_equal(eval(parse(text=paste("fres_pma_HS_L1_AR1_outAR0$",testcontents[i]))),
+                   eval(parse(text=paste("fres_pma_HS_L1_AR1_outAR0_check$",testcontents[i]))),
+                   label=testcontents[i])
   }
 
   # HS L1 AR1 outAR T(1) ----
   load(system.file("extdata","fres_pma_HS_L1_AR1_outAR1.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("fres_pma_HS_L1_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("fres_pma_HS_L1_AR1_outAR1_check$",testcontents[i]))))
   }
 
@@ -139,21 +141,21 @@ test_that("oututput value check (iteration for future sim is fixed as 2) ",{
   load(system.file("extdata","fres_pma_HS_L2_AR0_outAR0.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("fres_pma_HS_L2_AR0_outAR0$",testcontents[i]))),eval(parse(text=paste("fres_pma_HS_L2_AR0_outAR0_check$",testcontents[i]))))
   }
   # HS L2 AR1 outAR F(0) ----
   load(system.file("extdata","fres_pma_HS_L2_AR1_outAR0.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("fres_pma_HS_L2_AR1_outAR0$",testcontents[i]))),eval(parse(text=paste("fres_pma_HS_L2_AR1_outAR0_check$",testcontents[i]))))
   }
   # HS L2 AR1 outAR T(1) ----
   load(system.file("extdata","fres_pma_HS_L2_AR1_outAR1.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("fres_pma_HS_L2_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("fres_pma_HS_L2_AR1_outAR1_check$",testcontents[i]))))
   }
 
@@ -162,7 +164,7 @@ test_that("oututput value check (iteration for future sim is fixed as 2) ",{
   load(system.file("extdata","fres_pma_BH_L1_AR0_outAR0.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("fres_pma_BH_L1_AR0_outAR0$",testcontents[i]))),eval(parse(text=paste("fres_pma_BH_L1_AR0_outAR0_check$",testcontents[i]))))
   }
 
@@ -170,7 +172,7 @@ test_that("oututput value check (iteration for future sim is fixed as 2) ",{
   load(system.file("extdata","fres_pma_BH_L1_AR1_outAR0.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("fres_pma_BH_L1_AR1_outAR0$",testcontents[i]))),eval(parse(text=paste("fres_pma_BH_L1_AR1_outAR0_check$",testcontents[i]))))
   }
 
@@ -178,7 +180,7 @@ test_that("oututput value check (iteration for future sim is fixed as 2) ",{
   load(system.file("extdata","fres_pma_BH_L1_AR1_outAR1.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("fres_pma_BH_L1_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("fres_pma_BH_L1_AR1_outAR1_check$",testcontents[i]))))
   }
 
@@ -186,21 +188,21 @@ test_that("oututput value check (iteration for future sim is fixed as 2) ",{
   load(system.file("extdata","fres_pma_BH_L2_AR0_outAR0.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("fres_pma_BH_L2_AR0_outAR0$",testcontents[i]))),eval(parse(text=paste("fres_pma_BH_L2_AR0_outAR0_check$",testcontents[i]))))
   }
   # BH L2 AR1 outAR F(0) ----
   load(system.file("extdata","fres_pma_BH_L2_AR1_outAR0.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("fres_pma_BH_L2_AR1_outAR0$",testcontents[i]))),eval(parse(text=paste("fres_pma_BH_L2_AR1_outAR0_check$",testcontents[i]))))
   }
   # BH L2 AR1 outAR T(1) ----
   load(system.file("extdata","fres_pma_BH_L2_AR1_outAR1.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("fres_pma_BH_L2_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("fres_pma_BH_L2_AR1_outAR1_check$",testcontents[i]))))
   }
 
@@ -211,7 +213,7 @@ test_that("oututput value check (iteration for future sim is fixed as 2) ",{
   load(system.file("extdata","fres_pma_RI_L1_AR0_outAR0.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("fres_pma_RI_L1_AR0_outAR0$",testcontents[i]))),eval(parse(text=paste("fres_pma_RI_L1_AR0_outAR0_check$",testcontents[i]))))
   }
 
@@ -219,7 +221,7 @@ test_that("oututput value check (iteration for future sim is fixed as 2) ",{
   load(system.file("extdata","fres_pma_RI_L1_AR1_outAR0.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("fres_pma_RI_L1_AR1_outAR0$",testcontents[i]))),eval(parse(text=paste("fres_pma_RI_L1_AR1_outAR0_check$",testcontents[i]))))
   }
 
@@ -227,7 +229,7 @@ test_that("oututput value check (iteration for future sim is fixed as 2) ",{
   load(system.file("extdata","fres_pma_RI_L1_AR1_outAR1.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("fres_pma_RI_L1_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("fres_pma_RI_L1_AR1_outAR1_check$",testcontents[i]))))
   }
 
@@ -235,21 +237,21 @@ test_that("oututput value check (iteration for future sim is fixed as 2) ",{
   load(system.file("extdata","fres_pma_RI_L2_AR0_outAR0.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("fres_pma_RI_L2_AR0_outAR0$",testcontents[i]))),eval(parse(text=paste("fres_pma_RI_L2_AR0_outAR0_check$",testcontents[i]))))
   }
   # RI L2 AR1 outAR F(0) ----
   load(system.file("extdata","fres_pma_RI_L2_AR1_outAR0.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("fres_pma_RI_L2_AR1_outAR0$",testcontents[i]))),eval(parse(text=paste("fres_pma_RI_L2_AR1_outAR0_check$",testcontents[i]))))
   }
   # RI L2 AR1 outAR T(1) ----
   load(system.file("extdata","fres_pma_RI_L2_AR1_outAR1.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("fres_pma_RI_L2_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("fres_pma_RI_L2_AR1_outAR1_check$",testcontents[i]))))
   }
 
@@ -289,7 +291,7 @@ test_that("oututput value check",{
                                         waa.year=2009:2011, # 生物パラメータの参照年
                                         maa.year=2009:2011,
                                         M.year=2009:2011,
-                                        is.plot=TRUE, # 結果をプロットするかどうか
+                                        is.plot=FALSE, # 結果をプロットするかどうか
                                         seed=1,
                                         silent=TRUE,
                                         recfunc=eval(parse(text=selectedSR))
@@ -303,7 +305,6 @@ test_that("oututput value check",{
   res_MSY_pma_check <- est.MSY(res_vpa_pma, # VPAの計算結果
                          res_future_Fcurrent_pma$input, # 将来予測で使用した引数
                          seed=res_future_Fcurrent_pma$input$seed,
-                         resid.year=0, # ARありの場合、最近何年分の残差を平均するかをここで指定する。ARありの設定を反映させたい場合必ずここを１以上とすること（とりあえず１としておいてください）。
                          N=100, # 確率的計算の繰り返し回数=>実際の計算では1000~5000回くらいやってください
                          calc.yieldcurve=TRUE,
                          PGY=c(0.95,0.9,0.6,0.1), # 計算したいPGYレベル。上限と下限の両方が計算される
@@ -319,14 +320,17 @@ test_that("oututput value check",{
   load(system.file("extdata","res_MSY_pma.rda",package = "frasyr"))
 
   #照合内容
-  testcontents <-c("summary","summaryAR","summary_tb","F.msy","all.stat","all.statAR","all.stat_tb","trace","ssb.ar.mean","SPR.msy")
+  #  testcontents <-c("summary","summaryAR","summary_tb","F.msy","all.stat","all.statAR","all.stat_tb","trace","ssb.ar.mean","SPR.msy")
+  testcontents <-c("summary","summary_tb","F.msy","all.stat","trace")  
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
-    expect_equal(eval(parse(text=paste("res_MSY_pma$",testcontents[i]))),eval(parse(text=paste("res_MSY_pma_check$",testcontents[i]))))
+  for(i in 1:length(testcontents)){
+      expect_equal(eval(parse(text=paste("res_MSY_pma$",testcontents[i]))),
+                   eval(parse(text=paste("res_MSY_pma_check$",testcontents[i]))),
+                   label=testcontents[i])
   }
 
- })
+})
 
 
 context("future future.vpa (option of futureF)")
