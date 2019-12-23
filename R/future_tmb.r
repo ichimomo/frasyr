@@ -38,7 +38,7 @@ make_array <- function(d3_mat, pars, pars.year, year_replace_future){
 #'
 #' @param res_vpa VPAの推定結果
 #' @param res_SR 再生産関係の推定結果
-#' @param SR_mat 将来予測用の再生産関係パラメータが格納されている３次元行列
+#' @param SR_mat 将来予測用の再生産関係パラメータが格納する３次元行列
 #' @param seed_number シード番号
 #' @param start_random_rec_year_name ランダム加入を仮定する最初の年
 #' @param resid_type 残差の発生パターン；対数正規分布は"lognormal"、単純リサンプリングは"resampling"
@@ -132,6 +132,48 @@ set_SR_mat <- function(res_vpa,
     }
     if(resid_type=="backward"){
         ## coming soon
+    }
+    
+    return(SR_mat)
+}
+
+
+#'
+#' モデル平均的な再生産関係を与える
+#'
+#' @param res_vpa VPAの推定結果
+#' @param res_SR_list 再生産関係の推定結果のリスト
+#' @param range_list 
+#' @param SR_mat 将来予測用の再生産関係パラメータを格納する３次元行列
+#' @param seed_number シード番号
+#' @param start_random_rec_year_name ランダム加入を仮定する最初の年
+#' @param resid_type 残差の発生パターン；対数正規分布は"lognormal"、単純リサンプリングは"resampling"
+#' @param resample_year_range 0の場合、推定に使ったデータから計算される残差を用いる。年の範囲を入れると、対象とした年の範囲で計算される残差を用いる
+#' 
+#' @export
+#' 
+
+average_SR_mat <- function(res_vpa,
+                           res_SR_list,
+                           range_list=list(1:500,501:1000),
+                           SR_mat,
+                           seed_number,
+                           start_random_rec_year_name,
+                           resid_type="lognormal",
+                           resample_year_range=0,
+                           bias_correction=TRUE){
+    
+    allyear_name <- dimnames(SR_mat)[[1]]
+    start_random_rec_year  <- which(allyear_name==start_random_rec_year_name)
+    random_rec_year_period <- (start_random_rec_year):length(allyear_name)
+
+    for(i in 1:length(res_SR_list)){
+        SR_mat_tmp <- set_SR_mat(res_vpa, res_SR_list[[i]], SR_mat, seed_number+i,
+                                 start_random_rec_year_name, resid_type=resid_type,
+                                 resample_year_range=resample_year_range,
+                                 bias_correction=bias_correction)
+        SR_mat[,as.character(range_list[[i]]),] <-
+            SR_mat_tmp[,range_list[[i]],]
     }
     
     return(SR_mat)
@@ -509,7 +551,9 @@ future_vpa_R <- function(naa_mat,
 
 
 trace_future <- function(tmb_data,
-                         trace.multi=c(seq(from=0,to=0.9,by=0.1),1,seq(from=1.1,to=2,by=0.1),3:5,7,20,100)){
+                         trace.multi=c(seq(from=0,to=0.9,by=0.1),1,
+                                       seq(from=1.1,to=2,by=0.1),3:5,7,20,100),
+                         ncore=0){
 #    R_obj_fun <- function(x, tmb_data, what_return="obj"){
 #        tmb_data$x <- x
 #        tmb_data$what_return <- what_return
@@ -517,14 +561,31 @@ trace_future <- function(tmb_data,
 #        return(obj)
 #    }    
 
-    trace <- purrr::map_dfr(trace.multi, function(x)
-        #       R_obj_fun(x=x, tmb_data = tmb_data, what_return="stat") %>%
-        future_vpa(tmb_data,
-                   optim_method="none",
-                   multi_init=x,
-                   multi_lower=x,
-                   multi_upper=x) %>%
-        get.stat(use_new_output=TRUE) %>% as_tibble())
+    if(ncore==0){
+        trace <- purrr::map_dfr(trace.multi, function(x)
+            #       R_obj_fun(x=x, tmb_data = tmb_data, what_return="stat") %>%
+            future_vpa(tmb_data,
+                       optim_method="none",
+                       multi_init=x,
+                       multi_lower=x,
+                       multi_upper=x) %>%
+            get.stat(use_new_output=TRUE) %>% as_tibble())
+    }
+    else{
+        library(foreach)
+        library(doParallel)
+        cl <- makeCluster(ncore, type="FORK")
+        registerDoParallel(cl)
+        trace <- foreach::foreach(x=trace.multi,.combine="rbind")%dopar%{
+            future_vpa(tmb_data,
+                       optim_method="none",
+                       multi_init=x,
+                       multi_lower=x,
+                       multi_upper=x) %>%
+                get.stat(use_new_output=TRUE) %>% as_tibble()
+        }
+        stopCluster(cl)
+    }
     
     return(trace)
 }

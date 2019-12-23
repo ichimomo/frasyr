@@ -1726,7 +1726,8 @@ compare_eq_stat <- function(MSYlist,
 #'
 #' @param MSYlist est.MSYの返り値をリストにしたもの; 単独でも可
 #' @param MSYname 凡例につけるMSYのケースの名前。MSYlistと同じ長さにしないとエラーとなる
-#' @param 凡例の位置
+#' @param legend.position 凡例の位置
+#' @param yaxis
 #' 
 #' @examples 
 #' \dontrun{
@@ -1742,7 +1743,8 @@ compare_eq_stat <- function(MSYlist,
 
 compare_MSY <- function(MSYlist, 
                         legend.position="top",
-                        MSYname=NULL){
+                        MSYname=NULL,
+                        yaxis="Fref2Fcurrent"){
 
     if(!is.null(MSYname)){
         if(length(MSYname)!=length(MSYlist)) stop("Length of MSYlist and MSYname is different")
@@ -1753,14 +1755,21 @@ compare_MSY <- function(MSYlist,
 
     data_summary <- purrr::map_dfr(MSYlist, function(x) x$summary, .id="id")   %>%
         dplyr::filter(!is.na(RP.definition)) %>%
-        mutate(label=stringr::str_c(id, RP.definition, sep="-"))
+        mutate(label=stringr::str_c(id, RP.definition, sep="-")) %>%
+        mutate(perSPR_rev=1-perSPR)
 
     g1 <- data_summary %>% ggplot()+
-        geom_point(aes(x=SSB, y=Fref2Fcurrent, color=id))+
-        ggrepel::geom_label_repel(aes(x=SSB, y=Fref2Fcurrent, color=id, label=label))+
+        geom_point(aes(x=SSB, y=get(yaxis), color=id))+
+        ggrepel::geom_label_repel(aes(x=SSB, y=get(yaxis), color=id, label=label))+
         theme_SH(legend.position=legend.position)
 
     return(g1)
 }
 
-    
+#' @export
+compare_SRfit <- function(SRlist){
+    plot_SRdata(SRlist[[1]]$input$SRdata)
+    for(i in 1:length(SRlist)){
+        lines(SRlist[[i]]$pred,col=i)
+    }
+}
