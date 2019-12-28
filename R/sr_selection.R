@@ -45,7 +45,7 @@ draw_SRline <- function(fitted, observed, show.year) {
 #' Fit and draw SR line(s) over observed stock-recruitment plots
 #'
 #' @inheritParams get.SRdata
-#' #' @inheritParams draw_SRline
+#' @inheritParams draw_SRline
 #' @param SR Vector of multiple SR model described in \code{\link{fit.SR}}
 #' @param method Vector of multiple method described in \code{\link{fit.SR}}
 #' @examples
