@@ -88,7 +88,7 @@ Type objective_function<Type>::operator() ()
 	  N_mat(0,t,i) = SR_mat(t,i,0)*spawner_mat(t-recruit_age,i)*exp(-SR_mat(t,i,1)*spawner_mat(t-recruit_age,i));
 	 }
 	
-	N_mat(0,t,i) = N_mat(0,t,i)*exp(SR_mat(t,i,5));	
+	N_mat(0,t,i) = N_mat(0,t,i)*exp(SR_mat(t,i,5))+SR_mat(t,i,8);	
       }
 
       // forward calculation 

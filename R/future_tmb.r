@@ -42,7 +42,7 @@ make_array <- function(d3_mat, pars, pars.year, year_replace_future){
 #' @param seed_number シード番号
 #' @param start_random_rec_year_name ランダム加入を仮定する最初の年
 #' @param resid_type 残差の発生パターン；対数正規分布は"lognormal"、単純リサンプリングは"resampling"
-#' @param resample_year_range 0の場合、推定に使ったデータから計算される残差を用いる。年の範囲を入れると、対象とした年の範囲で計算される残差を用いる
+#' @param resample_year_range 0の場合、推定に使ったデータから計算される残差を用いる。年の範囲を入れると、対象とした年の範囲で計算される残差を用いる。
 #' 
 #' @export
 #' 
@@ -54,6 +54,7 @@ set_SR_mat <- function(res_vpa,
                        start_random_rec_year_name,
                        resid_type="lognormal",
                        resample_year_range=0,
+                       intercept=0,
                        bias_correction=TRUE){
     
     allyear_name <- dimnames(SR_mat)[[1]]
@@ -79,6 +80,7 @@ set_SR_mat <- function(res_vpa,
     SR_mat[,,"a"] <- res_SR$pars$a
     SR_mat[,,"b"] <- res_SR$pars$b
     SR_mat[,,"rho"] <- res_SR$pars$rho
+    SR_mat[,,"intercept"] <- intercept
 
     # re-culcurate recruitment deviation
     SR_mat[1:(start_random_rec_year-1),,"ssb"] <- as.numeric(colSums(res_vpa$ssb))[1:(start_random_rec_year-1)]
@@ -223,7 +225,8 @@ make_future_data <- function(res_vpa,
                           seed_number=1,
                           resid_type="lognormal", # or resample
                           resample_year_range=0, # only when "resample"
-                          bias_correction=TRUE, 
+                          bias_correction=TRUE,
+                          recruit_intercept=0, # number of additional recruitment (immigration or enhancement)
                           # Other
                           Pope=res_vpa$input$Pope
                           ) 
@@ -250,13 +253,14 @@ make_future_data <- function(res_vpa,
         array(0, dim=c(nage, total_nyear, nsim),
               dimnames=list(age=age_name, year=allyear_name, nsim=1:nsim))
     class(waa_mat) <- class(M_mat) <- class(maa_mat) <- class(naa_mat) <- class(faa_mat) <- class(caa_mat) <- "myarray"                                                                                  
-    SR_mat <- array(0, dim=c(total_nyear, nsim, 8),
+    SR_mat <- array(0, dim=c(total_nyear, nsim, 9),
                     dimnames=list(year=allyear_name, nsim=1:nsim,
                                   par=c("a","b","rho", #1-3
                                         "SR_type", # 4
                                         "rand_resid", # 5
                                         "deviance", #6
-                                        "recruit","ssb"))) 
+                                        "recruit","ssb",
+                                        "intercept")))  #9
     HCR_mat <- array(0, dim=c(total_nyear, nsim, 8),
                     dimnames=list(year=allyear_name, nsim=1:nsim,
                                   par=c("beta","Blimit","Bban","gamma","year_lag", #1-5
@@ -292,6 +296,8 @@ make_future_data <- function(res_vpa,
                          start_random_rec_year_name, resid_type=resid_type,
                          resample_year_range=resample_year_range,
                          bias_correction=bias_correction)
+
+    SR_mat[,,"intercept"] <- recruit_intercept
 
     # set F & HCR parameter
     start_F_year <- which(allyear_name==start_F_year_name)
@@ -488,7 +494,8 @@ future_vpa_R <- function(naa_mat,
                           fun <- list(SRF_HS,SRF_BH,SRF_RI)[[x]];
                           fun(ssb,a,b)
                       })
-            N_mat[1,t,] <- N_mat[1,t,]*exp(SR_mat[t,,"deviance"]);            
+            N_mat[1,t,] <- N_mat[1,t,]*exp(SR_mat[t,,"deviance"]) + 
+                SR_mat[t,,"intercept"];            
         }
 
         # harvest control rule
@@ -573,9 +580,9 @@ trace_future <- function(tmb_data,
     }
     else{
         library(foreach)
-        library(doParallel)
-        cl <- makeCluster(ncore, type="FORK")
-        registerDoParallel(cl)
+#        library(doParallel)
+        cl <- parallel::makeCluster(ncore, type="FORK")
+        doParallel::registerDoParallel(cl)
         trace <- foreach::foreach(x=trace.multi,.combine="rbind")%dopar%{
             future_vpa(tmb_data,
                        optim_method="none",
@@ -584,7 +591,7 @@ trace_future <- function(tmb_data,
                        multi_upper=x) %>%
                 get.stat(use_new_output=TRUE) %>% as_tibble()
         }
-        stopCluster(cl)
+        parallel::stopCluster(cl)
     }
     
     return(trace)

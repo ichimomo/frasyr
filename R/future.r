@@ -392,7 +392,7 @@ future.vpa <-
              waa.fun=FALSE,              
              use.MSE=FALSE,MSE.options=NULL,
              # setting HCR
-             HCR=list(Blim=-1, Bban=-1,beta=1,year.lag=0),
+             HCR=NULL,
              HCR_beta=NULL,
              HCR_Blimit=NULL,
              HCR_Bban=NULL,
@@ -412,17 +412,18 @@ future.vpa <-
         argname <- ls()
         arglist <- lapply(argname,function(x) eval(parse(text=x)))
         names(arglist) <- argname
-        
-        if(is.null(plus.group)) plus.group <- TRUE
-        if(is.null(Pope)) Pope <- FALSE
 
-        if(!is.null(HCR)){
+        if(is.null(HCR)){
+            HCR <- list(Blim=-1, Bban=-1,beta=1,year.lag=0)
             HCR_Blimit <- HCR$Blim
             HCR_Bban <- HCR$Bban
             HCR_year_lag <- HCR$year.lag
             HCR_beta <- HCR$beta
+            if(!"year.lag"%in%names(HCR)) HCR_year_lag <- 0            
         }
-        if(!"year.lag"%in%names(HCR)) HCR_year_lag <- 0
+        
+        if(is.null(plus.group)) plus.group <- TRUE
+        if(is.null(Pope)) Pope <- FALSE
         
         ##--------------------------------------------------
         if(isTRUE(det.run)) N <- N + 1
@@ -2124,7 +2125,6 @@ est.MSY <- function(vpares,
                     farg,
                    seed=farg$seed,
                    eyear=0, # 将来予測の最後のeyear+1年分を平衡状態とする
-#                   FUN=median, # 漁獲量の何を最大化するか？
                    FUN=mean, # 漁獲量の何を最大化するか？                   
                    N=1000, # stochastic計算するときの繰り返し回数
                    onlylower.pgy=FALSE,# PGY計算するとき下限のみ計算する（計算時間省略のため）

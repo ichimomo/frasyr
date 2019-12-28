@@ -114,20 +114,18 @@ convert_vpa_tibble <- function(vpares){
 
 
 SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,ylabel="尾",
-                      labeling.year=NULL,add.info=TRUE){
-#    require(tidyverse,quietly=TRUE)    
-    #    require(ggrepel)
+                      labeling.year=NULL,add.info=TRUE, recruit_intercept=0){
 
     if(is.null(refs$Blimit) && !is.null(refs$Blim)) refs$Blimit <- refs$Blim
 
-    if (SR_result$input$SR=="HS") SRF <- function(SSB,a,b) (ifelse(SSB*xscale>b,b*a,SSB*xscale*a))/yscale
-    if (SR_result$input$SR=="BH") SRF <- function(SSB,a,b) (a*SSB*xscale/(1+b*SSB*xscale))/yscale
-    if (SR_result$input$SR=="RI") SRF <- function(SSB,a,b) (a*SSB*xscale*exp(-b*SSB*xscale))/yscale
+    if (SR_result$input$SR=="HS") SRF <- function(SSB,a,b,recruit_intercept=0) (ifelse(SSB*xscale>b,b*a,SSB*xscale*a)+recruit_intercept)/yscale
+    if (SR_result$input$SR=="BH") SRF <- function(SSB,a,b,recruit_intercept=0) (a*SSB*xscale/(1+b*SSB*xscale)+recruit_intercept)/yscale
+    if (SR_result$input$SR=="RI") SRF <- function(SSB,a,b,recruit_intercept=0) (a*SSB*xscale*exp(-b*SSB*xscale)+recruit_intercept)/yscale
     
     SRdata <- as_tibble(SR_result$input$SRdata) %>%
         mutate(type="obs")
     SRdata.pred <- as_tibble(SR_result$pred) %>%
-        mutate(type="pred",year=NA)    
+        mutate(type="pred", year=NA, R=R) 
     alldata <- bind_rows(SRdata,SRdata.pred) %>%
         mutate(R=R/yscale,SSB=SSB/xscale)
     ymax <- max(alldata$R)
@@ -137,19 +135,12 @@ SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千ト�
     alldata <- alldata %>% mutate(pick.year=ifelse(year%in%labeling.year,year,""))
 
     g1 <- ggplot(data=alldata,mapping=aes(x=SSB,y=R)) +
-#        geom_line(data=dplyr::filter(alldata,type=="pred"),
-#                      aes(y=R,x=SSB),color="deepskyblue3",lwd=1.3) +
         stat_function(fun=SRF,args=list(a=SR_result$pars$a,
                                         b=SR_result$pars$b),color="deepskyblue3",lwd=1.3)+
     geom_path(data=dplyr::filter(alldata,type=="obs"),
                   aes(y=R,x=SSB),color=1) +
         geom_point(data=dplyr::filter(alldata,type=="obs"),
                    aes(y=R,x=SSB),shape=21,fill="white") +
-#        scale_shape_discrete(solid=T)+        
-#        geom_label_repel(data=dplyr::filter(alldata,type=="obs" & (year%%10==0|year==year.max)),
-#                         aes(y=R,x=SSB,label=year),
-    #                         size=3,box.padding=3,segment.color="black") +
-    #        geom_text_repel(aes(y=R,x=SSB,label=pickyear)) +
     ggrepel::geom_text_repel(data=dplyr::filter(alldata,type=="obs"),
                     segment.alpha=0.5,nudge_y=5,
                     aes(y=R,x=SSB,label=pick.year)) +                
@@ -159,6 +150,14 @@ SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千ト�
         xlab(str_c("親魚資源量 (",xlabel,")"))+
         ylab(str_c("加入尾数 (",ylabel,")"))+        
     coord_cartesian(ylim=c(0,ymax*1.05),expand=0)
+
+    if(recruit_intercept>0){
+        g1 <- g1+stat_function(fun=SRF,
+                               args=list(a=SR_result$pars$a,
+                                         b=SR_result$pars$b,
+                                         recruit_intercept=recruit_intercept),
+                               color="deepskyblue3",lwd=1.3,lty=2)
+    }
 
     if(add.info){
         g1 <- g1+labs(caption=str_c("関数形: ",SR_result$input$SR,", 自己相関: ",SR_result$input$AR,
