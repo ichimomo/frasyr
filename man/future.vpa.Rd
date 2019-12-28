@@ -5,30 +5,36 @@
 \alias{future.vpa}
 \title{将来予測のための関数}
 \usage{
-future.vpa(res0, currentF = NULL, multi = 1, futureF = NULL,
-  nyear = 10, Pope = res0$input$Pope, outtype = "FULL",
+future.vpa(res0, multi = 1, currentF = NULL, futureF = NULL,
+  N = 1000, nyear = 10, Pope = res0$input$Pope,
+  plus.group = res0$input$plus.group, seed = NULL, outtype = "FULL",
   multi.year = 1, start.year = NULL, ABC.year = NULL,
   waa.year = NULL, waa.catch.year = NULL, maa.year = NULL,
-  M.year = NULL, seed = NULL, strategy = "F", HCR = NULL,
-  use.MSE = FALSE, MSE.options = NULL, beta = NULL, delta = NULL,
-  Blim = 0, Bban = 0, plus.group = res0$input$plus.group, N = 1000,
-  silent = FALSE, is.plot = TRUE, pre.catch = NULL, rec.new = NULL,
-  recfunc = HS.recAR, rec.arg = list(a = 1, b = 1, rho = 0, sd = 0, c =
-  1, bias.correction = TRUE, resample = FALSE, resid = 0, resid.year =
-  NULL), Frec = NULL, waa = NULL, waa.catch = NULL, maa = NULL,
-  M = NULL, waa.fun = FALSE, naa0 = NULL, eaa0 = NULL,
-  ssb0 = NULL, faa0 = NULL, add.year = 0, det.run = TRUE)
+  M.year = NULL, waa = NULL, waa.catch = NULL, maa = NULL,
+  M = NULL, waa.fun = FALSE, use.MSE = FALSE, MSE.options = NULL,
+  HCR = list(Blim = -1, Bban = -1, beta = 1, year.lag = 0),
+  HCR_beta = NULL, HCR_Blimit = NULL, HCR_Bban = NULL,
+  HCR_year_lag = NULL, silent = FALSE, is.plot = TRUE,
+  pre.catch = NULL, rec.new = NULL, recfunc = HS.recAR,
+  rec.arg = list(a = 1, b = 1, rho = 0, sd = 0, c = 1, bias.correction =
+  TRUE, resample = FALSE, resid = 0, resid.year = NULL), Frec = NULL,
+  naa0 = NULL, eaa0 = NULL, ssb0 = NULL, faa0 = NULL,
+  add.year = 0, det.run = TRUE)
 }
 \arguments{
 \item{res0}{VPAの出力結果}
 
-\item{currentF}{ABC算定年-1年目までに用いるF at age。NULLの場合、VPA結果のres0$Fc.at.ageを用いる}
-
 \item{multi}{ABC算定年以降にcurrentFに乗じる係数}
+
+\item{currentF}{ABC算定年-1年目までに用いるF at age。NULLの場合、VPA結果のres0$Fc.at.ageを用いる}
 
 \item{futureF}{ABC算定年以降に用いられるF at age。NULLの場合にはcurrentFをそのまま用いる。currentF, multi, futureFをあわせて、将来のF at ageはABC算定年-1年まではcurrentF, ABC算定年以降はmulti x futureF (NULLの場合、currentF)が用いられる}
 
+\item{N}{確率的なシミュレーションをする場合の繰り返し回数。N+1の結果が返され、1列目に決定論的な結果が与えられる。0を与えると決定論的な結果のみが出力される。}
+
 \item{Pope}{漁獲量計算にPopeの近似式を使うか。指定しない場合はvpa関数への引数がそのまま受け継がれる。}
+
+\item{seed}{乱数のシード。将来予測の実行前にset.seed(seed)でシードを固定する。NULLの場合は、ランダムな数が用いられる。}
 
 \item{multi.year}{ある特定の年だけFを変えたい場合。デフォルトは1。変える場合は、指定した年またはタイムステップの要素数のベクトルで指定。}
 
@@ -38,13 +44,17 @@ future.vpa(res0, currentF = NULL, multi = 1, futureF = NULL,
 
 \item{waa.year}{VPA結果から生物パラメータをもってきて平均する期間。maa.year, waa.catch.year, M.yearも同じ。NULLの場合，VPAの最終年のパラメータを持ってくる。}
 
-\item{seed}{乱数のシード。将来予測の実行前にset.seed(seed)でシードを固定する。NULLの場合は、ランダムな数が用いられる。}
+\item{waa}{年齢別体重を直接指定する場合(waa.yearよりも優先される)}
 
-\item{strategy}{# F: 漁獲係数一定, E: 漁獲割合一定、C: 漁獲量一定（pre.catchで漁獲量を指定）。もう使われていない引数？}
+\item{waa.catch}{漁獲量計算用の年齢別体重を直接指定する場合(waa.catch.yearよりも優先される)}
+
+\item{maa}{年齢別成熟率を直接指定する場合(maa.yearよりも優先される)}
+
+\item{M}{自然死亡係数を直接指定する場合(M.yearよりも優先される)}
+
+\item{waa.fun}{年齢別体重を年齢別資源尾数の関数とするか(waa.catchが別に与えられているときには機能しない)}
 
 \item{use.MSE}{簡易MSEを実施するかどうか}
-
-\item{N}{確率的なシミュレーションをする場合の繰り返し回数。N+1の結果が返され、1列目に決定論的な結果が与えられる。0を与えると決定論的な結果のみが出力される。}
 
 \item{silent}{計算条件を出力、プロットするか。デフォルトはFALSE。}
 
@@ -58,19 +68,11 @@ future.vpa(res0, currentF = NULL, multi = 1, futureF = NULL,
 
 \item{Frec}{Frecオプション。Frec計算のための設定リストを与えると、指定された設定でのFrecに対応するFで将来予測を行う。例；Frec=list(stochastic=TRUE,future.year=2018,Blimit=450*1000,scenario="catch.mean",Frange=c(0.01,2*mult))。stochastic; TRUEの場合、stochastic simulationで50\%の確率でBlimitを越す。FALSEの場合、RPS固定のprojectionがBilmitと一致する。future.year; 何年の資源量を見るか？ Blimit; 参照とする親魚量。scenario; scenario; "catch.mean"の場合漁獲量の平均値を見る。"blimit"の場合、親魚量を見る。デフォルトは"blimit"。Frange; Fの探索範囲（Fcurrentに対する乗数）}
 
-\item{waa}{年齢別体重を直接指定する場合(waa.yearよりも優先される)}
-
-\item{waa.catch}{漁獲量計算用の年齢別体重を直接指定する場合(waa.catch.yearよりも優先される)}
-
-\item{maa}{年齢別成熟率を直接指定する場合(maa.yearよりも優先される)}
-
-\item{M}{自然死亡係数を直接指定する場合(M.yearよりも優先される)}
-
-\item{waa.fun}{年齢別体重を年齢別資源尾数の関数とするか(waa.catchが別に与えられているときには機能しない)}
-
 \item{add.year}{=1で1年分余分に計算する（通常は使わない）}
 
 \item{det.run}{1回めのランは決定論的将来予測をする。デフォルトはTRUE。#'}
+
+\item{strategy}{# F: 漁獲係数一定, E: 漁獲割合一定、C: 漁獲量一定（pre.catchで漁獲量を指定）。もう使われていない引数？}
 
 \item{HCRを使う場合、list(Blim=154500, }{Bban=49400,beta=1,year.lag=0)のように指定する。year.lag=0で将来予測年の予測SSBを使う。-2の場合は２年遅れのSSBを使う。}
 
