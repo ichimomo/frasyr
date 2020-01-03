@@ -184,7 +184,16 @@ kobeII.data <- beta.simulation(input.abc,
 kobeII.table <- make_kobeII_table(kobeII.data,res_vpa,
                                  Btarget=derive_RP_value(res_MSY$summary,"Btarget0")$SSB,
                                  Blimit=derive_RP_value(res_MSY$summary,"Btarget0")$SSB,
-                                 Bban=derive_RP_value(res_MSY$summary,"Btarget0")$SSB)
+                                 Bban=derive_RP_value(res_MSY$summary,"Btarget0")$SSB,
+				 year.catch=2019:2030,
+				 year.ssb  =2019:2030,
+				 year.Fsakugen  =2019:2030,
+				 year.ssbtarget  =2019:2030,
+				 year.ssblimit  =2019:2030,
+				 year.ssbban  =2019:2030,
+				 year.ssbmax  =2019:2030,
+				 year.ssbmin  =2019:2030,
+				 year.aav  =2019:2030)
                                  
 ## csvファイルに一括して出力する場合
 out.vpa(res=res_vpa,

@@ -21,7 +21,8 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(Pope);
   DATA_INTEGER(total_nyear);  
   DATA_INTEGER(future_initial_year);
-  DATA_INTEGER(start_ABC_year);    
+  DATA_INTEGER(start_ABC_year);
+  DATA_INTEGER(start_random_rec_year);      
   DATA_INTEGER(nsim);
   DATA_INTEGER(nage);
   DATA_INTEGER(recruit_age);    
@@ -74,7 +75,7 @@ Type objective_function<Type>::operator() ()
       }
 	
       // update recruitment except for t=initial year (t=0)
-      if(t>future_initial_year-1){      
+      if(t>start_random_rec_year){      
 	if(SR_mat(t,i,3) == 1) { //Hockey-stick
 	  vector<Type> rec_pred(2);
 	  rec_pred(0) = spawner_mat(t-recruit_age,i)*SR_mat(t,i,0);

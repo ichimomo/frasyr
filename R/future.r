@@ -350,7 +350,7 @@ calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=
 #' @param Pope 漁獲量計算にPopeの近似式を使うか。指定しない場合はvpa関数への引数がそのまま受け継がれる。
 #' @param add.year =1で1年分余分に計算する（通常は使わない）
 #' @param seed 乱数のシード。将来予測の実行前にset.seed(seed)でシードを固定する。NULLの場合は、ランダムな数が用いられる。
-#' @param HCRを使う場合、list(Blim=154500, Bban=49400,beta=1,year.lag=0)のように指定する。year.lag=0で将来予測年の予測SSBを使う。-2の場合は２年遅れのSSBを使う。
+#' @param NULLの場合、HCRは有効にならない。HCRを使う場合、list(Blim=154500, Bban=49400,beta=1,year.lag=0)のように指定する。year.lag=0で将来予測年の予測SSBを使う。-2の場合は２年遅れのSSBを使う。
 #' @param N 確率的なシミュレーションをする場合の繰り返し回数。N+1の結果が返され、1列目に決定論的な結果が与えられる。0を与えると決定論的な結果のみが出力される。
 #' @param silent 計算条件を出力、プロットするか。デフォルトはFALSE。
 #' @param pre.catch 漁獲重量をgivenで与える場合の引数。list(year=2012,wcatch=13000)として指定。
@@ -413,8 +413,16 @@ future.vpa <-
         arglist <- lapply(argname,function(x) eval(parse(text=x)))
         names(arglist) <- argname
 
+        # HCRが無効な場合
         if(is.null(HCR)){
             HCR <- list(Blim=-1, Bban=-1,beta=1,year.lag=0)
+            HCR_Blimit <- HCR$Blim
+            HCR_Bban <- HCR$Bban
+            HCR_year_lag <- HCR$year.lag
+            HCR_beta <- HCR$beta
+            if(!"year.lag"%in%names(HCR)) HCR_year_lag <- 0            
+        }
+        else{
             HCR_Blimit <- HCR$Blim
             HCR_Bban <- HCR$Bban
             HCR_year_lag <- HCR$year.lag

@@ -5,14 +5,17 @@
 \alias{compare_MSY}
 \title{複数の管理基準値の推定結果を重ね書きする}
 \usage{
-compare_MSY(MSYlist, legend.position = "top", MSYname = NULL)
+compare_MSY(MSYlist, legend.position = "top", MSYname = NULL,
+  yaxis = "Fref2Fcurrent")
 }
 \arguments{
 \item{MSYlist}{est.MSYの返り値をリストにしたもの; 単独でも可}
 
+\item{legend.position}{凡例の位置}
+
 \item{MSYname}{凡例につけるMSYのケースの名前。MSYlistと同じ長さにしないとエラーとなる}
 
-\item{凡例の位置}{}
+\item{yaxis}{}
 }
 \description{
 複数の管理基準値の推定結果を重ね書きする
