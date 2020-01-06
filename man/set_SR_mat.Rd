@@ -6,7 +6,9 @@
 \usage{
 set_SR_mat(res_vpa, res_SR, SR_mat, seed_number,
   start_random_rec_year_name, resid_type = "lognormal",
-  resample_year_range = 0, intercept = 0, bias_correction = TRUE)
+  resample_year_range = 0, recruit_intercept = 0,
+  bias_correction = TRUE, fix_recruit = fix_recruit,
+  only_make_deviance = FALSE)
 }
 \arguments{
 \item{res_vpa}{VPAの推定結果}

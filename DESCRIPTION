@@ -24,7 +24,6 @@ Suggests:
     rmarkdown,
     testthat,
     TMB,
-    tidyverse,
     foreach,
     doParallel
 VignetteBuilder: knitr

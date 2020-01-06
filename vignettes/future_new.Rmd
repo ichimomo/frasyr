@@ -81,7 +81,7 @@ names(data_future_test$data)
 - optim_method="R" or "tmb"にすると、指定された条件下で最適化されます（MSY推定などができる）
 
 
-```{r future_vpa, eval=FALSE}
+```{r future_vpa, eval=TRUE}
 
 # 単なる将来予測の場合
 res_future_test <- future_vpa(tmb_data=data_future_test$data, # さっき作成した将来予測用のデータフレーム
@@ -103,7 +103,7 @@ res_future_test <- future_vpa(tmb_data=data_future_test$data, # さっき作成�
 - そのための専用関数もいくつかあります
    - average_SR_mat: モデル平均用
 
-```{r average_SR_mat, eval=FALSE}
+```{r average_SR_mat, eval=TRUE}
 # モデル平均に利用するもう一つの再生産関係を呼び出し
 data(res_sr_HSL1)
 # data_future_test$data$SR_matを上書き
@@ -123,108 +123,102 @@ data_future_test$data$SR_mat <- average_SR_mat(res_vpa=res_vpa,
 
 ## MSEの実施
 
-```{r mse, eval=FALSE}
+```{r mse, eval=TRUE}
 
-# MSEは時間がかかるので、回数や年数を減らす
-data_future_for_MSE <- make_future_data(res_vpa, # VPAの結果
-	         nsim = 30, # シミュレーション回数
-                 nyear = 10, # 将来予測の年数
-                 future_initial_year_name = 2017, # 年齢別資源尾数を参照して将来予測をスタートする年
-                 start_F_year_name = 2018, # この関数で指定したFに置き換える最初の年
-                 start_biopar_year_name=2018, # この関数で指定した生物パラメータに置き換える最初の年
-                 start_random_rec_year_name = 2018, # この関数で指定した再生産関係からの加入の予測値に置き換える最初の年
+# 通常の将来予測と同じように将来予測用(真の個体群動態)のデータを作成する
+# (MSEは時間がかかるのでシミュレーション回数・年数は減らしたほうが良い)
+data_future_as_true <- make_future_data(res_vpa, 
+	         nsim = 30, nyear = 10, 
+                 future_initial_year_name = 2017, 
+                 start_F_year_name = 2018, 
+                 start_biopar_year_name=2018, 
+                 start_random_rec_year_name = 2018, 
                  # biopar setting
-                 waa_year=2015:2017, waa=NULL, # 将来の年齢別体重の設定。過去の年を指定し、その平均値を使うか、直接ベクトルで指定するか。以下も同じ。
+                 waa_year=2015:2017, waa=NULL, 
                  waa_catch_year=2015:2017, waa_catch=NULL,
                  maa_year=2015:2017, maa=NULL,
                  M_year=2015:2017, M=NULL,
-                 # faa setting
-                 faa_year=NULL, # currentF, futureFが指定されない場合だけ有効になる。将来のFを指定の年の平均値とする
+                 faa_year=NULL, 
                  currentF=apply_year_colum(res_vpa$faa,2015:2017),
 		 futureF=apply_year_colum(res_vpa$faa,2015:2017)*0.6,
                  # HCR setting (not work when using TMB)
-                 start_ABC_year_name=2019, # HCRを適用する最初の年
-                 HCR_beta=0.8, # HCRのbeta
-                 HCR_Blimit=30000, # HCRのBlimit
-                 HCR_Bban=0, # HCRのBban
-                 HCR_year_lag=0, # HCRで何年遅れにするか
+                 start_ABC_year_name=2019,
+                 # MSEの場合、ABC計算から漁獲量を決め、そのとおりに漁獲するので
+                 # 以下のHCRの設定は関係ない                 
+                 HCR_beta=0.8, HCR_Blimit=30000, HCR_Bban=0, 
+                 HCR_year_lag=0,
                  # SR setting
-                 res_SR=res_sr_HSL2, # 将来予測に使いたい再生産関係の推定結果が入っているfit.SRの返り値
-                 seed_number=1, # シード番号
-                 resid_type="lognormal", # 加入の誤差分布（"lognormal": 対数正規分布、"resample": 残差リサンプリング）
-                 resample_year_range=0, # リサンプリングの場合、残差をリサンプリングする年の範囲
-                 bias_correction=TRUE, # バイアス補正をするかどうか
-                 recruit_intercept=0, # 移入や放流などで一定の加入がある場合に足す加入尾数
-                 # Other
+                 res_SR=res_sr_HSL2, seed_number=1, 
+                 resid_type="lognormal", 
+                 resample_year_range=0, bias_correction=TRUE, 
+                 recruit_intercept=0, 
                  Pope=res_vpa$input$Pope)
 
+# ABC計算用の設定をした将来予測用のデータを作成する
+data_future_for_ABC <- make_future_data(res_vpa, 
+	         nsim = 30, nyear = 10, 
+                 future_initial_year_name = 2017, 
+                 start_F_year_name = 2018, 
+                 start_biopar_year_name=2018, 
+                 start_random_rec_year_name = 2018, 
+                 # biopar setting
+                 waa_year=2015:2017, waa=NULL, 
+                 waa_catch_year=2015:2017, waa_catch=NULL,
+                 maa_year=2015:2017, maa=NULL,
+                 M_year=2015:2017, M=NULL,
+                 faa_year=NULL, 
+                 currentF=apply_year_colum(res_vpa$faa,2015:2017),
+		 futureF=apply_year_colum(res_vpa$faa,2015:2017)*0.6,
+                 # HCR setting (not work when using TMB)
+                 start_ABC_year_name=2019,
+                 # ここの管理基準値などを、別の再生産関係などから推定されたものにする
+                 HCR_beta=0.8, HCR_Blimit=30000, HCR_Bban=0, 
+                 HCR_year_lag=0,
+                 # SR setting
+                 # ここも真の再生産関係とは異なるものにする
+                 res_SR=res_sr_HSL1, seed_number=1, 
+                 resid_type="lognormal", 
+                 resample_year_range=0, bias_correction=TRUE, 
+                 recruit_intercept=0, 
+                 Pope=res_vpa$input$Pope)
 
-res_future_for_MSE <- future_vpa(tmb_data=data_future_for_MSE$data, # さっき作成した将来予測用のデータフレーム
+# MSEするとき
+res_future_MSE <- future_vpa(tmb_data=data_future_as_true$data, # 真の個体群動態
 		   	do_MSE=TRUE,
-		              MSE_input_data=data_future_for_MSE, # MSE内の将来予測で用いるためのデータフレーム
-			      optim_method="none", # "none"または"R"のみ有効
-                    	      multi_init = 0.6, # 最適化する場合の初期値
-                       	      multi_lower = 0, # 最適化する場合の下限値
-                       	      multi_upper = 10, # 最適化する場合の上限値
-                       	      objective ="MSY", # or PGY, percentB0, Bempirical 
-                       	      obj_value = 0,                         
-                       	      obj_stat  ="mean", 
-                       	      compile=FALSE)
-
-res_future_noMSE <- future_vpa(tmb_data=data_future_for_MSE$data, # さっき作成した将来予測用のデータフレーム
+                        MSE_input_data=data_future_for_ABC, # ABC計算用の個体群動態
+                        optim_method="none", # "none"にする
+                        multi_init = 1)
+# MSEしないとき
+res_future_noMSE <- future_vpa(tmb_data=data_future_as_true$data, # 真の個体群動態
 		   	do_MSE=FALSE,
-		              MSE_input_data=data_future_for_MSE, # MSE内の将来予測で用いるためのデータフレーム
-			      optim_method="none", # "none"または"R"のみ有効
-                    	      multi_init = 0.6, # 最適化する場合の初期値
-                       	      multi_lower = 0, # 最適化する場合の下限値
-                       	      multi_upper = 10, # 最適化する場合の上限値
-                       	      objective ="MSY", # or PGY, percentB0, Bempirical 
-                       	      obj_value = 0,                         
-                       	      obj_stat  ="mean", 
-                       	      compile=FALSE)
+                        MSE_input_data=data_future_for_ABC, # ABC計算用の個体群動態
+                        optim_method="none", # "none"にする
+                        multi_init = 1)
 
-plot_futures(res_vpa,list(res_future_for_MSE,res_future_noMSE))
+# MSEする場合としない場合の比較
+plot_futures(res_vpa,list(res_future_MSE,res_future_noMSE))
 
 
-### check for program
-dummy_future <- data_future_for_MSE
+### MSEプログラムが想定通り動いているかの確認
+dummy_future <- data_future_as_true
+# 将来予測の加入の確率変動をゼロにする→全く同じ再生産関係を使えば、同じ結果になるはず
 dummy_future$data$SR_mat[,,"deviance"] <- 0
 dummy_future$data$SR_mat[,,"rand_resid"] <- 0
 dummy_future$input$res_SR$pars$sd <- 0
 
-res_test1 <- future_vpa(tmb_data=dummy_future$data, # さっき作成した将来予測用のデータフレーム
+res_test1 <- future_vpa(tmb_data=dummy_future$data, 
 		   	do_MSE=TRUE,
-		              MSE_input_data=dummy_future, # MSE内の将来予測で用いるためのデータフレーム
-			      optim_method="none", # "none"または"R"のみ有効
-                    	      multi_init = 1, # 最適化する場合の初期値
-                       	      multi_lower = 0, # 最適化する場合の下限値
-                       	      multi_upper = 10, # 最適化する場合の上限値
-                       	      objective ="MSY", # or PGY, percentB0, Bempirical 
-                       	      obj_value = 0,                         
-                       	      obj_stat  ="mean", 
-                       	      compile=FALSE)
+		              MSE_input_data=dummy_future, 
+			      optim_method="none", 
+                    	      multi_init = 1)
 
-res_test2 <- future_vpa(tmb_data=dummy_future$data, # さっき作成した将来予測用のデータフレーム
+res_test2 <- future_vpa(tmb_data=dummy_future$data, 
 	  		   	do_MSE=FALSE,
 		              MSE_input_data=dummy_future, # MSE内の将来予測で用いるためのデータフレーム
 			      optim_method="none", # "none"または"R"のみ有効
-                    	      multi_init = 1, # 最適化する場合の初期値
-                       	      multi_lower = 0, # 最適化する場合の下限値
-                       	      multi_upper = 10, # 最適化する場合の上限値
-                       	      objective ="MSY", # or PGY, percentB0, Bempirical 
-                       	      obj_value = 0,                         
-                       	      obj_stat  ="mean", 
-                       	      compile=FALSE)
+                    	      multi_init = 1)
 
+# 全く同じ結果になる
 plot_futures(res_vpa,list(res_test1,res_test2))
-
-# apply(res_test2$wcaa[,30:35,1],2,sum)
-#   2017     2018     2019     2020     2021     2022 
-#26015.86 29524.12 18416.14 33207.80 49085.60 61117.57
-
-#> apply(res_test1$wcaa[,30:35,1],2,sum)
-#    2017     2018     2019     2020     2021     2022 
-#26015.86 29524.12 18416.09 33297.43 49188.77 60770.50
-
 
 ```
