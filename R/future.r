@@ -1285,20 +1285,32 @@ RI.recAR2 <- function(ssb,vpares,deterministic=FALSE,rec.resample=NULL,
 #'
 #' @export
 
-plot.futures <- function(fres.list,conf=c(0.1,0.5,0.9),target="SSB",legend.text="",xlim.tmp=NULL,y.scale=1){
-    if(target=="SSB")  aa <- lapply(fres.list,function(x) apply(x$vssb[,-1],1,quantile,probs=conf))
-    if(target=="Biomass") aa <- lapply(fres.list,function(x) apply(x$vbiom[,-1],1,quantile,probs=conf))
-    if(target=="Catch") aa <- lapply(fres.list,function(x) apply(x$vwcaa[,-1],1,quantile,probs=conf))
+plot.futures <- function(fres.list,conf=c(0.1,0.5,0.9),target="SSB",legend.text="",xlim.tmp=NULL,y.scale=1,det.run=TRUE){
+
+    if(legend.text=="") legend.text <- names(fres.list)
+    if(is.null(legend.text)) legend.text <- 1:length(fres.list)
+
+    for(i in 1:length(fres.list)){
+        if(class(fres.list[[i]])=="future_new")
+            fres.list[[i]] <- format_to_old_future(fres.list[[i]])
+        det.run <- FALSE
+    }
+
+    if(isTRUE(det.run)) select_col <- -1  else select_col <- TRUE    
+
+    if(target=="SSB")  aa <- lapply(fres.list,function(x) apply(x$vssb[,select_col],1,quantile,probs=conf))
+    if(target=="Biomass") aa <- lapply(fres.list,function(x) apply(x$vbiom[,select_col],1,quantile,probs=conf))
+    if(target=="Catch") aa <- lapply(fres.list,function(x) apply(x$vwcaa[,select_col],1,quantile,probs=conf))
     if(target=="Recruit"){
         if(is.null(x$recruit)) x$recruit <- x$naa
-        aa <- lapply(fres.list,function(x) apply(x$recruit[,-1],1,quantile,probs=conf))
+        aa <- lapply(fres.list,function(x) apply(x$recruit[,select_col],1,quantile,probs=conf))
     }
 
     if(is.null(xlim.tmp)) xlim.tmp <- as.numeric(range(unlist(sapply(aa,function(x) colnames(x)))))
     plot(0,max(unlist(aa)),type="n",xlim=xlim.tmp,
          ylim=y.scale*c(0,max(unlist(aa))),xlab="Year",ylab=target)
     lapply(1:length(aa),function(i) matpoints(colnames(aa[[i]]),t(aa[[i]]),col=i,type="l",lty=c(2,1,2)))
-    legend("bottomright",col=1:length(aa),legend=legend.text,lty=1)
+    legend("bottomright",col=1:length(fres.list),legend=legend.text,lty=1)
     invisible(aa)
 }
 
@@ -1311,24 +1323,33 @@ plot.futures <- function(fres.list,conf=c(0.1,0.5,0.9),target="SSB",legend.text=
 #'
 #' @export
 
-plot.future <- function(fres0,ylim.tmp=NULL,xlim.tmp=NULL,vpares=NULL,what=c(TRUE,TRUE,TRUE),conf=0.1,N.line=0,
+plot.future <- function(fres0,ylim.tmp=NULL,xlim.tmp=NULL,vpares=NULL,what=c(TRUE,TRUE,TRUE),conf=0.1,N.line=0,det.run=TRUE,
                         label=c("Biomass","SSB","Catch"),is.legend=TRUE,add=FALSE,col=NULL,...){
-    ## 暗黙に、vssbなどのmatrixの1列目は決定論的なランの結果と仮定している 
+    ## 暗黙に、vssbなどのmatrixの1列目は決定論的なランの結果と仮定している
+
+    if(class(fres0)=="future_new"){
+        fres0 <- format_to_old_future(fres0)
+        det.run <- FALSE
+    }
+    
     if(is.null(col)) col <- 1                        
     matplot2 <- function(x,add=FALSE,...){
         if(add==FALSE) matplot(rownames(x),x,type="l",lty=c(2,1,2),col=col,xlab="Year",...)
-        if(add==TRUE) matpoints(rownames(x),x,type="l",lty=c(2,1,2),col=col,xlab="Year",...)    
+        if(add==TRUE) matpoints(rownames(x),x,type="l",lty=c(2,1,2),col=col,xlab="Year",...)
     }
 
     if(is.null(xlim.tmp)) xlim.tmp <- range(as.numeric(rownames(fres0$vssb)))
-    
+
+    if(isTRUE(det.run)) select_col <- -1  else select_col <- TRUE
+        
     if(what[1]){
-        matplot2(x <- t(apply(fres0$vbiom[,-1],1,quantile,probs=c(conf,0.5,1-conf))),
+        matplot2(x <- t(apply(fres0$vbiom[,select_col],1,
+                              quantile,probs=c(conf,0.5,1-conf))),
                  ylim=c(0,ifelse(is.null(ylim.tmp),max(x),ylim.tmp[1])),
                  xlim=xlim.tmp,
                  ylab=label[1],main=label[1],add=add,...)
-        points(rownames(fres0$vbiom),apply(fres0$vbiom[,-1],1,mean),type="b",pch=1)
-        points(rownames(fres0$vbiom),as.numeric(fres0$vbiom[,1]),type="b",pch=3)
+        points(rownames(fres0$vbiom),apply(fres0$vbiom[,select_col],1,mean),type="b",pch=1)
+        if(isTRUE(det.run)) points(rownames(fres0$vbiom),as.numeric(fres0$vbiom[,1]),type="b",pch=3)
         if(!is.null(vpares)){
             points(colnames(vpares$baa),colSums(vpares$baa),type="o",pch=20)
         }
@@ -1336,12 +1357,13 @@ plot.future <- function(fres0,ylim.tmp=NULL,xlim.tmp=NULL,vpares=NULL,what=c(TRU
     }
 
   if(what[2]){
-    matplot2(x <- t(apply(fres0$vssb[,-1],1,quantile,probs=c(conf,0.5,1-conf))),
+      matplot2(x <- t(apply(fres0$vssb[,select_col],1,quantile,
+                            probs=c(conf,0.5,1-conf))),
              ylim=c(0,ifelse(is.null(ylim.tmp),max(x),ylim.tmp[2])),
              xlim=xlim.tmp,           
              ylab=label[2],main=label[2],add=add,...)
-    points(rownames(fres0$vssb),apply(fres0$vssb[,-1],1,mean),type="b",pch=1)    
-    points(rownames(fres0$vssb),as.numeric(fres0$vssb[,1]),type="b",pch=3)
+    points(rownames(fres0$vssb),apply(fres0$vssb[,select_col],1,mean),type="b",pch=1)    
+   if(isTRUE(det.run)) points(rownames(fres0$vssb),as.numeric(fres0$vssb[,1]),type="b",pch=3)
     if(!is.null(fres0$input$Frec))
         if(!is.null(fres0$input$Frec$scenario))
         if(fres0$input$Frec$scenario!="catch.mean"){
@@ -1355,12 +1377,13 @@ plot.future <- function(fres0,ylim.tmp=NULL,xlim.tmp=NULL,vpares=NULL,what=c(TRU
   }
 
   if(what[3]){
-    matplot2(x <- t(apply(fres0$vwcaa[,-1],1,quantile,probs=c(conf,0.5,1-conf))),
+      matplot2(x <- t(apply(fres0$vwcaa[,select_col],1,
+                            quantile,probs=c(conf,0.5,1-conf))),
              ylim=c(0,ifelse(is.null(ylim.tmp),max(x),ylim.tmp[3])),
              xlim=xlim.tmp,           
              ylab=label[3],main=label[3],add=add,...)
-    points(rownames(fres0$vwcaa),apply(fres0$vwcaa[,-1],1,mean),type="b",pch=1)        
-    points(rownames(fres0$vwcaa),as.numeric(fres0$vwcaa[,1]),type="b",pch=3)
+    points(rownames(fres0$vwcaa),apply(fres0$vwcaa[,select_col],1,mean),type="b",pch=1)        
+    if(isTRUE(det.run)) points(rownames(fres0$vwcaa),as.numeric(fres0$vwcaa[,1]),type="b",pch=3)
     if(!is.null(fres0$input$Frec))
         if(fres0$input$Frec$scenario=="catch.mean"){
         abline(h=fres0$input$Frec$Blimit,col=2)

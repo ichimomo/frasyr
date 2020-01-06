@@ -498,14 +498,18 @@ future_vpa_R <- function(naa_mat,
                       what_return="obj",
                       HCR_mat,
                       do_MSE=NULL,
-                      MSE_input_data=NULL
+                      MSE_input_data=NULL,
+                      MSE_nsim = NULL
                       ){
 
     argname <- ls()
     tmb_data <- lapply(argname,function(x) eval(parse(text=x)))
     names(tmb_data) <- argname
 
-    MSE_seed <- MSE_input_data$input$seed+1
+    if(isTRUE(do_MSE)){
+        MSE_seed <- MSE_input_data$input$seed_number + 1        
+        if(!is.null(MSE_nsim)) MSE_input_data$input$nsim <- MSE_nsim
+    }                
 
     F_mat <- N_mat <-  naa_mat
     F_mat[] <- N_mat[] <-  0
@@ -541,34 +545,42 @@ future_vpa_R <- function(naa_mat,
             HCR_mat[t, tmp ,"alpha"] <- HCR_mat[t,tmp,"beta"]*(ssb_tmp[tmp]-HCR_mat[t,tmp,"Bban"])/
                 (HCR_mat[t,tmp,"Blimit"]-HCR_mat[t,tmp,"Bban"])
             HCR_mat[t, HCR_mat[t,,"alpha"]<0 ,"alpha"] <- 0
-            F_mat[,t,] <- F_mat[,t,]*HCR_mat[t,,"alpha"]
+            F_mat[,t,] <- sweep(F_mat[,t,],2,HCR_mat[t,,"alpha"],FUN="*")
         }
 
-        if(isTRUE(do_MSE) & t>=start_ABC_year){
-            MSE_input_data$data$future_initial_year <- t-2
-            MSE_input_data$data$start_random_rec_year <- t-1
-            MSE_input_data$data$total_nyear <- t
-            MSE_input_data$data$x <- 0
-            MSE_input_data$data$what_return <- "stat"            
+        if(isTRUE(do_MSE) && t>=start_ABC_year){
+            MSE_dummy_data <- do.call(make_future_data,MSE_input_data$input)$data
+            MSE_dummy_data$future_initial_year <- t-2
+            MSE_dummy_data$start_random_rec_year <- t-1
+            MSE_dummy_data$start_ABC_year <- t            
+            MSE_dummy_data$total_nyear <- t
+            MSE_dummy_data$x <- 0
+            MSE_dummy_data$what_return <- "stat"
+            MSE_dummy_data$do_MSE      <- FALSE
             for(i in 1:nsim){
                 cat(t,"-",i,"\n")                
-                MSE_input_data$data$naa_mat[] <-  N_mat[,,i]
-                MSE_input_data$data$naa_mat[,(t-1):t,] <-  0
-                MSE_input_data$data$faa_mat[] <-  F_mat[,,i]
-                for(k in 1:nsim) MSE_input_data$data$SR_mat[,k,]  <- SR_mat[,i,]
-                MSE_input_data$data$SR_mat <-
+                MSE_dummy_data$naa_mat[] <-  N_mat[,,i]
+                MSE_dummy_data$naa_mat[,(t-1):t,] <-  0
+                MSE_dummy_data$faa_mat[,1:(t-1),] <-  F_mat[,1:(t-1),i]
+                MSE_dummy_data$faa_mat[,t,] <-  MSE_input_data$data$faa[,t,i] # use original F at age
+                MSE_dummy_data$waa_mat[] <-  waa_mat[,,i]
+                MSE_dummy_data$waa_catch_mat[] <-  waa_catch_mat[,,i]                
+                MSE_dummy_data$maa_mat[] <-  maa_mat[,,i]
+                MSE_dummy_data$M_mat[]   <-  M_mat[,,i]                
+                for(k in 1:nsim) MSE_dummy_data$SR_mat[,k,]  <- SR_mat[,i,]
+                MSE_dummy_data$SR_mat <-
                     set_SR_mat(res_vpa   = NULL,
                                res_SR    = MSE_input_data$input$res_SR,
-                               SR_mat    = MSE_input_data$data$SR_mat,
+                               SR_mat    = MSE_dummy_data$SR_mat,
                                seed_number=MSE_seed,
                                start_random_rec_year_name = dimnames(naa_mat)[[2]][t-1],
                                resid_type                 = MSE_input_data$input$resid_type,
-                               resample_year_range        = MSE_input_data$inputresample_year_range,
-                               bias_correction            = MSE_input_data$inputbias_correction,
-                               recruit_intercept          = MSE_input_data$inputrecruit_intercept,
+                               resample_year_range        = MSE_input_data$input$resample_year_range,
+                               bias_correction            = MSE_input_data$input$bias_correction,
+                               recruit_intercept          = MSE_input_data$input$recruit_intercept,
                                only_make_deviance         = TRUE)
-
-                res_tmp <- do.call(future_vpa_R,MSE_input_data$data)
+                res_tmp <- do.call(future_vpa_R,MSE_dummy_data)
+#                if(t>32) browser()
                 HCR_mat[t,i,"wcatch"] <- mean(apply(res_tmp$wcaa[,t,],2,sum))
                 MSE_seed <- MSE_seed+1
             }
@@ -581,6 +593,7 @@ future_vpa_R <- function(naa_mat,
                                                      waa_catch_mat[,t,x],M_mat[,t,x],
                                                      HCR_mat[t,x,"wcatch"],Pope=as.logical(Pope))$x)
             F_mat[,t,] <- sweep(saa.tmp, 2, fix_catch_multiplier, FUN="*")
+
         }
 
        
@@ -621,8 +634,10 @@ future_vpa_R <- function(naa_mat,
     if(what_return=="stat"){
         tmb_data$SR_mat[,,"ssb"]  <- spawner_mat
         tmb_data$SR_mat[,,"recruit"]  <- N_mat[1,,]
-        list(naa=N_mat, wcaa=wcaa_mat, faa=F_mat, SR_mat=tmb_data$SR_mat,
-             HCR_mat=HCR_mat,multi=exp(x))
+        res <- list(naa=N_mat, wcaa=wcaa_mat, faa=F_mat, SR_mat=tmb_data$SR_mat,
+                    HCR_mat=HCR_mat,multi=exp(x))
+        class(res) <- "future_new"
+        return(res)
     }
 
 }
@@ -708,7 +723,7 @@ get_summary_stat <- function(all.stat){
 
 
 format_to_old_future <- function(fout){
-    fout_old <- fout[c("naa","faa","multi","alpha")]
+    fout_old <- fout[c("naa","faa","multi")]
     fout_old$waa       <- fout$input$tmb_data$waa_mat
     fout_old$waa.catch <- fout$input$tmb_data$waa_catch_mat        
     fout_old$maa       <- fout$input$tmb_data$maa_mat
@@ -721,6 +736,7 @@ format_to_old_future <- function(fout){
     fout_old$caa       <- fout$wcaa/fout_old$waa
     fout_old$multi     <- fout$multi
     fout_old$recruit   <- fout$SR_mat[,,"recruit"]
+    fout_old$alpha     <- fout$HCR_mat[,,"alpha"]
     return(fout_old)
 }
 

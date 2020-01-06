@@ -986,6 +986,12 @@ plot_futures <- function(vpares,
     col.Ftarget <- "#714C99"
     col.betaFtarget <- "#505596"
 
+    for(i in 1:length(future.list)){
+        if(class(future.list[[i]])=="future_new")
+            future.list[[i]] <- format_to_old_future(future.list[[i]])
+        det.run <- FALSE
+    }
+
     if(!isTRUE(exclude.japanese.font)){
         junit <- c("","十","百","千","万")[log10(biomass.unit)+1]
         #    require(tidyverse,quietly=TRUE)
