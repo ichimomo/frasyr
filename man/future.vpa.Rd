@@ -12,8 +12,7 @@ future.vpa(res0, multi = 1, currentF = NULL, futureF = NULL,
   waa.year = NULL, waa.catch.year = NULL, maa.year = NULL,
   M.year = NULL, waa = NULL, waa.catch = NULL, maa = NULL,
   M = NULL, waa.fun = FALSE, use.MSE = FALSE, MSE.options = NULL,
-  HCR = list(Blim = -1, Bban = -1, beta = 1, year.lag = 0),
-  HCR_beta = NULL, HCR_Blimit = NULL, HCR_Bban = NULL,
+  HCR = NULL, HCR_beta = NULL, HCR_Blimit = NULL, HCR_Bban = NULL,
   HCR_year_lag = NULL, silent = FALSE, is.plot = TRUE,
   pre.catch = NULL, rec.new = NULL, recfunc = HS.recAR,
   rec.arg = list(a = 1, b = 1, rho = 0, sd = 0, c = 1, bias.correction =
@@ -74,7 +73,7 @@ future.vpa(res0, multi = 1, currentF = NULL, futureF = NULL,
 
 \item{strategy}{# F: 漁獲係数一定, E: 漁獲割合一定、C: 漁獲量一定（pre.catchで漁獲量を指定）。もう使われていない引数？}
 
-\item{HCRを使う場合、list(Blim=154500, }{Bban=49400,beta=1,year.lag=0)のように指定する。year.lag=0で将来予測年の予測SSBを使う。-2の場合は２年遅れのSSBを使う。}
+\item{NULLの場合、HCRは有効にならない。HCRを使う場合、list(Blim=154500, }{Bban=49400,beta=1,year.lag=0)のように指定する。year.lag=0で将来予測年の予測SSBを使う。-2の場合は２年遅れのSSBを使う。}
 
 \item{MSE.option}{簡易MSEのoption}
 }

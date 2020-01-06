@@ -114,20 +114,18 @@ convert_vpa_tibble <- function(vpares){
 
 
 SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,ylabel="尾",
-                      labeling.year=NULL,add.info=TRUE){
-#    require(tidyverse,quietly=TRUE)    
-    #    require(ggrepel)
+                      labeling.year=NULL,add.info=TRUE, recruit_intercept=0){
 
     if(is.null(refs$Blimit) && !is.null(refs$Blim)) refs$Blimit <- refs$Blim
 
-    if (SR_result$input$SR=="HS") SRF <- function(SSB,a,b) (ifelse(SSB*xscale>b,b*a,SSB*xscale*a))/yscale
-    if (SR_result$input$SR=="BH") SRF <- function(SSB,a,b) (a*SSB*xscale/(1+b*SSB*xscale))/yscale
-    if (SR_result$input$SR=="RI") SRF <- function(SSB,a,b) (a*SSB*xscale*exp(-b*SSB*xscale))/yscale
+    if (SR_result$input$SR=="HS") SRF <- function(SSB,a,b,recruit_intercept=0) (ifelse(SSB*xscale>b,b*a,SSB*xscale*a)+recruit_intercept)/yscale
+    if (SR_result$input$SR=="BH") SRF <- function(SSB,a,b,recruit_intercept=0) (a*SSB*xscale/(1+b*SSB*xscale)+recruit_intercept)/yscale
+    if (SR_result$input$SR=="RI") SRF <- function(SSB,a,b,recruit_intercept=0) (a*SSB*xscale*exp(-b*SSB*xscale)+recruit_intercept)/yscale
     
     SRdata <- as_tibble(SR_result$input$SRdata) %>%
         mutate(type="obs")
     SRdata.pred <- as_tibble(SR_result$pred) %>%
-        mutate(type="pred",year=NA)    
+        mutate(type="pred", year=NA, R=R) 
     alldata <- bind_rows(SRdata,SRdata.pred) %>%
         mutate(R=R/yscale,SSB=SSB/xscale)
     ymax <- max(alldata$R)
@@ -137,19 +135,12 @@ SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千ト�
     alldata <- alldata %>% mutate(pick.year=ifelse(year%in%labeling.year,year,""))
 
     g1 <- ggplot(data=alldata,mapping=aes(x=SSB,y=R)) +
-#        geom_line(data=dplyr::filter(alldata,type=="pred"),
-#                      aes(y=R,x=SSB),color="deepskyblue3",lwd=1.3) +
         stat_function(fun=SRF,args=list(a=SR_result$pars$a,
                                         b=SR_result$pars$b),color="deepskyblue3",lwd=1.3)+
     geom_path(data=dplyr::filter(alldata,type=="obs"),
                   aes(y=R,x=SSB),color=1) +
         geom_point(data=dplyr::filter(alldata,type=="obs"),
                    aes(y=R,x=SSB),shape=21,fill="white") +
-#        scale_shape_discrete(solid=T)+        
-#        geom_label_repel(data=dplyr::filter(alldata,type=="obs" & (year%%10==0|year==year.max)),
-#                         aes(y=R,x=SSB,label=year),
-    #                         size=3,box.padding=3,segment.color="black") +
-    #        geom_text_repel(aes(y=R,x=SSB,label=pickyear)) +
     ggrepel::geom_text_repel(data=dplyr::filter(alldata,type=="obs"),
                     segment.alpha=0.5,nudge_y=5,
                     aes(y=R,x=SSB,label=pick.year)) +                
@@ -159,6 +150,14 @@ SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千ト�
         xlab(str_c("親魚資源量 (",xlabel,")"))+
         ylab(str_c("加入尾数 (",ylabel,")"))+        
     coord_cartesian(ylim=c(0,ymax*1.05),expand=0)
+
+    if(recruit_intercept>0){
+        g1 <- g1+stat_function(fun=SRF,
+                               args=list(a=SR_result$pars$a,
+                                         b=SR_result$pars$b,
+                                         recruit_intercept=recruit_intercept),
+                               color="deepskyblue3",lwd=1.3,lty=2)
+    }
 
     if(add.info){
         g1 <- g1+labs(caption=str_c("関数形: ",SR_result$input$SR,", 自己相関: ",SR_result$input$AR,
@@ -987,6 +986,12 @@ plot_futures <- function(vpares,
     col.Ftarget <- "#714C99"
     col.betaFtarget <- "#505596"
 
+    for(i in 1:length(future.list)){
+        if(class(future.list[[i]])=="future_new")
+            future.list[[i]] <- format_to_old_future(future.list[[i]])
+        det.run <- FALSE
+    }
+
     if(!isTRUE(exclude.japanese.font)){
         junit <- c("","十","百","千","万")[log10(biomass.unit)+1]
         #    require(tidyverse,quietly=TRUE)
@@ -1726,7 +1731,8 @@ compare_eq_stat <- function(MSYlist,
 #'
 #' @param MSYlist est.MSYの返り値をリストにしたもの; 単独でも可
 #' @param MSYname 凡例につけるMSYのケースの名前。MSYlistと同じ長さにしないとエラーとなる
-#' @param 凡例の位置
+#' @param legend.position 凡例の位置
+#' @param yaxis
 #' 
 #' @examples 
 #' \dontrun{
@@ -1742,7 +1748,8 @@ compare_eq_stat <- function(MSYlist,
 
 compare_MSY <- function(MSYlist, 
                         legend.position="top",
-                        MSYname=NULL){
+                        MSYname=NULL,
+                        yaxis="Fref2Fcurrent"){
 
     if(!is.null(MSYname)){
         if(length(MSYname)!=length(MSYlist)) stop("Length of MSYlist and MSYname is different")
@@ -1753,14 +1760,21 @@ compare_MSY <- function(MSYlist,
 
     data_summary <- purrr::map_dfr(MSYlist, function(x) x$summary, .id="id")   %>%
         dplyr::filter(!is.na(RP.definition)) %>%
-        mutate(label=stringr::str_c(id, RP.definition, sep="-"))
+        mutate(label=stringr::str_c(id, RP.definition, sep="-")) %>%
+        mutate(perSPR_rev=1-perSPR)
 
     g1 <- data_summary %>% ggplot()+
-        geom_point(aes(x=SSB, y=Fref2Fcurrent, color=id))+
-        ggrepel::geom_label_repel(aes(x=SSB, y=Fref2Fcurrent, color=id, label=label))+
+        geom_point(aes(x=SSB, y=get(yaxis), color=id))+
+        ggrepel::geom_label_repel(aes(x=SSB, y=get(yaxis), color=id, label=label))+
         theme_SH(legend.position=legend.position)
 
     return(g1)
 }
 
-    
+#' @export
+compare_SRfit <- function(SRlist){
+    plot_SRdata(SRlist[[1]]$input$SRdata)
+    for(i in 1:length(SRlist)){
+        lines(SRlist[[i]]$pred,col=i)
+    }
+}

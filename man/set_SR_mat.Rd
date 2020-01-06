@@ -6,14 +6,16 @@
 \usage{
 set_SR_mat(res_vpa, res_SR, SR_mat, seed_number,
   start_random_rec_year_name, resid_type = "lognormal",
-  resample_year_range = 0, bias_correction = TRUE)
+  resample_year_range = 0, recruit_intercept = 0,
+  bias_correction = TRUE, fix_recruit = fix_recruit,
+  only_make_deviance = FALSE)
 }
 \arguments{
 \item{res_vpa}{VPAの推定結果}
 
 \item{res_SR}{再生産関係の推定結果}
 
-\item{SR_mat}{将来予測用の再生産関係パラメータが格納されている３次元行列}
+\item{SR_mat}{将来予測用の再生産関係パラメータが格納する３次元行列}
 
 \item{seed_number}{シード番号}
 
@@ -21,7 +23,7 @@ set_SR_mat(res_vpa, res_SR, SR_mat, seed_number,
 
 \item{resid_type}{残差の発生パターン；対数正規分布は"lognormal"、単純リサンプリングは"resampling"}
 
-\item{resample_year_range}{0の場合、推定に使ったデータから計算される残差を用いる。年の範囲を入れると、対象とした年の範囲で計算される残差を用いる}
+\item{resample_year_range}{0の場合、推定に使ったデータから計算される残差を用いる。年の範囲を入れると、対象とした年の範囲で計算される残差を用いる。}
 }
 \description{
 再生産関係をres_SRで与えると、res_vpaを見ながら残差を再計算したのち、start_random_rec_year_name以降の加入のdeviationを計算しSR_mat[,,"deviance"]に入れる。
