@@ -770,7 +770,7 @@ HCR.simulation <- function(finput,HCRtable,year.lag=year.lag){
 #'
 #' 
 
-beta.simulation <- function(finput,beta_vector,year.lag=0, type="old"){
+beta.simulation <- function(finput,beta_vector,year.lag=0,type="old"){
     
     tb <- NULL
     

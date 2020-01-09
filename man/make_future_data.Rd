@@ -13,7 +13,8 @@ make_future_data(res_vpa, nsim = 1000, nyear = 50,
   HCR_Blimit = -1, HCR_Bban = -1, HCR_year_lag = 0, res_SR = NULL,
   seed_number = 1, resid_type = "lognormal", resample_year_range = 0,
   bias_correction = TRUE, recruit_intercept = 0,
-  Pope = res_vpa$input$Pope, fix_recruit = NULL, fix_wcatch = NULL)
+  model_average_option = NULL, Pope = res_vpa$input$Pope,
+  fix_recruit = NULL, fix_wcatch = NULL)
 }
 \arguments{
 \item{nsim}{シミュレーションの繰り返し回数}
@@ -29,6 +30,8 @@ make_future_data(res_vpa, nsim = 1000, nyear = 50,
 \item{waa_year}{将来の年齢別体重を過去の平均値とする場合、過去のパラメータを平均する期間}
 
 \item{waa}{将来の年齢別体重を直接与える場合}
+
+\item{model_average_option}{model averagingをする場合のオプション. SR_matのlistとweightをlist形式で入れる(list(SR_list=list(res_SR1,res_SR2),weight=c(0.5,0.5)))}
 }
 \description{
 future_vpaにインプットとして入れる将来予測の空のarrayを生成する関数
