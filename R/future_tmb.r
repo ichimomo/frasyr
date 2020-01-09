@@ -497,9 +497,13 @@ future_vpa <- function(tmb_data,
 
     res_future$input <- input
 
-    if(output_format!="new") res_future <- format_to_old_future(res_future)
+    if(output_format!="new"){
+        res_future <- format_to_old_future(res_future)
+    }
+    else{
+        class(res_future) <- "future_new"    
+        }
     if(!isTRUE(attach_input)) res_future$input <- NULL
-    
     return(res_future)
 
     # 足りないもの
@@ -671,7 +675,6 @@ future_vpa_R <- function(naa_mat,
         tmb_data$SR_mat[,,"recruit"]  <- N_mat[1,,]
         res <- list(naa=N_mat, wcaa=wcaa_mat, faa=F_mat, SR_mat=tmb_data$SR_mat,
                     HCR_mat=HCR_mat,multi=exp(x))
-        class(res) <- "future_new"
         return(res)
     }
 

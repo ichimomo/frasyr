@@ -1099,15 +1099,18 @@ plot_futures <- function(vpares,
 
     dummy     <- left_join(dummy,rename_list) %>% dplyr::filter(!is.na(stat))
     dummy2    <- left_join(dummy2,rename_list) %>% dplyr::filter(!is.na(stat))
-    ssb_table <- tibble(jstat = dplyr::filter(rename_list, stat == "SSB") %>%
-                          dplyr::pull(jstat),
-                        value = c(Btarget, Blimit, Bban) / biomass.unit,
-                        RP_name = RP_name)
-    if(!is.null(MSY)){
-        ssb_table <- tibble(jstat=dplyr::filter(rename_list, stat == "catch") %>%
+
+    if("SSB" %in% what.plot){
+        ssb_RP <- tibble(jstat = dplyr::filter(rename_list, stat == "SSB") %>%
+                                dplyr::pull(jstat),
+                            value = c(Btarget, Blimit, Bban) / biomass.unit,
+                            RP_name = RP_name)
+    }
+    if("catch" %in% what.plot){
+        catch_RP <- tibble(jstat=dplyr::filter(rename_list, stat == "catch") %>%
                                   dplyr::pull(jstat),
                               value=MSY/biomass.unit,
-                              RP_name="MSY") %>% bind_rows(ssb_table)
+                              RP_name="MSY") 
     }
     
     options(warn=org.warn)
@@ -1139,11 +1142,19 @@ plot_futures <- function(vpares,
         theme(legend.position="top",panel.grid = element_blank())+
         facet_wrap(~factor(jstat,levels=rename_list$jstat),scales="free_y",ncol=ncol)+        
         xlab("年")+ylab("")+ labs(fill = "",linetype="",color="")+
-        xlim(min(future.table$year),maxyear)+
-        geom_hline(data = ssb_table,
-                   aes(yintercept = value, linetype = RP_name),
-                   color = c(col.SBtarget, col.SBlim, col.SBban,col.MSY))
+        xlim(min(future.table$year),maxyear)
 
+    if("SSB" %in% what.plot){
+        g1 <- g1 + geom_hline(data = ssb_RP,
+                   aes(yintercept = value, linetype = RP_name),
+                   color = c(col.SBtarget, col.SBlim, col.SBban))
+    }
+
+    if("catch" %in% what.plot){
+        g1 <- g1 + geom_hline(data = catch_RP,
+                   aes(yintercept = value, linetype = RP_name),
+                   color = c(col.MSY))
+    }    
 
     if(n_example>0){
         if(n_example>1){
