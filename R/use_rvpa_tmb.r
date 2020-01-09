@@ -24,5 +24,5 @@ use_rvpa_tmb <- function(TmbFile = "rvpa_tmb",
   }
 file.copy( from=paste0(CppDir,"/",TmbFile,".cpp"), to=paste0(RunDir,"/",TmbFile,".cpp"), overwrite=overwrite)
   TMB::compile( paste0(TmbFile,".cpp") )
-  dyn.load(dynlib(TmbFile))
+  dyn.load(TMB::dynlib(TmbFile))
 }

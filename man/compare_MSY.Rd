@@ -3,23 +3,28 @@
 \encoding{UTF-8}
 \name{compare_MSY}
 \alias{compare_MSY}
-\title{複数のMSYの推定結果を重ね書きする}
+\title{複数の管理基準値の推定結果を重ね書きする}
 \usage{
 compare_MSY(MSYlist, legend.position = "top", MSYname = NULL,
-  ncol = 2)
+  yaxis = "Fref2Fcurrent")
 }
 \arguments{
 \item{MSYlist}{est.MSYの返り値をリストにしたもの; 単独でも可}
 
+\item{legend.position}{凡例の位置}
+
 \item{MSYname}{凡例につけるMSYのケースの名前。MSYlistと同じ長さにしないとエラーとなる}
+
+\item{yaxis}{}
 }
 \description{
-複数のMSYの推定結果を重ね書きする
+複数の管理基準値の推定結果を重ね書きする
 }
 \examples{
 \dontrun{
 data(res_MSY)
-compare_MSY(list(res_MSY, res_MSY))
+MSY_list <- tibble::lst(res_MSY_HSL1, res_MSY_HSL2)
+g1 <- compare_MSY(list(res_MSY, res_MSY))
 }
 
 }
