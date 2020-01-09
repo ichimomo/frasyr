@@ -1559,15 +1559,16 @@ SRregime_plot <- function (SRregime_result,xscale=1000,xlabel="SSB",yscale=1,yla
       #                    "), regime_year: ", paste0(SRregime_result$input$regime.year,collapse="&"), 
       #                    ", regime_key: ",paste0(SRregime_result$input$regime.key,collapse="->"),", AICc: ",round(SRregime_result$AICc,2)))
     labs(caption=str_c(SRregime_result$input$SR,"(",SRregime_result$input$method,
-                       "), ", ", regime_par: ", paste0(SRregime_result$input$regime.par,collapse="&"),", ",
+                       "), ", "regime_par: ", paste0(SRregime_result$input$regime.par,collapse="&"),", ",
                        paste0(SRregime_result$input$regime.year,collapse="&"), 
                        ", ",paste0(SRregime_result$input$regime.key,collapse="->"),
                        ", AICc: ",round(SRregime_result$AICc,2))
          )
     
+    }
   }
   g1
-  }}
+  }
 
 #' 複数のVPAの結果を重ね書きする
 #'
@@ -1690,4 +1691,3 @@ compare_MSY <- function(MSYlist,
     gridExtra::grid.arrange(g1,g2)
 }
   
-    
