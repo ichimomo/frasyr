@@ -19,16 +19,22 @@ SRF_RI <- function(x,a,b) a*x*exp(-b*x)
 #' 
 
 make_array <- function(d3_mat, pars, pars.year, year_replace_future){
-    years <- dimnames(d3_mat)[[2]]
-    if(is.null(pars)){
-        pars.future <- rowMeans(d3_mat[,years%in%pars.year,1])
+    if(length(dim(pars))==3){
+        return(pars)
     }
     else{
-        if(length(pars)==dim(d3_mat)[[1]]) pars.future <- pars
-        else stop("length of parameter is bad..")
+        years <- dimnames(d3_mat)[[2]]
+        if(is.null(pars)){
+            pars.future <- rowMeans(d3_mat[,years%in%pars.year,1])
+        }
+        else{
+            if(length(pars)==dim(d3_mat)[[1]]) pars.future <- pars
+            else stop("length of parameter is bad..")
+        }
+        d3_mat[,which(year_replace_future==years):length(years),] <- pars.future
+        
+        return(d3_mat)
     }
-    d3_mat[,which(year_replace_future==years):length(years),] <- pars.future
-    d3_mat
 }
 
 #'
@@ -43,6 +49,7 @@ make_array <- function(d3_mat, pars, pars.year, year_replace_future){
 #' @param start_random_rec_year_name ランダム加入を仮定する最初の年
 #' @param resid_type 残差の発生パターン；対数正規分布は"lognormal"、単純リサンプリングは"resampling"
 #' @param resample_year_range 0の場合、推定に使ったデータから計算される残差を用いる。年の範囲を入れると、対象とした年の範囲で計算される残差を用いる。
+#' @param model_average_option model averagingをする場合のオプション. SR_matのlistとweightをlist形式で入れる(list(SR_list=list(res_SR1,res_SR2),weight=c(0.5,0.5)))
 #' 
 #' @export
 #' 
@@ -57,7 +64,8 @@ set_SR_mat <- function(res_vpa,
                        recruit_intercept=0,
                        bias_correction=TRUE,
                        fix_recruit=fix_recruit,
-                       only_make_deviance=FALSE){
+                       only_make_deviance=FALSE,
+                       model_average_option=NULL){
 
     allyear_name <- dimnames(SR_mat)[[1]]
     start_random_rec_year  <- which(allyear_name==start_random_rec_year_name)
@@ -96,6 +104,7 @@ set_SR_mat <- function(res_vpa,
 
     # define future recruitment deviation
     set.seed(seed_number)
+    nsim <- dim(SR_mat)[[2]]
     if(resid_type=="lognormal"){
         if(isTRUE(bias_correction)){
             sd_with_AR <- sqrt(res_SR$pars$sd^2/(1-res_SR$pars$rho^2))
@@ -105,7 +114,7 @@ set_SR_mat <- function(res_vpa,
             bias_factor <- 0
         }
         tmp_SR <- t(SR_mat[random_rec_year_period,,"rand_resid"])
-        tmp_SR[] <- rnorm(dim(SR_mat)[[2]]*length(random_rec_year_period), mean=0, sd=res_SR$pars$sd)
+        tmp_SR[] <- rnorm(nsim*length(random_rec_year_period), mean=0, sd=res_SR$pars$sd)
         SR_mat[random_rec_year_period,,"rand_resid"] <- t(tmp_SR)
    
         for(t in random_rec_year_period){
@@ -118,7 +127,7 @@ set_SR_mat <- function(res_vpa,
         if(resample_year_range==0){
             sampled_residual <- res_SR$resid[res_SR$input$w==1]
             if(isTRUE(bias_correction)) bias_factor <- log(mean(exp(sampled_residual))) else bias_factor <- 0
-            SR_mat[random_rec_year_period,,"rand_resid"] <- sample(sampled_residual, dim(SR_mat)[[2]]*length(random_rec_year_period), replace=TRUE)
+            SR_mat[random_rec_year_period,,"rand_resid"] <- sample(sampled_residual, nsim*length(random_rec_year_period), replace=TRUE)
             SR_mat[random_rec_year_period,,"deviance"] <- SR_mat[random_rec_year_period,,"rand_resid"]-bias_factor
         }
         else{ # VPA結果から計算しなおした残差を使う
@@ -139,8 +148,25 @@ set_SR_mat <- function(res_vpa,
         ## coming soon
     }
 
+    if(!is.null(model_average_option)){
+        weight <- arrange_weight(model_average_option$weight,nsim)
+        SR_mat <- average_SR_mat(res_vpa     = res_vpa,
+                                 res_SR_list = model_average_option$SR_list,
+                                 range_list  = weight,
+                                 SR_mat      = SR_mat,
+                                 seed_number = seed_number+1,
+                                 start_random_rec_year_name=start_random_rec_year_name)
+    }
+
    
     return(SR_mat)
+}
+
+arrange_weight <- function(weight, nsim){
+    weight <- weight / sum(weight)
+    weight <- round(cumsum(weight) * nsim)
+    weight2 <- c(1,weight[-length(weight)]+1)
+    purrr::map(1:length(weight),function(x) weight2[x]:weight[x])
 }
 
 
@@ -200,6 +226,7 @@ print.myarray <- function(x) cat("array :", dim(x),"\n")
 #' @param start_random_rec_year_name 将来の加入を再生産関係から予測する最初の年
 #' @param waa_year 将来の年齢別体重を過去の平均値とする場合、過去のパラメータを平均する期間
 #' @param waa 将来の年齢別体重を直接与える場合
+#' @param model_average_option model averagingをする場合のオプション. SR_matのlistとweightをlist形式で入れる(list(SR_list=list(res_SR1,res_SR2),weight=c(0.5,0.5))) 
 #' 
 #' @export
 
@@ -231,6 +258,7 @@ make_future_data <- function(res_vpa,
                           resample_year_range=0, # only when "resample"
                           bias_correction=TRUE,
                           recruit_intercept=0, # number of additional recruitment (immigration or enhancement)
+                          model_average_option=NULL,
                           # Other
                           Pope=res_vpa$input$Pope,
                           fix_recruit=NULL, # list(year=2020, rec=1000)
@@ -252,8 +280,9 @@ make_future_data <- function(res_vpa,
     total_nyear         <- future_initial_year + nyear
     allyear_name        <- min(as.numeric(colnames(res_vpa$naa)))+c(0:(total_nyear-1))
     allyear_label       <- c(rep("VPA",future_initial_year),rep("future",nyear))
-    start_random_rec_year  <- which(allyear_name==start_random_rec_year_name)    
-    print(tibble(allyear_name, allyear_label))
+    start_random_rec_year  <- which(allyear_name==start_random_rec_year_name)
+    tmpdata <- tibble(allyear_name, allyear_label)
+    print(tmpdata)
 
     # define empty array
     waa_mat <- waa_catch_mat <- M_mat <- maa_mat <- naa_mat <- faa_mat <- caa_mat <- 
@@ -303,7 +332,8 @@ make_future_data <- function(res_vpa,
                          start_random_rec_year_name, resid_type=resid_type,
                          resample_year_range=resample_year_range,
                          bias_correction=bias_correction,
-                         recruit_intercept=recruit_intercept)
+                         recruit_intercept=recruit_intercept,
+                         model_average_option=model_average_option)
     
     # when fix recruitment
     if(!is.null(fix_recruit)) naa_mat[1,as.character(fix_recruit$year),] <- fix_recruit$rec           
@@ -320,13 +350,14 @@ make_future_data <- function(res_vpa,
     HCR_mat[start_ABC_year:total_nyear,,"year_lag"] <- HCR_year_lag
 
     # when fix wcatch
-    if(isTRUE(Pope)){
-        tmp <- naa_mat*(1-exp(-faa_mat))*exp(-M_mat/2) * waa_catch_mat
-    }
-    else{
-        tmp <- naa_mat*(1-exp(-faa_mat-M))*faa_mat/(faa_mat+M) * waa_catch_mat
-    }
-    HCR_mat[,,"wcatch"] <- apply(tmp,c(2,3),sum)
+    # VPA期間中のwcatchをfixするかどうか？？
+#    if(isTRUE(Pope)){
+#        tmp <- naa_mat*(1-exp(-faa_mat))*exp(-M_mat/2) * waa_catch_mat
+#    }
+#    else{
+#        tmp <- naa_mat*(1-exp(-faa_mat-M))*faa_mat/(faa_mat+M) * waa_catch_mat
+#    }
+#    HCR_mat[,,"wcatch"] <- apply(tmp,c(2,3),sum)
     HCR_mat[as.character(fix_wcatch$year), ,"wcatch"] <- fix_wcatch$wcatch
    
     # set data and parameter for TMB
@@ -383,7 +414,7 @@ naming_adreport <- function(tmb_data, ad_report){
 #'
 
 future_vpa <- function(tmb_data,
-                       optim_method="tmb", # or "R" or "none"
+                       optim_method="none", # or "R" or "none"
                        multi_init = 1,
                        multi_lower = 0,
                        multi_upper = 10,
@@ -392,12 +423,16 @@ future_vpa <- function(tmb_data,
                        obj_stat  ="mean",
                        do_MSE=NULL,
                        MSE_input_data=NULL,
-                       compile=FALSE){
+                       MSE_nsim=NULL,
+                       compile=FALSE,
+                       output_format="new",
+                       attach_input=TRUE
+                       ){
 
     argname <- ls()
     input <- lapply(argname,function(x) eval(parse(text=x)))
-    names(input) <- argname    
-
+    names(input) <- argname
+    
     # conversion of estimation option
     tmb_data$objective <-
         dplyr::case_when(objective=="MSY"   ~ 0,
@@ -437,6 +472,7 @@ future_vpa <- function(tmb_data,
         
         tmb_data$do_MSE <- do_MSE
         tmb_data$MSE_input_data <- MSE_input_data
+        tmb_data$MSE_nsim <- MSE_nsim
         
         R_obj_fun <- function(x, tmb_data, what_return="obj"){
             tmb_data$x <- x
@@ -461,6 +497,13 @@ future_vpa <- function(tmb_data,
 
     res_future$input <- input
 
+    if(output_format!="new"){
+        res_future <- format_to_old_future(res_future)
+    }
+    else{
+        class(res_future) <- "future_new"    
+        }
+    if(!isTRUE(attach_input)) res_future$input <- NULL
     return(res_future)
 
     # 足りないもの
@@ -468,9 +511,6 @@ future_vpa <- function(tmb_data,
     # waa.fun
     # 生産関係の細かい設定
     # FperSPRの計算結果を出力する
-    # yield curveが変
-    # do_MSE option
-    # 2do_futureで、SR関数を置き換えるオプション
 }
 
 #' @export
@@ -558,7 +598,7 @@ future_vpa_R <- function(naa_mat,
             MSE_dummy_data$what_return <- "stat"
             MSE_dummy_data$do_MSE      <- FALSE
             for(i in 1:nsim){
-                cat(t,"-",i,"\n")                
+#                cat(t,"-",i,"\n")                
                 MSE_dummy_data$naa_mat[] <-  N_mat[,,i]
                 MSE_dummy_data$naa_mat[,(t-1):t,] <-  0
                 MSE_dummy_data$faa_mat[,1:(t-1),] <-  F_mat[,1:(t-1),i]
@@ -587,15 +627,14 @@ future_vpa_R <- function(naa_mat,
         }        
 
         if(sum(HCR_mat[t,,"wcatch"])>0){
-            saa.tmp <- sweep(F_mat[,t,],2,apply(F_mat[,t,],2,max),FUN="/")
-            fix_catch_multiplier <- purrr::map_dbl(1:nsim,
-                             function(x) caa.est.mat(N_mat[,t,x],saa.tmp[,x],
-                                                     waa_catch_mat[,t,x],M_mat[,t,x],
-                                                     HCR_mat[t,x,"wcatch"],Pope=as.logical(Pope))$x)
-            F_mat[,t,] <- sweep(saa.tmp, 2, fix_catch_multiplier, FUN="*")
-
+            F_max_tmp <- apply(F_mat[,t,],2,max)
+            saa.tmp <- sweep(F_mat[,t,],2,F_max_tmp,FUN="/")
+            fix_catch_multiplier <- purrr::map_dbl(which(F_max_tmp>0),
+                                        function(x) caa.est.mat(N_mat[,t,x],saa.tmp[,x],
+                                                                waa_catch_mat[,t,x],M_mat[,t,x],
+                                                                HCR_mat[t,x,"wcatch"],Pope=as.logical(Pope))$x)
+            F_mat[,t,which(F_max_tmp>0)] <- sweep(saa.tmp[,which(F_max_tmp>0)], 2, fix_catch_multiplier, FUN="*")
         }
-
        
         if(t<total_nyear){
             # forward calculation                 
@@ -636,7 +675,6 @@ future_vpa_R <- function(naa_mat,
         tmb_data$SR_mat[,,"recruit"]  <- N_mat[1,,]
         res <- list(naa=N_mat, wcaa=wcaa_mat, faa=F_mat, SR_mat=tmb_data$SR_mat,
                     HCR_mat=HCR_mat,multi=exp(x))
-        class(res) <- "future_new"
         return(res)
     }
 
@@ -723,7 +761,7 @@ get_summary_stat <- function(all.stat){
 
 
 format_to_old_future <- function(fout){
-    fout_old <- fout[c("naa","faa","multi")]
+    fout_old <- fout[c("naa","faa","multi","input")]
     fout_old$waa       <- fout$input$tmb_data$waa_mat
     fout_old$waa.catch <- fout$input$tmb_data$waa_catch_mat        
     fout_old$maa       <- fout$input$tmb_data$maa_mat
@@ -740,4 +778,15 @@ format_to_old_future <- function(fout){
     return(fout_old)
 }
 
+
+#' 
+#'
+#' 
+#' @export
+#'
+
+safe.call_ <- function(func,args,...){
+    formals(func) %in% args
+}
+    
 
