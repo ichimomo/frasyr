@@ -1715,6 +1715,7 @@ compare_eq_stat <- function(MSYlist,
                            y_axis_name="catch.mean", 
                            legend.position="top",
                            is_MSY_line=TRUE,
+                           is.scale=FALSE,
                            MSYname=NULL){
 
     if(!is.null(MSYname)){
@@ -1724,9 +1725,14 @@ compare_eq_stat <- function(MSYlist,
     if(isTRUE("summary" %in% names(MSYlist))) MSYlist <- list(MSYlist)
 
     data_yield <- purrr::map_dfr(MSYlist, function(x){
-        x$trace %>% mutate(catch.order=rank(-catch.mean))
+        x$trace %>% mutate(catch.order= rank(-catch.mean),
+                           catch.max  = max(catch.mean)  ,
+                           ssb.max    = max(ssb.mean))
         }
        ,.id="id")
+
+    if(isTRUE(is.scale)) data_yield <- data_yield %>% mutate(catch.mean=catch.mean/catch.max,
+                                              ssb.mean=ssb.mean/ssb.max)
 
     g1 <- data_yield %>% ggplot()+
         geom_line(aes(x=get(x_axis_name), y=get(y_axis_name[1]), color=id))+

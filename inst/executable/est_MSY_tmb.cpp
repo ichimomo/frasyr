@@ -25,6 +25,7 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(start_random_rec_year);      
   DATA_INTEGER(nsim);
   DATA_INTEGER(nage);
+  DATA_INTEGER(plus_age);  
   DATA_INTEGER(recruit_age);    
   DATA_INTEGER(obj_stat); // 0: mean, 1: geomean
   DATA_INTEGER(objective); // 0: MSY, 1: PGY, 2: percentB0 or Bempirical
@@ -94,10 +95,10 @@ Type objective_function<Type>::operator() ()
 
       // forward calculation 
       if(t<(total_nyear-1)){
-	for(int iage=0; iage<(nage-1); iage++) {
+	for(int iage=0; iage<(plus_age-1); iage++) {
 	  N_mat(iage+1,t+1,i) = N_mat(iage,t,i)*exp(-M_mat(iage,t,i)-F_mat(iage,t,i));
 	}
-        N_mat(nage-1,t+1,i) += N_mat(nage-1,t,i)*exp(-M_mat(nage-1,t,i)-F_mat(nage-1,t,i));
+        N_mat(plus_age-1,t+1,i) += N_mat(plus_age-1,t,i)*exp(-M_mat(plus_age-1,t,i)-F_mat(plus_age-1,t,i));
       }
     }
   }

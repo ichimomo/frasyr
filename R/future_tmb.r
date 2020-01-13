@@ -54,7 +54,7 @@ make_array <- function(d3_mat, pars, pars.year, year_replace_future){
 #' @export
 #' 
 
-set_SR_mat <- function(res_vpa,
+set_SR_mat <- function(res_vpa=NULL,
                        res_SR,
                        SR_mat,
                        seed_number,
@@ -62,45 +62,48 @@ set_SR_mat <- function(res_vpa,
                        resid_type="lognormal",
                        resample_year_range=0,
                        recruit_intercept=0,
+                       recruit_age=0,
                        bias_correction=TRUE,
                        fix_recruit=fix_recruit,
-                       only_make_deviance=FALSE,
                        model_average_option=NULL){
 
     allyear_name <- dimnames(SR_mat)[[1]]
     start_random_rec_year  <- which(allyear_name==start_random_rec_year_name)
     random_rec_year_period <- (start_random_rec_year):length(allyear_name)
     
-    if(!isTRUE(only_make_deviance)){
-        # define SR function
-        if(res_SR$input$SR=="HS"){
-            SR_mat[random_rec_year_period,,"SR_type"] <- 1
-            SRF <- SRF_HS
-        }
-        if(res_SR$input$SR=="BH"){
-            SR_mat[random_rec_year_period,,"SR_type"] <- 2
-            SRF <- SRF_BH        
-        }
-        if(res_SR$input$SR=="RI"){
-            SR_mat[random_rec_year_period,,"SR_type"] <- 3
-            SRF <- SRF_RI                
-        }
 
-        # define SR parameter
-        SR_mat[,,"a"] <- res_SR$pars$a
-        SR_mat[,,"b"] <- res_SR$pars$b
-        SR_mat[,,"rho"] <- res_SR$pars$rho
-        SR_mat[,,"intercept"] <- recruit_intercept
+    # define SR function
+    if(res_SR$input$SR=="HS"){
+        SR_mat[random_rec_year_period,,"SR_type"] <- 1
+        SRF <- SRF_HS
+    }
+    if(res_SR$input$SR=="BH"){
+        SR_mat[random_rec_year_period,,"SR_type"] <- 2
+        SRF <- SRF_BH        
+    }
+    if(res_SR$input$SR=="RI"){
+        SR_mat[random_rec_year_period,,"SR_type"] <- 3
+        SRF <- SRF_RI                
+    }
 
+    # define SR parameter
+    SR_mat[,,"a"] <- res_SR$pars$a
+    SR_mat[,,"b"] <- res_SR$pars$b
+    SR_mat[,,"rho"] <- res_SR$pars$rho
+    SR_mat[,,"intercept"] <- recruit_intercept
+
+    if(!is.null(res_vpa)){
         # re-culcurate recruitment deviation
         SR_mat[1:(start_random_rec_year-1),,"ssb"] <- as.numeric(colSums(res_vpa$ssb))[1:(start_random_rec_year-1)]
         SR_mat[1:(start_random_rec_year-1),,"recruit"] <- as.numeric(res_vpa$naa[1,1:(start_random_rec_year-1)])
-        SR_mat[1:(start_random_rec_year-1),,"deviance"] <- SR_mat[1:(start_random_rec_year-1),,"rand_resid"] <- 
-            log(SR_mat[1:(start_random_rec_year-1),,"recruit"]) -
-            log(SRF(SR_mat[1:(start_random_rec_year-1),,"ssb"],
-                    SR_mat[1:(start_random_rec_year-1),,"a"],
-                    SR_mat[1:(start_random_rec_year-1),,"b"]))
     }
+
+    recruit_range <- (recruit_age+1):(start_random_rec_year-1)
+    ssb_range     <- 1:(start_random_rec_year-1-recruit_age)    
+    
+    SR_mat[recruit_range,,"deviance"] <- SR_mat[1:(start_random_rec_year-1),,"rand_resid"] <- 
+        log(SR_mat[recruit_range,,"recruit"]) -
+        log(SRF(SR_mat[ssb_range,,"ssb"],SR_mat[recruit_range,,"a"],SR_mat[recruit_range,,"b"]))
 
     # define future recruitment deviation
     set.seed(seed_number)
@@ -155,6 +158,7 @@ set_SR_mat <- function(res_vpa,
                                  range_list  = weight,
                                  SR_mat      = SR_mat,
                                  seed_number = seed_number+1,
+                                 recruit_age = recruit_age,
                                  start_random_rec_year_name=start_random_rec_year_name)
     }
 
@@ -191,6 +195,7 @@ average_SR_mat <- function(res_vpa,
                            SR_mat,
                            seed_number,
                            start_random_rec_year_name,
+                           recruit_age,
                            resid_type="lognormal",
                            resample_year_range=0,
                            bias_correction=TRUE){
@@ -203,6 +208,7 @@ average_SR_mat <- function(res_vpa,
         SR_mat_tmp <- set_SR_mat(res_vpa, res_SR_list[[i]], SR_mat, seed_number+i,
                                  start_random_rec_year_name, resid_type=resid_type,
                                  resample_year_range=resample_year_range,
+                                 recruit_age=recruit_age,
                                  bias_correction=bias_correction)
         SR_mat[,as.character(range_list[[i]]),] <-
             SR_mat_tmp[,range_list[[i]],]
@@ -233,6 +239,7 @@ print.myarray <- function(x) cat("array :", dim(x),"\n")
 make_future_data <- function(res_vpa,
                           nsim = 1000, # number of simulation
                           nyear = 50, # number of future year
+                          plus_age  = NULL, # if null, equal to row number as plus group
                           future_initial_year_name = 2017,
                           start_F_year_name = 2018,
                           start_biopar_year_name=2018,
@@ -271,7 +278,8 @@ make_future_data <- function(res_vpa,
     names(input) <- argname
     
     # define age and year
-    nage        <- nrow(res_vpa$naa)
+    nage <- nrow(res_vpa$naa)
+    if(is.null(plus_age)) plus_age <- nage
     age_name    <- as.numeric(rownames(res_vpa$naa))
     recruit_age <- min(as.numeric(rownames(res_vpa$naa)))
    
@@ -281,7 +289,9 @@ make_future_data <- function(res_vpa,
     allyear_name        <- min(as.numeric(colnames(res_vpa$naa)))+c(0:(total_nyear-1))
     allyear_label       <- c(rep("VPA",future_initial_year),rep("future",nyear))
     start_random_rec_year  <- which(allyear_name==start_random_rec_year_name)
-    tmpdata <- tibble(allyear_name, allyear_label)
+    tmpdata <- tibble(allyear_name, allyear_label) %>%
+        group_by(allyear_label) %>%
+        summarize(start=min(allyear_name),end=max(allyear_name))
     print(tmpdata)
 
     # define empty array
@@ -328,11 +338,12 @@ make_future_data <- function(res_vpa,
     }    
 
     # set SR parameter
-    SR_mat <- set_SR_mat(res_vpa, res_SR, SR_mat, seed_number,
+    SR_mat <- set_SR_mat(res_vpa=res_vpa, res_SR, SR_mat, seed_number,
                          start_random_rec_year_name, resid_type=resid_type,
                          resample_year_range=resample_year_range,
                          bias_correction=bias_correction,
                          recruit_intercept=recruit_intercept,
+                         recruit_age=recruit_age,
                          model_average_option=model_average_option)
     
     # when fix recruitment
@@ -376,6 +387,7 @@ make_future_data <- function(res_vpa,
                      start_random_rec_year=start_random_rec_year,
                      nsim = nsim,
                      nage = nage,
+                     plus_age = plus_age,
                      recruit_age = recruit_age,
                      HCR_mat = HCR_mat,
                      obj_stat = 0, # 0: mean, 1:geomean
@@ -477,7 +489,7 @@ future_vpa <- function(tmb_data,
         R_obj_fun <- function(x, tmb_data, what_return="obj"){
             tmb_data$x <- x
             tmb_data$what_return <- what_return
-            obj <- do.call(future_vpa_R, tmb_data)
+            obj <- safe_call(future_vpa_R, tmb_data)
             return(obj)
         }
         
@@ -492,7 +504,7 @@ future_vpa <- function(tmb_data,
             tmb_data$x <- log(multi_init)            
         }
         tmb_data$what_return <- "stat"
-        res_future <- do.call(future_vpa_R, tmb_data)
+        res_future <- safe_call(future_vpa_R, tmb_data)
     }
 
     res_future$input <- input
@@ -530,6 +542,7 @@ future_vpa_R <- function(naa_mat,
                       start_random_rec_year,
                       nsim,
                       nage,
+                      plus_age,
                       recruit_age,
                       obj_stat,
                       objective,
@@ -541,7 +554,9 @@ future_vpa_R <- function(naa_mat,
                       MSE_input_data=NULL,
                       MSE_nsim = NULL
                       ){
-
+    
+    options(deparse.max.lines=10)
+    
     argname <- ls()
     tmb_data <- lapply(argname,function(x) eval(parse(text=x)))
     names(tmb_data) <- argname
@@ -549,6 +564,8 @@ future_vpa_R <- function(naa_mat,
     if(isTRUE(do_MSE)){
         MSE_seed <- MSE_input_data$input$seed_number + 1        
         if(!is.null(MSE_nsim)) MSE_input_data$input$nsim <- MSE_nsim
+        SR_MSE <- SR_mat
+        SR_MSE[,,"recruit"] <- SR_MSE[,,"ssb"] <- 0
     }                
 
     F_mat <- N_mat <-  naa_mat
@@ -589,59 +606,71 @@ future_vpa_R <- function(naa_mat,
         }
 
         if(isTRUE(do_MSE) && t>=start_ABC_year){
-            MSE_dummy_data <- do.call(make_future_data,MSE_input_data$input)$data
-            MSE_dummy_data$future_initial_year <- t-2
-            MSE_dummy_data$start_random_rec_year <- t-1
-            MSE_dummy_data$start_ABC_year <- t            
-            MSE_dummy_data$total_nyear <- t
-            MSE_dummy_data$x <- 0
-            MSE_dummy_data$what_return <- "stat"
-            MSE_dummy_data$do_MSE      <- FALSE
+            MSE_dummy_data <- safe_call(make_future_data,MSE_input_data$input)$data
+            MSE_dummy_data <- MSE_dummy_data %>%
+                purrr::list_modify(future_initial_year   = t-2,
+                                   start_random_rec_year = t-1,
+                                   start_ABC_year        = t,
+                                   total_nyear           = t,
+                                   x                     = 0, # = 1 in normal scale
+                                   what_return           = "stat",
+                                   do_MSE                = FALSE)
             for(i in 1:nsim){
 #                cat(t,"-",i,"\n")                
-                MSE_dummy_data$naa_mat[] <-  N_mat[,,i]
-                MSE_dummy_data$naa_mat[,(t-1):t,] <-  0
-                MSE_dummy_data$faa_mat[,1:(t-1),] <-  F_mat[,1:(t-1),i]
-                MSE_dummy_data$faa_mat[,t,] <-  MSE_input_data$data$faa[,t,i] # use original F at age
-                MSE_dummy_data$waa_mat[] <-  waa_mat[,,i]
-                MSE_dummy_data$waa_catch_mat[] <-  waa_catch_mat[,,i]                
-                MSE_dummy_data$maa_mat[] <-  maa_mat[,,i]
-                MSE_dummy_data$M_mat[]   <-  M_mat[,,i]                
-                for(k in 1:nsim) MSE_dummy_data$SR_mat[,k,]  <- SR_mat[,i,]
-                MSE_dummy_data$SR_mat <-
-                    set_SR_mat(res_vpa   = NULL,
+                MSE_dummy_data$naa_mat[] <-  N_mat[,,i] # true dynamics
+                MSE_dummy_data$naa_mat[,(t-1):t,] <-  0 # estiamted as future
+                MSE_dummy_data$faa_mat[,1:(t-1),] <-  F_mat[,1:(t-1),i] # we know true F even in future
+                MSE_dummy_data$faa_mat[,t,] <-  MSE_input_data$data$faa[,t,i] # alpha in ABC year is depends on future SSB
+                MSE_dummy_data$waa_mat[] <-  waa_mat[,,i] # in case
+                MSE_dummy_data$waa_catch_mat[] <-  waa_catch_mat[,,i] # in case
+                MSE_dummy_data$maa_mat[] <-  maa_mat[,,i] # in case
+                MSE_dummy_data$M_mat[]   <-  M_mat[,,i] # in case
+                for(k in 1:MSE_nsim){
+                    MSE_dummy_data$SR_mat[,k,]  <- SR_mat[,i,]
+                    MSE_dummy_data$SR_mat[,k,"ssb"]  <- spawner_mat[,i] # true ssb
+                    MSE_dummy_data$SR_mat[,k,"recruit"]  <- N_mat[1,,i] # true recruit         
+                }
+                # re-calculate past deviance and produce random residual in future
+                MSE_dummy_data$SR_mat <- 
+                    set_SR_mat(res_vpa   = NULL, # past deviande is calculated by true ssb
                                res_SR    = MSE_input_data$input$res_SR,
                                SR_mat    = MSE_dummy_data$SR_mat,
                                seed_number=MSE_seed,
                                start_random_rec_year_name = dimnames(naa_mat)[[2]][t-1],
+                               recruit_age = recruit_age,
                                resid_type                 = MSE_input_data$input$resid_type,
                                resample_year_range        = MSE_input_data$input$resample_year_range,
                                bias_correction            = MSE_input_data$input$bias_correction,
                                recruit_intercept          = MSE_input_data$input$recruit_intercept,
-                               only_make_deviance         = TRUE)
-                res_tmp <- do.call(future_vpa_R,MSE_dummy_data)
-#                if(t>32) browser()
-                HCR_mat[t,i,"wcatch"] <- mean(apply(res_tmp$wcaa[,t,],2,sum))
+                               model_average_option       = MSE_input_data$input$model_average_option)
+                res_tmp <- safe_call(future_vpa_R,MSE_dummy_data) # do future projection
+                HCR_mat[t,i,"wcatch"] <- mean(apply(res_tmp$wcaa[,t,],2,sum)) # determine ABC in year t
+                SR_MSE[t,i,"recruit"] <- mean(res_tmp$naa[1,t,])
+                SR_MSE[t,i,"ssb"]     <- mean(res_tmp$SR_mat[t,,"ssb"])
                 MSE_seed <- MSE_seed+1
             }
         }        
 
         if(sum(HCR_mat[t,,"wcatch"])>0){
             F_max_tmp <- apply(F_mat[,t,],2,max)
-            saa.tmp <- sweep(F_mat[,t,],2,F_max_tmp,FUN="/")
+#            saa.tmp <- sweep(F_mat[,t,],2,F_max_tmp,FUN="/")
             fix_catch_multiplier <- purrr::map_dbl(which(F_max_tmp>0),
-                                        function(x) caa.est.mat(N_mat[,t,x],saa.tmp[,x],
+                                        function(x) caa.est.mat(N_mat[,t,x],F_mat[,t,x],#saa.tmp[,x],
                                                                 waa_catch_mat[,t,x],M_mat[,t,x],
-                                                                HCR_mat[t,x,"wcatch"],Pope=as.logical(Pope))$x)
-            F_mat[,t,which(F_max_tmp>0)] <- sweep(saa.tmp[,which(F_max_tmp>0)], 2, fix_catch_multiplier, FUN="*")
+                                                                HCR_mat[t,x,"wcatch"],
+                                                                set_max1=FALSE,
+                                                                Pope=as.logical(Pope))$x)
+            F_mat[,t,which(F_max_tmp>0)] <- sweep(F_mat[,t,which(F_max_tmp>0)],#saa.tmp[,which(F_max_tmp>0)],
+                                                  2, fix_catch_multiplier, FUN="*")
+            HCR_mat[t,which(F_max_tmp>0),"alpha"] <- HCR_mat[t,which(F_max_tmp>0),"alpha"]*fix_catch_multiplier
         }
        
         if(t<total_nyear){
             # forward calculation                 
-            for(iage in 1:(nage-1)) {
+            for(iage in 1:(plus_age-1)) {
                 N_mat[iage+1,t+1,] <- N_mat[iage,t,]*exp(-M_mat[iage,t,]-F_mat[iage,t,])
             }
-            N_mat[nage,t+1,] <- N_mat[nage,t+1,] + N_mat[nage,t,]*exp(-M_mat[nage,t,]-F_mat[nage,t,])
+            N_mat[plus_age,t+1,] <- N_mat[plus_age,t+1,] + N_mat[plus_age,t,]*exp(-M_mat[plus_age,t,]-F_mat[plus_age,t,])
         }
     }
 
@@ -675,6 +704,7 @@ future_vpa_R <- function(naa_mat,
         tmb_data$SR_mat[,,"recruit"]  <- N_mat[1,,]
         res <- list(naa=N_mat, wcaa=wcaa_mat, faa=F_mat, SR_mat=tmb_data$SR_mat,
                     HCR_mat=HCR_mat,multi=exp(x))
+        if(isTRUE(do_MSE)) res$SR_MSE <- SR_MSE
         return(res)
     }
 
@@ -780,13 +810,25 @@ format_to_old_future <- function(fout){
 
 
 #' 
+#' do.callのsafe版
 #'
-#' 
+#' do.callで与えたリストの中にfuncで定義されていないものが混じっていた場合に、実際にdo.callを呼び出す前にerorrを吐いて関数をストップさせる。非常に大きいオブジェクトを与えていながらdo.callで上記の場面でエラーが出ると、長時間Rがフリーズするのを避けるため。force=TRUEにすると、func内で定義されていない引数はリストから除外してdo.callを実行する.
+#'
 #' @export
-#'
+#' 
 
-safe.call_ <- function(func,args,...){
-    formals(func) %in% args
+safe_call <- function(func,args,force=FALSE,...){
+    argname <- names(formals(func))
+    check_argument <- names(args) %in% argname
+    if(sum(check_argument==FALSE)>0){
+        if(force==FALSE){
+            stop(paste(names(args)[check_argument==FALSE]), " is not used in func\n")
+        }
+        else{
+            args <- args[check_argument==TRUE]
+        }
+    }
+    return(do.call(func,args,...))
 }
     
 
