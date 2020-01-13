@@ -1085,8 +1085,8 @@ forward.calc.mat2 <- function(fav,nav,Mv,plus.group=TRUE){
   return(naa)
 }
 
-caa.est.mat <- function(naa,saa,waa,M,catch.obs,Pope){
-  saa <- saa/max(saa)
+caa.est.mat <- function(naa,saa,waa,M,catch.obs,Pope,set_max1=TRUE){
+  if(set_max1==TRUE) saa <- saa/max(saa)
   tmpfunc <- function(logx,catch.obs=catch.obs,naa=naa,saa=saa,waa=waa,M=M,out=FALSE,Pope=Pope){
       x <- exp(logx)
       if(isTRUE(Pope)){
