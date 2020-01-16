@@ -89,16 +89,16 @@ ref.F <- function(
   if(is.null(M.year)) M.year <- rev(years)[1]
   if(is.null(rps.year)) rps.year <- as.numeric(colnames(res$naa))
   
-  if(is.null(waa))  waa <- apply_year_colum(res$input$dat$waa,waa.year)#apply(as.matrix(as.data.frame(res$input$dat$waa)[as.character(waa.year)]),1,mean)
-  if(is.null(M))  M <- apply_year_colum(res$input$dat$M,M.year)#apply(as.matrix(as.data.frame(res$input$dat$M)[as.character(M.year)]),1,mean)
-  if(is.null(maa))  maa <- apply_year_colum(res$input$dat$maa,maa.year)#apply(as.matrix(as.data.frame(res$input$dat$maa)[as.character(maa.year)]),1,mean)
+  if(is.null(waa))  waa <- apply_year_colum(res$input$dat$waa,waa.year)
+  if(is.null(M))    M   <- apply_year_colum(res$input$dat$M,M.year)
+  if(is.null(maa))  maa <- apply_year_colum(res$input$dat$maa,maa.year)
 
   if(is.null(waa.catch)){
       if(is.null(res$input$dat$waa.catch)){
           waa.catch <- waa
       }
       else{
-          waa.catch <- apply_year_colum(res$input$dat$waa.catch,waa.year)#apply(as.matrix(as.data.frame(res$input$dat$waa.catch)[as.character(waa.year)]),1,mean)
+          waa.catch <- apply_year_colum(res$input$dat$waa.catch,waa.year)
           }
   }
 
@@ -125,7 +125,7 @@ ref.F <- function(
                                  max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)
   original.spr0 <- calc.rel.abund(Fcurrent,0,na,M,waa,waa.catch,maa,min.age=min.age,
                                   max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)
-  original.perspr <- sum(original.spr$spr)/sum(original.spr0$spr)
+  original.perspr <- sum(original.spr$spr,na.rm=T)/sum(original.spr0$spr,na.rm=T)
     
 
     # Fcurrent
@@ -134,13 +134,13 @@ ref.F <- function(
     # grid search
     Fcurrent_max <- Fcurrent_max_mean[1]
     F.range <- sort(c(F.range,  Fcurrent_max))
-    spr0 <- sum(calc.rel.abund(Fcurrent,0,na,M,waa,waa.catch,maa,min.age=min.age,max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)$spr)  
+    spr0 <- sum(calc.rel.abund(Fcurrent,0,na,M,waa,waa.catch,maa,min.age=min.age,max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)$spr,na.rm=T)  
     tmp <- lapply(F.range, function(x) calc.rel.abund(sel,x,na,M,waa,waa.catch,maa,min.age=min.age,max.age=max.age,Pope=Pope,ssb.coef=ssb.coef))
-    ypr <- sapply(tmp,function(x) sum(x$ypr))
-    pspr <- sapply(tmp,function(x) sum(x$spr))/spr0*100
+    ypr <- sapply(tmp,function(x) sum(x$ypr,na.rm=T))
+    pspr <- sapply(tmp,function(x) sum(x$spr,na.rm=T))/spr0*100
     ypr.spr <- data.frame(F.range=F.range,ypr=ypr,pspr=pspr)
     ypr.spr$Frange2Fcurrent  <- ypr.spr$F.range/Fcurrent_max
-    
+
   # F.spr
 
   spr.f.est <- function(log.p, out=FALSE, sub="med", spr0=NULL){
@@ -148,7 +148,7 @@ ref.F <- function(
 
     tmp <- calc.rel.abund(sel,Fr,na,M,waa,waa.catch,maa,min.age=min.age,max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)
     rel.abund <- tmp$rel.abund
-    spr <- sum(tmp$spr)
+    spr <- sum(tmp$spr,na.rm=T)
     if (isTRUE(out)) obj <- spr
     else{
      if(sub=="mean") obj <- (spr-spr.q[4])^2       
@@ -193,7 +193,7 @@ ref.F <- function(
   
     tmp <- calc.rel.abund(sel,Fr,na,M,waa,waa.catch,maa,max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)
     rel.abund <- tmp$rel.abund
-    ypr <- sum(tmp$ypr)    
+    ypr <- sum(tmp$ypr,na.rm=T)    
 
     if (isTRUE(out)) obj <- ypr else obj <- -ypr
 
@@ -211,7 +211,7 @@ ref.F <- function(
 
     tmp <- calc.rel.abund(sel,Fr,na,M,waa,waa.catch,maa,max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)
     rel.abund <- tmp$rel.abund
-    ypr <- sum(tmp$ypr)
+    ypr <- sum(tmp$ypr,na.rm=T)
     if (isTRUE(out)) obj <- ypr else obj <- -ypr
 
     return(obj)
@@ -257,9 +257,9 @@ ref.F <- function(
   Res$summary <- rbind(Res$summary,Res$summary[1,]/Res$summary[1,1])
   dimnames(Res$summary)[[1]][3] <- "Fref/Fcur"
 
-  Res$currentSPR <- list(SPR=sum(original.spr$spr),
+  Res$currentSPR <- list(SPR=sum(original.spr$spr,na.rm=T),
                          perSPR=original.perspr,
-                         YPR=sum(original.spr$spr),
+                         YPR=sum(original.spr$spr,na.rm=T),
                          Fcurrent=Fcurrent)
 
   Res$ypr.spr  <- ypr.spr #data.frame(F.range=F.range,ypr=ypr,spr=spr)
@@ -2097,6 +2097,7 @@ show.likeprof <- function(res){
 #' 
 #'
 #' @export 
+
 get.SPR <- function(dres,target.SPR=30,Fmax=10,max.age=Inf){
     dres$ysdata <- matrix(0,ncol(dres$faa),5)
     dimnames(dres$ysdata) <- list(colnames(dres$faa),c("perSPR","YPR","SPR","SPR0","F/Ftarget"))

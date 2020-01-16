@@ -37,8 +37,9 @@ make_future_data <- function(res_vpa,
                           # SR setting
                           res_SR=NULL,                       
                           seed_number=1,
-                          resid_type="lognormal", # or resample
-                          resample_year_range=0, # only when "resample"
+                          resid_type="lognormal", # or resample or backward
+                          resample_year_range=0, # only when "resample" or backward
+                          backward_duration=5, # only when backward
                           bias_correction=TRUE,
                           recruit_intercept=0, # number of additional recruitment (immigration or enhancement)
                           model_average_option=NULL,
@@ -55,7 +56,6 @@ make_future_data <- function(res_vpa,
     
     # define age and year
     nage <- nrow(res_vpa$naa)
-    if(is.null(plus_age)) plus_age <- nage
     age_name    <- as.numeric(rownames(res_vpa$naa))
     recruit_age <- min(as.numeric(rownames(res_vpa$naa)))
    
@@ -69,6 +69,8 @@ make_future_data <- function(res_vpa,
         group_by(allyear_label) %>%
         summarize(start=min(allyear_name),end=max(allyear_name))
     print(tmpdata)
+
+    if(is.null(plus_age)) plus_age <- max(which(!is.na(res_vpa$naa[,future_initial_year])))
 
     # define empty array
     waa_mat <- waa_catch_mat <- M_mat <- maa_mat <- naa_mat <- faa_mat <- caa_mat <- 
@@ -120,6 +122,7 @@ make_future_data <- function(res_vpa,
                          bias_correction=bias_correction,
                          recruit_intercept=recruit_intercept,
                          recruit_age=recruit_age,
+                         backward_duration=backward_duration,
                          model_average_option=model_average_option)
     
     # when fix recruitment
@@ -146,6 +149,14 @@ make_future_data <- function(res_vpa,
 #    }
 #    HCR_mat[,,"wcatch"] <- apply(tmp,c(2,3),sum)
     HCR_mat[as.character(fix_wcatch$year), ,"wcatch"] <- fix_wcatch$wcatch
+
+    waa_mat[is.na(waa_mat)] <- 0
+    waa_catch_mat[is.na(waa_catch_mat)] <- 0            
+    maa_mat[is.na(maa_mat)] <- 0    
+    M_mat  [is.na(M_mat)  ] <- 0
+    faa_mat[is.na(faa_mat)] <- 0
+    naa_mat[is.na(naa_mat)] <- 0        
+    caa_mat[is.na(caa_mat)] <- 0
    
     # set data and parameter for TMB
     tmb_data <- list(naa_mat=naa_mat,
@@ -476,8 +487,9 @@ future_vpa_R <- function(naa_mat,
 #' @param SR_mat 将来予測用の再生産関係パラメータが格納する３次元行列
 #' @param seed_number シード番号
 #' @param start_random_rec_year_name ランダム加入を仮定する最初の年
-#' @param resid_type 残差の発生パターン；対数正規分布は"lognormal"、単純リサンプリングは"resampling"
-#' @param resample_year_range 0の場合、推定に使ったデータから計算される残差を用いる。年の範囲を入れると、対象とした年の範囲で計算される残差を用いる。
+#' @param resid_type 残差の発生パターン；対数正規分布は"lognormal"、単純リサンプリングは"resampling"、backward-resamplingは"backward"
+#' @param resample_year_range "resampling", "backward"で有効。0の場合、推定に使ったデータから計算される残差を用いる。年の範囲を入れると、対象とした年の範囲で計算される残差を用いる。
+#' @param backward_duration "backward"で有効。デフォルトは5 。
 #' @param model_average_option model averagingをする場合のオプション. SR_matのlistとweightをlist形式で入れる(list(SR_list=list(res_SR1,res_SR2),weight=c(0.5,0.5)))
 #' 
 #' @export
@@ -490,11 +502,13 @@ set_SR_mat <- function(res_vpa=NULL,
                        start_random_rec_year_name,
                        resid_type="lognormal",
                        resample_year_range=0,
+                       backward_duration=5,
                        recruit_intercept=0,
                        recruit_age=0,
                        bias_correction=TRUE,
                        fix_recruit=fix_recruit,
-                       model_average_option=NULL){
+                       model_average_option=NULL
+                       ){
 
     allyear_name <- dimnames(SR_mat)[[1]]
     start_random_rec_year  <- which(allyear_name==start_random_rec_year_name)
@@ -523,7 +537,7 @@ set_SR_mat <- function(res_vpa=NULL,
 
     if(!is.null(res_vpa)){
         # re-culcurate recruitment deviation
-        SR_mat[1:(start_random_rec_year-1),,"ssb"] <- as.numeric(colSums(res_vpa$ssb))[1:(start_random_rec_year-1)]
+        SR_mat[1:(start_random_rec_year-1),,"ssb"] <- as.numeric(colSums(res_vpa$ssb,na.rm=T))[1:(start_random_rec_year-1)]
         SR_mat[1:(start_random_rec_year-1),,"recruit"] <- as.numeric(res_vpa$naa[1,1:(start_random_rec_year-1)])
     }
 
@@ -537,6 +551,7 @@ set_SR_mat <- function(res_vpa=NULL,
     # define future recruitment deviation
     set.seed(seed_number)
     nsim <- dim(SR_mat)[[2]]
+    
     if(resid_type=="lognormal"){
         if(isTRUE(bias_correction)){
             sd_with_AR <- sqrt(res_SR$pars$sd^2/(1-res_SR$pars$rho^2))
@@ -554,30 +569,33 @@ set_SR_mat <- function(res_vpa=NULL,
         }
         SR_mat[random_rec_year_period,,"deviance"] <- SR_mat[random_rec_year_period,,"deviance"] - bias_factor
     }
-    if(resid_type=="resample"){
+    
+    if(resid_type=="resample" | resid_type=="backward"){
         # 推定された残差をそのまま使う
         if(resample_year_range==0){
-            sampled_residual <- res_SR$resid[res_SR$input$w==1]
-            if(isTRUE(bias_correction)) bias_factor <- log(mean(exp(sampled_residual))) else bias_factor <- 0
-            SR_mat[random_rec_year_period,,"rand_resid"] <- sample(sampled_residual, nsim*length(random_rec_year_period), replace=TRUE)
-            SR_mat[random_rec_year_period,,"deviance"] <- SR_mat[random_rec_year_period,,"rand_resid"]-bias_factor
+#            sampled_residual <- res_SR$resid[res_SR$input$w==1]
+#            if(isTRUE(bias_correction)) bias_factor <- log(mean(exp(sampled_residual))) else bias_factor <- 0
+#            SR_mat[random_rec_year_period,,"rand_resid"] <- sample(sampled_residual, nsim*length(random_rec_year_period), replace=TRUE)
+            #            SR_mat[random_rec_year_period,,"deviance"] <- SR_mat[random_rec_year_period,,"rand_resid"]-bias_factor
+            resample_year_range <- sort(res_SR$input$SRdata$year[res_SR$input$w==1])
         }
-        else{ # VPA結果から計算しなおした残差を使う
-            sampled_residual <- SR_mat[as.character(resample_year_range),,"rand_resid"]
-            if(isTRUE(bias_correction)){
-                bias_factor <- log(colMeans(exp(sampled_residual)))
-            }
-            else{
-                bias_factor <- rep(0,ncol(sampled_residual))
-                }
-            for(i in 1:ncol(sampled_residual)){
+
+        sampled_residual <- SR_mat[as.character(resample_year_range),,"rand_resid"]
+        if(isTRUE(bias_correction)){
+            bias_factor <- log(colMeans(exp(sampled_residual)))
+        }
+        else{
+            bias_factor <- rep(0,ncol(sampled_residual))
+        }
+        for(i in 1:ncol(sampled_residual)){
+            if(resid_type=="resample"){
                 SR_mat[random_rec_year_period,i,"rand_resid"] <- sample(sampled_residual[,i], length(random_rec_year_period), replace=TRUE)
-                SR_mat[random_rec_year_period,i,"deviance"] <- SR_mat[random_rec_year_period,,"rand_resid"]-bias_factor[i]
             }
+            if(resid_type=="backward"){
+                SR_mat[random_rec_year_period,i,"rand_resid"] <- sample_backward(sampled_residual[,i], length(random_rec_year_period), backward_duration)
+            }            
+            SR_mat[random_rec_year_period,i,"deviance"] <- SR_mat[random_rec_year_period,i,"rand_resid"]-bias_factor[i]
         }
-    }
-    if(resid_type=="backward"){
-        ## coming soon
     }
 
     if(!is.null(model_average_option)){
@@ -587,10 +605,13 @@ set_SR_mat <- function(res_vpa=NULL,
                                  range_list  = weight,
                                  SR_mat      = SR_mat,
                                  seed_number = seed_number+1,
+                                 start_random_rec_year_name=start_random_rec_year_name,
+                                 resid_type  = resid_type,
                                  recruit_age = recruit_age,
-                                 start_random_rec_year_name=start_random_rec_year_name)
+                                 bias_correction = bias_correction,
+                                 fix_recruit = fix_recruit
+                                 )
     }
-
    
     return(SR_mat)
 }
@@ -683,6 +704,31 @@ average_SR_mat <- function(res_vpa,
     }
     
     return(SR_mat)
+}
+
+#'
+#' @examples
+#'
+#' set.seed(1)
+#' res <- sample_backward(rep(1:5,each=5), 30, 5)
+#' apply(matrix(res,5,6),2,min)
+#' 
+#' @export
+#'
+#' 
+
+sample_backward <- function(residual, n, duration){
+    residual_rev <- rev(residual)
+    nblock <- floor(length(residual_rev)/duration)
+    block <- (1:(nblock))*(duration)
+    block2 <- block-(duration)+1
+    block[length(block)] <- length(residual_rev)
+    block.list <- purrr::map(1:length(block),function(x) residual_rev[block2[x]:block[x]])
+    resid_future <- ceiling(1:n/duration)
+    resid_future <- ifelse(resid_future>nblock,nblock,resid_future)
+
+    for(i in 1:n) resid_future[i] <- sample(block.list[[sample(1:resid_future[i],1)]],1)
+    return(resid_future)
 }
 
 
@@ -797,9 +843,9 @@ format_to_old_future <- function(fout){
     fout_old$waa.catch <- fout$input$tmb_data$waa_catch_mat        
     fout_old$maa       <- fout$input$tmb_data$maa_mat
     fout_old$M         <- fout$input$tmb_data$M_mat        
-    fout_old$vssb      <- apply(fout$naa * fout_old$waa * fout_old$maa, c(2,3), sum)
-    fout_old$vbiom     <- apply(fout$naa * fout_old$waa, c(2,3),sum)
-    fout_old$vwcaa     <- apply(fout$wcaa,c(2,3),sum)
+    fout_old$vssb      <- apply(fout$naa * fout_old$waa * fout_old$maa, c(2,3), sum, na.rm=T)
+    fout_old$vbiom     <- apply(fout$naa * fout_old$waa, c(2,3),sum, na.rm=T)
+    fout_old$vwcaa     <- apply(fout$wcaa,c(2,3),sum, na.rm=T)
     fout_old$currentF  <- fout$faa[,fout$input$tmb_data$start_ABC_year-1,1]
     fout_old$futureF   <- fout$faa[,fout$input$tmb_data$start_ABC_year,1]    
     fout_old$caa       <- fout$wcaa/fout_old$waa
