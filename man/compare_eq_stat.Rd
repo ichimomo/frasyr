@@ -7,7 +7,7 @@
 \usage{
 compare_eq_stat(MSYlist, x_axis_name = "ssb.mean",
   y_axis_name = "catch.mean", legend.position = "top",
-  is_MSY_line = TRUE, MSYname = NULL)
+  is_MSY_line = TRUE, is.scale = FALSE, MSYname = NULL)
 }
 \arguments{
 \item{MSYlist}{est.MSYの返り値をリストにしたもの; 単独でも可}

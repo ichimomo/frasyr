@@ -331,6 +331,7 @@ future_vpa_R <- function(naa_mat,
     if(isTRUE(do_MSE)){
         MSE_seed <- MSE_input_data$input$seed_number + 1        
         if(!is.null(MSE_nsim)) MSE_input_data$input$nsim <- MSE_nsim
+        if( is.null(MSE_nsim)) MSE_nsim <- MSE_input_data$input$nsim
         SR_MSE <- SR_mat
         SR_MSE[,,"recruit"] <- SR_MSE[,,"ssb"] <- 0
     }                
