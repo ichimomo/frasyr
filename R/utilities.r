@@ -1072,7 +1072,7 @@ plot_futures <- function(vpares,
     future.table <-
         bind_rows(future.table,vpa_tb,future.dummy) %>%
         mutate(stat=factor(stat,levels=rename_list$stat)) %>%
-        mutate(scenario=factor(scenario,levels=c("VPA",future.name))) %>%
+        mutate(scenario=factor(scenario,levels=c(future.name,"VPA"))) %>%
         mutate(value=ifelse(stat%in%c("Fsakugen","Fsakugen_ratio","alpha"),value,value/biomass.unit))
 
     future.table.qt <- 
