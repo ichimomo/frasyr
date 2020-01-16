@@ -7,7 +7,8 @@
 future_vpa(tmb_data, optim_method = "none", multi_init = 1,
   multi_lower = 0, multi_upper = 10, objective = "MSY",
   obj_value = 0, obj_stat = "mean", do_MSE = NULL,
-  MSE_input_data = NULL, MSE_nsim = NULL, compile = FALSE)
+  MSE_input_data = NULL, MSE_nsim = NULL, compile = FALSE,
+  output_format = "new", attach_input = TRUE)
 }
 \arguments{
 \item{tmb_data}{make_future_dataの返り値}
