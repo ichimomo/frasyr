@@ -907,7 +907,7 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
                                           y=max.U*0.85,
                                           label=RP.label),
                               aes(x=x,y=y,label=label),
-                              direction="x",nudge_y=max.U*0.9,size=11*0.282)
+                              direction="x",nudge_y=max.U*0.9,size=11*0.282*2)
     }   
 
     if(!is.null(beta)){
@@ -925,9 +925,9 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
         ####        
         x.pos <- max.B*HCR.label.position[1]
         y.pos <- multi2currF(1.05)*HCR.label.position[2]
-        g4 <- g4+stat_function(fun = h,lwd=1.5,color=1,n=1000)+
+        g4 <- g4+stat_function(fun = h,lwd=1.5,color="black",n=1000)+
             annotate("text",x=x.pos,y=y.pos,
-                     label=str_c("漁獲管理規則\n(β=",beta,")"))
+                     label=str_c("漁獲管理規則\n(β=",beta,")"),size=6)
     }
    
     g4 <- g4 +
@@ -943,7 +943,7 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
         g4 <- g4 + ylab("漁獲圧の比 (F/Fmsy)")        
     }
     
-    g4 <- g4 + theme_SH()
+    g4 <- g4 
     
     return(g4) 
 }
