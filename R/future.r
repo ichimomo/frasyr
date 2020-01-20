@@ -1966,7 +1966,11 @@ forward.calc.mat <- function(fav,nav,Mv,plus.group=TRUE){
   return(naa)
 }
 
-get.stat <- get.stat3 <- function(fout,eyear=0,tmp.year=NULL, use_new_output=FALSE){
+
+#' @export
+#' 
+
+get.stat <- function(fout,eyear=0,tmp.year=NULL, use_new_output=FALSE){
 
     if(isTRUE(use_new_output)){
         fout <- format_to_old_future(fout)
@@ -2062,7 +2066,9 @@ get.stat <- get.stat3 <- function(fout,eyear=0,tmp.year=NULL, use_new_output=FAL
     res.stat2 <- as.data.frame(t(c(tb.mat,tc.mat,ssb.mat)))
     res.stat <- cbind(res.stat1,res.stat2) %>% as_tibble()
     return(res.stat)    
-}    
+}
+
+get.stat3 <- get.stat
 
 
 geomean <- function(x)
