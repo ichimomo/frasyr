@@ -446,7 +446,7 @@ future_vpa_R <- function(naa_mat,
         wcaa_mat <- N_mat*(1-exp(-F_mat))*exp(-M_mat/2) * waa_catch_mat
     }
     else{
-        wcaa_mat <- N_mat*(1-exp(-F_mat-M))*F_mat/(F_mat+M) * waa_catch_mat
+        wcaa_mat <- N_mat*(1-exp(-F_mat-M_mat))*F_mat/(F_mat+M_mat) * waa_catch_mat
     }
 
     if(objective<2){
