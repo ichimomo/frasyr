@@ -302,6 +302,9 @@ test_that("oututput value check",{
                                                      sd=SRmodel.base$pars$sd,resid=SRmodel.base$resid))
 
   # est MSY ----
+  nyear <- round(Generation.Time(res_vpa,
+                                 maa.year=2009:2011,
+                                 M.year=2009:2011)*20)
   res_MSY_pma_check <- est.MSY(res_vpa_pma, # VPAの計算結果
                          res_future_Fcurrent_pma$input, # 将来予測で使用した引数
                          seed=res_future_Fcurrent_pma$input$seed,
@@ -310,6 +313,7 @@ test_that("oututput value check",{
                          PGY=c(0.95,0.9,0.6,0.1), # 計算したいPGYレベル。上限と下限の両方が計算される
                          onlylower.pgy=FALSE, # TRUEにするとPGYレベルの上限は計算しない（計算時間の節約になる）
                          B0percent=c(0.2,0.3,0.4),
+                         nyear=nyear,
                          Bempirical=c(round(tail(colSums(res_vpa_pma$ssb),n=1)),
                                       round(max(colSums(res_vpa_pma$ssb))),
                                       24000, # 現行Blimit
