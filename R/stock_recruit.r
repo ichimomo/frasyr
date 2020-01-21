@@ -1,11 +1,11 @@
 #'
-#' @import magrittr          
-#' @import dplyr             
-#' @import tidyr             
-#' @import tibble            
+#' @import magrittr
+#' @import dplyr
+#' @import tidyr
+#' @import tibble
 #' @importFrom magrittr %>%
 #' @importFrom dplyr filter
-#' 
+#'
 NULL
 
 #' VPAの結果から再生産関係推定用のデータを作成する
@@ -63,8 +63,8 @@ get.SRdata <- function(vpares,R.dat = NULL,
 #' \dontrun{
 #' data(res_vpa)
 #' SRdata <- get.SRdata(res_vpa)
-#' resSR <- fit.SR(SRdata, SR = c("HS","BH","RI")[1], 
-#'                 method = c("L1","L2")[1], AR = 1, 
+#' resSR <- fit.SR(SRdata, SR = c("HS","BH","RI")[1],
+#'                 method = c("L1","L2")[1], AR = 1,
 #'                 out.AR = TRUE, rep.opt = TRUE)
 #' resSR$pars
 #' }
@@ -96,31 +96,31 @@ fit.SR <- function(SRdata,
                    p0=NULL,
                    out.AR = TRUE, #自己相関係数rhoを外で推定するか
                    rep.opt = FALSE
-){ 
-  
+){
+
   argname <- ls()
   arglist <- lapply(argname,function(xx) eval(parse(text=xx)))
   names(arglist) <- argname
-  
+
   if (AR==0) out.AR <- FALSE
   rec <- SRdata$R
   ssb <- SRdata$SSB
-  
+
   N <- length(rec)
   NN <- sum(w) #likelihoodを計算するサンプル数
-  
+
   #  if (SR=="HS") SRF <- function(x,a,b) a*(x+sqrt(b^2+gamma^2/4)-sqrt((x-b)^2+gamma^2/4))
   if (SR=="HS") SRF <- function(x,a,b) ifelse(x>b,b*a,x*a)
   if (SR=="BH") SRF <- function(x,a,b) a*x/(1+b*x)
   if (SR=="RI") SRF <- function(x,a,b) a*x*exp(-b*x)
-  
+
   obj.f <- function(a,b,rho){
     resid <- sapply(1:N,function(i) log(rec[i]) - log(SRF(ssb[i],a,b)))
     resid2 <- NULL
     for (i in 1:N) {
       resid2[i] <- ifelse(i==1, resid[i], resid[i]-rho*resid[i-1])
     }
-    
+
     if (method == "L2") {
       rss <- w[1]*resid2[1]^2*(1-rho^2)
       for(i in 2:N) rss <- rss + w[i]*resid2[i]^2
@@ -136,7 +136,7 @@ fit.SR <- function(SRdata,
     }
     return(obj)
   }
-  
+
   if (is.null(p0)) {
     a.range <- range(rec/ssb)
     b.range <- range(1/ssb)
@@ -152,8 +152,8 @@ fit.SR <- function(SRdata,
   } else {
     init = p0
   }
-  
-  if (SR == "HS") { 
+
+  if (SR == "HS") {
     if (AR == 0 || out.AR) {
       obj.f2 <- function(x) obj.f(exp(x[1]),min(ssb)+(max(ssb)-min(ssb))/(1+exp(-x[2])),0)
     } else {
@@ -166,7 +166,7 @@ fit.SR <- function(SRdata,
       obj.f2 <-  function(x) obj.f(exp(x[1]),exp(x[2]),1/(1+exp(-x[3])))
     }
   }
-  
+
   opt <- optim(init,obj.f2)
   if (rep.opt) {
     for (i in 1:100) {
@@ -176,11 +176,11 @@ fit.SR <- function(SRdata,
     }
   }
   opt <- optim(opt$par,obj.f2,method="BFGS",hessian=hessian)
-    
+
   Res <- list()
   Res$input <- arglist
   Res$opt <- opt
-  
+
   a <- exp(opt$par[1])
   b <- ifelse(SR=="HS",min(ssb)+(max(ssb)-min(ssb))/(1+exp(-opt$par[2])),exp(opt$par[2]))
   rho <- ifelse(AR==0,0,ifelse(out.AR,0,1/(1+exp(-opt$par[3]))))
@@ -189,7 +189,7 @@ fit.SR <- function(SRdata,
   for (i in 1:N) {
     resid2[i] <- ifelse(i == 1,resid[i], resid[i]-rho*resid[i-1])
   }
-  
+
   if (method=="L2") {
     rss <- w[1]*resid2[1]^2*(1-rho^2)
     for(i in 2:N) rss <- rss + w[i]*resid2[i]^2
@@ -201,12 +201,12 @@ fit.SR <- function(SRdata,
     sd <- sqrt(2)*sd
   }
   # sd <- ifelse(method=="L2",sqrt(sum(w*resid2^2)/(NN-rho^2)),sqrt(2)*sum(abs(w*resid2))/(NN-rho^2))
-  
+
   Res$resid <- resid
   Res$resid2 <- resid2
-  
+
   Res$pars <- c(a,b,sd,rho)
-  
+
   if (method!="L2") {
     if (AR!=0) {
       message("L1 & out.AR=FALSE is NOT recommended")
@@ -215,7 +215,7 @@ fit.SR <- function(SRdata,
       Res$pars[4] <- ifelse(arres$ar<0,0,arres$ar)
     }
   }
-  
+
   if (AR==1 && out.AR) {
     arres <- ar(resid,aic=FALSE,order.max=1,demean=FALSE,method="mle")
     Res$pars[3] <- sqrt(arres$var.pred)
@@ -223,18 +223,18 @@ fit.SR <- function(SRdata,
     Res$resid2[2:length(Res$resid2)] <- arres$resid[-1]
     Res$AIC.ar  <- ar(resid,order.max=1,demean=FALSE,method="mle")$aic
   }
-  
+
   Res$loglik <- loglik <- -opt$value
-  
+
   names(Res$pars) <- c("a","b","sd","rho")
   Res$pars <- data.frame(t(Res$pars))
   #  Res$gamma <- gamma
-  
+
   ssb.tmp <- seq(from=0,to=max(ssb)*max.ssb.pred,length=100)
   R.tmp <- sapply(1:length(ssb.tmp), function(i) SRF(ssb.tmp[i],a,b))
   pred.data <- data.frame(SSB=ssb.tmp,R=R.tmp)
   Res$pred <- pred.data
-  
+
   Res$k <- k <- length(opt$par)+1
   Res$AIC <- -2*loglik+2*k
   Res$AICc <- Res$AIC+2*k*(k+1)/(NN-k-1)
@@ -255,28 +255,28 @@ fit.SR2 <- function(SRdata,
                     length=20, #parameter (a,b) の初期値を決めるときにgrid searchする数
                     c.est = TRUE #Allee effectを推定するかどうか(c>1でdepensation (Allee-like), c<1でcompensation)
 ){
-  
+
   argname <- ls()
   arglist <- lapply(argname,function(xx) eval(parse(text=xx)))
   names(arglist) <- argname
-  
+
   rec <- SRdata$R
   ssb <- SRdata$SSB
-  
+
   N <- length(rec)
   NN <- sum(w) #sample size for likelihood calculation
-  
+
   if (SR=="HS") SRF <- function(x,a,b,c) ifelse(x>b,b*a,a*b*(x/b)^c)
   if (SR=="BH") SRF <- function(x,a,b,c) (a/b)/(1+1/(b*x)^c)
   if (SR=="RI") SRF <- function(x,a,b,c) a/(b*exp(1))*(b*x)^c*exp(c*(1-b*x))
-  
+
   obj.f <- function(a,b,rho,c){
     resid <- sapply(1:N,function(i) log(rec[i]) - log(SRF(ssb[i],a,b,c)))
     resid2 <- NULL
     for (i in 1:N) {
       resid2[i] <- ifelse(i==1,resid[i], resid[i]-rho*resid[i-1])
     }
-    
+
     if (method == "L2") {
       sd <- sqrt(sum(w*resid2^2)/(NN-rho^2))
       sd2 <- c(sd/sqrt(1-rho^2), rep(sd,N-1))
@@ -288,7 +288,7 @@ fit.SR2 <- function(SRdata,
     }
     return(obj)
   }
-  
+
   a.range <- range(rec/ssb)
   b.range <- range(1/ssb)
   if (SR == "HS") b.range <- range(ssb)
@@ -301,8 +301,8 @@ fit.SR2 <- function(SRdata,
   init[2] <- ifelse (SR == "HS",-log(max(0.000001,(max(ssb)-min(ssb))/max(init[2]-min(ssb),0.000001)-1)),log(init[2]))
   if (AR != 0 || isTRUE(c.est)) init[3] <- 0
   if (AR != 0 && isTRUE(c.est)) init[4] <- 0
-  
-  if (SR == "HS") { 
+
+  if (SR == "HS") {
     if (AR == 0) {
       if (c.est) {
         obj.f2 <- function(x) obj.f(exp(x[1]),min(ssb)+(max(ssb)-min(ssb))/(1+exp(-x[2])),0,exp(x[3]))
@@ -331,14 +331,14 @@ fit.SR2 <- function(SRdata,
       }
     }
   }
-  
+
   opt <- optim(init,obj.f2)
   opt <- optim(opt$par,obj.f2,method="BFGS",hessian=hessian)
-  
+
   Res <- list()
   Res$input <- arglist
   Res$opt <- opt
-  
+
   a <- exp(opt$par[1])
   b <- ifelse(SR=="HS",min(ssb)+(max(ssb)-min(ssb))/(1+exp(-opt$par[2])),exp(opt$par[2]))
   rho <- ifelse(AR==0,0,1/(1+exp(-opt$par[3])))
@@ -349,12 +349,12 @@ fit.SR2 <- function(SRdata,
     resid2[i] <- ifelse(i == 1,resid[i], resid[i]-rho*resid[i-1])
   }
   sd <- ifelse(method=="L2",sqrt(sum(w*resid2^2)/(NN-rho^2)),sqrt(2)*sum(abs(w*resid2))/(NN-rho^2))
-  
+
   Res$resid <- resid
   Res$resid2 <- resid2
-  
+
   Res$pars <- c(a,b,sd,rho,c)
-  
+
   if (method!="L2") {
     if (AR!=0) {
       arres <- ar(resid,aic=FALSE,order.max=1)
@@ -362,17 +362,17 @@ fit.SR2 <- function(SRdata,
       Res$pars[4] <- arres$ar
     }
   }
-  
+
   Res$loglik <- loglik <- -opt$value
-  
+
   names(Res$pars) <- c("a","b","sd","rho","c")
   Res$pars <- data.frame(t(Res$pars))
-  
+
   ssb.tmp <- seq(from=0,to=max(ssb)*1.3,length=100)
   R.tmp <- sapply(1:length(ssb.tmp), function(i) SRF(ssb.tmp[i],a,b,c))
   pred.data <- data.frame(SSB=ssb.tmp,R=R.tmp)
   Res$pred <- pred.data
-  
+
   Res$k <- k <- length(opt$par)+1
   Res$AIC <- -2*loglik+2*k
   Res$AICc <- Res$AIC+2*k*(k+1)/(NN-k-1)
@@ -381,28 +381,28 @@ fit.SR2 <- function(SRdata,
 }
 
 #' parametric bootstrap usnig fit.SR
-#' 
+#'
 #' @encoding UTF-8
 #' @export
-#' 
+#'
 
 boot.SR <- function(Res,n=100,seed=1){
   N <- length(Res$input$SRdata$year)
-  
+
 #  if (Res$input$SR=="HS") SRF <- function(x,a,b,gamma=Res$gamma) a*(x+sqrt(b^2+gamma^2/4)-sqrt((x-b)^2+gamma^2/4))
-  if (Res$input$SR=="HS") SRF <- function(x,a,b) ifelse(x>b,b*a,x*a) 
+  if (Res$input$SR=="HS") SRF <- function(x,a,b) ifelse(x>b,b*a,x*a)
   if (Res$input$SR=="BH") SRF <- function(x,a,b) a*x/(1+b*x)
   if (Res$input$SR=="RI") SRF <- function(x,a,b) a*x*exp(-b*x)
-  
+
   sd <- sapply(1:N, function(i) ifelse(i==1,Res$pars$sd/sqrt(1-Res$pars$rho^2),Res$pars$sd))
-  
+
   set.seed(seed)
   lapply(1:n, function(j){
     N <- length(Res$input$SRdata$SSB)
     resids <- rnorm(N,0,sd)
     pred <- obs <- resid0 <- numeric(N)
     ssb <- Res$input$SRdata$SSB
-    
+
     for(i in 1:N){
       pred[i] <- SRF(ssb[i],Res$pars$a,Res$pars$b)
       if (i==1) {
@@ -423,7 +423,7 @@ boot.SR <- function(Res,n=100,seed=1){
 #' @param Res 再生産関係（\code{fit.SR()}）の結果オブジェクト
 #' @encoding UTF-8
 #' @export
-#' 
+#'
 
 prof.lik <- function(Res,a=Res$pars$a,b=Res$pars$b,sd=Res$pars$sd,rho=ifelse(Res$input$out.AR,0,Res$pars$rho)) {
   SRdata <- Res$input$SRdata
@@ -434,18 +434,18 @@ prof.lik <- function(Res,a=Res$pars$a,b=Res$pars$b,sd=Res$pars$sd,rho=ifelse(Res
   gamma <- Res$gamma
   method <- Res$input$method
   w <- Res$input$w
-  
+
 #  if (SR=="HS") SRF <- function(x,a,b) a*(x+sqrt(b^2+gamma^2/4)-sqrt((x-b)^2+gamma^2/4))
-  if (SR=="HS") SRF <- function(x,a,b) ifelse(x>b,b*a,x*a)   
+  if (SR=="HS") SRF <- function(x,a,b) ifelse(x>b,b*a,x*a)
   if (SR=="BH") SRF <- function(x,a,b) a*x/(1+b*x)
   if (SR=="RI") SRF <- function(x,a,b) a*x*exp(-b*x)
-  
+
   resid <- sapply(1:N,function(i) log(rec[i]) - log(SRF(ssb[i],a,b)))
   resid2 <- NULL
   for (i in 1:N) {
     resid2[i] <- ifelse(i==1,resid[i], resid[i]-rho*resid[i-1])
   }
-  
+
   obj <- NULL
   if (method == "L2") {
     for (i in 1:N) {
@@ -469,7 +469,7 @@ prof.lik <- function(Res,a=Res$pars$a,b=Res$pars$b,sd=Res$pars$sd,rho=ifelse(Res
 }
 
 #' レジーム分けを考慮した再生産関係の推定
-#' 
+#'
 #' レジームシフトが生じた年やレジームであるパラメータが共通する場合やレジームのパターンがA->B->CなのかA->B->Aなのか等が検討できる
 #' @param SRdata \code{get.SRdata}で作成した再生産関係データ
 #' @param SR 再生産関係 (\code{"HS"}: Hockey-stick, \code{"BH"}: Beverton-Holt, \code{"RI"}: Ricker)
@@ -481,12 +481,12 @@ prof.lik <- function(Res,a=Res$pars$a,b=Res$pars$b,sd=Res$pars$sd,rho=ifelse(Res
 #' @param p0 \code{optim}で設定する初期値
 #' @inheritParams fit.SR
 #' @encoding UTF-8
-#' @examples 
+#' @examples
 #' \dontrun{
 #' data(res_vpa)
 #' SRdata <- get.SRdata(res_vpa)
-#' resSRregime <- fit.SRregime(SRdata, SR="HS", method="L2", 
-#'                             regime.year=c(1977,1989), regime.key=c(0,1,0),
+#' resSRregime <- fit.SRregime(SRdata, SR="HS", method="L2",
+#'                             regime.year=c(1995,2005), regime.key=c(0,1,0),
 #'                             regime.par = c("a","b","sd")[2:3])
 #' resSRregime$regime_pars
 #' }
@@ -527,27 +527,28 @@ fit.SRregime <- function(
   argname <- ls()
   arglist <- lapply(argname,function(xx) eval(parse(text=xx)))
   names(arglist) <- argname
-  
+
   rec <- SRdata$R
   ssb <- SRdata$SSB
-  
+
   N <- length(rec)
-  
+
+  regime.key0 = regime.key
   regime.key <- regime.key-min(regime.key)+1
-  regime <- a_key <- b_key <- sd_key <- rep(1,N) 
+  regime <- a_key <- b_key <- sd_key <- rep(min(regime.key),N)
   if (!is.null(regime.year)) {
     for(i in 1:length(regime.year)) {
-      regime[SRdata$year>=regime.year[i]] <- regime.key[i+1]
+      regime[SRdata$year>=regime.year[i]] <- min(regime.key)+i
     }
   }
   if ("a" %in% regime.par) a_key <- regime
   if ("b" %in% regime.par) b_key <- regime
   if ("sd" %in% regime.par) sd_key <- regime
-  
+
   if (SR=="HS") SRF <- function(x,a,b) ifelse(x>b,b*a,x*a)
   if (SR=="BH") SRF <- function(x,a,b) a*x/(1+b*x)
   if (SR=="RI") SRF <- function(x,a,b) a*x*exp(-b*x)
-  
+
   obj.f <- function(a,b,out="nll"){ #a,bはベクトル
     resid <- NULL
     for(i in 1:N) {
@@ -556,19 +557,19 @@ fit.SRregime <- function(
     }
     if (method == "L2") {
       tbl = tibble(resid=resid,sd_key=sd_key,w=w) %>%
-        mutate(resid2 = resid^2) %>% 
+        mutate(resid2 = resid^2) %>%
         group_by(sd_key) %>%
         summarise(rss = sum(w*resid2), n = sum(w)) %>%
         mutate(sd = sqrt(rss/n))
     } else {
       tbl = tibble(resid=resid,sd_key=sd_key,w=w) %>%
-        # mutate(resid2 = resid^2) %>% 
+        # mutate(resid2 = resid^2) %>%
         group_by(sd_key) %>%
         summarise(rss = sum(w*abs(resid)), n = sum(w)) %>%
         mutate(sd = rss/n)
     }
     SD = tbl$sd %>% as.numeric()
-    nll <- 
+    nll <-
       ifelse(method=="L2",
              -sum(sapply(1:N, function(i) dnorm(resid[i],0,SD[sd_key[i]], log=TRUE))),
              -sum(sapply(1:N, function(i) -log(2*SD[sd_key[i]])-abs(resid[i]/SD[sd_key[i]])))
@@ -577,7 +578,7 @@ fit.SRregime <- function(
     if (out=="resid") return(resid)
     if (out=="sd") return(SD)
   }
-  
+
   a_grid <- NULL
   for(i in unique(a_key)){
     a_range<-range(rec[a_key==i]/ssb[a_key==i])
@@ -592,7 +593,7 @@ fit.SRregime <- function(
   }
   ab_grid <- expand.grid(data.frame(a_grid,b_grid)) %>% as.matrix()
   b_range <- apply(b_grid,2,range)
-  
+
   if (is.null(p0)) {
     if (use.fit.SR) {
       fit_SR_res = fit.SR(SRdata, SR = SR, method = method, w = w, AR = 0)
@@ -601,7 +602,7 @@ fit.SRregime <- function(
       init_list <- sapply(1:nrow(ab_grid), function(j) {
         obj.f(a=ab_grid[j,1:max(a_key)],b=ab_grid[j,(1+max(a_key)):(max(a_key)+max(b_key))])
       })
-      
+
       ab_init <- as.numeric(ab_grid[which.min(init_list),])
       init <- log(ab_init[1:max(a_key)])
       if (SR=="HS") {
@@ -615,7 +616,7 @@ fit.SRregime <- function(
   } else {
     init <- p0
   }
-  
+
   if (SR=="HS") {
     obj.f2 <- function(x) {
       a <- exp(x[1:max(a_key)])
@@ -625,7 +626,7 @@ fit.SRregime <- function(
   } else {
     obj.f2 <- function(x) obj.f(a=exp(x[1:max(a_key)]),b=exp(x[(1+max(a_key)):(max(a_key)+max(b_key))]))
   }
-  
+
   opt <- optim(init,obj.f2)
   for (i in 1:100) {
     opt2 <- optim(opt$par,obj.f2)
@@ -633,11 +634,11 @@ fit.SRregime <- function(
     opt <- opt2
   }
   opt <- optim(opt$par,obj.f2,method="BFGS")
-  
+
   Res <- list()
   Res$input <- arglist
   Res$opt <- opt
-  
+
   a <- exp(opt$par[1:max(a_key)])
   if (SR=="HS") {
     b <- b_range[1,]+(b_range[2,]-b_range[1,])/(1+exp(-opt$par[(1+max(a_key)):(max(a_key)+max(b_key))]))
@@ -647,24 +648,24 @@ fit.SRregime <- function(
   sd <- obj.f(a,b,out="sd")
   if (method=="L1") sd <- sqrt(2)*sd
   resid <- obj.f(a,b,out="resid")
-  
+
   Res$resid <- resid
   Res$pars$a <- a
   Res$pars$b <- b
   Res$pars$sd <- sd
-  
+
   Res$loglik <- loglik <- -opt$value
   Res$k <- k <- length(opt$par)+max(sd_key)
   Res$AIC <- -2*loglik+2*k
   Res$AICc <- Res$AIC+2*k*(k+1)/(sum(w>0)-k-1)
   Res$BIC <- -2*loglik+k*log(sum(w>0))
-  
-  Res$regime_pars <- tibble(regime=regime,a=a[a_key],b=b[b_key],sd=sd[sd_key]) %>% distinct()
-  Res$regime_resid <- tibble(regime=regime,resid = resid)
-  
+
+  Res$regime_pars <- tibble(regime=regime.key0[regime],a=a[a_key],b=b[b_key],sd=sd[sd_key]) %>% distinct()
+  Res$regime_resid <- tibble(regime=regime.key0[regime],resid = resid)
+
   ssb.tmp <- seq(from=0,to=max(ssb)*max.ssb.pred,length=100)
   ab_unique <- unique(cbind(a_key,b_key))
-  summary_tbl = tibble(Year = SRdata$year,SSB=ssb, R = rec, Regime=regime, Category = "Obs")
+  summary_tbl = tibble(Year = SRdata$year,SSB=ssb, R = rec, Regime=regime.key0[regime], Category = "Obs")
   for (i in 1:nrow(ab_unique)) {
     R.tmp <- sapply(1:length(ssb.tmp), function(j) SRF(ssb.tmp[j],a[ab_unique[i,1]],b[ab_unique[i,2]]))
     summary_tbl = bind_rows(summary_tbl,tibble(Year=NA,SSB=ssb.tmp, R=R.tmp, Regime=i, Category="Pred"))
@@ -681,6 +682,6 @@ fit.SRregime <- function(
     dplyr::select(Year,SSB,R,Regime,Pred,resid)
   Res$pred_to_obs <- pred_to_obs
   Res$summary_tbl
-  
+
   return(Res)
 }
