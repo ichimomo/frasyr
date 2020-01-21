@@ -318,16 +318,23 @@ test_that("oututput value check",{
 
   # 上記設定の結果を読み込み ----
   load(system.file("extdata","res_MSY_pma.rda",package = "frasyr"))
+  load(system.file("extdata","res_MSY_pma_pre.rda",package = "frasyr"))
 
   #照合内容
   #  testcontents <-c("summary","summaryAR","summary_tb","F.msy","all.stat","all.statAR","all.stat_tb","trace","ssb.ar.mean","SPR.msy")
-  testcontents <-c("summary","summary_tb","F.msy","all.stat","trace")  
+  testcontents <-c("summary","summary_tb","F.msy","all.stat","trace")
 
-  #読み込んだ結果と照合
+  #読み込んだ結果と照合 future2.1.r + utility.r(future-vpa ver.)との比較
   for(i in 1:length(testcontents)){
       expect_equal(eval(parse(text=paste("res_MSY_pma$",testcontents[i]))),
                    eval(parse(text=paste("res_MSY_pma_check$",testcontents[i]))),
                    label=testcontents[i])
+  }
+  #読み込んだ結果と照合 future.r + utility.r(2019/12/18以前ver.)との比較
+  for(i in 1:length(testcontents)){
+    expect_equal(eval(parse(text=paste("res_MSY_pma_pre$",testcontents[i]))),
+                 eval(parse(text=paste("res_MSY_pma_check$",testcontents[i]))),
+                 label=testcontents[i])
   }
 
 })
