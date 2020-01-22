@@ -5,9 +5,15 @@
 \alias{calc_kobeII_matrix}
 \title{Kobe II matrixを計算するための関数}
 \usage{
-calc_kobeII_matrix(fres_base, refs_base, Btarget = c("Btarget0"),
-  Blimit = c("Blimit0"), Bban = c("Bban0"), year.lag = 0,
-  beta = seq(from = 0.5, to = 1, by = 0.1))
+calc_kobeII_matrix(
+  fres_base,
+  refs_base,
+  Btarget = c("Btarget0"),
+  Blimit = c("Blimit0"),
+  Bban = c("Bban0"),
+  year.lag = 0,
+  beta = seq(from = 0.5, to = 1, by = 0.1)
+)
 }
 \arguments{
 \item{fres_base}{future.vpaの結果のオブジェクト}

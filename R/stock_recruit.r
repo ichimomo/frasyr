@@ -530,17 +530,20 @@ fit.SRregime <- function(
 
   rec <- SRdata$R
   ssb <- SRdata$SSB
-
   N <- length(rec)
 
   regime.key0 = regime.key
-  regime.key <- regime.key-min(regime.key)+1
-  regime <- a_key <- b_key <- sd_key <- rep(min(regime.key),N)
+  unique.key = unique(regime.key)
+  regime.key = sapply(1:length(regime.key0), function(i) which(unique.key == regime.key0[i]))
+  regime <- a_key <- b_key <- sd_key <- rep(1,N)
+  regime.key
+  
   if (!is.null(regime.year)) {
     for(i in 1:length(regime.year)) {
-      regime[SRdata$year>=regime.year[i]] <- min(regime.key)+i
+      regime[SRdata$year>=regime.year[i]] <- regime.key[i+1]
     }
   }
+  
   if ("a" %in% regime.par) a_key <- regime
   if ("b" %in% regime.par) b_key <- regime
   if ("sd" %in% regime.par) sd_key <- regime

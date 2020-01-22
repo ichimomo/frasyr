@@ -5,8 +5,14 @@
 \alias{profile_likelihood.vpa}
 \title{VPAの推定値についてprofile likelihood (one parameter)を実施する}
 \usage{
-profile_likelihood.vpa(res, Alpha = 0.95, min.p = 1e-06, max.p = 1,
-  L = 20, method = "ci")
+profile_likelihood.vpa(
+  res,
+  Alpha = 0.95,
+  min.p = 1e-06,
+  max.p = 1,
+  L = 20,
+  method = "ci"
+)
 }
 \arguments{
 \item{res}{vpa関数の出力値}

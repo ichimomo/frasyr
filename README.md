@@ -6,18 +6,18 @@
 # 使い方
 
 ```
-
-# install.package("devtools") # <-- devtoolsをインストールしていない人はインストールする
+# devtoolsをインストールしていない人はインストールする
+install.packages("devtools") 
 
 # マスター版（最新・安定版）をインストールする場合
 devtools::install_github("ichimomo/frasyr") 
 
 # 開発中の最新版をインストールする場合（バグ可能性あり！）
-#    ref=""で開発中のブランチを指定します。だいたい、"dev"ブランチに開発中のものがあります
+# ref=""で開発中のブランチを指定します。だいたい、"dev"ブランチに開発中のものがあります
 devtools::install_github("ichimomo/frasyr", ref="dev") 
 
 # 過去の安定版を指定してインストールする場合
-#     @以下にしてしたリリースバージョンを指定します
+# @以下にリリースバージョンを指定します
 devtools::install_github("ichimomo/frasyr@v1.00")
 
 # 以上の操作をしてfrasyrをインストールしてから、以下のコマンドで呼び出します
@@ -56,11 +56,11 @@ devtools::load_all()
 4. 2,3を繰り返してコードの修正を完了させる
 5. テストコードを走らせて確認
 ```{r}
-devtoos::test()
+devtools::test()
 ```
 6. 仕上げ（vignetteも作り直す）
 ```{r}
-devtoos::check()
+devtools::check()
 ```
 7. 修正した一連の変更を 個人の名前のブランチichimomoに push する
 8. Githubのウェブ上で，ichimomoからdevにpull request => merge

@@ -5,12 +5,29 @@
 \alias{ref.F}
 \title{再生産関係を仮定しない管理基準値計算(SPR,YPR,F0.1,Fmax)のための関数}
 \usage{
-ref.F(res, Fcurrent = NULL, waa = NULL, maa = NULL, M = NULL,
-  waa.catch = NULL, M.year = NULL, waa.year = NULL,
-  maa.year = NULL, rps.year = NULL, max.age = Inf, min.age = 0,
-  d = 0.001, Fem.init = 0.5, Fmax.init = 1.5, F0.1.init = 0.7,
-  pSPR = seq(10, 90, by = 10), iterlim = 1000, plot = TRUE,
-  Pope = NULL, F.range = seq(from = 0, to = 2, length = 101))
+ref.F(
+  res,
+  Fcurrent = NULL,
+  waa = NULL,
+  maa = NULL,
+  M = NULL,
+  waa.catch = NULL,
+  M.year = NULL,
+  waa.year = NULL,
+  maa.year = NULL,
+  rps.year = NULL,
+  max.age = Inf,
+  min.age = 0,
+  d = 0.001,
+  Fem.init = 0.5,
+  Fmax.init = 1.5,
+  F0.1.init = 0.7,
+  pSPR = seq(10, 90, by = 10),
+  iterlim = 1000,
+  plot = TRUE,
+  Pope = NULL,
+  F.range = seq(from = 0, to = 2, length = 101)
+)
 }
 \arguments{
 \item{res}{VPAの出力結果}

@@ -5,8 +5,13 @@
 \alias{prof.lik}
 \title{profile likelihood}
 \usage{
-prof.lik(Res, a = Res$pars$a, b = Res$pars$b, sd = Res$pars$sd,
-  rho = ifelse(Res$input$out.AR, 0, Res$pars$rho))
+prof.lik(
+  Res,
+  a = Res$pars$a,
+  b = Res$pars$b,
+  sd = Res$pars$sd,
+  rho = ifelse(Res$input$out.AR, 0, Res$pars$rho)
+)
 }
 \arguments{
 \item{Res}{再生産関係（\code{fit.SR()}）の結果オブジェクト}
