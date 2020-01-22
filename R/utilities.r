@@ -1072,7 +1072,7 @@ plot_futures <- function(vpares,
     future.table <-
         bind_rows(future.table,vpa_tb,future.dummy) %>%
         mutate(stat=factor(stat,levels=rename_list$stat)) %>%
-        mutate(scenario=factor(scenario,levels=c("VPA",future.name))) %>%
+        mutate(scenario=factor(scenario,levels=c(future.name,"VPA"))) %>%
         mutate(value=ifelse(stat%in%c("Fsakugen","Fsakugen_ratio","alpha"),value,value/biomass.unit))
 
     future.table.qt <- 
@@ -1422,9 +1422,9 @@ colorize_table <- function(beta_table, color) {
 
 #' 表を画像として保存
 #'
-#' @inheritParams \code{\link{formattable::as.htmlwidget}}
-#' @inheritParams \code{\link{htmltools::html_print}}
-#' @inheritParams \code{\link{webshot::webshot}}
+#' # @inheritParams \code{\link{formattable::as.htmlwidget}}
+#' # @inheritParams \code{\link{htmltools::html_print}}
+#' # @inheritParams \code{\link{webshot::webshot}}
 #' @param table ファイルとして保存したい表
 #' @examples
 #' \dontrun{
