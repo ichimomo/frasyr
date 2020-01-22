@@ -4,10 +4,13 @@
 \alias{export_kobeII_tables}
 \title{β調整による管理効果を比較する表を画像として一括保存}
 \usage{
-export_kobeII_tables(kobeII_table, fname_ssb = "tbl_ssb.png",
+export_kobeII_tables(
+  kobeII_table,
+  fname_ssb = "tbl_ssb.png",
   fname_catch = "tbl_catch.png",
   fname_ssb_above_target = "tbl_ssb>target.png",
-  fname_ssb_above_limit = "tbl_ssb>limit.png")
+  fname_ssb_above_limit = "tbl_ssb>limit.png"
+)
 }
 \arguments{
 \item{fname_ssb}{「平均親魚量」の保存先ファイル名}

@@ -5,8 +5,14 @@
 \alias{plot_vpa}
 \title{複数のVPAの結果を重ね書きする}
 \usage{
-plot_vpa(vpalist, vpatibble = NULL, what.plot = NULL,
-  legend.position = "top", vpaname = NULL, ncol = 2)
+plot_vpa(
+  vpalist,
+  vpatibble = NULL,
+  what.plot = NULL,
+  legend.position = "top",
+  vpaname = NULL,
+  ncol = 2
+)
 }
 \arguments{
 \item{vpalist}{vpaの返り値をリストにしたもの; 単独でも可}

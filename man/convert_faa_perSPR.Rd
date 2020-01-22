@@ -5,8 +5,13 @@
 \alias{convert_faa_perSPR}
 \title{vpaデータ, 選択率の参照年1, 漁獲圧の参照年2を与えて、参照年2の漁獲圧のもとで参照年1の選択率となるF at ageを作成する関数。漁獲圧の変換は％SPR換算}
 \usage{
-convert_faa_perSPR(res_vpa, sel_year, faa_year, Fcurrent_MSY = NULL,
-  Fsel_MSY = NULL)
+convert_faa_perSPR(
+  res_vpa,
+  sel_year,
+  faa_year,
+  Fcurrent_MSY = NULL,
+  Fsel_MSY = NULL
+)
 }
 \description{
 sel_year 選択率の参照年

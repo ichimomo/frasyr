@@ -4,17 +4,44 @@
 \alias{make_future_data}
 \title{future_vpaにインプットとして入れる将来予測の空のarrayを生成する関数}
 \usage{
-make_future_data(res_vpa, nsim = 1000, nyear = 50, plus_age = NULL,
-  future_initial_year_name = 2017, start_F_year_name = 2018,
-  start_biopar_year_name = 2018, start_random_rec_year_name = 2018,
-  waa_year, waa = NULL, waa_catch_year, waa_catch = NULL, maa_year,
-  maa = NULL, M_year, M = NULL, faa_year, currentF = NULL,
-  futureF = NULL, start_ABC_year_name = 2019, HCR_beta = 1,
-  HCR_Blimit = -1, HCR_Bban = -1, HCR_year_lag = 0, res_SR = NULL,
-  seed_number = 1, resid_type = "lognormal", resample_year_range = 0,
-  backward_duration = 5, bias_correction = TRUE,
-  recruit_intercept = 0, model_average_option = NULL,
-  Pope = res_vpa$input$Pope, fix_recruit = NULL, fix_wcatch = NULL)
+make_future_data(
+  res_vpa,
+  nsim = 1000,
+  nyear = 50,
+  plus_age = NULL,
+  future_initial_year_name = 2017,
+  start_F_year_name = 2018,
+  start_biopar_year_name = 2018,
+  start_random_rec_year_name = 2018,
+  waa_year,
+  waa = NULL,
+  waa_catch_year,
+  waa_catch = NULL,
+  maa_year,
+  maa = NULL,
+  M_year,
+  M = NULL,
+  faa_year,
+  currentF = NULL,
+  futureF = NULL,
+  start_ABC_year_name = 2019,
+  HCR_beta = 1,
+  HCR_Blimit = -1,
+  HCR_Bban = -1,
+  HCR_year_lag = 0,
+  Pope = res_vpa$input$Pope,
+  fix_recruit = NULL,
+  fix_wcatch = NULL,
+  res_SR = NULL,
+  seed_number = 1,
+  resid_type = "lognormal",
+  bias_correction = TRUE,
+  resample_year_range = 0,
+  backward_duration = 5,
+  recruit_intercept = 0,
+  model_average_option = NULL,
+  regime_shift_option = NULL
+)
 }
 \arguments{
 \item{nsim}{シミュレーションの繰り返し回数}

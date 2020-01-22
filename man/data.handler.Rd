@@ -5,8 +5,16 @@
 \alias{data.handler}
 \title{csvデータを読み込んでvpa用のデータを作成する関数}
 \usage{
-data.handler(caa, waa, maa, index = NULL, M = 0.4, maa.tune = NULL,
-  waa.catch = NULL, catch.prop = NULL)
+data.handler(
+  caa,
+  waa,
+  maa,
+  index = NULL,
+  M = 0.4,
+  maa.tune = NULL,
+  waa.catch = NULL,
+  catch.prop = NULL
+)
 }
 \arguments{
 \item{caa}{catch at age}

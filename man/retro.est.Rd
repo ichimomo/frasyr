@@ -5,8 +5,7 @@
 \alias{retro.est}
 \title{レトロスペクティブ解析の実施}
 \usage{
-retro.est(res, n = 5, stat = "mean", init.est = FALSE,
-  b.fix = TRUE)
+retro.est(res, n = 5, stat = "mean", init.est = FALSE, b.fix = TRUE)
 }
 \arguments{
 \item{res}{VPAの出力}

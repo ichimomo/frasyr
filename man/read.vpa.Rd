@@ -5,13 +5,21 @@
 \alias{read.vpa}
 \title{csvファイルとしてまとめられた資源計算結果を読み込んでRのオブジェクトにする}
 \usage{
-read.vpa(tfile, caa.label = "catch at age",
-  maa.label = "maturity at age", waa.label = "weight at age",
+read.vpa(
+  tfile,
+  caa.label = "catch at age",
+  maa.label = "maturity at age",
+  waa.label = "weight at age",
   waa.biomass.label = "weight at age for biomass calculation",
   waa.catch.label = "weight at age for catch calculation",
-  M.label = "M at age", faa.label = "fishing mortality at age",
-  Fc.label = "Current F", naa.label = "numbers at age",
-  Blimit = NULL, Pope = NULL, fc.year = NULL)
+  M.label = "M at age",
+  faa.label = "fishing mortality at age",
+  Fc.label = "Current F",
+  naa.label = "numbers at age",
+  Blimit = NULL,
+  Pope = NULL,
+  fc.year = NULL
+)
 }
 \arguments{
 \item{tfile}{資源計算結果がまとめられたcsvファイルの名前}

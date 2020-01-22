@@ -5,10 +5,19 @@
 \alias{SRregime_plot}
 \title{fit.SRregimeの結果で得られた再生産関係をプロットするための関数}
 \usage{
-SRregime_plot(SRregime_result, xscale = 1000, xlabel = "SSB",
-  yscale = 1, ylabel = "R", labeling.year = NULL,
-  show.legend = TRUE, legend.title = "Regime", regime.name = NULL,
-  base_size = 16, add.info = TRUE)
+SRregime_plot(
+  SRregime_result,
+  xscale = 1000,
+  xlabel = "SSB",
+  yscale = 1,
+  ylabel = "R",
+  labeling.year = NULL,
+  show.legend = TRUE,
+  legend.title = "Regime",
+  regime.name = NULL,
+  base_size = 16,
+  add.info = TRUE
+)
 }
 \arguments{
 \item{xscale}{X軸のスケーリングの値（親魚量をこの値で除す）}

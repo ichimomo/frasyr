@@ -5,8 +5,13 @@
 \alias{get.SRdata}
 \title{VPAの結果から再生産関係推定用のデータを作成する}
 \usage{
-get.SRdata(vpares, R.dat = NULL, SSB.dat = NULL,
-  years = as.numeric(colnames(vpares$naa)), return.df = FALSE)
+get.SRdata(
+  vpares,
+  R.dat = NULL,
+  SSB.dat = NULL,
+  years = as.numeric(colnames(vpares$naa)),
+  return.df = FALSE
+)
 }
 \arguments{
 \item{vpares}{VPAの結果のオブジェクト}
