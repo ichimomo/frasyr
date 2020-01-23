@@ -340,6 +340,8 @@ future_vpa_R <- function(naa_mat,
         if( is.null(MSE_nsim)) MSE_nsim <- MSE_input_data$input$nsim
         SR_MSE <- SR_mat
         SR_MSE[,,"recruit"] <- SR_MSE[,,"ssb"] <- 0
+        dimnames(SR_MSE)$par[12] <- "real_true_catch"
+        dimnames(SR_MSE)$par[13] <- "pseudo_true_catch"        
     }                
 
     F_mat <- N_mat <-  naa_mat
@@ -417,11 +419,23 @@ future_vpa_R <- function(naa_mat,
                                resample_year_range        = MSE_input_data$input$resample_year_range,
                                bias_correction            = MSE_input_data$input$bias_correction,
                                recruit_intercept          = MSE_input_data$input$recruit_intercept,
-                               model_average_option       = MSE_input_data$input$model_average_option)
+                               model_average_option       = MSE_input_data$input$model_average_option,
+                               regime_shift_option        = MSE_input_data$input$regime_shift_option)
+
                 res_tmp <- safe_call(future_vpa_R,MSE_dummy_data) # do future projection
                 HCR_mat[t,i,"wcatch"] <- mean(apply(res_tmp$wcaa[,t,],2,sum)) # determine ABC in year t
                 SR_MSE[t,i,"recruit"] <- mean(res_tmp$naa[1,t,])
                 SR_MSE[t,i,"ssb"]     <- mean(res_tmp$SR_mat[t,,"ssb"])
+                faa_tmp <- MSE_input_data$data$faa[,t,i]                
+                if(Pope==1){
+                    SR_MSE[t,i,"real_true_catch"] <- sum(N_mat[,t,i]*(1-exp(-F_mat[,t,i]))*exp(-M_mat[,t,i]/2) * waa_catch_mat[,t,i])
+                    SR_MSE[t,i,"pseudo_true_catch"] <- sum(N_mat[,t,i]*(1-exp(-faa_tmp))*exp(-M_mat[,t,i]/2) * waa_catch_mat[,t,i])                    
+                }
+                else{
+                    SR_MSE[t,i,"real_true_catch"] <- sum(N_mat[,t,i]*(1-exp(-F_mat[,t,i]-M_mat[,t,i]))*F_mat[,t,i]/(F_mat[,t,i]+M_mat[,t,i]) * waa_catch_mat[,t,i])
+                    SR_MSE[t,i,"pseudo_true_catch"] <- sum(N_mat[,t,i]*(1-exp(-faa_tmp-M_mat[,t,i]))*faa_tmp/(faa_tmp+M_mat[,t,i]) * waa_catch_mat[,t,i])                    
+                }
+                 
                 MSE_seed <- MSE_seed+1
             }
         }        
@@ -544,7 +558,9 @@ set_SR_mat <- function(res_vpa=NULL,
         SR_mat[,,"sd"] <- res_SR$pars$sd        
     }
     else{
-        regime_data <- res_SR$regime_resid %>% left_join(res_SR$regime_pars) %>% bind_cols(res_SR$input$SRdata)
+        regime_data <- res_SR$regime_resid %>%
+            left_join(res_SR$regime_pars, by="regime") %>%
+            bind_cols(res_SR$input$SRdata)
         SR_mat[as.character(regime_data$year),,"a"] <- regime_data$a
         SR_mat[as.character(regime_data$year),,"b"] <- regime_data$b
         SR_mat[as.character(regime_data$year),,"sd"] <- regime_data$sd
