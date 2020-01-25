@@ -29,3 +29,8 @@ test_that("convert table from kobeIItable to the required format", {
   expect_equal(after_ton_rounded[, "y2020"], c(22, 17, 12))
   expect_equal(after_ton_rounded[, "y2021"], c(32, 28, 23))
 })
+
+test_that("test for HCR function", {
+    res_HCR <- HCR_default(matrix(1:10,2,5),matrix(5,2,5),matrix(1,2,5),matrix(0.8,2,5))
+    expect_equal(res_HCR, matrix(c(0,0.2,0.4,0.6,rep(0.8,6)),2,5))
+})
