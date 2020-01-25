@@ -614,6 +614,7 @@ make_kobeII_table <- function(kobeII_data,
                               year.ssbmin=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
                               year.ssbmax=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
                               year.aav=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              year.catchdiff=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
                               Btarget=0,
                               Blimit=0,
                               Bban=0){
@@ -724,7 +725,7 @@ make_kobeII_table <- function(kobeII_data,
         group_by(HCR_name,beta) %>%
         summarise(catch.aav.mean=mean(catch.aav)) %>%
         arrange(HCR_name,desc(beta))%>%
-        mutate(stat_name="catch.csv (recent 5 year)")
+        mutate(stat_name="catch.aav")
 
     res_list <- list(catch.mean   = catch.mean,
                      ssb.mean         = ssb.mean,
@@ -1818,20 +1819,58 @@ compare_SRfit <- function(SRlist){
 #' @export
 #' 
 
-get_performance <- function(future_list,res_vpa,ABC_year,...){
+get_performance <- function(future_list,res_vpa,ABC_year=2021,
+                            indicator_year=c(0,5,10),Btarget=Btarget, Blimit=Blimit, Bban=Bban,
+                            type=c("long","wide")[1],biomass.unit=10000,...){
 
-    if(class(future_list[[i]])=="future_new")
-        future_list[[i]] <- format_to_old_future(future_list[[i]])
+    future_list <- purrr::map(future_list,
+                              function(x) if(class(x)=="future_new")
+                                              format_to_old_future(x) else x)
 
     future_tibble <- purrr::map_dfr(1:length(future_list),
                                     function(i) convert_future_table(future_list[[i]],
-                                                                     label=names(future_list[[i]])) %>%
+                                                                     label=names(future_list)[i]) %>%
                                                 rename(HCR_name=label) %>% mutate(beta=NA))
 
-    make_kobeII_table(future_tibble,res_vpa,...)
+    kobe_res <- make_kobeII_table(future_tibble,res_vpa,
+                                  year.ssb   = ABC_year+indicator_year,
+                                  year.catch = ABC_year+indicator_year,
+                                  year.ssbtarget = ABC_year+indicator_year,
+                                  year.ssblimit  = ABC_year+indicator_year,
+                                  year.ssbban=NULL, year.ssbmin=NULL, year.ssbmax=NULL,
+                                  year.aav = c(ABC_year,ABC_year-1),
+                                  Btarget= Btarget,
+                                  Blimit = Blimit,
+                                  Bban   = Bban)
+
+    junit <- c("","十","百","千","万")[log10(biomass.unit)+1]
+
+    stat_data <- tibble(stat_name=c("ssb.mean","catch.mean","Pr(SSB>SSBtarget)","Pr(SSB>SSBlim)",
+                                    "catch.aav"),
+                        stat_category=c("平均親魚量 ", "平均漁獲量 ", "目標上回る確率 ", "限界上回る確率 ",
+                                        "漁獲量変動"))
+
+    kobe_res <- purrr::map_dfr(kobe_res[c("ssb.mean", "catch.mean", "prob.over.ssbtarget",
+                              "prob.over.ssblimit", "catch.aav")],
+                   function(x) x %>% select(-beta) %>%
+                               gather(key=year,value=value,-HCR_name,-stat_name)) %>%
+        mutate(value=ifelse(stat_name %in% c("ssb.mean", "catch.mean"), value/biomass.unit, value)) %>%
+        mutate(unit =ifelse(stat_name %in% c("ssb.mean", "catch.mean"), str_c(junit, "トン"), "%")) %>%
+        mutate(unit =ifelse(stat_name %in% c("catch.aav"), "", unit)) %>%
+        left_join(stat_data) %>%
+        mutate(stat_year_name=str_c(stat_category,year))  
+
+    if(type=="wide"){
+        kobe_res <- kobe_res  %>%  select(-year) %>%
+            spread(key=stat_year_name, value=value)
+    }
     
-    return(dat)
+    return(kobe_res)
 }
+
+#'
+#' @export
+#' 
 
 plot_bias_in_MSE <- function(fout, out="graph", error_scale="log", yrange=NULL){
 

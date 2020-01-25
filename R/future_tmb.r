@@ -91,12 +91,12 @@ make_future_data <- function(res_vpa,
     HCR_mat <- array(0, dim=c(total_nyear, nsim, 8),
                     dimnames=list(year=allyear_name, nsim=1:nsim,
                                   par=c("beta","Blimit","Bban","gamma","year_lag", #1-5
-                                        "alpha","wcatch","par3")))  # 6-8
+                                        "beta_gamma","wcatch","par3")))  # 6-8
     class(SR_mat)  <- "myarray"
     class(HCR_mat) <- "myarray"
 
     HCR_mat[,,"Blimit"] <- HCR_mat[,,"Bban"] <- -1
-    HCR_mat[,,"beta"] <- HCR_mat[,,"alpha"] <- 1
+    HCR_mat[,,"beta"] <- HCR_mat[,,"beta_gamma"] <- 1
     
     # fill vpa data 
     waa_mat[,1:vpa_nyear,] <- as.matrix(res_vpa$input$dat$waa)
@@ -373,13 +373,9 @@ future_vpa_R <- function(naa_mat,
         if(t>=start_ABC_year){
             # harvest control rule
             ssb_tmp <- spawner_mat[cbind(t-HCR_mat[t,,"year_lag"],1:nsim)]
-            Blimit <- HCR_mat[t,,"Blimit"]
-            HCR_mat[t, ,"alpha"] <- HCR_mat[t, ,"beta"]
-            tmp <- ssb_tmp < Blimit
-            HCR_mat[t, tmp ,"alpha"] <- HCR_mat[t,tmp,"beta"]*(ssb_tmp[tmp]-HCR_mat[t,tmp,"Bban"])/
-                (HCR_mat[t,tmp,"Blimit"]-HCR_mat[t,tmp,"Bban"])
-            HCR_mat[t, HCR_mat[t,,"alpha"]<0 ,"alpha"] <- 0
-            F_mat[,t,] <- sweep(F_mat[,t,],2,HCR_mat[t,,"alpha"],FUN="*")
+            HCR_mat[t,,"beta_gamma"] <- HCR_default(ssb_tmp, HCR_mat[t,,"Blimit"],
+                                                    HCR_mat[t,,"Bban"], HCR_mat[t,,"beta"])
+            F_mat[,t,] <- sweep(F_mat[,t,],2,HCR_mat[t,,"beta_gamma"],FUN="*")
         }
 
         if(isTRUE(do_MSE) && t>=start_ABC_year){
@@ -426,14 +422,11 @@ future_vpa_R <- function(naa_mat,
                 HCR_mat[t,i,"wcatch"] <- mean(apply(res_tmp$wcaa[,t,],2,sum)) # determine ABC in year t
                 SR_MSE[t,i,"recruit"] <- mean(res_tmp$naa[1,t,])
                 SR_MSE[t,i,"ssb"]     <- mean(res_tmp$SR_mat[t,,"ssb"])
-                faa_tmp <- MSE_input_data$data$faa[,t,i]                
                 if(Pope==1){
                     SR_MSE[t,i,"real_true_catch"] <- sum(N_mat[,t,i]*(1-exp(-F_mat[,t,i]))*exp(-M_mat[,t,i]/2) * waa_catch_mat[,t,i])
-                    SR_MSE[t,i,"pseudo_true_catch"] <- sum(N_mat[,t,i]*(1-exp(-faa_tmp))*exp(-M_mat[,t,i]/2) * waa_catch_mat[,t,i])                    
                 }
                 else{
                     SR_MSE[t,i,"real_true_catch"] <- sum(N_mat[,t,i]*(1-exp(-F_mat[,t,i]-M_mat[,t,i]))*F_mat[,t,i]/(F_mat[,t,i]+M_mat[,t,i]) * waa_catch_mat[,t,i])
-                    SR_MSE[t,i,"pseudo_true_catch"] <- sum(N_mat[,t,i]*(1-exp(-faa_tmp-M_mat[,t,i]))*faa_tmp/(faa_tmp+M_mat[,t,i]) * waa_catch_mat[,t,i])                    
                 }
                  
                 MSE_seed <- MSE_seed+1
@@ -451,7 +444,7 @@ future_vpa_R <- function(naa_mat,
                                                                 Pope=as.logical(Pope))$x)
             F_mat[,t,which(F_max_tmp>0)] <- sweep(F_mat[,t,which(F_max_tmp>0)],#saa.tmp[,which(F_max_tmp>0)],
                                                   2, fix_catch_multiplier, FUN="*")
-            HCR_mat[t,which(F_max_tmp>0),"alpha"] <- HCR_mat[t,which(F_max_tmp>0),"alpha"]*fix_catch_multiplier
+            HCR_mat[t,which(F_max_tmp>0),"beta_gamma"] <- HCR_mat[t,which(F_max_tmp>0),"beta_gamma"]*fix_catch_multiplier
         }
        
         if(t<total_nyear){
@@ -468,6 +461,24 @@ future_vpa_R <- function(naa_mat,
     }
     else{
         wcaa_mat <- N_mat*(1-exp(-F_mat-M_mat))*F_mat/(F_mat+M_mat) * waa_catch_mat
+    }
+
+    if(isTRUE(do_MSE)){
+        F_pseudo_mat <- MSE_input_data$data$faa
+        beta_gamma <- HCR_default(spawner_mat,
+                                  MSE_input_data$data$HCR_mat[,,"Blimit"],
+                                  MSE_input_data$data$HCR_mat[,,"Bban"],
+                                  MSE_input_data$data$HCR_mat[,,"beta"])
+        F_pseudo_mat[] <- sweep(F_pseudo_mat,c(2,3),beta_gamma,FUN="*")
+        
+        if(Pope==1){
+            wcaa_tmp <- N_mat*(1-exp(-F_pseudo_mat))*exp(-M_mat/2) * waa_catch_mat
+        }
+        else{
+            wcaa_tmp <- N_mat*(1-exp(-F_pseudo_mat-M_mat))*F_pseudo_mat/
+                (F_pseudo_mat+M_mat) * waa_catch_mat
+        }
+        SR_MSE[,,"pseudo_true_catch"] <- apply(wcaa_tmp, c(2,3), sum)
     }
 
     if(objective<2){
@@ -899,7 +910,8 @@ format_to_old_future <- function(fout){
     fout_old$caa       <- fout$wcaa/fout_old$waa
     fout_old$multi     <- fout$multi
     fout_old$recruit   <- fout$SR_mat[,,"recruit"]
-    fout_old$alpha     <- fout$HCR_mat[,,"alpha"]
+    fout_old$beta_gamma     <- fout$HCR_mat[,,"beta_gamma"]
+    fout_old$alpha     <- fout$HCR_mat[,,"beta_gamma"]    
     return(fout_old)
 }
 
@@ -925,5 +937,15 @@ safe_call <- function(func,args,force=FALSE,...){
     }
     return(do.call(func,args,...))
 }
-    
 
+#'
+#' @export
+#' 
+
+HCR_default <- function(ssb, Blimit, Bban, beta){
+    beta_gamma <- beta
+    tmp <- ssb < Blimit
+    beta_gamma[tmp] <- beta[tmp]*(ssb[tmp]-Bban[tmp])/(Blimit[tmp]-Bban[tmp])
+    beta_gamma[beta_gamma < 0] <- 0
+    return(beta_gamma)
+}
