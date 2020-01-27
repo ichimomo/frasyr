@@ -2,7 +2,7 @@
 % Please edit documentation in R/future_tmb.r
 \name{set_SR_mat}
 \alias{set_SR_mat}
-\title{対数正規分布の残差分布を作る関数}
+\title{将来予測用の再生産関係の設定を行う関数}
 \usage{
 set_SR_mat(
   res_vpa = NULL,
@@ -35,7 +35,7 @@ set_SR_mat(
 
 \item{resample_year_range}{"resampling", "backward"で有効。0の場合、推定に使ったデータから計算される残差を用いる。年の範囲を入れると、対象とした年の範囲で計算される残差を用いる。}
 
-\item{backward_duration}{"backward"で有効。デフォルトは5 。}
+\item{backward_duration}{"backward"の場合、何年で１ブロックとするか。"backward"で有効。デフォルトは5 。}
 
 \item{model_average_option}{model averagingをする場合のオプション. SR_matのlistとweightをlist形式で入れる(list(SR_list=list(res_SR1,res_SR2),weight=c(0.5,0.5))). 上で設定されたres_SRは使われない.}
 

@@ -1,14 +1,37 @@
 #'
 #' future_vpaにインプットとして入れる将来予測の空のarrayを生成する関数
-#' 
+#'
+#' @param res_vpa vpaの結果 (vpa関数の返り値)
 #' @param nsim シミュレーションの繰り返し回数
 #' @param nyear 将来予測の実施年数
-#' @param future_initial_year_name 将来予測の「初期値となる」年齢別資源尾数を参照する年。この年のFを使って翌年の個体群動態が将来予測で決定される
-#' @param start_biopar_year_name 将来の生物パラメータとして生物パラメータを置き換える年の最初の年
+#' @param plus_age プラスグループの年齢。デフォルト値（NULL）ならfuture_initial_year_name年にNA以外の数値が入っている一番大きい年齢をプラスグループの年齢とする
+#' @param future_initial_year_name 将来予測の「初期値となる」年齢別資源尾数を参照する年。この年の年齢別資源尾数を使って翌年の個体群動態が将来予測で決定される
+#' @param start_F_year_name 将来予測でF全体にmultiplierを乗じる場合、multiplierを乗じる最初の年
+#' @param start_biopar_year_name 生物パラメータを将来の生物パラメータとして設定された値に置き換える年の最初の年
 #' @param start_random_rec_year_name 将来の加入を再生産関係から予測する最初の年
-#' @param waa_year 将来の年齢別体重を過去の平均値とする場合、過去のパラメータを平均する期間
-#' @param waa 将来の年齢別体重を直接与える場合
-#' @param model_average_option model averagingをする場合のオプション. SR_matのlistとweightをlist形式で入れる(list(SR_list=list(res_SR1,res_SR2),weight=c(0.5,0.5))) 
+#' @param waa_year 将来の年齢別体重を過去の平均値とする場合、過去のパラメータを平均する期間, maa_year, M_yearも同様
+#' @param waa 将来の年齢別体重を直接与える場合, maa, M_yearも同様
+#' @param faa_year 将来のFを過去の平均値とする場合、平均をとる年を指定する。下のcurrentF, futureFが指定されている場合にはこの設定は無視される
+#' @param currentF start_ABC_yar_name以前に使うFのベクトル（いわゆるcurrent F）
+#' @param futureF  start_ABC_yar_name以降に使うFのベクトル（いわゆるFmsy）
+#' @param start_ABC_year_name HCRを有効にする年
+#' @param HCR_beta HCRのbeta
+#' @param HCR_Blimi HCRのBlimi
+#' @param HCR_Bban HCRのBban
+#' @param HCR_year_lag HCRするときにいつのタイミングのssbを参照するか.0の場合、ABC計算年のSSBを参照する。正の値1を入れると1年前のssbを参照する
+#' @param HCR_beta_year betaを年によって変える場合。tibble(year=2020:2024, beta=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える
+#' @param Pope 漁獲方程式にPopeの近似式を使うかどうか。与えない場合には、VPAのオプションが引き継がれる
+#' @param fix_recruit 将来予測において再生産関係を無視して加入量を一定値で与える場合、その加入の値。list(year=2020, rec=1000)のように与える。
+#' @param fix_wcatch 将来予測において漁獲量をあらかじめ決める場合
+#' @param res_SR 再生産関係の推定関数 (fit.SR　of fit.SRregime) の返り値
+#' @param seed_number 乱数のシードの数
+#' @param resid_type 加入量の残差の発生方法。"lognormal":対数正規分布, "resample": リサンプリング, "backward": backward resampling
+#' @param bias_correction 将来予測でバイアス補正をするかどうか
+#' @param resample_year_range "resampling", "backward"で有効。0の場合、推定に使ったデータから計算される残差を用いる。年の範囲を入れると、対象とした年の範囲で計算される残差を用いる。
+#' @param backward_duration "backward"の場合、何年で１ブロックとするか。"backward"で有効。デフォルトは5 。
+#' @param recruit_intercept 将来の加入の切片。将来の加入は R=f(ssb) + intercept となる。
+#' @param model_average_option model averagingをする場合のオプション. SR_matのlistとweightをlist形式で入れる(list(SR_list=list(res_SR1,res_SR2),weight=c(0.5,0.5)))
+#' @param regime_shift_option res_SRにfit.SRregimeの返り値を入れた場合に指定する。将来予測で再生産関係のどのフェーズがおこるかを指定する。list(future_regime=将来のregimeの仮定。keyで指定された番号を入れる)
 #' 
 #' @export
 
@@ -26,7 +49,7 @@ make_future_data <- function(res_vpa,
                           maa_year, maa=NULL,
                           M_year, M=NULL,
                           # faa setting
-                          faa_year,
+                          faa_year=NULL,
                           currentF=NULL,futureF=NULL,
                           # HCR setting (not work when using TMB)
                           start_ABC_year_name=2019,
@@ -34,6 +57,7 @@ make_future_data <- function(res_vpa,
                           HCR_Blimit=-1,
                           HCR_Bban=-1,
                           HCR_year_lag=0,
+                          HCR_beta_year=NULL, # tibble(year=2020:2024, beta=c(1.3,1.2,1.1,1,0.9))
                           # Other
                           Pope=res_vpa$input$Pope,
                           fix_recruit=NULL, # list(year=2020, rec=1000)
@@ -97,7 +121,8 @@ make_future_data <- function(res_vpa,
 
     HCR_mat[,,"Blimit"] <- HCR_mat[,,"Bban"] <- -1
     HCR_mat[,,"beta"] <- HCR_mat[,,"beta_gamma"] <- 1
-    
+
+  
     # fill vpa data 
     waa_mat[,1:vpa_nyear,] <- as.matrix(res_vpa$input$dat$waa)
     maa_mat[,1:vpa_nyear,] <- as.matrix(res_vpa$input$dat$maa)
@@ -144,6 +169,11 @@ make_future_data <- function(res_vpa,
     HCR_mat[start_ABC_year:total_nyear,,"Blimit"  ] <- HCR_Blimit
     HCR_mat[start_ABC_year:total_nyear,,"Bban"    ] <- HCR_Bban    
     HCR_mat[start_ABC_year:total_nyear,,"year_lag"] <- HCR_year_lag
+
+    if(!is.null(HCR_beta_year)){
+        HCR_mat[as.character(HCR_beta_year$year),,"beta"] <- HCR_beta_year$beta
+    }
+   
 
     # when fix wcatch
     # VPA期間中のwcatchをfixするかどうか？？
@@ -511,7 +541,7 @@ future_vpa_R <- function(naa_mat,
 }
 
 #'
-#' 対数正規分布の残差分布を作る関数
+#' 将来予測用の再生産関係の設定を行う関数
 #'
 #' 再生産関係をres_SRで与えると、res_vpaを見ながら残差を再計算したのち、start_random_rec_year_name以降の加入のdeviationを計算しSR_mat[,,"deviance"]に入れる。
 #'
@@ -522,7 +552,7 @@ future_vpa_R <- function(naa_mat,
 #' @param start_random_rec_year_name ランダム加入を仮定する最初の年
 #' @param resid_type 残差の発生パターン；対数正規分布は"lognormal"、単純リサンプリングは"resampling"、backward-resamplingは"backward"
 #' @param resample_year_range "resampling", "backward"で有効。0の場合、推定に使ったデータから計算される残差を用いる。年の範囲を入れると、対象とした年の範囲で計算される残差を用いる。
-#' @param backward_duration "backward"で有効。デフォルトは5 。
+#' @param backward_duration "backward"の場合、何年で１ブロックとするか。"backward"で有効。デフォルトは5 。
 #' @param model_average_option model averagingをする場合のオプション. SR_matのlistとweightをlist形式で入れる(list(SR_list=list(res_SR1,res_SR2),weight=c(0.5,0.5))). 上で設定されたres_SRは使われない.
 #' @param regime_shift_option レジームシフトを仮定する場合のオプション. この場合, res_SRにはfit.SRregimeの結果オブジェクトを入れる. オプションの設定は list(future_regime=将来のregimeの仮定。keyで指定された番号を入れる)
 #' 
