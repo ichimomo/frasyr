@@ -1820,9 +1820,11 @@ compare_SRfit <- function(SRlist){
 #' 
 
 get_performance <- function(future_list,res_vpa,ABC_year=2021,
+                            is_MSE=FALSE,
                             indicator_year=c(0,5,10),Btarget=Btarget, Blimit=Blimit, Bban=Bban,
                             type=c("long","wide")[1],biomass.unit=10000,...){
 
+    future_list_original <- future_list
     future_list <- purrr::map(future_list,
                               function(x) if(class(x)=="future_new")
                                               format_to_old_future(x) else x)
@@ -1843,6 +1845,32 @@ get_performance <- function(future_list,res_vpa,ABC_year=2021,
                                   Blimit = Blimit,
                                   Bban   = Bban)
 
+    if(isTRUE(is_MSE)){
+        error_table <- purrr::map_dfr(1:length(future_list_original), function(i){
+            if("SR_MSE" %in% names(future_list_original[[i]])){
+                plot_bias_in_MSE(future_list_original[[i]], out="stat") %>%
+                    dplyr::filter(year %in% (ABC_year + indicator_year)) %>%
+                    group_by(year, stat) %>%
+                    summarise(mean_error=mean(Relative_error_normal)) %>%
+                    mutate(HCR_name=names(future_list)[i])
+            }
+            else{
+                NULL
+            }
+        })
+        error_table <- error_table %>%
+            gather(key=stat_name,value=value,-HCR_name,-year,-stat) %>%
+            mutate(unit="",stat_category="推定バイアス") %>%
+            mutate(stat_year_name=str_c(stat_category,year)) %>%
+            ungroup(year) %>%
+            mutate(year=as.character(year)) %>%
+            mutate(stat_name=stat) %>%
+            select(-stat)
+    }
+    else{
+        error_table <- NULL
+    }
+
     junit <- c("","十","百","千","万")[log10(biomass.unit)+1]
 
     stat_data <- tibble(stat_name=c("ssb.mean","catch.mean","Pr(SSB>SSBtarget)","Pr(SSB>SSBlim)",
@@ -1860,12 +1888,16 @@ get_performance <- function(future_list,res_vpa,ABC_year=2021,
         left_join(stat_data) %>%
         mutate(stat_year_name=str_c(stat_category,year))  
 
+    kobe_res <- bind_rows(kobe_res,error_table)
+    
     if(type=="wide"){
-        kobe_res <- kobe_res  %>%  select(-year) %>%
-            spread(key=stat_year_name, value=value)
+        kobe_res <- kobe_res  %>%
+            select(-year, -stat_name, -stat_category) %>%
+            spread(key=HCR_name,value=value) %>%
+            select(2:4,1)
     }
     
-    return(kobe_res)
+    return(tibble::lst(kobe_res,error_table))
 }
 
 #'
@@ -1911,7 +1943,7 @@ plot_bias_in_MSE <- function(fout, out="graph", error_scale="log", yrange=NULL){
         return(g1)
     }
     else{
-        invisible(alldat)
+        return(alldat)
     }
     
 }

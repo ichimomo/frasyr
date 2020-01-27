@@ -34,6 +34,7 @@ make_future_data <- function(res_vpa,
                           HCR_Blimit=-1,
                           HCR_Bban=-1,
                           HCR_year_lag=0,
+                          HCR_beta_year=NULL, # tibble(year=2020:2024, beta=c(1.3,1.2,1.1,1,0.9))
                           # Other
                           Pope=res_vpa$input$Pope,
                           fix_recruit=NULL, # list(year=2020, rec=1000)
@@ -97,7 +98,8 @@ make_future_data <- function(res_vpa,
 
     HCR_mat[,,"Blimit"] <- HCR_mat[,,"Bban"] <- -1
     HCR_mat[,,"beta"] <- HCR_mat[,,"beta_gamma"] <- 1
-    
+
+  
     # fill vpa data 
     waa_mat[,1:vpa_nyear,] <- as.matrix(res_vpa$input$dat$waa)
     maa_mat[,1:vpa_nyear,] <- as.matrix(res_vpa$input$dat$maa)
@@ -144,6 +146,11 @@ make_future_data <- function(res_vpa,
     HCR_mat[start_ABC_year:total_nyear,,"Blimit"  ] <- HCR_Blimit
     HCR_mat[start_ABC_year:total_nyear,,"Bban"    ] <- HCR_Bban    
     HCR_mat[start_ABC_year:total_nyear,,"year_lag"] <- HCR_year_lag
+
+    if(!is.null(HCR_beta_year)){
+        HCR_mat[as.character(HCR_beta_year$year),,"beta"] <- HCR_beta_year$beta
+    }
+    
 
     # when fix wcatch
     # VPA期間中のwcatchをfixするかどうか？？
