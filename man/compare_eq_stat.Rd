@@ -5,9 +5,15 @@
 \alias{compare_eq_stat}
 \title{F一定の場合で平衡状態になったときの統計量をx軸、y軸にプロットして比較する}
 \usage{
-compare_eq_stat(MSYlist, x_axis_name = "ssb.mean",
-  y_axis_name = "catch.mean", legend.position = "top",
-  is_MSY_line = TRUE, is.scale = FALSE, MSYname = NULL)
+compare_eq_stat(
+  MSYlist,
+  x_axis_name = "ssb.mean",
+  y_axis_name = "catch.mean",
+  legend.position = "top",
+  is_MSY_line = TRUE,
+  is.scale = FALSE,
+  MSYname = NULL
+)
 }
 \arguments{
 \item{MSYlist}{est.MSYの返り値をリストにしたもの; 単独でも可}

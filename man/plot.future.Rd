@@ -5,10 +5,21 @@
 \alias{plot.future}
 \title{一つの将来予測の結果をプロットする（ggplotは使わず）}
 \usage{
-\method{plot}{future}(fres0, ylim.tmp = NULL, xlim.tmp = NULL,
-  vpares = NULL, what = c(TRUE, TRUE, TRUE), conf = 0.1,
-  N.line = 0, det.run = TRUE, label = c("Biomass", "SSB", "Catch"),
-  is.legend = TRUE, add = FALSE, col = NULL, ...)
+\method{plot}{future}(
+  fres0,
+  ylim.tmp = NULL,
+  xlim.tmp = NULL,
+  vpares = NULL,
+  what = c(TRUE, TRUE, TRUE),
+  conf = 0.1,
+  N.line = 0,
+  det.run = TRUE,
+  label = c("Biomass", "SSB", "Catch"),
+  is.legend = TRUE,
+  add = FALSE,
+  col = NULL,
+  ...
+)
 }
 \arguments{
 \item{fres0}{future.vpaからの出力結果}

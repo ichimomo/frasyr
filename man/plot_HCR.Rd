@@ -5,21 +5,30 @@
 \alias{plot_HCR}
 \title{HCRを書く}
 \usage{
-plot_HCR(SBtarget, SBlim, SBban, Ftarget, biomass.unit = 1, beta = 0.8,
-  col.multi2currf = "black", col.SBtarget = "#00533E",
-  col.SBlim = "#edb918", col.SBban = "#C73C2E",
-  col.Ftarget = "black", col.betaFtarget = "gray", is.text = TRUE)
+plot_HCR(
+  SBtarget,
+  SBlim,
+  SBban,
+  Ftarget,
+  biomass.unit = 1,
+  beta = 0.8,
+  col.multi2currf = "black",
+  col.SBtarget = "#00533E",
+  col.SBlim = "#edb918",
+  col.SBban = "#C73C2E",
+  col.Ftarget = "black",
+  col.betaFtarget = "gray",
+  is.text = TRUE
+)
 }
 \arguments{
 \item{SBtarget}{目標管理基準値}
 
-\item{SBlim}{限界管理基準値}
+\item{SBlim}{禁漁水準}
 
 \item{Ftarget}{Ftarget}
 
 \item{is.text}{ラベルを記入するかどうか（FALSEにすると後で自分で書き換えられる）}
-
-\item{SBlim}{禁漁水準}
 }
 \description{
 HCRを書く

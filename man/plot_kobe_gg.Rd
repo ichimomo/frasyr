@@ -5,13 +5,27 @@
 \alias{plot_kobe_gg}
 \title{Kobe plotを書く}
 \usage{
-plot_kobe_gg(vpares, refs_base, roll_mean = 1, category = 4,
-  Btarget = c("Btarget0"), Blimit = c("Blimit0"), Blow = c("Blow0"),
-  Bban = c("Bban0"), write.vline = TRUE, ylab.type = "U",
-  labeling.year = NULL, RP.label = c("目標管理基準値",
-  "限界管理基準値", "禁漁水準"), refs.color = c("#00533E",
-  "#edb918", "#C73C2E"), Fratio = NULL, yscale = 1.2, xscale = 1.2,
-  HCR.label.position = c(1, 1), beta = NULL, plot.year = "all")
+plot_kobe_gg(
+  vpares,
+  refs_base,
+  roll_mean = 1,
+  category = 4,
+  Btarget = c("Btarget0"),
+  Blimit = c("Blimit0"),
+  Blow = c("Blow0"),
+  Bban = c("Bban0"),
+  write.vline = TRUE,
+  ylab.type = "U",
+  labeling.year = NULL,
+  RP.label = c("目標管理基準値", "限界管理基準値", "禁漁水準"),
+  refs.color = c("#00533E", "#edb918", "#C73C2E"),
+  Fratio = NULL,
+  yscale = 1.2,
+  xscale = 1.2,
+  HCR.label.position = c(1, 1),
+  beta = NULL,
+  plot.year = "all"
+)
 }
 \arguments{
 \item{vpares}{VPAの結果のオブジェクト}

@@ -530,17 +530,19 @@ fit.SRregime <- function(
 
   rec <- SRdata$R
   ssb <- SRdata$SSB
-
   N <- length(rec)
 
   regime.key0 = regime.key
-  regime.key <- regime.key-min(regime.key)+1
-  regime <- a_key <- b_key <- sd_key <- rep(min(regime.key),N)
+  unique.key = unique(regime.key)
+  regime.key = sapply(1:length(regime.key0), function(i) which(unique.key == regime.key0[i]))
+  regime <- a_key <- b_key <- sd_key <- rep(1,N)
+
   if (!is.null(regime.year)) {
     for(i in 1:length(regime.year)) {
-      regime[SRdata$year>=regime.year[i]] <- min(regime.key)+i
+      regime[SRdata$year>=regime.year[i]] <- regime.key[i+1]
     }
   }
+  
   if ("a" %in% regime.par) a_key <- regime
   if ("b" %in% regime.par) b_key <- regime
   if ("sd" %in% regime.par) sd_key <- regime
@@ -668,7 +670,7 @@ fit.SRregime <- function(
   summary_tbl = tibble(Year = SRdata$year,SSB=ssb, R = rec, Regime=regime.key0[regime], Category = "Obs")
   for (i in 1:nrow(ab_unique)) {
     R.tmp <- sapply(1:length(ssb.tmp), function(j) SRF(ssb.tmp[j],a[ab_unique[i,1]],b[ab_unique[i,2]]))
-    summary_tbl = bind_rows(summary_tbl,tibble(Year=NA,SSB=ssb.tmp, R=R.tmp, Regime=i, Category="Pred"))
+    summary_tbl = bind_rows(summary_tbl,tibble(Year=NA,SSB=ssb.tmp, R=R.tmp, Regime=unique.key[i], Category="Pred"))
   }
   summary_tbl = summary_tbl %>% mutate(Regime = factor(Regime))
   pred = dplyr::filter(summary_tbl, Category == "Pred") %>%
