@@ -34,9 +34,9 @@ selectedSR <- sprintf("%s.recAR",SRmodel.base$input$SR[1])
 # future fcurrent ----
 res_future_Fcurrent_pma <- future.vpa(res_vpa_pma,
                                             multi=1,
-                                            nyear=50, # 将来予測の年数
+                                            nyear=58, # 将来予測の年数
                                             start.year=2012, # 将来予測の開始年
-                                            N=100, # 確率的計算の繰り返し回数
+                                            N=1000, # 確率的計算の繰り返し回数
                                             ABC.year=2013, # ABCを計算する年
                                             waa.year=2009:2011, # 生物パラメータの参照年
                                             maa.year=2009:2011,
@@ -58,7 +58,7 @@ res_MSY_pma <- est.MSY(res_vpa_pma, # VPAの計算結果
                              res_future_Fcurrent_pma$input, # 将来予測で使用した引数
                              seed=res_future_Fcurrent_pma$input$seed,
                              resid.year=0, # ARありの場合、最近何年分の残差を平均するかをここで指定する。ARありの設定を反映させたい場合必ずここを１以上とすること（とりあえず１としておいてください）。
-                             N=100, # 確率的計算の繰り返し回数=>実際の計算では1000~5000回くらいやってください
+                             N=1000, # 確率的計算の繰り返し回数=>実際の計算では1000~5000回くらいやってください
                              calc.yieldcurve=TRUE,
                              PGY=c(0.95,0.9,0.6,0.1), # 計算したいPGYレベル。上限と下限の両方が計算される
                              onlylower.pgy=FALSE, # TRUEにするとPGYレベルの上限は計算しない（計算時間の節約になる）
@@ -71,12 +71,12 @@ res_MSY_pma <- est.MSY(res_vpa_pma, # VPAの計算結果
 save(res_MSY_pma,file = "./inst/extdata/res_MSY_pma.rda")
 
 
-# est MSY (grid)----
+# est MSY (grid) F.msyがみつからな----
 res_MSY_pma_grid <- est.MSY(res_vpa_pma, # VPAの計算結果
                        res_future_Fcurrent_pma$input, # 将来予測で使用した引数
                        seed=res_future_Fcurrent_pma$input$seed,
                        resid.year=0, # ARありの場合、最近何年分の残差を平均するかをここで指定する。ARありの設定を反映させたい場合必ずここを１以上とすること（とりあえず１としておいてください）。
-                       N=100, # 確率的計算の繰り返し回数=>実際の計算では1000~5000回くらいやってください
+                       N=1000, # 確率的計算の繰り返し回数=>実際の計算では1000~5000回くらいやってください
                        calc.yieldcurve=TRUE,
                        PGY=c(0.95,0.9,0.6,0.1), # 計算したいPGYレベル。上限と下限の両方が計算される
                        onlylower.pgy=FALSE, # TRUEにするとPGYレベルの上限は計算しない（計算時間の節約になる）
