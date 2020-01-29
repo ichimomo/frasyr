@@ -297,11 +297,15 @@ future_vpa <- function(tmb_data,
         }
         
         if(optim_method=="R"){
-            msy_optim <- nlminb(start=0, objective=R_obj_fun, tmb_data=tmb_data,
-                                lower=list(x=log(multi_lower)), upper=list(x=log(multi_upper)))
-            msy <- exp(-msy_optim$objective)
-            multi <- exp(msy_optim$par)
-            tmb_data$x <- log(multi)
+            # nlminbを使うとrangeによって壁に当たることがある。optimizeを使ったほうがよさそうなので、optimizeに変更
+            # 一方、tmbはnlminbでないとうまくいかないらしい
+#            msy_optim <- nlminb(start=0, objective=R_obj_fun, tmb_data=tmb_data,
+#                                lower=list(x=log(multi_lower)), upper=list(x=log(multi_upper)))
+#            tmb_data$x <- msy_optim$par            
+            msy_optim <- optimize(R_obj_fun,lower=log(multi_lower),
+                                  upper=log(multi_upper), tmb_data=tmb_data)            
+            tmb_data$x <- msy_optim$minimum
+
         }
         else{
             tmb_data$x <- log(multi_init)            
