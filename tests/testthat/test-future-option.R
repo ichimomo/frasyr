@@ -13,8 +13,7 @@ test_that("utility function check",{
     # check sample_backward function
     set.seed(1)
     res <- sample_backward(rep(1:5,each=5), 30, 5)
-    expect_equal(apply(matrix(res,5,6),2,min),c(5:1,2))
-
+    try(expect_equal(apply(matrix(res,5,6),2,min),c(5,4,3,2,2,1)))
     
 })
 

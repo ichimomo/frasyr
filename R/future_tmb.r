@@ -795,7 +795,12 @@ average_SR_mat <- function(res_vpa,
     return(SR_mat)
 }
 
-#'
+#' 過去にさかのぼってブロックサンプリングをおこなう
+#' 
+#' @param residual リサンプリングする残差
+#' @param n 将来にわたって何年分のリサンプリング残差を作るか
+#' @param duration 1ブロックの年の長さ
+#' 
 #' @examples
 #'
 #' set.seed(1)
