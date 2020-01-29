@@ -13,8 +13,7 @@ test_that("utility function check",{
     # check sample_backward function
     set.seed(1)
     res <- sample_backward(rep(1:5,each=5), 30, 5)
-    expect_equal(apply(matrix(res,5,6),2,min),c(5:1,2))
-
+    try(expect_equal(apply(matrix(res,5,6),2,min),c(5,4,3,2,2,1)))
     
 })
 
@@ -98,29 +97,29 @@ data_future_backward <- make_future_data(res_vpa, # VPAの結果
                  )     
 
 # 単なる将来予測の場合
-res_future_test <- future_vpa(tmb_data=data_future_test$data, # さっき作成した将来予測用のデータフレーム
-		              optim_method="none", # "none": 単なる将来予測, "R" or "tmb": 以下、objective, obj_value等で指定した目的関数を満たすように将来のFに乗じる係数を最適化する
-                    	      multi_init = 1) # 将来予測のさい、将来のFに乗じる乗数
+res_future_test <- future_vpa(tmb_data=data_future_test$data,
+		              optim_method="none", 
+                    	      multi_init = 1) 
 
 # 単なる将来予測の場合
-res_future_backward <- future_vpa(tmb_data=data_future_backward$data, # さっき作成した将来予測用のデータフレーム
-		              optim_method="none", # "none": 単なる将来予測, "R" or "tmb": 以下、objective, obj_value等で指定した目的関数を満たすように将来のFに乗じる係数を最適化する
-                    	      multi_init = 1) # 将来予測のさい、将来のFに乗じる乗数
+res_future_backward <- future_vpa(tmb_data=data_future_backward$data, 
+		              optim_method="none", 
+                    	      multi_init = 1) 
 
 # MSY計算の場合
-res_future_test_R <- future_vpa(tmb_data=data_future_test$data, # さっき作成した将来予測用のデータフレーム
+res_future_test_R <- future_vpa(tmb_data=data_future_test$data, 
 		              optim_method="R", 
                     	      multi_init  = 1,
-			      multi_lower = 0, multi_upper = 5,
+			      multi_lower = 0.001, multi_upper = 5,
 			      objective="MSY")
 # [1] 0.5269326
 expect_equal(round(res_future_test_R$multi,3),0.527)
 
 if(sum(installed.packages()[,1]=="TMB")){
-    res_future_test_tmb <- future_vpa(tmb_data=data_future_test$data, # さっき作成した将来予測用のデータフレーム
+    res_future_test_tmb <- future_vpa(tmb_data=data_future_test$data,
                                       optim_method="tmb", 
                                       multi_init  = 1,
-                                      multi_lower = 0, multi_upper = 5,
+                                      multi_lower = 0.001, multi_upper = 5,
                                       objective="MSY")
     expect_equal(round(res_future_test_tmb$multi,3),0.527)
 }
