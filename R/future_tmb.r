@@ -787,11 +787,17 @@ average_SR_mat <- function(res_vpa,
     random_rec_year_period <- (start_random_rec_year):length(allyear_name)
 
     for(i in 1:length(res_SR_list)){
-        SR_mat_tmp <- set_SR_mat(res_vpa, res_SR_list[[i]], SR_mat, seed_number+i,
-                                 start_random_rec_year_name, resid_type=resid_type,
+        SR_mat_tmp <- set_SR_mat(res_vpa=res_vpa,
+                                 start_random_rec_year_name, 
+                                 SR_mat=SR_mat,
+                                 res_SR=res_SR_list[[i]],
+                                 seed_number=seed_number+i,
+                                 resid_type=resid_type,        
                                  resample_year_range=resample_year_range,
                                  recruit_age=recruit_age,
-                                 bias_correction=bias_correction)
+                                 recruit_intercept=recruit_intercept,
+                                 bias_correction=bias_correction,
+                                 regime_shift_option=regime_shift_option)
         SR_mat[,as.character(range_list[[i]]),] <-
             SR_mat_tmp[,range_list[[i]],]
     }
