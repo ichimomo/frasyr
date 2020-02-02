@@ -521,7 +521,7 @@ fit.SRregime <- function(
   use.fit.SR = TRUE,
   length=10,  # parameter (a,b) の初期値を決めるときにgrid searchする数
   p0 = NULL,  # 初期値
-  w = rep(1,length(SRdata$year)),
+  w = rep(1,length(SRdata$R)),
   max.ssb.pred = 1.3
 ) {
   argname <- ls()
