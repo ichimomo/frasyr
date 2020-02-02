@@ -64,7 +64,7 @@ get.SRdata <- function(vpares,R.dat = NULL,
 #' data(res_vpa)
 #' SRdata <- get.SRdata(res_vpa)
 #' resSR <- fit.SR(SRdata, SR = c("HS","BH","RI")[1],
-#'                 method = c("L1","L2")[1], AR = 1,
+#'                 method = c("L1","L2")[2], AR = 1,
 #'                 out.AR = TRUE, rep.opt = TRUE)
 #' resSR$pars
 #' }
@@ -90,7 +90,7 @@ fit.SR <- function(SRdata,
                    SR="HS",
                    method="L2",
                    AR=1,TMB=FALSE,
-                   hessian=FALSE,w=rep(1,length(SRdata$year)),
+                   hessian=FALSE,w=rep(1,length(SRdata$R)),
                    length=20,
                    max.ssb.pred=1.3, # 予測値を計算するSSBの最大値（観測された最大値への乗数）
                    p0=NULL,
