@@ -1706,7 +1706,8 @@ plot_vpa <- function(vpalist, vpatibble=NULL,
 #' @param MSYlist est.MSYの返り値をリストにしたもの; 単独でも可
 #' @param MSYname 凡例につけるMSYのケースの名前。MSYlistと同じ長さにしないとエラーとなる
 #' @param x_axis_name x軸になにをとるか？("ssb.mean": 親魚の平均資源量, "fmulti": current Fに対する乗数、など)
-#'  @param y_axis_name y軸になにをとるか？("ssb.mean": 親魚の平均資源量, "catch.mean": 平均漁獲量、など）
+#' @param y_axis_name y軸になにをとるか？("ssb.mean": 親魚の平均資源量, "catch.mean": 平均漁獲量、"rec.mean": 加入量の平均値など） get.statの返り値として出される値（またはMSYの推定結果のtrace内の表）に対応
+#' @param plot_CI80 TRUE or FALSE, 平衡状態における信頼区間も追記する(現状では、縦軸が親魚量・漁獲量・加入尾数のときのみ対応)
 #' 
 #' @examples 
 #' \dontrun{
@@ -1720,6 +1721,8 @@ plot_vpa <- function(vpalist, vpatibble=NULL,
 #' # 縦軸を加入量
 #' g3 <- compare_eq_stat(MSY_list,x_axis_name="fmulti",y_axis_name="rec.mean")
 #' gridExtra::grid.arrange(g1,g2,g3,ncol=1)
+#'
+#' g3.withCI <- compare_eq_stat(MSY_list,x_axis_name="fmulti",y_axis_name="rec.mean",plot_CI80=TRUE)
 #' 
 #' }
 #' 
@@ -1729,12 +1732,14 @@ plot_vpa <- function(vpalist, vpatibble=NULL,
 #' 
 
 compare_eq_stat <- function(MSYlist,
-                           x_axis_name="ssb.mean",
+                           x_axis_name="fmulti",
                            y_axis_name="catch.mean", 
                            legend.position="top",
                            is_MSY_line=TRUE,
                            is.scale=FALSE,
-                           MSYname=NULL){
+                           MSYname=NULL,
+                           plot_CI80=FALSE
+                           ){
 
     if(!is.null(MSYname)){
         if(length(MSYname)!=length(MSYlist)) stop("Length of MSYlist and MSYname is different")
@@ -1750,7 +1755,7 @@ compare_eq_stat <- function(MSYlist,
        ,.id="id")
 
     if(isTRUE(is.scale)) data_yield <- data_yield %>% mutate(catch.mean=catch.mean/catch.max,
-                                              ssb.mean=ssb.mean/ssb.max)
+                                                             ssb.mean=ssb.mean/ssb.max)
 
     g1 <- data_yield %>% ggplot()+
         geom_line(aes(x=get(x_axis_name), y=get(y_axis_name[1]), color=id))+
@@ -1758,6 +1763,20 @@ compare_eq_stat <- function(MSYlist,
         xlab(x_axis_name)+ylab(str_c(y_axis_name))+
         geom_vline(data=dplyr::filter(data_yield,catch.order==1),
                    aes(xintercept=get(x_axis_name),color=id),lty=2)
+
+    if(isTRUE(plot_CI80)){
+        y_axis_name_L10 <- dplyr::case_when(
+                                      y_axis_name == "catch.mean" ~ "catch.L10",
+                                      y_axis_name == "ssb.mean"   ~ "ssb.L10",
+                                      y_axis_name == "rec.mean"   ~ "rec.L10")
+        y_axis_name_H10 <- dplyr::case_when(
+                                      y_axis_name == "catch.mean" ~ "catch.H10",
+                                      y_axis_name == "ssb.mean"   ~ "ssb.H10",
+                                      y_axis_name == "rec.mean"   ~ "rec.H10")
+        g1 <- g1 +
+            geom_line(aes(x=get(x_axis_name), y=get(y_axis_name_L10), color=id),lty=2)+
+            geom_line(aes(x=get(x_axis_name), y=get(y_axis_name_H10), color=id),lty=3)
+    }
 
     return(g1)
 }
