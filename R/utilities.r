@@ -138,7 +138,7 @@ SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千ト�
         stat_function(fun=SRF,args=list(a=SR_result$pars$a,
                                         b=SR_result$pars$b),color="deepskyblue3",lwd=1.3)+
     geom_path(data=dplyr::filter(alldata,type=="obs"),
-                  aes(y=R,x=SSB),color=1) +
+                  aes(y=R,x=SSB),color="black") +
         geom_point(data=dplyr::filter(alldata,type=="obs"),
                    aes(y=R,x=SSB),shape=21,fill="white") +
     ggrepel::geom_text_repel(data=dplyr::filter(alldata,type=="obs"),
@@ -201,7 +201,7 @@ plot_yield <- function(MSY_obj,refs_base,
                        AR_select=FALSE,xlim.scale=1.1,
                        biomass.unit=1,labeling=TRUE,lining=TRUE,
                        age.label.ratio=0.9, # 年齢のラベルを入れる位置（xの最大値からの割合)
-                       family = "JP1",
+#                       family = "JP1",
                        ylim.scale=1.2,future=NULL,
                        future.replicate=NULL,
                        past=NULL,future.name=NULL){
@@ -249,7 +249,7 @@ plot_yield <- function(MSY_obj,refs_base,
         mutate(cumcatch=cumsum(value)-value/2)%>%
         mutate(age=as.numeric(as.character(age)))
     age.label <- age.label %>%
-        mutate(age_name=str_c(age,ifelse(age.label$age==max(age.label$age),"+",""),"歳"))
+        mutate(age_name=str_c(age,ifelse(age.label$age==max(age.label$age),"+",""),"Y/O"))
    
     g1 <- g1 + geom_area(aes(x=ssb.mean,y=value,fill=年齢),col="black",alpha=0.5,lwd=1*0.3528) +
 #    geom_line(aes(x=ssb.mean,y=catch.CV,fill=age)) +
@@ -266,8 +266,8 @@ plot_yield <- function(MSY_obj,refs_base,
     coord_cartesian(xlim=c(0,xmax*xlim.scale),
                     ylim=c(0,ymax*ylim.scale),expand=0) +
     geom_text(data=age.label,
-              mapping = aes(y = cumcatch, x = ssb.mean, label = age_name),
-                            family = family
+              mapping = aes(y = cumcatch, x = ssb.mean, label = age_name)#,
+#                            family = family
               ) +
 #    geom_text_repel(data=refs_base,
 #                     aes(y=Catch,x=SSB,label=refs.label),
@@ -351,7 +351,7 @@ plot_yield <- function(MSY_obj,refs_base,
                         aes(y=Catch,x=SSB))+
             ggrepel::geom_label_repel(data=refs_base,
                             aes(y=Catch,x=SSB,label=refs.label),
-#                            size=4,box.padding=0.5,segment.color=1,
+#                            size=4,box.padding=0.5,segment.color="black",
                             hjust=0,#nudge_y      = ymax*ylim.scale-refs_base$Catch/2,
                             direction="y",angle=0,vjust        = 0,segment.size = 1)
 #             geom_label_repel(data=tibble(x=c(1,limit.ratio,ban.ratio),
@@ -926,7 +926,7 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
         ####        
         x.pos <- max.B*HCR.label.position[1]
         y.pos <- multi2currF(1.05)*HCR.label.position[2]
-        g4 <- g4+stat_function(fun = h,lwd=1.5,color=1,n=1000)+
+        g4 <- g4+stat_function(fun = h,lwd=1.5,color="black",n=5000)+
             annotate("text",x=x.pos,y=y.pos,
                      label=str_c("漁獲管理規則\n(β=",beta,")"))
     }
@@ -1127,7 +1127,7 @@ plot_futures <- function(vpares,
     g1 <- future.table.qt %>% dplyr::filter(!is.na(stat)) %>%
         ggplot()+
         geom_line(data=dplyr::filter(future.table.qt,!is.na(stat) & scenario=="VPA"),
-                  mapping=aes(x=year,y=mean),lwd=1,color=1)# VPAのプロット                
+                  mapping=aes(x=year,y=mean),lwd=1,color="black")# VPAのプロット                
 
     if(isTRUE(is.plot.CIrange)){
         g1 <- g1+
