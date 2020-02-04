@@ -1718,31 +1718,35 @@ out.vpa <- function(res=NULL,    # VPA result
                   col_names=TRUE)
   }
 
-      tmpfunc <- function(fres){
-    write("\n# future F at age",file=csvname,append=T)
-    write.table2(apply(fres$faa,c(1,2),mean),title.tmp="Average future F at age")
-          
-          write("\n# future numbers at age",file=csvname,append=T)
-          write.table2(apply(fres$naa,c(1,2),mean),title.tmp="Average future numbers at age")
-          
-          write("\n# future maturity at age",file=csvname,append=T)
-          write.table2(apply(fres$maa,c(1,2),mean),title.tmp="Average future numbers at age")
-          
-          write("\n# future weight at age",file=csvname,append=T)
-          write.table2(apply(fres$waa,c(1,2),mean),title.tmp="Average future numbers at age")
+  tmpfunc <- function(fres){
+      if(class(fres)=="future_new"){
+          fres <- format_to_old_future(fres)
+      }      
 
-          write("\n# future total spawning biomass",file=csvname,append=T)    
-          make_summary_table(fres$vssb,1,probs=ci.future) %>%
-              write_csv(path=csvname,append=TRUE, col_names = TRUE)
-
-          write("\n# future total biomass",file=csvname,append=T)    
-          make_summary_table(fres$vbiom,1,probs=ci.future) %>%
-              write_csv(path=csvname,append=TRUE, col_names = TRUE)
+      write("\n# future F at age",file=csvname,append=T)
+      write.table2(apply(fres$faa,c(1,2),mean),title.tmp="Average future F at age")
           
-          write("\n# future total catch",file=csvname,append=T)    
-          make_summary_table(fres$vwcaa,1,probs=ci.future) %>%
-              write_csv(path=csvname,append=TRUE, col_names = TRUE)
-      }  
+      write("\n# future numbers at age",file=csvname,append=T)
+      write.table2(apply(fres$naa,c(1,2),mean),title.tmp="Average future numbers at age")
+          
+      write("\n# future maturity at age",file=csvname,append=T)
+      write.table2(apply(fres$maa,c(1,2),mean),title.tmp="Average future numbers at age")
+          
+      write("\n# future weight at age",file=csvname,append=T)
+      write.table2(apply(fres$waa,c(1,2),mean),title.tmp="Average future numbers at age")
+
+      write("\n# future total spawning biomass",file=csvname,append=T)    
+      make_summary_table(fres$vssb,1,probs=ci.future) %>%
+          write_csv(path=csvname,append=TRUE, col_names = TRUE)
+
+      write("\n# future total biomass",file=csvname,append=T)    
+      make_summary_table(fres$vbiom,1,probs=ci.future) %>%
+          write_csv(path=csvname,append=TRUE, col_names = TRUE)
+          
+      write("\n# future total catch",file=csvname,append=T)    
+      make_summary_table(fres$vwcaa,1,probs=ci.future) %>%
+          write_csv(path=csvname,append=TRUE, col_names = TRUE)
+  }  
 
   if(!is.null(fres_current)){
       write("\n# future projection under F current",file=csvname,append=T)  
@@ -2139,6 +2143,8 @@ get.SPR <- function(dres,target.SPR=30,Fmax=10,max.age=Inf){
 #'
 #' @param vpares VPAの結果のオブジェクト
 #' @param frag   MSY計算時の将来予測で用いる引数のリスト
+#' @param type "classic"(通常プロット) or "gg"(ggplot)
+#' 
 #' @encoding UTF-8
 #' 
 #'
@@ -2146,8 +2152,10 @@ get.SPR <- function(dres,target.SPR=30,Fmax=10,max.age=Inf){
 #'
 #' 
 
-plot_SRdata <- function(SRdata){
-    plot(SRdata$SSB,SRdata$R,xlab="SSB",ylab="R",xlim=c(0,max(SRdata$SSB)),ylim=c(0,max(SRdata$R)))
+plot_SRdata <- function(SRdata, type=c("classic","gg")[1]){
+    if(type=="classic") plot(SRdata$SSB,SRdata$R,xlab="SSB",ylab="R",xlim=c(0,max(SRdata$SSB)),ylim=c(0,max(SRdata$R)))
+    if(type=="gg") ggplot2::qplot(y=R,x=SSB,data=as_tibble(SRdata),
+                                  xlab="SSB",ylab="R",xlim=c(0,max(SRdata$SSB)),ylim=c(0,max(SRdata$R))) + theme_SH()
 }
 
 #' VPAの結果からMSY推定を行う

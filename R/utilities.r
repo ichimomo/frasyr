@@ -46,7 +46,7 @@ convert_future_table <- function(fout,label="tmp"){
     catch    <- convert_2d_future(df=fout$vwcaa,  name="catch",   label=label)    
     biomass  <- convert_2d_future(df=fout$vbiom,  name="biomass", label=label)
     U_table  <- convert_2d_future(df=U_table,     name="U",       label=label)
-    alpha    <- convert_2d_future(df=fout$alpha,  name="alpha",   label=label)        
+    beta_gamma    <- convert_2d_future(df=fout$alpha,  name="beta_gamma",   label=label)        
     Fsakugen <- convert_2d_future(df=fout$Fsakugen, name="Fsakugen",   label=label)
     recruit  <- convert_2d_future(df=fout$recruit, name="Recruitment",   label=label)
     
@@ -54,7 +54,7 @@ convert_future_table <- function(fout,label="tmp"){
         mutate(value=value+1)
     Fsakugen_ratio$stat <- "Fsakugen_ratio"
 
-    bind_rows(ssb,catch,biomass,alpha,Fsakugen,Fsakugen_ratio,recruit, U_table)
+    bind_rows(ssb,catch,biomass,beta_gamma,Fsakugen,Fsakugen_ratio,recruit, U_table)
 }
         
     
@@ -968,7 +968,7 @@ plot_futures <- function(vpares,
                          font.size=18,
                          ncol=3,
                          is.plot.CIrange=TRUE,
-                         what.plot=c("Recruitment","SSB","biomass","catch","alpha","U"),
+                         what.plot=c("Recruitment","SSB","biomass","catch","beta_gamma","U"),
                          biomass.unit=1,
                          RP_name=c("Btarget","Blimit","Bban"),
                          Btarget=0,Blimit=0,Bban=0,#Blow=0,
@@ -997,28 +997,24 @@ plot_futures <- function(vpares,
         junit <- c("","十","百","千","万")[log10(biomass.unit)+1]
         #    require(tidyverse,quietly=TRUE)
 
-        rename_list <- tibble(stat=c("Recruitment","SSB","biomass","catch","Fsakugen","Fsakugen_ratio","alpha","U"),
+        rename_list <- tibble(stat=c("Recruitment","SSB","biomass","catch","beta_gamma","U"),
                               jstat=c(str_c("加入尾数"),
                                       str_c("親魚量 (",junit,"トン)"),
                                       str_c("資源量 (",junit,"トン)"),
                                       str_c("漁獲量 (",junit,"トン)"),
-                                      "努力量の削減率",
-                                      "Fcurrentに対する乗数",
-                                      "alpha",
+                                      "Fmsyへの乗数(beta x gamma)",
                                       "漁獲割合"))
     }
     else{
         junit <- c("","10","100","1000","10,000")[log10(biomass.unit)+1]
         #    require(tidyverse,quietly=TRUE)
 
-        rename_list <- tibble(stat=c("Recruitment","SSB","biomass","catch","Fsakugen","Fsakugen_ratio","alpha","U"),
+        rename_list <- tibble(stat=c("Recruitment","SSB","biomass","catch","beta_gamma","U"),
                               jstat=c(str_c("Recruits"),
                                       str_c("SB (",junit,"MT)"),
                                       str_c("Biomass (",junit,"MT)"),
                                       str_c("Catch (",junit,"MT)"),
-                                      "Effort reduction",
-                                      "multiplier to Fcurrent",
-                                      "alpha",
+                                      "multiplier to Fmsy",
                                       "Catch/Biomass (U)"))        
         }
 
@@ -1051,7 +1047,7 @@ plot_futures <- function(vpares,
     
     future.example <- future.example %>%
         mutate(stat = as.character(stat),
-             value=ifelse((stat=="Fsakugen"|stat=="Fsakugen_ratio"|stat=="alpha"|stat=="U"),
+             value=ifelse((stat=="beta_gamma"|stat=="U"),
                           value,value/biomass.unit)) %>%
       left_join(rename_list) %>%
       group_by(sim,scenario)
@@ -1076,7 +1072,7 @@ plot_futures <- function(vpares,
         bind_rows(future.table,vpa_tb,future.dummy) %>%
         mutate(stat=factor(stat,levels=rename_list$stat)) %>%
         mutate(scenario=factor(scenario,levels=c(future.name,"VPA"))) %>%
-        mutate(value=ifelse(stat%in%c("Fsakugen","Fsakugen_ratio","alpha","U"),value,value/biomass.unit))
+        mutate(value=ifelse(stat%in%c("beta_gamma","U"),value,value/biomass.unit))
 
     future.table.qt <- 
         future.table %>% group_by(scenario,year,stat) %>%
@@ -1100,8 +1096,8 @@ plot_futures <- function(vpares,
         mutate(jstat=factor(jstat,levels=rename_list$jstat))
 
 
-    dummy     <- left_join(dummy,rename_list) %>% dplyr::filter(!is.na(stat))
-    dummy2    <- left_join(dummy2,rename_list) %>% dplyr::filter(!is.na(stat))
+    dummy     <- left_join(dummy,rename_list,by="stat") %>% dplyr::filter(!is.na(stat))
+    dummy2    <- left_join(dummy2,rename_list,by="stat") %>% dplyr::filter(!is.na(stat))
 
     if("SSB" %in% what.plot){
         ssb_RP <- tibble(jstat = dplyr::filter(rename_list, stat == "SSB") %>%
@@ -1828,10 +1824,11 @@ compare_MSY <- function(MSYlist,
 
 #' @export
 compare_SRfit <- function(SRlist){
-    plot_SRdata(SRlist[[1]]$input$SRdata)
+    g1 <- plot_SRdata(SRlist[[1]]$input$SRdata,type="gg")
     for(i in 1:length(SRlist)){
-        lines(SRlist[[i]]$pred,col=i)
+        g1 <- g1 + geom_line(data=SRlist[[i]]$pred,mapping=aes(x=SSB,y=R),col=i)
     }
+    g1
 }
 
 #'
