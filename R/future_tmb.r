@@ -86,10 +86,13 @@ make_future_data <- function(res_vpa,
    
     vpa_nyear           <- ncol(res_vpa$naa)
     future_initial_year <- which(colnames(res_vpa$naa)==future_initial_year_name)
+    if(length(future_initial_year)  ==0) stop("future_initial_year_name is invalid.")
     total_nyear         <- future_initial_year + nyear
     allyear_name        <- min(as.numeric(colnames(res_vpa$naa)))+c(0:(total_nyear-1))
     allyear_label       <- c(rep("VPA",future_initial_year),rep("future",nyear))
     start_random_rec_year  <- which(allyear_name==start_random_rec_year_name)
+    if(length(start_random_rec_year)==0) stop("start_random_rec_year_name is invalid.")
+    
     tmpdata <- tibble(allyear_name, allyear_label) %>%
         group_by(allyear_label) %>%
         summarize(start=min(allyear_name),end=max(allyear_name))
@@ -582,6 +585,8 @@ set_SR_mat <- function(res_vpa=NULL,
     start_random_rec_year  <- which(allyear_name==start_random_rec_year_name)
     random_rec_year_period <- (start_random_rec_year):length(allyear_name)
 
+    if(!resid_type%in%c("lognormal","resample","backward")) stop("resid_type is invalid.")
+
     # define SR function
     if(res_SR$input$SR=="HS"){
         SR_mat[,,"SR_type"] <- 1
@@ -740,9 +745,10 @@ make_array <- function(d3_mat, pars, pars.year, year_replace_future){
         }
         else{
             if(length(pars)==dim(d3_mat)[[1]]) pars.future <- pars
-            else stop("length of parameter is bad..")
+            else stop("length of parameter is different from what is expected.")
         }
         d3_mat[,which(year_replace_future==years):length(years),] <- pars.future
+        if(sum(year_replace_future==years)==0) stop("year_replace_future is invalid.")
         
         return(d3_mat)
     }
