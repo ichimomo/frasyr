@@ -707,6 +707,7 @@ set_SR_mat <- function(res_vpa=NULL,
                                  seed_number = seed_number+1,
                                  start_random_rec_year_name=start_random_rec_year_name,
                                  resid_type  = resid_type,
+                                 recruit_intercept=recruit_intercept,
                                  recruit_age = recruit_age,
                                  bias_correction = bias_correction
                                  )
@@ -786,6 +787,7 @@ average_SR_mat <- function(res_vpa,
                            recruit_age,
                            resid_type="lognormal",
                            resample_year_range=0,
+                           recruit_intercept=recruit_intercept,
                            bias_correction=TRUE){
     
     allyear_name <- dimnames(SR_mat)[[1]]
