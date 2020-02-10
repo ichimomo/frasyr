@@ -911,7 +911,8 @@ naming_adreport <- function(tmb_data, ad_report){
     tmb_data$SR_mat[,,"ssb"] <- ad_report$spawner_mat
     tmb_data$SR_mat[,,"recruit"] <- ad_report$N_mat[1,,]
     
-    return(list(wcaa=wcaa, naa=naa, faa=faa, SR_mat=tmb_data$SR_mat))
+    return(list(wcaa=wcaa, naa=naa, faa=faa, SR_mat=tmb_data$SR_mat,
+                waa=tmb_data$waa_mat, waa_catch_mat=tmb_data$waa_catch_mat))
 }
 
 
