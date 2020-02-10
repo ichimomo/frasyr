@@ -965,8 +965,6 @@ plot_futures <- function(vpares,
                          future_tibble=NULL,
                          CI_range=c(0.1,0.9),
                          maxyear=NULL,
-                         font.size=18,
-                         ncol=3,
                          is.plot.CIrange=TRUE,
                          what.plot=c("Recruitment","SSB","biomass","catch","beta_gamma","U"),
                          biomass.unit=1,
@@ -977,7 +975,10 @@ plot_futures <- function(vpares,
                          n_example=3, # number of examples
                          example_width=0.7, # line width of examples
                          future.replicate=NULL, 
-                         seed=1 # seed for selecting the above example
+                         seed=1, # seed for selecting the above example
+                         legend.position="top",
+                         font.size=18,
+                         ncol=3
                          ){
 
     col.SBtarget <- "#00533E"
@@ -1141,10 +1142,9 @@ plot_futures <- function(vpares,
     g1 <- g1+
         geom_blank(data=dummy,mapping=aes(y=value,x=year))+
         geom_blank(data=dummy2,mapping=aes(y=value,x=year))+
-        theme_bw(base_size=font.size) +
+        #theme_bw(base_size=font.size) +
         #        coord_cartesian(expand=0)+
         scale_y_continuous(expand=expand_scale(mult=c(0,0.05)))+
-        theme(legend.position="top",panel.grid = element_blank())+
         facet_wrap(~factor(jstat,levels=rename_list$jstat),scales="free_y",ncol=ncol)+        
         xlab("年")+ylab("")+ labs(fill = "",linetype="",color="")+
         xlim(min(future.table$year),maxyear)
@@ -1184,7 +1184,15 @@ plot_futures <- function(vpares,
         g1 <- g1+scale_alpha_discrete(guide=FALSE)            
     }
 
-    g1 <- g1 + guides(lty=guide_legend(ncol=3), fill=guide_legend(ncol=3), col=guide_legend(ncol=3))
+    g1 <- g1 + guides(lty=guide_legend(ncol=3),
+                      fill=guide_legend(ncol=3),
+                      col=guide_legend(ncol=3))+
+        theme_SH(base_size=font.size,legend.position=legend.position)+
+        scale_color_hue(l=40)+
+        labs(caption = str_c("(塗り:", CI_range[1]*100,"-",CI_range[2]*100,
+                             "%信頼区間, 太い実線: 平均値",
+                             ifelse(n_example>0,", 細い実線: シミュレーションの1例)",")")
+                             ))
         
     return(g1)
 }
@@ -1507,9 +1515,9 @@ export_kobeII_tables <- function(kobeII_table,
 #' @export
 #' 
 
-theme_SH <- function(legend.position="none"){
-    theme_bw(base_size=12) +
-    theme(panel.grid = element_blank(),
+theme_SH <- function(legend.position="none",base_size=12){
+    theme_bw(base_size=base_size) +
+        theme(panel.grid = element_blank(),
           axis.text.x=element_text(size=11,color="black"),
           axis.text.y=element_text(size=11,color="black"),
           axis.line.x=element_line(size= 0.3528),
