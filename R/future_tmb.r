@@ -754,6 +754,7 @@ set_SR_mat <- function(res_vpa=NULL,
                                  resid_type  = resid_type,
                                  recruit_intercept=recruit_intercept,
                                  recruit_age = recruit_age,
+                                 regime_shift_option = regime_shift_option,
                                  bias_correction = bias_correction
                                  )
     }
@@ -832,7 +833,8 @@ average_SR_mat <- function(res_vpa,
                            recruit_age,
                            resid_type="lognormal",
                            resample_year_range=0,
-                           recruit_intercept=recruit_intercept,
+                           regime_shift_option=NULL,
+                           recruit_intercept=0,
                            bias_correction=TRUE){
     
     allyear_name <- dimnames(SR_mat)[[1]]
