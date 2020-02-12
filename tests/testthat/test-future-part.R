@@ -2,7 +2,7 @@ library(frasyr)
 
 context("future ref.F")
 
-test_that("oututput value check",{
+test_that("output value check",{
   load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
 
   res_ref_f_pma_check <- ref.F(res_vpa_pma,Fcurrent=NULL,waa=NULL,maa=NULL,M=NULL,waa.catch=NULL,M.year=NULL,
@@ -31,11 +31,13 @@ test_that("oututput value check",{
   #照合内容
   testcontents <-c("sel","max.age","min.age","rps.q","spr.q","Fcurrent","Fmed","Flow","Fhigh","Fmax","F0.1","Fmean","rps.data","FpSPR","summary","ypr.spr","waa","waa.catch","maa","spr0")
 
-  #読み込んだ結果と照合
   for(i in 1:length(testcontents)){
-    expect_equal(eval(parse(text=paste("res_ref_f_pma$",testcontents[i]))),eval(parse(text=paste("res_ref_f_pma_check$",testcontents[i]))))
+      tmp1 <- eval(parse(text=paste("res_ref_f_pma$",testcontents[i])))
+      tmp2 <- eval(parse(text=paste("res_ref_f_pma_check$",testcontents[i])))
+      expect_equivalent(tmp1,tmp2,tolerance=1e-4,label=testcontents[i])
+      # %SPRを計算するところで、初期値が変わると1e-4以下の誤差で値がずれるので1e-4をtoleranceに入れる
+      # toleranceのつづりが間違っていても誰も教えてくれない（無言でtoleranceを無視する）ため注意
   }
-
 })
 
 context("future SRdata")
@@ -354,64 +356,6 @@ test_that("oututput value check",{
   # check trace
   for(i in 1:ncol(trace_check)) expect_equal(unlist(trace_check[,i]),unlist(trace_old[,i]), label=colnames(trace_check)[i])  
   
-  
-  ## #summaryとF.msyの照合
-  ## testcontents<-c("summary$RP_name","summary$AR","summary$SSB","summary$SSB2SSB0","summary$B","summary$U","summary$Catch","summary$Catch.CV","summary$`Fref/Fcur`","summary$Fref2Fcurrent","summary$F0","summary$F1","summary$F2","summary$F3","F.msy")
-
-  ## for(i in 1:length(testcontents)){
-  ##   if(is.numeric(eval(parse(text=paste("res_MSY_pma_check$",testcontents[i]))))){
-  ##     if( is.nan(as.numeric(as.character(eval(parse(text=paste("res_MSY_pma_check$",testcontents[i],"[2]")))))) ){
-  ##       expect_equal(as.numeric(as.character(eval(parse(text=paste("res_MSY_pma$",testcontents[i],"[1]"))))),as.numeric(as.character(eval(parse(text=paste("res_MSY_pma_check$",testcontents[i],"[1]"))))),label=c(testcontents[i]))
-  ##       expect_equal(as.numeric(as.character(eval(parse(text=paste("res_MSY_pma$",testcontents[i],"[2]"))))),as.numeric(as.character(eval(parse(text=paste("res_MSY_pma_check$",testcontents[i],"[2]"))))),label=c(testcontents[i]))
-  ##       for(j in 3:length(eval(parse(text=paste("res_MSY_pma_check$",testcontents[i]))))){
-  ##         expect_equal(as.numeric(as.character(eval(parse(text=paste("res_MSY_pma$",testcontents[i],"[",j,"]"))))),as.numeric(as.character(eval(parse(text=paste("res_MSY_pma_check$",testcontents[i],"[",j,"]"))))),label=c(testcontents[i]))
-  ##       }
-  ##     }
-  ##     else if(as.numeric(as.character(eval(parse(text=paste("res_MSY_pma_check$",testcontents[i],"[2]"))))) == 0 ) {
-  ##       expect_equal(as.numeric(as.character(eval(parse(text=paste("res_MSY_pma$",testcontents[i],"[1]"))))),as.numeric(as.character(eval(parse(text=paste("res_MSY_pma_check$",testcontents[i],"[1]"))))),label=c(testcontents[i]))
-  ##       expect_equal(as.numeric(as.character(eval(parse(text=paste("res_MSY_pma$",testcontents[i],"[2]"))))),as.numeric(as.character(eval(parse(text=paste("res_MSY_pma_check$",testcontents[i],"[2]"))))),label=c(testcontents[i]))
-  ##       for(j in 3:length(eval(parse(text=paste("res_MSY_pma_check$",testcontents[i]))))){
-  ##         expect_equal(as.numeric(as.character(eval(parse(text=paste("res_MSY_pma$",testcontents[i],"[",j,"]"))))),as.numeric(as.character(eval(parse(text=paste("res_MSY_pma_check$",testcontents[i],"[",j,"]"))))),label=c(testcontents[i]))
-  ##       }
-  ##     }
-  ##     else{
-  ##       expect_equal(as.numeric(as.character(eval(parse(text=paste("res_MSY_pma$",testcontents[i]))))),as.numeric(as.character(eval(parse(text=paste("res_MSY_pma_check$",testcontents[i]))))),label=c(testcontents[i]))
-  ##     }
-  ##   }
-  ##   else{
-  ##     expect_equal(as.character(eval(parse(text=paste("res_MSY_pma$",testcontents[i])))),as.character(eval(parse(text=paste("res_MSY_pma_check$",testcontents[i])))),label=c(testcontents[i]))
-  ##     }
-  ## }
-
-  ## testcontents <-c("all.stat$catch.mean","all.stat$catch.sd","all.stat$catch.geomean","all.stat$catch.median","all.stat$catch.L10","all.stat$catch.H10","all.stat$ssb.mean","all.stat$ssb.sd","all.stat$ssb.geomean","all.stat$ssb.median","all.stat$ssb.L10","all.stat$ssb.H10","all.stat$biom.mean","all.stat$biom.sd","all.stat$biom.geomean","all.stat$biom.median","all.stat$biom.L10","all.stat$biom.H10","all.stat$Fref2Fcurrent","all.stat$U.mean","all.stat$U.median","all.stat$U.geomean","all.stat$catch.CV","all.stat$ssb.CV","all.stat$biom.CV","all.stat$F0","all.stat$F1","all.stat$F2","all.stat$F3","all.stat$'TB-mean-A0'","all.stat$'TB-mean-A1'","all.stat$'TB-mean-A2'","all.stat$'TB-mean-A3'","all.stat$'TB-median-A0'","all.stat$'TB-median-A1'","all.stat$'TB-median-A2'","all.stat$'TB-median-A3'","all.stat$'TB-geomean-A0'","all.stat$'TB-geomean-A1'","all.stat$'TB-geomean-A2'","all.stat$'TB-geomean-A3'","all.stat$'TB-det-A0'","all.stat$'TB-det-A1'","all.stat$'TB-det-A2'","all.stat$'TB-det-A3'","all.stat$'TB-L10-A0'","all.stat$'TB-L10-A1'","all.stat$'TB-L10-A2'","all.stat$'TB-L10-A3'","all.stat$'TB-H10-A0'","all.stat$'TB-H10-A1'","all.stat$'TB-H10-A2'","all.stat$'TB-H10-A3'","all.stat$'TC-mean-A0'","all.stat$'TC-mean-A1'","all.stat$'TC-mean-A2'","all.stat$'TC-mean-A3'","all.stat$'TC-median-A0'","all.stat$'TC-median-A1'","all.stat$'TC-median-A2'","all.stat$'TC-median-A3'","all.stat$'TC-geomean-A0'","all.stat$'TC-geomean-A1'","all.stat$'TC-geomean-A2'","all.stat$'TC-geomean-A3'","all.stat$'TC-det-A0'","all.stat$'TC-det-A1'","all.stat$'TC-det-A2'","all.stat$'TC-det-A3'","all.stat$'TC-L10-A0'","all.stat$'TC-L10-A1'","all.stat$'TC-L10-A2'","all.stat$'TC-L10-A3'","all.stat$'TC-H10-A0'","all.stat$'TC-H10-A1'","all.stat$'TC-H10-A2'","all.stat$'TC-H10-A3'","all.stat$'SSB-GA-A0'","all.stat$'SSB-GA-A1'","all.stat$'SSB-GA-A2'","all.stat$'SSB-GA-A3'","all.stat$'SSB-median-A0'","all.stat$'SSB-median-A1'","all.stat$'SSB-median-A2'","all.stat$'SSB-median-A3'","all.stat$'SSB-geomean-A0'","trace$catch.mean","trace$catch.sd","trace$catch.geomean","trace$catch.median","trace$catch.L10","trace$catch.H10","trace$ssb.mean","trace$ssb.sd","trace$ssb.geomean","trace$ssb.median","trace$ssb.L10","trace$ssb.H10","trace$biom.mean","trace$biom.sd","trace$biom.geomean","trace$biom.median","trace$biom.L10","trace$biom.H10","trace$U.mean","trace$U.median","trace$U.geomean","trace$catch.CV","trace$ssb.CV","trace$F0","trace$F1","trace$F2","trace$F3","trace$'TB-mean-A0'","trace$'TB-mean-A1'","trace$'TB-mean-A2'","trace$'TB-mean-A3'","trace$'TB-median-A0'","trace$'TB-median-A1'","trace$'TB-median-A2'","trace$'TB-median-A3'","trace$'TB-geomean-A0'","trace$'TB-geomean-A1'","trace$'TB-geomean-A2'","trace$'TB-geomean-A3'","trace$'TB-det-A0'","trace$'TB-det-A1'","trace$'TB-det-A2'","trace$'TB-det-A3'","trace$'TB-L10-A0'","trace$'TB-L10-A1'","trace$'TB-L10-A2'","trace$'TB-L10-A3'","trace$'TB-H10-A0'","trace$'TB-H10-A1'","trace$'TB-H10-A2'","trace$'TB-H10-A3'","trace$'TC-mean-A0'","trace$'TC-mean-A1'","trace$'TC-mean-A2'","trace$'TC-mean-A3'","trace$'TC-median-A0'","trace$'TC-median-A1'","trace$'TC-median-A2'","trace$'TC-median-A3'","trace$'TC-geomean-A0'","trace$'TC-geomean-A1'","trace$'TC-geomean-A2'","trace$'TC-geomean-A3'","trace$'TC-det-A0'","trace$'TC-det-A1'","trace$'TC-det-A2'","trace$'TC-det-A3'","trace$'TC-L10-A0'","trace$'TC-L10-A1'","trace$'TC-L10-A2'","trace$'TC-L10-A3'","trace$'TC-H10-A0'","trace$'TC-H10-A1'","trace$'TC-H10-A2'","trace$'TC-H10-A3'","trace$'SSB-GA-A0'","trace$'SSB-GA-A1'","trace$'SSB-GA-A2'","trace$'SSB-GA-A3'","trace$'SSB-median-A0'","trace$'SSB-median-A1'","trace$'SSB-median-A2'","trace$'SSB-median-A3'","trace$'SSB-geomean-A0'")
-
-  ## for(i in 1:length(testcontents)){
-  ##   if(is.null(eval(parse(text=paste("res_MSY_pma_check$",testcontents[i]))))) {
-  ##     expect_equal(eval(parse(text=paste("res_MSY_pma$",testcontents[i]))),eval(parse(text=paste("res_MSY_pma_check$",testcontents[i]))),label=c(testcontents[i]))
-  ##   }
-  ##   else{
-  ##     if( is.nan(as.numeric(as.character(eval(parse(text=paste("res_MSY_pma_check$",testcontents[i],"[2]")))))) || is.na(as.character(eval(parse(text=paste("res_MSY_pma_check$",testcontents[i],"[2]"))))) ){
-
-  ##       expect_equal(as.numeric(as.character(eval(parse(text=paste("res_MSY_pma$",testcontents[i],"[1]"))))),as.numeric(as.character(eval(parse(text=paste("res_MSY_pma_check$",testcontents[i],"[1]"))))),label=c(testcontents[i]))
-  ##       expect_equal(as.numeric(as.character(eval(parse(text=paste("res_MSY_pma$",testcontents[i],"[2]"))))),as.numeric(as.character(eval(parse(text=paste("res_MSY_pma_check$",testcontents[i],"[2]"))))),label=c(testcontents[i]))
-  ##       for(j in 3:length(eval(parse(text=paste("res_MSY_pma_check$",testcontents[i]))))){
-  ##         expect_equal(as.numeric(as.character(eval(parse(text=paste("res_MSY_pma$",testcontents[i],"[",j,"]"))))),as.numeric(as.character(eval(parse(text=paste("res_MSY_pma_check$",testcontents[i],"[",j,"]"))))),label=c(testcontents[i]))
-  ##       }
-  ##     }
-  ##     else if(as.numeric(as.character(eval(parse(text=paste("res_MSY_pma_check$",testcontents[i],"[2]"))))) == 0 ) {
-
-  ##       expect_equal(as.numeric(as.character(eval(parse(text=paste("res_MSY_pma$",testcontents[i],"[1]"))))),as.numeric(as.character(eval(parse(text=paste("res_MSY_pma_check$",testcontents[i],"[1]"))))),label=c(testcontents[i]))
-  ##       expect_equal(as.numeric(as.character(eval(parse(text=paste("res_MSY_pma$",testcontents[i],"[2]"))))),as.numeric(as.character(eval(parse(text=paste("res_MSY_pma_check$",testcontents[i],"[2]"))))),label=c(testcontents[i]))
-  ##       for(j in 3:length(eval(parse(text=paste("res_MSY_pma_check$",testcontents[i]))))){
-  ##         expect_equal(as.numeric(as.character(eval(parse(text=paste("res_MSY_pma$",testcontents[i],"[",j,"]"))))),as.numeric(as.character(eval(parse(text=paste("res_MSY_pma_check$",testcontents[i],"[",j,"]"))))),label=c(testcontents[i]))
-  ##       }
-  ##     }
-  ##     else{
-  ##       expect_equal(as.numeric(as.character(eval(parse(text=paste("res_MSY_pma$",testcontents[i]))))),as.numeric(as.character(eval(parse(text=paste("res_MSY_pma_check$",testcontents[i]))))),label=c(testcontents[i]))
-  ##     }
-  ##   }
-  ## }
-
 })
 
 
