@@ -261,7 +261,7 @@ plot_yield <- function(MSY_obj,refs_base,
     #形は塗りつぶしができる形にすること
     scale_shape_manual(values = c(21, 24,5,10)) +
     #塗りつぶし色を指定する
-    scale_color_manual(values = c("green", "pink","orange","yellow"))+
+    scale_color_manual(values = c("darkgreen", "darkblue","orange","yellow"))+
     theme(panel.grid = element_blank(),axis.text=element_text(color="black")) +
     coord_cartesian(xlim=c(0,xmax*xlim.scale),
                     ylim=c(0,ymax*ylim.scale),expand=0) +
@@ -280,10 +280,18 @@ plot_yield <- function(MSY_obj,refs_base,
     xlab(str_c("平均親魚量 (",junit,"トン)")) + ylab(str_c("平均漁獲量 (",junit,"トン)"))
 
     if(!is.null(future)){
-        tmpdata <- NULL
+        futuredata <- NULL
         for(j in 1:length(future)){
+            if(class(future[[j]])=="future_new"){
+                future_init <- future[[j]]$input$tmb_data$future_initial_year
+                future_init <- as.numeric(dimnames(future[[j]]$naa)[[2]][future_init])
+                future[[j]] <- format_to_old_future(future[[j]])
+            }
+            else{
+                future_init <- 0
+                }
             if(is.null(future.replicate)){
-               tmpdata <- bind_rows(tmpdata,
+               futuredata <- bind_rows(futuredata,
                    tibble(
                    year        =as.numeric(rownames(future[[j]]$vssb)),
                    ssb.future  =apply(future[[j]]$vssb[,-1],1,mean)/biomass.unit,
@@ -291,29 +299,28 @@ plot_yield <- function(MSY_obj,refs_base,
                    scenario=future.name[j]))
             }
             else{
-               tmpdata <- bind_rows(tmpdata,
+               futuredata <- bind_rows(futuredata,
                    tibble(
                    year        =as.numeric(rownames(future[[j]]$vssb)),
                    ssb.future  =future[[j]]$vssb[,future.replicate[j]]/biomass.unit,
                    catch.future=future[[j]]$vwcaa[,future.replicate[j]]/biomass.unit,
                    scenario=future.name[j]))                
             }
-            tmpdata <- tmpdata %>% group_by(scenario)
+            futuredata <- futuredata %>% group_by(scenario) %>%
+                dplyr::filter(year > future_init)
             g1 <- g1 +
-                geom_path(data=tmpdata,
+                geom_path(data=futuredata,
                           mapping=aes(x       =ssb.future,
                                       y       = catch.future,
                                       linetype=factor(scenario),
                                       color   = factor(scenario)),
                           lwd=1)+
-                geom_point(data=tmpdata,
+                geom_point(data=futuredata,
                            mapping=aes(x    =ssb.future,
                                        y    =catch.future,
                                        shape=factor(scenario),
                                        color=factor(scenario)),
                            size=3)
-
-            
         }
     }
     
@@ -322,18 +329,16 @@ plot_yield <- function(MSY_obj,refs_base,
       if (past$input$last.catch.zero && !is.null(future)) {
         catch.past[length(catch.past)] = apply(future[[1]]$vwcaa[,-1],1,mean)[1]/biomass.unit
       }
-        tmpdata <- tibble(
+        pastdata <- tibble(
             year      =as.numeric(colnames(past$ssb)),
             ssb.past  =unlist(colSums(past$ssb, na.rm=T))/biomass.unit,
             catch.past=catch.past
         )
 
         g1 <- g1 +
-#            geom_point(data=tmpdata,mapping=aes(x=ssb.past,y=catch.past,
-#                                                alpha=year),shape=2) +
-    geom_path(data=tmpdata,
-              mapping=aes(x=ssb.past,y=catch.past),
-              color=col.SBban,lwd=1,alpha=0.9)
+            geom_path(data=pastdata,
+                      mapping=aes(x=ssb.past,y=catch.past),
+                      color="darkred",lwd=1,alpha=0.9)
     }
     
     if(isTRUE(lining)){
@@ -1205,40 +1210,47 @@ plot_futures <- function(vpares,
 #' @export
 
 plot_Fcurrent <- function(vpares,
+                          Fcurrent=NULL,
                           year.range=NULL){
 
     if(is.null(year.range)) year.range <- min(as.numeric(colnames(vpares$naa))):max(as.numeric(colnames(vpares$naa)))
     vpares_tb <- convert_vpa_tibble(vpares)
 
-    fc_at_age <- vpares_tb %>%
+    faa_history <- vpares_tb %>%
         dplyr::filter(stat=="fishing_mortality", year%in%year.range) %>%
-        mutate(F=value,year=as.character(year)) %>%
-        select(-stat,-sim,-type,-value)
-    fc_at_age_current <- tibble(F=vpares$Fc.at.age,age=as.numeric(rownames(vpares$naa)),
-                                year="currentF")
-    fc_at_age <- bind_rows(fc_at_age,fc_at_age_current) %>%
-        mutate(F_name=c("gray","tomato")[as.numeric(year=="currentF")+1]) %>%
-        group_by(year)
+        mutate(F=value,year=as.character(year),type="History") %>%
+        select(-stat,-sim,-value) %>%
+        group_by(year) %>%
+        dplyr::filter(!is.na(F)) %>%
+        mutate(Year=as.numeric(year)) %>%
+        mutate(age_name=ifelse(max(age)==age,str_c(age,"+"),age))
     
-    g <- fc_at_age %>% ggplot() +
-        geom_line(aes(x=age,y=as.numeric(F),alpha=year,linetype=F_name,color=F_name),lwd=1.5) +
-        #        geom_line(data=fc_at_age_current,mapping=aes(x=age,y=as.numeric(F)),color="tomato",lwd=1.5)+        
-        #        geom_point(data=fc_at_age_current,mapping=aes(x=age,y=as.numeric(F)),color="tomato",size=2)+
-        #        scale_color_gradient(low="gray",high="blue")+
-        scale_colour_identity()+
-        theme_bw()+theme(legend.position="none")+
-        coord_cartesian(expand=0,ylim=c(0,max(fc_at_age$F)*1.1),xlim=range(fc_at_age$age)+c(-0.5,0.5))+
-        labs(year="年",color="",labels=c(gray="",tomato="Current F"))+
-        #        theme(#legend.position="bottom",
-        #            panel.grid = element_blank())+
-        xlab("年齢")+ylab("漁獲係数(F)")#+
-#    scale_color_discrete(name="F type",breaks=c())
-#    scale_colour_manual(
-#        values = c(
-#            col1  = "gray",
-#            col2  = "tomato",
-#            col3  = "blue3",
-    #            col4  = "yellow3")    )
+    if(is.null(Fcurrent)){
+        fc_at_age_current <- vpares$Fc.at.age
+    }
+    else{
+        fc_at_age_current <- Fcurrent
+    }
+    fc_at_age_current <- tibble(F=fc_at_age_current,age=as.numeric(rownames(vpares$naa)),
+                                year="0",type="currentF") %>%
+        dplyr::filter(!is.na(F)) %>%
+        mutate(age_name=ifelse(max(age)==age,str_c(age,"+"),age))
+
+    pal <- c("#3B9AB2", "#56A6BA", "#71B3C2", "#9EBE91", "#D1C74C",
+             "#E8C520", "#E4B80E", "#E29E00", "#EA5C00", "#F21A00")
+    g <- faa_history  %>% ggplot() +
+        geom_path(aes(x=age_name,y=F,color=Year,group=Year),lwd=1.5) +
+        scale_color_gradientn(colors = pal)+
+        geom_path(data=fc_at_age_current,
+                  mapping=aes(x=age_name,y=F,group=type),color="black",lwd=1.5,lty=1)+        
+        geom_point(data=fc_at_age_current,
+                  mapping=aes(x=age_name,y=F,shape=type),color="black",size=3)+
+        coord_cartesian(ylim=c(0,max(faa_history$F,na.rm=T)))+
+##                        xlim=range(as.numeric(faa_history$age_name,na.rm=T))+c(-0.5,0.5)
+#                        )+        
+        xlab("年齢")+ylab("漁獲係数(F)")+theme_SH(legend.position="right")+
+        scale_shape_discrete(name="", labels=c("F current"))
+
     return(g)
 }
 
@@ -1264,10 +1276,12 @@ library(ggplot2)
 #' @export
 
 plot_HCR <- function(SBtarget,SBlim,SBban,Ftarget,
+                     Fcurrent=-1,
                      biomass.unit=1,
                      beta=0.8,col.multi2currf="black",col.SBtarget="#00533E",
                      col.SBlim="#edb918",col.SBban="#C73C2E",col.Ftarget="black",
-                     col.betaFtarget="gray",is.text = TRUE){
+                     col.betaFtarget="gray",is.text = TRUE,
+                     RP.label=c("目標管理基準値","限界管理基準値","禁漁水準")){
     
   # Arguments; SBtarget,SBlim,SBban,Ftarget,beta,col.multi2currf,col.SBtarget,col.SBlim,col.SBban,col.Ftarget,col.betaFtarget.
   # col.xx means the line color for xx on figure.
@@ -1300,17 +1314,29 @@ plot_HCR <- function(SBtarget,SBlim,SBban,Ftarget,
         geom_hline(yintercept = Ftarget, size = 0.9, linetype = "43", color = col.Ftarget) +
         geom_hline(yintercept = beta*Ftarget, size = 0.7, linetype = "43", color = col.betaFtarget) +
         labs(title = "",subtitle = "", caption =  "", x = str_c("親魚量 (",junit,"トン)"),
-             y = "努力量の乗数",color = "") +
+             y = "漁獲圧の比(F/Fmsy)",color = "") +
         theme_bw(base_size=12)+
         theme(legend.position="none",panel.grid = element_blank())+
         stat_function(fun = h,lwd=1.5,color=col.multi2currf)
+
+    if(Fcurrent>0){
+        g <- g+geom_hline(yintercept = Fcurrent, size = 0.7, linetype = 1, color = "gray")+
+            geom_label(label="Fcurrent", x=SBtarget*1.1, y=Fcurrent)
+        
+    }
+    
     if (is.text) {
       g <- g +
-        annotate("text", label="目標水準", x=SBtarget, y=1.2*Ftarget) +
-        annotate("text", label="限界水準", x=SBlim, y=1.1*Ftarget) +
-        annotate("text", label="禁漁水準", x=SBban, y=1.2*Ftarget)+
-        annotate("text", label="Ftarget", x=SBtarget/15, y=0.95*Ftarget)+
-        annotate("text", label=str_c(beta,"Ftarget"), x=SBtarget/15, y=0.95*beta*Ftarget)
+#        annotate("text", label=RP.label[1], x=SBtarget, y=1.2*Ftarget) +
+#        annotate("text", label=RP.label[2], x=SBlim, y=1.1*Ftarget) +
+#        annotate("text", label=RP.label[3], x=SBban, y=1.2*Ftarget)+
+#        annotate("text", label="Fmsy", x=SBtarget/15, y=0.95*Ftarget)+
+    #        annotate("text", label=str_c(beta,"Fmsy"), x=SBtarget/15, y=0.95*beta*Ftarget)
+    geom_label(label=RP.label[1], x=SBtarget, y=Ftarget*0.9) +
+    geom_label(label=RP.label[2], x=SBlim, y=Ftarget*0.9) +
+    geom_label(label=RP.label[3], x=SBban, y=Ftarget*0.9)+
+    geom_label(label="Fmsy", x=SBtarget*1.2, y=Ftarget)+
+    geom_label(label=str_c(beta,"Fmsy"), x=SBtarget*1.2, y=beta*Ftarget)    
     }
 
     return(g)

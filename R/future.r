@@ -178,10 +178,14 @@ ref.F <- function(
     FpSPR <- NULL
 
     for (i in pSPR){
-      Fspr.init <- ypr.spr$F.range[which.min(abs(ypr.spr$pspr-i))] #original.perspr/i*100
-      FpSPR.res <- nlm(spr.f.est, Fspr.init, out=FALSE, sub=i, spr0=spr0, iterlim=iterlim)
+        tmp <- which.min(abs(ypr.spr$pspr-i))+c(-1,1)
+        tmp <- ifelse(tmp<=0,1,tmp)
+        tmp <- ifelse(tmp>length(ypr.spr$F.range),length(ypr.spr$F.range),tmp)        
+        Fspr.init <- log(ypr.spr$F.range[tmp]) #original.perspr/i*100
+        FpSPR.res <- optimize(spr.f.est, Fspr.init,out=FALSE,sub=i,spr0=spr0)
+      #nlm(spr.f.est, Fspr.init, out=FALSE, sub=i, spr0=spr0, iterlim=iterlim)
 #      cat("Estimate F%spr: initial value=", Fspr.init," : estimated value=",exp(FpSPR.res$estimate),"\n")
-      FpSPR <- c(FpSPR, exp(FpSPR.res$estimate))
+      FpSPR <- c(FpSPR, exp(FpSPR.res$minimum))
     }
     names(FpSPR) <- paste(pSPR,"%SPR",sep="")
   }
