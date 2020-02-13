@@ -49,12 +49,18 @@ convert_future_table <- function(fout,label="tmp"){
     beta_gamma    <- convert_2d_future(df=fout$alpha,  name="beta_gamma",   label=label)        
     Fsakugen <- convert_2d_future(df=fout$Fsakugen, name="Fsakugen",   label=label)
     recruit  <- convert_2d_future(df=fout$recruit, name="Recruitment",   label=label)
+    if(!is.null(fout$Fratio)){
+        Fratio <- convert_2d_future(df=fout$Fratio, name="Fratio",   label=label)
+    }
+    else{
+        Fratio <- Fratio
+    }
     
     Fsakugen_ratio <- Fsakugen %>%
         mutate(value=value+1)
     Fsakugen_ratio$stat <- "Fsakugen_ratio"
 
-    bind_rows(ssb,catch,biomass,beta_gamma,Fsakugen,Fsakugen_ratio,recruit, U_table)
+    bind_rows(ssb,catch,biomass,beta_gamma,Fsakugen,Fsakugen_ratio,recruit, U_table, Fratio)
 }
         
     
@@ -73,13 +79,13 @@ convert_vector <- function(vector,name){
 #'
 #' @export
 
-convert_vpa_tibble <- function(vpares){
+convert_vpa_tibble <- function(vpares,SPRtarget=NULL){
 
-  if (is.null(vpares$input$dat$waa.catch)) {
-    total.catch <- colSums(vpares$input$dat$caa*vpares$input$dat$waa,na.rm=T)
-  } else {
-    total.catch <- colSums(vpares$input$dat$caa*vpares$input$dat$waa.catch,na.rm=T)
-  }
+    if (is.null(vpares$input$dat$waa.catch)) {
+        total.catch <- colSums(vpares$input$dat$caa*vpares$input$dat$waa,na.rm=T)
+    } else {
+        total.catch <- colSums(vpares$input$dat$caa*vpares$input$dat$waa.catch,na.rm=T)
+    }
     U <- total.catch/colSums(vpares$baa, na.rm=T)
 
     SSB <- convert_vector(colSums(vpares$ssb,na.rm=T),"SSB") %>%
@@ -89,7 +95,27 @@ convert_vpa_tibble <- function(vpares){
     FAA <- convert_df(vpares$faa,"fishing_mortality") %>%
         dplyr::filter(value>0&!is.na(value))
     Recruitment <- convert_vector(colSums(vpares$naa[1,,drop=F]),"Recruitment") %>%
-        dplyr::filter(value>0&!is.na(value))    
+        dplyr::filter(value>0&!is.na(value))
+
+    if(!is.null(SPRtarget)){
+        if(is.null(vpares$input$dat$waa.catch)) waa.catch <- vpares$input$dat$waa
+        else waa.catch <- vpares$input$dat$waa.catch
+        Fratio <- purrr::map_dfc(1:ncol(vpares$naa),
+                                 function(i){
+                                     tmp <- !is.na(vpares$faa[,i])
+                                     calc_Fratio(faa=vpares$faa[tmp,i],
+                                                 maa=vpares$input$dat$maa[tmp,i],
+                                                 waa=vpares$input$dat$waa[tmp,i],
+                                                 M  =vpares$input$dat$M[tmp,i],
+                                                 waa.catch=waa.catch[tmp],
+                                                 SPRtarget=SPRtarget)
+                                     })
+        colnames(Fratio) <- colnames(vpares$naa)
+        Fratio <- convert_df(Fratio,"Fratio")
+    }
+    else{
+        fratio <- NULL
+        }
     
     all_table <- bind_rows(SSB,
                            Biomass,
@@ -100,7 +126,8 @@ convert_vpa_tibble <- function(vpares){
                            convert_df(vpares$input$dat$waa,"weight"),
                            convert_df(vpares$input$dat$maa,"maturity"),
                            convert_df(vpares$input$dat$caa,"catch_number"),
-                           Recruitment)
+                           Recruitment,
+                           Fratio)
 }
 
 
@@ -971,11 +998,14 @@ plot_futures <- function(vpares,
                          CI_range=c(0.1,0.9),
                          maxyear=NULL,
                          is.plot.CIrange=TRUE,
-                         what.plot=c("Recruitment","SSB","biomass","catch","beta_gamma","U"),
+                         what.plot=c("Recruitment","SSB","biomass","catch","beta_gamma","U","Fratio"),
                          biomass.unit=1,
+                         number.unit=1,
+                         number.name="",
                          RP_name=c("Btarget","Blimit","Bban"),
                          Btarget=0,Blimit=0,Bban=0,#Blow=0,
                          MSY=0,Umsy=0,
+                         SPRtarget=NULL,
                          exclude.japanese.font=FALSE, # english version
                          n_example=3, # number of examples
                          example_width=0.7, # line width of examples
@@ -1001,29 +1031,37 @@ plot_futures <- function(vpares,
 
     if(!isTRUE(exclude.japanese.font)){
         junit <- c("","十","百","千","万")[log10(biomass.unit)+1]
-        #    require(tidyverse,quietly=TRUE)
 
-        rename_list <- tibble(stat=c("Recruitment","SSB","biomass","catch","beta_gamma","U"),
-                              jstat=c(str_c("加入尾数"),
+        rename_list <- tibble(stat=c("Recruitment","SSB","biomass","catch","beta_gamma","U","Fratio"),
+                              jstat=c(str_c("加入尾数(",number.name,"尾)"),
                                       str_c("親魚量 (",junit,"トン)"),
                                       str_c("資源量 (",junit,"トン)"),
                                       str_c("漁獲量 (",junit,"トン)"),
-                                      "Fmsyへの乗数(beta x gamma)",
-                                      "漁獲割合"))
+                                      "beta_gamma(F/Fmsy)",
+                                      "漁獲割合(%)",
+                                      "漁獲圧の比(F/Fmsy)"))
     }
     else{
         junit <- c("","10","100","1000","10,000")[log10(biomass.unit)+1]
         #    require(tidyverse,quietly=TRUE)
 
-        rename_list <- tibble(stat=c("Recruitment","SSB","biomass","catch","beta_gamma","U"),
-                              jstat=c(str_c("Recruits"),
+        rename_list <- tibble(stat=c("Recruitment","SSB","biomass","catch","beta_gamma","U","Fratio"),
+                              jstat=c(str_c("Recruits(",number_name,"fish)"),
                                       str_c("SB (",junit,"MT)"),
                                       str_c("Biomass (",junit,"MT)"),
                                       str_c("Catch (",junit,"MT)"),
                                       "multiplier to Fmsy",
-                                      "Catch/Biomass (U)"))        
-        }
+                                      "Catch/Biomass (U)",
+                                      "F ratio (F/Fmsy)"))        
+    }
 
+    # define unit of value
+    rename_list <- rename_list %>%
+        mutate(unit=dplyr::case_when(stat%in%c("SSB","biomass","catch") ~ biomass.unit,
+                                     stat%in%c("Recruitment")           ~ number.unit,
+                                     stat%in%c("U")                     ~ 0.01,
+                                     TRUE                               ~ 1))
+               
     rename_list <- rename_list %>% dplyr::filter(stat%in%what.plot)
     
     if(!is.null(future.list)){
@@ -1036,37 +1074,32 @@ plot_futures <- function(vpares,
 
     if(is.null(future_tibble)) future_tibble <- purrr::map_dfr(future.list,convert_future_table,.id="scenario")
 
-    future.table <-
+    future_tibble <-
         future_tibble %>%
         dplyr::filter(stat%in%rename_list$stat) %>%
-        mutate(stat=factor(stat,levels=rename_list$stat))
-
-    set.seed(seed)
-    if(!is.null(future.replicate)){
-        future.example <- future.table %>%
-            dplyr::filter(sim%in%future.replicate)
+        mutate(stat=factor(stat,levels=rename_list$stat)) %>%
+        left_join(rename_list) %>%
+        mutate(value=value/unit)
+            
+    if(is.null(future.replicate)){
+        set.seed(seed)
+        future.replicate <- sample(2:max(future_tibble$sim),n_example)
     }
-    else{
-        future.example <- future.table %>%
-            dplyr::filter(sim%in%sample(2:max(future.table$sim),n_example))
-    }
+    future.example <- future_tibble %>%
+        dplyr::filter(sim%in%future.replicate) %>%
+        group_by(sim,scenario)
     
-    future.example <- future.example %>%
-        mutate(stat = as.character(stat),
-             value=ifelse((stat=="beta_gamma"|stat=="U"),
-                          value,value/biomass.unit)) %>%
-      left_join(rename_list) %>%
-      group_by(sim,scenario)
-        
-
-    if(is.null(maxyear)) maxyear <- max(future.table$year)
+    if(is.null(maxyear)) maxyear <- max(future_tibble$year)
 
     min.age <- as.numeric(rownames(vpares$naa)[1])
-    vpa_tb <- convert_vpa_tibble(vpares) %>%
-        dplyr::filter(stat=="SSB"|stat=="biomass"|stat=="catch"|stat=="Recruitment") %>%
+    vpa_tb <- convert_vpa_tibble(vpares,SPRtarget=SPRtarget) %>%
         mutate(scenario=type,year=as.numeric(year),
                stat=factor(stat,levels=rename_list$stat),
-               mean=value,sim=0)
+               mean=value,sim=0)%>%
+        dplyr::filter(stat%in%rename_list$stat) %>%
+        left_join(rename_list) %>%
+        mutate(value=value/unit,mean=mean/unit)
+    
     # 将来と過去をつなげるためのダミーデータ
     tmp <- vpa_tb %>% group_by(stat) %>%
         summarise(value=tail(value[!is.na(value)],n=1,na.rm=T),year=tail(year[!is.na(value)],n=1,na.rm=T),sim=0) 
@@ -1074,33 +1107,32 @@ plot_futures <- function(vpares,
 
     org.warn <- options()$warn
     options(warn=-1)
-    future.table <-
-        bind_rows(future.table,vpa_tb,future.dummy) %>%
+    future_tibble <-
+        bind_rows(future_tibble,vpa_tb,future.dummy) %>%
         mutate(stat=factor(stat,levels=rename_list$stat)) %>%
-        mutate(scenario=factor(scenario,levels=c(future.name,"VPA"))) %>%
-        mutate(value=ifelse(stat%in%c("beta_gamma","U"),value,value/biomass.unit))
+        mutate(scenario=factor(scenario,levels=c(future.name,"VPA"))) #%>%
+#        mutate(value=ifelse(stat%in%c("beta_gamma","U"),value,value/biomass.unit))
 
-    future.table.qt <- 
-        future.table %>% group_by(scenario,year,stat) %>%
+    future_tibble.qt <- 
+        future_tibble %>% group_by(scenario,year,stat) %>%
         summarise(low=quantile(value,CI_range[1],na.rm=T),
                   high=quantile(value,CI_range[2],na.rm=T),
                   median=median(value,na.rm=T),
                   mean=mean(value))
 
     # make dummy for y range
-    dummy <- future.table %>% group_by(stat) %>% summarise(max=max(value)) %>%
-        mutate(value=0,year=min(future.table$year,na.rm=T)) %>%
+    dummy <- future_tibble %>% group_by(stat) %>% summarise(max=max(value)) %>%
+        mutate(value=0,year=min(future_tibble$year,na.rm=T)) %>%
         select(-max)
 
-    dummy2 <- future.table %>% group_by(stat) %>%
+    dummy2 <- future_tibble %>% group_by(stat) %>%
         summarise(max=max(quantile(value,CI_range[2],na.rm=T))) %>%
         mutate(value=max*1.1,
-               year=min(future.table$year,na.rm=T)) %>%
+               year=min(future_tibble$year,na.rm=T)) %>%
         select(-max)
 
-    future.table.qt <- left_join(future.table.qt,rename_list) %>%
+    future_tibble.qt <- left_join(future_tibble.qt,rename_list) %>%
         mutate(jstat=factor(jstat,levels=rename_list$jstat))
-
 
     dummy     <- left_join(dummy,rename_list,by="stat") %>% dplyr::filter(!is.na(stat))
     dummy2    <- left_join(dummy2,rename_list,by="stat") %>% dplyr::filter(!is.na(stat))
@@ -1126,21 +1158,19 @@ plot_futures <- function(vpares,
     
     options(warn=org.warn)
     
-    g1 <- future.table.qt %>% dplyr::filter(!is.na(stat)) %>%
-        ggplot()+
-        geom_line(data=dplyr::filter(future.table.qt,!is.na(stat) & scenario=="VPA"),
-                  mapping=aes(x=year,y=mean),lwd=1,color="black")# VPAのプロット                
+    g1 <- future_tibble.qt %>% dplyr::filter(!is.na(stat)) %>%
+        ggplot()
 
     if(isTRUE(is.plot.CIrange)){
         g1 <- g1+
-            geom_ribbon(data=dplyr::filter(future.table.qt,!is.na(stat) & scenario!="VPA" & year <= maxyear),
+            geom_ribbon(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario!="VPA" & year <= maxyear),
                         mapping=aes(x=year,ymin=low,ymax=high,fill=scenario),alpha=0.4)+
-            geom_line(data=dplyr::filter(future.table.qt,!is.na(stat) & scenario!="VPA" & year <= maxyear),
+            geom_line(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario!="VPA" & year <= maxyear),
                       mapping=aes(x=year,y=mean,color=scenario),lwd=1)
     }
 #    else{
 #        g1 <- g1+
-#            geom_line(data=dplyr::filter(future.table.qt,!is.na(stat) & scenario=="VPA"),
+#            geom_line(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario=="VPA"),
 #                      mapping=aes(x=year,y=mean,color=scenario),lwd=1)#+        
 #    }
     
@@ -1152,7 +1182,7 @@ plot_futures <- function(vpares,
         scale_y_continuous(expand=expand_scale(mult=c(0,0.05)))+
         facet_wrap(~factor(jstat,levels=rename_list$jstat),scales="free_y",ncol=ncol)+        
         xlab("年")+ylab("")+ labs(fill = "",linetype="",color="")+
-        xlim(min(future.table$year),maxyear)
+        xlim(min(future_tibble$year),maxyear)
 
     if("SSB" %in% what.plot){
         g1 <- g1 + geom_hline(data = ssb_RP,
@@ -1198,7 +1228,10 @@ plot_futures <- function(vpares,
                              "%信頼区間, 太い実線: 平均値",
                              ifelse(n_example>0,", 細い実線: シミュレーションの1例)",")")
                              ))
-        
+
+    g1 <- g1 +
+        geom_line(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario=="VPA"),
+                  mapping=aes(x=year,y=mean),lwd=1,color="black")# VPAのプロット                
     return(g1)
 }
 
@@ -2011,4 +2044,38 @@ plot_bias_in_MSE <- function(fout, out="graph", error_scale="log", yrange=NULL){
         return(alldat)
     }
     
+}
+
+#'
+#' calculate F/Ftarget based on F_%SPR multiplier
+#'
+#' @param faa F at age
+#' @param waa weight at age
+#' @param maa maturity at age
+#' @param M natural morality at age
+#' @param SPRtarget target SPR
+#' 
+#' @export
+#' 
+
+
+calc_Fratio <- function(faa, waa, maa, M, SPRtarget=30, waa.catch=NULL,Pope=TRUE){
+    tmpfunc <- function(x,SPR0=0,...){
+        SPR_tmp <- calc.rel.abund(sel=faa,Fr=exp(x),na=length(faa),M=M, waa=waa, waa.catch=waa.catch,
+                                  min.age=0,max.age=Inf,Pope=Pope,ssb.coef=0,maa=maa)$spr %>% sum()
+        sum(((SPR_tmp/SPR0*100)-SPRtarget)^2)
+    }
+    if(sum(faa)==0){ return(NA) }
+    else{
+        tmp <- !is.na(faa)
+        SPR0 <- calc.rel.abund(sel=faa,Fr=0,na=length(faa),M=M, waa=waa, waa.catch=waa.catch,maa=maa, 
+                               min.age=0,max.age=Inf,Pope=Pope,ssb.coef=0)$spr %>% sum()
+        opt_res <- optimize(tmpfunc,interval=c(-10,10),SPR0=SPR0)
+        SPR_est <- calc.rel.abund(sel=faa,Fr=exp(opt_res$minimum),na=length(faa),
+                                     M=M, waa=waa, waa.catch=waa.catch,maa=maa,
+                                     min.age=0,max.age=Inf,Pope=Pope,ssb.coef=0)$spr %>% sum()
+        SPR_est <- SPR_est/SPR0 * 100 
+        if(abs(SPR_est-SPRtarget)>0.01) {browser(); return(NA)}
+        else return(1/exp(opt_res$minimum))
+    }
 }

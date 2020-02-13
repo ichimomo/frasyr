@@ -122,7 +122,7 @@ make_future_data <- function(res_vpa,
     HCR_mat <- array(0, dim=c(total_nyear, nsim, 8),
                     dimnames=list(year=allyear_name, nsim=1:nsim,
                                   par=c("beta","Blimit","Bban","gamma","year_lag", #1-5
-                                        "beta_gamma","wcatch","par3")))  # 6-8
+                                        "beta_gamma","wcatch","Fratio")))  # 6-8
     class(SR_mat)  <- "myarray"
     class(HCR_mat) <- "myarray"
 
@@ -258,6 +258,7 @@ make_future_data <- function(res_vpa,
 #' 将来予測の実施関数
 #'
 #' @param tmb_data make_future_dataの返り値
+#' @param SPR_target 目標とする%SPR。NULL以外の値の場合、過去〜将来のそれぞれの年・シミュレーションが、目標とするF%SPRに対して何倍にあたるか(F/Ftarget)を計算して、HCR_matの"Fratio"に入れる。HCRが生きている年については"beta_gamma"と一致するはず。
 #'
 #' @export
 #'
@@ -275,8 +276,8 @@ future_vpa <- function(tmb_data,
                        MSE_nsim=NULL,
                        compile=FALSE,
                        output_format="new",
-                       attach_input=TRUE
-                       ){
+                       attach_input=TRUE,
+                       SPRtarget=NULL){
 
     argname <- ls()
     input <- lapply(argname,function(x) eval(parse(text=x)))
@@ -362,13 +363,38 @@ future_vpa <- function(tmb_data,
         class(res_future) <- "future_new"    
         }
     if(!isTRUE(attach_input)) res_future$input <- NULL
+
+    # modify results
+    # remove HCR control parameter before start_ABC_year
+    res_future$HCR_mat[1:(tmb_data$start_ABC_year-1),,] <- NA
+    # add Fratio if needed
+    if(!is.null(SPRtarget)){
+        for(i in 1:dim(res_future$faa)[[2]]){
+            for(j in 1:dim(res_future$faa)[[3]]){
+                if(j>2 &&
+                   all(res_future$faa[,i,j]==res_future$faa[,i,j-1]) &&
+                   all(res_future$waa[,i,j]==res_future$waa[,i,j-1]) &&
+                   all(res_future$waa_catch_mat[,i,j:(j-1)]==res_future$waa_catch_mat[,i,j:(j)]) &&
+                   all(res_future$maa[,i,j]==res_future$maa[,i,j-1]) &&
+                   all(res_future$M  [,i,j]==res_future$M  [,i,j-1])){
+                    res_future$HCR_mat[i,j,"Fratio"] <- res_future$HCR_mat[i,j-1,"Fratio"]
+                }
+                else{
+                    tmp <- res_future$naa[,i,j]>0
+                    res_future$HCR_mat[i,j,"Fratio"] <-
+                        calc_Fratio(faa=res_future$faa[tmp,i,j],
+                                    waa=res_future$waa[tmp,i,j],
+                                    maa=res_future$input$tmb_data$maa_mat[tmp,i,j],
+                                    M  =res_future$input$tmb_data$M_mat[tmp,i,j],
+                                    waa.catch=res_future$waa_catch_mat[tmp,i,j],
+                                    SPRtarget=SPRtarget)
+                }
+            }}}
+    
     return(res_future)
 
     # 足りないもの
     # 推定結果の簡易的グラフ(MSY_est_plot)
-    # waa.fun
-    # 生産関係の細かい設定
-    # FperSPRの計算結果を出力する
 }
 
 #' @export
@@ -912,9 +938,12 @@ naming_adreport <- function(tmb_data, ad_report){
 
     tmb_data$SR_mat[,,"ssb"] <- ad_report$spawner_mat
     tmb_data$SR_mat[,,"recruit"] <- ad_report$N_mat[1,,]
-    
-    return(list(wcaa=wcaa, naa=naa, faa=faa, SR_mat=tmb_data$SR_mat,
-                waa=tmb_data$waa_mat, waa_catch_mat=tmb_data$waa_catch_mat))
+
+    return(list(wcaa=wcaa, naa=naa, faa=faa,
+                SR_mat        = tmb_data$SR_mat,
+                HCR_mat       = tmb_data$HCR_mat,
+                waa           = tmb_data$waa_mat,
+                waa_catch_mat = tmb_data$waa_catch_mat))
 }
 
 
@@ -1012,7 +1041,8 @@ format_to_old_future <- function(fout){
     fout_old$multi     <- fout$multi
     fout_old$recruit   <- fout$SR_mat[,,"recruit"]
     fout_old$beta_gamma     <- fout$HCR_mat[,,"beta_gamma"]
-    fout_old$alpha     <- fout$HCR_mat[,,"beta_gamma"]    
+    fout_old$alpha     <- fout$HCR_mat[,,"beta_gamma"]
+    fout_old$Fratio     <- fout$HCR_mat[,,"Fratio"]        
     return(fout_old)
 }
 
@@ -1072,3 +1102,6 @@ update_waa_mat <- function(waa,rand,naa,pars_b0,pars_b1){
     waa[waa==0 & naa>0] <- waa_tmp[waa==0 & naa>0]
     waa
 }
+
+
+
