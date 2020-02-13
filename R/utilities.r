@@ -114,7 +114,7 @@ convert_vpa_tibble <- function(vpares,SPRtarget=NULL){
         Fratio <- convert_df(Fratio,"Fratio")
     }
     else{
-        fratio <- NULL
+        Fratio <- NULL
         }
     
     all_table <- bind_rows(SSB,
@@ -1340,7 +1340,7 @@ plot_HCR <- function(SBtarget,SBlim,SBban,Ftarget,
 
   #Drawing of the funciton by ggplot2
     ggplct <- ggplot(data.frame(x = c(0,1.5*SBtarget),y= c(0,1.5*Ftarget)), aes(x=x)) +
-        stat_function(fun = h,lwd=2,color=col.multi2currf)
+        stat_function(fun = h,lwd=2,color=col.multi2currf, n=5000)
     g <- ggplct  + geom_vline(xintercept = SBtarget, size = 0.9, linetype = "41", color = col.SBtarget) +
         geom_vline(xintercept = SBlim, size = 0.9, linetype = "41", color = col.SBlim) +
         geom_vline(xintercept = SBban, size = 0.9, linetype = "41", color = col.SBban) +
@@ -1365,9 +1365,9 @@ plot_HCR <- function(SBtarget,SBlim,SBban,Ftarget,
 #        annotate("text", label=RP.label[3], x=SBban, y=1.2*Ftarget)+
 #        annotate("text", label="Fmsy", x=SBtarget/15, y=0.95*Ftarget)+
     #        annotate("text", label=str_c(beta,"Fmsy"), x=SBtarget/15, y=0.95*beta*Ftarget)
-    geom_label(label=RP.label[1], x=SBtarget, y=Ftarget*0.9) +
+    geom_label(label=RP.label[1], x=SBtarget, y=Ftarget*0.95) +
     geom_label(label=RP.label[2], x=SBlim, y=Ftarget*0.9) +
-    geom_label(label=RP.label[3], x=SBban, y=Ftarget*0.9)+
+    geom_label(label=RP.label[3], x=SBban, y=Ftarget*0.85)+
     geom_label(label="Fmsy", x=SBtarget*1.2, y=Ftarget)+
     geom_label(label=str_c(beta,"Fmsy"), x=SBtarget*1.2, y=beta*Ftarget)    
     }
