@@ -12,10 +12,8 @@ plot_futures(
   future_tibble = NULL,
   CI_range = c(0.1, 0.9),
   maxyear = NULL,
-  font.size = 18,
-  ncol = 3,
   is.plot.CIrange = TRUE,
-  what.plot = c("Recruitment", "SSB", "biomass", "catch", "alpha", "U"),
+  what.plot = c("Recruitment", "SSB", "biomass", "catch", "beta_gamma", "U"),
   biomass.unit = 1,
   RP_name = c("Btarget", "Blimit", "Bban"),
   Btarget = 0,
@@ -27,7 +25,10 @@ plot_futures(
   n_example = 3,
   example_width = 0.7,
   future.replicate = NULL,
-  seed = 1
+  seed = 1,
+  legend.position = "top",
+  font.size = 18,
+  ncol = 3
 )
 }
 \arguments{

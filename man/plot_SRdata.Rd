@@ -5,9 +5,11 @@
 \alias{plot_SRdata}
 \title{SRdataをプロットする}
 \usage{
-plot_SRdata(SRdata)
+plot_SRdata(SRdata, type = c("classic", "gg")[1])
 }
 \arguments{
+\item{type}{"classic"(通常プロット) or "gg"(ggplot)}
+
 \item{vpares}{VPAの結果のオブジェクト}
 
 \item{frag}{MSY計算時の将来予測で用いる引数のリスト}
