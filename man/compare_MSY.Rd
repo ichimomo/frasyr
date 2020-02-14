@@ -5,8 +5,12 @@
 \alias{compare_MSY}
 \title{複数の管理基準値の推定結果を重ね書きする}
 \usage{
-compare_MSY(MSYlist, legend.position = "top", MSYname = NULL,
-  yaxis = "Fref2Fcurrent")
+compare_MSY(
+  MSYlist,
+  legend.position = "top",
+  MSYname = NULL,
+  yaxis = "Fref2Fcurrent"
+)
 }
 \arguments{
 \item{MSYlist}{est.MSYの返り値をリストにしたもの; 単独でも可}

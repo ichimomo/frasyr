@@ -5,8 +5,11 @@
 \alias{plot_Fref}
 \title{ref.Fの出力をプロットするための関数}
 \usage{
-plot_Fref(rres, xlabel = "max", vline.text = c("F0.1", "Fmax",
-  "Fcurrent", "Fmed"))
+plot_Fref(
+  rres,
+  xlabel = "max",
+  vline.text = c("F0.1", "Fmax", "Fcurrent", "Fmed")
+)
 }
 \arguments{
 \item{rres}{ref.Fの出力結果}

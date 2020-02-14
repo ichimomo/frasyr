@@ -4,14 +4,22 @@
 \alias{export_formattable}
 \title{表を画像として保存}
 \usage{
-export_formattable(table, file, width = "100\%", height = NULL,
-  background = "white", delay = 0.1)
+export_formattable(
+  table,
+  file,
+  width = "100\%",
+  height = NULL,
+  background = "white",
+  delay = 0.1
+)
 }
 \arguments{
 \item{table}{ファイルとして保存したい表}
 }
 \description{
-表を画像として保存
+# @inheritParams \code{\link{formattable::as.htmlwidget}}
+# @inheritParams \code{\link{htmltools::html_print}}
+# @inheritParams \code{\link{webshot::webshot}}
 }
 \examples{
 \dontrun{

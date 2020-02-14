@@ -5,12 +5,24 @@
 \alias{plot_yield}
 \title{漁獲量曲線(yield curve)を書く}
 \usage{
-plot_yield(MSY_obj, refs_base, refs.label = NULL,
-  refs.color = c("#00533E", "#edb918", "#C73C2E"), AR_select = FALSE,
-  xlim.scale = 1.1, biomass.unit = 1, labeling = TRUE,
-  lining = TRUE, age.label.ratio = 0.9, family = "JP1",
-  ylim.scale = 1.2, future = NULL, future.replicate = NULL,
-  past = NULL, future.name = NULL)
+plot_yield(
+  MSY_obj,
+  refs_base,
+  refs.label = NULL,
+  refs.color = c("#00533E", "#edb918", "#C73C2E"),
+  AR_select = FALSE,
+  xlim.scale = 1.1,
+  biomass.unit = 1,
+  labeling = TRUE,
+  lining = TRUE,
+  age.label.ratio = 0.9,
+  family = "JP1",
+  ylim.scale = 1.2,
+  future = NULL,
+  future.replicate = NULL,
+  past = NULL,
+  future.name = NULL
+)
 }
 \arguments{
 \item{MSY_obj}{est.MSYの結果のオブジェクト}

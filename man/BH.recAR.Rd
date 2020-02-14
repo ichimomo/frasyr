@@ -5,8 +5,13 @@
 \alias{BH.recAR}
 \title{BHを仮定したときの加入関数}
 \usage{
-BH.recAR(ssb, vpares, deterministic = FALSE, rec.resample = NULL,
-  rec.arg = list(a = 1000, b = 1000, sd = 0.1, bias.correction = TRUE))
+BH.recAR(
+  ssb,
+  vpares,
+  deterministic = FALSE,
+  rec.resample = NULL,
+  rec.arg = list(a = 1000, b = 1000, sd = 0.1, bias.correction = TRUE)
+)
 }
 \arguments{
 \item{ssb}{親魚資源量}

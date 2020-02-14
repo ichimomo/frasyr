@@ -1,5 +1,6 @@
 source("./tools/generate-testdata/rvpa1.9.4.r")
-source("./tools/generate-testdata/future2.1.r")
+#source("./tools/generate-testdata/future2.1.r")
+source("./tools/generate-testdata/stock_recruit.r") #stock_recruit.r 2019/11/26 ver.
 
 caa <- read.csv(system.file("extdata","caa_pma.csv",package="frasyr"),row.names=1)
 waa <- read.csv(system.file("extdata","waa_pma.csv",package="frasyr"),row.names=1)
@@ -20,10 +21,6 @@ for (i in 1:nrow(SRmodel.list)) {
 
 # SRタイプ、L1L2、自己相関タイプごとに異なるオブジェクトへ格納
 for (i in 1:nrow(SRmodel.list)) {
-  assign(sprintf("SRpma_%s_%s_AR%d_outAR%d",SRmodel.list$SR.rel[i],SRmodel.list$L.type[i], SRmodel.list$AR.type[i],SRmodel.list$out.AR[i]),SR.list[[i]])
-}
-
-for(i in 1:nrow(SRmodel.list)){
   assign(sprintf("SRpma_%s_%s_AR%d_outAR%d",SRmodel.list$SR.rel[i],SRmodel.list$L.type[i], SRmodel.list$AR.type[i],SRmodel.list$out.AR[i]),SR.list[[i]])
 
   savefilenameresfres <- sprintf("./inst/extdata/SRpma_%s_%s_AR%d_outAR%d.rda",SRmodel.list$SR.rel[i],SRmodel.list$L.type[i], SRmodel.list$AR.type[i],SRmodel.list$out.AR[i])

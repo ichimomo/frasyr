@@ -5,8 +5,13 @@
 \alias{resample.rec}
 \title{期間内の残差をサンプリングするときの加入関数}
 \usage{
-resample.rec(ssb, vpares, rec.resample = NULL, rec.arg = list(a = 1000,
-  b = 1000, sd = 0.1, resid = 0, SR = "HS", bias.correction = TRUE))
+resample.rec(
+  ssb,
+  vpares,
+  rec.resample = NULL,
+  rec.arg = list(a = 1000, b = 1000, sd = 0.1, resid = 0, SR = "HS", bias.correction =
+    TRUE)
+)
 }
 \description{
 期間内の残差をサンプリングするときの加入関数

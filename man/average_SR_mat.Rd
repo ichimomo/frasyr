@@ -4,10 +4,18 @@
 \alias{average_SR_mat}
 \title{モデル平均的な再生産関係を与える}
 \usage{
-average_SR_mat(res_vpa, res_SR_list, range_list = list(1:500, 501:1000),
-  SR_mat, seed_number, start_random_rec_year_name, recruit_age,
-  resid_type = "lognormal", resample_year_range = 0,
-  bias_correction = TRUE)
+average_SR_mat(
+  res_vpa,
+  res_SR_list,
+  range_list = list(1:500, 501:1000),
+  SR_mat,
+  seed_number,
+  start_random_rec_year_name,
+  recruit_age,
+  resid_type = "lognormal",
+  resample_year_range = 0,
+  bias_correction = TRUE
+)
 }
 \arguments{
 \item{res_vpa}{VPAの推定結果}

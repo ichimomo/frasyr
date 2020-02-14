@@ -1,6 +1,6 @@
 library(frasyr)
 
-context("future MSE option")
+context("new future_vpa option")
 
 test_that("utility function check",{
 
@@ -13,93 +13,117 @@ test_that("utility function check",{
     # check sample_backward function
     set.seed(1)
     res <- sample_backward(rep(1:5,each=5), 30, 5)
-    expect_equal(apply(matrix(res,5,6),2,min),c(5:1,2))
+    try(expect_equal(apply(matrix(res,5,6),2,min),c(5,4,3,2,2,1)))
+    
 })
 
-## test_that("MSE option check",{
-##     data(res_vpa)
+test_that("future_vpa function",{
 
-##     SRdata <- get.SRdata(res_vpa, years=1988:2016) 
-##     head(SRdata)
+data(res_vpa)
+data(res_sr_HSL2)
 
-##     if(0){
-##     SRmodel.list <- expand.grid(SR.rel = c("HS","BH","RI"), AR.type = c(0, 1), L.type = c("L1", "L2"))
-##     SR.list <- list()
-##     for (i in 1:nrow(SRmodel.list)) {
-##         SR.list[[i]] <- fit.SR(SRdata, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i], 
-##                                AR = SRmodel.list$AR.type[i], hessian = FALSE)
-##     }
-##     SRmodel.list$AICc <- sapply(SR.list, function(x) x$AICc)
-##     SRmodel.list$delta.AIC <- SRmodel.list$AICc - min(SRmodel.list$AICc)
-##     SR.list <- SR.list[order(SRmodel.list$AICc)]  # AICの小さい順に並べたもの
-##     (SRmodel.list <- SRmodel.list[order(SRmodel.list$AICc), ]) # 結果
-##     SRmodel.base <- SR.list[[1]] # AIC最小モデルを今後使っていく
-##     SRmodel.R1 <- SR.list[[12]] # 候補となる別の加入シナリオ
-##     future.Fcurrent <- future.vpa(res_vpa,
-##                                   multi=1,
-##                                   nyear=50, # 将来予測の年数
-##                                   start.year=2018, # 将来予測の開始年
-##                                   N=100, # 確率的計算の繰り返し回数=>実際の計算では1000~5000回くらいやってください
-##                       ABC.year=2019, # ABCを計算する年
-##                       waa.year=2015:2017, # 生物パラメータの参照年
-##                       maa.year=2015:2017,
-##                       M.year=2015:2017,
-##                       is.plot=TRUE, # 結果をプロットするかどうか
-##                       seed=1,
-##                       silent=FALSE,
-##                       recfunc=HS.recAR, # 再生産関係の関数
-##                       # recfuncに対する引数
-##                       rec.arg=list(a=SRmodel.base$pars$a,b=SRmodel.base$pars$b,
-##                                    rho=SRmodel.base$pars$rho, # ここではrho=0なので指定しなくてもOK
-##                                    sd=SRmodel.base$pars$sd,resid=SRmodel.base$resid))
-## # MSY管理基準値の計算; base caseのシナリオをもとにした管理基準値
-## MSY.base <- est.MSY(res_vpa, # VPAの計算結果
-##                     future.Fcurrent$input, # 将来予測で使用した引数
-##                  resid.year=0, # ARありの場合、最近何年分の残差を平均するかをここで指定する。ARありの設定を反映させたい場合必ずここを１以上とすること（とりあえず１としておいてください）。
-##                  N=100, # 確率的計算の繰り返し回数=>実際の計算では1000~5000回くらいやってください
-##                  calc.yieldcurve=TRUE,
-##                  PGY=c(0.6,0.1), # 計算したいPGYレベル。上限と下限の両方が計算される
-##                  onlylower.pgy=TRUE, # TRUEにするとPGYレベルの上限は計算しない（計算時間の節約になる）
-##                  B0percent=NULL,
-##                  Bempirical=NULL
-##                  ) # 計算したいB0%レベル
-## (refs.all <- MSY.base$summary_tb)
+data_future_test <- make_future_data(res_vpa, # VPAの結果
+	         nsim = 1000, # シミュレーション回数
+                 nyear = 50, # 将来予測の年数
+                 future_initial_year_name = 2017, # 年齢別資源尾数を参照して将来予測をスタートする年
+                 start_F_year_name = 2018, # この関数で指定したFに置き換える最初の年
+                 start_biopar_year_name=2018, # この関数で指定した生物パラメータに置き換える最初の年
+                 start_random_rec_year_name = 2018, # この関数で指定した再生産関係からの加入の予測値に置き換える最初の年
+                 # biopar setting
+                 waa_year=2015:2017, waa=NULL, # 将来の年齢別体重の設定。過去の年を指定し、その平均値を使うか、直接ベクトルで指定するか。以下も同じ。
+                 waa_catch_year=2015:2017, waa_catch=NULL,
+                 maa_year=2015:2017, maa=NULL,
+                 M_year=2015:2017, M=NULL,
+                 # faa setting
+                 faa_year=2015:2017, # currentF, futureFが指定されない場合だけ有効になる。将来のFを指定の年の平均値とする
+                 currentF=NULL,futureF=NULL, # 将来のABC.year以前のFとABC.year以降のFのベクトル 
+                 # HCR setting (not work when using TMB)
+                 start_ABC_year_name=2019, # HCRを適用する最初の年
+                 HCR_beta=1, # HCRのbeta
+                 HCR_Blimit=-1, # HCRのBlimit
+                 HCR_Bban=-1, # HCRのBban
+                 HCR_year_lag=0, # HCRで何年遅れにするか
+                 # SR setting
+                 res_SR=res_sr_HSL2, # 将来予測に使いたい再生産関係の推定結果が入っているfit.SRの返り値
+                 seed_number=1, # シード番号
+                 resid_type="lognormal", # 加入の誤差分布（"lognormal": 対数正規分布、"resample": 残差リサンプリング）
+                 resample_year_range=0, # リサンプリングの場合、残差をリサンプリングする年の範囲
+                 bias_correction=TRUE, # バイアス補正をするかどうか
+                 recruit_intercept=0, # 移入や放流などで一定の加入がある場合に足す加入尾数
+                 # Other
+                 Pope=res_vpa$input$Pope,
+		 fix_recruit=list(year=c(2020,2021),rec=c(1000,2000)),
+		 fix_wcatch=list(year=c(2020,2021),wcatch=c(1000,2000))		 
+                 ) 
+# data_future_testには、将来予測に使うデータ(data)とdata_futureを作るときに使った引数一覧(input)が入っている
+names(data_future_test)
+# data_future_test$dataには年齢別資源尾数naa_matなど。naa_matの将来予測部分にはまだNAが入っており、次のfuture_vpa関数でこのNAを埋める
+names(data_future_test$data)
 
-## # refs.allの中からRP.definitionで指定された行だけを抜き出す
-## (refs.base <- refs.all %>%
-##     dplyr::filter(!is.na(RP.definition)) %>% # RP.definitionがNAでないものを抽出
-##     arrange(desc(SSB)) %>% # SSBを大きい順に並び替え
-##     select(RP.definition,RP_name,SSB,SSB2SSB0,Catch,Catch.CV,U,Fref2Fcurrent)) #　列を並び替え
+# backward-resamplingの場合
+data_future_backward <- make_future_data(res_vpa, # VPAの結果
+	         nsim = 1000, # シミュレーション回数
+                 nyear = 50, # 将来予測の年数
+                 future_initial_year_name = 2017, # 年齢別資源尾数を参照して将来予測をスタートする年
+                 start_F_year_name = 2018, # この関数で指定したFに置き換える最初の年
+                 start_biopar_year_name=2018, # この関数で指定した生物パラメータに置き換える最初の年
+                 start_random_rec_year_name = 2018, # この関数で指定した再生産関係からの加入の予測値に置き換える最初の年
+                 # biopar setting
+                 waa_year=2015:2017, waa=NULL, # 将来の年齢別体重の設定。過去の年を指定し、その平均値を使うか、直接ベクトルで指定するか。以下も同じ。
+                 waa_catch_year=2015:2017, waa_catch=NULL,
+                 maa_year=2015:2017, maa=NULL,
+                 M_year=2015:2017, M=NULL,
+                 # faa setting
+                 faa_year=2015:2017, # currentF, futureFが指定されない場合だけ有効になる。将来のFを指定の年の平均値とする
+                 currentF=NULL,futureF=NULL, # 将来のABC.year以前のFとABC.year以降のFのベクトル 
+                 # HCR setting (not work when using TMB)
+                 start_ABC_year_name=2019, # HCRを適用する最初の年
+                 HCR_beta=1, # HCRのbeta
+                 HCR_Blimit=-1, # HCRのBlimit
+                 HCR_Bban=-1, # HCRのBban
+                 HCR_year_lag=0, # HCRで何年遅れにするか
+                 # SR setting
+                 res_SR=res_sr_HSL2, # 将来予測に使いたい再生産関係の推定結果が入っているfit.SRの返り値
+                 seed_number=1, # シード番号
+                 resid_type="backward", # 加入の誤差分布（"lognormal": 対数正規分布、"resample": 残差リサンプリング）
+                 resample_year_range=0, # リサンプリングの場合、残差をリサンプリングする年の範囲
+                 backward_duration=5,
+                 bias_correction=TRUE, # バイアス補正をするかどうか
+                 recruit_intercept=0, # 移入や放流などで一定の加入がある場合に足す加入尾数
+                 # Other
+                 Pope=res_vpa$input$Pope,
+		 fix_recruit=list(year=c(2020,2021),rec=c(1000,2000)),
+		 fix_wcatch=list(year=c(2020,2021),wcatch=c(1000,2000))		 
+                 )     
 
-## # HCRによる将来予測
-## input.abc <- future.Fcurrent$input # Fcurrentにおける将来予測の引数をベースに将来予測します
-## input.abc$multi <- derive_RP_value(refs.base,"Btarget0")$Fref2Fcurrent # currentFへの乗数を"Btarget0"で指定した値に
-## input.abc$silent <- TRUE
-## input.abc$HCR <- list(Blim=derive_RP_value(refs.base,"Blimit0")$SSB,
-##                       Bban=derive_RP_value(refs.base,"Bban0")$SSB,
-##                       beta=0.8,year.lag=0) # BlimitはBlimit0, BbanはBban0の値
-## input.abc$N <- 1000
-## future.default <- do.call(future.vpa,input.abc) # デフォルトルールの結果→図示などに使う
+# 単なる将来予測の場合
+res_future_test <- future_vpa(tmb_data=data_future_test$data,
+		              optim_method="none", 
+                    	      multi_init = 1) 
 
-## input.mse <- input.abc
-## input.mse$N <- 100
-## input.mse$use.MSE <- TRUE # MSE仕様での将来予測
-## input.mse$is.plot <- FALSE
-## future.mse <- do.call(future.vpa,input.mse)
+# 単なる将来予測の場合
+res_future_backward <- future_vpa(tmb_data=data_future_backward$data, 
+		              optim_method="none", 
+                    	      multi_init = 1) 
 
-## # use.MSEオプションで、ARありバージョンには十分対応していない→今後の課題
-## input.mse_R1 <- input.mse
-## input.mse_R1$N <- 100
-## input.mse_R1$MSE.options$recfunc <- future.Fcurrent_R1$recfunc
-## future.Fcurrent_R1$rec.arg$sd2 <- future.Fcurrent_R1$rec.arg$sd2[1:input.mse_R1$N]
-## input.mse_R1$MSE.options$rec.arg <- future.Fcurrent_R1$rec.arg
-## future.mse_R1 <- do.call(future.vpa,input.mse_R1)  
+# MSY計算の場合
+res_future_test_R <- future_vpa(tmb_data=data_future_test$data, 
+		              optim_method="R", 
+                    	      multi_init  = 1,
+			      multi_lower = 0.001, multi_upper = 5,
+			      objective="MSY")
+# [1] 0.5269326
+expect_equal(round(res_future_test_R$multi,3),0.527)
 
-##     all.table <- purrr::map_dfr(list(future.mse,future.default,future.mse_R1),convert_future_table,.id="scenario")
-## all.table %>% dplyr::filter(stat=="catch",year<2025,year>2018) %>%
-##     ggplot() +
-##     geom_boxplot(aes(x=factor(year),y=value,fill=scenario))
-   
-##     }
-## }
+if(sum(installed.packages()[,1]=="TMB")){
+    res_future_test_tmb <- future_vpa(tmb_data=data_future_test$data,
+                                      optim_method="tmb", 
+                                      multi_init  = 1,
+                                      multi_lower = 0.001, multi_upper = 5,
+                                      objective="MSY")
+    expect_equal(round(res_future_test_tmb$multi,3),0.527)
+}
+
+
+})
 

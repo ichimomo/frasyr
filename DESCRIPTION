@@ -18,12 +18,12 @@ Imports:
     formattable,
     ggrepel,
     magrittr,    
-    RcppRoll
+    RcppRoll,
+    TMB    
 Suggests: 
     knitr,
     rmarkdown,
     testthat,
-    TMB,
     foreach,
     doParallel
 VignetteBuilder: knitr

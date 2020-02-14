@@ -2219,7 +2219,7 @@ est.MSY <- function(vpares,
     farg.tmp$is.plot <- FALSE
     farg.tmp$ABC.year <- max(as.numeric(names(vpares$naa)))+1
     farg.tmp$add.year <- 1
-    farg.tmp$det.run <- FALSE
+    farg.tmp$det.run <- TRUE
 
     if(!is.null(farg.tmp$pre.catch)){
         farg.tmp$pre.catch <- NULL # pre.catchオプションがあるとうまくいかないのでなかったことにする
