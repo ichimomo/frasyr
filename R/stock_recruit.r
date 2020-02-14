@@ -209,7 +209,9 @@ fit.SR <- function(SRdata,
 
   if (method!="L2") {
     if (AR!=0) {
-      message("L1 & out.AR=FALSE is NOT recommended")
+      if (!isTRUE(out.AR)) {
+        message("L1 & out.AR=FALSE is NOT recommended")
+      }
       arres <- ar(resid,aic=FALSE,order.max=1,demean=FALSE,method="mle")
       Res$pars[3] <- ifelse(arres$ar<0,sd,sqrt(arres$var.pred))
       Res$pars[4] <- ifelse(arres$ar<0,0,arres$ar)
@@ -686,4 +688,37 @@ fit.SRregime <- function(
   Res$summary_tbl
 
   return(Res)
+}
+
+#' 再生産関係の推定における標準化残差を計算する関数
+#' @import rmutil
+#' @param resSR \code{fit.SR}か\code{fit.SRregime}のオブジェクト
+#' @encoding UTF-8
+#' @export
+calc.StdResid = function(resSR) {
+  if(is.null(resSR$regime_pars)) { #fit.SR
+    sigma = rep(sqrt(resSR$pars$sd^2/(1-resSR$pars$rho^2)),length(resSR$resid))
+    sigma2 = c(sqrt(resSR$pars$sd^2/(1-resSR$pars$rho^2)), rep(resSR$pars$sd,length(resSR$resid)-1))
+    std.resid = resSR$resid/sigma
+    std.resid2 = resSR$resid2/sigma2
+    if (resSR$input$method == "L2") {
+      cumulative.prob = pnorm(std.resid,0,1)
+    } else {
+      cumulative.prob = rmutil::plaplace(std.resid,0,s=1/sqrt(2))
+    }
+    cumulative.prob2 = pnorm(std.resid2,0,1)
+    RES = tibble(sigma,sigma2,std.resid,std.resid2,cumulative.prob,cumulative.prob2)
+  } else{ #fit.SRregime
+    RES = dplyr::full_join(resSR$regime_pars,resSR$regime_resid) %>%
+      dplyr::mutate(std.resid = resid/sd) %>%
+      dplyr::select(sd,std.resid) %>%
+      rename(sigma=sd)
+    if (resSR$input$method == "L2") {
+      cumulative.prob = pnorm(RES$std.resid,0,1)
+    } else {
+      cumulative.prob = rmutil::plaplace(RES$std.resid,0,s=1/sqrt(2))
+    }
+    RES = RES %>% mutate(cumulative.prob=cumulative.prob)
+  }
+  return(RES)
 }
