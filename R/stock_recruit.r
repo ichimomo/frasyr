@@ -209,7 +209,9 @@ fit.SR <- function(SRdata,
 
   if (method!="L2") {
     if (AR!=0) {
-      message("L1 & out.AR=FALSE is NOT recommended")
+      if (!isTRUE(out.AR)) {
+        message("L1 & out.AR=FALSE is NOT recommended")
+      }
       arres <- ar(resid,aic=FALSE,order.max=1,demean=FALSE,method="mle")
       Res$pars[3] <- ifelse(arres$ar<0,sd,sqrt(arres$var.pred))
       Res$pars[4] <- ifelse(arres$ar<0,0,arres$ar)
@@ -686,4 +688,118 @@ fit.SRregime <- function(
   Res$summary_tbl
 
   return(Res)
+}
+
+#' 再生産関係の推定における標準化残差を計算する関数
+#' @import rmutil
+#' @param resSR \code{fit.SR}か\code{fit.SRregime}のオブジェクト
+#' @encoding UTF-8
+#' @export
+calc.StdResid = function(resSR) {
+  if(is.null(resSR$regime_pars)) { #fit.SR
+    sigma = rep(sqrt(resSR$pars$sd^2/(1-resSR$pars$rho^2)),length(resSR$resid))
+    sigma2 = c(sqrt(resSR$pars$sd^2/(1-resSR$pars$rho^2)), rep(resSR$pars$sd,length(resSR$resid)-1))
+    std.resid = resSR$resid/sigma
+    std.resid2 = resSR$resid2/sigma2
+    if (resSR$input$method == "L2") {
+      cumulative.prob = pnorm(std.resid,0,1)
+    } else {
+      cumulative.prob = rmutil::plaplace(std.resid,0,s=1/sqrt(2))
+    }
+    cumulative.prob2 = pnorm(std.resid2,0,1)
+    RES = tibble(sigma,sigma2,std.resid,std.resid2,cumulative.prob,cumulative.prob2)
+  } else{ #fit.SRregime
+    RES = dplyr::full_join(resSR$regime_pars,resSR$regime_resid) %>%
+      dplyr::mutate(std.resid = resid/sd) %>%
+      dplyr::select(sd,std.resid) %>%
+      rename(sigma=sd)
+    if (resSR$input$method == "L2") {
+      cumulative.prob = pnorm(RES$std.resid,0,1)
+    } else {
+      cumulative.prob = rmutil::plaplace(RES$std.resid,0,s=1/sqrt(2))
+    }
+    RES = RES %>% mutate(cumulative.prob=cumulative.prob)
+  }
+  return(RES)
+}
+
+
+#' 再生産関係の残差の確率分布に関するチェック図を出力する関数
+#' 
+#' 1) 正規性をチェックするための検定結果・ヒストグラム、2) 累積確率分布のヒストグラム、3) 一様分布を使用した累積確率分布のQQプロttの3つが出力される
+#' 標準化した残差を使用する
+#' 累積確率分布はL2の場合は正規分布、L1の場合はラプラス分布を使用する
+#' 自己相関の外側推定の場合は、2段階で推定しているため、ファイルが2つ出力される
+#' @import  EnvStats
+#' @inheritParams calc.StdResid
+#' @param resSR \code{fit.SR}か\code{fit.SRregime}のオブジェクト
+#' @encoding UTF-8
+#' @export
+check.SRdist = function(resSR,test.ks=TRUE,filename = "SR_error_dist_diagnostics") {
+  std.resid.res = calc.StdResid(resSR)
+  main_name=paste0(resSR$input$SR," ",resSR$input$method," ")
+  
+  if (!is.null(resSR$pars$rho) && resSR$input$AR && !isTRUE(resSR$input$out.AR)) {
+    for(i in 1:2) {
+      if (i==1) {
+        std.resid = std.resid.res$std.resid
+        cumulative.prob = std.resid.res$cumulative.prob
+        main_name2 = "Std. Deviance to SR"
+      } else {
+        std.resid = std.resid.res$std.resid2
+        cumulative.prob = std.resid.res$cumulative.prob2
+        main_name2 = "Standard. Resid."
+      }
+      # pdf(file = paste0(filename,"(",main_name2,").pdf"), width=15,height=5)
+      png(file = paste0(filename,"(",main_name2,").png"), width=15, height=5, res=432, units='in')
+      par(pch=1,lwd = 2, mfrow=c(1,3),cex=1)
+      check1 <- shapiro.test(std.resid)
+      hist(std.resid,main = paste0(main_name,main_name2),
+           xlab = "Standardized Deviance",freq=FALSE)
+      X <- seq(min(std.resid)*1.3,max(std.resid)*1.3,length=200)
+      points(X,dnorm(X,0,1),col=2,lwd=3,type="l")
+      mtext(text=" P value",adj=1,line=-1,lwd=2,font=2)
+      mtext(text=sprintf(" SW: %1.3f",check1$p.value),adj=1,line=-2)
+      if (test.ks) {
+        check2 <- ks.test(std.resid,y="pnorm",sd=1)
+        mtext(text=sprintf(" KS: %1.3f",check2$p.value),adj=1,line=-3)
+      }
+      hist(cumulative.prob, xlab="Cumulative probability",
+           main = paste0(main_name,"Cumlative Prob. Dist."),freq=FALSE,breaks=seq(0,1,by=0.1))
+      EnvStats::qqPlot(x=cumulative.prob,distribution="unif", param.list = list(min = 0, max = 1),
+                       add.line = TRUE,qq.line.type = "0-1",line.lwd=1.5,cex=1.2,line.col="red",
+                       main = paste0(main_name,"Uniform QQ plot"),ylab="Quatiles of Cumlative.Prob.",
+                       xlab = "Quantiles of Uniform Dist.")
+      dev.off()
+    }
+  } else {
+    if (is.null(std.resid.res$std.resid2)) {
+      std.resid = std.resid.res$std.resid
+      cumulative.prob = std.resid.res$cumulative.prob
+    } else {
+      std.resid = std.resid.res$std.resid2
+      cumulative.prob = std.resid.res$cumulative.prob2
+    }
+    # pdf(file = paste0(filename,".pdf"), width=15,height=5)
+    png(file = paste0(filename,".png"), width=15, height=5, res=432, units='in')
+    par(pch=1,lwd = 2, mfrow=c(1,3),cex=1)
+    check1 <- shapiro.test(std.resid)
+    hist(std.resid,main = paste0(main_name,"Standard. Resid."),
+         xlab = "Standardized Residual",freq=FALSE)
+    X <- seq(min(std.resid)*1.3,max(std.resid)*1.3,length=200)
+    points(X,dnorm(X,0,1),col=2,lwd=3,type="l")
+    mtext(text=" P value",adj=1,line=-1,lwd=2,font=2)
+    mtext(text=sprintf(" SW: %1.3f",check1$p.value),adj=1,line=-2)
+    if (test.ks) {
+      check2 <- ks.test(std.resid,y="pnorm",sd=1)
+      mtext(text=sprintf(" KS: %1.3f",check2$p.value),adj=1,line=-3)
+    }
+    hist(cumulative.prob, xlab="Cumulative probability",
+         main = paste0(main_name,"Cumlative Prob. Dist."),freq=FALSE,breaks=seq(0,1,by=0.1))
+    EnvStats::qqPlot(x=cumulative.prob,distribution="unif", param.list = list(min = 0, max = 1),
+                     add.line = TRUE,qq.line.type = "0-1",line.lwd=1.5,cex=1.2,line.col="red",
+                     main = paste0(main_name,"Uniform QQ plot"),ylab="Quatiles of Cumlative.Prob.",
+                     xlab = "Quantiles of Uniform Dist.")
+    dev.off()
+  }
 }
