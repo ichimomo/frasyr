@@ -511,8 +511,6 @@ prof.lik <- function(Res,a=Res$pars$a,b=Res$pars$b,sd=Res$pars$sd,rho=ifelse(Res
 #' }
 #'
 #' @export
-
-
 fit.SRregime <- function(
   SRdata,
   SR = "HS",
@@ -709,7 +707,9 @@ calc.StdResid = function(resSR) {
     cumulative.prob2 = pnorm(std.resid2,0,1)
     RES = tibble(sigma,sigma2,std.resid,std.resid2,cumulative.prob,cumulative.prob2)
   } else{ #fit.SRregime
-    RES = dplyr::full_join(resSR$regime_pars,resSR$regime_resid) %>%
+    RES = dplyr::full_join(resSR$regime_pars,
+                           resSR$regime_resid %>% mutate(Year = resSR$input$SRdata$year)) %>%
+      dplyr::arrange(Year) %>%
       dplyr::mutate(std.resid = resid/sd) %>%
       dplyr::select(sd,std.resid) %>%
       rename(sigma=sd)
@@ -739,7 +739,7 @@ check.SRdist = function(resSR,test.ks=TRUE,filename = "SR_error_dist_diagnostics
   std.resid.res = calc.StdResid(resSR)
   main_name=paste0(resSR$input$SR," ",resSR$input$method," ")
   
-  if (!is.null(resSR$pars$rho) && resSR$input$AR && !isTRUE(resSR$input$out.AR)) {
+  if (!is.null(resSR$pars$rho) && resSR$input$AR && isTRUE(resSR$input$out.AR)) {
     for(i in 1:2) {
       if (i==1) {
         std.resid = std.resid.res$std.resid
@@ -802,4 +802,144 @@ check.SRdist = function(resSR,test.ks=TRUE,filename = "SR_error_dist_diagnostics
                      xlab = "Quantiles of Uniform Dist.")
     dev.off()
   }
+}
+
+#' 推定された再生産関係の残差から事後的に1次の自己相関係数を推定する関数
+#'
+#' 計算は\code{fit.SR}の\code{out.AR}と同じであるが、AICcも見れるほか、\code{fit.SRregime}にも対応している
+#' \code{fit.SRregime}の場合、各レジームの最初の年は初期値となる（つまり前のレジームの最後の年からの残差を引きずらない）
+#' @param resSR \code{fit.SR}か\code{fit.SRregime}のオブジェクト
+#' @param per_regime 自己相関係数をレジームごとに推定するか (\code{TRUE}) 否か
+#' @encoding UTF-8
+#' @examples
+#' \dontrun{
+#' data(res_vpa)
+#' SRdata <- get.SRdata(res_vpa)
+#' data(res_vpa)
+#' SRdata <- get.SRdata(res_vpa)
+#' resSR <- fit.SR(SRdata, SR = c("HS","BH","RI")[1],
+#'                 method = c("L1","L2")[1], AR = 0,
+#'                 out.AR = FALSE, rep.opt = TRUE)
+#' resSR_post = calc.residAR(resSR)
+#' resSR_post$AICc
+#' resSR_post$pars
+#' resSRregime <- fit.SRregime(SRdata, SR="HS", method="L2",
+#'                             regime.year=c(1995,2005), regime.key=c(0,1,0),
+#'                             regime.par = c("a","b","sd")[2:3])
+#' resSRregime_post = calc.residAR(resSRregime, per_regime = TRUE)
+#' resSRregime_post$AICc
+#' resSRregime_post$regime$pars
+#'                             
+#' @export
+calc.residAR = function(resSR, per_regime=TRUE) {
+  RES = list()
+  if (!is.null(resSR$pars$rho)) { #fit.SR
+    if (resSR$input$AR && !isTRUE(resSR$input$out.AR)) {
+      warning("This function is meaningless when AR=TRUE & out.AR=FALSE")
+    }
+    deviance = resSR$resid
+    arimares0 = arima(deviance,method="ML",include.mean=FALSE,order=c(0,0,0))
+    arimares1 = arima(deviance,method="ML",include.mean=FALSE,order=c(1,0,0))
+    nn = length(deviance)
+    k = c("AR(0)"=1,"AR(1)"=2)
+    loglik = c("AR(0)"=arimares0$loglik,"AR(1)"=arimares1$loglik)
+    AIC = c("AR(0)"=arimares0$aic,"AR(1)"=arimares1$aic)
+    AICc = AIC + 2*k*(k+1)/(nn-k-1)
+    BIC = AIC + k*log(nn)
+    rho = as.numeric(arimares1$coef)
+    sd = sqrt(arimares1$sigma2)
+    resid2 = arimares1$residuals
+    RES$pars = resSR$pars
+    RES$pars$rho = rho
+    RES$pars$sd = sd
+    RES$arima0 = arimares0
+    RES$arima1 = arimares1
+    RES$resid = resSR$resid
+    RES$resid2 = resid2
+    RES$loglik = loglik
+    RES$k = k
+    RES$AIC = AIC
+    RES$AICc = AICc
+    RES$BIC = BIC
+  } else {  #fit.SRregime
+    tbl = resSR$regime_pars %>% full_join(resSR$regime_resid %>% mutate(Year = resSR$input$SRdata$year)) %>%
+      arrange(Year) %>% mutate(Shift = if_else(Year %in% c(min(Year), resSR$input$regime.year),1,0)) 
+    tbl = tbl %>%
+      mutate(regime_id = purrr::map_dbl(regime, function(x) which(x==unique(resSR$regime_pars$regime))))
+    deviance = tbl$resid; shift = tbl$Shift; regime_id = tbl$regime_id;
+    w = resSR$input$w;nn = nrow(tbl);
+    obj.f = function(x,out="nll") {
+      rho = (exp(x)-1.0)/(exp(x)+1.0);resid2 = c();
+      if (per_regime) {
+        for (i in 1:nn) {
+          if (shift[i]==1) {
+            resid2 = c(resid2,sqrt(1-rho[regime_id[i]]^2)*deviance[i])
+          } else {
+            resid2 = c(resid2,deviance[i]-rho[regime_id[i-1]]*deviance[i-1])
+          }
+        }
+      } else {
+        for (i in 1:nn) {
+          if (shift[i]==1) {
+            resid2 = c(resid2,sqrt(1-rho^2)*deviance[i])
+          } else {
+            resid2 = c(resid2,deviance[i]-rho*deviance[i-1])
+          }
+        }
+      }
+      RSS = tbl %>% mutate(resid2 = resid2,w=w) %>% group_by(sd) %>%
+        summarise(var=sum(w*resid2^2),n=sum(w)) %>% 
+        mutate(sigma = sqrt(var/n))
+      tbl2 = left_join(tbl,RSS,by="sd")
+      sigma = tbl2$sigma
+      if (out=="nll") {
+        return(-sum(dnorm(0,resid2,sigma,log=TRUE))) } else {
+          if (out=="resid") {
+            return(resid2) } else {
+              return(sigma)
+            }
+        }
+    }
+    if (per_regime) {
+      opt = optim(rep(0,max(tbl$regime_id)),obj.f)
+      for (i in 1:100) {
+        opt2 <- optim(opt$par,obj.f)
+        if (abs(opt$value-opt2$value)<1e-6) break
+        opt <- opt2
+      }
+      opt <- optim(opt$par,obj.f,method="BFGS")
+    } else {
+      opt = optim(0,obj.f,method="Brent",lower=-20,upper=20)
+    }
+    rho = (exp(opt$par)-1)/(exp(opt$par)+1)
+    loglik1 = -opt$value
+    resid2 = obj.f(x=opt$par,out="resid")
+    sigma = obj.f(x=opt$par,out="sigma")
+    tbl3 = tbl %>% mutate(resid2 = resid2,sigma=sigma)
+    RES$pars = resSR$pars
+    RES$pars$rho = rho
+    if (per_regime) rho = rho[tbl3$regime_id]
+    tbl3 = tbl3 %>% mutate(rho = rho)
+    RES$regime_pars = tbl3 %>% dplyr::select(regime,a,b,sigma,rho) %>% distinct() %>% rename(sd = sigma)
+    RES$regime_resid = tbl3 %>% dplyr::select(regime,resid,resid2)
+    RES$pars$sd = unique(RES$regime_pars$sd)
+    
+    if (per_regime) {
+      loglik0 = -obj.f(rep(0,max(tbl$regime_id)))
+    } else {
+      loglik0 = -obj.f(0)
+    }
+    
+    k = c("AR(0)"=length(resSR$pars$sd),"AR(1)"=length(resSR$pars$sd)+length(opt$par))
+    loglik = c("AR(0)"=loglik0,"AR(1)"=loglik1)
+    AIC = -2*loglik+2*k
+    AICc = AIC + 2*k*(k+1)/(nn-k-1)
+    BIC = AIC + k*log(nn)
+    RES$loglik = loglik
+    RES$k = k
+    RES$AIC = AIC
+    RES$AICc = AICc
+    RES$BIC = BIC
+  }
+  return(RES)
 }
