@@ -5,7 +5,7 @@
 \alias{plot_Fcurrent}
 \title{F currentをプロットする}
 \usage{
-plot_Fcurrent(vpares, year.range = NULL)
+plot_Fcurrent(vpares, Fcurrent = NULL, year.range = NULL)
 }
 \arguments{
 \item{vpares}{VPAの結果のオブジェクト}

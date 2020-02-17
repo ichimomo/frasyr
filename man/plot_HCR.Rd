@@ -10,6 +10,7 @@ plot_HCR(
   SBlim,
   SBban,
   Ftarget,
+  Fcurrent = -1,
   biomass.unit = 1,
   beta = 0.8,
   col.multi2currf = "black",
@@ -18,7 +19,8 @@ plot_HCR(
   col.SBban = "#C73C2E",
   col.Ftarget = "black",
   col.betaFtarget = "gray",
-  is.text = TRUE
+  is.text = TRUE,
+  RP.label = c("目標管理基準値", "限界管理基準値", "禁漁水準")
 )
 }
 \arguments{
