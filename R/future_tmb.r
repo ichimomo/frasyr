@@ -519,13 +519,15 @@ future_vpa_R <- function(naa_mat,
                                start_random_rec_year_name = dimnames(naa_mat)[[2]][t-1],
                                recruit_age = recruit_age,
                                resid_type                 = MSE_input_data$input$resid_type,
-                               resample_year_range        = MSE_input_data$input$resample_year_range,
+                               resample_year_range        = dimnames(naa_mat)[[2]][1]:dimnames(naa_mat)[[2]][t-2],
+                               backward_duration          = MSE_input_data$input$backward_duration,
                                bias_correction            = MSE_input_data$input$bias_correction,
                                recruit_intercept          = MSE_input_data$input$recruit_intercept,
                                model_average_option       = MSE_input_data$input$model_average_option,
                                regime_shift_option        = MSE_input_data$input$regime_shift_option)
 
                 res_tmp <- safe_call(future_vpa_R,MSE_dummy_data) # do future projection
+#                if(t>55) browser()
                 HCR_mat[t,i,"wcatch"] <- mean(apply(res_tmp$wcaa[,t,],2,sum)) # determine ABC in year t
                 SR_MSE[t,i,"recruit"] <- mean(res_tmp$naa[1,t,])
                 SR_MSE[t,i,"ssb"]     <- mean(res_tmp$SR_mat[t,,"ssb"])
@@ -779,6 +781,7 @@ set_SR_mat <- function(res_vpa=NULL,
                                  start_random_rec_year_name=start_random_rec_year_name,
                                  resid_type  = resid_type,
                                  recruit_intercept=recruit_intercept,
+                                 resample_year_range=resample_year_range,                                 
                                  recruit_age = recruit_age,
                                  regime_shift_option = regime_shift_option,
                                  bias_correction = bias_correction

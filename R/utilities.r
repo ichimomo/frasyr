@@ -37,30 +37,30 @@ convert_2d_future <- function(df, name, label="tmp"){
 #' 
 
 convert_future_table <- function(fout,label="tmp"){
-  
-  U_table <- fout$vwcaa/fout$vbiom 
-  if(is.null(fout$Fsakugen)) fout$Fsakugen <- -(1-fout$faa[1,,]/fout$currentF[1])
-  if(is.null(fout$recruit))  fout$recruit <- fout$naa[1,,]
-  
-  ssb      <- convert_2d_future(df=fout$vssb,   name="SSB",     label=label)
-  catch    <- convert_2d_future(df=fout$vwcaa,  name="catch",   label=label)    
-  biomass  <- convert_2d_future(df=fout$vbiom,  name="biomass", label=label)
-  U_table  <- convert_2d_future(df=U_table,     name="U",       label=label)
-  beta_gamma    <- convert_2d_future(df=fout$alpha,  name="beta_gamma",   label=label)        
-  Fsakugen <- convert_2d_future(df=fout$Fsakugen, name="Fsakugen",   label=label)
-  recruit  <- convert_2d_future(df=fout$recruit, name="Recruitment",   label=label)
-  if(!is.null(fout$Fratio)){
-    Fratio <- convert_2d_future(df=fout$Fratio, name="Fratio",   label=label)
-  }
-  else{
-    Fratio <- Fratio
-  }
-  
-  Fsakugen_ratio <- Fsakugen %>%
-    mutate(value=value+1)
-  Fsakugen_ratio$stat <- "Fsakugen_ratio"
-  
-  bind_rows(ssb,catch,biomass,beta_gamma,Fsakugen,Fsakugen_ratio,recruit, U_table, Fratio)
+    
+    U_table <- fout$vwcaa/fout$vbiom 
+    if(is.null(fout$Fsakugen)) fout$Fsakugen <- -(1-fout$faa[1,,]/fout$currentF[1])
+    if(is.null(fout$recruit))  fout$recruit <- fout$naa[1,,]
+
+    ssb      <- convert_2d_future(df=fout$vssb,   name="SSB",     label=label)
+    catch    <- convert_2d_future(df=fout$vwcaa,  name="catch",   label=label)    
+    biomass  <- convert_2d_future(df=fout$vbiom,  name="biomass", label=label)
+    U_table  <- convert_2d_future(df=U_table,     name="U",       label=label)
+    beta_gamma    <- convert_2d_future(df=fout$alpha,  name="beta_gamma",   label=label)        
+    Fsakugen <- convert_2d_future(df=fout$Fsakugen, name="Fsakugen",   label=label)
+    recruit  <- convert_2d_future(df=fout$recruit, name="Recruitment",   label=label)
+    if(!is.null(fout$Fratio)){
+        Fratio <- convert_2d_future(df=fout$Fratio, name="Fratio",   label=label)
+    }
+    else{
+        Fratio <- NULL
+    }
+    
+    Fsakugen_ratio <- Fsakugen %>%
+        mutate(value=value+1)
+    Fsakugen_ratio$stat <- "Fsakugen_ratio"
+
+    bind_rows(ssb,catch,biomass,beta_gamma,Fsakugen,Fsakugen_ratio,recruit, U_table, Fratio)
 }
 
 
@@ -1999,6 +1999,82 @@ get_performance <- function(future_list,res_vpa,ABC_year=2021,
 }
 
 #'
+#' 短期的将来予測における複数の管理方策のパフォーマンスを比較する表を出力する
+#'
+#' @param future_list 将来予測の結果のリスト
+#' @param res_vpa VPAの結果
+#' @param ... get_performanceで必要な引数
+#' 
+#' 
+#' @export
+#' 
+
+compare_future_performance <- function(future_list,res_vpa,res_MSY,
+                                       biomass.unit=1000,is_MSE=FALSE,...){
+    perform_res <- get_performance(future_list=future_list, res_vpa=res_vpa,
+                                   Btarget=derive_RP_value(res_MSY$summary,"Btarget0")$SSB,
+                                   Blimit =derive_RP_value(res_MSY$summary,"Blimit0")$SSB,
+                                   Bban   =derive_RP_value(res_MSY$summary,"Bban0")$SSB,
+                                   type="long",is_MSE=is_MSE,biomass.unit=biomass.unit,...)
+
+    g1_ssb0 <- perform_res$kobe_res %>% dplyr::filter(stat_name=="ssb.mean") %>%
+        ggplot() +
+    geom_bar(aes(x=HCR_name,y=value,fill=stat_category),stat="identity") +
+    facet_wrap(stat_category~year,ncol=1)+coord_flip()+
+    geom_label(aes(x=HCR_name,y=max(value)/2,label=str_c(round(value),unit)),
+               alpha=0.5)+
+    theme_SH() + theme(legend.position="top")+xlab("Senario") +
+    guides(fill=guide_legend(title=""))+
+    scale_fill_manual(values=c("lightblue"))
+
+    g1_ssb <- g1_ssb0 +
+        geom_hline(yintercept=derive_RP_value(res_MSY$summary,"Btarget0")$SSB/biomass.unit,
+                   col="#00533E")+
+        geom_hline(yintercept=derive_RP_value(res_MSY$summary,"Blimit0")$SSB/biomass.unit,
+                   col="#edb918")    
+
+    g1_catch0 <- g1_ssb0 %+% dplyr::filter(perform_res$kobe_res, stat_name=="catch.mean")+
+        scale_x_discrete(labels=rep("",4))+    
+        scale_fill_manual(values=c("lightgreen")) 
+
+    g1_catch <- g1_catch0 +
+        geom_hline(yintercept=derive_RP_value(res_MSY$summary,"Btarget0")$Catch/10000,
+                   col="#00533E")+
+        geom_hline(yintercept=rev(colSums(res_vpa$wcaa,na.rm=T))[1]/biomass.unit,
+                   col="gray",lty=2)
+
+    g1_probtar <- g1_catch0 %+% dplyr::filter(perform_res$kobe_res, stat_name=="Pr(SSB>SSBtarget)")+
+        scale_fill_manual(values=c("lightblue"))+
+        geom_hline(yintercept=c(0,50,100),col="gray",lty=2)
+
+    g1_problim <- g1_catch0 %+% dplyr::filter(perform_res$kobe_res, stat_name=="Pr(SSB>SSBlim)")+
+        scale_fill_manual(values=c("gray"))+
+        geom_hline(yintercept=c(0,50,100),col="gray",lty=2)
+
+    g1_error_table <- perform_res$error_table  %>% 
+        ggplot() +
+        geom_bar(aes(x=HCR_name,y=value,fill=stat_category),stat="identity") +
+        facet_grid(year~stat_name)+coord_flip()+
+        geom_label(aes(x=HCR_name,y=max(value)/2,label=str_c(round(value,2),unit)),
+                   alpha=0.5)+
+        theme_SH() + theme(legend.position="top")+xlab("Senario") +
+        guides(fill=guide_legend(title=""))+
+        scale_fill_manual(values=c("lightpink"))
+
+    g1_performance <- gridExtra::marrangeGrob(list(g1_ssb,g1_probtar,g1_catch,g1_problim),
+                                              widths=c(1.3,1,1,1),nrow=1,ncol=4)
+
+    list(g1_performance,g1_error_table)
+    #ggsave(g1_performance, filename="g1_performance.png" ,path=output_folder,
+    #           width=20, height= 10)
+
+    #    ggsave(g1_error_table, filename="g1_error_table.png" ,path=output_folder,
+    #       width=15, height= 8)
+
+}
+
+
+#'
 #' @export
 #' 
 
@@ -2079,3 +2155,5 @@ calc_Fratio <- function(faa, waa, maa, M, SPRtarget=30, waa.catch=NULL,Pope=TRUE
     else return(1/exp(opt_res$minimum))
   }
 }
+
+
