@@ -5,7 +5,7 @@
 \alias{convert_vpa_tibble}
 \title{VPAの結果オブジェクトをtibble形式に変換する関数}
 \usage{
-convert_vpa_tibble(vpares)
+convert_vpa_tibble(vpares, SPRtarget = NULL)
 }
 \arguments{
 \item{vpares}{vpaの結果のオブジェクト}

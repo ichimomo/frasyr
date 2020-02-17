@@ -3,10 +3,15 @@
 \encoding{UTF-8}
 \name{boot.SR}
 \alias{boot.SR}
-\title{parametric bootstrap usnig fit.SR}
+\title{Residual Bootstrap for fit.SR}
 \usage{
-boot.SR(Res, n = 100, seed = 1)
+boot.SR(Res, method = "p", n = 100, seed = 1)
+}
+\arguments{
+\item{Res}{\code{fit.SR}か\code{fit.SRregime}のオブジェクト}
+
+\item{method}{パラメトリック ("p") かノンパラメトリック ("n")}
 }
 \description{
-parametric bootstrap usnig fit.SR
+パラメトリックブートストラップに加えてノンパラメトリックも追加
 }

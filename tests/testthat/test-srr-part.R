@@ -66,15 +66,19 @@ test_that("oututput value check",{
   # boot strap ----
   boot_res_pma_check <- boot.SR(SRmodel.select)
 
-  boot_res_pma_median_pars_a <-median(sapply(1:length(boot_res_pma_check), function(i) boot_res_pma_check[[i]]$pars$a))
-  boot_res_pma_median_pars_b <-median(sapply(1:length(boot_res_pma_check), function(i) boot_res_pma_check[[i]]$pars$b))
-  boot_res_pma_median_pars_sd <-median(sapply(1:length(boot_res_pma_check), function(i) boot_res_pma_check[[i]]$pars$sd))
-  boot_res_pma_median_pars_rho <-median(sapply(1:length(boot_res_pma_check), function(i) boot_res_pma_check[[i]]$pars$rho))
+  boot_res_pma_median_pars_a <-median(sapply(1:boot_res_pma_check$input$n, function(i) boot_res_pma_check[[i]]$pars$a))
+  boot_res_pma_median_pars_b <-median(sapply(1:boot_res_pma_check$input$n, function(i) boot_res_pma_check[[i]]$pars$b))
+  boot_res_pma_median_pars_sd <-median(sapply(1:boot_res_pma_check$input$n, function(i) boot_res_pma_check[[i]]$pars$sd))
+  boot_res_pma_median_pars_rho <-median(sapply(1:boot_res_pma_check$input$n, function(i) boot_res_pma_check[[i]]$pars$rho))
 
-  boot_res_pma_median_pars_check <- cbind(boot_res_pma_median_pars_a,boot_res_pma_median_pars_b,boot_res_pma_median_pars_sd,boot_res_pma_median_pars_rho)
+  # boot_res_pma_median_pars_check <- cbind(boot_res_pma_median_pars_a,boot_res_pma_median_pars_b,boot_res_pma_median_pars_sd,boot_res_pma_median_pars_rho)
+  boot_res_pma_median_pars_check <- c(boot_res_pma_median_pars_a,boot_res_pma_median_pars_b,boot_res_pma_median_pars_sd)
 
   #上記条件での結果の読み込み
   load(system.file("extdata","boot_res_pma_median_pars.rda",package = "frasyr"))
+  
   #結果の照合
-  expect_equal(boot_res_pma_median_pars,boot_res_pma_median_pars_check)
+  expect_equal(boot_res_pma_median_pars_check/as.numeric(boot_res_pma_median_pars[,-4]),rep(1,3),tolerance=0.01,
+               scale=0.01)
 })
+

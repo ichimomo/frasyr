@@ -382,43 +382,91 @@ fit.SR2 <- function(SRdata,
   return(Res)
 }
 
-#' parametric bootstrap usnig fit.SR
-#'
+#' Residual Bootstrap for fit.SR
+#' 
+#' パラメトリックブートストラップに加えてノンパラメトリックも追加
+#' @param Res \code{fit.SR}か\code{fit.SRregime}のオブジェクト
+#' @param method パラメトリック ("p") かノンパラメトリック ("n")
 #' @encoding UTF-8
 #' @export
 #'
-
-boot.SR <- function(Res,n=100,seed=1){
-  N <- length(Res$input$SRdata$year)
-
-#  if (Res$input$SR=="HS") SRF <- function(x,a,b,gamma=Res$gamma) a*(x+sqrt(b^2+gamma^2/4)-sqrt((x-b)^2+gamma^2/4))
+boot.SR <- function(Res,method="p",n=100,seed=1){
+  
+  argname <- ls()
+  arglist <- lapply(argname,function(xx) eval(parse(text=xx)))
+  names(arglist) <- argname
+  N <- length(Res$input$SRdata$SSB)
+  
   if (Res$input$SR=="HS") SRF <- function(x,a,b) ifelse(x>b,b*a,x*a)
   if (Res$input$SR=="BH") SRF <- function(x,a,b) a*x/(1+b*x)
   if (Res$input$SR=="RI") SRF <- function(x,a,b) a*x*exp(-b*x)
-
-  sd <- sapply(1:N, function(i) ifelse(i==1,Res$pars$sd/sqrt(1-Res$pars$rho^2),Res$pars$sd))
-
+  
   set.seed(seed)
-  lapply(1:n, function(j){
+  if (!is.null(Res$pars$rho)) { #fit.SR
     N <- length(Res$input$SRdata$SSB)
-    resids <- rnorm(N,0,sd)
-    pred <- obs <- resid0 <- numeric(N)
-    ssb <- Res$input$SRdata$SSB
-
-    for(i in 1:N){
-      pred[i] <- SRF(ssb[i],Res$pars$a,Res$pars$b)
-      if (i==1) {
-        obs[i] <- pred[i]*exp(resids[i])
-      } else {
-        obs[i] <- pred[i]*exp(Res$pars$rho*resid0[i-1])*exp(resids[i])
-      }
-      resid0[i] <- log(obs[i]/pred[i])
-    }
-    res.b <- Res
-    res.b$input$SRdata$R <- obs
-    res.b <- do.call(fit.SR, res.b$input)
-    return(res.b)
-  })
+    RES = lapply(1:n, function(j){
+        sd <- sapply(1:N, function(i) ifelse(i==1,Res$pars$sd/sqrt(1-Res$pars$rho^2),Res$pars$sd))
+        if (method=="p") { # parametric bootstrap assuming a normal distribution
+          resids <- rnorm(N,0,sd)
+        } else {# non-parametric bootstrap for residuals
+          std.resid = calc.StdResid(Res)$std.resid
+          std.resids = sample(std.resid,replace=TRUE)
+          resids = std.resids*sd
+        }
+        pred <- obs <- resid0 <- numeric(N)
+        ssb <- Res$input$SRdata$SSB
+        for(i in 1:N){
+          pred[i] <- SRF(ssb[i],Res$pars$a,Res$pars$b)
+          if (i==1) {
+            obs[i] <- pred[i]*exp(resids[i])
+          } else {
+            obs[i] <- pred[i]*exp(Res$pars$rho*resid0[i-1])*exp(resids[i])
+          }
+          resid0[i] <- log(obs[i]/pred[i])
+        }
+        res.b <- Res
+        res.b$input$SRdata$R <- obs
+        res.b$input$p0 = Res$opt$par
+        res.b <- do.call(fit.SR, res.b$input)
+      
+      return(res.b)
+    })
+  } else {
+    # fit.SRregime
+    N <- length(Res$input$SRdata$SSB)
+    tmp = calc.StdResid(Res)
+    sd = tmp$sigma
+    std.resid = tmp$std.resid
+    merged = full_join(Res$regime_pars,mutate(Res$regime_resid,Year=Res$input$SRdata$year),by="regime") %>%
+      arrange(Year)
+    RES = lapply(1:n, function(j){
+        if (method=="p") { # parametric bootstrap assuming a normal distribution
+          std.resids = rnorm(N,0,1)
+        } else {# non-parametric bootstrap for residuals
+          std.resids = sample(std.resid,replace=TRUE)
+        }
+        resids <- std.resids*sd
+        pred <- obs <- resid0 <- numeric(N)
+        ssb <- Res$input$SRdata$SSB
+        for(i in 1:N){
+          pred[i] <- SRF(ssb[i],merged$a[i],merged$b[i])
+          if (i==1) {
+            obs[i] <- pred[i]*exp(resids[i])
+          } else {
+            obs[i] <- pred[i]*exp(0*resid0[i-1])*exp(resids[i])
+          }
+          resid0[i] <- log(obs[i]/pred[i])
+        }
+        res.b <- Res
+        res.b$input$SRdata$R <- obs
+        res.b$input$p0 = Res$opt$par
+        res.b <- do.call(fit.SRregime, res.b$input)
+      
+      return(res.b)
+    })
+  }
+  RES$input = arglist
+  return(RES)
 }
 
 #'  profile likelihood
@@ -708,7 +756,7 @@ calc.StdResid = function(resSR) {
     RES = tibble(sigma,sigma2,std.resid,std.resid2,cumulative.prob,cumulative.prob2)
   } else{ #fit.SRregime
     RES = dplyr::full_join(resSR$regime_pars,
-                           resSR$regime_resid %>% mutate(Year = resSR$input$SRdata$year)) %>%
+                           resSR$regime_resid %>% mutate(Year = resSR$input$SRdata$year),by="regime") %>%
       dplyr::arrange(Year) %>%
       dplyr::mutate(std.resid = resid/sd) %>%
       dplyr::select(sd,std.resid) %>%
@@ -733,9 +781,10 @@ calc.StdResid = function(resSR) {
 #' @import  EnvStats
 #' @inheritParams calc.StdResid
 #' @param resSR \code{fit.SR}か\code{fit.SRregime}のオブジェクト
+#' @param output pngファイルに出力するか否か
 #' @encoding UTF-8
 #' @export
-check.SRdist = function(resSR,test.ks=TRUE,filename = "SR_error_dist_diagnostics") {
+check.SRdist = function(resSR,test.ks=TRUE,output=FALSE,filename = "SR_error_dist_diagnostics") {
   std.resid.res = calc.StdResid(resSR)
   main_name=paste0(resSR$input$SR," ",resSR$input$method," ")
   
@@ -751,7 +800,7 @@ check.SRdist = function(resSR,test.ks=TRUE,filename = "SR_error_dist_diagnostics
         main_name2 = "Standard. Resid."
       }
       # pdf(file = paste0(filename,"(",main_name2,").pdf"), width=15,height=5)
-      png(file = paste0(filename,"(",main_name2,").png"), width=15, height=5, res=432, units='in')
+      if (output) png(file = paste0(filename,"(",main_name2,").png"), width=15, height=5, res=432, units='in')
       par(pch=1,lwd = 2, mfrow=c(1,3),cex=1)
       check1 <- shapiro.test(std.resid)
       hist(std.resid,main = paste0(main_name,main_name2),
@@ -770,7 +819,7 @@ check.SRdist = function(resSR,test.ks=TRUE,filename = "SR_error_dist_diagnostics
                        add.line = TRUE,qq.line.type = "0-1",line.lwd=1.5,cex=1.2,line.col="red",
                        main = paste0(main_name,"Uniform QQ plot"),ylab="Quatiles of Cumlative.Prob.",
                        xlab = "Quantiles of Uniform Dist.")
-      dev.off()
+      if (output) dev.off()
     }
   } else {
     if (is.null(std.resid.res$std.resid2)) {
@@ -781,7 +830,7 @@ check.SRdist = function(resSR,test.ks=TRUE,filename = "SR_error_dist_diagnostics
       cumulative.prob = std.resid.res$cumulative.prob2
     }
     # pdf(file = paste0(filename,".pdf"), width=15,height=5)
-    png(file = paste0(filename,".png"), width=15, height=5, res=432, units='in')
+    if (output) png(file = paste0(filename,".png"), width=15, height=5, res=432, units='in')
     par(pch=1,lwd = 2, mfrow=c(1,3),cex=1)
     check1 <- shapiro.test(std.resid)
     hist(std.resid,main = paste0(main_name,"Standard. Resid."),
@@ -800,11 +849,11 @@ check.SRdist = function(resSR,test.ks=TRUE,filename = "SR_error_dist_diagnostics
                      add.line = TRUE,qq.line.type = "0-1",line.lwd=1.5,cex=1.2,line.col="red",
                      main = paste0(main_name,"Uniform QQ plot"),ylab="Quatiles of Cumlative.Prob.",
                      xlab = "Quantiles of Uniform Dist.")
-    dev.off()
+    if (output) dev.off()
   }
 }
 
-#' 推定された再生産関係の残差から事後的に1次の自己相関係数を推定する関数
+#' 再生産関係の残差から事後的に1次の自己相関係数を推定する関数
 #'
 #' 計算は\code{fit.SR}の\code{out.AR}と同じであるが、AICcも見れるほか、\code{fit.SRregime}にも対応している
 #' \code{fit.SRregime}の場合、各レジームの最初の年は初期値となる（つまり前のレジームの最後の年からの残差を引きずらない）
@@ -923,13 +972,12 @@ calc.residAR = function(resSR, per_regime=TRUE) {
     RES$regime_pars = tbl3 %>% dplyr::select(regime,a,b,sigma,rho) %>% distinct() %>% rename(sd = sigma)
     RES$regime_resid = tbl3 %>% dplyr::select(regime,resid,resid2)
     RES$pars$sd = unique(RES$regime_pars$sd)
-    
+    RES$opt = opt
     if (per_regime) {
       loglik0 = -obj.f(rep(0,max(tbl$regime_id)))
     } else {
       loglik0 = -obj.f(0)
     }
-    
     k = c("AR(0)"=length(resSR$pars$sd),"AR(1)"=length(resSR$pars$sd)+length(opt$par))
     loglik = c("AR(0)"=loglik0,"AR(1)"=loglik1)
     AIC = -2*loglik+2*k
@@ -942,4 +990,120 @@ calc.residAR = function(resSR, per_regime=TRUE) {
     RES$BIC = BIC
   }
   return(RES)
+}
+
+#' 再生産関係における残差の時系列の自己相関等についてのプロット 
+#' 
+#' 1) 残差のトレンド、2) \code{acf}関数による自己相関係数のプロット、3) Ljung-Box検定におけるP値の3つの図を出力
+#' @inheritParams calc.StdResid
+#' @param resSR \code{fit.SR}か\code{fit.SRregime}のオブジェクト
+#' @param use.resid 再生産関係との残差 (deviance \code{resid}) を使うか (1:default)、自己相関を除いた残差 (\code{resid2}) を使うか (2)
+#' @param output pngファイルに出力するか否か
+#' @encoding UTF-8
+#' @export
+plot.autocor = function(resSR,use.resid=1,lag.max=NULL,output = FALSE,filename = "Residual_trend",pch=16,lwd=2,cex=1.2,cex.main=1.2,cex.lab=1.2,...){
+  Year = resSR$input$SRdata$year
+  if (output) png(file = paste0(filename,".png"), width=15, height=5, res=432, units='in')
+  par(pch=pch,lwd = lwd, mfrow=c(1,3),cex=cex)
+  if (!is.null(resSR$pars$rho)) { #fit.SR
+    if (use.resid==1) {
+      Resid = resSR$resid
+      plot(Year,Resid,pch=pch,main="",xlab="Year",ylab="Deviance",cex.lab=cex.lab,...)
+      title("Time series of deviance to SR",cex.main=cex.main)
+    } else {
+      Resid = resSR$resid2
+      Resid[1] = sqrt(1-resSR$pars$rho^2)*Resid[1]
+      plot(Year,Resid,pch=pch,main="",xlab="Year",ylab="Residual",cex.lab=cex.lab,...)
+      title("Time series of Residuals",cex.main=cex.main)
+    }
+  } else { #fit.SRregime
+    message("Standardized residuals are used for 'fit.SRregime'")
+    table = calc.StdResid(resSR)
+    Resid = table$std.resid
+    plot(Year,Resid,pch=pch,main="",xlab="Year",ylab="Std.Residual",cex.lab=cex.lab,...)
+    title("Time series of Standardized Residuals",cex.main=cex.main)
+    abline(v=c(resSR$input$regime.year)-0.5,lty=3,col="blue")
+  }
+  abline(0,0,lty=2)
+  par(new=T)
+  scatter.smooth(Year, Resid, lpars=list(col="red",lwd=lwd),ann=F,axes=FALSE)
+  
+  if (is.null(lag.max)) lag.max = 10*log10(length(Resid))
+  ac.res <- acf(Resid,plot=FALSE,lag.max=lag.max)
+  plot(ac.res,main="",lwd=lwd,cex=cex,cex.lab=cex.lab,...)
+  title("Autocorrelation function (rho vs. lag)",cex.main=cex.main)
+  
+  p = c()
+  col = c()
+  for(i in 1:lag.max){
+    LBtest = Box.test(Resid,lag = i,type="Ljung")
+    p = c(p,LBtest$p.value)
+    col = c(col,isTRUE(LBtest$p.value<0.05)+1)
+  }
+  plot(p,pch=pch,...,ylim=c(0,max(c(p,0.2))),col=col,xlab="Lag",ylab="P value",cex.lab=cex.lab,...)
+  abline(0.05,0.,lty=2,col="blue")
+  title("Ljung-Box test",cex.main=cex.main)
+  if (output) dev.off()
+}
+
+#' 再生産関係における残差の時系列の自己相関等についてのプロット 
+#' 
+#' 1) 残差のトレンド、2) \code{acf}関数による自己相関係数のプロット、3) Ljung-Box検定におけるP値の3つの図を出力
+#' @param boot.res \code{boot.SR}のオブジェクト
+#' @param CI プロットする信頼区間
+#' @param output pngファイルに出力するか否か
+#' @param filename ファイル名
+#' @encoding UTF-8
+#' @export
+plot.bootSR = function(boot.res, CI = 0.8,output = FALSE,filename = "boot_pars",lwd=1.2,...) {
+  if (!is.null(boot.res$input$Res$pars$rho)) {
+    # for fit.SR
+    if (output) png(file = paste0(filename,".png"), width=10, height=10, res=432, units='in')
+    par(pch=pch,lwd = lwd, mfrow=c(2,2))
+    jmax = ifelse(boot.res$input$Res$pars$rho==0,3,4)
+    for (j in 1:jmax) {
+      par0 = c("a","b","sd","rho")[j]
+      
+      hist(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$pars[,par0]),xlab=par0,ylab="Frequency",main="")
+      abline(v=boot.res$input$Res$pars[,par0],col=2,lwd=3)
+      abline(v=median(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$pars[,par0])),col=3,lwd=3,lty=2)
+      arrows(quantile(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$pars[,par0]),0.5*(1-CI)),0,
+             quantile(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$pars[,par0]),0.5*(1-CI)+CI),0,
+             col=4,lwd=3,code=3)
+      legend("topright",
+             legend=c("Estimate","Median","CI(0.8)"),lty=1:2,col=2:4,lwd=2,ncol=1,cex=1)
+      if (boot.res$input$method=="p") {
+        title(paste0(par0," in Parametric Bootstrap"))
+      } else {
+        title(paste0(par0," in Non-Parametric Bootstrap"))
+      }
+    }
+    if (output) dev.off()
+  } else {
+    # fit.SRregime
+    for (ii in 1:nrow(boot.res$input$Res$regime_pars)) {
+      regime = boot.res$input$Res$regime_pars$regime[ii]
+      if (output) png(file = paste0(filename,"_regime",regime,".png"), width=10, height=10, res=432, units='in')
+      par(pch=pch,lwd = lwd, mfrow=c(2,2))
+      jmax = 3
+      for (j in 1:jmax) {
+        par0 = c("a","b","sd","rho")[j]
+        boot_pars = sapply(1:boot.res$input$n, function(i) as.numeric(boot.res[[i]]$regime_pars[ii,par0]))
+        hist(boot_pars,xlab=par0,ylab="Frequency",main="")
+        abline(v=as.numeric(boot.res$input$Res$regime_pars[ii,par0]),col=2,lwd=3)
+        abline(v=median(boot_pars),col=3,lwd=3,lty=2)
+        arrows(quantile(boot_pars,0.5*(1-CI)),0,
+               quantile(boot_pars,0.5*(1-CI)+CI),0,
+               col=4,lwd=3,code=3)
+        legend("topright",
+               legend=c("Estimate","Median","CI(0.8)"),lty=1:2,col=2:4,lwd=2,ncol=1,cex=1)
+        if (boot.res$input$method=="p") {
+          title(paste0(par0," of Regime",regime," in Parametric Bootstrap"))
+        } else {
+          title(paste0(par0," of Regime",regime," in Non-Parametric Bootstrap"))
+        }
+      }
+      if (output) dev.off()
+    }
+  }
 }

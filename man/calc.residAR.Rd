@@ -3,7 +3,7 @@
 \encoding{UTF-8}
 \name{calc.residAR}
 \alias{calc.residAR}
-\title{推定された再生産関係の残差から事後的に1次の自己相関係数を推定する関数}
+\title{再生産関係の残差から事後的に1次の自己相関係数を推定する関数}
 \usage{
 calc.residAR(resSR, per_regime = TRUE)
 }
