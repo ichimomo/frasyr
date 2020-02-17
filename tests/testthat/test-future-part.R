@@ -2,7 +2,7 @@ library(frasyr)
 
 context("future ref.F")
 
-test_that("oututput value check",{
+test_that("output value check",{
   load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
 
   res_ref_f_pma_check <- ref.F(res_vpa_pma,Fcurrent=NULL,waa=NULL,maa=NULL,M=NULL,waa.catch=NULL,M.year=NULL,
@@ -31,11 +31,13 @@ test_that("oututput value check",{
   #照合内容
   testcontents <-c("sel","max.age","min.age","rps.q","spr.q","Fcurrent","Fmed","Flow","Fhigh","Fmax","F0.1","Fmean","rps.data","FpSPR","summary","ypr.spr","waa","waa.catch","maa","spr0")
 
-  #読み込んだ結果と照合
   for(i in 1:length(testcontents)){
-    expect_equal(eval(parse(text=paste("res_ref_f_pma$",testcontents[i]))),eval(parse(text=paste("res_ref_f_pma_check$",testcontents[i]))))
+      tmp1 <- eval(parse(text=paste("res_ref_f_pma$",testcontents[i])))
+      tmp2 <- eval(parse(text=paste("res_ref_f_pma_check$",testcontents[i])))
+      expect_equivalent(tmp1,tmp2,tolerance=1e-4,label=testcontents[i])
+      # %SPRを計算するところで、初期値が変わると1e-4以下の誤差で値がずれるので1e-4をtoleranceに入れる
+      # toleranceのつづりが間違っていても誰も教えてくれない（無言でtoleranceを無視する）ため注意
   }
-
 })
 
 context("future SRdata")
@@ -284,7 +286,7 @@ test_that("oututput value check",{
  # future fcurrent ----
   res_future_Fcurrent_pma <- future.vpa(res_vpa_pma,
                                         multi=1,
-                                        nyear=50, # 将来予測の年数
+                                        nyear=58, # 将来予測の年数
                                         start.year=2012, # 将来予測の開始年
                                         N=100, # 確率的計算の繰り返し回数
                                         ABC.year=2013, # ABCを計算する年
@@ -302,34 +304,58 @@ test_that("oututput value check",{
                                                      sd=SRmodel.base$pars$sd,resid=SRmodel.base$resid))
 
   # est MSY ----
+  nyear <- round(Generation.Time(res_vpa,
+                                 maa.year=2009:2011,
+                                 M.year=2009:2011)*20)
+  #このテストではest.MSY関数の引数でcalc.yieldcurve=FALSEを指定。
   res_MSY_pma_check <- est.MSY(res_vpa_pma, # VPAの計算結果
                          res_future_Fcurrent_pma$input, # 将来予測で使用した引数
                          seed=res_future_Fcurrent_pma$input$seed,
-                         N=100, # 確率的計算の繰り返し回数=>実際の計算では1000~5000回くらいやってください
-                         calc.yieldcurve=TRUE,
+                         N=99, # 確率的計算の繰り返し回数=>実際の計算では1000~5000回くらいやってください
+                         calc.yieldcurve=FALSE,
                          PGY=c(0.95,0.9,0.6,0.1), # 計算したいPGYレベル。上限と下限の両方が計算される
                          onlylower.pgy=FALSE, # TRUEにするとPGYレベルの上限は計算しない（計算時間の節約になる）
                          B0percent=c(0.2,0.3,0.4),
+                         nyear=nyear,
                          Bempirical=c(round(tail(colSums(res_vpa_pma$ssb),n=1)),
                                       round(max(colSums(res_vpa_pma$ssb))),
                                       24000, # 現行Blimit
                                       SRmodel.base$pars$b) # HSの折れ点
-  )
-
+                         )
+  
   # 上記設定の結果を読み込み ----
   load(system.file("extdata","res_MSY_pma.rda",package = "frasyr"))
+  # 過去のsummaryではperSPRは出力されないのでcheckの対象から外す  
+  summary_old <- res_MSY_pma$summary_tb %>% dplyr::filter(AR==FALSE) %>%
+      select(-RP.definition) %>% select(sort(colnames(.)))
+  summary_check <- res_MSY_pma_check$summary_tb %>%
+      select(-perSPR,-RP.definition) %>% select(sort(colnames(.)))
 
-  #照合内容
-  #  testcontents <-c("summary","summaryAR","summary_tb","F.msy","all.stat","all.statAR","all.stat_tb","trace","ssb.ar.mean","SPR.msy")
-  testcontents <-c("summary","summary_tb","F.msy","all.stat","trace")  
+  # all.statとtraceは列名が一致しているものだけチェックの対象にする
+  all.stat_check <- res_MSY_pma_check$all.stat 
+  all.stat_old   <- res_MSY_pma$all.stat_tb %>% dplyr::filter(AR==FALSE)
+  tmp1 <- colnames(all.stat_check)%in%colnames(all.stat_old)
+  tmp2 <- colnames(all.stat_old)%in%colnames(all.stat_check)
+  all.stat_check <- all.stat_check[tmp1]
+  all.stat_old   <- all.stat_old[tmp2]
 
-  #読み込んだ結果と照合
-  for(i in 1:length(testcontents)){
-      expect_equal(eval(parse(text=paste("res_MSY_pma$",testcontents[i]))),
-                   eval(parse(text=paste("res_MSY_pma_check$",testcontents[i]))),
-                   label=testcontents[i])
-  }
-
+  # traceも同様
+  trace_check <- res_MSY_pma_check$trace
+  trace_old   <- res_MSY_pma$trace
+  tmp1 <- table(c(colnames(trace_check),colnames(trace_old)))
+  trace_check <- trace_check[sort(names(tmp1)[tmp1==2])]
+  trace_old   <- trace_old[sort(names(tmp1)[tmp1==2])]  
+  
+  #読み込んだ結果と照合 future2.1.r + utility.r(future-vpa ver.)との比較
+  # check summary
+  for(i in 1:ncol(summary_check)) expect_equal(unlist(summary_check[,i]),unlist(summary_old[,i]), label=colnames(summary_check)[i])
+  # check Fmsy
+  expect_equal(res_MSY_pma$F.msy,res_MSY_pma_check$F.msy)
+  # check all.stat
+  for(i in 1:ncol(all.stat_check)) expect_equal(unlist(all.stat_check[,i]),unlist(all.stat_old[,i]), label=colnames(all.stat_check)[i])
+  # check trace
+  for(i in 1:ncol(trace_check)) expect_equal(unlist(trace_check[,i]),unlist(trace_old[,i]), label=colnames(trace_check)[i])  
+  
 })
 
 

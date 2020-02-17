@@ -38,7 +38,7 @@ convert_2d_future <- function(df, name, label="tmp"){
 
 convert_future_table <- function(fout,label="tmp"){
     
-    U_table <- fout$vwcaa/fout$vbiom %>% as_tibble
+    U_table <- fout$vwcaa/fout$vbiom 
     if(is.null(fout$Fsakugen)) fout$Fsakugen <- -(1-fout$faa[1,,]/fout$currentF[1])
     if(is.null(fout$recruit))  fout$recruit <- fout$naa[1,,]
 
@@ -46,15 +46,21 @@ convert_future_table <- function(fout,label="tmp"){
     catch    <- convert_2d_future(df=fout$vwcaa,  name="catch",   label=label)    
     biomass  <- convert_2d_future(df=fout$vbiom,  name="biomass", label=label)
     U_table  <- convert_2d_future(df=U_table,     name="U",       label=label)
-    alpha    <- convert_2d_future(df=fout$alpha,  name="alpha",   label=label)        
+    beta_gamma    <- convert_2d_future(df=fout$alpha,  name="beta_gamma",   label=label)        
     Fsakugen <- convert_2d_future(df=fout$Fsakugen, name="Fsakugen",   label=label)
     recruit  <- convert_2d_future(df=fout$recruit, name="Recruitment",   label=label)
+    if(!is.null(fout$Fratio)){
+        Fratio <- convert_2d_future(df=fout$Fratio, name="Fratio",   label=label)
+    }
+    else{
+        Fratio <- Fratio
+    }
     
     Fsakugen_ratio <- Fsakugen %>%
         mutate(value=value+1)
     Fsakugen_ratio$stat <- "Fsakugen_ratio"
 
-    bind_rows(ssb,catch,biomass,alpha,Fsakugen,Fsakugen_ratio,recruit, U_table)
+    bind_rows(ssb,catch,biomass,beta_gamma,Fsakugen,Fsakugen_ratio,recruit, U_table, Fratio)
 }
         
     
@@ -73,13 +79,13 @@ convert_vector <- function(vector,name){
 #'
 #' @export
 
-convert_vpa_tibble <- function(vpares){
+convert_vpa_tibble <- function(vpares,SPRtarget=NULL){
 
-  if (is.null(vpares$input$dat$waa.catch)) {
-    total.catch <- colSums(vpares$input$dat$caa*vpares$input$dat$waa,na.rm=T)
-  } else {
-    total.catch <- colSums(vpares$input$dat$caa*vpares$input$dat$waa.catch,na.rm=T)
-  }
+    if (is.null(vpares$input$dat$waa.catch)) {
+        total.catch <- colSums(vpares$input$dat$caa*vpares$input$dat$waa,na.rm=T)
+    } else {
+        total.catch <- colSums(vpares$input$dat$caa*vpares$input$dat$waa.catch,na.rm=T)
+    }
     U <- total.catch/colSums(vpares$baa, na.rm=T)
 
     SSB <- convert_vector(colSums(vpares$ssb,na.rm=T),"SSB") %>%
@@ -89,7 +95,27 @@ convert_vpa_tibble <- function(vpares){
     FAA <- convert_df(vpares$faa,"fishing_mortality") %>%
         dplyr::filter(value>0&!is.na(value))
     Recruitment <- convert_vector(colSums(vpares$naa[1,,drop=F]),"Recruitment") %>%
-        dplyr::filter(value>0&!is.na(value))    
+        dplyr::filter(value>0&!is.na(value))
+
+    if(!is.null(SPRtarget)){
+        if(is.null(vpares$input$dat$waa.catch)) waa.catch <- vpares$input$dat$waa
+        else waa.catch <- vpares$input$dat$waa.catch
+        Fratio <- purrr::map_dfc(1:ncol(vpares$naa),
+                                 function(i){
+                                     tmp <- !is.na(vpares$faa[,i])
+                                     calc_Fratio(faa=vpares$faa[tmp,i],
+                                                 maa=vpares$input$dat$maa[tmp,i],
+                                                 waa=vpares$input$dat$waa[tmp,i],
+                                                 M  =vpares$input$dat$M[tmp,i],
+                                                 waa.catch=waa.catch[tmp],
+                                                 SPRtarget=SPRtarget)
+                                     })
+        colnames(Fratio) <- colnames(vpares$naa)
+        Fratio <- convert_df(Fratio,"Fratio")
+    }
+    else{
+        Fratio <- NULL
+        }
     
     all_table <- bind_rows(SSB,
                            Biomass,
@@ -100,7 +126,8 @@ convert_vpa_tibble <- function(vpares){
                            convert_df(vpares$input$dat$waa,"weight"),
                            convert_df(vpares$input$dat$maa,"maturity"),
                            convert_df(vpares$input$dat$caa,"catch_number"),
-                           Recruitment)
+                           Recruitment,
+                           Fratio)
 }
 
 
@@ -138,7 +165,7 @@ SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千ト�
         stat_function(fun=SRF,args=list(a=SR_result$pars$a,
                                         b=SR_result$pars$b),color="deepskyblue3",lwd=1.3)+
     geom_path(data=dplyr::filter(alldata,type=="obs"),
-                  aes(y=R,x=SSB),color=1) +
+                  aes(y=R,x=SSB),color="black") +
         geom_point(data=dplyr::filter(alldata,type=="obs"),
                    aes(y=R,x=SSB),shape=21,fill="white") +
     ggrepel::geom_text_repel(data=dplyr::filter(alldata,type=="obs"),
@@ -201,7 +228,7 @@ plot_yield <- function(MSY_obj,refs_base,
                        AR_select=FALSE,xlim.scale=1.1,
                        biomass.unit=1,labeling=TRUE,lining=TRUE,
                        age.label.ratio=0.9, # 年齢のラベルを入れる位置（xの最大値からの割合)
-                       family = "JP1",
+#                       family = "JP1",
                        ylim.scale=1.2,future=NULL,
                        future.replicate=NULL,
                        past=NULL,future.name=NULL){
@@ -249,7 +276,7 @@ plot_yield <- function(MSY_obj,refs_base,
         mutate(cumcatch=cumsum(value)-value/2)%>%
         mutate(age=as.numeric(as.character(age)))
     age.label <- age.label %>%
-        mutate(age_name=str_c(age,ifelse(age.label$age==max(age.label$age),"+",""),"歳"))
+        mutate(age_name=str_c(age,ifelse(age.label$age==max(age.label$age),"+",""),"Y/O"))
    
     g1 <- g1 + geom_area(aes(x=ssb.mean,y=value,fill=年齢),col="black",alpha=0.5,lwd=1*0.3528) +
 #    geom_line(aes(x=ssb.mean,y=catch.CV,fill=age)) +
@@ -261,13 +288,13 @@ plot_yield <- function(MSY_obj,refs_base,
     #形は塗りつぶしができる形にすること
     scale_shape_manual(values = c(21, 24,5,10)) +
     #塗りつぶし色を指定する
-    scale_color_manual(values = c("green", "pink","orange","yellow"))+
+    scale_color_manual(values = c("darkgreen", "darkblue","orange","yellow"))+
     theme(panel.grid = element_blank(),axis.text=element_text(color="black")) +
     coord_cartesian(xlim=c(0,xmax*xlim.scale),
                     ylim=c(0,ymax*ylim.scale),expand=0) +
     geom_text(data=age.label,
-              mapping = aes(y = cumcatch, x = ssb.mean, label = age_name),
-                            family = family
+              mapping = aes(y = cumcatch, x = ssb.mean, label = age_name)#,
+#                            family = family
               ) +
 #    geom_text_repel(data=refs_base,
 #                     aes(y=Catch,x=SSB,label=refs.label),
@@ -280,10 +307,18 @@ plot_yield <- function(MSY_obj,refs_base,
     xlab(str_c("平均親魚量 (",junit,"トン)")) + ylab(str_c("平均漁獲量 (",junit,"トン)"))
 
     if(!is.null(future)){
-        tmpdata <- NULL
+        futuredata <- NULL
         for(j in 1:length(future)){
+            if(class(future[[j]])=="future_new"){
+                future_init <- future[[j]]$input$tmb_data$future_initial_year
+                future_init <- as.numeric(dimnames(future[[j]]$naa)[[2]][future_init])
+                future[[j]] <- format_to_old_future(future[[j]])
+            }
+            else{
+                future_init <- 0
+                }
             if(is.null(future.replicate)){
-               tmpdata <- bind_rows(tmpdata,
+               futuredata <- bind_rows(futuredata,
                    tibble(
                    year        =as.numeric(rownames(future[[j]]$vssb)),
                    ssb.future  =apply(future[[j]]$vssb[,-1],1,mean)/biomass.unit,
@@ -291,29 +326,28 @@ plot_yield <- function(MSY_obj,refs_base,
                    scenario=future.name[j]))
             }
             else{
-               tmpdata <- bind_rows(tmpdata,
+               futuredata <- bind_rows(futuredata,
                    tibble(
                    year        =as.numeric(rownames(future[[j]]$vssb)),
                    ssb.future  =future[[j]]$vssb[,future.replicate[j]]/biomass.unit,
                    catch.future=future[[j]]$vwcaa[,future.replicate[j]]/biomass.unit,
                    scenario=future.name[j]))                
             }
-            tmpdata <- tmpdata %>% group_by(scenario)
+            futuredata <- futuredata %>% group_by(scenario) %>%
+                dplyr::filter(year > future_init)
             g1 <- g1 +
-                geom_path(data=tmpdata,
+                geom_path(data=futuredata,
                           mapping=aes(x       =ssb.future,
                                       y       = catch.future,
                                       linetype=factor(scenario),
                                       color   = factor(scenario)),
                           lwd=1)+
-                geom_point(data=tmpdata,
+                geom_point(data=futuredata,
                            mapping=aes(x    =ssb.future,
                                        y    =catch.future,
                                        shape=factor(scenario),
                                        color=factor(scenario)),
                            size=3)
-
-            
         }
     }
     
@@ -322,18 +356,16 @@ plot_yield <- function(MSY_obj,refs_base,
       if (past$input$last.catch.zero && !is.null(future)) {
         catch.past[length(catch.past)] = apply(future[[1]]$vwcaa[,-1],1,mean)[1]/biomass.unit
       }
-        tmpdata <- tibble(
+        pastdata <- tibble(
             year      =as.numeric(colnames(past$ssb)),
             ssb.past  =unlist(colSums(past$ssb, na.rm=T))/biomass.unit,
             catch.past=catch.past
         )
 
         g1 <- g1 +
-#            geom_point(data=tmpdata,mapping=aes(x=ssb.past,y=catch.past,
-#                                                alpha=year),shape=2) +
-    geom_path(data=tmpdata,
-              mapping=aes(x=ssb.past,y=catch.past),
-              color=col.SBban,lwd=1,alpha=0.9)
+            geom_path(data=pastdata,
+                      mapping=aes(x=ssb.past,y=catch.past),
+                      color="darkred",lwd=1,alpha=0.9)
     }
     
     if(isTRUE(lining)){
@@ -351,7 +383,7 @@ plot_yield <- function(MSY_obj,refs_base,
                         aes(y=Catch,x=SSB))+
             ggrepel::geom_label_repel(data=refs_base,
                             aes(y=Catch,x=SSB,label=refs.label),
-#                            size=4,box.padding=0.5,segment.color=1,
+#                            size=4,box.padding=0.5,segment.color="black",
                             hjust=0,#nudge_y      = ymax*ylim.scale-refs_base$Catch/2,
                             direction="y",angle=0,vjust        = 0,segment.size = 1)
 #             geom_label_repel(data=tibble(x=c(1,limit.ratio,ban.ratio),
@@ -614,11 +646,12 @@ make_kobeII_table <- function(kobeII_data,
                               year.ssbmin=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
                               year.ssbmax=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
                               year.aav=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              year.catchdiff=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
                               Btarget=0,
                               Blimit=0,
                               Bban=0){
     # 平均漁獲量
-    (catch.mean <- kobeII.data %>%
+    (catch.mean <- kobeII_data %>%
          dplyr::filter(year%in%year.catch,stat=="catch") %>% # 取り出す年とラベル("catch")を選ぶ
          group_by(HCR_name,beta,year) %>%
          summarise(catch.mean=mean(value)) %>%  # 値の計算方法を指定（漁獲量の平均ならmean(value)）
@@ -628,7 +661,7 @@ make_kobeII_table <- function(kobeII_data,
          mutate(stat_name="catch.mean"))
 
     # 平均親魚
-    (ssb.mean <- kobeII.data %>%
+    (ssb.mean <- kobeII_data %>%
          dplyr::filter(year%in%year.ssb,stat=="SSB") %>% 
          group_by(HCR_name,beta,year) %>%
          summarise(ssb.mean=mean(value)) %>%  
@@ -637,7 +670,7 @@ make_kobeII_table <- function(kobeII_data,
          mutate(stat_name="ssb.mean"))
 
     # 親魚, 下10%
-    (ssb.ci10 <- kobeII.data %>%
+    (ssb.ci10 <- kobeII_data %>%
          dplyr::filter(year%in%year.ssb,stat=="SSB") %>% 
          group_by(HCR_name,beta,year) %>%
          summarise(ssb.ci10=quantile(value,probs=0.1)) %>%  
@@ -646,7 +679,7 @@ make_kobeII_table <- function(kobeII_data,
          mutate(stat_name="ssb.ci10"))
 
     # 親魚, 上10%
-    (ssb.ci90 <- kobeII.data %>%
+    (ssb.ci90 <- kobeII_data %>%
          dplyr::filter(year%in%year.ssb,stat=="SSB") %>% 
          group_by(HCR_name,beta,year) %>%
          summarise(ssb.ci90=quantile(value,probs=0.9)) %>%  
@@ -655,7 +688,7 @@ make_kobeII_table <- function(kobeII_data,
          mutate(stat_name="ssb.ci90"))            
 
     # 1-currentFに乗じる値=currentFからの努力量の削減率の平均値（実際には確率分布になっている）
-    (Fsakugen.table <- kobeII.data %>%
+    (Fsakugen.table <- kobeII_data %>%
          dplyr::filter(year%in%year.Fsakugen,stat=="Fsakugen") %>% # 取り出す年とラベル("catch")を選ぶ
          group_by(HCR_name,beta,year) %>%
          summarise(Fsakugen=round(mean(value),2)) %>%
@@ -664,7 +697,7 @@ make_kobeII_table <- function(kobeII_data,
          mutate(stat_name="Fsakugen"))
 
     # SSB>SSBtargetとなる確率
-    ssbtarget.table <- kobeII.data %>%
+    ssbtarget.table <- kobeII_data %>%
         dplyr::filter(year%in%year.ssbtarget,stat=="SSB") %>%
         group_by(HCR_name,beta,year) %>%
         summarise(ssb.over=round(100*mean(value>Btarget))) %>%
@@ -674,7 +707,7 @@ make_kobeII_table <- function(kobeII_data,
         mutate(stat_name="Pr(SSB>SSBtarget)")
 
     # SSB>SSBlimとなる確率
-    ssblimit.table <- kobeII.data %>%
+    ssblimit.table <- kobeII_data %>%
         dplyr::filter(year%in%year.ssblimit,stat=="SSB") %>%
         group_by(HCR_name,beta,year) %>%
         summarise(ssb.over=round(100*mean(value>Blimit))) %>%
@@ -684,7 +717,7 @@ make_kobeII_table <- function(kobeII_data,
         mutate(stat_name="Pr(SSB>SSBlim)")
 
     # SSB>SSBbanとなる確率
-    ssbban.table <- kobeII.data %>%
+    ssbban.table <- kobeII_data %>%
         dplyr::filter(year%in%year.ssbban,stat=="SSB") %>%
         group_by(HCR_name,beta,year) %>%
         summarise(ssb.over=round(100*mean(value>Bban))) %>%
@@ -695,7 +728,7 @@ make_kobeII_table <- function(kobeII_data,
 
     # SSB>SSBmin(過去最低親魚量を上回る確率)
     ssb.min <- min(unlist(colSums(res_vpa$ssb, na.rm=T)))
-    ssbmin.table <- kobeII.data %>%
+    ssbmin.table <- kobeII_data %>%
         dplyr::filter(year%in%year.ssbmin,stat=="SSB") %>%
         group_by(HCR_name,beta,year) %>%
         summarise(ssb.over=round(100*mean(value>ssb.min))) %>%
@@ -706,7 +739,7 @@ make_kobeII_table <- function(kobeII_data,
 
     # SSB>SSBmax(過去最低親魚量を上回る確率)
     ssb.max <- max(unlist(colSums(res_vpa$ssb, na.rm=T)))
-    ssbmax.table <- kobeII.data %>%
+    ssbmax.table <- kobeII_data %>%
         dplyr::filter(year%in%year.ssbmax,stat=="SSB") %>%
         group_by(HCR_name,beta,year) %>%
         summarise(ssb.over=round(100*mean(value>ssb.max))) %>%
@@ -717,14 +750,14 @@ make_kobeII_table <- function(kobeII_data,
 
     # オプション: Catch AAV mean 
     calc.aav <- function(x)sum(abs(diff(x)))/sum(x[-1])
-    catch.aav.table <- kobeII.data %>%
+    catch.aav.table <- kobeII_data %>%
         dplyr::filter(year%in%year.aav,stat=="catch") %>%
         group_by(HCR_name,beta,sim) %>%
         dplyr::summarise(catch.aav=(calc.aav(value))) %>%
         group_by(HCR_name,beta) %>%
         summarise(catch.aav.mean=mean(catch.aav)) %>%
         arrange(HCR_name,desc(beta))%>%
-        mutate(stat_name="catch.csv (recent 5 year)")
+        mutate(stat_name="catch.aav")
 
     res_list <- list(catch.mean   = catch.mean,
                      ssb.mean         = ssb.mean,
@@ -925,7 +958,7 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
         ####        
         x.pos <- max.B*HCR.label.position[1]
         y.pos <- multi2currF(1.05)*HCR.label.position[2]
-        g4 <- g4+stat_function(fun = h,lwd=1.5,color=1,n=1000)+
+        g4 <- g4+stat_function(fun = h,lwd=1.5,color="black",n=5000)+
             annotate("text",x=x.pos,y=y.pos,
                      label=str_c("漁獲管理規則\n(β=",beta,")"))
     }
@@ -964,19 +997,23 @@ plot_futures <- function(vpares,
                          future_tibble=NULL,
                          CI_range=c(0.1,0.9),
                          maxyear=NULL,
-                         font.size=18,
-                         ncol=3,
                          is.plot.CIrange=TRUE,
-                         what.plot=c("Recruitment","SSB","biomass","catch","Fsakugen","Fsakugen_ratio"),
+                         what.plot=c("Recruitment","SSB","biomass","catch","beta_gamma","U","Fratio"),
                          biomass.unit=1,
+                         number.unit=1,
+                         number.name="",
                          RP_name=c("Btarget","Blimit","Bban"),
                          Btarget=0,Blimit=0,Bban=0,#Blow=0,
-                         MSY=0,
+                         MSY=0,Umsy=0,
+                         SPRtarget=NULL,
                          exclude.japanese.font=FALSE, # english version
                          n_example=3, # number of examples
                          example_width=0.7, # line width of examples
                          future.replicate=NULL, 
-                         seed=1 # seed for selecting the above example
+                         seed=1, # seed for selecting the above example
+                         legend.position="top",
+                         font.size=18,
+                         ncol=3
                          ){
 
     col.SBtarget <- "#00533E"
@@ -994,31 +1031,37 @@ plot_futures <- function(vpares,
 
     if(!isTRUE(exclude.japanese.font)){
         junit <- c("","十","百","千","万")[log10(biomass.unit)+1]
-        #    require(tidyverse,quietly=TRUE)
 
-        rename_list <- tibble(stat=c("Recruitment","SSB","biomass","catch","Fsakugen","Fsakugen_ratio","alpha"),
-                              jstat=c(str_c("加入尾数"),
+        rename_list <- tibble(stat=c("Recruitment","SSB","biomass","catch","beta_gamma","U","Fratio"),
+                              jstat=c(str_c("加入尾数(",number.name,"尾)"),
                                       str_c("親魚量 (",junit,"トン)"),
                                       str_c("資源量 (",junit,"トン)"),
                                       str_c("漁獲量 (",junit,"トン)"),
-                                      "努力量の削減率",
-                                      "Fcurrentに対する乗数",
-                                      "alpha"))
+                                      "beta_gamma(F/Fmsy)",
+                                      "漁獲割合(%)",
+                                      "漁獲圧の比(F/Fmsy)"))
     }
     else{
         junit <- c("","10","100","1000","10,000")[log10(biomass.unit)+1]
         #    require(tidyverse,quietly=TRUE)
 
-        rename_list <- tibble(stat=c("Recruitment","SSB","biomass","catch","Fsakugen","Fsakugen_ratio","alpha"),
-                              jstat=c(str_c("Recruits"),
+        rename_list <- tibble(stat=c("Recruitment","SSB","biomass","catch","beta_gamma","U","Fratio"),
+                              jstat=c(str_c("Recruits(",number_name,"fish)"),
                                       str_c("SB (",junit,"MT)"),
                                       str_c("Biomass (",junit,"MT)"),
                                       str_c("Catch (",junit,"MT)"),
-                                      "Effort reduction",
-                                      "multiplier to Fcurrent",
-                                      "alpha"))        
-        }
+                                      "multiplier to Fmsy",
+                                      "Catch/Biomass (U)",
+                                      "F ratio (F/Fmsy)"))        
+    }
 
+    # define unit of value
+    rename_list <- rename_list %>%
+        mutate(unit=dplyr::case_when(stat%in%c("SSB","biomass","catch") ~ biomass.unit,
+                                     stat%in%c("Recruitment")           ~ number.unit,
+                                     stat%in%c("U")                     ~ 0.01,
+                                     TRUE                               ~ 1))
+               
     rename_list <- rename_list %>% dplyr::filter(stat%in%what.plot)
     
     if(!is.null(future.list)){
@@ -1031,37 +1074,32 @@ plot_futures <- function(vpares,
 
     if(is.null(future_tibble)) future_tibble <- purrr::map_dfr(future.list,convert_future_table,.id="scenario")
 
-    future.table <-
+    future_tibble <-
         future_tibble %>%
         dplyr::filter(stat%in%rename_list$stat) %>%
-        mutate(stat=factor(stat,levels=rename_list$stat))
-
-    set.seed(seed)
-    if(!is.null(future.replicate)){
-        future.example <- future.table %>%
-            dplyr::filter(sim%in%future.replicate)
+        mutate(stat=factor(stat,levels=rename_list$stat)) %>%
+        left_join(rename_list) %>%
+        mutate(value=value/unit)
+            
+    if(is.null(future.replicate)){
+        set.seed(seed)
+        future.replicate <- sample(2:max(future_tibble$sim),n_example)
     }
-    else{
-        future.example <- future.table %>%
-            dplyr::filter(sim%in%sample(2:max(future.table$sim),n_example))
-    }
+    future.example <- future_tibble %>%
+        dplyr::filter(sim%in%future.replicate) %>%
+        group_by(sim,scenario)
     
-    future.example <- future.example %>%
-        mutate(stat = as.character(stat),
-             value=ifelse((stat=="Fsakugen"|stat=="Fsakugen_ratio"),
-                          value,value/biomass.unit)) %>%
-      left_join(rename_list) %>%
-      group_by(sim,scenario)
-        
-
-    if(is.null(maxyear)) maxyear <- max(future.table$year)
+    if(is.null(maxyear)) maxyear <- max(future_tibble$year)
 
     min.age <- as.numeric(rownames(vpares$naa)[1])
-    vpa_tb <- convert_vpa_tibble(vpares) %>%
-        dplyr::filter(stat=="SSB"|stat=="biomass"|stat=="catch"|stat=="Recruitment") %>%
+    vpa_tb <- convert_vpa_tibble(vpares,SPRtarget=SPRtarget) %>%
         mutate(scenario=type,year=as.numeric(year),
                stat=factor(stat,levels=rename_list$stat),
-               mean=value,sim=0)
+               mean=value,sim=0)%>%
+        dplyr::filter(stat%in%rename_list$stat) %>%
+        left_join(rename_list) %>%
+        mutate(value=value/unit,mean=mean/unit)
+    
     # 将来と過去をつなげるためのダミーデータ
     tmp <- vpa_tb %>% group_by(stat) %>%
         summarise(value=tail(value[!is.na(value)],n=1,na.rm=T),year=tail(year[!is.na(value)],n=1,na.rm=T),sim=0) 
@@ -1069,36 +1107,35 @@ plot_futures <- function(vpares,
 
     org.warn <- options()$warn
     options(warn=-1)
-    future.table <-
-        bind_rows(future.table,vpa_tb,future.dummy) %>%
+    future_tibble <-
+        bind_rows(future_tibble,vpa_tb,future.dummy) %>%
         mutate(stat=factor(stat,levels=rename_list$stat)) %>%
-        mutate(scenario=factor(scenario,levels=c(future.name,"VPA"))) %>%
-        mutate(value=ifelse(stat%in%c("Fsakugen","Fsakugen_ratio","alpha"),value,value/biomass.unit))
+        mutate(scenario=factor(scenario,levels=c(future.name,"VPA"))) #%>%
+#        mutate(value=ifelse(stat%in%c("beta_gamma","U"),value,value/biomass.unit))
 
-    future.table.qt <- 
-        future.table %>% group_by(scenario,year,stat) %>%
+    future_tibble.qt <- 
+        future_tibble %>% group_by(scenario,year,stat) %>%
         summarise(low=quantile(value,CI_range[1],na.rm=T),
                   high=quantile(value,CI_range[2],na.rm=T),
                   median=median(value,na.rm=T),
                   mean=mean(value))
 
     # make dummy for y range
-    dummy <- future.table %>% group_by(stat) %>% summarise(max=max(value)) %>%
-        mutate(value=0,year=min(future.table$year,na.rm=T)) %>%
+    dummy <- future_tibble %>% group_by(stat) %>% summarise(max=max(value)) %>%
+        mutate(value=0,year=min(future_tibble$year,na.rm=T)) %>%
         select(-max)
 
-    dummy2 <- future.table %>% group_by(stat) %>%
+    dummy2 <- future_tibble %>% group_by(stat) %>%
         summarise(max=max(quantile(value,CI_range[2],na.rm=T))) %>%
         mutate(value=max*1.1,
-               year=min(future.table$year,na.rm=T)) %>%
+               year=min(future_tibble$year,na.rm=T)) %>%
         select(-max)
 
-    future.table.qt <- left_join(future.table.qt,rename_list) %>%
+    future_tibble.qt <- left_join(future_tibble.qt,rename_list) %>%
         mutate(jstat=factor(jstat,levels=rename_list$jstat))
 
-
-    dummy     <- left_join(dummy,rename_list) %>% dplyr::filter(!is.na(stat))
-    dummy2    <- left_join(dummy2,rename_list) %>% dplyr::filter(!is.na(stat))
+    dummy     <- left_join(dummy,rename_list,by="stat") %>% dplyr::filter(!is.na(stat))
+    dummy2    <- left_join(dummy2,rename_list,by="stat") %>% dplyr::filter(!is.na(stat))
 
     if("SSB" %in% what.plot){
         ssb_RP <- tibble(jstat = dplyr::filter(rename_list, stat == "SSB") %>%
@@ -1112,37 +1149,40 @@ plot_futures <- function(vpares,
                               value=MSY/biomass.unit,
                               RP_name="MSY") 
     }
+    if("U" %in% what.plot){
+        U_RP <- tibble(jstat=dplyr::filter(rename_list, stat == "U") %>%
+                           dplyr::pull(jstat),
+                       value=Umsy,
+                       RP_name="U_MSY") 
+    }    
     
     options(warn=org.warn)
     
-    g1 <- future.table.qt %>% dplyr::filter(!is.na(stat)) %>%
-        ggplot()+
-        geom_line(data=dplyr::filter(future.table.qt,!is.na(stat) & scenario=="VPA"),
-                  mapping=aes(x=year,y=mean),lwd=1,color=1)# VPAのプロット                
+    g1 <- future_tibble.qt %>% dplyr::filter(!is.na(stat)) %>%
+        ggplot()
 
     if(isTRUE(is.plot.CIrange)){
         g1 <- g1+
-            geom_ribbon(data=dplyr::filter(future.table.qt,!is.na(stat) & scenario!="VPA" & year <= maxyear),
+            geom_ribbon(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario!="VPA" & year <= maxyear),
                         mapping=aes(x=year,ymin=low,ymax=high,fill=scenario),alpha=0.4)+
-            geom_line(data=dplyr::filter(future.table.qt,!is.na(stat) & scenario!="VPA" & year <= maxyear),
+            geom_line(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario!="VPA" & year <= maxyear),
                       mapping=aes(x=year,y=mean,color=scenario),lwd=1)
     }
 #    else{
 #        g1 <- g1+
-#            geom_line(data=dplyr::filter(future.table.qt,!is.na(stat) & scenario=="VPA"),
+#            geom_line(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario=="VPA"),
 #                      mapping=aes(x=year,y=mean,color=scenario),lwd=1)#+        
 #    }
     
     g1 <- g1+
         geom_blank(data=dummy,mapping=aes(y=value,x=year))+
         geom_blank(data=dummy2,mapping=aes(y=value,x=year))+
-        theme_bw(base_size=font.size) +
+        #theme_bw(base_size=font.size) +
         #        coord_cartesian(expand=0)+
         scale_y_continuous(expand=expand_scale(mult=c(0,0.05)))+
-        theme(legend.position="top",panel.grid = element_blank())+
         facet_wrap(~factor(jstat,levels=rename_list$jstat),scales="free_y",ncol=ncol)+        
         xlab("年")+ylab("")+ labs(fill = "",linetype="",color="")+
-        xlim(min(future.table$year),maxyear)
+        xlim(min(future_tibble$year),maxyear)
 
     if("SSB" %in% what.plot){
         g1 <- g1 + geom_hline(data = ssb_RP,
@@ -1154,7 +1194,13 @@ plot_futures <- function(vpares,
         g1 <- g1 + geom_hline(data = catch_RP,
                    aes(yintercept = value, linetype = RP_name),
                    color = c(col.MSY))
-    }    
+    }
+
+    if("U" %in% what.plot){
+        g1 <- g1 + geom_hline(data = U_RP,
+                   aes(yintercept = value, linetype = RP_name),
+                   color = c(col.MSY))
+    }        
 
     if(n_example>0){
         if(n_example>1){
@@ -1172,6 +1218,20 @@ plot_futures <- function(vpares,
         }
         g1 <- g1+scale_alpha_discrete(guide=FALSE)            
     }
+
+    g1 <- g1 + guides(lty=guide_legend(ncol=3),
+                      fill=guide_legend(ncol=3),
+                      col=guide_legend(ncol=3))+
+        theme_SH(base_size=font.size,legend.position=legend.position)+
+        scale_color_hue(l=40)+
+        labs(caption = str_c("(塗り:", CI_range[1]*100,"-",CI_range[2]*100,
+                             "%信頼区間, 太い実線: 平均値",
+                             ifelse(n_example>0,", 細い実線: シミュレーションの1例)",")")
+                             ))
+
+    g1 <- g1 +
+        geom_line(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario=="VPA"),
+                  mapping=aes(x=year,y=mean),lwd=1,color="black")# VPAのプロット                
     return(g1)
 }
 
@@ -1183,40 +1243,47 @@ plot_futures <- function(vpares,
 #' @export
 
 plot_Fcurrent <- function(vpares,
+                          Fcurrent=NULL,
                           year.range=NULL){
 
     if(is.null(year.range)) year.range <- min(as.numeric(colnames(vpares$naa))):max(as.numeric(colnames(vpares$naa)))
     vpares_tb <- convert_vpa_tibble(vpares)
 
-    fc_at_age <- vpares_tb %>%
+    faa_history <- vpares_tb %>%
         dplyr::filter(stat=="fishing_mortality", year%in%year.range) %>%
-        mutate(F=value,year=as.character(year)) %>%
-        select(-stat,-sim,-type,-value)
-    fc_at_age_current <- tibble(F=vpares$Fc.at.age,age=as.numeric(rownames(vpares$naa)),
-                                year="currentF")
-    fc_at_age <- bind_rows(fc_at_age,fc_at_age_current) %>%
-        mutate(F_name=c("gray","tomato")[as.numeric(year=="currentF")+1]) %>%
-        group_by(year)
+        mutate(F=value,year=as.character(year),type="History") %>%
+        select(-stat,-sim,-value) %>%
+        group_by(year) %>%
+        dplyr::filter(!is.na(F)) %>%
+        mutate(Year=as.numeric(year)) %>%
+        mutate(age_name=ifelse(max(age)==age,str_c(age,"+"),age))
     
-    g <- fc_at_age %>% ggplot() +
-        geom_line(aes(x=age,y=as.numeric(F),alpha=year,linetype=F_name,color=F_name),lwd=1.5) +
-        #        geom_line(data=fc_at_age_current,mapping=aes(x=age,y=as.numeric(F)),color="tomato",lwd=1.5)+        
-        #        geom_point(data=fc_at_age_current,mapping=aes(x=age,y=as.numeric(F)),color="tomato",size=2)+
-        #        scale_color_gradient(low="gray",high="blue")+
-        scale_colour_identity()+
-        theme_bw()+theme(legend.position="none")+
-        coord_cartesian(expand=0,ylim=c(0,max(fc_at_age$F)*1.1),xlim=range(fc_at_age$age)+c(-0.5,0.5))+
-        labs(year="年",color="",labels=c(gray="",tomato="Current F"))+
-        #        theme(#legend.position="bottom",
-        #            panel.grid = element_blank())+
-        xlab("年齢")+ylab("漁獲係数(F)")#+
-#    scale_color_discrete(name="F type",breaks=c())
-#    scale_colour_manual(
-#        values = c(
-#            col1  = "gray",
-#            col2  = "tomato",
-#            col3  = "blue3",
-    #            col4  = "yellow3")    )
+    if(is.null(Fcurrent)){
+        fc_at_age_current <- vpares$Fc.at.age
+    }
+    else{
+        fc_at_age_current <- Fcurrent
+    }
+    fc_at_age_current <- tibble(F=fc_at_age_current,age=as.numeric(rownames(vpares$naa)),
+                                year="0",type="currentF") %>%
+        dplyr::filter(!is.na(F)) %>%
+        mutate(age_name=ifelse(max(age)==age,str_c(age,"+"),age))
+
+    pal <- c("#3B9AB2", "#56A6BA", "#71B3C2", "#9EBE91", "#D1C74C",
+             "#E8C520", "#E4B80E", "#E29E00", "#EA5C00", "#F21A00")
+    g <- faa_history  %>% ggplot() +
+        geom_path(aes(x=age_name,y=F,color=Year,group=Year),lwd=1.5) +
+        scale_color_gradientn(colors = pal)+
+        geom_path(data=fc_at_age_current,
+                  mapping=aes(x=age_name,y=F,group=type),color="black",lwd=1.5,lty=1)+        
+        geom_point(data=fc_at_age_current,
+                  mapping=aes(x=age_name,y=F,shape=type),color="black",size=3)+
+        coord_cartesian(ylim=c(0,max(faa_history$F,na.rm=T)))+
+##                        xlim=range(as.numeric(faa_history$age_name,na.rm=T))+c(-0.5,0.5)
+#                        )+        
+        xlab("年齢")+ylab("漁獲係数(F)")+theme_SH(legend.position="right")+
+        scale_shape_discrete(name="", labels=c("F current"))
+
     return(g)
 }
 
@@ -1242,10 +1309,12 @@ library(ggplot2)
 #' @export
 
 plot_HCR <- function(SBtarget,SBlim,SBban,Ftarget,
+                     Fcurrent=-1,
                      biomass.unit=1,
                      beta=0.8,col.multi2currf="black",col.SBtarget="#00533E",
                      col.SBlim="#edb918",col.SBban="#C73C2E",col.Ftarget="black",
-                     col.betaFtarget="gray",is.text = TRUE){
+                     col.betaFtarget="gray",is.text = TRUE,
+                     RP.label=c("目標管理基準値","限界管理基準値","禁漁水準")){
     
   # Arguments; SBtarget,SBlim,SBban,Ftarget,beta,col.multi2currf,col.SBtarget,col.SBlim,col.SBban,col.Ftarget,col.betaFtarget.
   # col.xx means the line color for xx on figure.
@@ -1271,24 +1340,36 @@ plot_HCR <- function(SBtarget,SBlim,SBban,Ftarget,
 
   #Drawing of the funciton by ggplot2
     ggplct <- ggplot(data.frame(x = c(0,1.5*SBtarget),y= c(0,1.5*Ftarget)), aes(x=x)) +
-        stat_function(fun = h,lwd=2,color=col.multi2currf)
+        stat_function(fun = h,lwd=2,color=col.multi2currf, n=5000)
     g <- ggplct  + geom_vline(xintercept = SBtarget, size = 0.9, linetype = "41", color = col.SBtarget) +
         geom_vline(xintercept = SBlim, size = 0.9, linetype = "41", color = col.SBlim) +
         geom_vline(xintercept = SBban, size = 0.9, linetype = "41", color = col.SBban) +
         geom_hline(yintercept = Ftarget, size = 0.9, linetype = "43", color = col.Ftarget) +
         geom_hline(yintercept = beta*Ftarget, size = 0.7, linetype = "43", color = col.betaFtarget) +
         labs(title = "",subtitle = "", caption =  "", x = str_c("親魚量 (",junit,"トン)"),
-             y = "努力量の乗数",color = "") +
+             y = "漁獲圧の比(F/Fmsy)",color = "") +
         theme_bw(base_size=12)+
         theme(legend.position="none",panel.grid = element_blank())+
         stat_function(fun = h,lwd=1.5,color=col.multi2currf)
+
+    if(Fcurrent>0){
+        g <- g+geom_hline(yintercept = Fcurrent, size = 0.7, linetype = 1, color = "gray")+
+            geom_label(label="Fcurrent", x=SBtarget*1.1, y=Fcurrent)
+        
+    }
+    
     if (is.text) {
       g <- g +
-        annotate("text", label="目標水準", x=SBtarget, y=1.2*Ftarget) +
-        annotate("text", label="限界水準", x=SBlim, y=1.1*Ftarget) +
-        annotate("text", label="禁漁水準", x=SBban, y=1.2*Ftarget)+
-        annotate("text", label="Ftarget", x=SBtarget/15, y=0.95*Ftarget)+
-        annotate("text", label=str_c(beta,"Ftarget"), x=SBtarget/15, y=0.95*beta*Ftarget)
+#        annotate("text", label=RP.label[1], x=SBtarget, y=1.2*Ftarget) +
+#        annotate("text", label=RP.label[2], x=SBlim, y=1.1*Ftarget) +
+#        annotate("text", label=RP.label[3], x=SBban, y=1.2*Ftarget)+
+#        annotate("text", label="Fmsy", x=SBtarget/15, y=0.95*Ftarget)+
+    #        annotate("text", label=str_c(beta,"Fmsy"), x=SBtarget/15, y=0.95*beta*Ftarget)
+    geom_label(label=RP.label[1], x=SBtarget, y=Ftarget*0.95) +
+    geom_label(label=RP.label[2], x=SBlim, y=Ftarget*0.9) +
+    geom_label(label=RP.label[3], x=SBban, y=Ftarget*0.85)+
+    geom_label(label="Fmsy", x=SBtarget*1.2, y=Ftarget)+
+    geom_label(label=str_c(beta,"Fmsy"), x=SBtarget*1.2, y=beta*Ftarget)    
     }
 
     return(g)
@@ -1422,9 +1503,9 @@ colorize_table <- function(beta_table, color) {
 
 #' 表を画像として保存
 #'
-#' @inheritParams \code{\link{formattable::as.htmlwidget}}
-#' @inheritParams \code{\link{htmltools::html_print}}
-#' @inheritParams \code{\link{webshot::webshot}}
+#' # @inheritParams \code{\link{formattable::as.htmlwidget}}
+#' # @inheritParams \code{\link{htmltools::html_print}}
+#' # @inheritParams \code{\link{webshot::webshot}}
 #' @param table ファイルとして保存したい表
 #' @examples
 #' \dontrun{
@@ -1493,9 +1574,9 @@ export_kobeII_tables <- function(kobeII_table,
 #' @export
 #' 
 
-theme_SH <- function(legend.position="none"){
-    theme_bw(base_size=12) +
-    theme(panel.grid = element_blank(),
+theme_SH <- function(legend.position="none",base_size=12){
+    theme_bw(base_size=base_size) +
+        theme(panel.grid = element_blank(),
           axis.text.x=element_text(size=11,color="black"),
           axis.text.y=element_text(size=11,color="black"),
           axis.line.x=element_line(size= 0.3528),
@@ -1688,7 +1769,8 @@ plot_vpa <- function(vpalist, vpatibble=NULL,
 #' @param MSYlist est.MSYの返り値をリストにしたもの; 単独でも可
 #' @param MSYname 凡例につけるMSYのケースの名前。MSYlistと同じ長さにしないとエラーとなる
 #' @param x_axis_name x軸になにをとるか？("ssb.mean": 親魚の平均資源量, "fmulti": current Fに対する乗数、など)
-#'  @param y_axis_name y軸になにをとるか？("ssb.mean": 親魚の平均資源量, "catch.mean": 平均漁獲量、など）
+#' @param y_axis_name y軸になにをとるか？("ssb.mean": 親魚の平均資源量, "catch.mean": 平均漁獲量、"rec.mean": 加入量の平均値など） get.statの返り値として出される値（またはMSYの推定結果のtrace内の表）に対応
+#' @param plot_CI80 TRUE or FALSE, 平衡状態における信頼区間も追記する(現状では、縦軸が親魚量・漁獲量・加入尾数のときのみ対応)
 #' 
 #' @examples 
 #' \dontrun{
@@ -1702,6 +1784,8 @@ plot_vpa <- function(vpalist, vpatibble=NULL,
 #' # 縦軸を加入量
 #' g3 <- compare_eq_stat(MSY_list,x_axis_name="fmulti",y_axis_name="rec.mean")
 #' gridExtra::grid.arrange(g1,g2,g3,ncol=1)
+#'
+#' g3.withCI <- compare_eq_stat(MSY_list,x_axis_name="fmulti",y_axis_name="rec.mean",plot_CI80=TRUE)
 #' 
 #' }
 #' 
@@ -1711,12 +1795,14 @@ plot_vpa <- function(vpalist, vpatibble=NULL,
 #' 
 
 compare_eq_stat <- function(MSYlist,
-                           x_axis_name="ssb.mean",
+                           x_axis_name="fmulti",
                            y_axis_name="catch.mean", 
                            legend.position="top",
                            is_MSY_line=TRUE,
                            is.scale=FALSE,
-                           MSYname=NULL){
+                           MSYname=NULL,
+                           plot_CI80=FALSE
+                           ){
 
     if(!is.null(MSYname)){
         if(length(MSYname)!=length(MSYlist)) stop("Length of MSYlist and MSYname is different")
@@ -1732,7 +1818,7 @@ compare_eq_stat <- function(MSYlist,
        ,.id="id")
 
     if(isTRUE(is.scale)) data_yield <- data_yield %>% mutate(catch.mean=catch.mean/catch.max,
-                                              ssb.mean=ssb.mean/ssb.max)
+                                                             ssb.mean=ssb.mean/ssb.max)
 
     g1 <- data_yield %>% ggplot()+
         geom_line(aes(x=get(x_axis_name), y=get(y_axis_name[1]), color=id))+
@@ -1740,6 +1826,20 @@ compare_eq_stat <- function(MSYlist,
         xlab(x_axis_name)+ylab(str_c(y_axis_name))+
         geom_vline(data=dplyr::filter(data_yield,catch.order==1),
                    aes(xintercept=get(x_axis_name),color=id),lty=2)
+
+    if(isTRUE(plot_CI80)){
+        y_axis_name_L10 <- dplyr::case_when(
+                                      y_axis_name == "catch.mean" ~ "catch.L10",
+                                      y_axis_name == "ssb.mean"   ~ "ssb.L10",
+                                      y_axis_name == "rec.mean"   ~ "rec.L10")
+        y_axis_name_H10 <- dplyr::case_when(
+                                      y_axis_name == "catch.mean" ~ "catch.H10",
+                                      y_axis_name == "ssb.mean"   ~ "ssb.H10",
+                                      y_axis_name == "rec.mean"   ~ "rec.H10")
+        g1 <- g1 +
+            geom_line(aes(x=get(x_axis_name), y=get(y_axis_name_L10), color=id),lty=2)+
+            geom_line(aes(x=get(x_axis_name), y=get(y_axis_name_H10), color=id),lty=3)
+    }
 
     return(g1)
 }
@@ -1791,8 +1891,191 @@ compare_MSY <- function(MSYlist,
 
 #' @export
 compare_SRfit <- function(SRlist){
-    plot_SRdata(SRlist[[1]]$input$SRdata)
+    g1 <- plot_SRdata(SRlist[[1]]$input$SRdata,type="gg")
     for(i in 1:length(SRlist)){
-        lines(SRlist[[i]]$pred,col=i)
+        g1 <- g1 + geom_line(data=SRlist[[i]]$pred,mapping=aes(x=SSB,y=R),col=i)
+    }
+    g1
+}
+
+#'
+#' 将来予測の結果のリストを入れると、代表的なパフォーマンス指標をピックアップする
+#'
+#' @param future_list future_vpaまたはfuture.vpaの返り値のリスト
+#' @param res_vpa vpaの返り値
+#' @param ABC_year 特にABCに注目したい年
+#' @param is_MSE MSEの結果を使うかどうか。MSEの結果の場合には、ABCや加入尾数の真の値との誤差も出力する
+#' @param indicator_year ABC_yearから相対的に何年後を指標として取り出すか
+#' @param Btarget 目標管理基準値の値
+#' @param Blimit 限界管理基準値の値
+#' @param Bban 禁漁水準の値
+#' @param type 出力の形式。"long"は縦長（ggplotに渡すときに便利）、"wide"は横長（数字を直接比較するときに便利）
+#' @param biomass.unit 資源量の単位
+#' 
+#' @export
+#' 
+
+get_performance <- function(future_list,res_vpa,ABC_year=2021,
+                            is_MSE=FALSE,
+                            indicator_year=c(0,5,10),Btarget=0, Blimit=0, Bban=0,
+                            type=c("long","wide")[1],biomass.unit=10000,...){
+
+    future_list_original <- future_list
+    future_list <- purrr::map(future_list,
+                              function(x) if(class(x)=="future_new")
+                                              format_to_old_future(x) else x)
+
+    if(is.null(names(future_list))) names(future_list) <- 1:length(future_list)
+
+    future_tibble <- purrr::map_dfr(1:length(future_list),
+                                    function(i) convert_future_table(future_list[[i]],
+                                                                     label=names(future_list)[i]) %>%
+                                                rename(HCR_name=label) %>% mutate(beta=NA))
+
+    kobe_res <- make_kobeII_table(future_tibble,res_vpa,
+                                  year.ssb   = ABC_year+indicator_year,
+                                  year.catch = ABC_year+indicator_year,
+                                  year.ssbtarget = ABC_year+indicator_year,
+                                  year.ssblimit  = ABC_year+indicator_year,
+                                  year.ssbban=NULL, year.ssbmin=NULL, year.ssbmax=NULL,
+                                  year.aav = c(ABC_year,ABC_year-1),
+                                  Btarget= Btarget,
+                                  Blimit = Blimit,
+                                  Bban   = Bban)
+
+    if(isTRUE(is_MSE)){
+        error_table <- purrr::map_dfr(1:length(future_list_original), function(i){
+            if("SR_MSE" %in% names(future_list_original[[i]])){
+                plot_bias_in_MSE(future_list_original[[i]], out="stat") %>%
+                    dplyr::filter(year %in% (ABC_year + indicator_year)) %>%
+                    group_by(year, stat) %>%
+                    summarise(mean_error=mean(Relative_error_normal)) %>%
+                    mutate(HCR_name=names(future_list)[i])
+            }
+            else{
+                NULL
+            }
+        })
+        error_table <- error_table %>%
+            gather(key=stat_name,value=value,-HCR_name,-year,-stat) %>%
+            mutate(unit="",stat_category="推定バイアス") %>%
+            mutate(stat_year_name=str_c(stat_category,year)) %>%
+            ungroup(year) %>%
+            mutate(year=as.character(year)) %>%
+            mutate(stat_name=stat) %>%
+            select(-stat)
+    }
+    else{
+        error_table <- NULL
+    }
+
+    junit <- c("","十","百","千","万")[log10(biomass.unit)+1]
+
+    stat_data <- tibble(stat_name=c("ssb.mean","catch.mean","Pr(SSB>SSBtarget)","Pr(SSB>SSBlim)",
+                                    "catch.aav"),
+                        stat_category=c("平均親魚量 ", "平均漁獲量 ", "目標上回る確率 ", "限界上回る確率 ",
+                                        "漁獲量変動"))
+
+    kobe_res <- purrr::map_dfr(kobe_res[c("ssb.mean", "catch.mean", "prob.over.ssbtarget",
+                              "prob.over.ssblimit", "catch.aav")],
+                   function(x) x %>% select(-beta) %>%
+                               gather(key=year,value=value,-HCR_name,-stat_name)) %>%
+        mutate(value=ifelse(stat_name %in% c("ssb.mean", "catch.mean"), value/biomass.unit, value)) %>%
+        mutate(unit =ifelse(stat_name %in% c("ssb.mean", "catch.mean"), str_c(junit, "トン"), "%")) %>%
+        mutate(unit =ifelse(stat_name %in% c("catch.aav"), "", unit)) %>%
+        left_join(stat_data) %>%
+        mutate(stat_year_name=str_c(stat_category,year))  
+
+    kobe_res <- bind_rows(kobe_res,error_table)
+    
+    if(type=="wide"){
+        kobe_res <- kobe_res  %>%
+            select(-year, -stat_name, -stat_category) %>%
+            spread(key=HCR_name,value=value) %>%
+            select(2:ncol(.),1)
+    }
+    
+    return(tibble::lst(kobe_res,error_table))
+}
+
+#'
+#' @export
+#' 
+
+plot_bias_in_MSE <- function(fout, out="graph", error_scale="log", yrange=NULL){
+
+    recruit_dat  <- convert_2d_future(fout$SR_MSE[,,"recruit"], name="Recruits", label="estimate") %>%
+        rename(value_est=value)
+    tmp <- convert_2d_future(fout$naa[1,,],            name="Recruits", label="true")
+    recruit_dat$value_true <- tmp$value
+
+    real_ABC_dat <- convert_2d_future(fout$HCR_mat[,,"wcatch"],    name="realABC", label="estimate") %>%
+        rename(value_est=value)
+    tmp  <- convert_2d_future(fout$SR_MSE[,,"real_true_catch"], name="realABC", label="true") 
+    real_ABC_dat$value_true <- tmp$value
+
+    pseudo_ABC_dat <- convert_2d_future(fout$HCR_mat[,,"wcatch"],    name="pseudoABC", label="estimate") %>%
+        rename(value_est=value)
+    tmp  <- convert_2d_future(fout$SR_MSE[,,"pseudo_true_catch"], name="pseudoABC", label="true") 
+    pseudo_ABC_dat$value_true <- tmp$value    
+    
+    alldat <- bind_rows(recruit_dat, real_ABC_dat, pseudo_ABC_dat) %>%
+        dplyr::filter(value_est>0) %>%
+        mutate(Relative_error_log=(log(value_est)-log(value_true))/log(value_true),
+               Relative_error_normal=((value_est)-(value_true))/(value_true),
+               Year=factor(year)) 
+
+    g1 <- alldat %>% ggplot() +
+        geom_boxplot(aes(x=Year,
+#                         y=Relative_error_log, 
+                         y={if(error_scale=="log") Relative_error_log else Relative_error_normal},
+                         fill=stat)) +
+        facet_wrap(~stat,scale="free_y") + 
+        geom_hline(yintercept=0) +
+        theme_SH() +
+        ylab(str_c("Relative error (",error_scale,")"))
+    
+    if(!is.null(yrange)) g1 <- g1 + coord_cartesian(ylim=yrange)
+
+    if(out=="graph"){
+        return(g1)
+    }
+    else{
+        return(alldat)
+    }
+    
+}
+
+#'
+#' calculate F/Ftarget based on F_%SPR multiplier
+#'
+#' @param faa F at age
+#' @param waa weight at age
+#' @param maa maturity at age
+#' @param M natural morality at age
+#' @param SPRtarget target SPR
+#' 
+#' @export
+#' 
+
+
+calc_Fratio <- function(faa, waa, maa, M, SPRtarget=30, waa.catch=NULL,Pope=TRUE){
+    tmpfunc <- function(x,SPR0=0,...){
+        SPR_tmp <- calc.rel.abund(sel=faa,Fr=exp(x),na=length(faa),M=M, waa=waa, waa.catch=waa.catch,
+                                  min.age=0,max.age=Inf,Pope=Pope,ssb.coef=0,maa=maa)$spr %>% sum()
+        sum(((SPR_tmp/SPR0*100)-SPRtarget)^2)
+    }
+    if(sum(faa)==0){ return(NA) }
+    else{
+        tmp <- !is.na(faa)
+        SPR0 <- calc.rel.abund(sel=faa,Fr=0,na=length(faa),M=M, waa=waa, waa.catch=waa.catch,maa=maa, 
+                               min.age=0,max.age=Inf,Pope=Pope,ssb.coef=0)$spr %>% sum()
+        opt_res <- optimize(tmpfunc,interval=c(-10,10),SPR0=SPR0)
+        SPR_est <- calc.rel.abund(sel=faa,Fr=exp(opt_res$minimum),na=length(faa),
+                                     M=M, waa=waa, waa.catch=waa.catch,maa=maa,
+                                     min.age=0,max.age=Inf,Pope=Pope,ssb.coef=0)$spr %>% sum()
+        SPR_est <- SPR_est/SPR0 * 100 
+        if(abs(SPR_est-SPRtarget)>0.01) {browser(); return(NA)}
+        else return(1/exp(opt_res$minimum))
     }
 }

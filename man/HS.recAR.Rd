@@ -5,8 +5,12 @@
 \alias{HS.recAR}
 \title{HSを仮定したときの加入関数}
 \usage{
-HS.recAR(ssb, vpares, rec.resample = NULL, rec.arg = list(a = 1000, b =
-  1000, sd = 0.1, rho = 0, resid = 0))
+HS.recAR(
+  ssb,
+  vpares,
+  rec.resample = NULL,
+  rec.arg = list(a = 1000, b = 1000, sd = 0.1, rho = 0, resid = 0)
+)
 }
 \arguments{
 \item{ssb}{親魚資源量}

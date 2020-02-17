@@ -5,20 +5,51 @@
 \alias{future.vpa}
 \title{将来予測のための関数}
 \usage{
-future.vpa(res0, multi = 1, currentF = NULL, futureF = NULL,
-  N = 1000, nyear = 10, Pope = res0$input$Pope,
-  plus.group = res0$input$plus.group, seed = NULL, outtype = "FULL",
-  multi.year = 1, start.year = NULL, ABC.year = NULL,
-  waa.year = NULL, waa.catch.year = NULL, maa.year = NULL,
-  M.year = NULL, waa = NULL, waa.catch = NULL, maa = NULL,
-  M = NULL, waa.fun = FALSE, use.MSE = FALSE, MSE.options = NULL,
-  HCR = NULL, HCR_beta = NULL, HCR_Blimit = NULL, HCR_Bban = NULL,
-  HCR_year_lag = NULL, silent = FALSE, is.plot = TRUE,
-  pre.catch = NULL, rec.new = NULL, recfunc = HS.recAR,
-  rec.arg = list(a = 1, b = 1, rho = 0, sd = 0, c = 1, bias.correction =
-  TRUE, resample = FALSE, resid = 0, resid.year = NULL), Frec = NULL,
-  naa0 = NULL, eaa0 = NULL, ssb0 = NULL, faa0 = NULL,
-  add.year = 0, det.run = TRUE)
+future.vpa(
+  res0,
+  multi = 1,
+  currentF = NULL,
+  futureF = NULL,
+  N = 1000,
+  nyear = 10,
+  Pope = res0$input$Pope,
+  plus.group = res0$input$plus.group,
+  seed = NULL,
+  outtype = "FULL",
+  multi.year = 1,
+  start.year = NULL,
+  ABC.year = NULL,
+  waa.year = NULL,
+  waa.catch.year = NULL,
+  maa.year = NULL,
+  M.year = NULL,
+  waa = NULL,
+  waa.catch = NULL,
+  maa = NULL,
+  M = NULL,
+  waa.fun = FALSE,
+  use.MSE = FALSE,
+  MSE.options = NULL,
+  HCR = NULL,
+  HCR_beta = NULL,
+  HCR_Blimit = NULL,
+  HCR_Bban = NULL,
+  HCR_year_lag = NULL,
+  silent = FALSE,
+  is.plot = TRUE,
+  pre.catch = NULL,
+  rec.new = NULL,
+  recfunc = HS.recAR,
+  rec.arg = list(a = 1, b = 1, rho = 0, sd = 0, c = 1, bias.correction = TRUE, resample
+    = FALSE, resid = 0, resid.year = NULL),
+  Frec = NULL,
+  naa0 = NULL,
+  eaa0 = NULL,
+  ssb0 = NULL,
+  faa0 = NULL,
+  add.year = 0,
+  det.run = TRUE
+)
 }
 \arguments{
 \item{res0}{VPAの出力結果}

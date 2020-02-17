@@ -8,7 +8,7 @@ output:
     toc: yes
     toc_float: yes
 vignette: >
-  %\VignetteIndexEntry{2. Estimating SR functions and Simulating futures}
+  %\VignetteIndexEntry{4. new function of future_vpa}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -133,8 +133,10 @@ res_future_backward <- future_vpa(tmb_data=data_future_backward$data, # さっ�
 res_future_test <- future_vpa(tmb_data=data_future_test$data, # さっき作成した将来予測用のデータフレーム
 		              optim_method="R", 
                     	      multi_init  = 1,
-			      multi_lower = 0, multi_upper = 5,
+			      multi_lower = 0.001, multi_upper = 5,
 			      objective="MSY")
+res_future_test$multi
+# [1] 0.5269326
 
 ```
 
