@@ -17,6 +17,8 @@ make_future_data(
   waa = NULL,
   waa_catch_year,
   waa_catch = NULL,
+  waa_fun = FALSE,
+  start_waafun_year_name = start_biopar_year_name,
   maa_year,
   maa = NULL,
   M_year,
@@ -51,7 +53,7 @@ make_future_data(
 
 \item{nyear}{将来予測の実施年数}
 
-\item{plus_age}{プラスグループの年齢。デフォルト値（NULL）ならfuture_initial_year_name年にNA以外の数値が入っている一番大きい年齢をプラスグループの年齢とする}
+\item{plus_age}{プラスグループとして計算する行（年齢ではないことに注意）。デフォルト値（NULL）ならfuture_initial_year_name年にNA以外の数値が入っている一番大きい年齢をプラスグループの年齢とする}
 
 \item{future_initial_year_name}{将来予測の「初期値となる」年齢別資源尾数を参照する年。この年の年齢別資源尾数を使って翌年の個体群動態が将来予測で決定される}
 
@@ -64,6 +66,10 @@ make_future_data(
 \item{waa_year}{将来の年齢別体重を過去の平均値とする場合、過去のパラメータを平均する期間, maa_year, M_yearも同様}
 
 \item{waa}{将来の年齢別体重を直接与える場合, maa, M_yearも同様}
+
+\item{waa_fun}{log(weight)~log(number)の回帰式から将来のweightを予測する}
+
+\item{start_waafun_year_name}{上記の設定がスタートする最初の年。それ以外の年は上で設定されたパラメータが使われる}
 
 \item{faa_year}{将来のFを過去の平均値とする場合、平均をとる年を指定する。下のcurrentF, futureFが指定されている場合にはこの設定は無視される}
 

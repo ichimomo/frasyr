@@ -16,7 +16,6 @@ plot_yield(
   labeling = TRUE,
   lining = TRUE,
   age.label.ratio = 0.9,
-  family = "JP1",
   ylim.scale = 1.2,
   future = NULL,
   future.replicate = NULL,

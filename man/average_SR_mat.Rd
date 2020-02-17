@@ -14,6 +14,7 @@ average_SR_mat(
   recruit_age,
   resid_type = "lognormal",
   resample_year_range = 0,
+  recruit_intercept = recruit_intercept,
   bias_correction = TRUE
 )
 }
