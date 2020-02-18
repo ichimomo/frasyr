@@ -5,7 +5,15 @@
 \alias{plot.bootSR}
 \title{再生産関係の残差ブートストラップ}
 \usage{
-\method{plot}{bootSR}(boot.res, CI = 0.8, output = FALSE, filename = "boot", lwd = 1.2, ...)
+\method{plot}{bootSR}(
+  boot.res,
+  CI = 0.8,
+  output = FALSE,
+  filename = "boot",
+  lwd = 1.2,
+  pch = 1,
+  ...
+)
 }
 \arguments{
 \item{boot.res}{\code{boot.SR}のオブジェクト}

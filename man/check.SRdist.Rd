@@ -5,12 +5,7 @@
 \alias{check.SRdist}
 \title{再生産関係の残差の確率分布に関するチェック図を出力する関数}
 \usage{
-check.SRdist(
-  resSR,
-  test.ks = TRUE,
-  output = FALSE,
-  filename = "SR_error_dist_diagnostics"
-)
+check.SRdist(resSR, test.ks = TRUE, output = FALSE, filename = "SR_error_dist")
 }
 \arguments{
 \item{resSR}{\code{fit.SR}か\code{fit.SRregime}のオブジェクト}
