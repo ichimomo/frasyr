@@ -179,6 +179,8 @@ fit.SR <- function(SRdata,
 
   Res <- list()
   Res$input <- arglist
+  Res$obj.f <- obj.f
+  Res$obj.f2 <- obj.f2
   Res$opt <- opt
 
   a <- exp(opt$par[1])
@@ -241,6 +243,8 @@ fit.SR <- function(SRdata,
   Res$AIC <- -2*loglik+2*k
   Res$AICc <- Res$AIC+2*k*(k+1)/(NN-k-1)
   Res$BIC <- -2*loglik+k*log(NN)
+  
+  class(Res) <- "fit.SR"
   return(Res)
 }
 
@@ -402,7 +406,7 @@ boot.SR <- function(Res,method="p",n=100,seed=1){
   if (Res$input$SR=="RI") SRF <- function(x,a,b) a*x*exp(-b*x)
   
   set.seed(seed)
-  if (!is.null(Res$pars$rho)) { #fit.SR
+  if (class(Res) == "fit.SR") { #fit.SR
     N <- length(Res$input$SRdata$SSB)
     RES = lapply(1:n, function(j){
         sd <- sapply(1:N, function(i) ifelse(i==1,Res$pars$sd/sqrt(1-Res$pars$rho^2),Res$pars$sd))
@@ -621,8 +625,8 @@ fit.SRregime <- function(
     SD = tbl$sd %>% as.numeric()
     nll <-
       ifelse(method=="L2",
-             -sum(sapply(1:N, function(i) dnorm(resid[i],0,SD[sd_key[i]], log=TRUE))),
-             -sum(sapply(1:N, function(i) -log(2*SD[sd_key[i]])-abs(resid[i]/SD[sd_key[i]])))
+             -sum(sapply(1:N, function(i) w[i]*dnorm(resid[i],0,SD[sd_key[i]], log=TRUE))),
+             -sum(sapply(1:N, function(i) w[i]*(-log(2*SD[sd_key[i]])-abs(resid[i]/SD[sd_key[i]]))))
       )
     if (out=="nll") return(nll)
     if (out=="resid") return(resid)
@@ -699,6 +703,8 @@ fit.SRregime <- function(
   if (method=="L1") sd <- sqrt(2)*sd
   resid <- obj.f(a,b,out="resid")
 
+  Res$obj.f <- obj.f
+  Res$obj.f2 <- obj.f2
   Res$resid <- resid
   Res$pars$a <- a
   Res$pars$b <- b
@@ -732,6 +738,7 @@ fit.SRregime <- function(
     dplyr::select(Year,SSB,R,Regime,Pred,resid)
   Res$pred_to_obs <- pred_to_obs
   Res$summary_tbl
+  class(Res) <- "fit.SRregime"
 
   return(Res)
 }
@@ -742,7 +749,7 @@ fit.SRregime <- function(
 #' @encoding UTF-8
 #' @export
 calc.StdResid = function(resSR) {
-  if(is.null(resSR$regime_pars)) { #fit.SR
+  if(class(resSR) == "fit.SR") { #fit.SR
     sigma = rep(sqrt(resSR$pars$sd^2/(1-resSR$pars$rho^2)),length(resSR$resid))
     sigma2 = c(sqrt(resSR$pars$sd^2/(1-resSR$pars$rho^2)), rep(resSR$pars$sd,length(resSR$resid)-1))
     std.resid = resSR$resid/sigma
@@ -778,7 +785,8 @@ calc.StdResid = function(resSR) {
 #' 標準化した残差を使用する
 #' 累積確率分布はL2の場合は正規分布、L1の場合はラプラス分布を使用する
 #' 自己相関の外側推定の場合は、2段階で推定しているため、ファイルが2つ出力される
-#' @import  EnvStats
+#' @import EnvStats
+#' @improt rmutil
 #' @inheritParams calc.StdResid
 #' @param resSR \code{fit.SR}か\code{fit.SRregime}のオブジェクト
 #' @param output pngファイルに出力するか否か
@@ -788,7 +796,7 @@ check.SRdist = function(resSR,test.ks=TRUE,output=FALSE,filename = "SR_error_dis
   std.resid.res = calc.StdResid(resSR)
   main_name=paste0(resSR$input$SR," ",resSR$input$method," ")
   
-  if (!is.null(resSR$pars$rho) && resSR$input$AR && isTRUE(resSR$input$out.AR)) {
+  if (class(resSR)=="fit.SR" && resSR$input$AR && isTRUE(resSR$input$out.AR)) {
     for(i in 1:2) {
       if (i==1) {
         std.resid = std.resid.res$std.resid
@@ -807,14 +815,26 @@ check.SRdist = function(resSR,test.ks=TRUE,output=FALSE,filename = "SR_error_dis
            xlab = "Standardized Deviance",freq=FALSE)
       X <- seq(min(std.resid)*1.3,max(std.resid)*1.3,length=200)
       points(X,dnorm(X,0,1),col=2,lwd=3,type="l")
+      if (resSR$input$method=="L1" && i==1) {
+        points(X,rmutil::dlaplace(X,0,1/sqrt(2)),col="blue",lwd=2,type="l",lty=2)
+      }
       mtext(text=" P value",adj=1,line=-1,lwd=2,font=2)
       mtext(text=sprintf(" SW: %1.3f",check1$p.value),adj=1,line=-2)
       if (test.ks) {
-        check2 <- ks.test(std.resid,y="pnorm",sd=1)
+        if (i==1 && resSR$input$method=="L1") {
+          check2 <- ks.test(std.resid,y=function(x) rmutil::plaplace(x,m=0,s=1/sqrt(2)))
+        } else {
+          check2 <- ks.test(std.resid,y="pnorm",sd=1)
+        }
         mtext(text=sprintf(" KS: %1.3f",check2$p.value),adj=1,line=-3)
       }
       hist(cumulative.prob, xlab="Cumulative probability",
            main = paste0(main_name,"Cumlative Prob. Dist."),freq=FALSE,breaks=seq(0,1,by=0.1))
+      # if (test.ks) {
+      #   check2 <- ks.test(cumulative.prob,y="punif",min=0,max=1)
+      #   mtext(text=" P value",adj=1,line=-1,lwd=2,font=2)
+      #   mtext(text=sprintf(" KS: %1.3f",check2$p.value),adj=1,line=-2)
+      # }
       EnvStats::qqPlot(x=cumulative.prob,distribution="unif", param.list = list(min = 0, max = 1),
                        add.line = TRUE,qq.line.type = "0-1",line.lwd=1.5,cex=1.2,line.col="red",
                        main = paste0(main_name,"Uniform QQ plot"),ylab="Quatiles of Cumlative.Prob.",
@@ -837,14 +857,26 @@ check.SRdist = function(resSR,test.ks=TRUE,output=FALSE,filename = "SR_error_dis
          xlab = "Standardized Residual",freq=FALSE)
     X <- seq(min(std.resid)*1.3,max(std.resid)*1.3,length=200)
     points(X,dnorm(X,0,1),col=2,lwd=3,type="l")
+    if (resSR$input$method=="L1") {
+      points(X,rmutil::dlaplace(X,0,1/sqrt(2)),col="blue",lwd=2,type="l",lty=2)
+    }
     mtext(text=" P value",adj=1,line=-1,lwd=2,font=2)
     mtext(text=sprintf(" SW: %1.3f",check1$p.value),adj=1,line=-2)
     if (test.ks) {
-      check2 <- ks.test(std.resid,y="pnorm",sd=1)
+      if (resSR$input$method=="L1"){
+        check2 <- ks.test(std.resid,y=function(x) rmutil::plaplace(x,m=0,s=1/sqrt(2)))
+      } else {
+        check2 <- ks.test(std.resid,y="pnorm",mean=0,sd=1)
+      }
       mtext(text=sprintf(" KS: %1.3f",check2$p.value),adj=1,line=-3)
     }
     hist(cumulative.prob, xlab="Cumulative probability",
          main = paste0(main_name,"Cumlative Prob. Dist."),freq=FALSE,breaks=seq(0,1,by=0.1))
+    # if (test.ks) {
+    #   check2 <- ks.test(cumulative.prob,y="punif",min=0,max=1)
+    #   mtext(text=" P value",adj=1,line=-1,lwd=2,font=2)
+    #   mtext(text=sprintf(" KS: %1.3f",check2$p.value),adj=1,line=-2)
+    # }
     EnvStats::qqPlot(x=cumulative.prob,distribution="unif", param.list = list(min = 0, max = 1),
                      add.line = TRUE,qq.line.type = "0-1",line.lwd=1.5,cex=1.2,line.col="red",
                      main = paste0(main_name,"Uniform QQ plot"),ylab="Quatiles of Cumlative.Prob.",
@@ -882,7 +914,7 @@ check.SRdist = function(resSR,test.ks=TRUE,output=FALSE,filename = "SR_error_dis
 #' @export
 calc.residAR = function(resSR, per_regime=TRUE) {
   RES = list()
-  if (!is.null(resSR$pars$rho)) { #fit.SR
+  if (class(resSR) == "fit.SR") { #fit.SR
     if (resSR$input$AR && !isTRUE(resSR$input$out.AR)) {
       warning("This function is meaningless when AR=TRUE & out.AR=FALSE")
     }
@@ -1005,7 +1037,7 @@ plot.autocor = function(resSR,use.resid=1,lag.max=NULL,output = FALSE,filename =
   Year = resSR$input$SRdata$year
   if (output) png(file = paste0(filename,".png"), width=15, height=5, res=432, units='in')
   par(pch=pch,lwd = lwd, mfrow=c(1,3),cex=cex)
-  if (!is.null(resSR$pars$rho)) { #fit.SR
+  if (class(resSR) == "fit.SR") { #fit.SR
     if (use.resid==1) {
       Resid = resSR$resid
       plot(Year,Resid,pch=pch,main="",xlab="Year",ylab="Deviance",cex.lab=cex.lab,...)
@@ -1046,19 +1078,19 @@ plot.autocor = function(resSR,use.resid=1,lag.max=NULL,output = FALSE,filename =
   if (output) dev.off()
 }
 
-#' 再生産関係における残差の時系列の自己相関等についてのプロット 
+#' 再生産関係の残差ブートストラップ
 #' 
-#' 1) 残差のトレンド、2) \code{acf}関数による自己相関係数のプロット、3) Ljung-Box検定におけるP値の3つの図を出力
 #' @param boot.res \code{boot.SR}のオブジェクト
 #' @param CI プロットする信頼区間
 #' @param output pngファイルに出力するか否か
 #' @param filename ファイル名
 #' @encoding UTF-8
 #' @export
-plot.bootSR = function(boot.res, CI = 0.8,output = FALSE,filename = "boot_pars",lwd=1.2,...) {
-  if (!is.null(boot.res$input$Res$pars$rho)) {
+plot.bootSR = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1.2,...) {
+  res_base = boot.res$input$Res
+  if (class(boot.res$input$Res)=="fit.SR") {
     # for fit.SR
-    if (output) png(file = paste0(filename,".png"), width=10, height=10, res=432, units='in')
+    if (output) png(file = paste0(filename,"_pars.png"), width=10, height=10, res=432, units='in')
     par(pch=pch,lwd = lwd, mfrow=c(2,2))
     jmax = ifelse(boot.res$input$Res$pars$rho==0,3,4)
     for (j in 1:jmax) {
@@ -1079,12 +1111,23 @@ plot.bootSR = function(boot.res, CI = 0.8,output = FALSE,filename = "boot_pars",
       }
     }
     if (output) dev.off()
+    
+    if (output) png(file = paste0(filename,"_SRcurve.png"), width=10, height=7.5, res=432, units='in')
+    data_SR = boot.res$input$Res$input$SRdata
+    plot(data_SR$R ~ data_SR$SSB, cex=2, type = "p",xlab="SSB",ylab="R",pch=1,
+         main="Bootstrapped SR functions",ylim=c(0,max(data_SR$R)*1.3),xlim=c(0,max(data_SR$SSB)*1.3))
+    points(rev(data_SR$SSB)[1],rev(data_SR$R)[1],col=1,type="p",lwd=3,pch=16,cex=2)
+    for (i in 1:boot.res$input$n) {
+      points(boot.res[[i]]$pred$SSB,boot.res[[i]]$pred$R,type="l",lwd=2,col=rgb(0,0,1,alpha=0.1))
+    }
+    points(res_base$pred$SSB,res_base$pred$R,col=2,type="l",lwd=3)
+    if (output) dev.off()
   } else {
     # fit.SRregime
     for (ii in 1:nrow(boot.res$input$Res$regime_pars)) {
       regime = boot.res$input$Res$regime_pars$regime[ii]
       if (output) png(file = paste0(filename,"_regime",regime,".png"), width=10, height=10, res=432, units='in')
-      par(pch=pch,lwd = lwd, mfrow=c(2,2))
+      par(lwd = lwd, mfrow=c(2,2))
       jmax = 3
       for (j in 1:jmax) {
         par0 = c("a","b","sd","rho")[j]
@@ -1105,5 +1148,229 @@ plot.bootSR = function(boot.res, CI = 0.8,output = FALSE,filename = "boot_pars",
       }
       if (output) dev.off()
     }
+    
+    if (output) png(file = paste0(filename,"_SRcurve.png"), width=15, height=7.5, res=432, units='in')
+    par(mfrow=c(1,length(regime_unique))) 
+    for(i in 1:length(regime_unique)) {
+      use_data = dplyr::filter(obs_data,Regime == regime_unique[i])
+      plot(use_data$R ~ use_data$SSB, cex=2, type = "p",pch=1,xlab="SSB",ylab="R",
+           main=paste0("Bootstrapped SR for Regime ",regime_unique[i]),ylim=c(0,max(use_data$R)*1.3),xlim=c(0,max(obs_data$SSB)*1.3))
+      for (j in 1:boot.res$input$n) {
+        pred_data = boot.res[[j]]$pred %>% filter(Regime == regime_unique[i])
+        points(pred_data$SSB,pred_data$R,type="l",lwd=2,col=rgb(0,0,1,alpha=0.1))
+      }
+      pred_data = res_base$pred %>% filter(Regime == regime_unique[i])
+      points(pred_data$SSB,pred_data$R,col=2,type="l",lwd=3)
+    }
+    if (output) dev.off()
   }
+}
+
+#' 再生産関係のジャックナイフ解析
+#' 
+#' 結果のプロットもこの関数で行う
+#' @param resSR \code{fit.SR}か\code{fit.SRregime}のオブジェクト
+#' @param is.plot プロットするかどうか
+#' @param output pngファイルに出力するか否か
+#' @param filename ファイル名
+#' @encoding UTF-8
+#' @export
+jackknife.SR = function(resSR,is.plot=TRUE,output=FALSE,filename = "jackknife",ylim.range = c(0.5,1.5),pch=19,cex=1.1,...) {
+  RES = lapply(1:length(resSR$input$SRdata$SSB), function(i){
+    jack <- resSR
+    jack$input$w[i] <- 0
+    jack$input$p0 <- resSR$opt$par
+    if (class(resSR)=="fit.SR") {
+      do.call(fit.SR,jack$input)
+    } else {
+      do.call(fit.SRregime,jack$input)
+    }
+  })
+  if (is.plot) {
+    jack.res <- RES
+    data_SR = resSR$input$SRdata
+    if (class(resSR)=="fit.SR") {
+      if (output) png(file = paste0(filename,"_pars.png"), width=10, height=10, res=432, units='in')
+      par(mfrow=c(2,2),mar=c(3,3,2,2),oma=c(3,3,2,2),pch=pch,cex=cex)
+      plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$pars$a),type="b",
+           xlab="Year removed",ylab="",main="a in jackknife",ylim=resSR$pars$a*ylim.range)
+      abline(resSR$pars$a,0,lwd=2,col=2,lty=2)
+      
+      plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$pars$b),type="b",
+           xlab="Year removed",ylab="",main="b in jackknife",ylim=resSR$pars$b*ylim.range)
+      abline(resSR$pars$b,0,lwd=2,col=2,lty=2)
+      
+      plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$pars$sd),type="b",
+           xlab="Year removed",ylab="",main="sd in jackknife",ylim=resSR$pars$sd*ylim.range)
+      abline(resSR$pars$sd,0,lwd=2,col=2,lty=2)
+      
+      if (resSR$input$AR==1) {
+        plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$pars$rho),type="b",
+             xlab="Year removed",ylab="",main="rho in jackknife",ylim=resSR$pars$rho*ylim.range)
+        abline(resSR$pars$rho,0,lwd=2,col=2,lty=2)
+      }
+      if (output) dev.off()
+      
+      if (output) png(file = paste0(filename,"_SRcurve.png"), width=8, height=4, res=432, units='in')
+      par(mar=c(3,3,2,2),oma=c(3,3,2,2))
+      plot(data_SR$R ~ data_SR$SSB, cex=2, type = "p",xlab="SSB",ylab="R",pch=1,
+           main="jackknife SR functions",ylim=c(0,max(data_SR$R)*1.3),xlim=c(0,max(data_SR$SSB)*1.3))
+      points(rev(data_SR$SSB)[1],rev(data_SR$R)[1],col=1,type="p",lwd=3,pch=16,cex=2)
+      for (i in 1:length(data_SR$R)) {
+        points(jack.res[[i]]$pred$SSB,jack.res[[i]]$pred$R,type="l",lwd=2,col=rgb(0,0,1,alpha=0.1))
+      }
+      points(resSR$pred$SSB,resSR$pred$R,col=2,type="l",lwd=3,lty=2)
+      if (output) dev.off()
+      
+    } else { #fit.SRregime
+      regime_unique = resSR$regime_resid$regime %>% unique()
+      if (output) png(file = paste0(filename,"_pars.png"), width=15, height=7.5, res=432, units='in')
+      par(mar=c(3,3,2,2),oma=c(3,3,2,2),mfrow=c(length(regime_unique),3),pch=pch,cex=cex)
+      for(j in 1:length(regime_unique)) {
+        plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$regime_pars$a[j]),type="b",
+             xlab="Year removed",ylab="",
+             main=paste0("a in jackknife (regime ",regime_unique[j],")"),ylim=resSR$regime_pars$a[j]*ylim.range)
+        abline(resSR$regime_pars$a[j],0,lwd=2,col=2,lty=2)
+        abline(v=resSR$input$regime.year-0.5,lwd=1,lty=3,col="blue")
+        plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$regime_pars$b[j]),type="b",
+             xlab="Year removed",ylab="",
+             main=paste0("b in jackknife (regime ",regime_unique[j],")"),ylim=resSR$regime_pars$b[j]*ylim.range)
+        abline(resSR$regime_pars$b[j],0,lwd=2,col=2,lty=2)
+        abline(v=resSR$input$regime.year-0.5,lwd=1,lty=3,col="blue")
+        plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$regime_pars$sd[j]),type="b",
+             xlab="Year removed",ylab="",
+             main=paste0("sd in jackknife (regime ",regime_unique[j],")"),ylim=resSR$regime_pars$sd[j]*ylim.range)
+        abline(resSR$regime_pars$sd[j],0,lwd=2,col=2,lty=2)
+        abline(v=resSR$input$regime.year-0.5,lwd=1,lty=3,col="blue")
+      }
+      if (output) dev.off()
+      obs_data = resSR$pred_to_obs
+      if (output) png(file = paste0(filename,"_SRcurve.png"), width=12, height=6, res=432, units='in')
+      par(mar=c(3,3,2,2),oma=c(3,3,2,2),mfrow=c(1,length(regime_unique))) 
+      for(i in 1:length(regime_unique)) {
+        use_data = dplyr::filter(obs_data,Regime == regime_unique[i])
+        plot(use_data$R ~ use_data$SSB, cex=2, type = "p",pch=1,xlab="SSB",ylab="R",
+             main=paste0("Jackknife SR for Regime ",regime_unique[i]),ylim=c(0,max(use_data$R)*1.3),xlim=c(0,max(obs_data$SSB)*1.3))
+        for (j in 1:nrow(obs_data)) {
+          pred_data = jack.res[[j]]$pred %>% filter(Regime == regime_unique[i])
+          points(pred_data$SSB,pred_data$R,type="l",lwd=2,col=rgb(0,0,1,alpha=0.1))
+        }
+        pred_data = resSR$pred %>% filter(Regime == regime_unique[i])
+        points(pred_data$SSB,pred_data$R,col=2,type="l",lwd=3,lty=2)
+      }
+      if (output) dev.off()
+    }
+  }
+  return(invisible(RES))
+}
+
+#' プロファイル尤度を計算する関数
+#' 
+#' 結果のプロットもこの関数で行う
+#' @param resSR \code{fit.SR}か\code{fit.SRregime}のオブジェクト
+#' @param output pngファイルに出力するか否か
+#' @param filename ファイル名
+#' @param a_range 推定値に\code{a_range}を乗じた範囲で尤度計算を行う (\code{NULL}のとき\code{c(0.5,2)})
+#' @param b_range 推定値に\code{a_range}を乗じた範囲で尤度計算を行う (\code{NULL}のとき\code{c(0.5,2)})
+#' @param HS_b_restrict Hockey-StickのときにbをSSBの観測値の範囲にするか否か (\code{b_range}より優先される)
+#' @param length 範囲を区切る数
+#' @encoding UTF-8
+#' @export
+prof.likSR = function(resSR,output=FALSE,filename="Proile_Likelihood",a_range = NULL,b_range = NULL,HS_b_restrict = TRUE,length=50) {
+  RES = list()
+  if (is.null(a_range)) a_range = c(0.5,2)
+  if (is.null(b_range)) b_range = c(0.5,2)
+  if (class(resSR) == "fit.SR") {
+    a.grid <- seq(resSR$pars$a*a_range[1],resSR$pars$a*a_range[2],length=length)
+    if (resSR$input$SR!="HS" || !isTRUE(HS_b_restrict)) {
+      b.grid <- seq(resSR$pars$b*b_range[1],resSR$pars$b*b_range[2],length=length)
+    } else {
+      b.grid <- seq(min(resSR$input$SRdata$SSB),max(resSR$input$SRdata$SSB),length=length)
+    }
+    ba.grid = expand.grid(b=b.grid,a=a.grid)
+    
+    if (resSR$pars$rho==0 || resSR$input$out.AR==TRUE) {
+      obj.f = function (a,b) resSR$obj.f(a=a,b=b,rho=0)
+      prof.lik.res <- exp(-sapply(1:nrow(ba.grid), function(i) obj.f(a=ba.grid[i,2],b=ba.grid[i,1])))
+    } else {
+      obj.f = function (a,b,x) resSR$obj.f(a=a,b=b,rho=x)
+      prof.lik.res <- exp(-sapply(1:nrow(ba.grid), function(i) {
+        optimize(function(x) obj.f(a=ba.grid[i,2],b=ba.grid[i,1],x),interval=c(-0.999,0.999))$objective
+      }))
+    }
+    if (output) png(file = paste0(filename,".png"), width=7.5, height=5, res=432, units='in')
+    image(b.grid,a.grid,matrix(prof.lik.res,nrow=length),ann=F,col=cm.colors(12),
+          ylim=range(a.grid),xlim=range(b.grid))
+    par(new=T, xaxs="i",yaxs="i")
+    contour(b.grid,a.grid,matrix(prof.lik.res,nrow=length),
+            ylim=range(a.grid),xlim=range(b.grid),
+            xlab="b",ylab="a",main="Profile Likelihood")
+    points(resSR$pars$b,resSR$pars$a,cex=2,pch=4,col=2,lwd=3)
+    if (output) dev.off()
+    ba.grid.res = ba.grid
+  } else { #fit.SRregime
+    if (output) png(file = paste0(filename,".png"), width=15, height=5, res=432, units='in')
+    par(mfrow=c(1,nrow(resSR$regime_pars)),mar=c(4,4,2,2))
+    # par(mfrow=c(1,nrow(resSR$regime_pars)))
+    prof.lik.res = NULL
+    ba.grid.res = list()
+    for (j in 1:nrow(resSR$regime_pars)) {
+      a.grid <- seq(resSR$regime_pars$a[j]*a_range[1],resSR$regime_pars$a[j]*a_range[2],length=length)
+      if (resSR$input$SR!="HS"|| !isTRUE(HS_b_restrict)) {
+        b.grid <- seq(resSR$regime_pars$b[j]*b_range[1],resSR$regime_pars$b[j]*b_range[2],length=length)
+      } else {
+        if ("b" %in% resSR$input$regime.par) {
+          ssb_range=range(resSR$pred_to_obs %>% dplyr::filter(Regime==resSR$regime_pars$regime[j]) %>%
+                            dplyr::select(SSB))
+          b.grid <- seq(ssb_range[1],ssb_range[2],length=length)
+        } else {
+          b.grid <- seq(min(resSR$input$SRdata$SSB),max(resSR$input$SRdata$SSB),length=length)
+        }
+      }
+      ba.grid = expand.grid(b=b.grid,a=a.grid)
+      ab_order = c("a"=which(resSR$regime_pars$a[j]==resSR$pars$a),"b"=which(resSR$regime_pars$b[j]==resSR$pars$b))
+      a_fix = resSR$regime_pars$a[j]
+      b_fix = resSR$regime_pars$b[j]
+      ab = c(resSR$pars$a,resSR$pars$b)
+      x = ab[!(ab %in% c(a_fix,b_fix))]
+      obj.f = function(par_a,par_b,x) {
+        a = resSR$pars$a
+        xa_length=length(a[-ab_order[1]])
+        if (xa_length>0) a[-ab_order[1]] <- x[1:xa_length]
+        b = resSR$pars$b
+        xb_length=length(b[-ab_order[2]])
+        if (xb_length>0) b[-ab_order[2]] <- x[xa_length+(1:xb_length)]
+        a[ab_order[1]] <- par_a
+        b[ab_order[2]] <- par_b
+        resSR$obj.f(a=a,b=b)
+      }
+      if (length(x)==1) {
+        prof.lik.res <- cbind(prof.lik.res,exp(-sapply(1:nrow(ba.grid), function(i) {
+          # opt = optim(x,obj.f,par_a=ba.grid[i,2],par_b=ba.grid[i,1],lower=x*1.0e-3,upper=x*1.0e+3,method="Brent")
+          opt = optim(x,obj.f,par_a=ba.grid[i,2],par_b=ba.grid[i,1],method="BFGS")
+          opt$value
+        })))
+      } else {
+        prof.lik.res <- cbind(prof.lik.res,exp(-sapply(1:nrow(ba.grid), function(i) {
+          # opt = optim(x,obj.f,par_a=ba.grid[i,2],par_b=ba.grid[i,1],lower=x*0.001,
+          #             upper=x*1000,method="L-BFGS-B")
+          opt = optim(x,obj.f,par_a=ba.grid[i,2],par_b=ba.grid[i,1],method="BFGS")
+          opt$value
+        })))
+      }
+      ba.grid.res[[j]] <- ba.grid
+      
+      image(b.grid,a.grid,matrix(prof.lik.res[,j],nrow=length),ann=F,col=cm.colors(12),
+            ylim=range(a.grid),xlim=range(b.grid))
+      par(new=T, xaxs="i",yaxs="i")
+      contour(b.grid,a.grid,matrix(prof.lik.res[,j],nrow=length),
+              ylim=range(a.grid),xlim=range(b.grid),
+              xlab="b",ylab="a",main=paste0("Profile Likelihood for Regime ",resSR$regime_pars$regime[j]))
+      points(resSR$regime_pars$b[j],resSR$regime_pars$a[j],cex=2,pch=4,col=2,lwd=3)
+    }
+    if (output) dev.off()
+  }
+  RES$prof.lik <- prof.lik.res
+  RES$ba.grid <- ba.grid.res
+  return(invisible(RES))
 }

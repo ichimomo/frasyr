@@ -3,17 +3,19 @@
 \encoding{UTF-8}
 \name{plot.bootSR}
 \alias{plot.bootSR}
-\title{再生産関係における残差の時系列の自己相関等についてのプロット}
+\title{再生産関係の残差ブートストラップ}
 \usage{
-\method{plot}{bootSR}(boot.res, CI = 0.8, filename = "boot_pars", lwd = 1.2, ...)
+\method{plot}{bootSR}(boot.res, CI = 0.8, output = FALSE, filename = "boot", lwd = 1.2, ...)
 }
 \arguments{
 \item{boot.res}{\code{boot.SR}のオブジェクト}
 
 \item{CI}{プロットする信頼区間}
 
+\item{output}{pngファイルに出力するか否か}
+
 \item{filename}{ファイル名}
 }
 \description{
-1) 残差のトレンド、2) \code{acf}関数による自己相関係数のプロット、3) Ljung-Box検定におけるP値の3つの図を出力
+再生産関係の残差ブートストラップ
 }
