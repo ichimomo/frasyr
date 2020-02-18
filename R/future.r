@@ -1827,14 +1827,14 @@ read.vpa <- function(tfile,
             }}
         tdat
     }
-  
+
   dres <- list()
   dres$naa <- tmpfunc(tmpdata,naa.label)
   dres$faa <- tmpfunc(tmpdata,faa.label)
-    
-    dres$Fc.at.age <- tmpfunc(tmpdata,Fc.label,type="Fc")
-    dres$Fc.at.age <- dres$Fc.at.age[!is.na(dres$Fc.at.age)]
-    if(length(dres$Fc.at.age)!=nrow(dres$naa)) stop("Dimension of Fc.at.age and numbers at age is differerent.")
+  dres$Fc.at.age <- tmpfunc(tmpdata,Fc.label,type="Fc")
+    #  dres$Fc.at.age <- dres$Fc.at.age[!is.na(dres$Fc.at.age)]
+  dres$Fc.at.age <- dres$Fc.at.age[1:nrow(dres$naa)]    
+#  if(length(dres$Fc.at.age)!=nrow(dres$naa)) stop("Dimension of Fc.at.age and numbers at age is differerent.")
     
   dres$input <- list()
   dres$input$dat <- list()
@@ -1861,20 +1861,21 @@ read.vpa <- function(tfile,
     ## catch at ageの計算時にpopeの近似式を使っているかどうか、通常は外から情報として与えてほしいところだが、与えられない場合、入力されたcaa,faa,naaの関係を見て、Popeで計算されているのかそうでないのかを判断してdres$input$Popeに入れる
   if(is.null(Pope)){
       caa.pope  <- dres$naa*(1-exp(-dres$faa))*exp(-dres$input$dat$M/2)
-        diff.pope <- mean(unlist(dres$input$dat$caa/caa.pope))
+        diff.pope <- mean(unlist(dres$input$dat$caa/caa.pope),na.rm=T)
         
         faa <- dres$faa
         M <- dres$input$dat$M
         caa.bara <- dres$naa*faa/(faa+M)*(1-exp(-faa-M))
-        diff.bara <- mean(unlist(dres$input$dat$caa/caa.bara))
+        diff.bara <- mean(unlist(dres$input$dat$caa/caa.bara),na.rm=T)
 
         if(abs(1-mean(diff.bara))>abs(1-mean(diff.pope))){
             dres$input$Pope <- TRUE
-            cat("Pope is TRUE... OK?\n")
+         
+            cat("Pope is TRUE... OK? (mean difference=", 1-mean(diff.pope),")\n")
         }
         else{
             dres$input$Pope <- FALSE
-            cat("Pope is FALSE... OK?\n")            
+            cat("Pope is FALSE... OK? (mean difference=", 1-mean(diff.bara),")\n")            
         }
   }
   else{
