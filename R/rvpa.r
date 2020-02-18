@@ -166,6 +166,8 @@ fp.forward.est <- function(caa,naa,M,i,k,alpha=1,maxit=5,d=0.0001){
   return(f1)
 }
 
+#' @export
+                             
 backward.calc <- function(caa,naa,M,na,k,min.caa=0.001,p=0.5,plus.group=TRUE){
   out <- rep(NA, na[k])
   if(na[k+1] > na[k]){
