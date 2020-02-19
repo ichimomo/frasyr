@@ -3,7 +3,7 @@
 \encoding{UTF-8}
 \name{boot.SR}
 \alias{boot.SR}
-\title{Residual Bootstrap for fit.SR}
+\title{再生産関係のブートストラップ}
 \usage{
 boot.SR(Res, method = "p", n = 100, seed = 1)
 }
@@ -13,5 +13,5 @@ boot.SR(Res, method = "p", n = 100, seed = 1)
 \item{method}{パラメトリック ("p") かノンパラメトリック ("n")}
 }
 \description{
-パラメトリックブートストラップに加えてノンパラメトリックも追加
+①残差のパラメトリックブートストラップ、②残差のノンパラメトリックブートストラップ（リサンプリング）、③データのブートストラップ（リサンプリング）が行える
 }
