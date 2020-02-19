@@ -386,9 +386,9 @@ fit.SR2 <- function(SRdata,
   return(Res)
 }
 
-#' Residual Bootstrap for fit.SR
+#' 再生産関係のブートストラップ
 #' 
-#' パラメトリックブートストラップに加えてノンパラメトリックも追加
+#' ①残差のパラメトリックブートストラップ、②残差のノンパラメトリックブートストラップ（リサンプリング）、③データのブートストラップ（リサンプリング）が行える
 #' @import purrr
 #' @param Res \code{fit.SR}か\code{fit.SRregime}のオブジェクト
 #' @param method パラメトリック ("p") かノンパラメトリック ("n")
@@ -411,36 +411,39 @@ boot.SR <- function(Res,method="p",n=100,seed=1){
     N <- length(Res$input$SRdata$SSB)
     RES = lapply(1:n, function(j){
         sd <- sapply(1:N, function(i) ifelse(i==1,Res$pars$sd/sqrt(1-Res$pars$rho^2),Res$pars$sd))
-        if (method=="d") { #data bootstrap
-          Year0 = Res$input$SRdata$year[Res$input$w==1]
-          Year_r = sample(Year0,replace=TRUE)
-          w_r = purrr::map_dbl(Year0, function(x) sum(Year_r==x))
-          res.b <- Res
-          res.b$input$w <- w_r
-        } else {
-          if (method=="p") { # parametric bootstrap assuming a normal distribution
-            resids <- rnorm(N,0,sd)
-          } else {# non-parametric bootstrap for residuals
-            std.resid = calc.StdResid(Res)$std.resid
-            std.resids = sample(std.resid,replace=TRUE)
-            resids = std.resids*sd
-          }
-          pred <- obs <- resid0 <- numeric(N)
-          ssb <- Res$input$SRdata$SSB
-          for(i in 1:N){
-            pred[i] <- SRF(ssb[i],Res$pars$a,Res$pars$b)
-            if (i==1) {
-              obs[i] <- pred[i]*exp(resids[i])
-            } else {
-              obs[i] <- pred[i]*exp(Res$pars$rho*resid0[i-1])*exp(resids[i])
+        for (j in 1:100) {
+          if (method=="d") { #data bootstrap
+            Year0 = Res$input$SRdata$year[Res$input$w==1]
+            Year_r = sample(Year0,replace=TRUE)
+            w_r = purrr::map_dbl(Year0, function(x) sum(Year_r==x))
+            res.b <- Res
+            res.b$input$w <- w_r
+          } else {
+            if (method=="p") { # parametric bootstrap assuming a normal distribution
+              resids <- rnorm(N,0,sd)
+            } else {# non-parametric bootstrap for residuals
+              std.resid = calc.StdResid(Res)$std.resid
+              std.resids = sample(std.resid,replace=TRUE)
+              resids = std.resids*sd
             }
-            resid0[i] <- log(obs[i]/pred[i])
+            pred <- obs <- resid0 <- numeric(N)
+            ssb <- Res$input$SRdata$SSB
+            for(i in 1:N){
+              pred[i] <- SRF(ssb[i],Res$pars$a,Res$pars$b)
+              if (i==1) {
+                obs[i] <- pred[i]*exp(resids[i])
+              } else {
+                obs[i] <- pred[i]*exp(Res$pars$rho*resid0[i-1])*exp(resids[i])
+              }
+              resid0[i] <- log(obs[i]/pred[i])
+            }
+            res.b <- Res
+            res.b$input$SRdata$R <- obs
           }
-          res.b <- Res
-          res.b$input$SRdata$R <- obs
+          res.b$input$p0 = Res$opt$par
+          res.b <- try(do.call(fit.SR, res.b$input))
+          if (class(res.b) != "try-error") break
         }
-        res.b$input$p0 = Res$opt$par
-        res.b <- do.call(fit.SR, res.b$input)
       
       return(res.b)
     })
@@ -453,35 +456,38 @@ boot.SR <- function(Res,method="p",n=100,seed=1){
     merged = full_join(Res$regime_pars,mutate(Res$regime_resid,Year=Res$input$SRdata$year),by="regime") %>%
       arrange(Year)
     RES = lapply(1:n, function(j){
-      if (method=="d") { #data bootstrap
-        Year0 = Res$input$SRdata$year[Res$input$w==1]
-        Year_r = sample(Year0,replace=TRUE)
-        w_r = purrr::map_dbl(Year0, function(x) sum(Year_r==x))
-        res.b <- Res
-        res.b$input$w <- w_r
-      } else {
-        if (method=="p") { # parametric bootstrap assuming a normal distribution
-          std.resids = rnorm(N,0,1)
-        } else {# non-parametric bootstrap for residuals
-          std.resids = sample(std.resid,replace=TRUE)
-        }
-        resids <- std.resids*sd
-        pred <- obs <- resid0 <- numeric(N)
-        ssb <- Res$input$SRdata$SSB
-        for(i in 1:N){
-          pred[i] <- SRF(ssb[i],merged$a[i],merged$b[i])
-          if (i==1) {
-            obs[i] <- pred[i]*exp(resids[i])
-          } else {
-            obs[i] <- pred[i]*exp(0*resid0[i-1])*exp(resids[i])
+      for (k in 1:100) {
+        if (method=="d") { #data bootstrap
+          Year0 = Res$input$SRdata$year[Res$input$w==1]
+          Year_r = sample(Year0,replace=TRUE)
+          w_r = purrr::map_dbl(Year0, function(x) sum(Year_r==x))
+          res.b <- Res
+          res.b$input$w <- w_r
+        } else {
+          if (method=="p") { # parametric bootstrap assuming a normal distribution
+            std.resids = rnorm(N,0,1)
+          } else {# non-parametric bootstrap for residuals
+            std.resids = sample(std.resid,replace=TRUE)
           }
-          resid0[i] <- log(obs[i]/pred[i])
+          resids <- std.resids*sd
+          pred <- obs <- resid0 <- numeric(N)
+          ssb <- Res$input$SRdata$SSB
+          for(i in 1:N){
+            pred[i] <- SRF(ssb[i],merged$a[i],merged$b[i])
+            if (i==1) {
+              obs[i] <- pred[i]*exp(resids[i])
+            } else {
+              obs[i] <- pred[i]*exp(0*resid0[i-1])*exp(resids[i])
+            }
+            resid0[i] <- log(obs[i]/pred[i])
+          }
+          res.b <- Res
+          res.b$input$SRdata$R <- obs
         }
-        res.b <- Res
-        res.b$input$SRdata$R <- obs
-      }
         res.b$input$p0 = Res$opt$par
-        res.b <- do.call(fit.SRregime, res.b$input)
+        res.b <- try(do.call(fit.SRregime, res.b$input))
+        if (class(res.b) != "try-error") break
+      }
       
       return(res.b)
     })
@@ -1145,7 +1151,16 @@ plot.bootSR = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
     if (output) png(file = paste0(filename,"_SRcurve.png"), width=10, height=7.5, res=432, units='in')
     data_SR = boot.res$input$Res$input$SRdata
     plot(data_SR$R ~ data_SR$SSB, cex=2, type = "p",xlab="SSB",ylab="R",pch=1,
-         main="Bootstrapped SR functions",ylim=c(0,max(data_SR$R)*1.3),xlim=c(0,max(data_SR$SSB)*1.3))
+         main="",ylim=c(0,max(data_SR$R)*1.3),xlim=c(0,max(data_SR$SSB)*1.3))
+    if (boot.res$input$method=="d") {
+      title("Data Bootstrap")
+    } else {
+      if (boot.res$input$method=="p") {
+        title("Parametric Bootstrap for Residuals")
+      } else {
+        title("Non-Parametric Bootstrap for Residuals")
+      }
+    }
     points(rev(data_SR$SSB)[1],rev(data_SR$R)[1],col=1,type="p",lwd=3,pch=16,cex=2)
     for (i in 1:boot.res$input$n) {
       points(boot.res[[i]]$pred$SSB,boot.res[[i]]$pred$R,type="l",lwd=2,col=rgb(0,0,1,alpha=0.1))
@@ -1191,7 +1206,16 @@ plot.bootSR = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
     for(i in 1:length(regime_unique)) {
       use_data = dplyr::filter(obs_data,Regime == regime_unique[i])
       plot(use_data$R ~ use_data$SSB, cex=2, type = "p",pch=1,xlab="SSB",ylab="R",
-           main=paste0("Bootstrapped SR for Regime ",regime_unique[i]),ylim=c(0,max(use_data$R)*1.3),xlim=c(0,max(obs_data$SSB)*1.3))
+           main="",ylim=c(0,max(use_data$R)*1.3),xlim=c(0,max(obs_data$SSB)*1.3))
+      if (boot.res$input$method=="d") {
+        title(paste0("Data Bootstrap for Regime ",regime_unique[i]))
+      } else {
+        if (boot.res$input$method=="p") {
+          title(paste0("Para Bootstrap for Regime ",regime_unique[i]))
+        } else {
+          title(paste0("Non-para Bootstrap for Regime ",regime_unique[i]))
+        }
+      }
       for (j in 1:boot.res$input$n) {
         pred_data = boot.res[[j]]$pred %>% filter(Regime == regime_unique[i])
         points(pred_data$SSB,pred_data$R,type="l",lwd=2,col=rgb(0,0,1,alpha=0.1))
