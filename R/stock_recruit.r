@@ -843,7 +843,7 @@ check.SRdist = function(resSR,test.ks=TRUE,output=FALSE,filename = "SR_error_dis
       par(pch=1,lwd = 2, mfrow=c(1,3),cex=1)
       check1 <- shapiro.test(std.resid)
       hist(std.resid,main = paste0(main_name,main_name2),
-           xlab = "Standardized Deviance",freq=FALSE)
+           xlab = "Standardized Deviance",freq=FALSE,col="gray")
       X <- seq(min(std.resid)*1.3,max(std.resid)*1.3,length=200)
       points(X,dnorm(X,0,1),col=2,lwd=3,type="l")
       if (resSR$input$method=="L1" && i==1) {
@@ -860,7 +860,7 @@ check.SRdist = function(resSR,test.ks=TRUE,output=FALSE,filename = "SR_error_dis
         mtext(text=sprintf(" KS: %1.3f",check2$p.value),adj=1,line=-3)
       }
       hist(cumulative.prob, xlab="Cumulative probability",
-           main = paste0(main_name,"Cumlative Prob. Dist."),freq=FALSE,breaks=seq(0,1,by=0.1))
+           main = paste0(main_name,"Cumlative Prob. Dist."),freq=FALSE,breaks=seq(0,1,by=0.1),col="gray")
       # if (test.ks) {
       #   check2 <- ks.test(cumulative.prob,y="punif",min=0,max=1)
       #   mtext(text=" P value",adj=1,line=-1,lwd=2,font=2)
@@ -885,7 +885,7 @@ check.SRdist = function(resSR,test.ks=TRUE,output=FALSE,filename = "SR_error_dis
     par(pch=1,lwd = 2, mfrow=c(1,3),cex=1)
     check1 <- shapiro.test(std.resid)
     hist(std.resid,main = paste0(main_name,"Standard. Resid."),
-         xlab = "Standardized Residual",freq=FALSE)
+         xlab = "Standardized Residual",freq=FALSE,col="gray")
     X <- seq(min(std.resid)*1.3,max(std.resid)*1.3,length=200)
     points(X,dnorm(X,0,1),col=2,lwd=3,type="l")
     if (resSR$input$method=="L1") {
@@ -902,7 +902,7 @@ check.SRdist = function(resSR,test.ks=TRUE,output=FALSE,filename = "SR_error_dis
       mtext(text=sprintf(" KS: %1.3f",check2$p.value),adj=1,line=-3)
     }
     hist(cumulative.prob, xlab="Cumulative probability",
-         main = paste0(main_name,"Cumlative Prob. Dist."),freq=FALSE,breaks=seq(0,1,by=0.1))
+         main = paste0(main_name,"Cumlative Prob. Dist."),freq=FALSE,breaks=seq(0,1,by=0.1),col="gray")
     # if (test.ks) {
     #   check2 <- ks.test(cumulative.prob,y="punif",min=0,max=1)
     #   mtext(text=" P value",adj=1,line=-1,lwd=2,font=2)
@@ -1127,7 +1127,7 @@ plot.bootSR = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
     for (j in 1:jmax) {
       par0 = c("a","b","sd","rho")[j]
       
-      hist(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$pars[,par0]),xlab=par0,ylab="Frequency",main="")
+      hist(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$pars[,par0]),xlab=par0,ylab="Frequency",main="",col="gray")
       abline(v=boot.res$input$Res$pars[,par0],col=2,lwd=3)
       abline(v=median(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$pars[,par0])),col=3,lwd=3,lty=2)
       arrows(quantile(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$pars[,par0]),0.5*(1-CI)),0,
@@ -1179,7 +1179,7 @@ plot.bootSR = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
       for (j in 1:jmax) {
         par0 = c("a","b","sd","rho")[j]
         boot_pars = sapply(1:boot.res$input$n, function(i) as.numeric(boot.res[[i]]$regime_pars[ii,par0]))
-        hist(boot_pars,xlab=par0,ylab="Frequency",main="")
+        hist(boot_pars,xlab=par0,ylab="Frequency",main="",col="gray")
         abline(v=as.numeric(boot.res$input$Res$regime_pars[ii,par0]),col=2,lwd=3)
         abline(v=median(boot_pars),col=3,lwd=3,lty=2)
         arrows(quantile(boot_pars,0.5*(1-CI)),0,
