@@ -9,6 +9,7 @@
   resSR,
   use.resid = 1,
   lag.max = NULL,
+  output = FALSE,
   filename = "Residual_trend",
   pch = 16,
   lwd = 2,
@@ -22,6 +23,8 @@
 \item{resSR}{\code{fit.SR}か\code{fit.SRregime}のオブジェクト}
 
 \item{use.resid}{再生産関係との残差 (deviance \code{resid}) を使うか (1:default)、自己相関を除いた残差 (\code{resid2}) を使うか (2)}
+
+\item{output}{pngファイルに出力するか否か}
 }
 \description{
 1) 残差のトレンド、2) \code{acf}関数による自己相関係数のプロット、3) Ljung-Box検定におけるP値の3つの図を出力

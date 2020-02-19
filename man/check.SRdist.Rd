@@ -5,10 +5,12 @@
 \alias{check.SRdist}
 \title{再生産関係の残差の確率分布に関するチェック図を出力する関数}
 \usage{
-check.SRdist(resSR, test.ks = TRUE, filename = "SR_error_dist_diagnostics")
+check.SRdist(resSR, test.ks = TRUE, output = FALSE, filename = "SR_error_dist")
 }
 \arguments{
 \item{resSR}{\code{fit.SR}か\code{fit.SRregime}のオブジェクト}
+
+\item{output}{pngファイルに出力するか否か}
 }
 \description{
 1) 正規性をチェックするための検定結果・ヒストグラム、2) 累積確率分布のヒストグラム、3) 一様分布を使用した累積確率分布のQQプロttの3つが出力される
