@@ -817,7 +817,7 @@ calc.StdResid = function(resSR) {
 #' 累積確率分布はL2の場合は正規分布、L1の場合はラプラス分布を使用する
 #' 自己相関の外側推定の場合は、2段階で推定しているため、ファイルが2つ出力される
 #' @import EnvStats
-#' @improt rmutil
+#' @import rmutil
 #' @inheritParams calc.StdResid
 #' @param resSR \code{fit.SR}か\code{fit.SRregime}のオブジェクト
 #' @param output pngファイルに出力するか否か
@@ -941,6 +941,7 @@ check.SRdist = function(resSR,test.ks=TRUE,output=FALSE,filename = "SR_error_dis
 #' resSRregime_post = calc.residAR(resSRregime, per_regime = TRUE)
 #' resSRregime_post$AICc
 #' resSRregime_post$regime$pars
+#' }
 #'                             
 #' @export
 calc.residAR = function(resSR, per_regime=TRUE) {

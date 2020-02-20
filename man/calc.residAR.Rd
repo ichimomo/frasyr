@@ -16,3 +16,24 @@ calc.residAR(resSR, per_regime = TRUE)
 計算は\code{fit.SR}の\code{out.AR}と同じであるが、AICcも見れるほか、\code{fit.SRregime}にも対応している
 \code{fit.SRregime}の場合、各レジームの最初の年は初期値となる（つまり前のレジームの最後の年からの残差を引きずらない）
 }
+\examples{
+\dontrun{
+data(res_vpa)
+SRdata <- get.SRdata(res_vpa)
+data(res_vpa)
+SRdata <- get.SRdata(res_vpa)
+resSR <- fit.SR(SRdata, SR = c("HS","BH","RI")[1],
+                method = c("L1","L2")[1], AR = 0,
+                out.AR = FALSE, rep.opt = TRUE)
+resSR_post = calc.residAR(resSR)
+resSR_post$AICc
+resSR_post$pars
+resSRregime <- fit.SRregime(SRdata, SR="HS", method="L2",
+                            regime.year=c(1995,2005), regime.key=c(0,1,0),
+                            regime.par = c("a","b","sd")[2:3])
+resSRregime_post = calc.residAR(resSRregime, per_regime = TRUE)
+resSRregime_post$AICc
+resSRregime_post$regime$pars
+}
+                            
+}
