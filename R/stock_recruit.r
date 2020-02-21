@@ -1065,7 +1065,7 @@ calc.residAR = function(resSR, per_regime=TRUE) {
 #' @param output pngファイルに出力するか否か
 #' @encoding UTF-8
 #' @export
-plot.autocor = function(resSR,use.resid=1,lag.max=NULL,output = FALSE,filename = "Residual_trend",pch=16,lwd=2,cex=1.2,cex.main=1.2,cex.lab=1.2,...){
+autocor.plot = function(resSR,use.resid=1,lag.max=NULL,output = FALSE,filename = "Residual_trend",pch=16,lwd=2,cex=1.2,cex.main=1.2,cex.lab=1.2,...){
   Year = resSR$input$SRdata$year
   if (output) png(file = paste0(filename,".png"), width=15, height=5, res=432, units='in')
   par(pch=pch,lwd = lwd, mfrow=c(1,3),cex=cex)
@@ -1118,7 +1118,7 @@ plot.autocor = function(resSR,use.resid=1,lag.max=NULL,output = FALSE,filename =
 #' @param filename ファイル名
 #' @encoding UTF-8
 #' @export
-plot.bootSR = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1.2,pch=1,...) {
+bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1.2,pch=1,...) {
   res_base = boot.res$input$Res
   if (class(boot.res$input$Res)=="fit.SR") {
     # for fit.SR
