@@ -1889,12 +1889,39 @@ compare_MSY <- function(MSYlist,
   return(g1)
 }
 
+#' 複数の再生産関係を比較する関数
+#'
+#' @param SRlist 再生産関係の推定結果のリスト。
+#' @param biomass.unit 資源量の単位
+#' @param number.unit 尾数の単位
+#'
+#' @examples 
+#' \dontrun{
+#' data(res_sr_HSL1)
+#' data(res_sr_HSL2)
+#' 
+#' (g1 <- compare_SRfit(list(HSL1=res_sr_HSL1, HSL2=res_sr_HSL2),
+#'                      biomass.unit=1000, number.unit=1000))
+#' 
+#' }
+#'
 #' @export
-compare_SRfit <- function(SRlist){
-  g1 <- plot_SRdata(SRlist[[1]]$input$SRdata,type="gg")
-  for(i in 1:length(SRlist)){
-    g1 <- g1 + geom_line(data=SRlist[[i]]$pred,mapping=aes(x=SSB,y=R),col=i)
-  }
+#'
+#' 
+
+compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000){
+    SRdata <- SRlist[[1]]$input$SRdata %>%
+        as_tibble() %>%
+        mutate(SSB=SSB/biomass.unit, R=R/number.unit)
+    g1 <- plot_SRdata(SRdata,type="gg")
+
+    SRpred <- purrr::map_dfr(SRlist,
+                             function(x) x$pred, .id="SR_type")
+    g1 <- g1+geom_line(data=SRpred,mapping=aes(x=SSB/biomass.unit,y=R/number.unit,col=SR_type)) +
+        theme(legend.position="top") +
+        xlab(str_c("SSB (x",biomass.unit,")")) +
+        ylab(str_c("Number (x",number.unit,")")) 
+
   g1
 }
 
