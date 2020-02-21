@@ -776,7 +776,7 @@ calc.StdResid = function(resSR) {
     if (resSR$input$method == "L2") {
       sigma = rep(sqrt(sum(resSR$resid^2)/length(resSR$resid)),length(resSR$resid))
     } else {
-      sigma = rep(sqrt(2)*sum(abs(resL1$resid))/length(resL1$resid),length(resSR$resid))
+      sigma = rep(sqrt(2)*sum(abs(resSR$resid))/length(resSR$resid),length(resSR$resid))
     }
     sigma2 = c(sqrt(resSR$pars$sd^2/(1-resSR$pars$rho^2)), rep(resSR$pars$sd,length(resSR$resid)-1))
     std.resid = resSR$resid/sigma
