@@ -113,29 +113,90 @@ fit.SR <- function(SRdata,
   if (SR=="HS") SRF <- function(x,a,b) ifelse(x>b,b*a,x*a)
   if (SR=="BH") SRF <- function(x,a,b) a*x/(1+b*x)
   if (SR=="RI") SRF <- function(x,a,b) a*x*exp(-b*x)
-
-  obj.f <- function(a,b,rho){
-    resid <- sapply(1:N,function(i) log(rec[i]) - log(SRF(ssb[i],a,b)))
-    resid2 <- NULL
-    for (i in 1:N) {
-      resid2[i] <- ifelse(i==1, resid[i], resid[i]-rho*resid[i-1])
+  
+  if (length(SRdata$R) != length(w)) stop("The length of 'w' is not appropriate!")
+  
+  zero_min = min(SRdata$year[w==0])
+  one_max = max(SRdata$year[w>0])
+  
+  if (method == "L2" && AR==1 && out.AR==FALSE && zero_min<one_max) { # For Jackknife
+    
+    obj.f = function(a,b,rho) {
+      w2 = as.numeric(w>0)
+      before_zero = rep(0,N)
+      for (i in 1:N) {
+        if (w2[i]>0) {
+          if (i == 1) {
+            w2[i] <- w[i]*(1-rho^2) 
+          } else {
+            for (j in 1:(i-1)) {
+              if (rev(w[1:(i-1)])[j] == 0) {
+                before_zero[i] = before_zero[i]+1
+                w2[i] <- w2[i]+rho^(2*j)
+              } else break
+            }
+            if (before_zero[i] == i-1) {
+              w2[i] <- w[i]*(1-rho^2)
+            } else {
+              w2[i] <- w[i]*w2[i]
+            }
+          }
+        }
+      }
+      
+      resid <- sapply(1:N,function(i) log(rec[i]) - log(SRF(ssb[i],a,b)))
+      pred_resid <- NULL
+      for (i in 1:N) {
+        if (i==1 || before_zero[i] == i-1) {
+          pred_resid <- c(pred_resid,0)
+        } else {
+          pred_resid <- c(pred_resid,rho^(1+before_zero[i])*resid[i-1-before_zero[i]])
+        }
+      }
+      sd2 = sum(w2*(resid-pred_resid)^2)/sum(w2) #variance
+      sd = sqrt(sd2) #SD
+      sigma_b = NULL
+      for (i in 1:N) {
+        if (i==1 || before_zero[i] == i-1) {
+          sigma_b = c(sigma_b,sd/sqrt(1-rho^2))
+        } else {
+          
+        }
+      }
+      sigma = sqrt(sd2*w2)
+      
+      nll <- c()
+      for (i in 1:N) {
+        
+      }
+      
+    } 
+   
+  }else {
+    obj.f <- function(a,b,rho){
+      resid <- sapply(1:N,function(i) log(rec[i]) - log(SRF(ssb[i],a,b)))
+      resid2 <- NULL
+      for (i in 1:N) {
+        resid2[i] <- ifelse(i==1, resid[i], resid[i]-rho*resid[i-1])
+      }
+      
+      if (method == "L2") {
+        rss <- w[1]*resid2[1]^2*(1-rho^2)
+        for(i in 2:N) rss <- rss + w[i]*resid2[i]^2
+        sd <- sqrt(rss/NN)
+        sd2 <- c(sd/sqrt(1-rho^2), rep(sd,N-1))
+        obj <- -sum(w*dnorm(resid2,0,sd2,log=TRUE))
+      } else {
+        rss <- w[1]*abs(resid2[1])*sqrt(1-rho^2)
+        for(i in 2:N) rss <- rss + w[i]*abs(resid2[i])
+        sd <- sum(abs(w*resid2))/NN
+        sd2 <- c(sd/sqrt(1-rho^2), rep(sd,N-1))
+        obj <- -sum(w*sapply(1:N, function(i){-log(2*sd2[i])-abs(resid2[i]/sd2[i])}))
+      }
+      return(obj)
+    }
     }
 
-    if (method == "L2") {
-      rss <- w[1]*resid2[1]^2*(1-rho^2)
-      for(i in 2:N) rss <- rss + w[i]*resid2[i]^2
-      sd <- sqrt(rss/NN)
-      sd2 <- c(sd/sqrt(1-rho^2), rep(sd,N-1))
-      obj <- -sum(w*dnorm(resid2,0,sd2,log=TRUE))
-    } else {
-      rss <- w[1]*abs(resid2[1])*sqrt(1-rho^2)
-      for(i in 2:N) rss <- rss + w[i]*abs(resid2[i])
-      sd <- sum(abs(w*resid2))/NN
-      sd2 <- c(sd/sqrt(1-rho^2), rep(sd,N-1))
-      obj <- -sum(w*sapply(1:N, function(i){-log(2*sd2[i])-abs(resid2[i]/sd2[i])}))
-    }
-    return(obj)
-  }
 
   if (is.null(p0)) {
     a.range <- range(rec/ssb)
