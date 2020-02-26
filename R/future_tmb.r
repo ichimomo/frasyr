@@ -1028,7 +1028,6 @@ get_summary_stat <- function(all.stat){
 #' @export
 #' 
 
-
 format_to_old_future <- function(fout){
     fout_old <- fout[c("naa","faa","multi","input","waa")]
 #    fout_old$waa       <- fout$input$tmb_data$waa_mat
@@ -1039,7 +1038,8 @@ format_to_old_future <- function(fout){
     fout_old$vbiom     <- apply(fout$naa * fout_old$waa, c(2,3),sum, na.rm=T)
     fout_old$vwcaa     <- apply(fout$wcaa,c(2,3),sum, na.rm=T)
     fout_old$currentF  <- fout$faa[,fout$input$tmb_data$start_ABC_year-1,1]
-    fout_old$futureF   <- fout$faa[,fout$input$tmb_data$start_ABC_year,1]    
+    fout_old$futureF   <- fout$faa[,fout$input$tmb_data$start_ABC_year,1]
+    fout_old$finalmeanF<- fout$faa[,dim(fout$faa)[[2]],] %>% apply(1,mean) # newly define
     fout_old$caa       <- fout$wcaa/fout_old$waa
     fout_old$multi     <- fout$multi
     fout_old$recruit   <- fout$SR_mat[,,"recruit"]
