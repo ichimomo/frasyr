@@ -2030,7 +2030,7 @@ get.stat <- function(fout,eyear=0,tmp.year=NULL, use_new_output=FALSE){
 
     #    Faa <- as.data.frame(t(fout$multi * fout$input$res0$Fc.at.age))
     # Faa <- as.data.frame(t(fout$multi * fout$currentF))
-    Faa <- as.data.frame(t(fout$multi * fout$futureF))    
+    if("finalmeanF" %in% names(fout)) Faa <- as.data.frame(t(fout$finalmeanF)) else Faa <- as.data.frame(t(fout$multi * fout$futureF))
     colnames(Faa) <- paste("F",dimnames(fout$naa)[[1]],sep="")
     res.stat1 <- cbind(a,Faa) # ここまで、get.stat
 
