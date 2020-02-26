@@ -116,12 +116,12 @@ fit.SR <- function(SRdata,
   
   if (length(SRdata$R) != length(w)) stop("The length of 'w' is not appropriate!")
   
-  zero_min = min(SRdata$year[w==0])
   one_max = max(SRdata$year[w>0])
+  zero_min =ifelse(sum(w==0)>0, min(SRdata$year[w==0]),one_max)
   
   if (method == "L2" && AR==1 && out.AR==FALSE && zero_min<one_max) { # For Jackknife
     
-    obj.f = function(a,b,rho) {
+    obj.f = function(a,b,rho,out = "nll") {
       w2 = as.numeric(w>0)
       before_zero = rep(0,N)
       for (i in 1:N) {
@@ -138,7 +138,7 @@ fit.SR <- function(SRdata,
             if (before_zero[i] == i-1) {
               w2[i] <- w[i]*(1-rho^2)
             } else {
-              w2[i] <- w[i]*w2[i]
+              w2[i] <- w[i]/w2[i]
             }
           }
         }
@@ -155,24 +155,23 @@ fit.SR <- function(SRdata,
       }
       sd2 = sum(w2*(resid-pred_resid)^2)/sum(w2) #variance
       sd = sqrt(sd2) #SD
-      sigma_b = NULL
+      
+      sigma = NULL
       for (i in 1:N) {
-        if (i==1 || before_zero[i] == i-1) {
-          sigma_b = c(sigma_b,sd/sqrt(1-rho^2))
+        if (w2[i]==0) {
+          sigma = c(sigma,1000)
         } else {
-          
+          sigma = c(sigma,sqrt(sd2/w2[i]))
         }
       }
-      sigma = sqrt(sd2*w2)
-      
-      nll <- c()
-      for (i in 1:N) {
-        
-      }
-      
-    } 
-   
-  }else {
+
+      nll <- -sum(w*dnorm(resid,pred_resid,sigma,log=TRUE))
+      if (out=="nll") return(nll)
+      if (out=="resid") return(resid)
+      if (out=="resid2") return(resid-pred_resid)
+      if (out=="sd") return(sd)
+    }
+  } else {
     obj.f <- function(a,b,rho){
       resid <- sapply(1:N,function(i) log(rec[i]) - log(SRF(ssb[i],a,b)))
       resid2 <- NULL
@@ -196,7 +195,6 @@ fit.SR <- function(SRdata,
       return(obj)
     }
     }
-
 
   if (is.null(p0)) {
     a.range <- range(rec/ssb)
@@ -247,27 +245,33 @@ fit.SR <- function(SRdata,
   a <- exp(opt$par[1])
   b <- ifelse(SR=="HS",min(ssb)+(max(ssb)-min(ssb))/(1+exp(-opt$par[2])),exp(opt$par[2]))
   rho <- ifelse(AR==0,0,ifelse(out.AR,0,1/(1+exp(-opt$par[3]))))
-  resid <- sapply(1:N,function(i) log(rec[i]) - log(SRF(ssb[i],a,b)))
-  resid2 <- NULL
-  for (i in 1:N) {
-    resid2[i] <- ifelse(i == 1,resid[i], resid[i]-rho*resid[i-1])
-  }
-
-  if (method=="L2") {
-    rss <- w[1]*resid2[1]^2*(1-rho^2)
-    for(i in 2:N) rss <- rss + w[i]*resid2[i]^2
-    sd <- sqrt(rss/NN)
+  
+  if (method == "L2" && AR==1 && out.AR==FALSE && zero_min<one_max) {
+    resid = obj.f(a=a,b=b,rho=rho,out="resid")
+    resid2 = obj.f(a=a,b=b,rho=rho,out="resid2")
+    sd = obj.f(a=a,b=b,rho=rho,out="sd")
   } else {
-    rss <- w[1]*abs(resid2[1])*sqrt(1-rho^2)
-    for(i in 2:N) rss <- rss + w[i]*abs(resid2[i])
-    sd <- sum(abs(w*resid2))/NN
-    sd <- sqrt(2)*sd
+    resid <- sapply(1:N,function(i) log(rec[i]) - log(SRF(ssb[i],a,b)))
+    resid2 <- NULL
+    for (i in 1:N) {
+      resid2[i] <- ifelse(i == 1,resid[i], resid[i]-rho*resid[i-1])
+    }
+    
+    if (method=="L2") {
+      rss <- w[1]*resid2[1]^2*(1-rho^2)
+      for(i in 2:N) rss <- rss + w[i]*resid2[i]^2
+      sd <- sqrt(rss/NN)
+    } else {
+      rss <- w[1]*abs(resid2[1])*sqrt(1-rho^2)
+      for(i in 2:N) rss <- rss + w[i]*abs(resid2[i])
+      sd <- sum(abs(w*resid2))/NN
+      sd <- sqrt(2)*sd
+    }
+    # sd <- ifelse(method=="L2",sqrt(sum(w*resid2^2)/(NN-rho^2)),sqrt(2)*sum(abs(w*resid2))/(NN-rho^2))
   }
-  # sd <- ifelse(method=="L2",sqrt(sum(w*resid2^2)/(NN-rho^2)),sqrt(2)*sum(abs(w*resid2))/(NN-rho^2))
-
+  
   Res$resid <- resid
   Res$resid2 <- resid2
-
   Res$pars <- c(a,b,sd,rho)
 
   if (method!="L2") {
@@ -1334,7 +1338,7 @@ jackknife.SR = function(resSR,is.plot=TRUE,output=FALSE,filename = "jackknife",y
       }
       if (output) dev.off()
       
-      if (output) png(file = paste0(filename,"_SRcurve.png"), width=8, height=4, res=432, units='in')
+      if (output) png(file = paste0(filename,"_SRcurve.png"), width=8, height=5, res=432, units='in')
       par(mar=c(3,3,2,2),oma=c(3,3,2,2),mfrow=c(1,1))
       plot(data_SR$R ~ data_SR$SSB, cex=2, type = "p",xlab="SSB",ylab="R",pch=1,
            main="jackknife SR functions",ylim=c(0,max(data_SR$R)*1.3),xlim=c(0,max(data_SR$SSB)*1.3))
