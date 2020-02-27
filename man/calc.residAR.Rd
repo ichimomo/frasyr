@@ -5,7 +5,12 @@
 \alias{calc.residAR}
 \title{再生産関係の残差から事後的に1次の自己相関係数を推定する関数}
 \usage{
-calc.residAR(resSR, per_regime = TRUE)
+calc.residAR(
+  resSR,
+  per_regime = TRUE,
+  output = TRUE,
+  filename = "residARouter"
+)
 }
 \arguments{
 \item{resSR}{\code{fit.SR}か\code{fit.SRregime}のオブジェクト}

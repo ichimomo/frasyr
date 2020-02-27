@@ -662,7 +662,8 @@ fit.SRregime <- function(
   length=10,  # parameter (a,b) の初期値を決めるときにgrid searchする数
   p0 = NULL,  # 初期値
   w = rep(1,length(SRdata$R)),
-  max.ssb.pred = 1.3
+  max.ssb.pred = 1.3,
+  hessian = FALSE
 ) {
   argname <- ls()
   arglist <- lapply(argname,function(xx) eval(parse(text=xx)))
@@ -775,7 +776,7 @@ fit.SRregime <- function(
     if (abs(opt$value-opt2$value)<1e-6) break
     opt <- opt2
   }
-  opt <- optim(opt$par,obj.f2,method="BFGS")
+  opt <- optim(opt$par,obj.f2,method="BFGS",hessian=hessian)
 
   Res <- list()
   Res$input <- arglist
@@ -1009,7 +1010,7 @@ check.SRdist = function(resSR,test.ks=TRUE,output=FALSE,filename = "SR_error_dis
 #' }
 #'                             
 #' @export
-calc.residAR = function(resSR, per_regime=TRUE) {
+calc.residAR = function(resSR, per_regime=TRUE, output=TRUE, filename="residARouter") {
   RES = list()
   if (class(resSR) == "fit.SR") { #fit.SR
     if (resSR$input$AR && !isTRUE(resSR$input$out.AR)) {
@@ -1117,6 +1118,9 @@ calc.residAR = function(resSR, per_regime=TRUE) {
     RES$AIC = AIC
     RES$AICc = AICc
     RES$BIC = BIC
+  }
+  if (output) {
+    capture.output(RES, file = paste0(filename,".txt"))
   }
   return(RES)
 }
@@ -1500,4 +1504,46 @@ prof.likSR = function(resSR,output=FALSE,filename="Proile_Likelihood",a_range = 
   RES$prof.lik <- prof.lik.res
   RES$ba.grid <- ba.grid.res
   return(invisible(RES))
+}
+
+#' 再生産関係の推定結果をtxtファイルに出力する関数
+#' 
+#' @param resSR \code{fit.SR}か\code{fit.SRregime}のオブジェクト
+#' @param filename ファイル名('.txt')がつく
+#' @encoding UTF-8
+#' @export
+out.SR = function(resSR,filename = "resSR") {
+  RES = list()
+  RES$SR = resSR$input$SR
+  RES$method = resSR$input$method
+  if (class(resSR) == "fit.SR") {
+    RES$AR = resSR$input$AR
+    RES$out.AR = resSR$input$out.AR
+    RES$pars = resSR$pars
+  } else {
+    RES$regime.year = resSR$input$regime.year
+    RES$regime.key = resSR$input$regime.key
+    RES$regime.par = resSR$input$regime.par
+    RES$pars = resSR$regime_pars
+  }
+  RES$n = sum(resSR$input$w)
+  RES$k = resSR$k
+  RES$loglik = resSR$loglik
+  RES$AIC = resSR$AIC
+  if (!is.null(resSR$AIC.ar)) RES$AIC.ar = resSR$AIC.ar
+  RES$AICc = resSR$AICc
+  RES$BIC = resSR$BIC
+  RES$opt = resSR$opt
+  if (class(resSR) == "fit.SR") {
+    RES$pred_to_obs = as_tibble(resSR$input$SRdata) %>%
+      dplyr::rename(Year = year) %>%
+      dplyr::mutate(resid = resSR$resid,resid2 = resSR$resid2) %>%
+      dplyr::mutate(Pred_from_SR = R/exp(resid),Pred_from_AR=R/exp(resid2)) %>%
+      dplyr::select(Year,SSB,R,Pred_from_SR,resid,Pred_from_AR,resid2)
+  } else {
+    RES$pred_to_obs = resSR$pred_to_obs
+  }
+  RES$pred_to_obs =  as.data.frame(RES$pred_to_obs)
+  
+  capture.output(RES, file = paste0(filename,".txt"))
 }
