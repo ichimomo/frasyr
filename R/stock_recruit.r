@@ -1241,10 +1241,10 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
     # fit.SRregime
     regime_unique = boot.res$input$Res$regime_pars$regime
     obs_data = boot.res$input$Res$pred_to_obs
+    if (output) png(file = paste0(filename,"_pars.png"), width=15, height=5*nrow(boot.res$input$Res$regime_pars), res=432, units='in')
+    par(lwd = lwd, mfrow=c(nrow(boot.res$input$Res$regime_pars),3))
     for (ii in 1:nrow(boot.res$input$Res$regime_pars)) {
       regime = boot.res$input$Res$regime_pars$regime[ii]
-      if (output) png(file = paste0(filename,"_regime",regime,".png"), width=10, height=10, res=432, units='in')
-      par(lwd = lwd, mfrow=c(2,2))
       jmax = 3
       for (j in 1:jmax) {
         par0 = c("a","b","sd","rho")[j]
@@ -1268,10 +1268,10 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
         }
         
       }
-      if (output) dev.off()
     }
+    if (output) dev.off()
     
-    if (output) png(file = paste0(filename,"_SRcurve.png"), width=15, height=7.5, res=432, units='in')
+    if (output) png(file = paste0(filename,"_SRcurve.png"), width=7.5*length(regime_unique), height=7.5, res=432, units='in')
     par(mfrow=c(1,length(regime_unique))) 
     for(i in 1:length(regime_unique)) {
       use_data = dplyr::filter(obs_data,Regime == regime_unique[i])
