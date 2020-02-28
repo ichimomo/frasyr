@@ -16,7 +16,8 @@ fit.SRregime(
   length = 10,
   p0 = NULL,
   w = rep(1, length(SRdata$R)),
-  max.ssb.pred = 1.3
+  max.ssb.pred = 1.3,
+  hessian = FALSE
 )
 }
 \arguments{
