@@ -130,6 +130,20 @@ convert_vpa_tibble <- function(vpares,SPRtarget=NULL){
                          Fratio)
 }
 
+#' fit.SRの結果をtibble形式に治す
+#'
+#' @param SR_result fit.SRの結果のオブジェクト
+#' @encoding UTF-8
+#'
+#' @export
+#'
+
+convert_SR_tibble <- function(res_SR){
+    bind_rows(tibble(value=as.numeric(res_SR$pars),type="parameter",name=names(res_SR$pars)),
+              res_SR$pred %>% mutate(type="prediction",name="prediction"),
+              res_SR$input$SRdata %>% as_tibble() %>%
+              mutate(type="observed",name="observed",residual=res_SR$resid))
+}
 
 #' 再生産関係をプロットする関数
 #'
@@ -138,7 +152,6 @@ convert_vpa_tibble <- function(vpares,SPRtarget=NULL){
 #'
 #' @export
 #'
-
 
 SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,ylabel="尾",
                                  labeling.year=NULL,add.info=TRUE, recruit_intercept=0){
@@ -816,6 +829,7 @@ beta.simulation <- function(finput,beta_vector,year.lag=0,type="old"){
     }
     else{
       finput$tmb_data$HCR_mat[,,"beta"] <- beta_vector[i]
+      if(!is.null(finput$MSE_input_data)) finput$MSE_input_data$input$HCR_beta <- beta_vector[i]
       fres_base <- do.call(future_vpa,finput) # デフォルトルールの結果→図示などに使う
       fres_base <- format_to_old_future(fres_base)
     }
