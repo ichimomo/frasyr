@@ -75,7 +75,8 @@ make_future_data <- function(res_vpa,
                           backward_duration=5, # only when backward
                           recruit_intercept=0, # number of additional recruitment (immigration or enhancement)
                           model_average_option=NULL,
-                          regime_shift_option =NULL
+                          regime_shift_option =NULL,
+                          silent=FALSE
                           ) 
 {
 
@@ -100,7 +101,7 @@ make_future_data <- function(res_vpa,
     tmpdata <- tibble(allyear_name, allyear_label) %>%
         group_by(allyear_label) %>%
         summarize(start=min(allyear_name),end=max(allyear_name))
-    print(tmpdata)
+    if(silent==FALSE) print(tmpdata)
 
     if(is.null(plus_age)) plus_age <- max(which(!is.na(res_vpa$naa[,future_initial_year])))
 

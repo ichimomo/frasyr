@@ -43,7 +43,8 @@ make_future_data(
   backward_duration = 5,
   recruit_intercept = 0,
   model_average_option = NULL,
-  regime_shift_option = NULL
+  regime_shift_option = NULL,
+  silent = FALSE
 )
 }
 \arguments{
