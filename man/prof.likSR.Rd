@@ -8,7 +8,7 @@
 prof.likSR(
   resSR,
   output = FALSE,
-  filename = "Proile_Likelihood",
+  filename = "Profile_Likelihood",
   a_range = NULL,
   b_range = NULL,
   HS_b_restrict = TRUE,
