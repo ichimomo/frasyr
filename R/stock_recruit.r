@@ -1407,7 +1407,7 @@ jackknife.SR = function(resSR,is.plot=TRUE,output=FALSE,filename = "jackknife",y
 #' @param length 範囲を区切る数
 #' @encoding UTF-8
 #' @export
-prof.likSR = function(resSR,output=FALSE,filename="Proile_Likelihood",a_range = NULL,b_range = NULL,HS_b_restrict = TRUE,length=50) {
+prof.likSR = function(resSR,output=FALSE,filename="Profile_Likelihood",a_range = NULL,b_range = NULL,HS_b_restrict = TRUE,length=50) {
   RES = list()
   if (is.null(a_range)) a_range = c(0.5,2)
   if (is.null(b_range)) b_range = c(0.5,2)
@@ -1546,4 +1546,128 @@ out.SR = function(resSR,filename = "resSR") {
   RES$pred_to_obs =  as.data.frame(RES$pred_to_obs)
   
   capture.output(RES, file = paste0(filename,".txt"))
+}
+
+#' 再生産関係推定が収束しているかや最適解を得られているかを診断する関数
+#' 
+#' @param resSR \code{fit.SR}か\code{fit.SRregime}のオブジェクト
+#' @param n 初期値を変えてパラメータ推定する回数
+#' @param sigma 初期値を変えるときの生起乱数の標準偏差
+#' @param seed \code{set.seed}で使用するseed
+#' @param output テキストファイルに結果を出力するか 
+#' @param filename ファイル名('.txt')がつく
+#' @encoding UTF-8
+#' @export
+check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="checkSRfit") {
+  opt = resSR$opt
+  SRdata = resSR$input$SRdata
+  
+  RES = list()
+  # check convergence
+  if (opt$convergence==0) {
+    cat(RES$convergence <- "Successful convergence","\n")
+  } else {
+    message(RES$convergence <- "False convergencen","\n")
+  }
+  # hessian
+  if (is.null(resSR$opt$hessian)) {
+    input = resSR$input
+    input$p0 = resSR$opt$par
+    input$hessian = TRUE
+    if (class(resSR) == "fit.SR") {
+      resSR2 = do.call(fit.SR, input)
+    } else {
+      resSR2 = do.call(fit.SRregime, input)
+    }
+  }
+  if (all(diag(resSR$opt$hessian) > 0)) {
+    cat(RES$hessian <- "Hessian successfully having positive definite","\n")
+  } else {
+    message(RES$hessian <- "Hessian NOT having positive definite","\n")
+  }
+  
+  # check boundary
+  RES$boundary <- NULL
+  if (class(resSR) == "fit.SR") {
+    if (resSR$input$SR == "HS") {
+      if (resSR$pars$b > max(SRdata$SSB)*0.99) message(RES$boundary <- "Parameter b reaching the maximum SSB","\n")
+      if (resSR$pars$b < min(SRdata$SSB)*1.01) message(RES$boundary <- "Parameter b reaching the minimum SSB","\n")
+    } else {
+      if (1/resSR$pars$b > 10*max(SRdata$SSB)) message(RES$boundary <- "Proportional recruitment to SSB (no density-dependence)","\n")
+      if (1/resSR$pars$b < 0.1*min(SRdata$SSB)) message(RES$boundary <- "Extremely strong density-dependence of recruitment against SSB","\n")
+    }
+  } else {
+    for (i in 1:nrow(resSR$regime_pars)) {
+      if ("b" %in% resSR$input$regime.par) {
+        SRdata_r = dplyr::filter(resSR$pred_to_obs,Regime==resSR$regime_pars$regime[i])
+      } else {
+        SRdata_r = SRdata
+      }
+      if (resSR$input$SR == "HS") {
+        if (resSR$regime_pars$b[i] > max(SRdata_r$SSB)*0.99) RES$boundary <- c(RES$boundary,paste0("Parameter b of regime ",resSR$regime_pars$regime[i], " reaching the maximum SSB"))
+        if (resSR$regime_pars$b[i] < min(SRdata_r$SSB)*1.01) RES$boundary <- c(RES$boundary,paste0("Parameter b of regime ",resSR$regime_pars$regime[i], " reaching the minimum SSB"))
+      } else {
+        if (1/resSR$regime_pars$b[i] > 10*max(SRdata_r$SSB)) RES$boundary <- c(RES$boundary,paste0("Proportional recruitment of regime ",resSR$regime_pars$regime[i], " to SSB (no density-dependence)"))
+        if (1/resSR$regime_pars$b[i] < 0.1*min(SRdata_r$SSB)) RES$boundary <- c(RES$boundary,paste0("Extremely strong density-dependence of recruitment against SSB in ",resSR$regime_pars$regime[i]))
+      }
+    }
+  }
+  if (is.null(RES$boundary)) {
+    cat(RES$boundary <- "Parameters not reaching boundaries (successful)","\n")
+  } else {
+    for (i in 1:length(RES$boundary)) {
+      message(RES$boundary[i],"\n")
+    }
+  }
+  
+  set.seed(seed)
+  loglik = NULL
+  pars = NULL
+  resSR_list = list()
+  for (i in 1:n) {
+    input = resSR$input
+    input$p0 <- rnorm(length(opt$par),0,sigma)
+    if (class(resSR) == "fit.SR") {
+      input$rep.opt = TRUE
+      resSR2 = do.call(fit.SR, input)
+    } else {
+      resSR2 = do.call(fit.SRregime, input)
+    }
+    resSR_list[[i]] = resSR2
+    loglik = c(loglik, resSR2$loglik)
+    pars = rbind(pars,resSR2$opt$par)
+  }
+  max_loglik = max(loglik)
+  optimal = NULL
+  if (resSR$loglik-max_loglik < -0.001) {
+    message(RES$optim <- "NOT achieving the global optimum","\n")
+    optimal = resSR_list[[which.max(loglik)]]
+  } else  {
+    cat(RES$optim <- "Successfully achieving the global optimum","\n")
+    # global optimumに達している場合のみ
+    loglik_diff = purrr::map_dbl(loglik, function(x) abs(diff(c(x,max(loglik)))))
+    problem = NULL
+    for (i in 1:n) {
+      if (loglik_diff[i] < 1.0e-6) {
+        if (all(abs(pars[i,] - resSR$opt$par) < 0.001)) {
+          problem = c(problem,FALSE)
+        } else {
+          problem = c(problem,TRUE)
+        }
+      } else {
+        problem = c(problem,FALSE)
+      }
+    }
+    if (sum(problem)>0) {
+      message(RES$pars <- "Different parameter values achieving the global optimum","\n")
+    } else {
+      cat(RES$pars <- "Parameters successfully achieving the single solution","\n")
+    }
+  }
+  
+  if (output) {
+    capture.output(RES,file=paste0("checkSRfit",".txt"))
+  }
+  if (!is.null(optimal)) RES$optimum = optimal
+  return(RES)
 }
