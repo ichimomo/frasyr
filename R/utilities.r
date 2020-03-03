@@ -2105,7 +2105,7 @@ compare_future_performance <- function(future_list,res_vpa,res_MSY,
     g1_performance <- gridExtra::marrangeGrob(list(g1_ssb,g1_probtar,g1_catch,g1_problim),
                                               widths=c(1.3,1,1,1),nrow=1,ncol=4)
 
-    list(g1_performance,g1_error_table)
+    list(g1_performance, g1_error_table, perform_res)
     #ggsave(g1_performance, filename="g1_performance.png" ,path=output_folder,
     #           width=20, height= 10)
 
