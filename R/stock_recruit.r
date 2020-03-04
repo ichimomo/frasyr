@@ -1567,34 +1567,36 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
   if (opt$convergence==0) {
     cat(RES$convergence <- "Successful convergence","\n")
   } else {
-    message(RES$convergence <- "False convergencen","\n")
+    message(RES$convergence <- "False convergencen")
   }
   # hessian
+  resSR2 = resSR
   if (is.null(resSR$opt$hessian)) {
     input = resSR$input
     input$p0 = resSR$opt$par
     input$hessian = TRUE
     if (class(resSR) == "fit.SR") {
+      input$rep.opt = TRUE
       resSR2 = do.call(fit.SR, input)
     } else {
       resSR2 = do.call(fit.SRregime, input)
     }
   }
-  if (all(diag(resSR$opt$hessian) > 0)) {
+  if (all(diag(resSR2$opt$hessian) > 0)) {
     cat(RES$hessian <- "Hessian successfully having positive definite","\n")
   } else {
-    message(RES$hessian <- "Hessian NOT having positive definite","\n")
+    message(RES$hessian <- "Hessian NOT having positive definite")
   }
   
   # check boundary
   RES$boundary <- NULL
   if (class(resSR) == "fit.SR") {
     if (resSR$input$SR == "HS") {
-      if (resSR$pars$b > max(SRdata$SSB)*0.99) message(RES$boundary <- "Parameter b reaching the maximum SSB","\n")
-      if (resSR$pars$b < min(SRdata$SSB)*1.01) message(RES$boundary <- "Parameter b reaching the minimum SSB","\n")
+      if (resSR$pars$b > max(SRdata$SSB)*0.99) message(RES$boundary <- "Parameter b reaching the maximum SSB")
+      if (resSR$pars$b < min(SRdata$SSB)*1.01) message(RES$boundary <- "Parameter b reaching the minimum SSB")
     } else {
-      if (1/resSR$pars$b > 10*max(SRdata$SSB)) message(RES$boundary <- "Proportional recruitment to SSB (no density-dependence)","\n")
-      if (1/resSR$pars$b < 0.1*min(SRdata$SSB)) message(RES$boundary <- "Extremely strong density-dependence of recruitment against SSB","\n")
+      if (1/resSR$pars$b > 10*max(SRdata$SSB)) message(RES$boundary <- "Proportional recruitment to SSB (no density-dependence)")
+      if (1/resSR$pars$b < 0.1*min(SRdata$SSB)) message(RES$boundary <- "Extremely strong density-dependence of recruitment against SSB")
     }
   } else {
     for (i in 1:nrow(resSR$regime_pars)) {
@@ -1616,7 +1618,7 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
     cat(RES$boundary <- "Parameters not reaching boundaries (successful)","\n")
   } else {
     for (i in 1:length(RES$boundary)) {
-      message(RES$boundary[i],"\n")
+      message(RES$boundary[i])
     }
   }
   
@@ -1640,9 +1642,9 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
   max_loglik = max(loglik)
   optimal = NULL
   if (resSR$loglik-max_loglik < -0.001) {
-    message(RES$optim <- "NOT achieving the global optimum","\n")
+    message(RES$optim <- "NOT achieving the global optimum")
     optimal = resSR_list[[which.max(loglik)]]
-  } else  {
+  } else {
     cat(RES$optim <- "Successfully achieving the global optimum","\n")
     # global optimumに達している場合のみ
     loglik_diff = purrr::map_dbl(loglik, function(x) abs(diff(c(x,max(loglik)))))
@@ -1659,14 +1661,14 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
       }
     }
     if (sum(problem)>0) {
-      message(RES$pars <- "Different parameter values achieving the global optimum","\n")
+      message(RES$pars <- "Different parameter values achieving the global optimum")
     } else {
       cat(RES$pars <- "Parameters successfully achieving the single solution","\n")
     }
   }
   
   if (output) {
-    capture.output(RES,file=paste0("checkSRfit",".txt"))
+    capture.output(RES,file=paste0(filename,".txt"))
   }
   if (!is.null(optimal)) RES$optimum = optimal
   return(RES)
