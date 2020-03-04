@@ -1668,7 +1668,7 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
   }
   
   if (output) {
-    capture.output(RES,file=paste0("checkSRfit",".txt"))
+    capture.output(RES,file=paste0(filename,".txt"))
   }
   if (!is.null(optimal)) RES$optimum = optimal
   return(RES)
