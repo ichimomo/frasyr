@@ -1646,18 +1646,31 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
   optimal = NULL
   if (resSR$loglik-max_loglik < -0.001) {
     message(RES$optim <- "NOT achieving the global optimum")
+    diff_loglik = abs(resSR$loglik-max_loglik)
+    message(paste0("Maximum difference of log-likelihood is ",round(diff_loglik,6)))
     optimal = resSR_list[[which.max(loglik)]]
+    RES$loglik_diff = diff_loglik
   } else {
     cat(RES$optim <- "Successfully achieving the global optimum","\n")
     # global optimumに達している場合のみ
     loglik_diff = purrr::map_dbl(loglik, function(x) abs(diff(c(x,max(loglik)))))
     problem = NULL
+    diff_threshold = 1.0e-6
+    # a_diff = NULL; b_diff = NULL; sd_diff = NULL; rho_diff = NULL
     for (i in 1:n) {
-      if (loglik_diff[i] < 1.0e-6) {
+      if (loglik_diff[i] < diff_threshold) {
         if (all(abs(pars[i,] - resSR$opt$par) < 0.001)) {
           problem = c(problem,FALSE)
+          # a_diff = c(a_diff,0); b_diff = c(b_diff,0); sd_diff = c(sd_diff,0)
+          # if (class(resSR)=="fit.SR" && resSR$pars$rho != 0) rho_diff = c(rho_diff,NULL)
         } else {
           problem = c(problem,TRUE)
+          # a_diff = c(a_diff,max(abs(resSR_list[[i]]$pars$a/resSR$pars$a-1))*100)
+          # b_diff = c(b_diff,max(abs(resSR_list[[i]]$pars$b/resSR$pars$b-1))*100)
+          # sd_diff = c(sd_diff,max(abs(resSR_list[[i]]$pars$sd/resSR$pars$sd-1))*100)
+          # if (class(resSR)=="fit.SR" && resSR$pars$rho != 0) {
+          #   rho_diff = c(rho_diff,max(abs(resSR_list[[i]]$pars$rho/resSR$pars$rho-1))*100)
+          # }
         }
       } else {
         problem = c(problem,FALSE)
@@ -1665,14 +1678,32 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
     }
     if (sum(problem)>0) {
       message(RES$pars <- "Different parameter values achieving the global optimum")
+      # RES$percent_bias = c("a"=max(a_diff),"b"=max(b_diff),"sd" = max(sd_diff))
+      # message("Maximum percent bias of 'a' is ", round(as.numeric(RES$percent_bias["a"]),6),"%")
+      # message("Maximum percent bias of 'b' is ", round(as.numeric(RES$percent_bias["b"]),6),"%")
+      # message("Maximum percent bias of 'sd' is ", round(as.numeric(RES$percent_bias["sd"]),6),"%")
+      # if (class(resSR)=="fit.SR" && resSR$pars$rho != 0) {
+      #   RES$percent_bias = c(RES$percent_bias,"rho" = max(rho_diff))
+      #   message("Maximum percent bias of 'rho' is ", round(as.numeric(RES$percent_bias["rho"]),6),"%")
+      # }
+      par_list = t(sapply(1:n, function(i) unlist(resSR_list[[i]]$pars)[unlist(resSR$pars) != 0]))
+      par_list = par_list[loglik_diff<diff_threshold,]
+      bias_list = t(sapply(1:n, function(i) 100*(unlist(resSR_list[[i]]$pars)[unlist(resSR$pars) != 0]/unlist(resSR$pars)[unlist(resSR$pars)!=0]-1)))
+      bias_list = bias_list[loglik_diff<diff_threshold,]
+      par_summary = apply(par_list,2,summary)
+      percent_bias_summary = apply(bias_list,2,summary)
+      RES$par_summary <- par_summary
+      RES$percent_bias_summary <- percent_bias_summary
     } else {
       cat(RES$pars <- "Parameters successfully achieving the single solution","\n")
     }
   }
-  
   if (output) {
     capture.output(RES,file=paste0(filename,".txt"))
   }
   if (!is.null(optimal)) RES$optimum = optimal
+  # RES$loglik = loglik
+  # RES$par_list = par_list
+  # RES$percent_bias_list = bias_list
   return(RES)
 }
