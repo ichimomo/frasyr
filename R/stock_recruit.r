@@ -1628,12 +1628,15 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
   resSR_list = list()
   for (i in 1:n) {
     input = resSR$input
-    input$p0 <- rnorm(length(opt$par),0,sigma)
-    if (class(resSR) == "fit.SR") {
-      input$rep.opt = TRUE
-      resSR2 = do.call(fit.SR, input)
-    } else {
-      resSR2 = do.call(fit.SRregime, input)
+    for (j in 1:100) {
+      input$p0 <- opt$par + rnorm(length(opt$par),0,sigma)
+      if (class(resSR) == "fit.SR") {
+        input$rep.opt = TRUE
+        resSR2 = try(do.call(fit.SR, input),silent=TRUE)
+      } else {
+        resSR2 = try(do.call(fit.SRregime, input),silent=TRUE)
+      }
+      if (class(resSR2) != "try-error") break
     }
     resSR_list[[i]] = resSR2
     loglik = c(loglik, resSR2$loglik)
