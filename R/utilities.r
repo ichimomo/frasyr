@@ -981,7 +981,7 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
     geom_path(mapping=aes(x=Bratio,y=Uratio)) +
     geom_point(mapping=aes(x=Bratio,y=Uratio),shape=21,fill="white") +
     coord_cartesian(xlim=c(0,max.B*1.1),ylim=c(0,max.U*1.15),expand=0) +
-    ylab("漁獲率の比 (U/Umsy)") + xlab("親魚量の比 (SB/SBmsy)")  +
+    ylab("漁獲割合の比 (U/Umsy)") + xlab("親魚量の比 (SB/SBmsy)")  +
     ggrepel::geom_text_repel(#data=dplyr::filter(UBdata,year%in%labeling.year),
       aes(x=Bratio,y=Uratio,label=year.label),
       size=4,box.padding=0.5,segment.color="gray")
@@ -1176,7 +1176,11 @@ plot_futures <- function(vpares,
     ggplot()
 
   if(isTRUE(is.plot.CIrange)){
-    g1 <- g1+
+      g1 <- g1+
+      geom_line(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario!="VPA" & year <= maxyear),
+                  mapping=aes(x=year,y=high,lty=scenario,color=scenario))+
+      geom_line(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario!="VPA" & year <= maxyear),
+                  mapping=aes(x=year,y=low,lty=scenario,color=scenario))+    
       geom_ribbon(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario!="VPA" & year <= maxyear),
                   mapping=aes(x=year,ymin=low,ymax=high,fill=scenario),alpha=0.4)+
       geom_line(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario!="VPA" & year <= maxyear),

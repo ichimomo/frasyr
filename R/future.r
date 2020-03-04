@@ -1708,7 +1708,7 @@ out.vpa <- function(res=NULL,    # VPA result
 
   if(!is.null(srres)){
       sr_summary <- 
-          as_tibble(srres$pars) %>% mutate(AIC   =srres$AIC,
+          as_tibble(srres$pars) %>% mutate(AICc   =srres$AICc,
                                            method=srres$input$method,
                                            type  =srres$input$SR)      
       write("\n# SR fit resutls",file=csvname,append=T)
