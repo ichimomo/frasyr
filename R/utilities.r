@@ -1469,8 +1469,18 @@ calc_perspr <- function(finput=NULL,
     M.tmp               <- fout.tmp$M[,target.col,1]
   }
 
+  # 緊急措置。本来ならどこをプラスグループとして与えるかを引数として与えないといけない
+  allsumpars <- waa.tmp+waa.catch.tmp+maa.tmp+M.tmp
+  waa.tmp <- waa.tmp[allsumpars!=0]
+  waa.catch.tmp <- waa.catch.tmp[allsumpars!=0]
+  maa.tmp <- maa.tmp[allsumpars!=0]
+  M.tmp <- M.tmp[ allsumpars!=0]     
+  Fvector <- Fvector %>%  as.numeric()
+  Fvector <- Fvector[allsumpars!=0]
+  ## ここまで緊急措置
+  
   # SPRを計算
-  spr.current <- ref.F(res_vpa,Fcurrent=as.numeric(Fvector),
+  spr.current <- ref.F(res_vpa,Fcurrent=Fvector,
                        waa=waa.tmp,
                        waa.catch=waa.catch.tmp,pSPR=NULL,
                        maa=maa.tmp,M=M.tmp,rps.year=as.numeric(colnames(res_vpa$naa)),
