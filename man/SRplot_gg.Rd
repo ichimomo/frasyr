@@ -14,7 +14,9 @@ SRplot_gg(
   ylabel = "尾",
   labeling.year = NULL,
   add.info = TRUE,
-  recruit_intercept = 0
+  recruit_intercept = 0,
+  plot_CI = FALSE,
+  CI = 0.9
 )
 }
 \arguments{
