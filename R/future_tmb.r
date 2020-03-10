@@ -913,10 +913,20 @@ sample_backward <- function(residual, n, duration){
     block2 <- block-(duration)+1
     block[length(block)] <- length(residual_rev)
     block.list <- purrr::map(1:length(block),function(x) residual_rev[block2[x]:block[x]])
+    # calculate sampling probability in the case of tail block (different length)
+    block.probability <- sapply(block.list,length)
+    block.probability <- block.probability/sum(block.probability)
     resid_future <- ceiling(1:n/duration)
     resid_future <- ifelse(resid_future>nblock,nblock,resid_future)
 
-    for(i in 1:n) resid_future[i] <- sample(block.list[[sample(1:resid_future[i],1)]],1)
+    for(i in 1:n){
+        # block is resampled according to the data length of each block
+        if(i%%duration==1){
+            block_select <- sample(x=1:resid_future[i],size=1,prob=block.probability[1:resid_future[i]])
+        }
+        # iごとに指定されたブロックをリサンプリング＝重複あり
+        resid_future[i] <- sample(x=block.list[[block_select]],size=1)        
+    }
     return(resid_future)
 }
 
