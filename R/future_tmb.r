@@ -903,7 +903,7 @@ average_SR_mat <- function(res_vpa,
 #' apply(matrix(res,5,6),2,min)
 #' 
 #' @export
-#'
+#' @encoding UTF-8
 #' 
 
 sample_backward <- function(residual, n, duration){

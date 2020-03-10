@@ -154,7 +154,8 @@ convert_SR_tibble <- function(res_SR){
 #'
 
 SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,ylabel="尾",
-                                 labeling.year=NULL,add.info=TRUE, recruit_intercept=0){
+                                 labeling.year=NULL,add.info=TRUE, recruit_intercept=0,
+                                 plot_CI=FALSE, CI=0.9){
 
   if(is.null(refs$Blimit) && !is.null(refs$Blim)) refs$Blimit <- refs$Blim
 
@@ -162,10 +163,14 @@ SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千ト�
   if (SR_result$input$SR=="BH") SRF <- function(SSB,a,b,recruit_intercept=0) (a*SSB*xscale/(1+b*SSB*xscale)+recruit_intercept)/yscale
   if (SR_result$input$SR=="RI") SRF <- function(SSB,a,b,recruit_intercept=0) (a*SSB*xscale*exp(-b*SSB*xscale)+recruit_intercept)/yscale
 
+  SRF_CI <- function(CI,sigma,sign,...){
+      exp(log(SRF(...))+qnorm(1-(1-CI)/2)*sigma*sign)
+  }
+
   SRdata <- as_tibble(SR_result$input$SRdata) %>%
     mutate(type="obs")
   SRdata.pred <- as_tibble(SR_result$pred) %>%
-    mutate(type="pred", year=NA, R=R)
+      mutate(type="pred", year=NA, R=R)
   alldata <- bind_rows(SRdata,SRdata.pred) %>%
     mutate(R=R/yscale,SSB=SSB/xscale)
   ymax <- max(alldata$R)
@@ -176,8 +181,28 @@ SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千ト�
 
   g1 <- ggplot(data=alldata,mapping=aes(x=SSB,y=R)) +
     stat_function(fun=SRF,args=list(a=SR_result$pars$a,
-                                    b=SR_result$pars$b),color="deepskyblue3",lwd=1.3)+
-    geom_path(data=dplyr::filter(alldata,type=="obs"),
+                                    b=SR_result$pars$b),color="deepskyblue3",lwd=1.3,
+                  n=5000)
+    
+  if(isTRUE(plot_CI)){
+      g1 <- g1+
+          stat_function(fun=SRF_CI,
+                        args=list(a=SR_result$pars$a,
+                                  b=SR_result$pars$b,
+                                  sigma=SR_result$pars$sd,
+                                  sign=-1,
+                                  CI=CI),
+                        color="deepskyblue3",lty=3,n=5000)+
+          stat_function(fun=SRF_CI,
+                        args=list(a=SR_result$pars$a,
+                                  b=SR_result$pars$b,
+                                  sigma=SR_result$pars$sd,
+                                  sign=1,
+                                  CI=CI),
+                        color="deepskyblue3",lty=3,n=5000)
+  }
+    
+  g1 <- g1+  geom_path(data=dplyr::filter(alldata,type=="obs"),
               aes(y=R,x=SSB),color="black") +
     geom_point(data=dplyr::filter(alldata,type=="obs"),
                aes(y=R,x=SSB),shape=21,fill="white") +
@@ -932,21 +957,25 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
   max.B <- max(c(UBdata$Bratio,xscale),na.rm=T)
   max.U <- max(c(UBdata$Uratio,yscale),na.rm=T)
 
+    red.color <- rgb(238/255,121/255,72/255)
+    yellow.color <- rgb(245/255,229/255,107/255)
+    green.color <- rgb(175/255,209/255,71/255) #"olivedrab2"#rgb(58/255,180/255,131/255)
+    
   g4 <- ggplot(data=UBdata) +theme(legend.position="none")+
     geom_polygon(data=tibble(x=c(-1,1,1,-1),
                              y=c(-1,-1,1,1)),
-                 aes(x=x,y=y),fill="khaki1")+
+                 aes(x=x,y=y),fill=yellow.color)+
     geom_polygon(data=tibble(x=c(1,20,20,1),
                              y=c(-1,-1,1,1)),
-                 aes(x=x,y=y),fill="olivedrab2")+
+                 aes(x=x,y=y),fill=green.color)+
     geom_polygon(data=tibble(x=c(1,20,20,1),
                              y=c(1,1,20,20)),
-                 aes(x=x,y=y),fill="khaki1")+
+                 aes(x=x,y=y),fill=yellow.color)+
     geom_polygon(data=tibble(x=c(-1,1,1,-1),
                              y=c(1,1,20,20)),
-                 aes(x=x,y=y),fill="indianred1") +
+                 aes(x=x,y=y),fill=red.color) +
     geom_polygon(data=tibble(x=c(-1,1,1,-1),
-                             y=c(-1,-1,1,1)),aes(x=x,y=y),fill="khaki1")
+                             y=c(-1,-1,1,1)),aes(x=x,y=y),fill=yellow.color)
 
   if(write.vline){
     g4 <- g4 + geom_vline(xintercept=c(1,limit.ratio,ban.ratio),color=refs.color,lty="41",lwd=0.7)+
@@ -1446,7 +1475,7 @@ calc_perspr <- function(finput=NULL,
                         max.age=Inf,
                         target.col=NULL
 ){
-  if(!is.null(finput)){
+    if(!is.null(finput)){
     # MSYにおける将来予測計算をやりなおし
     finput$outtype <- "FULL"
     fout.tmp <- do.call(future.vpa,finput)
