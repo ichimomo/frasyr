@@ -2239,3 +2239,11 @@ calc_Fratio <- function(faa, waa, maa, M, SPRtarget=30, waa.catch=NULL,Pope=TRUE
     else return(1/exp(opt_res$minimum))
   }
 }
+
+#'
+#' @export
+#'
+#'
+
+calc_akaike_weight <- function(AIC) exp(-AIC/2)/sum(exp(-AIC/2))
+
