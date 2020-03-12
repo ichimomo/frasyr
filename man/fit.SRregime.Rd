@@ -5,10 +5,20 @@
 \alias{fit.SRregime}
 \title{レジーム分けを考慮した再生産関係の推定}
 \usage{
-fit.SRregime(SRdata, SR = "HS", method = "L2", regime.year = NULL,
-  regime.key = 0:length(regime.year), regime.par = c("a", "b", "sd"),
-  use.fit.SR = TRUE, length = 10, p0 = NULL, w = rep(1,
-  length(SRdata$year)), max.ssb.pred = 1.3)
+fit.SRregime(
+  SRdata,
+  SR = "HS",
+  method = "L2",
+  regime.year = NULL,
+  regime.key = 0:length(regime.year),
+  regime.par = c("a", "b", "sd"),
+  use.fit.SR = TRUE,
+  length = 10,
+  p0 = NULL,
+  w = rep(1, length(SRdata$R)),
+  max.ssb.pred = 1.3,
+  hessian = FALSE
+)
 }
 \arguments{
 \item{SRdata}{\code{get.SRdata}で作成した再生産関係データ}
@@ -53,8 +63,8 @@ fit.SRregime(SRdata, SR = "HS", method = "L2", regime.year = NULL,
 \dontrun{
 data(res_vpa)
 SRdata <- get.SRdata(res_vpa)
-resSRregime <- fit.SRregime(SRdata, SR="HS", method="L2", 
-                            regime.year=c(1977,1989), regime.key=c(0,1,0),
+resSRregime <- fit.SRregime(SRdata, SR="HS", method="L2",
+                            regime.year=c(1995,2005), regime.key=c(0,1,0),
                             regime.par = c("a","b","sd")[2:3])
 resSRregime$regime_pars
 }

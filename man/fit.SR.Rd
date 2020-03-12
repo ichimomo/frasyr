@@ -5,9 +5,20 @@
 \alias{fit.SR}
 \title{再生産関係の推定}
 \usage{
-fit.SR(SRdata, SR = "HS", method = "L2", AR = 1, TMB = FALSE,
-  hessian = FALSE, w = rep(1, length(SRdata$year)), length = 20,
-  max.ssb.pred = 1.3, p0 = NULL, out.AR = TRUE, rep.opt = FALSE)
+fit.SR(
+  SRdata,
+  SR = "HS",
+  method = "L2",
+  AR = 1,
+  TMB = FALSE,
+  hessian = FALSE,
+  w = rep(1, length(SRdata$R)),
+  length = 20,
+  max.ssb.pred = 1.3,
+  p0 = NULL,
+  out.AR = TRUE,
+  rep.opt = FALSE
+)
 }
 \arguments{
 \item{SRdata}{\code{get.SRdata}で作成した再生産関係データ}
@@ -50,8 +61,8 @@ fit.SR(SRdata, SR = "HS", method = "L2", AR = 1, TMB = FALSE,
 \dontrun{
 data(res_vpa)
 SRdata <- get.SRdata(res_vpa)
-resSR <- fit.SR(SRdata, SR = c("HS","BH","RI")[1], 
-                method = c("L1","L2")[1], AR = 1, 
+resSR <- fit.SR(SRdata, SR = c("HS","BH","RI")[1],
+                method = c("L1","L2")[2], AR = 1,
                 out.AR = TRUE, rep.opt = TRUE)
 resSR$pars
 }

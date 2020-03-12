@@ -5,8 +5,12 @@
 \alias{use_rvpa_tmb}
 \title{Ridge VPAの計算をTMBで実行するためにcppファイルのコンパイル等をする関数}
 \usage{
-use_rvpa_tmb(TmbFile = "rvpa_tmb", CppDir = system.file("executable",
-  package = "frasyr"), RunDir = getwd())
+use_rvpa_tmb(
+  TmbFile = "rvpa_tmb",
+  CppDir = system.file("executable", package = "frasyr"),
+  RunDir = getwd(),
+  overwrite = FALSE
+)
 }
 \arguments{
 \item{TmbFile}{Cppファイルの名前}
@@ -14,6 +18,8 @@ use_rvpa_tmb(TmbFile = "rvpa_tmb", CppDir = system.file("executable",
 \item{CppDir}{Cppファイルが格納されているディレクトリ}
 
 \item{RunDir}{実行するディレクトリ}
+
+\item{overwrite}{Cppファイルをコピーするさい、すでに同じ名前のファイルがあるときにファイルを上書きするかどうか}
 }
 \description{
 Ridge VPAの計算をTMBで実行するためにcppファイルのコンパイル等をする関数

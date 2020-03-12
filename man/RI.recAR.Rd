@@ -5,8 +5,13 @@
 \alias{RI.recAR}
 \title{RIを仮定したときの加入関数}
 \usage{
-RI.recAR(ssb, vpares, deterministic = FALSE, rec.resample = NULL,
-  rec.arg = list(a = 1000, b = 1000, sd = 0.1, bias.correction = TRUE))
+RI.recAR(
+  ssb,
+  vpares,
+  deterministic = FALSE,
+  rec.resample = NULL,
+  rec.arg = list(a = 1000, b = 1000, sd = 0.1, bias.correction = TRUE)
+)
 }
 \arguments{
 \item{ssb}{親魚資源量}

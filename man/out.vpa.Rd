@@ -5,10 +5,18 @@
 \alias{out.vpa}
 \title{VPA結果をcsvファイルに出力する}
 \usage{
-out.vpa(res = NULL, srres = NULL, msyres = NULL,
-  fres_current = NULL, fres_HCR = NULL, kobeII = NULL,
-  filename = "vpa", csvname = NULL, pdfname = NULL,
-  ci.future = c(0.1, 0.5, 0.9))
+out.vpa(
+  res = NULL,
+  srres = NULL,
+  msyres = NULL,
+  fres_current = NULL,
+  fres_HCR = NULL,
+  kobeII = NULL,
+  filename = "vpa",
+  csvname = NULL,
+  pdfname = NULL,
+  ci.future = c(0.1, 0.5, 0.9)
+)
 }
 \arguments{
 \item{res}{VPAの結果}

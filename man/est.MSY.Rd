@@ -5,14 +5,24 @@
 \alias{est.MSY}
 \title{VPAの結果からMSY推定を行う}
 \usage{
-est.MSY(vpares, farg, seed = farg$seed, nyear = NULL, eyear = 0,
-  FUN = mean, N = 1000, onlylower.pgy = FALSE,
-  optim.method = "optimize", max.target = "catch.mean",
-  calc.yieldcurve = TRUE, Blimit = 0, trace.multi = c(seq(from = 0,
-  to = 0.9, by = 0.1), 1, seq(from = 1.1, to = 2, by = 0.1), 3:5, 7, 20,
-  100), is.plot = TRUE, PGY = NULL, B0percent = NULL,
-  Bempirical = NULL, long.term = 20, GT = NULL, mY = 5,
-  estAR.RP = FALSE, resid.year = 0, current.resid = NULL)
+est.MSY(
+  vpares,
+  farg,
+  seed = farg$seed,
+  eyear = 0,
+  FUN = mean,
+  N = 1000,
+  onlylower.pgy = FALSE,
+  optim.method = "optimize",
+  calc.yieldcurve = TRUE,
+  trace.multi = c(seq(from = 0, to = 0.9, by = 0.1), 1, seq(from = 1.1, to = 2, by =
+    0.1), 3:5, 7, 20, 100),
+  is.plot = TRUE,
+  PGY = NULL,
+  B0percent = NULL,
+  Bempirical = NULL,
+  nyear = NULL
+)
 }
 \arguments{
 \item{vpares}{VPAの結果のオブジェクト}

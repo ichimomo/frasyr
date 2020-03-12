@@ -5,11 +5,20 @@
 \alias{calc_perspr}
 \title{MSYを達成するときの\%SPRを計算する}
 \usage{
-calc_perspr(finput, Fvector, Fmax = 10, max.age = Inf,
-  target.col = NULL)
+calc_perspr(
+  finput = NULL,
+  fout = NULL,
+  res_vpa = NULL,
+  Fvector,
+  Fmax = 10,
+  max.age = Inf,
+  target.col = NULL
+)
 }
 \arguments{
 \item{finput}{将来予測インプット}
+
+\item{fout}{将来予測のアウトプット（finputがない場合)}
 
 \item{Fvector}{Fのベクトル}
 }

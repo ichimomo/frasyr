@@ -5,7 +5,7 @@
 \alias{beta.simulation}
 \title{kobeII matrixの簡易版（Btarget, Blimitは決め打ちでβのみ変える)}
 \usage{
-beta.simulation(finput, beta_vector, year.lag = 0)
+beta.simulation(finput, beta_vector, year.lag = 0, type = "old")
 }
 \description{
 kobeII matrixの簡易版（Btarget, Blimitは決め打ちでβのみ変える)

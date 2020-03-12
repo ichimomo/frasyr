@@ -5,14 +5,34 @@
 \alias{plot_futures}
 \title{将来予測の複数の結果をggplotで重ね書きする}
 \usage{
-plot_futures(vpares, future.list = NULL,
-  future.name = names(future.list), future_tibble = NULL,
-  CI_range = c(0.1, 0.9), maxyear = NULL, font.size = 18, ncol = 3,
-  is.plot.CIrange = TRUE, what.plot = c("Recruitment", "SSB",
-  "biomass", "catch", "Fsakugen", "Fsakugen_ratio"), biomass.unit = 1,
-  RP_name = c("Btarget", "Blimit", "Bban"), Btarget = 0, Blimit = 0,
-  Bban = 0, MSY = 0, exclude.japanese.font = FALSE, n_example = 3,
-  example_width = 0.7, future.replicate = NULL, seed = 1)
+plot_futures(
+  vpares,
+  future.list = NULL,
+  future.name = names(future.list),
+  future_tibble = NULL,
+  CI_range = c(0.1, 0.9),
+  maxyear = NULL,
+  is.plot.CIrange = TRUE,
+  what.plot = c("Recruitment", "SSB", "biomass", "catch", "beta_gamma", "U", "Fratio"),
+  biomass.unit = 1,
+  number.unit = 1,
+  number.name = "",
+  RP_name = c("Btarget", "Blimit", "Bban"),
+  Btarget = 0,
+  Blimit = 0,
+  Bban = 0,
+  MSY = 0,
+  Umsy = 0,
+  SPRtarget = NULL,
+  exclude.japanese.font = FALSE,
+  n_example = 3,
+  example_width = 0.7,
+  future.replicate = NULL,
+  seed = 1,
+  legend.position = "top",
+  font.size = 18,
+  ncol = 3
+)
 }
 \arguments{
 \item{vpares}{VPAの結果のオブジェクト}

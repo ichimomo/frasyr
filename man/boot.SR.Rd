@@ -3,10 +3,15 @@
 \encoding{UTF-8}
 \name{boot.SR}
 \alias{boot.SR}
-\title{parametric bootstrap usnig fit.SR}
+\title{再生産関係のブートストラップ}
 \usage{
-boot.SR(Res, n = 100, seed = 1)
+boot.SR(Res, method = "p", n = 100, seed = 1)
+}
+\arguments{
+\item{Res}{\code{fit.SR}か\code{fit.SRregime}のオブジェクト}
+
+\item{method}{パラメトリック ("p") かノンパラメトリック ("n")}
 }
 \description{
-parametric bootstrap usnig fit.SR
+①残差のパラメトリックブートストラップ、②残差のノンパラメトリックブートストラップ（リサンプリング）、③データのブートストラップ（リサンプリング）が行える
 }

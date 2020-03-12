@@ -5,10 +5,19 @@
 \alias{SRregime_plot}
 \title{fit.SRregimeの結果で得られた再生産関係をプロットするための関数}
 \usage{
-SRregime_plot(SRregime_result, xscale = 1000, xlabel = "SSB",
-  yscale = 1, ylabel = "R", labeling.year = NULL,
-  show.legend = TRUE, legend.title = "Regime", regime.name = NULL,
-  base_size = 16, add.info = TRUE)
+SRregime_plot(
+  SRregime_result,
+  xscale = 1000,
+  xlabel = "SSB",
+  yscale = 1,
+  ylabel = "R",
+  labeling.year = NULL,
+  show.legend = TRUE,
+  legend.title = "Regime",
+  regime.name = NULL,
+  base_size = 16,
+  add.info = TRUE
+)
 }
 \arguments{
 \item{xscale}{X軸のスケーリングの値（親魚量をこの値で除す）}
@@ -42,7 +51,7 @@ SRregime_plot(SRregime_result, xscale = 1000, xlabel = "SSB",
 \dontrun{
 data(res_vpa)
 SRdata <- get.SRdata(res_vpa)
-resSRregime <- fit.SRregime(SRdata, SR="HS", method="L2", 
+resSRregime <- fit.SRregime(SRdata, SR="HS", method="L2",
                             regime.year=c(1977,1989), regime.key=c(0,1,0),
                             regime.par = c("a","b","sd")[2:3])
 g1 <- SRregime_plot(resSRregime, regime.name=c("Low","High"))
