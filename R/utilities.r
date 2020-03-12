@@ -1408,7 +1408,7 @@ plot_HCR <- function(SBtarget,SBlim,SBban,Ftarget,
     labs(x = str_c("親魚量 (",junit,"トン)"),y = "漁獲圧の比(F/Fmsy)",color = "") +
     theme_bw(base_size=12)+
     theme(legend.position="none",panel.grid = element_blank())+
-    stat_function(fun = h,lwd=1.5,color=col.multi2currf)
+    stat_function(fun = h,lwd=1,color=col.multi2currf)
 
   if(Fcurrent>0){
     g <- g+geom_hline(yintercept = Fcurrent, size = 0.7, linetype = 1, color = "gray")+
@@ -1510,7 +1510,7 @@ plot_HCR_by_catch <- function(trace,
     
     g <- trace %>%
         ggplot()+
-        geom_line(aes(x=ssb.mean/biomass.unit,y=catch_HCR/biomass.unit))+
+        geom_line(aes(x=ssb.mean/biomass.unit,y=catch_HCR/biomass.unit),lwd=1)+
         theme_SH()+
         geom_vline(xintercept = SBtarget/biomass.unit, size = 0.9, linetype = "41", color = col.SBtarget) +
         geom_vline(xintercept = SBlim/biomass.unit, size = 0.9, linetype = "41", color = col.SBlim) +
