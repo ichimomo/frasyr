@@ -31,13 +31,19 @@ library(frasyr)
 # リリースバージョン
 - v1.00 : future-rvpaから移動してきたほぼそのままのバージョン
 - v1.10 : future.vpaにuse.MSEオプションを追加
+- v1.20 : 2019年アジ・イワシ事前検討会用
+- v2.00 : 2020年アジ・イワシ研究機関会議用
+   - 将来予測のメイン関数をfuture.vpaからfuture_vpaに移行。基本的な使い方は以下のマニュアルのリンク先を参照のこと
 
 # マニュアル
 - VPAによる資源量推定　https://ichimomo.github.io/frasyr/doc/vpa.html
+- 将来予測関数の使い方：https://github.com/ichimomo/frasyr/wiki/future_new
+<!---
 - 新ルールのもとでの将来予測計算 https://ichimomo.github.io/frasyr/doc/future.html
 - 管理基準値の計算 https://ichimomo.github.io/frasyr/doc/estMSY.html
+--->
 - 再生産関係決定ガイドライン https://ichimomo.github.io/frasyr/doc/SRR-guidline.html
-- 将来予測関数を刷新。使い方はこちら：https://ichimomo.github.io/frasyr/doc/future_new.html
+
 =======
 
 frasyr_tool群の全体説明は[こちら](https://ichimomo.github.io/main/)

@@ -3,10 +3,7 @@ title: "新しい将来予測関数：future_vpaを使った将来予測"
 author: "市野川桃子"
 date: "`r Sys.Date()`"
 output:
-  html_document:
-    highlight: kate
-    toc: yes
-    toc_float: yes
+  md_document:
 vignette: >
   %\VignetteIndexEntry{4. new function of future_vpa}
   %\VignetteEngine{knitr::rmarkdown}
