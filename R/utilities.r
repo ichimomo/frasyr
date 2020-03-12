@@ -1515,7 +1515,7 @@ plot_HCR_by_catch <- function(trace,
         geom_vline(xintercept = SBtarget/biomass.unit, size = 0.9, linetype = "41", color = col.SBtarget) +
         geom_vline(xintercept = SBlim/biomass.unit, size = 0.9, linetype = "41", color = col.SBlim) +
         geom_vline(xintercept = SBban/biomass.unit, size = 0.9, linetype = "41", color = col.SBban) +
-        geom_hline(yintercept = MSY/biomass.unit,color="gray")+
+  #      geom_hline(yintercept = MSY/biomass.unit,color="gray")+
         xlab(str_c("親魚量 (",junit,"トン)"))+
         ylab(str_c("漁獲量 (",junit,"トン)"))
 
@@ -1524,8 +1524,8 @@ plot_HCR_by_catch <- function(trace,
                          y=rep(max(trace$catch_HCR)*0.9,3)/biomass.unit)
         g <- g + ggrepel::geom_label_repel(data=RPdata, 
                                            mapping=aes(x=value, y=y, label=RP.label), 
-                                           box.padding=0.5, nudge_y=1) +
-             geom_label(label="MSY", x=SBtarget*1.4/biomass.unit, y=MSY/biomass.unit)
+                                           box.padding=0.5, nudge_y=1) #+
+        # geom_label(label="MSY", x=SBtarget*1.4/biomass.unit, y=MSY/biomass.unit)
         #      geom_label(label=str_c(beta,"Fmsy"), x=SBtarget*1.3, y=beta*Ftarget)+
         #        ylim(0,1.3)
     }
