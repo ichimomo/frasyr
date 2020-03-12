@@ -269,7 +269,9 @@ plot_yield <- function(MSY_obj,refs_base,
                        #                       family = "JP1",
                        ylim.scale=1.2,future=NULL,
                        future.replicate=NULL,
-                       past=NULL,future.name=NULL){
+                       past=NULL,
+                       past_year_range=NULL,
+                       future.name=NULL){
 
   junit <- c("","十","百","千","万")[log10(biomass.unit)+1]
 
@@ -399,6 +401,9 @@ plot_yield <- function(MSY_obj,refs_base,
       ssb.past  =unlist(colSums(past$ssb, na.rm=T))/biomass.unit,
       catch.past=catch.past
     )
+
+    if(past_year_range[1] > 0 && !is.null(past_year_range))
+        pastdata <- pastdata %>% dplyr::filter(year%in%past_year_range)
 
     g1 <- g1 +
       geom_path(data=pastdata,
