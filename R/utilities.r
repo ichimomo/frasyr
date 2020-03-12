@@ -953,10 +953,17 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
   }
 
   UBdata <- UBdata %>%
-    mutate(year.label=ifelse(year%in%labeling.year,year,""))
+      mutate(year.label=ifelse(year%in%labeling.year,year,""),
+             year_group=1)
 
-  if (plot.year[1]!="all") {
-    UBdata <- UBdata %>% filter(year %in% plot.year)
+  if(plot.year[1]!="all") {
+      diff.year <- plot.year[which(diff(plot.year)>1)+1] 
+      UBdata <- UBdata %>% filter(year %in% plot.year) 
+
+      for(i in 1:length(diff.year)){
+          UBdata <- UBdata %>%
+              mutate(year_group = ifelse(year >= diff.year[i], year_group+1, year_group))
+      }
   }
 
   max.B <- max(c(UBdata$Bratio,xscale),na.rm=T)
@@ -1012,8 +1019,8 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
   }
 
   g4 <- g4 +
-    geom_path(mapping=aes(x=Bratio,y=Uratio)) +
-    geom_point(mapping=aes(x=Bratio,y=Uratio),shape=21,fill="white") +
+    geom_path(mapping=aes(x=Bratio,y=Uratio,group=year_group)) +
+    geom_point(mapping=aes(x=Bratio,y=Uratio,group=year_group),shape=21,fill="white") +
     coord_cartesian(xlim=c(0,max.B*1.1),ylim=c(0,max.U*1.15),expand=0) +
     ylab("漁獲割合の比 (U/Umsy)") + xlab("親魚量の比 (SB/SBmsy)")  +
     ggrepel::geom_text_repel(#data=dplyr::filter(UBdata,year%in%labeling.year),
