@@ -154,7 +154,8 @@ convert_SR_tibble <- function(res_SR){
 #'
 
 SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,ylabel="尾",
-                                 labeling.year=NULL,add.info=TRUE, recruit_intercept=0){
+                                 labeling.year=NULL,add.info=TRUE, recruit_intercept=0,
+                                 plot_CI=FALSE, CI=0.9){
 
   if(is.null(refs$Blimit) && !is.null(refs$Blim)) refs$Blimit <- refs$Blim
 
@@ -162,10 +163,14 @@ SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千ト�
   if (SR_result$input$SR=="BH") SRF <- function(SSB,a,b,recruit_intercept=0) (a*SSB*xscale/(1+b*SSB*xscale)+recruit_intercept)/yscale
   if (SR_result$input$SR=="RI") SRF <- function(SSB,a,b,recruit_intercept=0) (a*SSB*xscale*exp(-b*SSB*xscale)+recruit_intercept)/yscale
 
+  SRF_CI <- function(CI,sigma,sign,...){
+      exp(log(SRF(...))+qnorm(1-(1-CI)/2)*sigma*sign)
+  }
+
   SRdata <- as_tibble(SR_result$input$SRdata) %>%
     mutate(type="obs")
   SRdata.pred <- as_tibble(SR_result$pred) %>%
-    mutate(type="pred", year=NA, R=R)
+      mutate(type="pred", year=NA, R=R)
   alldata <- bind_rows(SRdata,SRdata.pred) %>%
     mutate(R=R/yscale,SSB=SSB/xscale)
   ymax <- max(alldata$R)
@@ -176,8 +181,28 @@ SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千ト�
 
   g1 <- ggplot(data=alldata,mapping=aes(x=SSB,y=R)) +
     stat_function(fun=SRF,args=list(a=SR_result$pars$a,
-                                    b=SR_result$pars$b),color="deepskyblue3",lwd=1.3)+
-    geom_path(data=dplyr::filter(alldata,type=="obs"),
+                                    b=SR_result$pars$b),color="deepskyblue3",lwd=1.3,
+                  n=5000)
+    
+  if(isTRUE(plot_CI)){
+      g1 <- g1+
+          stat_function(fun=SRF_CI,
+                        args=list(a=SR_result$pars$a,
+                                  b=SR_result$pars$b,
+                                  sigma=SR_result$pars$sd,
+                                  sign=-1,
+                                  CI=CI),
+                        color="deepskyblue3",lty=3,n=5000)+
+          stat_function(fun=SRF_CI,
+                        args=list(a=SR_result$pars$a,
+                                  b=SR_result$pars$b,
+                                  sigma=SR_result$pars$sd,
+                                  sign=1,
+                                  CI=CI),
+                        color="deepskyblue3",lty=3,n=5000)
+  }
+    
+  g1 <- g1+  geom_path(data=dplyr::filter(alldata,type=="obs"),
               aes(y=R,x=SSB),color="black") +
     geom_point(data=dplyr::filter(alldata,type=="obs"),
                aes(y=R,x=SSB),shape=21,fill="white") +
@@ -244,7 +269,9 @@ plot_yield <- function(MSY_obj,refs_base,
                        #                       family = "JP1",
                        ylim.scale=1.2,future=NULL,
                        future.replicate=NULL,
-                       past=NULL,future.name=NULL){
+                       past=NULL,
+                       past_year_range=NULL,
+                       future.name=NULL){
 
   junit <- c("","十","百","千","万")[log10(biomass.unit)+1]
 
@@ -289,7 +316,7 @@ plot_yield <- function(MSY_obj,refs_base,
     mutate(cumcatch=cumsum(value)-value/2)%>%
     mutate(age=as.numeric(as.character(age)))
   age.label <- age.label %>%
-    mutate(age_name=str_c(age,ifelse(age.label$age==max(age.label$age),"+",""),"Y/O"))
+    mutate(age_name=str_c("Age ",age,ifelse(age.label$age==max(age.label$age),"+","")))
 
   g1 <- g1 + geom_area(aes(x=ssb.mean,y=value,fill=年齢),col="black",alpha=0.5,lwd=1*0.3528) +
     #    geom_line(aes(x=ssb.mean,y=catch.CV,fill=age)) +
@@ -374,6 +401,9 @@ plot_yield <- function(MSY_obj,refs_base,
       ssb.past  =unlist(colSums(past$ssb, na.rm=T))/biomass.unit,
       catch.past=catch.past
     )
+
+    if(past_year_range[1] > 0 && !is.null(past_year_range))
+        pastdata <- pastdata %>% dplyr::filter(year%in%past_year_range)
 
     g1 <- g1 +
       geom_path(data=pastdata,
@@ -923,30 +953,41 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
   }
 
   UBdata <- UBdata %>%
-    mutate(year.label=ifelse(year%in%labeling.year,year,""))
+      mutate(year.label=ifelse(year%in%labeling.year,year,""),
+             year_group=1)
 
-  if (plot.year[1]!="all") {
-    UBdata <- UBdata %>% filter(year %in% plot.year)
+  if(plot.year[1]!="all") {
+      diff.year <- plot.year[which(diff(plot.year)>1)+1] 
+      UBdata <- UBdata %>% filter(year %in% plot.year) 
+
+      for(i in 1:length(diff.year)){
+          UBdata <- UBdata %>%
+              mutate(year_group = ifelse(year >= diff.year[i], year_group+1, year_group))
+      }
   }
 
   max.B <- max(c(UBdata$Bratio,xscale),na.rm=T)
   max.U <- max(c(UBdata$Uratio,yscale),na.rm=T)
 
+    red.color <- "indianred1" # rgb(238/255,121/255,72/255)
+    yellow.color <- "khaki1" # rgb(245/255,229/255,107/255)
+    green.color <- "olivedrab2" # rgb(175/255,209/255,71/255) #"olivedrab2"#rgb(58/255,180/255,131/255)
+    
   g4 <- ggplot(data=UBdata) +theme(legend.position="none")+
     geom_polygon(data=tibble(x=c(-1,1,1,-1),
                              y=c(-1,-1,1,1)),
-                 aes(x=x,y=y),fill="khaki1")+
+                 aes(x=x,y=y),fill=yellow.color)+
     geom_polygon(data=tibble(x=c(1,20,20,1),
                              y=c(-1,-1,1,1)),
-                 aes(x=x,y=y),fill="olivedrab2")+
+                 aes(x=x,y=y),fill=green.color)+
     geom_polygon(data=tibble(x=c(1,20,20,1),
                              y=c(1,1,20,20)),
-                 aes(x=x,y=y),fill="khaki1")+
+                 aes(x=x,y=y),fill=yellow.color)+
     geom_polygon(data=tibble(x=c(-1,1,1,-1),
                              y=c(1,1,20,20)),
-                 aes(x=x,y=y),fill="indianred1") +
+                 aes(x=x,y=y),fill=red.color) +
     geom_polygon(data=tibble(x=c(-1,1,1,-1),
-                             y=c(-1,-1,1,1)),aes(x=x,y=y),fill="khaki1")
+                             y=c(-1,-1,1,1)),aes(x=x,y=y),fill=yellow.color)
 
   if(write.vline){
     g4 <- g4 + geom_vline(xintercept=c(1,limit.ratio,ban.ratio),color=refs.color,lty="41",lwd=0.7)+
@@ -978,8 +1019,8 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
   }
 
   g4 <- g4 +
-    geom_path(mapping=aes(x=Bratio,y=Uratio)) +
-    geom_point(mapping=aes(x=Bratio,y=Uratio),shape=21,fill="white") +
+    geom_path(mapping=aes(x=Bratio,y=Uratio,group=year_group)) +
+    geom_point(mapping=aes(x=Bratio,y=Uratio,group=year_group),shape=21,fill="white") +
     coord_cartesian(xlim=c(0,max.B*1.1),ylim=c(0,max.U*1.15),expand=0) +
     ylab("漁獲割合の比 (U/Umsy)") + xlab("親魚量の比 (SB/SBmsy)")  +
     ggrepel::geom_text_repel(#data=dplyr::filter(UBdata,year%in%labeling.year),
@@ -1358,17 +1399,16 @@ plot_HCR <- function(SBtarget,SBlim,SBban,Ftarget,
 
   #Drawing of the funciton by ggplot2
   ggplct <- ggplot(data.frame(x = c(0,1.5*SBtarget),y= c(0,1.5*Ftarget)), aes(x=x)) +
-    stat_function(fun = h,lwd=2,color=col.multi2currf, n=5000)
+    stat_function(fun = h,lwd=1.5,color=col.multi2currf, n=5000)
   g <- ggplct  + geom_vline(xintercept = SBtarget, size = 0.9, linetype = "41", color = col.SBtarget) +
     geom_vline(xintercept = SBlim, size = 0.9, linetype = "41", color = col.SBlim) +
     geom_vline(xintercept = SBban, size = 0.9, linetype = "41", color = col.SBban) +
     geom_hline(yintercept = Ftarget, size = 0.9, linetype = "43", color = col.Ftarget) +
     geom_hline(yintercept = beta*Ftarget, size = 0.7, linetype = "43", color = col.betaFtarget) +
-    labs(title = "",subtitle = "", caption =  "", x = str_c("親魚量 (",junit,"トン)"),
-         y = "漁獲圧の比(F/Fmsy)",color = "") +
+    labs(x = str_c("親魚量 (",junit,"トン)"),y = "漁獲圧の比(F/Fmsy)",color = "") +
     theme_bw(base_size=12)+
     theme(legend.position="none",panel.grid = element_blank())+
-    stat_function(fun = h,lwd=1.5,color=col.multi2currf)
+    stat_function(fun = h,lwd=1,color=col.multi2currf)
 
   if(Fcurrent>0){
     g <- g+geom_hline(yintercept = Fcurrent, size = 0.7, linetype = 1, color = "gray")+
@@ -1376,18 +1416,14 @@ plot_HCR <- function(SBtarget,SBlim,SBban,Ftarget,
 
   }
 
-  if (is.text) {
-    g <- g +
-      #        annotate("text", label=RP.label[1], x=SBtarget, y=1.2*Ftarget) +
-      #        annotate("text", label=RP.label[2], x=SBlim, y=1.1*Ftarget) +
-      #        annotate("text", label=RP.label[3], x=SBban, y=1.2*Ftarget)+
-      #        annotate("text", label="Fmsy", x=SBtarget/15, y=0.95*Ftarget)+
-      #        annotate("text", label=str_c(beta,"Fmsy"), x=SBtarget/15, y=0.95*beta*Ftarget)
-      geom_label(label=RP.label[1], x=SBtarget, y=Ftarget*0.95) +
-      geom_label(label=RP.label[2], x=SBlim, y=Ftarget*0.9) +
-      geom_label(label=RP.label[3], x=SBban, y=Ftarget*0.85)+
-      geom_label(label="Fmsy", x=SBtarget*1.2, y=Ftarget)+
-      geom_label(label=str_c(beta,"Fmsy"), x=SBtarget*1.2, y=beta*Ftarget)
+  if(is.text) {
+    RPdata <- tibble(RP.label=RP.label, value=c(SBtarget, SBlim, SBban), y=c(1.1,1.05,1.05))
+    g <- g + ggrepel::geom_label_repel(data=RPdata, 
+                                mapping=aes(x=value, y=y, label=RP.label), 
+                                box.padding=0.5, nudge_y=1) +
+      geom_label(label="Fmsy", x=SBtarget*1.3, y=Ftarget)+
+      geom_label(label=str_c(beta,"Fmsy"), x=SBtarget*1.3, y=beta*Ftarget)+
+        ylim(0,1.3)
   }
 
   return(g)
@@ -1427,6 +1463,77 @@ plot_HCR <- function(SBtarget,SBlim,SBban,Ftarget,
 
 }
 
+#' 縦軸が漁獲量のHCRを書く（traceの結果が必要）
+#'
+#' @param trace 
+#' @param fout 将来予測のアウトプット（finputがない場合)
+#' @param Fvector Fのベクトル
+#' @encoding UTF-8
+#' @export
+
+plot_HCR_by_catch <- function(trace,
+                              fout0.8,
+                              SBtarget,SBlim,SBban,Fmsy_vector,MSY,
+                              M_vector,
+                              biomass.unit=1,
+                              beta=0.8,col.multi2currf="black",col.SBtarget="#00533E",
+                              col.SBlim="#edb918",col.SBban="#C73C2E",col.Ftarget="black",
+                              col.betaFtarget="gray",is.text = TRUE,
+                              Pope=TRUE,
+                              RP.label=c("目標管理基準値","限界管理基準値","禁漁水準")){
+    # 本当は途中までplot_HCRと統合させたい
+    junit <- c("","十","百","千","万")[log10(biomass.unit)+1]    
+    biomass_comp <- trace %>% dplyr::select(starts_with("TB-mean-"))
+    biomass_comp <- biomass_comp[,Fmsy_vector>0]
+    M_vector <- M_vector[Fmsy_vector>0]
+    Fmsy_vector <- Fmsy_vector[Fmsy_vector>0]
+    
+    calc_catch <- function(B, M, Fvec, Pope=TRUE){
+        if(isTRUE(Pope)){
+            total.catch <- B*(1-exp(-Fvec))*exp(-M/2) 
+        }
+        else{
+            total.catch <- B*(1-exp(-Fvec-M))*Fvec/(Fvec+M) 
+        }
+        return(sum(total.catch))
+    }
+    
+    n <- nrow(trace)
+    gamma <- HCR_default(as.numeric(trace$ssb.mean),
+                         Blimit=rep(SBlim,n),Bban=rep(SBban,n),beta=rep(beta,n))
+    F_matrix <- outer(gamma, Fmsy_vector)
+    trace$catch_HCR <- purrr::map_dbl(1:nrow(trace), function(x) 
+        calc_catch(biomass_comp[x,],M_vector, F_matrix[x,], Pope=Pope))
+
+    trace <- trace %>% dplyr::arrange(ssb.mean) %>%
+        dplyr::filter(ssb.mean < SBtarget*1.5)
+    
+    g <- trace %>%
+        ggplot()+
+        geom_line(aes(x=ssb.mean/biomass.unit,y=catch_HCR/biomass.unit),lwd=1)+
+        theme_SH()+
+        geom_vline(xintercept = SBtarget/biomass.unit, size = 0.9, linetype = "41", color = col.SBtarget) +
+        geom_vline(xintercept = SBlim/biomass.unit, size = 0.9, linetype = "41", color = col.SBlim) +
+        geom_vline(xintercept = SBban/biomass.unit, size = 0.9, linetype = "41", color = col.SBban) +
+  #      geom_hline(yintercept = MSY/biomass.unit,color="gray")+
+        xlab(str_c("親魚量 (",junit,"トン)"))+
+        ylab(str_c("漁獲量 (",junit,"トン)"))
+
+    if(is.text) {
+        RPdata <- tibble(RP.label=RP.label, value=c(SBtarget, SBlim, SBban)/biomass.unit,
+                         y=rep(max(trace$catch_HCR)*0.9,3)/biomass.unit)
+        g <- g + ggrepel::geom_label_repel(data=RPdata, 
+                                           mapping=aes(x=value, y=y, label=RP.label), 
+                                           box.padding=0.5, nudge_y=1) #+
+        # geom_label(label="MSY", x=SBtarget*1.4/biomass.unit, y=MSY/biomass.unit)
+        #      geom_label(label=str_c(beta,"Fmsy"), x=SBtarget*1.3, y=beta*Ftarget)+
+        #        ylim(0,1.3)
+    }
+    
+  
+}
+
+
 # test plot
 #Fig_Fish_Manage_Rule(SBtarget,SBlim,SBban,Ftarget,col.multi2currf = "#093d86", col.SBtarget = "#00533E", col.SBlim = "#edb918",col.SBban = "#C73C2E",col.Ftarget = "#714C99", col.betaFtarget = "#505596")
 # function;ruri-rio, sbtarget;moegi-iro, sblim;koki-ki; sbban;hi-iro, ftarget;sumire-iro, betaftarget;kikyou-iro
@@ -1446,7 +1553,7 @@ calc_perspr <- function(finput=NULL,
                         max.age=Inf,
                         target.col=NULL
 ){
-  if(!is.null(finput)){
+    if(!is.null(finput)){
     # MSYにおける将来予測計算をやりなおし
     finput$outtype <- "FULL"
     fout.tmp <- do.call(future.vpa,finput)
@@ -2211,3 +2318,11 @@ calc_Fratio <- function(faa, waa, maa, M, SPRtarget=30, waa.catch=NULL,Pope=TRUE
     else return(1/exp(opt_res$minimum))
   }
 }
+
+#'
+#' @export
+#'
+#'
+
+calc_akaike_weight <- function(AIC) exp(-AIC/2)/sum(exp(-AIC/2))
+
