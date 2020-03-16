@@ -58,6 +58,7 @@ get.SRdata <- function(vpares,R.dat = NULL,
 #' @param length 初期値を決める際のgridの長さ
 #' @param rep.opt \code{TRUE}で\code{optim}による最適化を収束するまで繰り返す
 #' @param p0 \code{optim}で設定する初期値
+#' @param sd.obs L1のときにSDをRMSEに置き換えるか否か
 #' @encoding UTF-8
 #' @examples
 #' \dontrun{
@@ -95,7 +96,8 @@ fit.SR <- function(SRdata,
                    max.ssb.pred=1.3, # 予測値を計算するSSBの最大値（観測された最大値への乗数）
                    p0=NULL,
                    out.AR = TRUE, #自己相関係数rhoを外で推定するか
-                   rep.opt = FALSE
+                   rep.opt = FALSE,
+                   sd.obs = TRUE
 ){
 
   argname <- ls()
@@ -272,6 +274,9 @@ fit.SR <- function(SRdata,
   
   Res$resid <- resid
   Res$resid2 <- resid2
+  if (sd.obs) {
+    if (AR==0 && method != "L2") sd = sqrt(sum(resid[w==1]^2)/sum(w))
+  }
   Res$pars <- c(a,b,sd,rho)
 
   if (method!="L2") {
@@ -619,6 +624,7 @@ prof.lik <- function(Res,a=Res$pars$a,b=Res$pars$b,sd=Res$pars$sd,rho=ifelse(Res
 #' @param regime.year レジームが変わる年
 #' @param regime.key レジームのパターンを表す(\code{0:2}だとA->B->Cで、\code{c(0,1,0)}だとA->B->Aのようなパターンとなる)
 #' @param regime.par レジームによって変化するパラメータ(\code{c("a","b","sd")}の中から選ぶ)
+#' @param sd.obs L1のときSDをRMSEに置き換えるか
 #' @param length 初期値を決める際のgridの長さ
 #' @param p0 \code{optim}で設定する初期値
 #' @inheritParams fit.SR
@@ -658,6 +664,7 @@ fit.SRregime <- function(
   regime.year = NULL,
   regime.key = 0:length(regime.year),
   regime.par = c("a","b","sd"),
+  sd.obs = TRUE,
   use.fit.SR = TRUE,
   length=10,  # parameter (a,b) の初期値を決めるときにgrid searchする数
   p0 = NULL,  # 初期値
@@ -807,7 +814,20 @@ fit.SRregime <- function(
 
   Res$regime_pars <- tibble(regime=regime.key0[regime],a=a[a_key],b=b[b_key],sd=sd[sd_key]) %>% distinct()
   Res$regime_resid <- tibble(regime=regime.key0[regime],resid = resid)
-
+  if (sd.obs) {
+    if (method=="L1") {
+      if ("sd" %in% regime.par) {
+        tmp = Res$regime_resid %>% mutate(w = w, squared_resid = w*resid^2) %>% 
+          group_by(regime) %>% summarise(n = sum(w), RSS = sum(squared_resid)) %>%
+          mutate(RMSE = sqrt(RSS/n))
+        sd = as.numeric(tmp$RMSE)
+      } else {
+        sd = sqrt(sum(resid[w==1]^2)/sum(w))
+      }
+      Res$pars$sd = sd
+      Res$regime_pars$sd = sd
+    }
+  }
   ssb.tmp <- seq(from=0,to=max(ssb)*max.ssb.pred,length=100)
   ab_unique <- unique(cbind(a_key,b_key))
   summary_tbl = tibble(Year = SRdata$year,SSB=ssb, R = rec, Regime=regime.key0[regime], Category = "Obs")
@@ -1179,7 +1199,7 @@ autocor.plot = function(resSR,use.resid=1,lag.max=NULL,output = FALSE,filename =
   if (output) dev.off()
 }
 
-#' 再生産関係の残差ブートストラップ
+#' 再生産関係の残差ブートストラップをプロットする関数
 #' 
 #' @param boot.res \code{boot.SR}のオブジェクト
 #' @param CI プロットする信頼区間
@@ -1706,4 +1726,40 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
   # RES$par_list = par_list
   # RES$percent_bias_list = bias_list
   return(RES)
+}
+
+#' 再生産関係のブートストラップの結果をggplotで生成する関数する関数
+#' 
+#' @param boot.res \code{boot.SR}のオブジェクト
+#' @param CI プロットする信頼区間
+#' @encoding UTF-8
+#' @export
+
+bootSR.ggplot = function(boot.res, CI=0.80) {
+  if (class(boot.res$input$Res) == "fit.SRregime") {
+    stop("This function cannot handle 'fit.SRregime' at present")
+  }
+  estimate_data = boot.res$input$Res$pred
+  obs_data = as_tibble(boot.res$input$Res$input$SRdata)
+  
+  for (i in 1:boot.res$input$n) {
+    tmp_tbl = boot.res[[i]]$pred %>% mutate(simID = i)
+    if (i == 1) {
+      boot_pred = tmp_tbl
+    } else {
+      boot_pred = bind_rows(boot_pred,tmp_tbl)
+    }
+  }
+  
+  summary_boot = boot_pred %>%
+    group_by(SSB) %>%
+    summarise(median = median(R), lower=quantile(R, probs=0.5*(1-CI))[1], upper=quantile(R, probs=1-0.5*(1-CI))[1])
+  
+  g1 = ggplot(data = NULL)+
+    geom_ribbon(data = summary_boot, aes(x=SSB,ymin=lower,ymax=upper),alpha=0.3,fill="red")+
+    geom_path(data = estimate_data,aes(x=SSB,y=R),size=2) +
+    geom_point(data = obs_data,aes(x=SSB,y=R),size=2)+
+    geom_path(data = summary_boot, aes(x=SSB,y=median),colour="red",size=2,linetype="dashed")+
+    theme_SH()
+  g1 
 }

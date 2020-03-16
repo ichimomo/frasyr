@@ -12,6 +12,7 @@ fit.SRregime(
   regime.year = NULL,
   regime.key = 0:length(regime.year),
   regime.par = c("a", "b", "sd"),
+  sd.obs = TRUE,
   use.fit.SR = TRUE,
   length = 10,
   p0 = NULL,
@@ -32,6 +33,8 @@ fit.SRregime(
 \item{regime.key}{レジームのパターンを表す(\code{0:2}だとA->B->Cで、\code{c(0,1,0)}だとA->B->Aのようなパターンとなる)}
 
 \item{regime.par}{レジームによって変化するパラメータ(\code{c("a","b","sd")}の中から選ぶ)}
+
+\item{sd.obs}{L1のときSDをRMSEに置き換えるか}
 
 \item{length}{初期値を決める際のgridの長さ}
 

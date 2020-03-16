@@ -17,7 +17,8 @@ fit.SR(
   max.ssb.pred = 1.3,
   p0 = NULL,
   out.AR = TRUE,
-  rep.opt = FALSE
+  rep.opt = FALSE,
+  sd.obs = TRUE
 )
 }
 \arguments{
@@ -36,6 +37,8 @@ fit.SR(
 \item{out.AR}{自己相関係数を一度再生産関係を推定したのちに、外部から推定するか（1), 内部で推定するか(0)}
 
 \item{rep.opt}{\code{TRUE}で\code{optim}による最適化を収束するまで繰り返す}
+
+\item{sd.obs}{L1のときにSDをRMSEに置き換えるか否か}
 }
 \value{
 以下の要素からなるリスト
