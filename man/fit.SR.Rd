@@ -10,15 +10,13 @@ fit.SR(
   SR = "HS",
   method = "L2",
   AR = 1,
-  TMB = FALSE,
   hessian = FALSE,
   w = rep(1, length(SRdata$R)),
   length = 20,
   max.ssb.pred = 1.3,
   p0 = NULL,
   out.AR = TRUE,
-  rep.opt = FALSE,
-  sd.obs = TRUE
+  rep.opt = FALSE
 )
 }
 \arguments{

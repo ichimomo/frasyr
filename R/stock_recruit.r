@@ -90,14 +90,14 @@ get.SRdata <- function(vpares,R.dat = NULL,
 fit.SR <- function(SRdata,
                    SR="HS",
                    method="L2",
-                   AR=1,TMB=FALSE,
+                   AR=1,
+                   # TMB=FALSE,
                    hessian=FALSE,w=rep(1,length(SRdata$R)),
                    length=20,
                    max.ssb.pred=1.3, # 予測値を計算するSSBの最大値（観測された最大値への乗数）
                    p0=NULL,
                    out.AR = TRUE, #自己相関係数rhoを外で推定するか
-                   rep.opt = FALSE,
-                   sd.obs = TRUE
+                   rep.opt = FALSE
 ){
 
   argname <- ls()
@@ -251,7 +251,7 @@ fit.SR <- function(SRdata,
   if (method == "L2" && AR==1 && out.AR==FALSE && zero_min<one_max) {
     resid = obj.f(a=a,b=b,rho=rho,out="resid")
     resid2 = obj.f(a=a,b=b,rho=rho,out="resid2")
-    sd = obj.f(a=a,b=b,rho=rho,out="sd")
+    sd <- sd.pred <- obj.f(a=a,b=b,rho=rho,out="sd")
   } else {
     resid <- sapply(1:N,function(i) log(rec[i]) - log(SRF(ssb[i],a,b)))
     resid2 <- NULL
@@ -259,24 +259,26 @@ fit.SR <- function(SRdata,
       resid2[i] <- ifelse(i == 1,resid[i], resid[i]-rho*resid[i-1])
     }
     
-    if (method=="L2") {
+    # if (method=="L2") {
       rss <- w[1]*resid2[1]^2*(1-rho^2)
       for(i in 2:N) rss <- rss + w[i]*resid2[i]^2
-      sd <- sqrt(rss/NN)
-    } else {
-      rss <- w[1]*abs(resid2[1])*sqrt(1-rho^2)
-      for(i in 2:N) rss <- rss + w[i]*abs(resid2[i])
-      sd <- sum(abs(w*resid2))/NN
-      sd <- sqrt(2)*sd
+      sd <- sd.pred <- sqrt(rss/NN)
+    # } else {
+      if (method=="L1") {
+        rss <- w[1]*abs(resid2[1])*sqrt(1-rho^2)
+        for(i in 2:N) rss <- rss + w[i]*abs(resid2[i])
+        sd.pred <- sum(abs(w*resid2))/NN
+        sd.pred <- sqrt(2)*sd.pred
     }
     # sd <- ifelse(method=="L2",sqrt(sum(w*resid2^2)/(NN-rho^2)),sqrt(2)*sum(abs(w*resid2))/(NN-rho^2))
   }
   
   Res$resid <- resid
   Res$resid2 <- resid2
-  if (sd.obs) {
-    if (AR==0 && method != "L2") sd = sqrt(sum(resid[w==1]^2)/sum(w))
-  }
+  Res$sd.pred = sd.pred
+  # if (sd.obs) {
+    # if (AR==0 && method != "L2") sd = sqrt(sum(resid[w==1]^2)/sum(w))
+  # }
   Res$pars <- c(a,b,sd,rho)
 
   if (method!="L2") {
@@ -292,7 +294,7 @@ fit.SR <- function(SRdata,
 
   if (AR==1 && out.AR) {
     arres <- ar(resid,aic=FALSE,order.max=1,demean=FALSE,method="mle")
-    Res$pars[3] <- sqrt(arres$var.pred)
+    Res$pars[3] <- Res$sd.pred <-sqrt(arres$var.pred)
     Res$pars[4] <- as.numeric(arres$ar)
     Res$resid2[2:length(Res$resid2)] <- arres$resid[-1]
     Res$AIC.ar  <- ar(resid,order.max=1,demean=FALSE,method="mle")$aic
@@ -664,7 +666,7 @@ fit.SRregime <- function(
   regime.year = NULL,
   regime.key = 0:length(regime.year),
   regime.par = c("a","b","sd"),
-  sd.obs = TRUE,
+  # sd.obs = TRUE,
   use.fit.SR = TRUE,
   length=10,  # parameter (a,b) の初期値を決めるときにgrid searchする数
   p0 = NULL,  # 初期値
@@ -795,8 +797,11 @@ fit.SRregime <- function(
   } else {
     b <- exp(opt$par[(1+max(a_key)):(max(a_key)+max(b_key))])
   }
-  sd <- obj.f(a,b,out="sd")
-  if (method=="L1") sd <- sqrt(2)*sd
+  sd.pred <- sd <- obj.f(a,b,out="sd")
+  if (method=="L1") {
+    sd.pred <- sd <- sqrt(2)*sd.pred
+  }
+  # sd <- sqrt(sum(w*obj.f(a,b,out="resid")^2)/sum(w))
   resid <- obj.f(a,b,out="resid")
 
   Res$obj.f <- obj.f
@@ -814,8 +819,9 @@ fit.SRregime <- function(
 
   Res$regime_pars <- tibble(regime=regime.key0[regime],a=a[a_key],b=b[b_key],sd=sd[sd_key]) %>% distinct()
   Res$regime_resid <- tibble(regime=regime.key0[regime],resid = resid)
-  if (sd.obs) {
-    if (method=="L1") {
+  # if (sd.obs) {
+  Res$sd.pred = sd.pred  
+  if (method=="L1") {
       if ("sd" %in% regime.par) {
         tmp = Res$regime_resid %>% mutate(w = w, squared_resid = w*resid^2) %>% 
           group_by(regime) %>% summarise(n = sum(w), RSS = sum(squared_resid)) %>%
@@ -827,7 +833,7 @@ fit.SRregime <- function(
       Res$pars$sd = sd
       Res$regime_pars$sd = sd
     }
-  }
+  # }
   ssb.tmp <- seq(from=0,to=max(ssb)*max.ssb.pred,length=100)
   ab_unique <- unique(cbind(a_key,b_key))
   summary_tbl = tibble(Year = SRdata$year,SSB=ssb, R = rec, Regime=regime.key0[regime], Category = "Obs")
