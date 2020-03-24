@@ -36,6 +36,8 @@ fit.SRregime(
 \item{length}{初期値を決める際のgridの長さ}
 
 \item{p0}{\code{optim}で設定する初期値}
+
+\item{sd.obs}{L1のときSDをRMSEに置き換えるか}
 }
 \value{
 以下の要素からなるリスト

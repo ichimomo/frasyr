@@ -10,7 +10,6 @@ fit.SR(
   SR = "HS",
   method = "L2",
   AR = 1,
-  TMB = FALSE,
   hessian = FALSE,
   w = rep(1, length(SRdata$R)),
   length = 20,
@@ -36,6 +35,8 @@ fit.SR(
 \item{out.AR}{自己相関係数を一度再生産関係を推定したのちに、外部から推定するか（1), 内部で推定するか(0)}
 
 \item{rep.opt}{\code{TRUE}で\code{optim}による最適化を収束するまで繰り返す}
+
+\item{sd.obs}{L1のときにSDをRMSEに置き換えるか否か}
 }
 \value{
 以下の要素からなるリスト
