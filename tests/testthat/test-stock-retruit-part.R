@@ -40,7 +40,7 @@ test_that("oututput value check",{
   load(system.file("extdata","SRpma_HS_L1_AR0_outAR0.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("SRpma_HS_L1_AR0_outAR0$",testcontents[i]))),eval(parse(text=paste("SRpma_HS_L1_AR0_outAR0_check$",testcontents[i]))))
   }
 
@@ -48,7 +48,7 @@ test_that("oututput value check",{
   load(system.file("extdata","SRpma_HS_L1_AR1_outAR0.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0$",testcontents[i]))),eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0_check$",testcontents[i]))))
   }
 
@@ -56,14 +56,14 @@ test_that("oututput value check",{
   load(system.file("extdata","SRpma_HS_L1_AR1_outAR1.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("SRpma_HS_L1_AR1_outAR1_check$",testcontents[i]))))
   }
 
   # HS L2 AR0 ----
   load(system.file("extdata","SRpma_HS_L2_AR0_outAR0.rda",package = "frasyr"))
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("SRpma_HS_L2_AR0_outAR0$",testcontents[i]))),eval(parse(text=paste("SRpma_HS_L2_AR0_outAR0_check$",testcontents[i]))))
   }
 
@@ -71,7 +71,7 @@ test_that("oututput value check",{
   load(system.file("extdata","SRpma_HS_L2_AR1_outAR0.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("SRpma_HS_L2_AR1_outAR0$",testcontents[i]))),eval(parse(text=paste("SRpma_HS_L2_AR1_outAR0_check$",testcontents[i]))))
   }
 
@@ -79,7 +79,7 @@ test_that("oututput value check",{
   load(system.file("extdata","SRpma_HS_L2_AR1_outAR1.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("SRpma_HS_L2_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("SRpma_HS_L2_AR1_outAR1_check$",testcontents[i]))))
   }
 
@@ -87,7 +87,7 @@ test_that("oututput value check",{
   load(system.file("extdata","SRpma_BH_L1_AR0_outAR0.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("SRpma_BH_L1_AR0_outAR0$",testcontents[i]))),eval(parse(text=paste("SRpma_BH_L1_AR0_outAR0_check$",testcontents[i]))))
   }
 
@@ -95,7 +95,7 @@ test_that("oututput value check",{
   load(system.file("extdata","SRpma_BH_L1_AR1_outAR0.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("SRpma_BH_L1_AR1_outAR0$",testcontents[i]))),eval(parse(text=paste("SRpma_BH_L1_AR1_outAR0_check$",testcontents[i]))))
   }
 
@@ -103,14 +103,14 @@ test_that("oututput value check",{
   load(system.file("extdata","SRpma_BH_L1_AR1_outAR1.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("SRpma_BH_L1_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("SRpma_BH_L1_AR1_outAR1_check$",testcontents[i]))))
   }
 
   # BH L2 AR0 ----
   load(system.file("extdata","SRpma_BH_L2_AR0_outAR0.rda",package = "frasyr"))
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("SRpma_BH_L2_AR0_outAR0$",testcontents[i]))),eval(parse(text=paste("SRpma_BH_L2_AR0_outAR0_check$",testcontents[i]))))
   }
 
@@ -118,7 +118,7 @@ test_that("oututput value check",{
   load(system.file("extdata","SRpma_BH_L2_AR1_outAR0.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("SRpma_BH_L2_AR1_outAR0$",testcontents[i]))),eval(parse(text=paste("SRpma_BH_L2_AR1_outAR0_check$",testcontents[i]))))
   }
 
@@ -126,7 +126,7 @@ test_that("oututput value check",{
   load(system.file("extdata","SRpma_BH_L2_AR1_outAR1.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("SRpma_BH_L2_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("SRpma_BH_L2_AR1_outAR1_check$",testcontents[i]))))
   }
 
@@ -134,7 +134,7 @@ test_that("oututput value check",{
   load(system.file("extdata","SRpma_RI_L1_AR0_outAR0.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("SRpma_RI_L1_AR0_outAR0$",testcontents[i]))),eval(parse(text=paste("SRpma_RI_L1_AR0_outAR0_check$",testcontents[i]))))
   }
 
@@ -142,7 +142,7 @@ test_that("oututput value check",{
   load(system.file("extdata","SRpma_RI_L1_AR1_outAR0.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("SRpma_RI_L1_AR1_outAR0$",testcontents[i]))),eval(parse(text=paste("SRpma_RI_L1_AR1_outAR0_check$",testcontents[i]))))
   }
 
@@ -150,14 +150,14 @@ test_that("oututput value check",{
   load(system.file("extdata","SRpma_RI_L1_AR1_outAR1.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("SRpma_RI_L1_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("SRpma_RI_L1_AR1_outAR1_check$",testcontents[i]))))
   }
 
   # RI L2 AR0 ----
   load(system.file("extdata","SRpma_RI_L2_AR0_outAR0.rda",package = "frasyr"))
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("SRpma_RI_L2_AR0_outAR0$",testcontents[i]))),eval(parse(text=paste("SRpma_RI_L2_AR0_outAR0_check$",testcontents[i]))))
   }
 
@@ -165,7 +165,7 @@ test_that("oututput value check",{
   load(system.file("extdata","SRpma_RI_L2_AR1_outAR0.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("SRpma_RI_L2_AR1_outAR0$",testcontents[i]))),eval(parse(text=paste("SRpma_RI_L2_AR1_outAR0_check$",testcontents[i]))))
   }
 
@@ -173,7 +173,7 @@ test_that("oututput value check",{
   load(system.file("extdata","SRpma_RI_L2_AR1_outAR1.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("SRpma_RI_L2_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("SRpma_RI_L2_AR1_outAR1_check$",testcontents[i]))))
   }
 
