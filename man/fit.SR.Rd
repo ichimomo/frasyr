@@ -10,7 +10,6 @@ fit.SR(
   SR = "HS",
   method = "L2",
   AR = 1,
-  TMB = FALSE,
   hessian = FALSE,
   w = rep(1, length(SRdata$R)),
   length = 20,

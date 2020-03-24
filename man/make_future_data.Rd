@@ -44,7 +44,8 @@ make_future_data(
   recruit_intercept = 0,
   model_average_option = NULL,
   regime_shift_option = NULL,
-  silent = FALSE
+  silent = FALSE,
+  special_setting = NULL
 )
 }
 \arguments{
@@ -111,6 +112,8 @@ make_future_data(
 \item{model_average_option}{model averagingをする場合のオプション. SR_matのlistとweightをlist形式で入れる(list(SR_list=list(res_SR1,res_SR2),weight=c(0.5,0.5)))}
 
 \item{regime_shift_option}{res_SRにfit.SRregimeの返り値を入れた場合に指定する。将来予測で再生産関係のどのフェーズがおこるかを指定する。list(future_regime=将来のregimeの仮定。keyで指定された番号を入れる)}
+
+\item{special_setting}{list形式で与えるmake_future_dataの返り値のdataと同じ名前の要素について、最後にデータをここで示されたarrayのシミュレーション1回めの値で上書きする。arrayのデータに対してのみ有効。}
 
 \item{HCR_Blimi}{HCRのBlimi}
 }

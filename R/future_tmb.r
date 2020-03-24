@@ -34,6 +34,7 @@
 #' @param recruit_intercept 将来の加入の切片。将来の加入は R=f(ssb) + intercept となる。
 #' @param model_average_option model averagingをする場合のオプション. SR_matのlistとweightをlist形式で入れる(list(SR_list=list(res_SR1,res_SR2),weight=c(0.5,0.5)))
 #' @param regime_shift_option res_SRにfit.SRregimeの返り値を入れた場合に指定する。将来予測で再生産関係のどのフェーズがおこるかを指定する。list(future_regime=将来のregimeの仮定。keyで指定された番号を入れる)
+#' @param special_setting list形式で与えるmake_future_dataの返り値のdataと同じ名前の要素について、最後にデータをここで示されたarrayのシミュレーション1回めの値で上書きする。arrayのデータに対してのみ有効。
 #' 
 #' @export
 
@@ -76,7 +77,9 @@ make_future_data <- function(res_vpa,
                           recruit_intercept=0, # number of additional recruitment (immigration or enhancement)
                           model_average_option=NULL,
                           regime_shift_option =NULL,
-                          silent=FALSE
+                          silent=FALSE,
+                          # special
+                          special_setting=NULL
                           ) 
 {
 
@@ -253,6 +256,12 @@ make_future_data <- function(res_vpa,
         tmb_data$waa_mat[,waa_fun_year,] <- 0
     }
 
+    if(!is.null(special_setting)){
+        set_name <- names(special_setting)
+        for(i in 1:length(set_name)){
+            tmb_data[[which(set_name[[i]]==tmb_data)[[1]]]][] <- special_setting[[i]][]
+        }}
+    
     return(tibble::lst(data=tmb_data,input=input))
 }
 
