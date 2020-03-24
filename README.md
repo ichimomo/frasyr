@@ -32,8 +32,10 @@ library(frasyr)
 - v1.00 : future-rvpaから移動してきたほぼそのままのバージョン
 - v1.10 : future.vpaにuse.MSEオプションを追加
 - v1.20 : 2019年アジ・イワシ事前検討会用
-- v2.00 : 2020年アジ・イワシ研究機関会議用
+- v2.00 : 2020年アジ・イワシ研究機関会議用(事前配布版)
    - 将来予測のメイン関数をfuture.vpaからfuture_vpaに移行。基本的な使い方は以下のマニュアルのリンク先を参照のこと
+- v2.01 : 2020年アジ・イワシ研究機関会議用(最終版)
+   - fit.parでL1の場合のSDをRMSEに統一
 
 # マニュアル
 - VPAによる資源量推定　https://ichimomo.github.io/frasyr/doc/vpa.html
