@@ -799,6 +799,7 @@ fit.SRregime <- function(
   }
   sd.pred <- sd <- obj.f(a,b,out="sd")
   if (method=="L1") {
+    # L1の場合sd.predとsdは定義が異なる. sdの値は825-834行目は上書きされることに注意
     sd.pred <- sd <- sqrt(2)*sd.pred
   }
   # sd <- sqrt(sum(w*obj.f(a,b,out="resid")^2)/sum(w))
