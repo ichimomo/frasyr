@@ -58,7 +58,6 @@ get.SRdata <- function(vpares,R.dat = NULL,
 #' @param length 初期値を決める際のgridの長さ
 #' @param rep.opt \code{TRUE}で\code{optim}による最適化を収束するまで繰り返す
 #' @param p0 \code{optim}で設定する初期値
-#' @param sd.obs L1のときにSDをRMSEに置き換えるか否か
 #' @encoding UTF-8
 #' @examples
 #' \dontrun{
@@ -626,7 +625,6 @@ prof.lik <- function(Res,a=Res$pars$a,b=Res$pars$b,sd=Res$pars$sd,rho=ifelse(Res
 #' @param regime.year レジームが変わる年
 #' @param regime.key レジームのパターンを表す(\code{0:2}だとA->B->Cで、\code{c(0,1,0)}だとA->B->Aのようなパターンとなる)
 #' @param regime.par レジームによって変化するパラメータ(\code{c("a","b","sd")}の中から選ぶ)
-#' @param sd.obs L1のときSDをRMSEに置き換えるか
 #' @param length 初期値を決める際のgridの長さ
 #' @param p0 \code{optim}で設定する初期値
 #' @inheritParams fit.SR
