@@ -222,7 +222,7 @@ test_that("tentative test for sd of L1 and L2",{
 
 context("stock-recruitment fit.SRregime")
 
-test_that("output value check in fit.SRregime",{
+test_that("check matching of fit.SRregime and fit.SR",{
   load(system.file("extdata","SRdata_pma.rda",package = "frasyr"))
   SRdata = SRdata_pma
   SRmodel.list <- expand.grid(SR.rel = c("HS","BH","RI"), L.type = c("L1", "L2"))
@@ -231,6 +231,7 @@ test_that("output value check in fit.SRregime",{
   regime1 = min(SRdata$year):(regime_year-1); regime2 = regime_year:max(SRdata$year);
   SRdata1 = list(year=regime1, R=SRdata$R[SRdata$year %in% regime1],SSB=SRdata$SSB[SRdata$year %in% regime1]) 
   SRdata2 = list(year=regime2, R=SRdata$R[SRdata$year %in% regime2],SSB=SRdata$SSB[SRdata$year %in% regime2])
+  # レジームを完全に分けたときのfit.SRregimeの結果とfit.SRの結果が一致するかのテスト
   for (i in 1:nrow(SRmodel.list)) {
     resSR1 <- fit.SR(SRdata1, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],AR = 0, hessian = FALSE,rep.opt=TRUE,length=20)
     resSR2 <- fit.SR(SRdata2, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],AR = 0, hessian = FALSE,rep.opt=TRUE,length=20)
