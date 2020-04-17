@@ -1284,7 +1284,7 @@ plot_futures <- function(vpares,
     theme_SH(base_size=font.size,legend.position=legend.position)+
     scale_color_hue(l=40)+
     labs(caption = str_c("(塗り:", CI_range[1]*100,"-",CI_range[2]*100,
-                         "%信頼区間, 太い実線: 平均値",
+                         "%予測区間, 太い実線: 平均値",
                          ifelse(n_example>0,", 細い実線: シミュレーションの1例)",")")
     ))
 
