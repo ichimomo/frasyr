@@ -30,7 +30,13 @@ test_that("oututput value check",{
       # pars$sdは残差のRMSEに一致
       # ただしAR１＆L1の場合にはけっこうな桁で一致しない→toleranceをかなり緩くしてテストが通るようにしている→今後要改善
       if(SRmodel.list$AR[i]==0) expect_equal(SR.list[[i]]$pars$sd, sqrt(mean((SR.list[[i]]$resid)^2)),  label=i)
-      if(SRmodel.list$AR[i]==1) expect_equal(SR.list[[i]]$pars$sd, sqrt(mean((SR.list[[i]]$resid)^2)),  label=i, tolerance=0.01)
+      if(SRmodel.list$AR[i]==1) {
+        expect_equal(SR.list[[i]]$pars$sd, sqrt(mean((SR.list[[i]]$resid)^2)),  label=i, tolerance=0.01)
+        # AR(1)のときのar関数の結果と一致するかをチェック
+        arres = ar(SR.list[[i]]$resid,aic=FALSE,order.max=1,demean=FALSE,method="mle")
+        expect_equal(as.numeric(arres$ar), SR.list[[i]]$pars$rho,lebel=i,tol=1.0e-4)
+        expect_equal(as.numeric(sqrt(arres$var.pred)), SR.list[[i]]$pars$sd,lebel=i,tol=1.0e-4)
+      }
       # sd.predとして出力されるものは過去のsdと一致        
       # 同様に、AR＝１で同時推定の場合には一致しないらしいので、このあとテストの対象からは外している→要改善
       SR.list[[i]]$pars$sd <- SR.list[[i]]$sd.pred # sdはsd.predに置き換え
@@ -214,3 +220,28 @@ test_that("tentative test for sd of L1 and L2",{
       expect_equal(res_L2$pars$sd,res_L1$pars$sd)      
 })
 
+context("stock-recruitment fit.SRregime")
+
+test_that("check matching of fit.SRregime and fit.SR",{
+  load(system.file("extdata","SRdata_pma.rda",package = "frasyr"))
+  SRdata = SRdata_pma
+  SRmodel.list <- expand.grid(SR.rel = c("HS","BH","RI"), L.type = c("L1", "L2"))
+  # regime_year = ceiling(mean(SRdata$year))
+  regime_year = 1999
+  regime1 = min(SRdata$year):(regime_year-1); regime2 = regime_year:max(SRdata$year);
+  SRdata1 = list(year=regime1, R=SRdata$R[SRdata$year %in% regime1],SSB=SRdata$SSB[SRdata$year %in% regime1]) 
+  SRdata2 = list(year=regime2, R=SRdata$R[SRdata$year %in% regime2],SSB=SRdata$SSB[SRdata$year %in% regime2])
+  # レジームを完全に分けたときのfit.SRregimeの結果とfit.SRの結果が一致するかのテスト
+  for (i in 1:nrow(SRmodel.list)) {
+    resSR1 <- fit.SR(SRdata1, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],AR = 0, hessian = FALSE,rep.opt=TRUE,length=20)
+    resSR2 <- fit.SR(SRdata2, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],AR = 0, hessian = FALSE,rep.opt=TRUE,length=20)
+    resSRregime <- fit.SRregime(SRdata, SR = as.character(SRmodel.list$SR.rel[i]), method = as.character(SRmodel.list$L.type[i]), regime.year = regime_year, regime.key = 0:1, regime.par = c("a","b","sd"), use.fit.SR = TRUE)
+    expect_equal(c(resSR1$pars$a,resSR2$pars$a)/resSRregime$pars$a,c(1,1),label=i,tol=1.0e-2)
+    expect_equal(c(resSR1$pars$a,resSR2$pars$a)/resSRregime$regime_pars$a,c(1,1),label=i,tol=1.0e-2)
+    expect_equal(c(resSR1$pars$b,resSR2$pars$b)/resSRregime$pars$b,c(1,1),label=i,tol=1.0e-2)
+    expect_equal(c(resSR1$pars$b,resSR2$pars$b)/resSRregime$regime_pars$b,c(1,1),label=i,tol=1.0e-2)
+    expect_equal(c(resSR1$pars$sd,resSR2$pars$sd)/resSRregime$pars$sd,c(1,1),label=i,tol=1.0e-2)
+    expect_equal(c(resSR1$pars$sd,resSR2$pars$sd)/resSRregime$regime_pars$sd,c(1,1),label=i,tol=1.0e-2)
+    expect_equal(resSR1$loglik+resSR2$loglik,resSRregime$loglik,label=i,tol=1.0e-3)
+  }
+})
