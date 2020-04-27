@@ -15,6 +15,7 @@ NULL
 #' 年齢別パラメータを与えて、１年分前進計算する
 #'
 #' @export
+#' @encoding UTF-8
 
 calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=Inf,Pope=TRUE,ssb.coef=0){
   if(is.null(waa.catch)) waa.catch <- waa
@@ -41,7 +42,7 @@ calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=
 #' 年齢別生物パラメータとFと漁獲量を与えると与えた漁獲量と一致するFへの乗数を返す
 #'  
 #' @export
-#' 
+#' @encoding UTF-8
 
 caa.est.mat <- function(naa,saa,waa,M,catch.obs,Pope,set_max1=TRUE){
   if(set_max1==TRUE) saa <- saa/max(saa)
@@ -88,6 +89,9 @@ caa.est.mat <- function(naa,saa,waa,M,catch.obs,Pope,set_max1=TRUE){
 #   tmp2 <- tmpfunc(x=tmp$minimum,catch.obs=catch.obs,naa=naa,saa=saa,waa=waa,M=M,Pope=Pope,out=TRUE)
 #   return(list(x=tmp$minimum,caa=tmp2))
 # }
+
+#' @export
+#' @encoding UTF-8
 
 solv.Feq <- function(cvec,nvec,mvec){
   Fres <- rep(0,length(cvec))
@@ -144,6 +148,8 @@ solv.Feq <- function(cvec,nvec,mvec){
 #'
 #' @export
 #' @import tibble 
+#' @encoding UTF-8
+#' 
 
 # ref.F
 ref.F <- function(

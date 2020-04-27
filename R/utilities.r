@@ -11,7 +11,7 @@ pt1             <- 0.3528
 #' 会議用の図のフォーマット
 #'
 #' @export
-#'
+#' @encoding UTF-8
 
 theme_SH <- function(legend.position="none",base_size=12){
   theme_bw(base_size=base_size) +
@@ -35,6 +35,7 @@ ggsave_SH <- function(...){
 #' 会議用の図の出力関数（大きさ・サイズの指定済）：大きいサイズ
 #'
 #' @export
+#' @encoding UTF-8 
 #'
 
 ggsave_SH_large <- function(...){
@@ -518,6 +519,7 @@ derive_RP_value <- function(refs_base,RP_name){
 #'
 #' @export
 #'
+#' @encoding UTF-8
 
 make_kobeII_table <- function(kobeII_data,
                               res_vpa,
@@ -1130,16 +1132,6 @@ plot_Fcurrent <- function(vpares,
   
   return(g)
 }
-
-
-library(ggplot2)
-
-#Setting parameter values.
-#SBtarget <- 250
-#SBban <- 0.1*SBtarget
-#SBlim <- 0.4*SBtarget
-#Ftarget <-1.5
-#beta <- 0.8
 
 #' HCRを書く
 #'
@@ -1795,6 +1787,7 @@ compare_MSY <- function(MSYlist,
 #' }
 #'
 #' @export
+#' @encoding UTF-8
 #'
 #' 
 
@@ -1829,6 +1822,7 @@ compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000){
 #' @param biomass.unit 資源量の単位
 #'
 #' @export
+#' @encoding UTF-8 
 #'
 
 get_performance <- function(future_list,res_vpa,ABC_year=2021,
@@ -1921,7 +1915,7 @@ get_performance <- function(future_list,res_vpa,ABC_year=2021,
 #' @param res_vpa VPAの結果
 #' @param ... get_performanceで必要な引数
 #'
-#'
+#' @encoding UTF-8
 #' @export
 #'
 
@@ -2048,6 +2042,7 @@ plot_bias_in_MSE <- function(fout, out="graph", error_scale="log", yrange=NULL){
 #' @param SPRtarget target SPR
 #'
 #' @export
+#' @encoding UTF-8 
 #'
 
 

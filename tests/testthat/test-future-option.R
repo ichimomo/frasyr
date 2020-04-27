@@ -134,12 +134,12 @@ res_future_test_R <- future_vpa(tmb_data=data_future_test$data,
 expect_equal(round(res_future_test_R$multi,3),0.527)
 
 if(sum(installed.packages()[,1]=="TMB")){
-    res_future_test_tmb <- future_vpa(tmb_data=data_future_test$data,
-                                      optim_method="tmb", 
-                                      multi_init  = 1,
-                                      multi_lower = 0.001, multi_upper = 5,
-                                      objective="MSY")
-    expect_equal(round(res_future_test_tmb$multi,3),0.527)
+  #  res_future_test_tmb <- future_vpa(tmb_data=data_future_test$data,
+  #                                    optim_method="tmb", 
+  #                                    multi_init  = 1,
+  #                                    multi_lower = 0.001, multi_upper = 5,
+  #                                    objective="MSY")
+  #  expect_equal(round(res_future_test_tmb$multi,3),0.527)
 }
 
 

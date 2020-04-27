@@ -39,6 +39,7 @@
 #' @param special_setting list形式で与えるmake_future_dataの返り値のdataと同じ名前の要素について、最後にデータをここで示されたarrayのシミュレーション1回めの値で上書きする。arrayのデータに対してのみ有効。
 #' 
 #' @export
+#' @encoding UTF-8
 
 make_future_data <- function(res_vpa,
                              nsim = 1000, # number of simulation
@@ -273,7 +274,7 @@ make_future_data <- function(res_vpa,
 #' @param SPR_target 目標とする%SPR。NULL以外の値の場合、過去〜将来のそれぞれの年・シミュレーションが、目標とするF%SPRに対して何倍にあたるか(F/Ftarget)を計算して、HCR_matの"Fratio"に入れる。HCRが生きている年については"beta_gamma"と一致するはず。
 #'
 #' @export
-#'
+#' @encoding UTF-8
 
 future_vpa <- function(tmb_data,
                        optim_method="none", # or "R" or "none"
@@ -651,7 +652,7 @@ future_vpa_R <- function(naa_mat,
 #' @param regime_shift_option レジームシフトを仮定する場合のオプション. この場合, res_SRにはfit.SRregimeの結果オブジェクトを入れる. オプションの設定は list(future_regime=将来のregimeの仮定。keyで指定された番号を入れる)
 #' 
 #' @export
-#' 
+#' @encoding UTF-8
 
 set_SR_mat <- function(res_vpa=NULL,
                        start_random_rec_year_name,                       
@@ -820,7 +821,7 @@ SRF_RI <- function(x,a,b) a*x*exp(-b*x)
 #' @param pars 置き換えるべき生物パラメータ
 #' @param pars.year この期間の生物パラメータを平均して、将来のパラメータとする
 #' @param year_replace_future 生物パラメータを置き換える最初の年
-#'
+#' @encoding UTF-8
 #' @export
 #' 
 
@@ -865,7 +866,7 @@ arrange_weight <- function(weight, nsim){
 #' @param resample_year_range 0の場合、推定に使ったデータから計算される残差を用いる。年の範囲を入れると、対象とした年の範囲で計算される残差を用いる
 #' 
 #' @export
-#' 
+#' @encoding UTF-8
 
 average_SR_mat <- function(res_vpa,
                            res_SR_list,
@@ -952,7 +953,7 @@ print.myarray <- function(x) cat("array :", dim(x),"\n")
 
 #'
 #' @export
-#' 
+#' @encoding UTF-8
 
 naming_adreport <- function(tmb_data, ad_report){
   #    ssb <- ad_report$spawner_mat
@@ -976,7 +977,7 @@ naming_adreport <- function(tmb_data, ad_report){
 
 #'
 #' @export
-#' 
+#' @encoding UTF-8
 
 trace_future <- function(tmb_data,
                          trace.multi=c(seq(from=0,to=0.9,by=0.1),1,
@@ -1020,7 +1021,7 @@ trace_future <- function(tmb_data,
 
 #'
 #' @export
-#' 
+#' @encoding UTF-8
 
 get_summary_stat <- function(all.stat){
   
@@ -1050,7 +1051,7 @@ get_summary_stat <- function(all.stat){
 
 #'
 #' @export
-#' 
+#' @encoding UTF-8
 
 format_to_old_future <- function(fout){
   fout_old <- fout[c("naa","faa","multi","input","waa")]
@@ -1080,7 +1081,7 @@ format_to_old_future <- function(fout){
 #' do.callで与えたリストの中にfuncで定義されていないものが混じっていた場合に、実際にdo.callを呼び出す前にerorrを吐いて関数をストップさせる。非常に大きいオブジェクトを与えていながらdo.callで上記の場面でエラーが出ると、長時間Rがフリーズするのを避けるため。force=TRUEにすると、func内で定義されていない引数はリストから除外してdo.callを実行する.
 #'
 #' @export
-#' 
+#' @encoding UTF-8
 
 safe_call <- function(func,args,force=FALSE,...){
   argname <- names(formals(func))
@@ -1098,7 +1099,7 @@ safe_call <- function(func,args,force=FALSE,...){
 
 #'
 #' @export
-#' 
+#' @encoding UTF-8
 
 HCR_default <- function(ssb, Blimit, Bban, beta){
   beta_gamma <- beta
