@@ -1,3 +1,5 @@
+# basic dynamics ----
+
 #'
 #' future_vpaにインプットとして入れる将来予測の空のarrayを生成する関数
 #'
@@ -332,7 +334,7 @@ future_vpa <- function(tmb_data,
     res_future$multi <- multi
   }
   
-  #--- R ----
+  #--- R
   if(optim_method=="R" | optim_method=="none"){
     
     tmb_data$do_MSE <- do_MSE
@@ -629,6 +631,8 @@ future_vpa_R <- function(naa_mat,
   }
   
 }
+
+# utility functions for stock recruitment relationship ----
 
 #'
 #' 将来予測用の再生産関係の設定を行う関数
@@ -944,11 +948,11 @@ sample_backward <- function(residual, n, duration){
 print.myarray <- function(x) cat("array :", dim(x),"\n")
 
 
+# utility functions for other parts -----
 
 #'
 #' @export
 #' 
-
 
 naming_adreport <- function(tmb_data, ad_report){
   #    ssb <- ad_report$spawner_mat
