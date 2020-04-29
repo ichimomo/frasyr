@@ -9,7 +9,9 @@
 #' 
 NULL
 
-# 個体群動態の記述に使われる基本的関数 ----
+# 将来予測や管理基準値計算に使われる関数群 ----
+
+# 個体群動態に関する基本的関数 ----
 
 #'
 #' 年齢別パラメータを与えて、１年分前進計算する
@@ -115,6 +117,72 @@ solv.Feq <- function(cvec,nvec,mvec){
   }
   Fres
 }
+
+#' VPAの結果に格納されている生物パラメータから世代時間を計算
+#'
+#' @export
+#' 
+
+Generation.Time <- function(vpares,
+                            maa.year=2014:2015,
+                            maa=NULL,
+                            M.year=2014:2015,
+                            M=NULL,
+                            Plus = 19
+){
+  
+  if(is.null(maa)){
+    maa <- vpares$input$dat$maa
+    maa <- rowMeans(maa[,colnames(maa) %in% maa.year,drop=F],na.rm=T)
+    maa <- maa[!is.na(maa)]
+  }
+  if(is.null(M)){
+    M <- vpares$input$dat$M
+    M <- rowMeans(M[,colnames(M) %in% M.year,drop=F],na.rm=T)
+    M <- M[!is.na(M)]
+  }
+  
+  age <- as.numeric(names(maa))
+  maa <- c(maa, rep(1,Plus))
+  M <- c(M, rep(M[length(M)],Plus))
+  age <- c(age, max(age)+1:Plus)
+  A <- length(M)
+  L <- c(1,exp(-cumsum(M[-A])))
+  G <- sum(age*L*maa)/sum(L*maa)
+  
+  return(G)
+}
+
+### dynamics MSYを計算してみる                                                                                  
+dyn.msy <- function(naa.past,naa.init=NULL,fmsy,a,b,resid,resid.year,waa,maa,M,SR=TRUE){
+  nyear <- length(resid)
+  if(is.null(naa.init)) nage <- nrow(naa.past) else nage <- length(naa.init)
+  naa <- matrix(0,nage,nyear)
+  ssb <- numeric()
+  if(is.null(naa.init)) naa[,1] <- naa.past[,colnames(naa.past)==min(resid.year)]
+  else naa[,1] <- naa.init
+  colnames(naa) <- resid.year
+  if(is.null(naa.init)){
+    waa <- waa[,colnames(naa.past)%in%resid.year]
+    maa <- maa[,colnames(naa.past)%in%resid.year]
+    M <- M[,colnames(naa.past)%in%resid.year]
+  }
+  for(i in 2:nyear){
+    ssb[i-1] <- sum(naa[,i-1]*waa[,i-1]*maa[,i-1],na.rm=T)
+    if(SR==TRUE){
+      naa[1,i] <- HS(ssb[i-1],a,b)*exp(resid[i])
+    }
+    else{
+      naa[1,i] <- naa.past[1,i]
+    }
+    for(j in 2:(nage-1)) naa[j,i] <- naa[j-1,i-1] * exp(-fmsy[j-1]-M[j-1,i-1])
+    naa[nage,i] <- naa[nage-1,i-1] * exp(-fmsy[j-1]-M[j-1,i-1]) + naa[nage,i-1] * exp(-fmsy[nage]-M[nage,i-1])
+  }
+  i <- nyear ; ssb[i] <- sum(naa[,i]*waa[,i]*maa[,i])
+  list(naa=naa,ssb=ssb)
+}
+
+
 
 # 再生産関係を仮定しない管理基準値計算 ----
 
@@ -392,6 +460,91 @@ ref.F <- function(
   return(Res)
 }
 
+#' 毎年のFの\%SPRやターゲットした\%SPRに相当するFの大きさを計算する
+#' 
+#' VPA計算結果を使って毎年のF at ageがどのくらいのSPR, YPRに相当するかを計算する。また、各年のFが、目標としたSPR（target.SPR）を達成するためのF(Ftarget)の何倍(F/Ftarget)に相当するかも計算する。F/Ftargetは数値的に探索するが、そのときのF/Ftargetの上限をFmaxにて指定する。十分大きい値（デフォルトは１０）を与えておけば大丈夫だが、Ftargetが非常に小さい数字になりそうな場合にはこの値をもっと大きくとるなどする。また、SPRの計算は、デフォルトでは等比級数の和の公式を使って、無限大の年齢までSPRを足しているが、max.ageを指定することで、有限の年齢までの和も計算できる。
+#'
+#' @param dres vpa関数の返り値
+#' @param target.SPR 目標とするSPR。この値を入れると、結果の$ysdata$"F/Ftarget"で、その年のFが目標としたSPR(％)を達成するためのF（Ftarget）の何倍になっているかを返す。デフォルトは30が入っている。このとき、SPRを計算するための生物パラメータ（年齢別体重・成熟率・死亡率）はそれぞれの年で仮定されているものを用いる。
+#' @param Fmax F/Ftargetを推定するときに探索するFの乗数の最大値
+#' @param max.age SPRやYPRの計算をするときに最大何歳まで考慮するか（デフォルトは無限大)。値の指定の仕方はhelp(ref.F)を参照のこと
+#' @encoding UTF-8
+#'
+#' @examples
+#' data(res_vpa)
+#' Fratio <- get.SPR(res_vpa,target.SPR=12)$ysdata$"F/Ftarget"
+#' plot(colnames(res_vpa$naa),Fratio,type="b")
+#' 
+#'
+#' @export 
+
+get.SPR <- function(dres,target.SPR=30,Fmax=10,max.age=Inf){
+  dres$ysdata <- matrix(0,ncol(dres$faa),5)
+  dimnames(dres$ysdata) <- list(colnames(dres$faa),c("perSPR","YPR","SPR","SPR0","F/Ftarget"))
+  for(i in 1:ncol(dres$faa)){
+    dres$Fc.at.age <- dres$faa[,i] # Fc.at.ageに対象年のFAAを入れる
+    if(all(dres$Fc.at.age>0, na.rm=T)){
+      byear <- colnames(dres$faa)[i] # 何年の生物パラメータを使うか
+      
+      a <- ref.F(dres,waa.year=byear,maa.year=byear,M.year=byear,rps.year=2000:2011,
+                 pSPR=round(target.SPR),
+                 F.range=c(seq(from=0,to=ceiling(max(dres$Fc.at.age,na.rm=T)*Fmax),
+                               length=301),max(dres$Fc.at.age,na.rm=T)),plot=FALSE,max.age=max.age)
+      # YPRと%SPR
+      dres$ysdata[i,1:2] <- (as.numeric(rev(a$ypr.spr[which(a$ypr.spr$Frange2Fcurrent==1)[1],2:3])))
+      # SPR                                                                                               
+      dres$ysdata[i,3] <- a$spr0*dres$ysdata[i,1]/100
+      # SPR0                                                                                              
+      dres$ysdata[i,4] <- a$spr0
+      # relative F
+      dres$ysdata[i,5] <- 1/a$summary[3,grep("SPR",colnames(a$summary))][1]
+    }
+    else{
+      break;
+    }
+  }
+  dres$ysdata <- as.data.frame(dres$ysdata)
+  dres$target.SPR <- target.SPR
+  return(dres)
+}
+
+#' vpaデータ, 選択率の参照年1, 漁獲圧の参照年2を与えて、参照年2の漁獲圧のもとで参照年1の選択率となるF at ageを作成する関数。漁獲圧の変換は％SPR換算
+#'
+#' sel_year 選択率の参照年
+#' faa_year 漁獲圧の参照年
+#'
+#' @encoding UTF-8
+#' @export
+
+convert_faa_perSPR <- function(res_vpa, sel_year, faa_year, Fcurrent_MSY=NULL, Fsel_MSY=NULL){
+  if(is.null(Fcurrent_MSY)){
+    Fcurrent_MSY <- apply_year_colum(res_vpa$faa,target_year=faa_year)
+  }
+  Fcurrent.per.spr <- ref.F(res_vpa,Fcurrent=Fcurrent_MSY,waa.year=faa_year,M.year=faa_year,
+                            maa.year=faa_year,plot=FALSE,pSPR=NULL)$currentSPR$perSPR
+  cat("%SPR in Fcurrent ",Fcurrent.per.spr,"\n")
+  if(is.null(Fsel_MSY)){
+    Fsel_MSY <- apply_year_colum(res_vpa$faa,target_year=sel_year)
+  }
+  
+  Fmultiplier <- ref.F(res_vpa,Fcurrent=Fsel_MSY,waa.year=faa_year,M.year=faa_year,
+                       maa.year=faa_year,pSPR=Fcurrent.per.spr*100,plot=FALSE)
+  cat("----------------------------- \n ")                
+  cat("%SPR in Fsel_MSY",Fmultiplier$currentSPR$perSPR," = ")        
+  Fmultiplier <- rev(Fmultiplier$summary)[3,1] %>% unlist()
+  cat("(F multiplier=",Fmultiplier,")\n")
+  Fcurrent_MSY_new <- Fsel_MSY * Fmultiplier
+  Fref_tmp <- ref.F(res_vpa,Fcurrent=Fcurrent_MSY_new,waa.year=faa_year,
+                    M.year=faa_year,maa.year=faa_year,
+                    pSPR=Fcurrent.per.spr*100,plot=FALSE)
+  cat("%SPR in new-Fcurrent",Fref_tmp$currentSPR$perSPR,"\n")
+  cat("----------------------------- \n ")                        
+  matplot(cbind(Fcurrent_MSY_new,Fcurrent_MSY,Fsel_MSY),type="b",pch=1:3,ylab="F",xlab="Age (recruit age=1)")
+  legend("bottomright",pch=1:3,col=1:3,c("Fcurrent","Fsel_MSY","new-Fcurrent"))        
+  return(Fcurrent_MSY_new)
+}
+
+
 # 結果のプロットのための関数 ----
 
 #' ref.Fの出力をプロットするための関数
@@ -561,7 +714,7 @@ make_summary_table <- function(mat_data,side=1,probs=c(0.1,0.5,0.8)){
 }
 
 
-# 結果の入出力 ----
+# 結果の入出力&サマリーの作成 ----
 
 #'
 #' VPA結果をcsvファイルに出力する
@@ -1006,53 +1159,7 @@ get.trace <- function(trace){
   return(trace)
 }
 
-#' 毎年のFの\%SPRやターゲットした\%SPRに相当するFの大きさを計算する
-#' 
-#' VPA計算結果を使って毎年のF at ageがどのくらいのSPR, YPRに相当するかを計算する。また、各年のFが、目標としたSPR（target.SPR）を達成するためのF(Ftarget)の何倍(F/Ftarget)に相当するかも計算する。F/Ftargetは数値的に探索するが、そのときのF/Ftargetの上限をFmaxにて指定する。十分大きい値（デフォルトは１０）を与えておけば大丈夫だが、Ftargetが非常に小さい数字になりそうな場合にはこの値をもっと大きくとるなどする。また、SPRの計算は、デフォルトでは等比級数の和の公式を使って、無限大の年齢までSPRを足しているが、max.ageを指定することで、有限の年齢までの和も計算できる。
-#'
-#' @param dres vpa関数の返り値
-#' @param target.SPR 目標とするSPR。この値を入れると、結果の$ysdata$"F/Ftarget"で、その年のFが目標としたSPR(％)を達成するためのF（Ftarget）の何倍になっているかを返す。デフォルトは30が入っている。このとき、SPRを計算するための生物パラメータ（年齢別体重・成熟率・死亡率）はそれぞれの年で仮定されているものを用いる。
-#' @param Fmax F/Ftargetを推定するときに探索するFの乗数の最大値
-#' @param max.age SPRやYPRの計算をするときに最大何歳まで考慮するか（デフォルトは無限大)。値の指定の仕方はhelp(ref.F)を参照のこと
-#' @encoding UTF-8
-#'
-#' @examples
-#' data(res_vpa)
-#' Fratio <- get.SPR(res_vpa,target.SPR=12)$ysdata$"F/Ftarget"
-#' plot(colnames(res_vpa$naa),Fratio,type="b")
-#' 
-#'
-#' @export 
 
-get.SPR <- function(dres,target.SPR=30,Fmax=10,max.age=Inf){
-  dres$ysdata <- matrix(0,ncol(dres$faa),5)
-  dimnames(dres$ysdata) <- list(colnames(dres$faa),c("perSPR","YPR","SPR","SPR0","F/Ftarget"))
-  for(i in 1:ncol(dres$faa)){
-    dres$Fc.at.age <- dres$faa[,i] # Fc.at.ageに対象年のFAAを入れる
-    if(all(dres$Fc.at.age>0, na.rm=T)){
-      byear <- colnames(dres$faa)[i] # 何年の生物パラメータを使うか
-      
-      a <- ref.F(dres,waa.year=byear,maa.year=byear,M.year=byear,rps.year=2000:2011,
-                 pSPR=round(target.SPR),
-                 F.range=c(seq(from=0,to=ceiling(max(dres$Fc.at.age,na.rm=T)*Fmax),
-                               length=301),max(dres$Fc.at.age,na.rm=T)),plot=FALSE,max.age=max.age)
-      # YPRと%SPR
-      dres$ysdata[i,1:2] <- (as.numeric(rev(a$ypr.spr[which(a$ypr.spr$Frange2Fcurrent==1)[1],2:3])))
-      # SPR                                                                                               
-      dres$ysdata[i,3] <- a$spr0*dres$ysdata[i,1]/100
-      # SPR0                                                                                              
-      dres$ysdata[i,4] <- a$spr0
-      # relative F
-      dres$ysdata[i,5] <- 1/a$summary[3,grep("SPR",colnames(a$summary))][1]
-    }
-    else{
-      break;
-    }
-  }
-  dres$ysdata <- as.data.frame(dres$ysdata)
-  dres$target.SPR <- target.SPR
-  return(dres)
-}
 
 
 #' SRdataをプロットする
@@ -1074,77 +1181,6 @@ plot_SRdata <- function(SRdata, type=c("classic","gg")[1]){
                                 xlab="SSB",ylab="R",xlim=c(0,max(SRdata$SSB)),ylim=c(0,max(SRdata$R))) + theme_SH()
 }
 
-
-
-plotRadial <- function(index,base=1,col.tmp=NULL,lwd=2,...){
-  old.par <- par()
-  layout(matrix(c(1,2),2,1),heights=c(2,1))
-  
-  index2 <- sweep(matrix(unlist(index),nrow(index),ncol(index)),2,as.numeric(unlist(index[base,])),FUN="/")
-  
-  if(is.null(col.tmp)) col.tmp <- brewer.pal(nrow(index2-1),"Set1")
-  
-  radial.plot(index2,rp.type="p",lwd=lwd,show.grid.labels=FALSE,
-              labels=colnames(index),
-              radial.lim=c(0,1.5),clockwise=TRUE,start=1,
-              line.col=c(NA,col.tmp),
-              poly.col=c(rgb(40/255,96/255,163/255,0.2),rep(NA,nrow(index2)-1)), # MSYだけ色で塗る
-              ...
-  )
-  refname <- rownames(index)
-  par(mar=c(1,0,1,0))
-  plot(0,10,type="n",axes=FALSE,ylab="")
-  legend("topleft",legend=refname,
-         col=c(rgb(40/255,96/255,163/255,0.2),col.tmp),
-         ncol=2,lwd=c(10,rep(lwd,length(refname)-1)))
-  layout(matrix(c(1),1,1),heights=c(1))
-  par(old.par)
-  invisible(index2)
-}
-
-
-## 管理基準値を取り出す関数
-get.Bref <- function(res,SRfunc="hs",B0=c(0.3),SPR0=c(0.3),HS=c(1,1.3),PGY=c("PGY_0.9_upper_hs","PGY_0.9_lower_hs")){
-  sumref <- res$summary[rownames(res$summary)==SRfunc,]
-  refpoints <- list()
-  ## MSY管理基準値をピックアップ
-  refpoints$BMSY <- sumref$"SSB_MSY"
-  
-  ## B0基準の管理基準値はB0×％
-  ## B0の値はmout$summary$"B0(SSB)"にある。１番目がHSの結果
-  refpoints$B0per <- sumref$"B0(SSB)"[1] * B0 # B0_10,20,30,35,40%の値
-  names(refpoints$B0per) <- paste(B0*100,"%",sep="")
-  
-  ## B_HS関連の管理基準値
-  refpoints$BHS <- sumref$b[1] *  HS
-  names(refpoints$BHS) <- paste("B_HSx",HS,sep="")
-  
-  ## B_PGY関連の管理基準値(HSをもとにしたものはPGY.biom.hsにあります)
-  x <- res$PGY.biom.hs["ssb.mean"]
-  refpoints$BPGY <- x[match(PGY,rownames(x)),1]
-  names(refpoints$BPGY) <- PGY
-  
-  ## SSB_current
-  refpoints$SSBcur <- rev(as.numeric(res$vpares$ssb))[1]
-  
-  ## SSB_max
-  refpoints$SSBmax <- max(as.numeric(res$vpares$ssb))
-  return(unlist(refpoints))
-}
-
-plot.RP <- function(rdata,RP=NULL,biomass.scale=1,ymax=1,is.text=TRUE){
-  n <- length(rdata)
-  rdata <- sort(rdata)
-  if(is.null(RP)) RP <- names(rdata)
-  ymax <- ymax * seq(from=0.5,to=1,length=n)
-  for(j in 1:n){
-    abline(v=rdata[j]/biomass.scale,lty=1,lwd=2,col=rgb(40/255,96/255,40/255,0.5))
-    if(isTRUE(is.text)){
-      text(rdata[j]/biomass.scale,ymax[j],
-           paste(RP[j],"=\n",format(round(rdata[j]/biomass.scale),big.mark=","),"",sep=""),adj=0)
-    }
-  }
-}
 
 #'
 #' @export
@@ -1175,122 +1211,6 @@ plot_waa <- function(vres){
 }
 
 
-#'
-#' @export
-#' 
-
-Generation.Time <- function(vpares,
-                            maa.year=2014:2015,
-                            maa=NULL,
-                            M.year=2014:2015,
-                            M=NULL,
-                            Plus = 19
-){
-  
-  if(is.null(maa)){
-    maa <- vpares$input$dat$maa
-    maa <- rowMeans(maa[,colnames(maa) %in% maa.year,drop=F],na.rm=T)
-    maa <- maa[!is.na(maa)]
-  }
-  if(is.null(M)){
-    M <- vpares$input$dat$M
-    M <- rowMeans(M[,colnames(M) %in% M.year,drop=F],na.rm=T)
-    M <- M[!is.na(M)]
-  }
-  
-  age <- as.numeric(names(maa))
-  maa <- c(maa, rep(1,Plus))
-  M <- c(M, rep(M[length(M)],Plus))
-  age <- c(age, max(age)+1:Plus)
-  A <- length(M)
-  L <- c(1,exp(-cumsum(M[-A])))
-  G <- sum(age*L*maa)/sum(L*maa)
-  
-  return(G)
-}
-
-
-### dynamics MSYを計算してみる                                                                                  
-dyn.msy <- function(naa.past,naa.init=NULL,fmsy,a,b,resid,resid.year,waa,maa,M,SR=TRUE){
-  nyear <- length(resid)
-  if(is.null(naa.init)) nage <- nrow(naa.past) else nage <- length(naa.init)
-  naa <- matrix(0,nage,nyear)
-  ssb <- numeric()
-  if(is.null(naa.init)) naa[,1] <- naa.past[,colnames(naa.past)==min(resid.year)]
-  else naa[,1] <- naa.init
-  colnames(naa) <- resid.year
-  if(is.null(naa.init)){
-    waa <- waa[,colnames(naa.past)%in%resid.year]
-    maa <- maa[,colnames(naa.past)%in%resid.year]
-    M <- M[,colnames(naa.past)%in%resid.year]
-  }
-  for(i in 2:nyear){
-    ssb[i-1] <- sum(naa[,i-1]*waa[,i-1]*maa[,i-1],na.rm=T)
-    if(SR==TRUE){
-      naa[1,i] <- HS(ssb[i-1],a,b)*exp(resid[i])
-    }
-    else{
-      naa[1,i] <- naa.past[1,i]
-    }
-    for(j in 2:(nage-1)) naa[j,i] <- naa[j-1,i-1] * exp(-fmsy[j-1]-M[j-1,i-1])
-    naa[nage,i] <- naa[nage-1,i-1] * exp(-fmsy[j-1]-M[j-1,i-1]) + naa[nage,i-1] * exp(-fmsy[nage]-M[nage,i-1])
-  }
-  i <- nyear ; ssb[i] <- sum(naa[,i]*waa[,i]*maa[,i])
-  list(naa=naa,ssb=ssb)
-}
-
-
-draw.refline <- function(reftable,horiz=TRUE,scale=1000,lwd=3){
-  if(horiz==FALSE){
-    abline(v=reftable[1:4,2]/scale,
-           col=c("darkgreen","darkblue","darkred","red"),lwd=lwd,lty="22")
-    abline(v=reftable[1:4,1]/scale,
-           col=c("darkgreen","darkblue","darkred","red"),lwd=lwd,lty=1)
-  }
-  else{
-    abline(h=reftable[1:4,2]/scale,
-           col=c("darkgreen","darkblue","darkred","red"),lwd=lwd,lty="22")
-    abline(h=reftable[1:4,1]/scale,
-           col=c("darkgreen","darkblue","darkred","red"),lwd=lwd,lty=1)
-  }
-}
-
-
-#' vpaデータ, 選択率の参照年1, 漁獲圧の参照年2を与えて、参照年2の漁獲圧のもとで参照年1の選択率となるF at ageを作成する関数。漁獲圧の変換は％SPR換算
-#'
-#' sel_year 選択率の参照年
-#' faa_year 漁獲圧の参照年
-#'
-#' @encoding UTF-8
-#' @export
-
-convert_faa_perSPR <- function(res_vpa, sel_year, faa_year, Fcurrent_MSY=NULL, Fsel_MSY=NULL){
-  if(is.null(Fcurrent_MSY)){
-    Fcurrent_MSY <- apply_year_colum(res_vpa$faa,target_year=faa_year)
-  }
-  Fcurrent.per.spr <- ref.F(res_vpa,Fcurrent=Fcurrent_MSY,waa.year=faa_year,M.year=faa_year,
-                            maa.year=faa_year,plot=FALSE,pSPR=NULL)$currentSPR$perSPR
-  cat("%SPR in Fcurrent ",Fcurrent.per.spr,"\n")
-  if(is.null(Fsel_MSY)){
-    Fsel_MSY <- apply_year_colum(res_vpa$faa,target_year=sel_year)
-  }
-  
-  Fmultiplier <- ref.F(res_vpa,Fcurrent=Fsel_MSY,waa.year=faa_year,M.year=faa_year,
-                       maa.year=faa_year,pSPR=Fcurrent.per.spr*100,plot=FALSE)
-  cat("----------------------------- \n ")                
-  cat("%SPR in Fsel_MSY",Fmultiplier$currentSPR$perSPR," = ")        
-  Fmultiplier <- rev(Fmultiplier$summary)[3,1] %>% unlist()
-  cat("(F multiplier=",Fmultiplier,")\n")
-  Fcurrent_MSY_new <- Fsel_MSY * Fmultiplier
-  Fref_tmp <- ref.F(res_vpa,Fcurrent=Fcurrent_MSY_new,waa.year=faa_year,
-                    M.year=faa_year,maa.year=faa_year,
-                    pSPR=Fcurrent.per.spr*100,plot=FALSE)
-  cat("%SPR in new-Fcurrent",Fref_tmp$currentSPR$perSPR,"\n")
-  cat("----------------------------- \n ")                        
-  matplot(cbind(Fcurrent_MSY_new,Fcurrent_MSY,Fsel_MSY),type="b",pch=1:3,ylab="F",xlab="Age (recruit age=1)")
-  legend("bottomright",pch=1:3,col=1:3,c("Fcurrent","Fsel_MSY","new-Fcurrent"))        
-  return(Fcurrent_MSY_new)
-}
 
 
 #' 列が年である行列に対して、年を指定するとその年のあいだの平均値（等）を返す関数
