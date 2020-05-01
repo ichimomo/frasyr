@@ -29,5 +29,6 @@ Suggests:
     rmarkdown,
     testthat,
     foreach,
-    doParallel
+    doParallel,
+    covr
 VignetteBuilder: knitr
