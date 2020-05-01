@@ -5,3 +5,8 @@ sudo: false
 warnings_are_errors: false
 r_check_args: "--no-manual --as--cran"
 cache: packages
+
+r_packages:
+  - covr
+after_success:
+  - Rscript -e 'covr::codecov()'
