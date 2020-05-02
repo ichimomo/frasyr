@@ -71,8 +71,10 @@ ggsave_SH_large <- function(...){
 #' @export
 #'
 
-plot_vpa <- function(vpalist, vpatibble=NULL,
-                     what.plot=NULL, legend.position="top",
+plot_vpa <- function(vpalist, 
+                     vpatibble=NULL,
+                     what.plot=NULL, 
+                     legend.position="top",
                      vpaname=NULL, ncol=2){
   
   if(!is.null(vpaname)){
