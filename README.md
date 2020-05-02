@@ -37,6 +37,7 @@ library(frasyr)
    - 将来予測のメイン関数をfuture.vpaからfuture_vpaに移行。基本的な使い方は以下のマニュアルのリンク先を参照のこと
 - v2.01 : 2020年アジ・イワシ研究機関会議用(最終版)
    - fit.parでL1の場合のSDをRMSEに統一
+- v2.10 : 6月上旬ごろアップ予定   
 
 # マニュアル
 - VPAによる資源量推定　https://ichimomo.github.io/frasyr/doc/vpa.html

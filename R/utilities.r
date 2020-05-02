@@ -1,13 +1,1025 @@
-col.SBtarget    <- "#00533E"
-col.SBlim       <- "#edb918"
-col.SBlimit     <- "#edb918"
-col.SBban       <- "#C73C2E"
-col.Ftarget     <- "#714C99"
-col.betaFtarget <- "#505596"
+#'
+#' @import ggplot2
+#' @import magrittr          
+#' @import dplyr             
+#' @import tidyr             
+#' @import tibble            
+#' @importFrom magrittr %>%
+#' @importFrom dplyr filter
+#' 
+NULL
 
-pt1             <- 0.3528
+# 将来予測や管理基準値計算に使われる関数群 ----
+
+# 個体群動態に関する基本的関数 ----
+
+#'
+#' 年齢別パラメータを与えて、１年分前進計算する
+#'
+#' @export
+#' @encoding UTF-8
+
+calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=Inf,Pope=TRUE,ssb.coef=0){
+  if(is.null(waa.catch)) waa.catch <- waa
+  rel.abund <- rep(NA, na)
+  rel.abund[1] <- 1
+  for (i in 2:(na-1)) {
+    rel.abund[i] <- rel.abund[i-1]*exp(-M[i-1]-sel[i-1]*Fr)
+  }
+  rel.abund[na] <- rel.abund[na-1]*exp(-M[na-1]-sel[na-1]*Fr)*(1-exp(-((max.age-min.age)-(na-2))*(M[na]+sel[na]*Fr)))/(1-exp(-M[na]-sel[na]*Fr))
+  
+  if(isTRUE(Pope)){
+    ypr1 <- rel.abund*waa.catch[1:na]*(1-exp(-sel[1:na]*Fr))*exp(-M[1:na]/2)
+  }
+  else{
+    # use Baranov catch equation
+    ypr1 <- rel.abund*(1-exp(-sel[1:na]*Fr-M[1:na]))*sel[1:na]*Fr/
+      (sel[1:na]*Fr+M[1:na])*waa.catch[1:na]
+  }
+  spr <- rel.abund*waa[1:na]*maa[1:na]*exp(-ssb.coef*(sel[1:na]*Fr+M[1:na])) 
+  return(list(rel.abund=rel.abund,ypr=ypr1,spr=spr))
+}
+
+#'
+#' 年齢別生物パラメータとFと漁獲量を与えると与えた漁獲量と一致するFへの乗数を返す
+#'  
+#' @export
+#' @encoding UTF-8
+
+caa.est.mat <- function(naa,saa,waa,M,catch.obs,Pope,set_max1=TRUE){
+  if(set_max1==TRUE) saa <- saa/max(saa)
+  tmpfunc <- function(logx,catch.obs=catch.obs,naa=naa,saa=saa,waa=waa,M=M,out=FALSE,Pope=Pope){
+    x <- exp(logx)
+    if(isTRUE(Pope)){
+      caa <- naa*(1-exp(-saa*x))*exp(-M/2)
+    }
+    else{
+      caa <- naa*(1-exp(-saa*x-M))*saa*x/(saa*x+M)
+    }
+    wcaa <- caa*waa
+    if(out==FALSE){
+      return(log((sum(wcaa,na.rm=T)-catch.obs)^2))
+    }
+    else{
+      return(caa)
+    }
+  }
+  tmp <- optimize(tmpfunc,log(c(0.000001,10)),catch.obs=catch.obs,naa=naa,saa=saa,waa=waa,M=M,Pope=Pope,out=FALSE)#,tol=.Machine$double.eps)
+  tmp2 <- tmpfunc(logx=tmp$minimum,catch.obs=catch.obs,naa=naa,saa=saa,waa=waa,M=M,Pope=Pope,out=TRUE)
+  return(list(x=exp(tmp$minimum),caa=tmp2))
+}
+
+# #　上の関数とどっちが使われているか不明,,,多分使われていないのでコメントアウトする
+# caa.est <- function(naa,saa,waa,M,catch.obs,Pope){
+#   saa <- saa/max(saa)
+#   tmpfunc <- function(x,catch.obs=catch.obs,naa=naa,saa=saa,waa=waa,M=M,out=FALSE,Pope=Pope){
+#     if(isTRUE(Pope)){
+#       caa <- naa*(1-exp(-saa*x))*exp(-M/2)
+#     }
+#     else{
+#       caa <- naa*(1-exp(-saa*x-M))*saa*x/(saa*x+M)
+#     }
+#     wcaa <- caa*waa
+#     if(out==FALSE){
+#       return((sum(wcaa,na.rm=T)-catch.obs)^2)
+#     }
+#     else{
+#       return(caa)
+#     }
+#   }
+#   tmp <- optimize(tmpfunc,c(0,5),catch.obs=catch.obs,naa=naa,saa=saa,waa=waa,M=M,Pope=Pope,out=FALSE)
+#   tmp2 <- tmpfunc(x=tmp$minimum,catch.obs=catch.obs,naa=naa,saa=saa,waa=waa,M=M,Pope=Pope,out=TRUE)
+#   return(list(x=tmp$minimum,caa=tmp2))
+# }
+
+#' @export
+#' @encoding UTF-8
+
+solv.Feq <- function(cvec,nvec,mvec){
+  Fres <- rep(0,length(cvec))
+  # cat(nvec," ")
+  for(i in 1:length(cvec)){
+    F0 <- cvec[i]/nvec[i]
+    F1 <- cvec[i]*(F0+mvec[i])/nvec[i]/(1-exp(-F0-mvec[i]))
+    if(round(cvec[i],6)<round(nvec[i],6)){
+      while(abs(F0-F1)>0.0001 ){
+        F0 <- F1
+        F1 <- cvec[i]*(F0+mvec[i])/nvec[i]/(1-exp(-F0-mvec[i]))
+        if(F0-F1==-Inf) cat("\n",cvec[i]," ",nvec[i]," \n")
+      }
+      Fres[i] <- F1
+    }
+    else{
+      Fres[i] <- 10
+      cat("Warning: catch exceeded tot_num at: ",i," ",
+          round(cvec[i],6)," ",round(nvec[i],6),"\n")
+    }
+  }
+  Fres
+}
+
+#' VPAの結果に格納されている生物パラメータから世代時間を計算
+#'
+#' @export
+#' 
+
+Generation.Time <- function(vpares,
+                            maa.year=2014:2015,
+                            maa=NULL,
+                            M.year=2014:2015,
+                            M=NULL,
+                            Plus = 19
+){
+  
+  if(is.null(maa)){
+    maa <- vpares$input$dat$maa
+    maa <- rowMeans(maa[,colnames(maa) %in% maa.year,drop=F],na.rm=T)
+    maa <- maa[!is.na(maa)]
+  }
+  if(is.null(M)){
+    M <- vpares$input$dat$M
+    M <- rowMeans(M[,colnames(M) %in% M.year,drop=F],na.rm=T)
+    M <- M[!is.na(M)]
+  }
+  
+  age <- as.numeric(names(maa))
+  maa <- c(maa, rep(1,Plus))
+  M <- c(M, rep(M[length(M)],Plus))
+  age <- c(age, max(age)+1:Plus)
+  A <- length(M)
+  L <- c(1,exp(-cumsum(M[-A])))
+  G <- sum(age*L*maa)/sum(L*maa)
+  
+  return(G)
+}
+
+### dynamics MSYを計算してみる                                                                                  
+dyn.msy <- function(naa.past,naa.init=NULL,fmsy,a,b,resid,resid.year,waa,maa,M,SR=TRUE){
+  nyear <- length(resid)
+  if(is.null(naa.init)) nage <- nrow(naa.past) else nage <- length(naa.init)
+  naa <- matrix(0,nage,nyear)
+  ssb <- numeric()
+  if(is.null(naa.init)) naa[,1] <- naa.past[,colnames(naa.past)==min(resid.year)]
+  else naa[,1] <- naa.init
+  colnames(naa) <- resid.year
+  if(is.null(naa.init)){
+    waa <- waa[,colnames(naa.past)%in%resid.year]
+    maa <- maa[,colnames(naa.past)%in%resid.year]
+    M <- M[,colnames(naa.past)%in%resid.year]
+  }
+  for(i in 2:nyear){
+    ssb[i-1] <- sum(naa[,i-1]*waa[,i-1]*maa[,i-1],na.rm=T)
+    if(SR==TRUE){
+      naa[1,i] <- HS(ssb[i-1],a,b)*exp(resid[i])
+    }
+    else{
+      naa[1,i] <- naa.past[1,i]
+    }
+    for(j in 2:(nage-1)) naa[j,i] <- naa[j-1,i-1] * exp(-fmsy[j-1]-M[j-1,i-1])
+    naa[nage,i] <- naa[nage-1,i-1] * exp(-fmsy[j-1]-M[j-1,i-1]) + naa[nage,i-1] * exp(-fmsy[nage]-M[nage,i-1])
+  }
+  i <- nyear ; ssb[i] <- sum(naa[,i]*waa[,i]*maa[,i])
+  list(naa=naa,ssb=ssb)
+}
 
 
+
+# 再生産関係を仮定しない管理基準値計算 ----
+
+#'
+#' 再生産関係を仮定しない管理基準値計算(SPR,YPR,F0.1,Fmax)のための関数
+#'
+#' @param res VPAの出力結果
+#' @param sel 仮定する選択率．NULLの場合，res$Fc.at.ageが使われる
+#' @param waa 仮定する年齢別体重。直接の値を入れるか，waa.yearで年を指定するやり方のどちらでも動く。直接指定するほうが優先。
+#' @param maa 仮定する年齢別成熟率。直接の値を入れるか，waa.yearで年を指定するやり方のどちらでも動く。直接指定するほうが優先。
+#' @param M 仮定する年齢別死亡率。直接の値を入れるか，waa.yearで年を指定するやり方のどちらでも動く。直接指定するほうが優先。
+#' @param waa.catch　仮定する年齢別体重（漁獲量計算用）。直接の値を入れるか，waa.yearで年を指定するやり方のどちらでも動く。直接指定するほうが優先。
+#' @param M.year 年を指定して生物パラメータを仮定する場合．年の範囲の平均値が用いられる．NULLの場合，VPA最終年の値が使われる
+#' @param waa.year 年を指定して生物パラメータを仮定する場合．年の範囲の平均値が用いられる．NULLの場合，VPA最終年の値が使われる
+#' @param maa.year 年を指定して生物パラメータを仮定する場合．年の範囲の平均値が用いられる．NULLの場合，VPA最終年の値が使われる
+#' @param rps.year Fmedの計算に使うRPSの年の範囲．NULLの場合，全範囲が用いられる
+#' @param max.age 加入年齢を０歳としたときに、SPR計算で考慮される最大の年齢（年齢の数ではないことに注意, デフォルトはInf）。加入年齢が１歳以上のときは、SPR計算で考慮したい年齢-加入年齢を入力する、またはmin.ageの引数に加入年齢を設定する。
+#' @param min.age  加入年齢が0歳でないときに指定できる(デフォルトは0)
+#' @param  pSPR = seq(10,90,by=10), # F\%SPRを計算するときの％SPR
+#' @param d 0.001
+#' @param  Fem.init 経験的管理基準値(Fmed, Fmean, Fhigh, Flow)の初期値 (default=0.5)
+#' @param  Fmax.init Fmaxの初期値 (default=1.5)
+#' @param  F0.1.init F0.1の初期値 (default=0.7)
+#' @param  iterlim 
+#' @param  plot 結果のプロットを表示するかどうか
+#' @param  Pope Popeの式を使うか
+#' @param  F.range YPR, SPR曲線を書くときのFの範囲（Fの最大値のスケール）、かつ、F\%SPRを計算するときの初期値を決めるために利用される。F\%SPRの推定がうまくいかない場合はこの範囲を調整してください。
+#' @encoding UTF-8
+#'
+#' @note F_SPRのF管理基準値の初期値は　与えられたFのもとでのSPR/目的のSPR　を初期値とするように調整されるので不要。
+#'
+#' @export
+#' @import tibble 
+#' @encoding UTF-8
+#' 
+
+# ref.F
+ref.F <- function(
+  res, # VPAの結果のオブジェクト
+  #  sel=NULL, # 仮定する選択率．NULLの場合，res$Fc.at.ageが使われる
+  Fcurrent=NULL, # Fcurrentの仮定．NULLの場合，res$Fc.at.ageが使われる  
+  waa=NULL, # 仮定する生物パラメータ．直接の値を入れるか，年を指定するやり方のどちらでも動く。直接指定するほうが優先。
+  maa=NULL,
+  M=NULL,
+  waa.catch=NULL,
+  M.year=NULL, 
+  waa.year=NULL, # 年を指定して生物パラメータを仮定する場合．年の範囲の平均値が用いられる．NULLの場合，VPA最終年の値が使われる
+  maa.year=NULL,
+  rps.year = NULL, # Fmedの計算に使うRPSの年の範囲．NULLの場合，全範囲が用いられる
+  max.age = Inf, # 加入年齢を０歳としたときに、SPR計算で考慮される最大の年齢（年齢の数ではないことに注意）。加入年齢が１歳以上のときは、SPR計算で考慮したい年齢-加入年齢を入力する、またはmin.ageの引数に加入年齢を設定する。
+  min.age = 0, # 加入年齢が0歳でないときに指定できる
+  d = 0.001,
+  Fem.init = 0.5, 
+  Fmax.init = 1.5, # Fmaxの初期値
+  F0.1.init = 0.7, # F0.1の初期値
+  pSPR = seq(10,90,by=10), # F%SPRを計算するときの％SPR
+  iterlim=1000,
+  plot=TRUE,
+  Pope=NULL, # 2014.7.4追加
+  F.range = seq(from=0,to=2,length=101)  # YPR, SPR曲線を書くときのFの範囲
+){
+  
+  argname <- ls()
+  arglist <- lapply(argname,function(x) eval(parse(text=x)))
+  names(arglist) <- argname
+  
+  if(is.null(Pope)) Pope <- res$input$Pope
+  
+  naa <- res$naa
+  ssb <- res$ssb
+  ny <- ncol(naa)
+  years <- dimnames(naa)[[2]]
+  ages <- dimnames(naa)[[1]]
+  
+  if(is.null(Fcurrent)){
+    Fcurrent <- res$Fc.at.age
+  }
+  sel <- Fcurrent/max(Fcurrent,na.rm=TRUE)
+  na <- sum(!is.na(Fcurrent))
+  
+  if(is.null(waa.year)) waa.year <- rev(years)[1]
+  if(is.null(maa.year)) maa.year <- rev(years)[1]
+  if(is.null(M.year)) M.year <- rev(years)[1]
+  if(is.null(rps.year)) rps.year <- as.numeric(colnames(res$naa))
+  
+  if(is.null(waa))  waa <- apply_year_colum(res$input$dat$waa,waa.year)
+  if(is.null(M))    M   <- apply_year_colum(res$input$dat$M,M.year)
+  if(is.null(maa))  maa <- apply_year_colum(res$input$dat$maa,maa.year)
+  
+  if(is.null(waa.catch)){
+    if(is.null(res$input$dat$waa.catch)){
+      waa.catch <- waa
+    }
+    else{
+      waa.catch <- apply_year_colum(res$input$dat$waa.catch,waa.year)
+    }
+  }
+  
+  ssb.coef <- ifelse(is.null(res$ssb.coef),0,res$ssb.coef)
+  
+  min.age <- min(as.numeric(rownames(res$naa)))
+  if(min.age==0) slide.tmp <- TRUE else slide.tmp <- -1:-min.age
+  rps.data <- data.frame(year=as.numeric(names(colSums(ssb,na.rm=T))),
+                         ssb=as.numeric(colSums(ssb,na.rm=T)),
+                         recruit=as.numeric(c(naa[1,slide.tmp],rep(NA,min.age))))
+  if (sum(is.na(rps.data$year))>0) rps.data <- rps.data[-which(is.na(rps.data$year)),]
+  rps.data$rps <- rps <- rps.data$recruit/rps.data$ssb
+  #  rps <- as.numeric(naa[1,]/colSums(ssb,na.rm=TRUE))
+  
+  #  if (is.null(rps.year)) rps.year <- years
+  
+  tmp <- rps.data$year %in% rps.year
+  rps.q <- quantile(rps[tmp], na.rm=TRUE, probs=c(0.1,0.5,0.9))
+  rps.q <- c(rps.q,mean(rps[tmp], na.rm=TRUE))  
+  names(rps.q)[4] <- "mean"
+  spr.q <- 1/rps.q
+  
+  original.spr <- calc.rel.abund(Fcurrent,1,na,M,waa,waa.catch,maa,min.age=min.age,
+                                 max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)
+  original.spr0 <- calc.rel.abund(Fcurrent,0,na,M,waa,waa.catch,maa,min.age=min.age,
+                                  max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)
+  original.perspr <- sum(original.spr$spr,na.rm=T)/sum(original.spr0$spr,na.rm=T)
+  
+  
+  # Fcurrent
+  Fcurrent_max_mean <- c(max(Fcurrent,na.rm=T), mean(Fcurrent,na.rm=T))
+  
+  # grid search
+  Fcurrent_max <- Fcurrent_max_mean[1]
+  F.range <- sort(c(F.range,  Fcurrent_max))
+  spr0 <- sum(calc.rel.abund(Fcurrent,0,na,M,waa,waa.catch,maa,min.age=min.age,max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)$spr,na.rm=T)  
+  tmp <- lapply(F.range, function(x) calc.rel.abund(sel,x,na,M,waa,waa.catch,maa,min.age=min.age,max.age=max.age,Pope=Pope,ssb.coef=ssb.coef))
+  ypr <- sapply(tmp,function(x) sum(x$ypr,na.rm=T))
+  pspr <- sapply(tmp,function(x) sum(x$spr,na.rm=T))/spr0*100
+  ypr.spr <- data.frame(F.range=F.range,ypr=ypr,pspr=pspr)
+  ypr.spr$Frange2Fcurrent  <- ypr.spr$F.range/Fcurrent_max
+  
+  # F.spr
+  
+  spr.f.est <- function(log.p, out=FALSE, sub="med", spr0=NULL){
+    Fr <- exp(log.p)
+    
+    tmp <- calc.rel.abund(sel,Fr,na,M,waa,waa.catch,maa,min.age=min.age,max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)
+    rel.abund <- tmp$rel.abund
+    spr <- sum(tmp$spr,na.rm=T)
+    if (isTRUE(out)) obj <- spr
+    else{
+      if(sub=="mean") obj <- (spr-spr.q[4])^2       
+      if(sub=="low") obj <- (spr-spr.q[3])^2 
+      if(sub=="med") obj <- (spr-spr.q[2])^2
+      if(sub=="high") obj <- (spr-spr.q[1])^2
+      if(is.numeric(sub)) obj <- (spr/spr0-sub/100)^2
+      
+    }
+    
+    return(obj)
+  }
+  
+  spr0 <- spr.f.est(-Inf, out=TRUE)
+  
+  Fmed.res <- nlm(spr.f.est, Fem.init, out=FALSE, sub="med", iterlim = iterlim)
+  Fmean.res <- nlm(spr.f.est, Fem.init, out=FALSE, sub="mean", iterlim = iterlim)
+  Flow.res <- nlm(spr.f.est, Fem.init, out=FALSE, sub="low", iterlim = iterlim)
+  Fhigh.res <- nlm(spr.f.est, Fem.init, out=FALSE, sub="high", iterlim = iterlim)
+  
+  Fmean <- exp(Fmean.res$estimate)  
+  Fmed <- exp(Fmed.res$estimate)
+  Flow <- exp(Flow.res$estimate)
+  Fhigh <- exp(Fhigh.res$estimate)
+  
+  if (!is.null(pSPR)){
+    FpSPR <- NULL
+    
+    for (i in pSPR){
+      tmp <- which.min(abs(ypr.spr$pspr-i))+c(-1,1)
+      tmp <- ifelse(tmp<=0,1,tmp)
+      tmp <- ifelse(tmp>length(ypr.spr$F.range),length(ypr.spr$F.range),tmp)        
+      Fspr.init <- log(ypr.spr$F.range[tmp]) #original.perspr/i*100
+      FpSPR.res <- optimize(spr.f.est, Fspr.init,out=FALSE,sub=i,spr0=spr0)
+      #nlm(spr.f.est, Fspr.init, out=FALSE, sub=i, spr0=spr0, iterlim=iterlim)
+      #      cat("Estimate F%spr: initial value=", Fspr.init," : estimated value=",exp(FpSPR.res$estimate),"\n")
+      FpSPR <- c(FpSPR, exp(FpSPR.res$minimum))
+    }
+    names(FpSPR) <- paste(pSPR,"%SPR",sep="")
+  }
+  
+  # Fmax
+  
+  ypr.f.est <- function(log.p, out=FALSE){
+    Fr <- exp(log.p)
+    
+    tmp <- calc.rel.abund(sel,Fr,na,M,waa,waa.catch,maa,max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)
+    rel.abund <- tmp$rel.abund
+    ypr <- sum(tmp$ypr,na.rm=T)    
+    
+    if (isTRUE(out)) obj <- ypr else obj <- -ypr
+    
+    return(obj)
+  }
+  
+  Fmax.res <- nlm(ypr.f.est, log(Fmax.init), out=FALSE)
+  
+  Fmax <- exp(Fmax.res$estimate)
+  
+  # F0.1
+  
+  Fp <- function(log.p, out=FALSE){
+    Fr <- exp(log.p)
+    
+    tmp <- calc.rel.abund(sel,Fr,na,M,waa,waa.catch,maa,max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)
+    rel.abund <- tmp$rel.abund
+    ypr <- sum(tmp$ypr,na.rm=T)
+    if (isTRUE(out)) obj <- ypr else obj <- -ypr
+    
+    return(obj)
+  }
+  
+  F0.1.est <- function(log.p){
+    p <- exp(log.p)
+    ref.trend <- (Fp(log(d))-Fp(log(0)))/d
+    trend <- (Fp(log(p+d)) - Fp(log(p)))/d
+    
+    obj <- (ref.trend/10 - trend)^2
+    
+    obj
+  }
+  
+  F0.1.res <- nlm(F0.1.est,log(F0.1.init))
+  
+  F0.1 <- exp(F0.1.res$estimate)
+  
+  
+  # output
+  f.mean <- function(x) mean(x*sel, na.rm=T)
+  
+  Fmean <- c(Fmean, f.mean(Fmean))  
+  Fmed <- c(Fmed, f.mean(Fmed))
+  Flow <- c(Flow, f.mean(Flow))
+  Fhigh <- c(Fhigh, f.mean(Fhigh))
+  Fmax <- c(Fmax, f.mean(Fmax))
+  F0.1 <- c(F0.1, f.mean(F0.1))
+  
+  names(Fcurrent_max_mean) <- names(Fmed) <- names(Fmean) <- names(Flow) <- names(Fhigh) <- names(Fmax) <- names(F0.1) <- c("max","mean")
+  Res <- list(min.age=min.age, max.age=max.age, rps.q=rps.q, spr.q=spr.q, Fcurrent=Fcurrent_max_mean,
+              sel=sel, Fmed=Fmed, Flow=Flow, Fhigh=Fhigh, Fmax=Fmax, F0.1=F0.1, Fmean=Fmean,rps.data=rps.data)
+  
+  if (!is.null(pSPR)){
+    FpSPR <- rbind(FpSPR, sapply(FpSPR, f.mean))
+    rownames(FpSPR) <- c("max","mean")
+    Res$FpSPR <- FpSPR
+  }
+  
+  #---- make summary
+  Res$summary <- as.data.frame(Res[substr(names(Res),1,1)=="F"])
+  Res$summary <- rbind(Res$summary,Res$summary[1,]/Res$summary[1,1])
+  dimnames(Res$summary)[[1]][3] <- "Fref/Fcur"
+  
+  Res$currentSPR <- list(SPR=sum(original.spr$spr,na.rm=T),
+                         perSPR=original.perspr,
+                         YPR=sum(original.spr$spr,na.rm=T),
+                         Fcurrent=Fcurrent)
+  
+  Res$ypr.spr  <- ypr.spr #data.frame(F.range=F.range,ypr=ypr,spr=spr)
+  Res$waa <- waa
+  Res$waa.catch <- waa.catch  
+  Res$maa <- maa
+  Res$arglist <- arglist
+  Res$spr0 <- spr0
+  
+  class(Res) <- "ref"
+  
+  if(isTRUE(plot)){
+    plot_Fref(Res)
+  }    
+  return(Res)
+}
+
+#' 毎年のFの\%SPRやターゲットした\%SPRに相当するFの大きさを計算する
+#' 
+#' VPA計算結果を使って毎年のF at ageがどのくらいのSPR, YPRに相当するかを計算する。また、各年のFが、目標としたSPR（target.SPR）を達成するためのF(Ftarget)の何倍(F/Ftarget)に相当するかも計算する。F/Ftargetは数値的に探索するが、そのときのF/Ftargetの上限をFmaxにて指定する。十分大きい値（デフォルトは１０）を与えておけば大丈夫だが、Ftargetが非常に小さい数字になりそうな場合にはこの値をもっと大きくとるなどする。また、SPRの計算は、デフォルトでは等比級数の和の公式を使って、無限大の年齢までSPRを足しているが、max.ageを指定することで、有限の年齢までの和も計算できる。
+#'
+#' @param dres vpa関数の返り値
+#' @param target.SPR 目標とするSPR。この値を入れると、結果の$ysdata$"F/Ftarget"で、その年のFが目標としたSPR(％)を達成するためのF（Ftarget）の何倍になっているかを返す。デフォルトは30が入っている。このとき、SPRを計算するための生物パラメータ（年齢別体重・成熟率・死亡率）はそれぞれの年で仮定されているものを用いる。
+#' @param Fmax F/Ftargetを推定するときに探索するFの乗数の最大値
+#' @param max.age SPRやYPRの計算をするときに最大何歳まで考慮するか（デフォルトは無限大)。値の指定の仕方はhelp(ref.F)を参照のこと
+#' @encoding UTF-8
+#'
+#' @examples
+#' data(res_vpa)
+#' Fratio <- get.SPR(res_vpa,target.SPR=12)$ysdata$"F/Ftarget"
+#' plot(colnames(res_vpa$naa),Fratio,type="b")
+#' 
+#'
+#' @export 
+
+get.SPR <- function(dres,target.SPR=30,Fmax=10,max.age=Inf){
+  dres$ysdata <- matrix(0,ncol(dres$faa),5)
+  dimnames(dres$ysdata) <- list(colnames(dres$faa),c("perSPR","YPR","SPR","SPR0","F/Ftarget"))
+  for(i in 1:ncol(dres$faa)){
+    dres$Fc.at.age <- dres$faa[,i] # Fc.at.ageに対象年のFAAを入れる
+    if(all(dres$Fc.at.age>0, na.rm=T)){
+      byear <- colnames(dres$faa)[i] # 何年の生物パラメータを使うか
+      
+      a <- ref.F(dres,waa.year=byear,maa.year=byear,M.year=byear,rps.year=2000:2011,
+                 pSPR=round(target.SPR),
+                 F.range=c(seq(from=0,to=ceiling(max(dres$Fc.at.age,na.rm=T)*Fmax),
+                               length=301),max(dres$Fc.at.age,na.rm=T)),plot=FALSE,max.age=max.age)
+      # YPRと%SPR
+      dres$ysdata[i,1:2] <- (as.numeric(rev(a$ypr.spr[which(a$ypr.spr$Frange2Fcurrent==1)[1],2:3])))
+      # SPR                                                                                               
+      dres$ysdata[i,3] <- a$spr0*dres$ysdata[i,1]/100
+      # SPR0                                                                                              
+      dres$ysdata[i,4] <- a$spr0
+      # relative F
+      dres$ysdata[i,5] <- 1/a$summary[3,grep("SPR",colnames(a$summary))][1]
+    }
+    else{
+      break;
+    }
+  }
+  dres$ysdata <- as.data.frame(dres$ysdata)
+  dres$target.SPR <- target.SPR
+  return(dres)
+}
+
+#' vpaデータ, 選択率の参照年1, 漁獲圧の参照年2を与えて、参照年2の漁獲圧のもとで参照年1の選択率となるF at ageを作成する関数。漁獲圧の変換は％SPR換算
+#'
+#' sel_year 選択率の参照年
+#' faa_year 漁獲圧の参照年
+#'
+#' @encoding UTF-8
+#' @export
+
+convert_faa_perSPR <- function(res_vpa, sel_year, faa_year, Fcurrent_MSY=NULL, Fsel_MSY=NULL){
+  if(is.null(Fcurrent_MSY)){
+    Fcurrent_MSY <- apply_year_colum(res_vpa$faa,target_year=faa_year)
+  }
+  Fcurrent.per.spr <- ref.F(res_vpa,Fcurrent=Fcurrent_MSY,waa.year=faa_year,M.year=faa_year,
+                            maa.year=faa_year,plot=FALSE,pSPR=NULL)$currentSPR$perSPR
+  cat("%SPR in Fcurrent ",Fcurrent.per.spr,"\n")
+  if(is.null(Fsel_MSY)){
+    Fsel_MSY <- apply_year_colum(res_vpa$faa,target_year=sel_year)
+  }
+  
+  Fmultiplier <- ref.F(res_vpa,Fcurrent=Fsel_MSY,waa.year=faa_year,M.year=faa_year,
+                       maa.year=faa_year,pSPR=Fcurrent.per.spr*100,plot=FALSE)
+  cat("----------------------------- \n ")                
+  cat("%SPR in Fsel_MSY",Fmultiplier$currentSPR$perSPR," = ")        
+  Fmultiplier <- rev(Fmultiplier$summary)[3,1] %>% unlist()
+  cat("(F multiplier=",Fmultiplier,")\n")
+  Fcurrent_MSY_new <- Fsel_MSY * Fmultiplier
+  Fref_tmp <- ref.F(res_vpa,Fcurrent=Fcurrent_MSY_new,waa.year=faa_year,
+                    M.year=faa_year,maa.year=faa_year,
+                    pSPR=Fcurrent.per.spr*100,plot=FALSE)
+  cat("%SPR in new-Fcurrent",Fref_tmp$currentSPR$perSPR,"\n")
+  cat("----------------------------- \n ")                        
+  matplot(cbind(Fcurrent_MSY_new,Fcurrent_MSY,Fsel_MSY),type="b",pch=1:3,ylab="F",xlab="Age (recruit age=1)")
+  legend("bottomright",pch=1:3,col=1:3,c("Fcurrent","Fsel_MSY","new-Fcurrent"))        
+  return(Fcurrent_MSY_new)
+}
+
+
+
+
+#' @export
+make_summary_table <- function(mat_data,side=1,probs=c(0.1,0.5,0.8)){
+  res_mat <- cbind(apply(mat_data,side,mean),
+                   t(apply(mat_data,side,quantile,probs=probs)))
+  colnames(res_mat)[1] <- "average"
+  res_mat %>% as_tibble()
+}
+
+
+# 結果の入出力&サマリーの作成 ----
+
+#'
+#' VPA結果をcsvファイルに出力する
+#' @param res  VPAの結果
+#' @param srres fit.SRの結果
+#' @param msyres est.MSYの結果
+#' @param fres_current future.vpaの結果(Fcurrent)
+#' @param fres_HCR future.vpaの結果(F with HCR)
+#' @param kobeII kobeII.matrixの結果
+#' @param filename csvファイルとpdfファイルの両方のファイル名を指定する場合（拡張子なしで指定）
+#' @param csvname csvファイルのファイル名
+#' @param pdfname pdfファイルのファイル名
+#' @encoding UTF-8
+#' @export
+
+out.vpa <- function(res=NULL,    # VPA result
+                    srres=NULL,  # fit.SR result
+                    msyres=NULL, # est.MSY result
+                    fres_current=NULL,   # future projection result
+                    fres_HCR=NULL,   # future projection result                    
+                    kobeII=NULL, # kobeII result
+                    filename="vpa", # filename without extension
+                    csvname=NULL,
+                    pdfname=NULL,
+                    ci.future=c(0.1,0.5,0.9)
+){
+  old.par <- par()  
+  exit.func <- function(){
+    dev.off()
+    options(warn=0)      
+  }
+  on.exit(exit.func())
+  
+  if(!is.null(filename)){
+    csvname <- paste(filename,".csv",sep="")
+    pdfname <- paste(filename,".pdf",sep="")
+  }
+  
+  pdf(pdfname)
+  par(mfrow=c(3,2),mar=c(3,3,2,1))  
+  options(warn=-1)
+  
+  write.table2 <- function(x,title.tmp="",is.plot=TRUE,...){
+    if(is.plot){
+      if(!is.null(dim(x))){
+        matplot(colnames(x),t(x),type="b",ylim=c(0,max(x,na.rm=T)),pch=substr(rownames(x),1,1))
+      }
+      else{
+        barplot(x)
+      }
+      title(title.tmp)
+    }
+    if(!is.null(dim(x))){
+      tmp <- matrix("",nrow(x)+1,ncol(x)+1)
+      tmp[-1,-1] <- as.character(unlist(x))
+      tmp[-1,1] <- rownames(x)
+      tmp[1,-1] <- colnames(x)
+    }
+    else{
+      tmp <- x
+    }
+    write.table(tmp,append=T,sep=",",quote=FALSE,file=csvname,col.names=F,row.names=F,...)
+  }
+  
+  write(paste("# frasyr outputs at ",date()," & ",getwd()),file=csvname)  
+  
+  if(!is.null(res)){
+    write("# VPA results",file=csvname, append=T)
+    
+    write("\n# catch at age",file=csvname,append=T)    
+    write.table2(res$input$dat$caa,title.tmp="Catch at age")
+    
+    write("\n# maturity at age",file=csvname,append=T)    
+    write.table2(res$input$dat$maa,title.tmp="Maturity at age")
+    
+    write("\n# weight at age for biomass calculation",file=csvname,append=T)    
+    write.table2(res$input$dat$waa,title.tmp="Weight at age (for biomass)")
+    
+    if(!is.null(res$input$dat$waa.catch)){
+      write("\n# weight at age for catch calculation",file=csvname,append=T)    
+      write.table2(res$input$dat$waa.catch,title.tmp="Weight at age (for catch)")    
+    }
+    
+    write("\n# M at age",file=csvname,append=T)    
+    write.table2(res$input$dat$M,title.tmp="M at age")          
+    
+    write("\n# fishing mortality at age",file=csvname,append=T)    
+    write.table2(res$faa,title.tmp="F at age")
+    
+    write("\n# Current F",file=csvname,append=T)    
+    write.table2(res$Fc.at.age,title.tmp="Current F")
+    
+    write("\n# numbers at age",file=csvname,append=T)    
+    write.table2(res$naa,title.tmp="Numbers at age")
+    
+    write("\n# total and spawning biomass ",file=csvname,append=T)
+    x <- rbind(colSums(res$ssb, na.rm=T),colSums(res$baa, na.rm=T),colSums(res$wcaa, na.rm=T))
+    rownames(x) <- c("Spawning biomass","Total biomass","Catch biomass")
+    write.table2(x,title.tmp="Total and spawning biomass")
+    
+    write("\n# YPR & SPR history ",file=csvname,append=T)    
+    get.SPR(res)$ysdata %>% as_tibble() %>% select(-"F/Ftarget") %>%
+      write_csv(path=csvname,append=T, col_names=TRUE)                   
+  }
+  
+  if(!is.null(srres)){
+    sr_summary <- 
+      as_tibble(srres$pars) %>% mutate(AICc   =srres$AICc,
+                                       AIC    =srres$AIC,
+                                       method=srres$input$method,
+                                       type  =srres$input$SR)      
+    write("\n# SR fit resutls",file=csvname,append=T)
+    write_csv(sr_summary,path=csvname,append=T,
+              col_names=TRUE)
+  }  
+  
+  if(!is.null(msyres)){
+    write("\n# MSY Reference points",file=csvname,append=T)
+    write_csv(msyres$summary,path=csvname,append=T,
+              col_names=TRUE)
+  }
+  
+  tmpfunc <- function(fres){
+    if(class(fres)=="future_new"){
+      fres <- format_to_old_future(fres)
+    }      
+    
+    write("\n# future F at age",file=csvname,append=T)
+    write.table2(apply(fres$faa,c(1,2),mean),title.tmp="Average future F at age")
+    
+    write("\n# future numbers at age",file=csvname,append=T)
+    write.table2(apply(fres$naa,c(1,2),mean),title.tmp="Average future numbers at age")
+    
+    write("\n# future maturity at age",file=csvname,append=T)
+    write.table2(apply(fres$maa,c(1,2),mean),title.tmp="Average future numbers at age")
+    
+    write("\n# future weight at age",file=csvname,append=T)
+    write.table2(apply(fres$waa,c(1,2),mean),title.tmp="Average future numbers at age")
+    
+    write("\n# future total spawning biomass",file=csvname,append=T)    
+    make_summary_table(fres$vssb,1,probs=ci.future) %>%
+      write_csv(path=csvname,append=TRUE, col_names = TRUE)
+    
+    write("\n# future total biomass",file=csvname,append=T)    
+    make_summary_table(fres$vbiom,1,probs=ci.future) %>%
+      write_csv(path=csvname,append=TRUE, col_names = TRUE)
+    
+    write("\n# future total catch",file=csvname,append=T)    
+    make_summary_table(fres$vwcaa,1,probs=ci.future) %>%
+      write_csv(path=csvname,append=TRUE, col_names = TRUE)
+  }  
+  
+  if(!is.null(fres_current)){
+    write("\n# future projection under F current",file=csvname,append=T)  
+    tmpfunc(fres_current)
+  }
+  
+  if(!is.null(fres_HCR)){
+    write("\n# future projection under HCR",file=csvname,append=T)  
+    tmpfunc(fres_HCR)
+  }
+  
+  if(!is.null(kobeII)){
+    write("\n# Kobe II table",file=csvname,append=T)  
+    kobeII.table_name <- names(kobeII)
+    for(i in 1:length(kobeII.table_name)){
+      write(str_c("\n# ",kobeII.table_name[i]),file=csvname,append=T)        
+      write_csv(kobeII[kobeII.table_name[i]][[1]],path=csvname,append=TRUE,
+                col_names = TRUE)
+    }
+  }
+  
+  
+}
+
+#' csvファイルとしてまとめられた資源計算結果を読み込んでRのオブジェクトにする
+#' @param tfile 資源計算結果がまとめられたcsvファイルの名前
+#' @encoding UTF-8
+#'
+#' @export
+
+read.vpa <- function(tfile,
+                     caa.label="catch at age",
+                     maa.label="maturity at age",
+                     waa.label="weight at age",
+                     waa.biomass.label="weight at age for biomass calculation",
+                     waa.catch.label="weight at age for catch calculation",                     
+                     M.label="M at age",
+                     faa.label="fishing mortality at age",
+                     Fc.label="Current F",
+                     naa.label="numbers at age",
+                     Blimit=NULL,
+                     Pope=NULL, # VPA計算時にどっちを使っているか入れる（TRUE or FALSE）。デフォルトはNULLでcaa,faa,naaの関係から自動判別するが、自動判別の結果はcatで出力されるので、それをみて正しく判断されているか確認してください。
+                     fc.year=NULL){
+  
+  tmpdata <- read.csv(tfile,header=F,as.is=F,colClasses="character")
+  
+  tmpfunc <- function(tmpdata,label,type=NULL){
+    flags <- which(substr(tmpdata[,1],1,1)=="#")
+    flag.name <- tmpdata[flags,1]
+    flag.name <- gsub("#","",flag.name)
+    flag.name <- gsub(" ","",flag.name)
+    get.flag <- which(flag.name==gsub(" ","",label))
+    {if(length(get.flag)>0){
+      tdat <- tmpdata[(flags[get.flag]+1):(flags[min(which(flags[get.flag]<flags))]-1),]
+      if(!is.null(type)){
+        tdat <- tdat[,!apply(tdat=="",2,all)]
+        tdat <- as.numeric(tdat)
+      }
+      else{
+        tmp.names <- list(tdat[-1,1],tdat[1,-1])
+        tdat <- tdat[,!apply(tdat=="",2,all)]
+        tdat <- tdat[!apply(tdat=="",1,all),]
+        tdat <- tdat[,!apply(is.na(tdat),2,all)]
+        tdat <- tdat[!apply(is.na(tdat),1,all),]
+        tdat <- sapply((tdat[-1,-1]),as.numeric)
+        tmp.names <- lapply(tmp.names,function(x) x[x!=""])
+        tmp.names <- lapply(tmp.names,function(x) x[!is.na(x)])                
+        dimnames(tdat) <- tmp.names                
+        tdat <- as.data.frame(tdat)
+      }
+    }
+      else{
+        tdat <- NULL
+      }}
+    tdat
+  }
+  
+  dres <- list()
+  dres$naa <- tmpfunc(tmpdata,naa.label)
+  dres$faa <- tmpfunc(tmpdata,faa.label)
+  dres$Fc.at.age <- tmpfunc(tmpdata,Fc.label,type="Fc")
+  #  dres$Fc.at.age <- dres$Fc.at.age[!is.na(dres$Fc.at.age)]
+  dres$Fc.at.age <- dres$Fc.at.age[1:nrow(dres$naa)]    
+  #  if(length(dres$Fc.at.age)!=nrow(dres$naa)) stop("Dimension of Fc.at.age and numbers at age is differerent.")
+  
+  dres$input <- list()
+  dres$input$dat <- list()
+  dres$input$dat$maa <- tmpfunc(tmpdata,maa.label)
+  dres$input$dat$caa <- tmpfunc(tmpdata,caa.label)    
+  dres$input$dat$M <- tmpfunc(tmpdata,M.label)
+  dres$input$dat$waa <- tmpfunc(tmpdata,waa.label)
+  if(is.null(dres$input$dat$waa)) dres$input$dat$waa <- tmpfunc(tmpdata,waa.biomass.label)        
+  dres$input$dat$waa.catch <- tmpfunc(tmpdata,waa.catch.label)      
+  if(is.null(dres$input$dat$waa.catch)) dres$input$dat$waa.catch <- dres$input$dat$waa
+  
+  dres$ssb <- dres$input$dat$waa * dres$input$dat$maa * dres$naa
+  dres$ssb <- as.data.frame(dres$ssb)
+  
+  dres$baa <- dres$input$dat$waa * dres$naa
+  dres$baa <- as.data.frame(dres$baa)
+  
+  # setting total catch
+  dres$wcaa <- dres$input$dat$waa.catch * dres$input$dat$caa
+  dres$wcaa <- as.data.frame(dres$wcaa)
+  
+  dres$Blimit <- Blimit
+  
+  ## catch at ageの計算時にpopeの近似式を使っているかどうか、通常は外から情報として与えてほしいところだが、与えられない場合、入力されたcaa,faa,naaの関係を見て、Popeで計算されているのかそうでないのかを判断してdres$input$Popeに入れる
+  if(is.null(Pope)){
+    caa.pope  <- dres$naa*(1-exp(-dres$faa))*exp(-dres$input$dat$M/2)
+    diff.pope <- mean(unlist(dres$input$dat$caa/caa.pope),na.rm=T)
+    
+    faa <- dres$faa
+    M <- dres$input$dat$M
+    caa.bara <- dres$naa*faa/(faa+M)*(1-exp(-faa-M))
+    diff.bara <- mean(unlist(dres$input$dat$caa/caa.bara),na.rm=T)
+    
+    if(abs(1-mean(diff.bara))>abs(1-mean(diff.pope))){
+      dres$input$Pope <- TRUE
+      
+      cat("Pope is TRUE... OK? (mean difference=", 1-mean(diff.pope),")\n")
+    }
+    else{
+      dres$input$Pope <- FALSE
+      cat("Pope is FALSE... OK? (mean difference=", 1-mean(diff.bara),")\n")            
+    }
+  }
+  else{
+    dres$input$Pope <- Pope
+  }    
+  if(is.null(dres$Fc.at.age) && !is.null(fc.year)) dres$Fc.at.age <- apply(dres$faa[,colnames(dres$faa)%in%fc.year],1,mean)
+  
+  # その他、他関数で必要になるVPAへのインプット
+  dres$input$last.catch.zero <- FALSE
+  
+  return(dres)
+}
+
+#' @export
+#' 
+
+get.stat <- function(fout,eyear=0,tmp.year=NULL, use_new_output=FALSE){
+  
+  if(isTRUE(use_new_output)){
+    fout <- format_to_old_future(fout)
+    col.target <- TRUE
+  }
+  else{
+    col.target <- ifelse(fout$input$N==0,1,-1)
+  }
+  tc <- fout$caa * fout$waa.catch     
+  tmp <- as.numeric(fout$vssb[(nrow(fout$vssb)-eyear):nrow(fout$vssb),col.target])
+  if(is.null(tmp.year)) tmp.year <- (nrow(fout$vwcaa)-eyear):nrow(fout$vwcaa)
+  a <- data.frame("catch.mean"=mean(fout$vwcaa[tmp.year,col.target]),
+                  "catch.sd"=sd(fout$vwcaa[tmp.year,col.target]),
+                  "catch.geomean"=geomean(fout$vwcaa[tmp.year,col.target]),
+                  "catch.median"=median(fout$vwcaa[tmp.year,col.target],na.rm=T),
+                  "catch.L10"=quantile(fout$vwcaa[tmp.year,col.target],na.rm=T,probs=0.1),
+                  "catch.H10"=quantile(fout$vwcaa[tmp.year,col.target],na.rm=T,probs=0.9),
+                  "ssb.mean"=mean(fout$vssb[tmp.year,col.target]),
+                  "ssb.sd"=sd(fout$vssb[tmp.year,col.target]),                        
+                  "ssb.geomean"=geomean(fout$vssb[tmp.year,col.target]),
+                  "ssb.median"=median(fout$vssb[tmp.year,col.target],na.rm=T),
+                  "ssb.L10"=quantile(fout$vssb[tmp.year,col.target],na.rm=T,probs=0.1),
+                  "ssb.H10"=quantile(fout$vssb[tmp.year,col.target],na.rm=T,probs=0.9),
+                  "biom.mean"=mean(fout$vbiom[tmp.year,col.target]),
+                  "biom.sd"=sd(fout$vbiom[tmp.year,col.target]),                        
+                  "biom.geomean"=geomean(fout$vbiom[tmp.year,col.target]),
+                  "biom.median"=median(fout$vbiom[tmp.year,col.target],na.rm=T),
+                  "biom.L10"=quantile(fout$vbiom[tmp.year,col.target],na.rm=T,probs=0.1),
+                  "biom.H10"=quantile(fout$vbiom[tmp.year,col.target],na.rm=T,probs=0.9),
+                  "rec.mean"=mean(unlist(fout$naa[1,,])[tmp.year,col.target]),
+                  "rec.sd"=sd(unlist(fout$naa[1,,])[tmp.year,col.target]),
+                  "rec.geomean"=geomean(unlist(fout$naa[1,,])[tmp.year,col.target]),
+                  "rec.median"=median(unlist(fout$naa[1,,])[tmp.year,col.target],na.rm=T),
+                  "rec.L10"=quantile(unlist(fout$naa[1,,])[tmp.year,col.target],na.rm=T,probs=0.1),
+                  "rec.H10"=quantile(unlist(fout$naa[1,,])[tmp.year,col.target],na.rm=T,probs=0.9),
+                  #                    "lower.HSpoint"=lhs,
+                  "Fref2Fcurrent"=fout$multi,
+                  fmulti=fout$multi
+  )
+  a$U.mean <- a$catch.mean/a$biom.mean
+  a$U.median <- a$catch.median/a$biom.median
+  a$U.geomean <- a$catch.geomean/a$biom.geomean
+  
+  a$catch.CV <- a$catch.sd/a$catch.mean
+  a$ssb.CV <- a$ssb.sd/a$ssb.mean
+  a$biom.CV <- a$biom.sd/a$biom.mean
+  a$rec.CV <- a$rec.sd/a$rec.mean
+  
+  #    Faa <- as.data.frame(t(fout$multi * fout$input$res0$Fc.at.age))
+  # Faa <- as.data.frame(t(fout$multi * fout$currentF))
+  if("finalmeanF" %in% names(fout)) Faa <- as.data.frame(t(fout$finalmeanF)) else Faa <- as.data.frame(t(fout$multi * fout$futureF))
+  colnames(Faa) <- paste("F",dimnames(fout$naa)[[1]],sep="")
+  res.stat1 <- cbind(a,Faa) # ここまで、get.stat
+  
+  agename <- dimnames(fout$naa)[[1]]
+  nage <- dim(fout$naa)[[1]]    
+  tb <- fout$naa * fout$waa 
+  if(is.null(fout$waa.catch)) fout$waa.catch <- fout$waa
+  ssb <- fout$naa * fout$waa *fout$maa  
+  tb.mat <- tc.mat <- ssb.mat <- matrix(0,nage,6)
+  for(i in 1:nage){
+    tb.mat[i,1] <- mean(tb[i,tmp.year,col.target])
+    tb.mat[i,2] <- median(tb[i,tmp.year,col.target])
+    tb.mat[i,3] <- geomean(tb[i,tmp.year,col.target])
+    tb.mat[i,4] <- mean(tb[i,tmp.year,1])
+    tb.mat[i,5:6] <- quantile(tb[i,tmp.year,col.target],probs=c(0.1,0.9),na.rm=T)
+    
+    tc.mat[i,1] <- mean(tc[i,tmp.year,col.target])
+    tc.mat[i,2] <- median(tc[i,tmp.year,col.target])
+    tc.mat[i,3] <- geomean(tc[i,tmp.year,col.target])
+    tc.mat[i,4] <- mean(tc[i,tmp.year,1])
+    tc.mat[i,5:6] <- quantile(tc[i,tmp.year,col.target],probs=c(0.1,0.9),na.rm=T)            
+    
+    ssb.mat[i,1] <- mean(ssb[i,tmp.year,col.target])
+    ssb.mat[i,2] <- median(ssb[i,tmp.year,col.target])
+    ssb.mat[i,3] <- geomean(ssb[i,tmp.year,col.target])
+    ssb.mat[i,4] <- mean(ssb[i,tmp.year,1])
+    ssb.mat[i,5:6] <- quantile(ssb[i,tmp.year,col.target],probs=c(0.1,0.9),na.rm=T)                        
+  }
+  tc.mat <- as.numeric(tc.mat)
+  tb.mat <- as.numeric(tb.mat)
+  ssb.mat <- as.numeric(ssb.mat)        
+  
+  # mean, ME; median, geomean; geometric mean
+  names(tc.mat) <- c(paste("TC-mean-A",agename,sep=""),paste("TC-median-A",agename,sep=""),
+                     paste("TC-geomean-A",agename,sep=""),paste("TC-det-A",agename,sep=""),
+                     paste("TC-L10-A",agename,sep=""),paste("TC-H10-A",agename,sep=""))
+  names(tb.mat) <- c(paste("TB-mean-A",agename,sep=""),paste("TB-median-A",agename,sep=""),
+                     paste("TB-geomean-A",agename,sep=""),paste("TB-det-A",agename,sep=""),
+                     paste("TB-L10-A",agename,sep=""),paste("TB-H10-A",agename,sep=""))
+  names(ssb.mat) <- c(paste("SSB-GA-A",agename,sep=""),paste("SSB-median-A",agename,sep=""),
+                      paste("SSB-geomean-A",agename,sep=""),paste("SSB-det-A",agename,sep=""),
+                      paste("SSB-L10-A",agename,sep=""),paste("SSB-H10-A",agename,sep=""))
+  res.stat2 <- as.data.frame(t(c(tb.mat,tc.mat,ssb.mat)))
+  res.stat <- cbind(res.stat1,res.stat2) %>% as_tibble()
+  return(res.stat)    
+}
+
+get.stat3 <- get.stat
+
+
+get.stat4 <- function(fout,Brefs,
+                      refyear=c(2019:2023,2028,2038)){
+  col.target <- ifelse(fout$input$N==0,1,-1)
+  years <- as.numeric(rownames(fout$vwcaa))
+  
+  if(is.null(refyear)){
+    refyear <- c(seq(from=min(years),to=min(years)+5),
+                 c(min(years)+seq(from=10,to=20,by=5)))
+  }
+  
+  catch.mean <- rowMeans(fout$vwcaa[years%in%refyear,col.target])
+  names(catch.mean) <- str_c("Catch",names(catch.mean))
+  catch.mean <- as_tibble(t(catch.mean))
+  
+  Btarget.prob <- rowMeans(fout$vssb[years%in%refyear,col.target]>Brefs$Btarget) %>%
+    t() %>% as_tibble()
+  names(Btarget.prob) <- str_c("Btarget_prob",names(Btarget.prob))
+  
+  #    Blow.prob <- rowMeans(fout$vssb[years%in%refyear,col.target]>Brefs$Blow) %>%
+  #        t() %>% as_tibble()
+  #    names(Blow.prob) <- str_c("Blow_prob",names(Blow.prob))
+  
+  Blimit.prob <- rowMeans(fout$vssb[years%in%refyear,col.target]<Brefs$Blimit) %>%
+    t() %>% as_tibble()
+  names(Blimit.prob) <- str_c("Blimit_prob",names(Blimit.prob))
+  
+  Bban.prob <- rowMeans(fout$vssb[years%in%refyear,col.target]<Brefs$Bban) %>%
+    t() %>% as_tibble()
+  names(Bban.prob) <- str_c("Bban_prob",names(Bban.prob))
+  
+  return(bind_cols(catch.mean,Btarget.prob,Blimit.prob,Bban.prob))
+}
+
+geomean <- function(x)
+{
+  ifelse(all(x > 0), exp(mean(log(x))), NA)
+}
+
+get.trace <- function(trace){
+  trace <- trace  %>% as_tibble() %>%
+    select(starts_with("TC-mean"),ssb.mean,fmulti,catch.CV) %>%
+    mutate(label=as.character(1:nrow(.)))
+  
+  trace <- trace %>% gather(value=value,key=age,-label,-fmulti,-ssb.mean,-catch.CV) %>%
+    mutate(age=str_extract(age, "(\\d)+")) %>%
+    mutate(age=factor(age)) %>%
+    mutate(age=fct_reorder(age,length(age):1))
+  return(trace)
+}
+
+
+#' 列が年である行列に対して、年を指定するとその年のあいだの平均値（等）を返す関数
+#'
+#' @encoding UTF-8
+#' @export
+#'
+#' 
+
+apply_year_colum <- function(mat,target_year,stat="mean"){
+  if(target_year[1]<0){
+    target_year <- rev(colnames(mat))[-target_year] %>%
+      as.numeric() %>% sort()
+  }
+  mat <- as.data.frame(mat)
+  apply(mat[as.character(target_year)],1,get(stat))
+}
+
+
+# VPAや将来予測の結果をtidyに ----
 convert_df <- function(df,name){
   df %>%
     as_tibble %>%
@@ -145,302 +1157,6 @@ convert_SR_tibble <- function(res_SR){
               mutate(type="observed",name="observed",residual=res_SR$resid))
 }
 
-#' 再生産関係をプロットする関数
-#'
-#' @param SR_result fit.SRの結果のオブジェクト
-#' @encoding UTF-8
-#'
-#' @export
-#'
-
-SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,ylabel="尾",
-                                 labeling.year=NULL,add.info=TRUE, recruit_intercept=0,
-                                 plot_CI=FALSE, CI=0.9){
-  
-  if(is.null(refs$Blimit) && !is.null(refs$Blim)) refs$Blimit <- refs$Blim
-  
-  if (SR_result$input$SR=="HS") SRF <- function(SSB,a,b,recruit_intercept=0) (ifelse(SSB*xscale>b,b*a,SSB*xscale*a)+recruit_intercept)/yscale
-  if (SR_result$input$SR=="BH") SRF <- function(SSB,a,b,recruit_intercept=0) (a*SSB*xscale/(1+b*SSB*xscale)+recruit_intercept)/yscale
-  if (SR_result$input$SR=="RI") SRF <- function(SSB,a,b,recruit_intercept=0) (a*SSB*xscale*exp(-b*SSB*xscale)+recruit_intercept)/yscale
-  
-  SRF_CI <- function(CI,sigma,sign,...){
-    exp(log(SRF(...))+qnorm(1-(1-CI)/2)*sigma*sign)
-  }
-  
-  SRdata <- as_tibble(SR_result$input$SRdata) %>%
-    mutate(type="obs")
-  SRdata.pred <- as_tibble(SR_result$pred) %>%
-    mutate(type="pred", year=NA, R=R)
-  alldata <- bind_rows(SRdata,SRdata.pred) %>%
-    mutate(R=R/yscale,SSB=SSB/xscale)
-  ymax <- max(alldata$R)
-  year.max <- max(alldata$year,na.rm=T)
-  tmp <- 1950:2030
-  if(is.null(labeling.year)) labeling.year <- c(tmp[tmp%%5==0],year.max)
-  alldata <- alldata %>% mutate(pick.year=ifelse(year%in%labeling.year,year,""))
-  
-  g1 <- ggplot(data=alldata,mapping=aes(x=SSB,y=R)) +
-    stat_function(fun=SRF,args=list(a=SR_result$pars$a,
-                                    b=SR_result$pars$b),color="deepskyblue3",lwd=1.3,
-                  n=5000)
-  
-  if(isTRUE(plot_CI)){
-    g1 <- g1+
-      stat_function(fun=SRF_CI,
-                    args=list(a=SR_result$pars$a,
-                              b=SR_result$pars$b,
-                              sigma=SR_result$pars$sd,
-                              sign=-1,
-                              CI=CI),
-                    color="deepskyblue3",lty=3,n=5000)+
-      stat_function(fun=SRF_CI,
-                    args=list(a=SR_result$pars$a,
-                              b=SR_result$pars$b,
-                              sigma=SR_result$pars$sd,
-                              sign=1,
-                              CI=CI),
-                    color="deepskyblue3",lty=3,n=5000)
-  }
-  
-  g1 <- g1+  geom_path(data=dplyr::filter(alldata,type=="obs"),
-                       aes(y=R,x=SSB),color="black") +
-    geom_point(data=dplyr::filter(alldata,type=="obs"),
-               aes(y=R,x=SSB),shape=21,fill="white") +
-    ggrepel::geom_text_repel(data=dplyr::filter(alldata,type=="obs"),
-                             segment.alpha=0.5,nudge_y=5,
-                             aes(y=R,x=SSB,label=pick.year)) +
-    theme_bw(base_size=14)+
-    theme(legend.position = 'none') +
-    theme(panel.grid = element_blank()) +
-    xlab(str_c("親魚資源量 (",xlabel,")"))+
-    ylab(str_c("加入尾数 (",ylabel,")"))+
-    coord_cartesian(ylim=c(0,ymax*1.05),expand=0)
-  
-  if(recruit_intercept>0){
-    g1 <- g1+stat_function(fun=SRF,
-                           args=list(a=SR_result$pars$a,
-                                     b=SR_result$pars$b,
-                                     recruit_intercept=recruit_intercept),
-                           color="deepskyblue3",lwd=1.3,lty=2)
-  }
-  
-  if(add.info){
-    g1 <- g1+labs(caption=str_c("関数形: ",SR_result$input$SR,", 自己相関: ",SR_result$input$AR,
-                                ", 最適化法",SR_result$input$method,", AICc: ",round(SR_result$AICc,2)))
-  }
-  
-  if(!is.null(refs)){
-    g1 <- g1+geom_vline(xintercept=c(refs$Bmsy/xscale,refs$Blimit/xscale,refs$Bban/xscale),
-                        linetype=2,
-                        col=c(col.SBtarget,col.SBlimit,col.SBban))
-  }
-  g1
-}
-
-get.trace <- function(trace){
-  trace <- trace  %>% as_tibble() %>%
-    select(starts_with("TC-mean"),ssb.mean,fmulti,catch.CV) %>%
-    mutate(label=as.character(1:nrow(.)))
-  
-  trace <- trace %>% gather(value=value,key=age,-label,-fmulti,-ssb.mean,-catch.CV) %>%
-    mutate(age=str_extract(age, "(\\d)+")) %>%
-    mutate(age=factor(age)) %>%
-    mutate(age=fct_reorder(age,length(age):1))
-  return(trace)
-}
-
-#' 漁獲量曲線(yield curve)を書く
-#'
-#' @param MSY_obj est.MSYの結果のオブジェクト
-#' @param refs_base est.MSYから得られる管理基準値の表
-#' @param future 将来予測結果のリスト。与えられると将来予測の結果を重ね書きする
-#' @param future.replicat 将来予測結果から特定のreplicateのみを示す。futureで与えたリストの長さのベクトルを与える。
-#' @param past  VPA結果。与えられると過去の推定値を重ね書きする
-#' @encoding UTF-8
-#'
-#' @export
-
-plot_yield <- function(MSY_obj,refs_base,
-                       refs.label=NULL, # label for reference point
-                       refs.color=c("#00533E","#edb918","#C73C2E"),
-                       AR_select=FALSE,xlim.scale=1.1,
-                       biomass.unit=1,labeling=TRUE,lining=TRUE,
-                       age.label.ratio=0.9, # 年齢のラベルを入れる位置（xの最大値からの割合)
-                       #                       family = "JP1",
-                       ylim.scale=1.2,future=NULL,
-                       future.replicate=NULL,
-                       past=NULL,
-                       past_year_range=NULL,
-                       future.name=NULL){
-  
-  junit <- c("","十","百","千","万")[log10(biomass.unit)+1]
-  
-  if ("trace" %in% names(MSY_obj)) {
-    trace.msy <- MSY_obj$trace
-  } else {
-    trace.msy <- MSY_obj
-  }
-  
-  #    require(tidyverse,quietly=TRUE)
-  #    require(ggrepel)
-  
-  trace <- get.trace(trace.msy) %>%
-    mutate("年齢"=age,ssb.mean=ssb.mean/biomass.unit,value=value/biomass.unit) %>%
-    dplyr::filter(!is.na(value))
-  
-  refs_base <- refs_base %>%
-    mutate(RP.definition=ifelse(is.na(RP.definition),"",RP.definition)) %>%
-    mutate(SSB=SSB/biomass.unit)
-  if("AR"%in%names(refs_base)) refs_base <- refs_base %>% dplyr::filter(AR==AR_select)
-  
-  ymax <- trace %>%
-    group_by(ssb.mean) %>%
-    summarise(catch.mean=sum(value))
-  ymax <- max(ymax$catch.mean)
-  
-  
-  g1 <- trace %>%
-    ggplot2::ggplot()
-  
-  if(is.null(future.name)) future.name <- 1:length(future)
-  
-  if(is.null(refs.label)) {
-    refs.label <- str_c(refs_base$RP_name,":",refs_base$RP.definition)
-    refs.color <- 1:length(refs.label)
-  }
-  refs_base$refs.label <- refs.label
-  
-  xmax <- max(trace$ssb.mean,na.rm=T)
-  age.label.position <- trace$ssb.mean[which.min((trace$ssb.mean-xmax*xlim.scale*age.label.ratio)^2)]
-  age.label <- trace %>% dplyr::filter(round(age.label.position,1)==round(ssb.mean,1))%>%
-    mutate(cumcatch=cumsum(value)-value/2)%>%
-    mutate(age=as.numeric(as.character(age)))
-  age.label <- age.label %>%
-    mutate(age_name=str_c("Age ",age,ifelse(age.label$age==max(age.label$age),"+","")))
-  
-  g1 <- g1 + geom_area(aes(x=ssb.mean,y=value,fill=年齢),col="black",alpha=0.5,lwd=1*0.3528) +
-    #    geom_line(aes(x=ssb.mean,y=catch.CV,fill=age)) +
-    #    scale_y_continuous(sec.axis = sec_axis(~.*5, name = "CV catch"))+
-    scale_fill_brewer() +
-    theme_bw() +
-    theme(legend.position = 'none') +
-    #    geom_point(data=refs_base,aes(y=Catch,x=SSB,shape=refs.label,color=refs.label),size=4)+
-    #形は塗りつぶしができる形にすること
-    scale_shape_manual(values = c(21, 24,5,10)) +
-    #塗りつぶし色を指定する
-    scale_color_manual(values = c("darkgreen", "darkblue","orange","yellow"))+
-    theme(panel.grid = element_blank(),axis.text=element_text(color="black")) +
-    coord_cartesian(xlim=c(0,xmax*xlim.scale),
-                    ylim=c(0,ymax*ylim.scale),expand=0) +
-    geom_text(data=age.label,
-              mapping = aes(y = cumcatch, x = ssb.mean, label = age_name)#,
-              #                            family = family
-    ) +
-    #    geom_text_repel(data=refs_base,
-    #                     aes(y=Catch,x=SSB,label=refs.label),
-    #                     size=4,box.padding=0.5,segment.color="gray",
-    #                     hjust=0,nudge_y      = ymax*ylim.scale-refs_base$Catch,
-    #    direction    = "y",
-    #    angle        = 0,
-    #    vjust        = 0,
-    #        segment.size = 1)+
-    xlab(str_c("平均親魚量 (",junit,"トン)")) + ylab(str_c("平均漁獲量 (",junit,"トン)"))
-  
-  if(!is.null(future)){
-    futuredata <- NULL
-    for(j in 1:length(future)){
-      if(class(future[[j]])=="future_new"){
-        future_init <- future[[j]]$input$tmb_data$future_initial_year
-        future_init <- as.numeric(dimnames(future[[j]]$naa)[[2]][future_init])
-        future[[j]] <- format_to_old_future(future[[j]])
-      }
-      else{
-        future_init <- 0
-      }
-      if(is.null(future.replicate)){
-        futuredata <- bind_rows(futuredata,
-                                tibble(
-                                  year        =as.numeric(rownames(future[[j]]$vssb)),
-                                  ssb.future  =apply(future[[j]]$vssb[,-1],1,mean)/biomass.unit,
-                                  catch.future=apply(future[[j]]$vwcaa[,-1],1,mean)/biomass.unit,
-                                  scenario=future.name[j]))
-      }
-      else{
-        futuredata <- bind_rows(futuredata,
-                                tibble(
-                                  year        =as.numeric(rownames(future[[j]]$vssb)),
-                                  ssb.future  =future[[j]]$vssb[,future.replicate[j]]/biomass.unit,
-                                  catch.future=future[[j]]$vwcaa[,future.replicate[j]]/biomass.unit,
-                                  scenario=future.name[j]))
-      }
-      futuredata <- futuredata %>% group_by(scenario) %>%
-        dplyr::filter(year > future_init)
-      g1 <- g1 +
-        geom_path(data=futuredata,
-                  mapping=aes(x       =ssb.future,
-                              y       = catch.future,
-                              linetype=factor(scenario),
-                              color   = factor(scenario)),
-                  lwd=1)+
-        geom_point(data=futuredata,
-                   mapping=aes(x    =ssb.future,
-                               y    =catch.future,
-                               shape=factor(scenario),
-                               color=factor(scenario)),
-                   size=3)
-    }
-  }
-  
-  if(!is.null(past)){
-    catch.past = unlist(colSums(past$input$dat$caa*past$input$dat$waa, na.rm=T)/biomass.unit)
-    if (past$input$last.catch.zero && !is.null(future)) {
-      catch.past[length(catch.past)] = apply(future[[1]]$vwcaa[,-1],1,mean)[1]/biomass.unit
-    }
-    pastdata <- tibble(
-      year      =as.numeric(colnames(past$ssb)),
-      ssb.past  =unlist(colSums(past$ssb, na.rm=T))/biomass.unit,
-      catch.past=catch.past
-    )
-    
-    if(past_year_range[1] > 0 && !is.null(past_year_range))
-      pastdata <- pastdata %>% dplyr::filter(year%in%past_year_range)
-    
-    g1 <- g1 +
-      geom_path(data=pastdata,
-                mapping=aes(x=ssb.past,y=catch.past),
-                color="darkred",lwd=1,alpha=0.9)
-  }
-  
-  if(isTRUE(lining)){
-    #        ylim.scale.factor <- rep(c(0.94,0.97),ceiling(length(refs.label)/2))[1:length(refs.label)]
-    g1 <- g1 + geom_vline(xintercept=refs_base$SSB,lty="41",lwd=0.6,color=refs.color)+
-      ggrepel::geom_label_repel(data=refs_base,
-                                aes(y=ymax*ylim.scale*0.85,
-                                    x=SSB,label=refs.label),
-                                direction="x",size=11*0.282,nudge_y=ymax*ylim.scale*0.9)
-  }
-  
-  if(isTRUE(labeling)){
-    g1 <- g1 +
-      geom_point(data=refs_base,
-                 aes(y=Catch,x=SSB))+
-      ggrepel::geom_label_repel(data=refs_base,
-                                aes(y=Catch,x=SSB,label=refs.label),
-                                #                            size=4,box.padding=0.5,segment.color="black",
-                                hjust=0,#nudge_y      = ymax*ylim.scale-refs_base$Catch/2,
-                                direction="y",angle=0,vjust        = 0,segment.size = 1)
-    #             geom_label_repel(data=tibble(x=c(1,limit.ratio,ban.ratio),
-    #                                          y=max.U,
-    #                                          label=c("目標管理基準値","限界管理基準値","禁漁水準")),
-    #                              aes(x=x,y=y,label=label),
-    #                              direction="y",angle=0,nudge_y=max.U
-  }
-  
-  
-  return(g1)
-  
-}
-
 #' 管理基準値の表を作成する
 #'
 #' @param refs_base est.MSYから得られる管理基準値の表
@@ -485,198 +1201,16 @@ make_RP_table <- function(refs_base){
 #'
 
 derive_RP_value <- function(refs_base,RP_name){
-  #    refs_base %>% dplyr::filter(RP.definition%in%RP_name)
-  #    subset(refs_base,RP.definition%in%RP_name)
   refs_base[refs_base$RP.definition%in%RP_name,]
 }
 
-#' Kobe II matrixを計算するための関数
+
+# kobe II matrix など、パフォーマンスを計算する関数 ----
+
 #'
-#' @param fres_base future.vpaの結果のオブジェクト
-#' @param refs_base est.MSYから得られる管理基準値の表
+#' @export
+#'
 #' @encoding UTF-8
-#'
-#' @export
-
-calc_kobeII_matrix <- function(fres_base,
-                               refs_base,
-                               Btarget=c("Btarget0"),
-                               Blimit=c("Blimit0"),
-                               #                              Blow=c("Blow0"),
-                               Bban=c("Bban0"),
-                               year.lag=0,
-                               beta=seq(from=0.5,to=1,by=0.1)){
-  #    require(tidyverse,quietly=TRUE)
-  # HCRの候補を網羅的に設定
-  #    HCR_candidate1 <- expand.grid(
-  #        Btarget_name=refs_base$RP.definition[str_detect(refs_base$RP.definition,Btarget)],
-  #        Blow_name=refs_base$RP.definition[str_detect(refs_base$RP.definition,Blow)],
-  #        Blimit_name=refs_base$RP.definition[str_detect(refs_base$RP.definition,Blimit)],
-  #        Bban_name=refs_base$RP.definition[str_detect(refs_base$RP.definition,Bban)],
-  #        beta=beta)
-  
-  refs.unique <- unique(c(Btarget,Blimit,Bban))
-  tmp <- !refs.unique%in%refs_base$RP.definition
-  if(sum(tmp)>0) stop(refs.unique[tmp]," does not appear in column of RP.definition\n")
-  
-  HCR_candidate1 <- expand.grid(
-    Btarget_name=derive_RP_value(refs_base,Btarget)$RP.definition,
-    #        Blow_name=derive_RP_value(refs_base,Blow)$RP.definition,
-    Blimit_name=derive_RP_value(refs_base,Blimit)$RP.definition,
-    Bban_name=derive_RP_value(refs_base,Bban)$RP.definition,
-    beta=beta)
-  
-  HCR_candidate2 <- expand.grid(
-    Btarget=derive_RP_value(refs_base,Btarget)$SSB,
-    #        Blow=derive_RP_value(refs_base,Blow)$SSB,
-    Blimit=derive_RP_value(refs_base,Blimit)$SSB,
-    Bban=derive_RP_value(refs_base,Bban)$SSB,
-    beta=beta) %>% select(-beta)
-  
-  HCR_candidate <- bind_cols(HCR_candidate1,HCR_candidate2) %>% as_tibble()
-  
-  HCR_candidate <- refs_base %>% #dplyr::filter(str_detect(RP.definition,Btarget)) %>%
-    dplyr::filter(RP.definition%in%Btarget) %>%
-    mutate(Btarget_name=RP.definition,Fmsy=Fref2Fcurrent) %>%
-    select(Btarget_name,Fmsy) %>%
-    left_join(HCR_candidate) %>%
-    arrange(Btarget_name,Blimit_name,Bban_name,desc(beta))
-  
-  HCR_candidate$HCR_name <- str_c(HCR_candidate$Btarget_name,
-                                  HCR_candidate$Blimit_name,
-                                  HCR_candidate$Bban_name,sep="-")
-  fres_base$input$outtype <- "FULL"
-  kobeII_table <- HCR.simulation(fres_base$input,HCR_candidate,year.lag=year.lag)
-  
-  cat(length(unique(HCR_candidate$HCR_name)), "HCR is calculated: ",
-      unique(HCR_candidate$HCR_name),"\n")
-  
-  kobeII_data <- left_join(kobeII_table,HCR_candidate)
-  return(kobeII_data)
-}
-
-#'
-#' @export
-#'
-
-make_kobeII_table0 <- function(kobeII_data,
-                               res_vpa,
-                               year.catch=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
-                               year.ssb=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
-                               year.Fsakugen=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
-                               year.ssbtarget=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
-                               year.ssblimit=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
-                               year.ssbban=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
-                               year.ssbmin=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
-                               year.ssbmax=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
-                               year.aav=(max(as.numeric(colnames(res_vpa$naa)))+1:10))
-{
-  # 平均漁獲量
-  (catch.table <- kobeII.data %>%
-     dplyr::filter(year%in%year.catch,stat=="catch") %>% # 取り出す年とラベル("catch")を選ぶ
-     group_by(HCR_name,beta,year) %>%
-     summarise(catch.mean=round(mean(value))) %>%  # 値の計算方法を指定（漁獲量の平均ならmean(value)）
-     # "-3"とかの値で桁数を指定
-     spread(key=year,value=catch.mean) %>% ungroup() %>%
-     arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
-     mutate(stat_name="catch.mean"))
-  
-  # 平均親魚
-  (ssb.table <- kobeII.data %>%
-      dplyr::filter(year%in%year.ssb,stat=="SSB") %>%
-      group_by(HCR_name,beta,year) %>%
-      summarise(ssb.mean=round(mean(value))) %>%
-      spread(key=year,value=ssb.mean) %>% ungroup() %>%
-      arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
-      mutate(stat_name="ssb.mean"))
-  
-  # 1-currentFに乗じる値=currentFからの努力量の削減率の平均値（実際には確率分布になっている）
-  (Fsakugen.table <- kobeII.data %>%
-      dplyr::filter(year%in%year.Fsakugen,stat=="Fsakugen") %>% # 取り出す年とラベル("catch")を選ぶ
-      group_by(HCR_name,beta,year) %>%
-      summarise(Fsakugen=round(mean(value),2)) %>%
-      spread(key=year,value=Fsakugen) %>% ungroup() %>%
-      arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
-      mutate(stat_name="Fsakugen"))
-  
-  # SSB>SSBtargetとなる確率
-  ssbtarget.table <- kobeII.data %>%
-    dplyr::filter(year%in%year.ssbtarget,stat=="SSB") %>%
-    group_by(HCR_name,beta,year) %>%
-    summarise(ssb.over=round(100*mean(value>Btarget))) %>%
-    spread(key=year,value=ssb.over) %>%
-    ungroup() %>%
-    arrange(HCR_name,desc(beta))%>%
-    mutate(stat_name="Pr(SSB>SSBtarget)")
-  
-  # SSB>SSBlimとなる確率
-  ssblimit.table <- kobeII.data %>%
-    dplyr::filter(year%in%year.ssblimit,stat=="SSB") %>%
-    group_by(HCR_name,beta,year) %>%
-    summarise(ssb.over=round(100*mean(value>Blimit))) %>%
-    spread(key=year,value=ssb.over)%>%
-    ungroup() %>%
-    arrange(HCR_name,desc(beta))%>%
-    mutate(stat_name="Pr(SSB>SSBlim)")
-  
-  # SSB>SSBbanとなる確率
-  ssbban.table <- kobeII.data %>%
-    dplyr::filter(year%in%year.ssbban,stat=="SSB") %>%
-    group_by(HCR_name,beta,year) %>%
-    summarise(ssb.over=round(100*mean(value>Bban))) %>%
-    spread(key=year,value=ssb.over)%>%
-    ungroup() %>%
-    arrange(HCR_name,desc(beta))%>%
-    mutate(stat_name="Pr(SSB>SSBban)")
-  
-  # SSB>SSBmin(過去最低親魚量を上回る確率)
-  ssb.min <- min(unlist(colSums(res_vpa$ssb, na.rm=T)))
-  ssbmin.table <- kobeII.data %>%
-    dplyr::filter(year%in%year.ssbmin,stat=="SSB") %>%
-    group_by(HCR_name,beta,year) %>%
-    summarise(ssb.over=round(100*mean(value>ssb.min))) %>%
-    spread(key=year,value=ssb.over)%>%
-    ungroup() %>%
-    arrange(HCR_name,desc(beta))%>%
-    mutate(stat_name="Pr(SSB>SSBmin)")
-  
-  # SSB>SSBmax(過去最低親魚量を上回る確率)
-  ssb.max <- max(unlist(colSums(res_vpa$ssb, na.rm=T)))
-  ssbmax.table <- kobeII.data %>%
-    dplyr::filter(year%in%year.ssbmax,stat=="SSB") %>%
-    group_by(HCR_name,beta,year) %>%
-    summarise(ssb.over=round(100*mean(value>ssb.max))) %>%
-    spread(key=year,value=ssb.over)%>%
-    ungroup() %>%
-    arrange(HCR_name,desc(beta))%>%
-    mutate(stat_name="Pr(SSB>SSBmax)")
-  
-  # オプション: Catch AAV mean
-  calc.aav <- function(x)sum(abs(diff(x)))/sum(x[-1])
-  catch.aav.table <- kobeII.data %>%
-    dplyr::filter(year%in%year.aav,stat=="catch") %>%
-    group_by(HCR_name,beta,sim) %>%
-    dplyr::summarise(catch.aav=(calc.aav(value))) %>%
-    group_by(HCR_name,beta) %>%
-    summarise(catch.aav.mean=mean(catch.aav)) %>%
-    arrange(HCR_name,desc(beta))%>%
-    mutate(stat_name="catch.csv (recent 5 year)")
-  
-  res_list <- list(average.catch   = catch.table,
-                   average.ssb     = ssb.table,
-                   prob.ssbtarget  = ssbtarget.table,
-                   prob.ssblimit   = ssblimit.table,
-                   prob.ssbban     = ssbban.table,
-                   prob.ssbmin     = ssbmin.table,
-                   prob.ssbmax     = ssbmax.table,
-                   catch.aav       = catch.aav.table)
-  return(res_list)
-  
-}
-
-#'
-#' @export
-#'
 
 make_kobeII_table <- function(kobeII_data,
                               res_vpa,
@@ -817,28 +1351,6 @@ make_kobeII_table <- function(kobeII_data,
 }
 
 
-HCR.simulation <- function(finput,HCRtable,year.lag=year.lag){
-  
-  tb <- NULL
-  
-  for(i in 1:nrow(HCRtable)){
-    HCR_base <- HCRtable[i,]
-    finput$multi <- HCR_base$Fmsy
-    finput$HCR <- list(Blim=HCR_base$Blimit,Bban=HCR_base$Bban,
-                       beta=HCR_base$beta,year.lag=year.lag)
-    finput$is.plot <- FALSE
-    finput$silent <- TRUE
-    fres_base <- do.call(future.vpa,finput) # デフォルトルールの結果→図示などに使う
-    tmp <- convert_future_table(fres_base,label=HCRtable$HCR_name[i]) %>%
-      rename(HCR_name=label)
-    tmp$beta <- HCR_base$beta
-    tb <- bind_rows(tb,tmp)
-  }
-  tb <- tb %>% mutate(HCR_name=str_c("beta",beta)) %>%
-    mutate(scenario=HCR_name)
-  return(tb)
-}
-
 #' kobeII matrixの簡易版（Btarget, Blimitは決め打ちでβのみ変える)
 #'
 #' @encoding UTF-8
@@ -870,673 +1382,6 @@ beta.simulation <- function(finput,beta_vector,year.lag=0,type="old"){
   return(tb)
 }
 
-
-get.stat4 <- function(fout,Brefs,
-                      refyear=c(2019:2023,2028,2038)){
-  col.target <- ifelse(fout$input$N==0,1,-1)
-  years <- as.numeric(rownames(fout$vwcaa))
-  
-  if(is.null(refyear)){
-    refyear <- c(seq(from=min(years),to=min(years)+5),
-                 c(min(years)+seq(from=10,to=20,by=5)))
-  }
-  
-  catch.mean <- rowMeans(fout$vwcaa[years%in%refyear,col.target])
-  names(catch.mean) <- str_c("Catch",names(catch.mean))
-  catch.mean <- as_tibble(t(catch.mean))
-  
-  Btarget.prob <- rowMeans(fout$vssb[years%in%refyear,col.target]>Brefs$Btarget) %>%
-    t() %>% as_tibble()
-  names(Btarget.prob) <- str_c("Btarget_prob",names(Btarget.prob))
-  
-  #    Blow.prob <- rowMeans(fout$vssb[years%in%refyear,col.target]>Brefs$Blow) %>%
-  #        t() %>% as_tibble()
-  #    names(Blow.prob) <- str_c("Blow_prob",names(Blow.prob))
-  
-  Blimit.prob <- rowMeans(fout$vssb[years%in%refyear,col.target]<Brefs$Blimit) %>%
-    t() %>% as_tibble()
-  names(Blimit.prob) <- str_c("Blimit_prob",names(Blimit.prob))
-  
-  Bban.prob <- rowMeans(fout$vssb[years%in%refyear,col.target]<Brefs$Bban) %>%
-    t() %>% as_tibble()
-  names(Bban.prob) <- str_c("Bban_prob",names(Bban.prob))
-  
-  return(bind_cols(catch.mean,Btarget.prob,Blimit.prob,Bban.prob))
-}
-
-#' Kobe plotを書く
-#'
-#' @param vpares VPAの結果のオブジェクト
-#' @param refs_base est.MSYから得られる管理基準値の表
-#' @encoding UTF-8
-#'
-#' @export
-#'
-
-plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
-                                      category=4,# 削除予定オプション
-                                      Btarget=c("Btarget0"),
-                                      Blimit=c("Blimit0"),
-                                      Blow=c("Blow0"), # 削除予定オプション
-                                      Bban=c("Bban0"),
-                                      write.vline=TRUE,
-                                      ylab.type="U", # or "U"
-                                      labeling.year=NULL,
-                                      RP.label=c("目標管理基準値","限界管理基準値","禁漁水準"),
-                                      refs.color=c("#00533E","#edb918","#C73C2E"),
-                                      Fratio=NULL,
-                                      yscale=1.2,xscale=1.2,
-                                      HCR.label.position=c(1,1),
-                                      beta=NULL,
-                                      plot.year="all"){
-  
-  target.RP <- derive_RP_value(refs_base,Btarget)
-  limit.RP <- derive_RP_value(refs_base,Blimit)
-  low.RP <- derive_RP_value(refs_base,Blow)
-  ban.RP <- derive_RP_value(refs_base,Bban)
-  
-  low.ratio <- low.RP$SSB/target.RP$SSB
-  limit.ratio <- limit.RP$SSB/target.RP$SSB
-  ban.ratio <- ban.RP$SSB/target.RP$SSB
-  
-  vpa_tb <- convert_vpa_tibble(vpares)
-  UBdata <- vpa_tb %>% dplyr::filter(stat=="U" | stat=="SSB") %>%
-    spread(key=stat,value=value) %>%
-    mutate(Uratio=RcppRoll::roll_mean(U/target.RP$U,n=roll_mean,fill=NA,align="right"),
-           Bratio=RcppRoll::roll_mean(SSB/target.RP$SSB,n=roll_mean,fill=NA,align="right")) %>%
-    arrange(year)
-  if(ylab.type=="F") UBdata <- UBdata %>% mutate(Uratio=Fratio)
-  
-  if(is.null(labeling.year)){
-    years <- unique(UBdata$year)
-    labeling.year <- c(years[years%%5==0],max(years))
-  }
-  
-  UBdata <- UBdata %>%
-    mutate(year.label=ifelse(year%in%labeling.year,year,""),
-           year_group=1)
-  
-  if(plot.year[1]!="all") {
-    diff.year <- plot.year[which(diff(plot.year)>1)+1] 
-    UBdata <- UBdata %>% filter(year %in% plot.year) 
-    
-    for(i in 1:length(diff.year)){
-      UBdata <- UBdata %>%
-        mutate(year_group = ifelse(year >= diff.year[i], year_group+1, year_group))
-    }
-  }
-  
-  max.B <- max(c(UBdata$Bratio,xscale),na.rm=T)
-  max.U <- max(c(UBdata$Uratio,yscale),na.rm=T)
-  
-  red.color <- "indianred1" # rgb(238/255,121/255,72/255)
-  yellow.color <- "khaki1" # rgb(245/255,229/255,107/255)
-  green.color <- "olivedrab2" # rgb(175/255,209/255,71/255) #"olivedrab2"#rgb(58/255,180/255,131/255)
-  
-  g4 <- ggplot(data=UBdata) +theme(legend.position="none")+
-    geom_polygon(data=tibble(x=c(-1,1,1,-1),
-                             y=c(-1,-1,1,1)),
-                 aes(x=x,y=y),fill=yellow.color)+
-    geom_polygon(data=tibble(x=c(1,20,20,1),
-                             y=c(-1,-1,1,1)),
-                 aes(x=x,y=y),fill=green.color)+
-    geom_polygon(data=tibble(x=c(1,20,20,1),
-                             y=c(1,1,20,20)),
-                 aes(x=x,y=y),fill=yellow.color)+
-    geom_polygon(data=tibble(x=c(-1,1,1,-1),
-                             y=c(1,1,20,20)),
-                 aes(x=x,y=y),fill=red.color) +
-    geom_polygon(data=tibble(x=c(-1,1,1,-1),
-                             y=c(-1,-1,1,1)),aes(x=x,y=y),fill=yellow.color)
-  
-  if(write.vline){
-    g4 <- g4 + geom_vline(xintercept=c(1,limit.ratio,ban.ratio),color=refs.color,lty="41",lwd=0.7)+
-      ggrepel::geom_label_repel(data=tibble(x=c(1,limit.ratio,ban.ratio),
-                                            y=max.U*0.85,
-                                            label=RP.label),
-                                aes(x=x,y=y,label=label),
-                                direction="x",nudge_y=max.U*0.9,size=11*0.282)
-  }
-  
-  if(!is.null(beta)){
-    ### HCRのプロット用の設定
-    #Setting of the function to multiply current F for SSB
-    multi2currF = function(x){
-      if(x > limit.ratio) {multi2currF=beta}
-      else if (x < ban.ratio) {multi2currF=0}
-      else { multi2currF = beta*(x - ban.ratio)/(limit.ratio - ban.ratio) }
-      return(multi2currF)
-    }
-    
-    #Function setting for drawing.
-    h=Vectorize(multi2currF)
-    ####
-    x.pos <- max.B*HCR.label.position[1]
-    y.pos <- multi2currF(1.05)*HCR.label.position[2]
-    g4 <- g4+stat_function(fun = h,lwd=1.5,color="black",n=5000)+
-      annotate("text",x=x.pos,y=y.pos,
-               label=str_c("漁獲管理規則\n(β=",beta,")"))
-  }
-  
-  g4 <- g4 +
-    geom_path(mapping=aes(x=Bratio,y=Uratio,group=year_group)) +
-    geom_point(mapping=aes(x=Bratio,y=Uratio,group=year_group),shape=21,fill="white") +
-    coord_cartesian(xlim=c(0,max.B*1.1),ylim=c(0,max.U*1.15),expand=0) +
-    ylab("漁獲割合の比 (U/Umsy)") + xlab("親魚量の比 (SB/SBmsy)")  +
-    ggrepel::geom_text_repel(#data=dplyr::filter(UBdata,year%in%labeling.year),
-      aes(x=Bratio,y=Uratio,label=year.label),
-      size=4,box.padding=0.5,segment.color="gray")
-  
-  if(ylab.type=="F"){
-    g4 <- g4 + ylab("漁獲圧の比 (F/Fmsy)")
-  }
-  
-  g4 <- g4 + theme_SH()
-  
-  return(g4)
-}
-
-#' 将来予測の複数の結果をggplotで重ね書きする
-#'
-#' @param vpares VPAの結果のオブジェクト
-#' @param future.list 将来予測の結果をリストで並べたもの
-#' @param n_example 個々のシミュレーションの例を示す数
-#' @param width_example 個々のシミュレーションをプロットする場合の線の太さ (default=0.7)
-#' @param future.replicate どのreplicateを選ぶかを選択する。この場合n_exampleによる指定は無効になる
-#' @encoding UTF-8
-#' @export
-
-plot_futures <- function(vpares,
-                         future.list=NULL,
-                         future.name=names(future.list),
-                         future_tibble=NULL,
-                         CI_range=c(0.1,0.9),
-                         maxyear=NULL,
-                         is.plot.CIrange=TRUE,
-                         what.plot=c("Recruitment","SSB","biomass","catch","beta_gamma","U","Fratio"),
-                         biomass.unit=1,
-                         number.unit=1,
-                         number.name="",
-                         RP_name=c("Btarget","Blimit","Bban"),
-                         Btarget=0,Blimit=0,Bban=0,#Blow=0,
-                         MSY=0,Umsy=0,
-                         SPRtarget=NULL,
-                         exclude.japanese.font=FALSE, # english version
-                         n_example=3, # number of examples
-                         example_width=0.7, # line width of examples
-                         future.replicate=NULL,
-                         seed=1, # seed for selecting the above example
-                         legend.position="top",
-                         font.size=18,
-                         ncol=3
-){
-  
-  col.SBtarget <- "#00533E"
-  col.SBlim <- "#edb918"
-  col.SBban <- "#C73C2E"
-  col.MSY <- "black"
-  col.Ftarget <- "#714C99"
-  col.betaFtarget <- "#505596"
-  
-  for(i in 1:length(future.list)){
-    if(class(future.list[[i]])=="future_new")
-      future.list[[i]] <- format_to_old_future(future.list[[i]])
-    det.run <- FALSE
-  }
-  
-  if(!isTRUE(exclude.japanese.font)){
-    junit <- c("","十","百","千","万")[log10(biomass.unit)+1]
-    
-    rename_list <- tibble(stat=c("Recruitment","SSB","biomass","catch","beta_gamma","U","Fratio"),
-                          jstat=c(str_c("加入尾数(",number.name,"尾)"),
-                                  str_c("親魚量 (",junit,"トン)"),
-                                  str_c("資源量 (",junit,"トン)"),
-                                  str_c("漁獲量 (",junit,"トン)"),
-                                  "beta_gamma(F/Fmsy)",
-                                  "漁獲割合(%)",
-                                  "漁獲圧の比(F/Fmsy)"))
-  }
-  else{
-    junit <- c("","10","100","1000","10,000")[log10(biomass.unit)+1]
-    #    require(tidyverse,quietly=TRUE)
-    
-    rename_list <- tibble(stat=c("Recruitment","SSB","biomass","catch","beta_gamma","U","Fratio"),
-                          jstat=c(str_c("Recruits(",number_name,"fish)"),
-                                  str_c("SB (",junit,"MT)"),
-                                  str_c("Biomass (",junit,"MT)"),
-                                  str_c("Catch (",junit,"MT)"),
-                                  "multiplier to Fmsy",
-                                  "Catch/Biomass (U)",
-                                  "F ratio (F/Fmsy)"))
-  }
-  
-  # define unit of value
-  rename_list <- rename_list %>%
-    mutate(unit=dplyr::case_when(stat%in%c("SSB","biomass","catch") ~ biomass.unit,
-                                 stat%in%c("Recruitment")           ~ number.unit,
-                                 stat%in%c("U")                     ~ 0.01,
-                                 TRUE                               ~ 1))
-  
-  rename_list <- rename_list %>% dplyr::filter(stat%in%what.plot)
-  
-  if(!is.null(future.list)){
-    if(is.null(future.name)) future.name <- str_c("s",1:length(future.list))
-    names(future.list) <- future.name
-  }
-  else{
-    if(is.null(future.name)) future.name <- str_c("s",1:length(unique(future_tibble$HCR_name)))
-  }
-  
-  if(is.null(future_tibble)) future_tibble <- purrr::map_dfr(future.list,convert_future_table,.id="scenario")
-  
-  future_tibble <-
-    future_tibble %>%
-    dplyr::filter(stat%in%rename_list$stat) %>%
-    mutate(stat=factor(stat,levels=rename_list$stat)) %>%
-    left_join(rename_list) %>%
-    mutate(value=value/unit)
-  
-  if(is.null(future.replicate)){
-    set.seed(seed)
-    future.replicate <- sample(2:max(future_tibble$sim),n_example)
-  }
-  future.example <- future_tibble %>%
-    dplyr::filter(sim%in%future.replicate) %>%
-    group_by(sim,scenario)
-  
-  if(is.null(maxyear)) maxyear <- max(future_tibble$year)
-  
-  min.age <- as.numeric(rownames(vpares$naa)[1])
-  vpa_tb <- convert_vpa_tibble(vpares,SPRtarget=SPRtarget) %>%
-    mutate(scenario=type,year=as.numeric(year),
-           stat=factor(stat,levels=rename_list$stat),
-           mean=value,sim=0)%>%
-    dplyr::filter(stat%in%rename_list$stat) %>%
-    left_join(rename_list) %>%
-    mutate(value=value/unit,mean=mean/unit)
-  
-  # 将来と過去をつなげるためのダミーデータ
-  tmp <- vpa_tb %>% group_by(stat) %>%
-    summarise(value=tail(value[!is.na(value)],n=1,na.rm=T),year=tail(year[!is.na(value)],n=1,na.rm=T),sim=0)
-  future.dummy <- purrr::map_dfr(future.name,function(x) mutate(tmp,scenario=x))
-  
-  org.warn <- options()$warn
-  options(warn=-1)
-  future_tibble <-
-    bind_rows(future_tibble,vpa_tb,future.dummy) %>%
-    mutate(stat=factor(stat,levels=rename_list$stat)) %>%
-    mutate(scenario=factor(scenario,levels=c(future.name,"VPA"))) #%>%
-  #        mutate(value=ifelse(stat%in%c("beta_gamma","U"),value,value/biomass.unit))
-  
-  future_tibble.qt <-
-    future_tibble %>% group_by(scenario,year,stat) %>%
-    summarise(low=quantile(value,CI_range[1],na.rm=T),
-              high=quantile(value,CI_range[2],na.rm=T),
-              median=median(value,na.rm=T),
-              mean=mean(value))
-  
-  # make dummy for y range
-  dummy <- future_tibble %>% group_by(stat) %>% summarise(max=max(value)) %>%
-    mutate(value=0,year=min(future_tibble$year,na.rm=T)) %>%
-    select(-max)
-  
-  dummy2 <- future_tibble %>% group_by(stat) %>%
-    summarise(max=max(quantile(value,CI_range[2],na.rm=T))) %>%
-    mutate(value=max*1.1,
-           year=min(future_tibble$year,na.rm=T)) %>%
-    select(-max)
-  
-  future_tibble.qt <- left_join(future_tibble.qt,rename_list) %>%
-    mutate(jstat=factor(jstat,levels=rename_list$jstat))
-  
-  dummy     <- left_join(dummy,rename_list,by="stat") %>% dplyr::filter(!is.na(stat))
-  dummy2    <- left_join(dummy2,rename_list,by="stat") %>% dplyr::filter(!is.na(stat))
-  
-  if("SSB" %in% what.plot){
-    ssb_RP <- tibble(jstat = dplyr::filter(rename_list, stat == "SSB") %>%
-                       dplyr::pull(jstat),
-                     value = c(Btarget, Blimit, Bban) / biomass.unit,
-                     RP_name = RP_name)
-  }
-  if("catch" %in% what.plot){
-    catch_RP <- tibble(jstat=dplyr::filter(rename_list, stat == "catch") %>%
-                         dplyr::pull(jstat),
-                       value=MSY/biomass.unit,
-                       RP_name="MSY")
-  }
-  if("U" %in% what.plot){
-    U_RP <- tibble(jstat=dplyr::filter(rename_list, stat == "U") %>%
-                     dplyr::pull(jstat),
-                   value=Umsy,
-                   RP_name="U_MSY")
-  }
-  
-  options(warn=org.warn)
-  
-  g1 <- future_tibble.qt %>% dplyr::filter(!is.na(stat)) %>%
-    ggplot()
-  
-  if(isTRUE(is.plot.CIrange)){
-    g1 <- g1+
-      geom_line(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario!="VPA" & year <= maxyear),
-                mapping=aes(x=year,y=high,lty=scenario,color=scenario))+
-      geom_line(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario!="VPA" & year <= maxyear),
-                mapping=aes(x=year,y=low,lty=scenario,color=scenario))+    
-      geom_ribbon(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario!="VPA" & year <= maxyear),
-                  mapping=aes(x=year,ymin=low,ymax=high,fill=scenario),alpha=0.4)+
-      geom_line(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario!="VPA" & year <= maxyear),
-                mapping=aes(x=year,y=mean,color=scenario),lwd=1)
-  }
-  #    else{
-  #        g1 <- g1+
-  #            geom_line(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario=="VPA"),
-  #                      mapping=aes(x=year,y=mean,color=scenario),lwd=1)#+
-  #    }
-  
-  g1 <- g1+
-    geom_blank(data=dummy,mapping=aes(y=value,x=year))+
-    geom_blank(data=dummy2,mapping=aes(y=value,x=year))+
-    #theme_bw(base_size=font.size) +
-    #        coord_cartesian(expand=0)+
-    scale_y_continuous(expand=expand_scale(mult=c(0,0.05)))+
-    facet_wrap(~factor(jstat,levels=rename_list$jstat),scales="free_y",ncol=ncol)+
-    xlab("年")+ylab("")+ labs(fill = "",linetype="",color="")+
-    xlim(min(future_tibble$year),maxyear)
-  
-  if("SSB" %in% what.plot){
-    g1 <- g1 + geom_hline(data = ssb_RP,
-                          aes(yintercept = value, linetype = RP_name),
-                          color = c(col.SBtarget, col.SBlim, col.SBban))
-  }
-  
-  if("catch" %in% what.plot){
-    g1 <- g1 + geom_hline(data = catch_RP,
-                          aes(yintercept = value, linetype = RP_name),
-                          color = c(col.MSY))
-  }
-  
-  if("U" %in% what.plot){
-    g1 <- g1 + geom_hline(data = U_RP,
-                          aes(yintercept = value, linetype = RP_name),
-                          color = c(col.MSY))
-  }
-  
-  if(n_example>0){
-    if(n_example>1){
-      g1 <- g1 + geom_line(data=dplyr::filter(future.example,year <= maxyear),
-                           mapping=aes(x=year,y=value,
-                                       alpha=factor(sim),
-                                       color=scenario),
-                           lwd=example_width)
-    }
-    else{
-      g1 <- g1 + geom_line(data=dplyr::filter(future.example,year <= maxyear),
-                           mapping=aes(x=year,y=value,
-                                       color=scenario),
-                           lwd=example_width)
-    }
-    g1 <- g1+scale_alpha_discrete(guide=FALSE)
-  }
-  
-  g1 <- g1 + guides(lty=guide_legend(ncol=3),
-                    fill=guide_legend(ncol=3),
-                    col=guide_legend(ncol=3))+
-    theme_SH(base_size=font.size,legend.position=legend.position)+
-    scale_color_hue(l=40)+
-    labs(caption = str_c("(塗り:", CI_range[1]*100,"-",CI_range[2]*100,
-                         "%予測区間, 太い実線: 平均値",
-                         ifelse(n_example>0,", 細い実線: シミュレーションの1例)",")")
-    ))
-  
-  g1 <- g1 +
-    geom_line(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario=="VPA"),
-              mapping=aes(x=year,y=mean),lwd=1,color="black")# VPAのプロット
-  return(g1)
-}
-
-#' F currentをプロットする
-#'
-#' @param vpares VPAの結果のオブジェクト
-#' @encoding UTF-8
-#'
-#' @export
-
-plot_Fcurrent <- function(vpares,
-                          Fcurrent=NULL,
-                          year.range=NULL){
-  
-  if(is.null(year.range)) year.range <- min(as.numeric(colnames(vpares$naa))):max(as.numeric(colnames(vpares$naa)))
-  vpares_tb <- convert_vpa_tibble(vpares)
-  
-  faa_history <- vpares_tb %>%
-    dplyr::filter(stat=="fishing_mortality", year%in%year.range) %>%
-    mutate(F=value,year=as.character(year),type="History") %>%
-    select(-stat,-sim,-value) %>%
-    group_by(year) %>%
-    dplyr::filter(!is.na(F)) %>%
-    mutate(Year=as.numeric(year)) %>%
-    mutate(age_name=ifelse(max(age)==age,str_c(age,"+"),age))
-  
-  if(is.null(Fcurrent)){
-    fc_at_age_current <- vpares$Fc.at.age
-  }
-  else{
-    fc_at_age_current <- Fcurrent
-  }
-  fc_at_age_current <- tibble(F=fc_at_age_current,age=as.numeric(rownames(vpares$naa)),
-                              year="0",type="currentF") %>%
-    dplyr::filter(!is.na(F)) %>%
-    mutate(age_name=ifelse(max(age)==age,str_c(age,"+"),age))
-  
-  pal <- c("#3B9AB2", "#56A6BA", "#71B3C2", "#9EBE91", "#D1C74C",
-           "#E8C520", "#E4B80E", "#E29E00", "#EA5C00", "#F21A00")
-  g <- faa_history  %>% ggplot() +
-    geom_path(aes(x=age_name,y=F,color=Year,group=Year),lwd=1.5) +
-    scale_color_gradientn(colors = pal)+
-    geom_path(data=fc_at_age_current,
-              mapping=aes(x=age_name,y=F,group=type),color="black",lwd=1.5,lty=1)+
-    geom_point(data=fc_at_age_current,
-               mapping=aes(x=age_name,y=F,shape=type),color="black",size=3)+
-    coord_cartesian(ylim=c(0,max(faa_history$F,na.rm=T)))+
-    ##                        xlim=range(as.numeric(faa_history$age_name,na.rm=T))+c(-0.5,0.5)
-    #                        )+
-    xlab("年齢")+ylab("漁獲係数(F)")+theme_SH(legend.position="right")+
-    scale_shape_discrete(name="", labels=c("F current"))
-  
-  return(g)
-}
-
-
-library(ggplot2)
-
-#Setting parameter values.
-#SBtarget <- 250
-#SBban <- 0.1*SBtarget
-#SBlim <- 0.4*SBtarget
-#Ftarget <-1.5
-#beta <- 0.8
-
-#' HCRを書く
-#'
-#' @param SBtarget 目標管理基準値
-#' @param SBlim    限界管理基準値
-#' @param SBlim    禁漁水準
-#' @param Ftarget  Ftarget
-#' @param is.text ラベルを記入するかどうか（FALSEにすると後で自分で書き換えられる）
-#' @encoding UTF-8
-#'
-#' @export
-
-plot_HCR <- function(SBtarget,SBlim,SBban,Ftarget,
-                     Fcurrent=-1,
-                     biomass.unit=1,
-                     beta=0.8,col.multi2currf="black",col.SBtarget="#00533E",
-                     col.SBlim="#edb918",col.SBban="#C73C2E",col.Ftarget="black",
-                     col.betaFtarget="gray",is.text = TRUE,
-                     RP.label=c("目標管理基準値","限界管理基準値","禁漁水準")){
-  
-  # Arguments; SBtarget,SBlim,SBban,Ftarget,beta,col.multi2currf,col.SBtarget,col.SBlim,col.SBban,col.Ftarget,col.betaFtarget.
-  # col.xx means the line color for xx on figure.
-  # beta and col.xx have default values.
-  # Default setting for beta = 0.8, therefore define this as (beta <-0.8) outside this function if the beta-value changes frequently.
-  # Default color setting for each parameter; Function(col.multi2currf="blue"), SBtarget(col.SBtarget = "green"), SBlimit(col.SBlim = "yellow"),SBban(col.SBban = "red"),Ftarget(col.Ftarget = "black"), β Ftarget(col.betaFtarget = "gray")
-  
-  junit <- c("","十","百","千","万")[log10(biomass.unit)+1]
-  SBtarget <- SBtarget/biomass.unit
-  SBlim <- SBlim/biomass.unit
-  SBban <- SBban/biomass.unit
-  
-  #Setting of the function to multiply current F for SSB
-  multi2currF = function(x){
-    if(x > SBlim) {multi2currF=beta*Ftarget}
-    else if (x < SBban) {multi2currF=0}
-    else { multi2currF = (x - SBban)* beta*Ftarget/(SBlim - SBban) }
-    return(multi2currF)
-  }
-  
-  #Function setting for drawing.
-  h=Vectorize(multi2currF)
-  
-  #Drawing of the funciton by ggplot2
-  ggplct <- ggplot(data.frame(x = c(0,1.5*SBtarget),y= c(0,1.5*Ftarget)), aes(x=x)) +
-    stat_function(fun = h,lwd=1.5,color=col.multi2currf, n=5000)
-  g <- ggplct  + geom_vline(xintercept = SBtarget, size = 0.9, linetype = "41", color = col.SBtarget) +
-    geom_vline(xintercept = SBlim, size = 0.9, linetype = "41", color = col.SBlim) +
-    geom_vline(xintercept = SBban, size = 0.9, linetype = "41", color = col.SBban) +
-    geom_hline(yintercept = Ftarget, size = 0.9, linetype = "43", color = col.Ftarget) +
-    geom_hline(yintercept = beta*Ftarget, size = 0.7, linetype = "43", color = col.betaFtarget) +
-    labs(x = str_c("親魚量 (",junit,"トン)"),y = "漁獲圧の比(F/Fmsy)",color = "") +
-    theme_bw(base_size=12)+
-    theme(legend.position="none",panel.grid = element_blank())+
-    stat_function(fun = h,lwd=1,color=col.multi2currf)
-  
-  if(Fcurrent>0){
-    g <- g+geom_hline(yintercept = Fcurrent, size = 0.7, linetype = 1, color = "gray")+
-      geom_label(label="Fcurrent", x=SBtarget*1.1, y=Fcurrent)
-    
-  }
-  
-  if(is.text) {
-    RPdata <- tibble(RP.label=RP.label, value=c(SBtarget, SBlim, SBban), y=c(1.1,1.05,1.05))
-    g <- g + ggrepel::geom_label_repel(data=RPdata, 
-                                       mapping=aes(x=value, y=y, label=RP.label), 
-                                       box.padding=0.5, nudge_y=1) +
-      geom_label(label="Fmsy", x=SBtarget*1.3, y=Ftarget)+
-      geom_label(label=str_c(beta,"Fmsy"), x=SBtarget*1.3, y=beta*Ftarget)+
-      ylim(0,1.3)
-  }
-  
-  return(g)
-  
-  #Drawing in a classical way
-  # curve(h,
-  #       xlim=c(0,2*SBtarget),  # range for x-axis is from 0 to 2*SBtarget
-  #       ylim=c(0,1.2*Ftarget), # range for y-axis is from 0 to 1.2*Ftarget
-  #       main="",
-  #       xlab="SSB(×1000[t])",
-  #       ylab="multipliyer to current F",
-  #       lwd=2,
-  #       col=col.multi2currf
-  # )
-  #Adding extention lines.
-  # abline(v=SBtarget,lty=2,lwd=2,col=col.SBtarget)
-  # abline(v=SBlim,lty=2,lwd=2,col=col.SBlim)
-  # abline(v=SBban,lty=2,lwd=2,col=col.SBban)
-  # abline(h=Ftarget,lty=2,col=col.Ftarget)
-  # abline(h=beta*Ftarget,lty=3,col=col.betaFtarget)
-  
-  #Display legends at bottom right of the figure.
-  # legend("bottomright",
-  #        legend=c("SBtarget","SBlimit","SBban","Ftarget","β Ftarget"),
-  #        lty=c(2,2,2,2,3),
-  #        lwd=c(2,2,2,1,1),
-  #        col=c(col.SBtarget, "yellow", "red","black","gray"),
-  #        bty="n"
-  # )
-  
-  #Setting each legend manually.
-  # legend(SBtarget, 1.1*Ftarget,legend='SBtarget',bty="n")
-  # legend(SBlim, 1.1*Ftarget, legend='SBlimit',bty="n")
-  # legend(SBban, 1.1*Ftarget, legend='SBban',bty="n")
-  # legend(0, Ftarget, legend='Ftarget',bty="n")
-  # legend(0, beta*Ftarget, legend='β Ftarget',bty="n")
-  
-}
-
-#' 縦軸が漁獲量のHCRを書く（traceの結果が必要）
-#'
-#' @param trace 
-#' @param fout 将来予測のアウトプット（finputがない場合)
-#' @param Fvector Fのベクトル
-#' @encoding UTF-8
-#' @export
-
-plot_HCR_by_catch <- function(trace,
-                              fout0.8,
-                              SBtarget,SBlim,SBban,Fmsy_vector,MSY,
-                              M_vector,
-                              biomass.unit=1,
-                              beta=0.8,col.multi2currf="black",col.SBtarget="#00533E",
-                              col.SBlim="#edb918",col.SBban="#C73C2E",col.Ftarget="black",
-                              col.betaFtarget="gray",is.text = TRUE,
-                              Pope=TRUE,
-                              RP.label=c("目標管理基準値","限界管理基準値","禁漁水準")){
-  # 本当は途中までplot_HCRと統合させたい
-  junit <- c("","十","百","千","万")[log10(biomass.unit)+1]    
-  biomass_comp <- trace %>% dplyr::select(starts_with("TB-mean-"))
-  biomass_comp <- biomass_comp[,Fmsy_vector>0]
-  M_vector <- M_vector[Fmsy_vector>0]
-  Fmsy_vector <- Fmsy_vector[Fmsy_vector>0]
-  
-  calc_catch <- function(B, M, Fvec, Pope=TRUE){
-    if(isTRUE(Pope)){
-      total.catch <- B*(1-exp(-Fvec))*exp(-M/2) 
-    }
-    else{
-      total.catch <- B*(1-exp(-Fvec-M))*Fvec/(Fvec+M) 
-    }
-    return(sum(total.catch))
-  }
-  
-  n <- nrow(trace)
-  gamma <- HCR_default(as.numeric(trace$ssb.mean),
-                       Blimit=rep(SBlim,n),Bban=rep(SBban,n),beta=rep(beta,n))
-  F_matrix <- outer(gamma, Fmsy_vector)
-  trace$catch_HCR <- purrr::map_dbl(1:nrow(trace), function(x) 
-    calc_catch(biomass_comp[x,],M_vector, F_matrix[x,], Pope=Pope))
-  
-  trace <- trace %>% dplyr::arrange(ssb.mean) %>%
-    dplyr::filter(ssb.mean < SBtarget*1.5)
-  
-  g <- trace %>%
-    ggplot()+
-    geom_line(aes(x=ssb.mean/biomass.unit,y=catch_HCR/biomass.unit),lwd=1)+
-    theme_SH()+
-    geom_vline(xintercept = SBtarget/biomass.unit, size = 0.9, linetype = "41", color = col.SBtarget) +
-    geom_vline(xintercept = SBlim/biomass.unit, size = 0.9, linetype = "41", color = col.SBlim) +
-    geom_vline(xintercept = SBban/biomass.unit, size = 0.9, linetype = "41", color = col.SBban) +
-    #      geom_hline(yintercept = MSY/biomass.unit,color="gray")+
-    xlab(str_c("親魚量 (",junit,"トン)"))+
-    ylab(str_c("漁獲量 (",junit,"トン)"))
-  
-  if(is.text) {
-    RPdata <- tibble(RP.label=RP.label, value=c(SBtarget, SBlim, SBban)/biomass.unit,
-                     y=rep(max(trace$catch_HCR)*0.9,3)/biomass.unit)
-    g <- g + ggrepel::geom_label_repel(data=RPdata, 
-                                       mapping=aes(x=value, y=y, label=RP.label), 
-                                       box.padding=0.5, nudge_y=1) #+
-    # geom_label(label="MSY", x=SBtarget*1.4/biomass.unit, y=MSY/biomass.unit)
-    #      geom_label(label=str_c(beta,"Fmsy"), x=SBtarget*1.3, y=beta*Ftarget)+
-    #        ylim(0,1.3)
-  }
-  
-  
-}
-
-
-# test plot
-#Fig_Fish_Manage_Rule(SBtarget,SBlim,SBban,Ftarget,col.multi2currf = "#093d86", col.SBtarget = "#00533E", col.SBlim = "#edb918",col.SBban = "#C73C2E",col.Ftarget = "#714C99", col.betaFtarget = "#505596")
-# function;ruri-rio, sbtarget;moegi-iro, sblim;koki-ki; sbban;hi-iro, ftarget;sumire-iro, betaftarget;kikyou-iro
 
 #' MSYを達成するときの\%SPRを計算する
 #'
@@ -1704,362 +1549,8 @@ export_kobeII_tables <- function(kobeII_table,
               kobeII_table = kobeII_table)
 }
 
-#' 会議用の図のフォーマット
-#'
-#' @export
-#'
-
-theme_SH <- function(legend.position="none",base_size=12){
-  theme_bw(base_size=base_size) +
-    theme(panel.grid = element_blank(),
-          axis.text.x=element_text(size=11,color="black"),
-          axis.text.y=element_text(size=11,color="black"),
-          axis.line.x=element_line(size= 0.3528),
-          axis.line.y=element_line(size= 0.3528),
-          legend.position=legend.position)
-}
-
-#' 会議用の図の出力関数（大きさ・サイズの指定済）：通常サイズ
-#'
-#' @export
-#'
-
-ggsave_SH <- function(...){
-  ggsave(width=150,height=85,dpi=600,units="mm",...)
-}
-
-#' 会議用の図の出力関数（大きさ・サイズの指定済）：大きいサイズ
-#'
-#' @export
-#'
-
-ggsave_SH_large <- function(...){
-  ggsave(width=150,height=120,dpi=600,units="mm",...)
-}
-
-#' fit.SRregimeの結果で得られた再生産関係をプロットするための関数
-#'
-#' レジームごとの観察値と予測線が描かれる
-#' @param resSRregime \code{fit.SRregime}の結果
-#' @param xscale X軸のスケーリングの値（親魚量をこの値で除す）
-#' @param xlabel X軸のラベル
-#' @param yscale Y軸のスケーリングの値（加入量をこの値で除す）
-#' @param ylabel Y軸のラベル
-#' @param labeling.year ラベルに使われる年
-#' @param show.legend 凡例を描くかどうか
-#' @param legend.title 凡例のタイトル（初期設定は\code{"Regime"}）
-#' @param regime.name 凡例に描かれる各レジームの名前（レジームの数だけ必要）
-#' @param base_size \code{ggplot}のベースサイズ
-#' @param add.info \code{AICc}や\code{regime.year}, \code{regime.key}などの情報を加えるかどうか
-#' @param use.fit.SR パラメータの初期値を決めるのに\code{frasyr::fit.SR}を使う（時間の短縮になる）
-#' @examples
-#' \dontrun{
-#' data(res_vpa)
-#' SRdata <- get.SRdata(res_vpa)
-#' resSRregime <- fit.SRregime(SRdata, SR="HS", method="L2",
-#'                             regime.year=c(1977,1989), regime.key=c(0,1,0),
-#'                             regime.par = c("a","b","sd")[2:3])
-#' g1 <- SRregime_plot(resSRregime, regime.name=c("Low","High"))
-#' g1
-#' }
-#' @encoding UTF-8
-#' @export
-#'
-
-SRregime_plot <- function (SRregime_result,xscale=1000,xlabel="SSB",yscale=1,ylabel="R",
-                           labeling.year = NULL, show.legend = TRUE, legend.title = "Regime",regime.name = NULL,
-                           base_size = 16, add.info = TRUE) {
-  pred_data = SRregime_result$pred %>% mutate(Category = "Pred")
-  obs_data = select(SRregime_result$pred_to_obs, -Pred, -resid) %>% mutate(Category = "Obs")
-  combined_data = full_join(pred_data, obs_data) %>%
-    mutate(Year = as.double(Year))
-  if (is.null(labeling.year)) labeling.year <- c(min(obs_data$Year),obs_data$Year[obs_data$Year %% 5 == 0],max(obs_data$Year))
-  combined_data = combined_data %>%
-    mutate(label=if_else(is.na(Year),as.numeric(NA),if_else(Year %in% labeling.year, Year, as.numeric(NA)))) %>%
-    mutate(SSB = SSB/xscale, R = R/yscale)
-  g1 = ggplot(combined_data, aes(x=SSB,y=R,label=label)) +
-    geom_path(data=dplyr::filter(combined_data, Category=="Pred"),aes(group=Regime,colour=Regime,linetype=Regime),size=2, show.legend = show.legend)+
-    geom_point(data=dplyr::filter(combined_data, Category=="Obs"),aes(group=Regime,colour=Regime),size=3, show.legend = show.legend)+
-    geom_path(data=dplyr::filter(combined_data, Category=="Obs"),colour="darkgray",size=1)+
-    xlab(xlabel)+ylab(ylabel)+
-    ggrepel::geom_label_repel()+
-    theme_bw(base_size=base_size)+
-    coord_cartesian(ylim=c(0,combined_data$R*1.05),expand=0)
-  if (show.legend) {
-    if (is.null(regime.name)) {
-      regime.name = unique(combined_data$Regime)
-    }
-    g1 = g1 + scale_colour_hue(name=legend.title, labels = regime.name) +
-      scale_linetype_discrete(name=legend.title, labels = regime.name)
-  }
-  if (add.info) {
-    if (is.null(SRregime_result$input$regime.year)) {
-      g1 = g1 +
-        # labs(caption=str_c(SRregime_result$input$SR,"(",SRregime_result$input$method,
-        #                    "), regime_year: ", paste0(SRregime_result$input$regime.year,collapse="&"),
-        #                    ", regime_key: ",paste0(SRregime_result$input$regime.key,collapse="->"),", AICc: ",round(SRregime_result$AICc,2)))
-        labs(caption=str_c(SRregime_result$input$SR,"(",SRregime_result$input$method,
-                           "), No Regime", ", AICc: ",round(SRregime_result$AICc,2))
-        )
-      
-    }  else {
-      g1 = g1 +
-        # labs(caption=str_c(SRregime_result$input$SR,"(",SRregime_result$input$method,
-        #                    "), regime_year: ", paste0(SRregime_result$input$regime.year,collapse="&"),
-        #                    ", regime_key: ",paste0(SRregime_result$input$regime.key,collapse="->"),", AICc: ",round(SRregime_result$AICc,2)))
-        labs(caption=str_c(SRregime_result$input$SR,"(",SRregime_result$input$method,
-                           "), ", "regime_par: ", paste0(SRregime_result$input$regime.par,collapse="&"),", ",
-                           paste0(SRregime_result$input$regime.year,collapse="&"),
-                           ", ",paste0(SRregime_result$input$regime.key,collapse="->"),
-                           ", AICc: ",round(SRregime_result$AICc,2))
-        )
-      
-    }
-  }
-  g1
-}
-
-#' 複数のVPAの結果を重ね書きする
-#'
-#' @param vpalist vpaの返り値をリストにしたもの; 単独でも可
-#' @param vpatibble tibble形式のVPA結果も可。この場合、convert_vpa_tibble関数の出力に準じる。複数のVPA結果がrbindされている場合は、列名"id"で区別する。
-#' @param what.plot 何の値をプロットするか. NULLの場合、全て（SSB, biomass, U, catch, Recruitment, fish_number, fishing_mortality, weight, maturity, catch_number）をプロットする。what.plot=c("SSB","Recruitment")とすると一部のみプロット。ここで指定された順番にプロットされる。
-#' @param legend.position 凡例の位置。"top" (上部), "bottom" (下部), "left" (左), "right" (右), "none" (なし)。
-#' @param vpaname 凡例につけるVPAのケースの名前。vpalistと同じ長さにしないとエラーとなる
-#' @param ncol 図の列数
-#'
-#' @examples
-#' \dontrun{
-#' data(res_vpa)
-#' res_vpa2 <- res_vpa
-#' res_vpa2$naa <- res_vpa2$naa*1.2
-#'
-#' plot_vpa(list(res_vpa, res_vpa2), vpaname=c("True","Dummy"))
-#' plot_vpa(list(res_vpa, res_vpa2), vpaname=c("True","Dummy"),
-#'                  what.plot=c("SSB","fish_number"))
-#'
-#' }
-#'
-#' @encoding UTF-8
-#'
-#' @export
-#'
-
-plot_vpa <- function(vpalist, vpatibble=NULL,
-                     what.plot=NULL, legend.position="top",
-                     vpaname=NULL, ncol=2){
-  
-  if(!is.null(vpaname)){
-    if(length(vpaname)!=length(vpalist)) stop("Length of vpalist and vpaname is different")
-    names(vpalist) <- vpaname
-  }
-  
-  if(is.null(vpatibble)){
-    if(isTRUE("naa" %in% names(vpalist))) vpalist <- list(vpalist)
-    vpadata <- vpalist %>% purrr::map_dfr(convert_vpa_tibble ,.id="id") %>%
-      mutate(age=factor(age))
-  }
-  else{
-    vpadata <- vpatibble %>%
-      mutate(age=factor(age))
-    if("id" %in% !names(vpadata)) vpadata$id <- "vpa1"
-  }
-  if(!is.null(what.plot)) vpadata <- vpadata %>%  dplyr::filter(stat%in%what.plot)
-  
-  biomass_factor <- vpadata %>% dplyr::filter(is.na(age)) %>%
-    select(stat) %>% unique() %>% unlist()
-  age_factor <- vpadata %>% dplyr::filter(!is.na(age)) %>%
-    select(stat) %>% unique() %>% unlist()
-  
-  if(!is.null(what.plot)){
-    vpadata <- vpadata %>%
-      mutate(stat=factor(stat,levels=what.plot))
-  }
-  else{
-    vpadata <- vpadata %>%
-      mutate(stat=factor(stat,levels=c(biomass_factor, age_factor)))
-  }
-  
-  g1 <- vpadata %>% ggplot()
-  if(all(is.na(vpadata$age))){
-    g1 <- g1+ geom_line(aes(x=year, y=value,lty=id))
-  }
-  else{
-    g1 <- g1+ geom_line(aes(x=year, y=value,color=age,lty=id))
-  }
-  
-  g1 <- g1 +
-    facet_wrap(~stat, scale="free_y", ncol=ncol) + ylim(0,NA) +
-    theme_SH(legend.position=legend.position) +
-    ylab("Year") + xlab("Value")
-  
-  g1
-}
 
 
-#' F一定の場合で平衡状態になったときの統計量をx軸、y軸にプロットして比較する
-#'
-#'
-#' 例えば、横軸を平均親魚量(ssb.mean)、縦軸を平均漁獲量(catch.mean)にすると漁獲量曲線が得られる。どの統計量がプロットできるかはest.MSYの返り値res_MSYの$trace以下の名前を参照(names(res_MSY$trace))。
-#'
-#' @param MSYlist est.MSYの返り値をリストにしたもの; 単独でも可
-#' @param MSYname 凡例につけるMSYのケースの名前。MSYlistと同じ長さにしないとエラーとなる
-#' @param x_axis_name x軸になにをとるか？("ssb.mean": 親魚の平均資源量, "fmulti": current Fに対する乗数、など)
-#' @param y_axis_name y軸になにをとるか？("ssb.mean": 親魚の平均資源量, "catch.mean": 平均漁獲量、"rec.mean": 加入量の平均値など） get.statの返り値として出される値（またはMSYの推定結果のtrace内の表）に対応
-#' @param plot_CI80 TRUE or FALSE, 平衡状態における信頼区間も追記する(現状では、縦軸が親魚量・漁獲量・加入尾数のときのみ対応)
-#'
-#' @examples
-#' \dontrun{
-#' data(res_MSY_HSL1)
-#' data(res_MSY_HSL2)
-#' MSY_list <- tibble::lst(res_MSY_HSL1, res_MSY_HSL2)
-#' # 縦軸を漁獲量、横軸をFの大きさ
-#' g1 <- compare_eq_stat(MSY_list,x_axis_name="fmulti",y_axis_name="catch.mean")
-#' # 縦軸を親魚量にする
-#' g2 <- compare_eq_stat(MSY_list,x_axis_name="fmulti",y_axis_name="ssb.mean")
-#' # 縦軸を加入量
-#' g3 <- compare_eq_stat(MSY_list,x_axis_name="fmulti",y_axis_name="rec.mean")
-#' gridExtra::grid.arrange(g1,g2,g3,ncol=1)
-#'
-#' g3.withCI <- compare_eq_stat(MSY_list,x_axis_name="fmulti",y_axis_name="rec.mean",plot_CI80=TRUE)
-#'
-#' }
-#'
-#' @encoding UTF-8
-#'
-#' @export
-#'
-
-compare_eq_stat <- function(MSYlist,
-                            x_axis_name="fmulti",
-                            y_axis_name="catch.mean",
-                            legend.position="top",
-                            is_MSY_line=TRUE,
-                            is.scale=FALSE,
-                            MSYname=NULL,
-                            plot_CI80=FALSE
-){
-  
-  if(!is.null(MSYname)){
-    if(length(MSYname)!=length(MSYlist)) stop("Length of MSYlist and MSYname is different")
-    names(MSYlist) <- MSYname
-  }
-  if(isTRUE("summary" %in% names(MSYlist))) MSYlist <- list(MSYlist)
-  
-  data_yield <- purrr::map_dfr(MSYlist, function(x){
-    x$trace %>% mutate(catch.order= rank(-catch.mean),
-                       catch.max  = max(catch.mean)  ,
-                       ssb.max    = max(ssb.mean))
-  }
-  ,.id="id")
-  
-  if(isTRUE(is.scale)) data_yield <- data_yield %>% mutate(catch.mean=catch.mean/catch.max,
-                                                           ssb.mean=ssb.mean/ssb.max)
-  
-  g1 <- data_yield %>% ggplot()+
-    geom_line(aes(x=get(x_axis_name), y=get(y_axis_name[1]), color=id))+
-    theme_SH(legend.position=legend.position)+
-    xlab(x_axis_name)+ylab(str_c(y_axis_name))+
-    geom_vline(data=dplyr::filter(data_yield,catch.order==1),
-               aes(xintercept=get(x_axis_name),color=id),lty=2)
-  
-  if(isTRUE(plot_CI80)){
-    y_axis_name_L10 <- dplyr::case_when(
-      y_axis_name == "catch.mean" ~ "catch.L10",
-      y_axis_name == "ssb.mean"   ~ "ssb.L10",
-      y_axis_name == "rec.mean"   ~ "rec.L10")
-    y_axis_name_H10 <- dplyr::case_when(
-      y_axis_name == "catch.mean" ~ "catch.H10",
-      y_axis_name == "ssb.mean"   ~ "ssb.H10",
-      y_axis_name == "rec.mean"   ~ "rec.H10")
-    g1 <- g1 +
-      geom_line(aes(x=get(x_axis_name), y=get(y_axis_name_L10), color=id),lty=2)+
-      geom_line(aes(x=get(x_axis_name), y=get(y_axis_name_H10), color=id),lty=3)
-  }
-  
-  return(g1)
-}
-
-
-#' 複数の管理基準値の推定結果を重ね書きする
-#'
-#' @param MSYlist est.MSYの返り値をリストにしたもの; 単独でも可
-#' @param MSYname 凡例につけるMSYのケースの名前。MSYlistと同じ長さにしないとエラーとなる
-#' @param legend.position 凡例の位置
-#' @param yaxis
-#'
-#' @examples
-#' \dontrun{
-#' data(res_MSY)
-#' MSY_list <- tibble::lst(res_MSY_HSL1, res_MSY_HSL2)
-#' g1 <- compare_MSY(list(res_MSY, res_MSY))
-#' }
-#'
-#' @encoding UTF-8
-#'
-#' @export
-#'
-
-compare_MSY <- function(MSYlist,
-                        legend.position="top",
-                        MSYname=NULL,
-                        yaxis="Fref2Fcurrent"){
-  
-  if(!is.null(MSYname)){
-    if(length(MSYname)!=length(MSYlist)) stop("Length of MSYlist and MSYname is different")
-    names(MSYlist) <- MSYname
-  }
-  
-  if(isTRUE("summary" %in% names(MSYlist))) MSYlist <- list(MSYlist)
-  
-  data_summary <- purrr::map_dfr(MSYlist, function(x) x$summary, .id="id")   %>%
-    dplyr::filter(!is.na(RP.definition)) %>%
-    mutate(label=stringr::str_c(id, RP.definition, sep="-")) %>%
-    mutate(perSPR_rev=1-perSPR)
-  
-  g1 <- data_summary %>% ggplot()+
-    geom_point(aes(x=SSB, y=get(yaxis), color=id))+
-    ggrepel::geom_label_repel(aes(x=SSB, y=get(yaxis), color=id, label=label))+
-    theme_SH(legend.position=legend.position)
-  
-  return(g1)
-}
-
-#' 複数の再生産関係を比較する関数
-#'
-#' @param SRlist 再生産関係の推定結果のリスト。
-#' @param biomass.unit 資源量の単位
-#' @param number.unit 尾数の単位
-#'
-#' @examples 
-#' \dontrun{
-#' data(res_sr_HSL1)
-#' data(res_sr_HSL2)
-#' 
-#' (g1 <- compare_SRfit(list(HSL1=res_sr_HSL1, HSL2=res_sr_HSL2),
-#'                      biomass.unit=1000, number.unit=1000))
-#' 
-#' }
-#'
-#' @export
-#'
-#' 
-
-compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000){
-  SRdata <- SRlist[[1]]$input$SRdata %>%
-    as_tibble() %>%
-    mutate(SSB=SSB/biomass.unit, R=R/number.unit)
-  g1 <- plot_SRdata(SRdata,type="gg")
-  
-  SRpred <- purrr::map_dfr(SRlist,
-                           function(x) x$pred, .id="SR_type")
-  g1 <- g1+geom_line(data=SRpred,mapping=aes(x=SSB/biomass.unit,y=R/number.unit,col=SR_type)) +
-    theme(legend.position="top") +
-    xlab(str_c("SSB (x",biomass.unit,")")) +
-    ylab(str_c("Number (x",number.unit,")")) 
-  
-  g1
-}
 
 #'
 #' 将来予測の結果のリストを入れると、代表的なパフォーマンス指標をピックアップする
@@ -2076,6 +1567,7 @@ compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000){
 #' @param biomass.unit 資源量の単位
 #'
 #' @export
+#' @encoding UTF-8 
 #'
 
 get_performance <- function(future_list,res_vpa,ABC_year=2021,
@@ -2168,7 +1660,7 @@ get_performance <- function(future_list,res_vpa,ABC_year=2021,
 #' @param res_vpa VPAの結果
 #' @param ... get_performanceで必要な引数
 #'
-#'
+#' @encoding UTF-8
 #' @export
 #'
 
@@ -2238,54 +1730,6 @@ compare_future_performance <- function(future_list,res_vpa,res_MSY,
 
 
 #'
-#' @export
-#'
-
-plot_bias_in_MSE <- function(fout, out="graph", error_scale="log", yrange=NULL){
-  
-  recruit_dat  <- convert_2d_future(fout$SR_MSE[,,"recruit"], name="Recruits", label="estimate") %>%
-    rename(value_est=value)
-  tmp <- convert_2d_future(fout$naa[1,,],            name="Recruits", label="true")
-  recruit_dat$value_true <- tmp$value
-  
-  real_ABC_dat <- convert_2d_future(fout$HCR_mat[,,"wcatch"],    name="realABC", label="estimate") %>%
-    rename(value_est=value)
-  tmp  <- convert_2d_future(fout$SR_MSE[,,"real_true_catch"], name="realABC", label="true")
-  real_ABC_dat$value_true <- tmp$value
-  
-  pseudo_ABC_dat <- convert_2d_future(fout$HCR_mat[,,"wcatch"],    name="pseudoABC", label="estimate") %>%
-    rename(value_est=value)
-  tmp  <- convert_2d_future(fout$SR_MSE[,,"pseudo_true_catch"], name="pseudoABC", label="true")
-  pseudo_ABC_dat$value_true <- tmp$value
-  
-  alldat <- bind_rows(recruit_dat, real_ABC_dat, pseudo_ABC_dat) %>%
-    dplyr::filter(value_est>0) %>%
-    mutate(Relative_error_log=(log(value_est)-log(value_true))/log(value_true),
-           Relative_error_normal=((value_est)-(value_true))/(value_true),
-           Year=factor(year))
-  
-  g1 <- alldat %>% ggplot() +
-    geom_boxplot(aes(x=Year,
-                     #                         y=Relative_error_log,
-                     y={if(error_scale=="log") Relative_error_log else Relative_error_normal},
-                     fill=stat)) +
-    facet_wrap(~stat,scale="free_y") +
-    geom_hline(yintercept=0) +
-    theme_SH() +
-    ylab(str_c("Relative error (",error_scale,")"))
-  
-  if(!is.null(yrange)) g1 <- g1 + coord_cartesian(ylim=yrange)
-  
-  if(out=="graph"){
-    return(g1)
-  }
-  else{
-    return(alldat)
-  }
-  
-}
-
-#'
 #' calculate F/Ftarget based on F_%SPR multiplier
 #'
 #' @param faa F at age
@@ -2295,6 +1739,7 @@ plot_bias_in_MSE <- function(fout, out="graph", error_scale="log", yrange=NULL){
 #' @param SPRtarget target SPR
 #'
 #' @export
+#' @encoding UTF-8 
 #'
 
 
