@@ -112,10 +112,10 @@ make_future_data <- function(res_vpa,
   if(is.null(plus_age)) plus_age <- max(which(!is.na(res_vpa$naa[,future_initial_year])))
   
   # define empty array
-  waa_mat <- waa_catch_mat <- M_mat <- maa_mat <- naa_mat <- faa_mat <- caa_mat <- 
+  waa_mat <- waa_catch_mat <- M_mat <- maa_mat <- naa_mat <- faa_mat <- caa_mat <- waa_catch_mat <-
     array(0, dim=c(nage, total_nyear, nsim),
           dimnames=list(age=age_name, year=allyear_name, nsim=1:nsim))
-  class(waa_mat) <- class(M_mat) <- class(maa_mat) <- class(naa_mat) <- class(faa_mat) <- class(caa_mat) <- "myarray"                                                                                  
+  class(waa_mat) <- class(M_mat) <- class(maa_mat) <- class(naa_mat) <- class(faa_mat) <- class(caa_mat) <- class(waa_catch_mat) <- "myarray"                                                                                  
   SR_mat <- array(0, dim=c(total_nyear, nsim, 15),
                   dimnames=list(year=allyear_name, nsim=1:nsim,
                                 par=c("a","b","rho", #1-3
@@ -149,12 +149,12 @@ make_future_data <- function(res_vpa,
   maa_mat <- make_array(maa_mat, maa, maa_year, start_biopar_year_name)
   M_mat   <- make_array(M_mat  , M  , M_year  , start_biopar_year_name)
   
-  if(is.null(res_vpa$input$dat$waa_catch)){
+  if(is.null(res_vpa$input$dat$waa.catch)){
     waa_catch_mat <- waa_mat
   }
   else{
-    waa_catch_mat[,1:vpa_nyear,] <- as.matrix(res_vpa$input$dat$waa_catch)
-    waa_catch_mat <- make_array(waa_catch_mat, waa_catch, waa_catch_year)
+    waa_catch_mat[,1:vpa_nyear,] <- as.matrix(res_vpa$input$dat$waa.catch)
+    waa_catch_mat <- make_array(waa_catch_mat, waa_catch, waa_catch_year, start_biopar_year_name)
   }    
   
   # set SR parameter
