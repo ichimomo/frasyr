@@ -195,8 +195,6 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
 })
 
 
-library(tidyverse)
-
 # utility function definition ----
 to_vpa_data <- function(x, label_name){
   vpa_data <- x %>% dplyr::filter(label==label_name) %>% as.data.frame()
@@ -312,8 +310,8 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
                               const_ssr <- mean(colSums(x$ssb))
                               const_R   <- mean(unlist(x$naa[1,]))
                               
-                              res_sr <- get.SRdata(x) %T>% plot_SRdata() %>%
-                                fit.SR(AR=0, SR="HS") %T>% SRplot_gg() 
+                              res_sr <- get.SRdata(x) %>% #%T>% plot_SRdata() %>%
+                                fit.SR(AR=0, SR="HS") %>% # %T>% SRplot_gg() 
                               
                               expect_equal(res_sr$pars$sd, 0, tol=0.000001)
                               expect_equal(res_sr$pars$b, const_ssr, tol=0.000001)
