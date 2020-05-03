@@ -151,8 +151,8 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
   # option fix_recruit、fix_wcatchのチェック
   catch <- apply(res_future_test$wcaa,c(2,3),sum)
   expect_equal(mean(res_future_test$naa[1,"2020",]), 1000)
-  expect_equal(catch["2020",], 1000)
-  expect_equal(catch["2021",], 2000)
+  expect_equal(mean(catch["2020",]), 1000, tol=0.001)
+  expect_equal(mean(catch["2021",]), 2000, tol=0.001)
   
   # 単なる将来予測の場合(backward)
   res_future_backward <- future_vpa(tmb_data=data_future_backward$data, 
@@ -161,8 +161,8 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
   # option fix_recruit、fix_wcatchのチェック
   expect_equal(mean(res_future_backward$naa[1,"2020",]), 1000)
   catch <- apply(res_future_backward$wcaa,c(2,3),sum)
-  expect_equal(catch["2020",], 1000)
-  expect_equal(catch["2021",], 2000)
+  expect_equal(mean(catch["2020",]), 1000, tol=0.001)
+  expect_equal(mean(catch["2021",]), 2000, tol=0.001)
   
   # MSY計算の場合(MSY estimation)
   res_future_test_R <- future_vpa(tmb_data=data_future_test$data, 
