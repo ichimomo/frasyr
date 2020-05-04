@@ -224,11 +224,11 @@ context("check future_vpa_function2 with dummy data")
 test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
   # read various data ----
   # data with caa=maa=waa=1, M=0
-  data_base <- read_csv(system.file("extdata","all_dummy_data_base.csv",package="frasyr")) 
+  data_base <- readr::read_csv(system.file("extdata","all_dummy_data_base.csv",package="frasyr")) 
   # data with caa=maa=waa=1, M=0 but plus group have changed 
-  data_pgc <- read_csv(system.file("extdata","all_dummy_data_plus_group_change.csv",package="frasyr")) 
+  data_pgc <- readr::read_csv(system.file("extdata","all_dummy_data_plus_group_change.csv",package="frasyr")) 
   # data with caa=maa=waa=1, M=0 but first recruit age is 1
-  data_rec <- read_csv(system.file("extdata","all_dummy_data_rec.csv",package="frasyr")) 
+  data_rec <- readr::read_csv(system.file("extdata","all_dummy_data_rec.csv",package="frasyr")) 
 
   # create various vpa data ----
   vpadat_base0 <- data.handler(caa=to_vpa_data(data_base, label_name="caa"),
