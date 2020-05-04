@@ -3,8 +3,11 @@
 #' @import magrittr          
 #' @import dplyr             
 #' @import tidyr             
-#' @import tibble            
+#' @import tibble 
+#' @import readr
+#' @import stringr           
 #' @importFrom magrittr %>%
+#' @importFrom magrittr %T>%
 #' @importFrom dplyr filter
 #' 
 NULL
