@@ -16,6 +16,7 @@ Imports:
     tibble,
     dplyr,
     tidyr,
+    readr,
     stringr,
     formattable,
     ggrepel,
