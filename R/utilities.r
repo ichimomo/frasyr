@@ -849,6 +849,34 @@ read.vpa <- function(tfile,
   return(dres)
 }
 
+#' tidy形式のVPAへのインプットデータをdata_dandlerへ渡す形式に変換する（暫定版）
+#'
+#' @export
+#' 
+
+to_vpa_data <- function(x, label_name){
+  vpa_data <- x %>% dplyr::filter(label==label_name) %>% as.data.frame()
+  if(label_name!="abund"){  
+    rownames(vpa_data) <- str_c("X",vpa_data$year)
+    vpa_data <- vpa_data %>% select(-year, -label) 
+    vpa_data$value <- vpa_data$fishery <- NULL    
+    vpa_data <- as.data.frame(t(vpa_data))
+    rownames(vpa_data) <- str_sub(rownames(vpa_data),5,5)
+  }
+  else{
+    vpa_data <- vpa_data %>% 
+      select(-starts_with("age_")) %>%
+      pivot_wider(names_from=year, values_from=value) 
+    abund_name <- vpa_data$fishery
+    vpa_data <- as.data.frame(vpa_data)
+    vpa_data$label <- vpa_data$fishery <- NULL
+    rownames(vpa_data) <- abund_name
+    colnames(vpa_data) <- str_c("X",colnames(vpa_data))
+  }
+  vpa_data  
+}
+
+
 #' @export
 #' 
 
@@ -1141,6 +1169,7 @@ convert_vpa_tibble <- function(vpares,SPRtarget=NULL){
                          convert_df(vpares$input$dat$waa,"weight"),
                          convert_df(vpares$input$dat$maa,"maturity"),
                          convert_df(vpares$input$dat$caa,"catch_number"),
+                         convert_df(vpares$input$dat$M,  "natural_mortality"),                         
                          Recruitment,
                          Fratio)
 }

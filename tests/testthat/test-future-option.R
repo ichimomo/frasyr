@@ -17,13 +17,13 @@ test_that("utility function check",{
     resid_test <- rep(1:5,each=5)
     res <- purrr::map_dfr(1:100, function(x)
         sample_backward(resid_test, 30, 5) %>%
-        matrix(5,6) %>% as_tibble())
+        matrix(5,6) %>% as_tibble(.name_repair=~stringr::str_c("V",1:6)))
 
     # 長さがdurationの倍数でない場合
     resid_test2 <- c(1,1,1,rep(1:5,each=5))
     res2 <- purrr::map_dfr(1:10000, function(x)
         sample_backward(resid_test2, 30, 5) %>%
-        matrix(5,6) %>% as_tibble())
+        matrix(5,6) %>% as_tibble(.name_repair=~stringr::str_c("V",1:6)))
     
     # Rのバージョンによってsampleの内部が変わっているので、seedを同じにしても、バージョンの違うR間で異なる結果が得られるらしい　https://community.rstudio.com/t/getting-different-results-with-set-seed/31624/4
     # そのため、100回繰り返して（乱数の影響を減らすため）各ブロックの最小値をテストする
