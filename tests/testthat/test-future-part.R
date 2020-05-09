@@ -194,135 +194,39 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
   
 })
 
-
-# utility function definition ----
-to_vpa_data <- function(x, label_name){
-  vpa_data <- x %>% dplyr::filter(label==label_name) %>% as.data.frame()
-  if(label_name!="abund"){  
-    rownames(vpa_data) <- str_c("X",vpa_data$year)
-    vpa_data <- vpa_data %>% select(-year, -label) 
-    vpa_data$value <- vpa_data$fishery <- NULL    
-    vpa_data <- as.data.frame(t(vpa_data))
-    rownames(vpa_data) <- str_sub(rownames(vpa_data),5,5)
-  }
-  else{
-    vpa_data <- vpa_data %>% 
-      select(-starts_with("age_")) %>%
-      pivot_wider(names_from=year, values_from=value) 
-    abund_name <- vpa_data$fishery
-    vpa_data <- as.data.frame(vpa_data)
-    vpa_data$label <- vpa_data$fishery <- NULL
-    rownames(vpa_data) <- abund_name
-    colnames(vpa_data) <- str_c("X",colnames(vpa_data))
-  }
-  vpa_data  
-}
-
 # check future_vpa with dummy data ----
 context("check future_vpa_function2 with dummy data") 
 
 test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
-  # read various data ----
-  # data with caa=maa=waa=1, M=0
-  data_base <- readr::read_csv(system.file("extdata","all_dummy_data_base.csv",package="frasyr")) 
-  # data with caa=maa=waa=1, M=0 but plus group have changed 
-  data_pgc <- readr::read_csv(system.file("extdata","all_dummy_data_plus_group_change.csv",package="frasyr")) 
-  # data with caa=maa=waa=1, M=0 but first recruit age is 1
-  data_rec <- readr::read_csv(system.file("extdata","all_dummy_data_rec.csv",package="frasyr")) 
 
-  # create various vpa data ----
-  vpadat_base0 <- data.handler(caa=to_vpa_data(data_base, label_name="caa"),
-                               waa=to_vpa_data(data_base, label_name="waa"),
-                               maa=to_vpa_data(data_base, label_name="maa"),
-                               M  = 0,
-                               index = to_vpa_data(data_base, label_name="abund"),
-                               maa.tune = NULL,
-                               waa.catch = NULL,
-                               catch.prop = NULL)
-  # waa.catch is given 
-  vpadat_base1 <- data.handler(caa=to_vpa_data(data_base, label_name="caa"),
-                               waa=to_vpa_data(data_base, label_name="waa"),
-                               maa=to_vpa_data(data_base, label_name="maa"),
-                               M  = 0,
-                               index = to_vpa_data(data_base, label_name="abund"),
-                               maa.tune = NULL,
-                               waa.catch = to_vpa_data(data_base, label_name="waa")*2,
-                               catch.prop = NULL)
-  
-  vpadat_pgc0 <- data.handler(caa=to_vpa_data(data_pgc, label_name="caa"),
-                              waa=to_vpa_data(data_pgc, label_name="waa"),
-                              maa=to_vpa_data(data_pgc, label_name="maa"),
-                              M  = 0,
-                              index = to_vpa_data(data_pgc, label_name="abund"),
-                              maa.tune = NULL,
-                              waa.catch = NULL,
-                              catch.prop = NULL)
-  
-  vpadat_rec0 <- data.handler(caa=to_vpa_data(data_rec, label_name="caa"),
-                              waa=to_vpa_data(data_rec, label_name="waa"),
-                              maa=to_vpa_data(data_rec, label_name="maa"),
-                              M  = 0,
-                              index = to_vpa_data(data_rec, label_name="abund"),
-                              maa.tune = NULL,
-                              waa.catch = NULL,
-                              catch.prop = NULL)
-  
-  # vpa (no tuning) ----
-  # この結果が4,3,2,2になるのはなんとなくそんな感じする             
-  res_vpa_base0_nontune <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
-                               Pope = TRUE, p.init = 0.5) 
-  expect_equal(as.numeric(rowMeans(res_vpa_base0_nontune$naa)), 
-               c(4,3,2,2))
-  
-  res_vpa_base1_nontune <- vpa(vpadat_base1, tf.year=2015:2016, last.catch.zero = FALSE, 
-                               Pope = TRUE, p.init = 0.5) 
-  expect_equal(as.numeric(rowMeans(res_vpa_base1_nontune$naa)), 
-               c(4,3,2,2))
-  
-  res_vpa_pgc0_nontune <- vpa(vpadat_pgc0, tf.year=2015:2016, last.catch.zero = FALSE, 
-                              Pope = TRUE, p.init = 0.5) 
-  expect_equal(as.numeric(unlist(res_vpa_pgc0_nontune$naa["2017"])), 
-               c(3,2,2,NA), tol=0.0001)
-  
-  res_vpa_rec0_nontune <- vpa(vpadat_rec0, tf.year=2015:2016, last.catch.zero = FALSE, 
-                              Pope = TRUE, p.init = 0.5) 
-  expect_equal(as.numeric(rowMeans(res_vpa_rec0_nontune$naa)), 
-               c(4,3,2,2))
-  
-  # catch計算用のwaaを２倍にしているbase1データでは漁獲量が倍になる
-  expect_equal(res_vpa_base0_nontune$wcaa*2,
-               res_vpa_base1_nontune$wcaa)
-  
-  # vpa (tuning) ----
-  # この記述は正しいか不明。計算しただけ。
-  res_vpa_base0_tune <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
-                            Pope = TRUE, p.init = 0.5, tune=TRUE, sel.update=TRUE)
+  # test-data.handler.Rで作成したVPAオブジェクトを読み込んでそれを使う  
+  load("res_vpa_files.rda")
   
   # estimate SR function ----
-  library(magrittr)
-  
   # VPA結果がほとんど同じになるres_vpa_base0_nontune, res_vpa_base1_nontune, res_vpa_rec0$nontueの
   # パラメータ推定値は同じになる。
-  res_sr_list <- purrr::map(tibble::lst(res_vpa_base0_nontune,
-                                        res_vpa_base1_nontune,
-                                        res_vpa_rec0_nontune), 
-                            function(x){
-                              const_ssr <- mean(colSums(x$ssb))
-                              const_R   <- mean(unlist(x$naa[1,]))
-                              
-                              res_sr <- get.SRdata(x) %>% 
-                                fit.SR(AR=0, SR="HS") 
-                              
-                              expect_equal(res_sr$pars$sd, 0, tol=0.000001)
-                              expect_equal(res_sr$pars$b, const_ssr, tol=0.000001)
-                              expect_equal(const_R/const_ssr, res_sr$pars$a)
-                              return(res_sr)
-                            })
+  vpa_list <- tibble::lst(res_vpa_base0_nontune,
+                          res_vpa_base1_nontune,
+                          res_vpa_pgc0_nontune,
+                          res_vpa_rec0_nontune)
+  res_sr_list <- list()
+  for(i in 1:length(vpa_list)){
+      x <- vpa_list[[i]]
+      res_sr <- res_sr_list[[i]] <- get.SRdata(x) %>% fit.SR(AR=0, SR="HS")
+      # SB、Rが同じにならない（SD>0）ケースは単純テストから除く
+      if(res_sr$pars$sd < 0.001){
+        const_ssr <- mean(colSums(x$ssb))
+        const_R   <- mean(unlist(x$naa[1,]))
+        expect_equal(res_sr$pars$sd, 0, tol=0.000001)
+        expect_equal(res_sr$pars$b, const_ssr, tol=0.000001)
+        expect_equal(const_R/const_ssr, res_sr$pars$a)
+  }}
+
+  names(res_sr_list) <- names(vpa_list)
   
   # res_sr_listの２つのパラメータ推定値はほとんど同じだが、res_vpa_rec0のほうは加入年齢が１歳からなので、再生産関係に使うデータ（SRdata）は一点少ない
   expect_equal(length(res_sr_list$res_vpa_base0_nontune$input$SRdata$SSB),
                length(res_sr_list$res_vpa_rec0_nontune$input$SRdata$SSB)+1)           
-  
   
   # future projection with dummy data ----
   
@@ -401,6 +305,12 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
   # waa.catchを別に与えた場合の総漁獲量は倍になっているはず
   expect_equal(sum(res_future_F0.1$wcaa[,,1])*2,
                sum(res_future_F0.1_wcatch$wcaa[,,1]))
+
+  # change plus group (途中でプラスグループが変わるVPA結果でもエラーなく計算できることだけ確認（レベル１）
+  res_future_pgc <- data_future_test$input %>%
+    list_modify(res_vpa = res_vpa_pgc0_nontune) %>%
+    safe_call(make_future_data,.) %>%
+    future_vpa(tmb_data=.$data, optim_method="none", multi_init=1)  
   
   # backward resampling 
   res_future_backward <- data_future_test$input %>%
@@ -408,7 +318,9 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
                 resample_year_range=0, # リサンプリングの場合、残差をリサンプリングする年の範囲
                 backward_duration=5) %>%
     safe_call(make_future_data,.) %>%
-    future_vpa(tmb_data=.$data, optim_method="none", multi_init=1)
+      future_vpa(tmb_data=.$data, optim_method="none", multi_init=1)
+
+  # 残差がゼロのVPA結果なので、バックワードでも対数正規でも結果は同じ
   expect_equal(res_future_backward$naa[,as.character(2025:2030),],
                res_future_F0.1$naa[,as.character(2025:2030),])
 })
