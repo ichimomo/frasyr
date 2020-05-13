@@ -144,7 +144,8 @@ backward.calc <- function(caa,naa,M,na,k,min.caa=0.001,p=0.5,plus.group=TRUE){
       out[i] <- naa[i+1,k+1]*exp(M[i,k])+caa[i,k]*exp(p*M[i,k])
     }
     if (isTRUE(plus.group)){
-      out[(na[k]-1):na[k]] <- pmax(caa[(na[k]-1):na[k],k],min.caa)/sum(pmax(caa[(na[k]-1):na[k],k],min.caa))*naa[na[k],k+1]*exp(M[(na[k]-1):na[k],k])+caa[(na[k]-1):na[k],k]*exp(p*M[(na[k]-1):na[k],k])
+      out[na[k]-1]<- (caa[na[k]-1,k] * (naa[na[k],k+1]+naa[na[k+1],k+1]) * exp(M[na[k]-1,k]))/(caa[na[k]-1,k]+caa[na[k],k]) + caa[na[k]-1,k] * exp(p * M[na[k]-1,k]) 
+      out[na[k]]  <- out[na[k]-1] * caa[na[k],k]/caa[na[k]-1,k] 
     }
     else{
       out[na[k]-1] <- naa[na[k],k+1]*exp(M[na[k]-1,k])+caa[na[k]-1,k]*exp(p*M[na[k]-1,k])
