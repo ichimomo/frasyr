@@ -1,8 +1,9 @@
 library(frasyr)
 
-context("future ref.F")
+# ref.F test ----
+context("check ref.F") 
 
-test_that("output value check",{
+test_that("ref.F (level 2)",{
   load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
 
   res_ref_f_pma_check <- ref.F(res_vpa_pma,Fcurrent=NULL,waa=NULL,maa=NULL,M=NULL,waa.catch=NULL,M.year=NULL,
@@ -40,9 +41,10 @@ test_that("output value check",{
   }
 })
 
-context("future SRdata")
+# check SR data ----
+context("check get.SRdata")
 
-test_that("oututput value check",{
+test_that("get.SRdata (level 2)",{
   load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
 
   SRdata0 <- get.SRdata(R.dat=exp(rnorm(10)),SSB.dat=exp(rnorm(10)))
@@ -64,342 +66,262 @@ test_that("oututput value check",{
 
 })
 
-context("future future.vpa")
+# check future_vpa with sample data ----
+context("check future_vpa with sample data") 
 
-test_that("oututput value check (iteration for future sim is fixed as 2) ",{
-
-  load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
-  load(system.file("extdata","SRdata_pma.rda",package = "frasyr"))
-
-  SRmodel.list <- expand.grid(SR.rel = c("HS","BH","RI"), AR.type = c(0, 1), out.AR=c(TRUE,FALSE), L.type = c("L1", "L2"))
-  SR.list <- list()
-
-  for (i in 1:nrow(SRmodel.list)) {
-    SR.list[[i]] <- fit.SR(SRdata_pma, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],
-                           AR = SRmodel.list$AR.type[i], out.AR=SRmodel.list$out.AR[i], hessian = FALSE)
-  }
-
-  for (i in 1:nrow(SRmodel.list)) {
-    infile.name <- sprintf("SRpma_%s_%s_AR%d_outAR%d.rda",SRmodel.list$SR.rel[i],SRmodel.list$L.type[i], SRmodel.list$AR.type[i],SRmodel.list$out.AR[i])
-    resfitSR <- load(system.file("extdata",infile.name,package = "frasyr"))
-
-    fittedSR <- eval(parse(text=resfitSR))
-    fres_pma_recarg_list <-list(a=fittedSR$pars$a,b=fittedSR$pars$b,
-                                rho=fittedSR$pars$rho, # ここではrho=0なので指定しなくてもOK
-                                sd=fittedSR$pars$sd,resid=fittedSR$resid)
-
-    selectedrecSR <- sprintf("%s.recAR",fittedSR$input$SR[1])
-
-    fres_pma_check <-future.vpa(res0=res_vpa_pma,
-                                multi=1, # res.pma$Fc.at.ageに掛ける乗数
-                                nyear=50, # 将来予測の年数
-                                start.year=2012, # 将来予測の開始年
-                                N=2, # 確率的計算の繰り返し回数
-                                ABC.year=2013, # ABCを計算する年
-                                waa.year=2009:2011, # 生物パラメータの参照年
-                                maa.year=2009:2011,
-                                M.year=2009:2011,
-                                is.plot=TRUE, # 結果をプロットするかどうか
-                                seed=1,
-                                silent=TRUE,
-                                recfunc=eval(parse(text=selectedrecSR)), # 再生産関係の関数
-                                # recfuncに対する引数
-                                rec.arg=fres_pma_recarg_list)
-
-    assign(sprintf("fres_pma_%s_%s_AR%d_outAR%d_check",SRmodel.list$SR.rel[i],SRmodel.list$L.type[i], SRmodel.list$AR.type[i],SRmodel.list$out.AR[i]),fres_pma_check)
-
-  }
-
-  #照合内容
-  testcontents <-c("faa","naa","wcaa","M","maa","vbiom","recruit","eaa","alpha","thisyear.ssb","waa","waa.catch","currentF","vssb","vwcaa","naa_all","years","fyear.year","ABC","waa.year","maa.year","multi","multi.year")
-
-  # HS L1 AR0 ----
-  load(system.file("extdata","fres_pma_HS_L1_AR0_outAR0.rda",package = "frasyr"))
-
-  #読み込んだ結果と照合
-  for(i in 1:length(testcontents)){
-    expect_equal(eval(parse(text=paste("fres_pma_HS_L1_AR0_outAR0$",testcontents[i]))),eval(parse(text=paste("fres_pma_HS_L1_AR0_outAR0_check$",testcontents[i]))), label=testcontents[i])
-  }
-
-  # HS L1 AR1 outAR F(0) ----
-  load(system.file("extdata","fres_pma_HS_L1_AR1_outAR0.rda",package = "frasyr"))
-
-  #読み込んだ結果と照合
-  for(i in 1:length(testcontents)){
-      expect_equal(eval(parse(text=paste("fres_pma_HS_L1_AR1_outAR0$",testcontents[i]))),
-                   eval(parse(text=paste("fres_pma_HS_L1_AR1_outAR0_check$",testcontents[i]))),
-                   label=testcontents[i])
-  }
-
-  # HS L1 AR1 outAR T(1) ----
-  load(system.file("extdata","fres_pma_HS_L1_AR1_outAR1.rda",package = "frasyr"))
-
-  #読み込んだ結果と照合
-  for(i in 1:length(testcontents)){
-    expect_equal(eval(parse(text=paste("fres_pma_HS_L1_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("fres_pma_HS_L1_AR1_outAR1_check$",testcontents[i]))))
-  }
-
-  # HS L2 AR0 ----
-  load(system.file("extdata","fres_pma_HS_L2_AR0_outAR0.rda",package = "frasyr"))
-
-  #読み込んだ結果と照合
-  for(i in 1:length(testcontents)){
-    expect_equal(eval(parse(text=paste("fres_pma_HS_L2_AR0_outAR0$",testcontents[i]))),eval(parse(text=paste("fres_pma_HS_L2_AR0_outAR0_check$",testcontents[i]))))
-  }
-  # HS L2 AR1 outAR F(0) ----
-  load(system.file("extdata","fres_pma_HS_L2_AR1_outAR0.rda",package = "frasyr"))
-
-  #読み込んだ結果と照合
-  for(i in 1:length(testcontents)){
-    expect_equal(eval(parse(text=paste("fres_pma_HS_L2_AR1_outAR0$",testcontents[i]))),eval(parse(text=paste("fres_pma_HS_L2_AR1_outAR0_check$",testcontents[i]))))
-  }
-  # HS L2 AR1 outAR T(1) ----
-  load(system.file("extdata","fres_pma_HS_L2_AR1_outAR1.rda",package = "frasyr"))
-
-  #読み込んだ結果と照合
-  for(i in 1:length(testcontents)){
-    expect_equal(eval(parse(text=paste("fres_pma_HS_L2_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("fres_pma_HS_L2_AR1_outAR1_check$",testcontents[i]))))
-  }
-
-
-  # BH L1 AR0 ----
-  load(system.file("extdata","fres_pma_BH_L1_AR0_outAR0.rda",package = "frasyr"))
-
-  #読み込んだ結果と照合
-  for(i in 1:length(testcontents)){
-    expect_equal(eval(parse(text=paste("fres_pma_BH_L1_AR0_outAR0$",testcontents[i]))),eval(parse(text=paste("fres_pma_BH_L1_AR0_outAR0_check$",testcontents[i]))))
-  }
-
-  # BH L1 AR1 outAR F(0) ----
-  load(system.file("extdata","fres_pma_BH_L1_AR1_outAR0.rda",package = "frasyr"))
-
-  #読み込んだ結果と照合
-  for(i in 1:length(testcontents)){
-    expect_equal(eval(parse(text=paste("fres_pma_BH_L1_AR1_outAR0$",testcontents[i]))),eval(parse(text=paste("fres_pma_BH_L1_AR1_outAR0_check$",testcontents[i]))))
-  }
-
-  # BH L1 AR1 outAR T(1) ----
-  load(system.file("extdata","fres_pma_BH_L1_AR1_outAR1.rda",package = "frasyr"))
-
-  #読み込んだ結果と照合
-  for(i in 1:length(testcontents)){
-    expect_equal(eval(parse(text=paste("fres_pma_BH_L1_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("fres_pma_BH_L1_AR1_outAR1_check$",testcontents[i]))))
-  }
-
-  # BH L2 AR0 ----
-  load(system.file("extdata","fres_pma_BH_L2_AR0_outAR0.rda",package = "frasyr"))
-
-  #読み込んだ結果と照合
-  for(i in 1:length(testcontents)){
-    expect_equal(eval(parse(text=paste("fres_pma_BH_L2_AR0_outAR0$",testcontents[i]))),eval(parse(text=paste("fres_pma_BH_L2_AR0_outAR0_check$",testcontents[i]))))
-  }
-  # BH L2 AR1 outAR F(0) ----
-  load(system.file("extdata","fres_pma_BH_L2_AR1_outAR0.rda",package = "frasyr"))
-
-  #読み込んだ結果と照合
-  for(i in 1:length(testcontents)){
-    expect_equal(eval(parse(text=paste("fres_pma_BH_L2_AR1_outAR0$",testcontents[i]))),eval(parse(text=paste("fres_pma_BH_L2_AR1_outAR0_check$",testcontents[i]))))
-  }
-  # BH L2 AR1 outAR T(1) ----
-  load(system.file("extdata","fres_pma_BH_L2_AR1_outAR1.rda",package = "frasyr"))
-
-  #読み込んだ結果と照合
-  for(i in 1:length(testcontents)){
-    expect_equal(eval(parse(text=paste("fres_pma_BH_L2_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("fres_pma_BH_L2_AR1_outAR1_check$",testcontents[i]))))
-  }
-
-
-
-
-  # RI L1 AR0 ----
-  load(system.file("extdata","fres_pma_RI_L1_AR0_outAR0.rda",package = "frasyr"))
-
-  #読み込んだ結果と照合
-  for(i in 1:length(testcontents)){
-    expect_equal(eval(parse(text=paste("fres_pma_RI_L1_AR0_outAR0$",testcontents[i]))),eval(parse(text=paste("fres_pma_RI_L1_AR0_outAR0_check$",testcontents[i]))))
-  }
-
-  # RI L1 AR1 outAR F(0) ----
-  load(system.file("extdata","fres_pma_RI_L1_AR1_outAR0.rda",package = "frasyr"))
-
-  #読み込んだ結果と照合
-  for(i in 1:length(testcontents)){
-    expect_equal(eval(parse(text=paste("fres_pma_RI_L1_AR1_outAR0$",testcontents[i]))),eval(parse(text=paste("fres_pma_RI_L1_AR1_outAR0_check$",testcontents[i]))))
-  }
-
-  # RI L1 AR1 outAR T(1) ----
-  load(system.file("extdata","fres_pma_RI_L1_AR1_outAR1.rda",package = "frasyr"))
-
-  #読み込んだ結果と照合
-  for(i in 1:length(testcontents)){
-    expect_equal(eval(parse(text=paste("fres_pma_RI_L1_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("fres_pma_RI_L1_AR1_outAR1_check$",testcontents[i]))))
-  }
-
-  # RI L2 AR0 ----
-  load(system.file("extdata","fres_pma_RI_L2_AR0_outAR0.rda",package = "frasyr"))
-
-  #読み込んだ結果と照合
-  for(i in 1:length(testcontents)){
-    expect_equal(eval(parse(text=paste("fres_pma_RI_L2_AR0_outAR0$",testcontents[i]))),eval(parse(text=paste("fres_pma_RI_L2_AR0_outAR0_check$",testcontents[i]))))
-  }
-  # RI L2 AR1 outAR F(0) ----
-  load(system.file("extdata","fres_pma_RI_L2_AR1_outAR0.rda",package = "frasyr"))
-
-  #読み込んだ結果と照合
-  for(i in 1:length(testcontents)){
-    expect_equal(eval(parse(text=paste("fres_pma_RI_L2_AR1_outAR0$",testcontents[i]))),eval(parse(text=paste("fres_pma_RI_L2_AR1_outAR0_check$",testcontents[i]))))
-  }
-  # RI L2 AR1 outAR T(1) ----
-  load(system.file("extdata","fres_pma_RI_L2_AR1_outAR1.rda",package = "frasyr"))
-
-  #読み込んだ結果と照合
-  for(i in 1:length(testcontents)){
-    expect_equal(eval(parse(text=paste("fres_pma_RI_L2_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("fres_pma_RI_L2_AR1_outAR1_check$",testcontents[i]))))
-  }
-
-
-
-     })
-
-context("future est MSY")
-
-test_that("oututput value check",{
-  load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
-  load(system.file("extdata","SRdata_pma.rda",package = "frasyr"))
-
-  SRmodel.list <- expand.grid(SR.rel = c("HS","BH","RI"), AR.type = c(0, 1), out.AR=c(TRUE,FALSE), L.type = c("L1", "L2"))
-  SR.list <- list()
-
-  for (i in 1:nrow(SRmodel.list)) {
-    SR.list[[i]] <- fit.SR(SRdata_pma, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],
-                           AR = SRmodel.list$AR.type[i], out.AR =SRmodel.list$out.AR[i], hessian = FALSE)
-  }
-
-  SRmodel.list$AICc <- sapply(SR.list, function(x) x$AICc)
-  SRmodel.list$delta.AIC <- SRmodel.list$AICc - min(SRmodel.list$AICc)
-  SR.list <- SR.list[order(SRmodel.list$AICc)]  # AICの小さい順に並べたもの
-  (SRmodel.list <- SRmodel.list[order(SRmodel.list$AICc), ]) # 結果
-
-  SRmodel.base <- SR.list[[1]] # AIC最小モデルを今後使っていく
-
-  selectedSR <- sprintf("%s.recAR",SRmodel.base$input$SR[1])
- # future fcurrent ----
-  res_future_Fcurrent_pma <- future.vpa(res_vpa_pma,
-                                        multi=1,
-                                        nyear=58, # 将来予測の年数
-                                        start.year=2012, # 将来予測の開始年
-                                        N=100, # 確率的計算の繰り返し回数
-                                        ABC.year=2013, # ABCを計算する年
-                                        waa.year=2009:2011, # 生物パラメータの参照年
-                                        maa.year=2009:2011,
-                                        M.year=2009:2011,
-                                        is.plot=FALSE, # 結果をプロットするかどうか
-                                        seed=1,
-                                        silent=TRUE,
-                                        recfunc=eval(parse(text=selectedSR))
-                                        , # 再生産関係の関数
-                                        # recfuncに対する引数
-                                        rec.arg=list(a=SRmodel.base$pars$a,b=SRmodel.base$pars$b,
-                                                     rho=SRmodel.base$pars$rho, # ここではrho=0なので指定しなくてもOK
-                                                     sd=SRmodel.base$pars$sd,resid=SRmodel.base$resid))
-
-  # est MSY ----
-  nyear <- round(Generation.Time(res_vpa,
-                                 maa.year=2009:2011,
-                                 M.year=2009:2011)*20)
-  #このテストではest.MSY関数の引数でcalc.yieldcurve=FALSEを指定。
-  res_MSY_pma_check <- est.MSY(res_vpa_pma, # VPAの計算結果
-                         res_future_Fcurrent_pma$input, # 将来予測で使用した引数
-                         seed=res_future_Fcurrent_pma$input$seed,
-                         N=99, # 確率的計算の繰り返し回数=>実際の計算では1000~5000回くらいやってください
-                         calc.yieldcurve=FALSE,
-                         PGY=c(0.95,0.9,0.6,0.1), # 計算したいPGYレベル。上限と下限の両方が計算される
-                         onlylower.pgy=FALSE, # TRUEにするとPGYレベルの上限は計算しない（計算時間の節約になる）
-                         B0percent=c(0.2,0.3,0.4),
-                         nyear=nyear,
-                         Bempirical=c(round(tail(colSums(res_vpa_pma$ssb),n=1)),
-                                      round(max(colSums(res_vpa_pma$ssb))),
-                                      24000, # 現行Blimit
-                                      SRmodel.base$pars$b) # HSの折れ点
-                         )
+test_that("future_vpa function (with sample vpa data) (level 2)",{
   
-  # 上記設定の結果を読み込み ----
-  load(system.file("extdata","res_MSY_pma.rda",package = "frasyr"))
-  # 過去のsummaryではperSPRは出力されないのでcheckの対象から外す  
-  summary_old <- res_MSY_pma$summary_tb %>% dplyr::filter(AR==FALSE) %>%
-      select(-RP.definition) %>% select(sort(colnames(.)))
-  summary_check <- res_MSY_pma_check$summary_tb %>%
-      select(-perSPR,-RP.definition) %>% select(sort(colnames(.)))
-
-  # all.statとtraceは列名が一致しているものだけチェックの対象にする
-  all.stat_check <- res_MSY_pma_check$all.stat 
-  all.stat_old   <- res_MSY_pma$all.stat_tb %>% dplyr::filter(AR==FALSE)
-  tmp1 <- colnames(all.stat_check)%in%colnames(all.stat_old)
-  tmp2 <- colnames(all.stat_old)%in%colnames(all.stat_check)
-  all.stat_check <- all.stat_check[tmp1]
-  all.stat_old   <- all.stat_old[tmp2]
-
-  # traceも同様
-  trace_check <- res_MSY_pma_check$trace
-  trace_old   <- res_MSY_pma$trace
-  tmp1 <- table(c(colnames(trace_check),colnames(trace_old)))
-  trace_check <- trace_check[sort(names(tmp1)[tmp1==2])]
-  trace_old   <- trace_old[sort(names(tmp1)[tmp1==2])]  
+  data(res_vpa)
+  data(res_sr_HSL2)
   
-  #読み込んだ結果と照合 future2.1.r + utility.r(future-vpa ver.)との比較
-  # check summary
-  for(i in 1:ncol(summary_check)) expect_equal(unlist(summary_check[,i]),unlist(summary_old[,i]), label=colnames(summary_check)[i])
-  # check Fmsy
-  expect_equal(res_MSY_pma$F.msy,res_MSY_pma_check$F.msy)
-  # check all.stat
-  for(i in 1:ncol(all.stat_check)) expect_equal(unlist(all.stat_check[,i]),unlist(all.stat_old[,i]), label=colnames(all.stat_check)[i])
-  # check trace
-  for(i in 1:ncol(trace_check)) expect_equal(unlist(trace_check[,i]),unlist(trace_old[,i]), label=colnames(trace_check)[i])  
+  data_future_test <- make_future_data(res_vpa, # VPAの結果
+                                       nsim = 1000, # シミュレーション回数
+                                       nyear = 50, # 将来予測の年数
+                                       future_initial_year_name = 2017, # 年齢別資源尾数を参照して将来予測をスタートする年
+                                       start_F_year_name = 2018, # この関数で指定したFに置き換える最初の年
+                                       start_biopar_year_name=2018, # この関数で指定した生物パラメータに置き換える最初の年
+                                       start_random_rec_year_name = 2018, # この関数で指定した再生産関係からの加入の予測値に置き換える最初の年
+                                       # biopar setting
+                                       waa_year=2015:2017, waa=NULL, # 将来の年齢別体重の設定。過去の年を指定し、その平均値を使うか、直接ベクトルで指定するか。以下も同じ。
+                                       waa_catch_year=2015:2017, waa_catch=NULL,
+                                       maa_year=2015:2017, maa=NULL,
+                                       M_year=2015:2017, M=NULL,
+                                       # faa setting
+                                       faa_year=2015:2017, # currentF, futureFが指定されない場合だけ有効になる。将来のFを指定の年の平均値とする
+                                       currentF=NULL,futureF=NULL, # 将来のABC.year以前のFとABC.year以降のFのベクトル 
+                                       # HCR setting (not work when using TMB)
+                                       start_ABC_year_name=2019, # HCRを適用する最初の年
+                                       HCR_beta=1, # HCRのbeta
+                                       HCR_Blimit=-1, # HCRのBlimit
+                                       HCR_Bban=-1, # HCRのBban
+                                       HCR_year_lag=0, # HCRで何年遅れにするか
+                                       # SR setting
+                                       res_SR=res_sr_HSL2, # 将来予測に使いたい再生産関係の推定結果が入っているfit.SRの返り値
+                                       seed_number=1, # シード番号
+                                       resid_type="lognormal", # 加入の誤差分布（"lognormal": 対数正規分布、"resample": 残差リサンプリング）
+                                       resample_year_range=0, # リサンプリングの場合、残差をリサンプリングする年の範囲
+                                       bias_correction=TRUE, # バイアス補正をするかどうか
+                                       recruit_intercept=0, # 移入や放流などで一定の加入がある場合に足す加入尾数
+                                       # Other
+                                       Pope=res_vpa$input$Pope,
+                                       fix_recruit=list(year=c(2020,2021),rec=c(1000,2000)),
+                                       fix_wcatch=list(year=c(2020,2021),wcatch=c(1000,2000))		 
+  ) 
+
+  # backward-resamplingの場合
+  data_future_backward <- make_future_data(res_vpa, # VPAの結果
+                                           nsim = 1000, # シミュレーション回数
+                                           nyear = 50, # 将来予測の年数
+                                           future_initial_year_name = 2017, # 年齢別資源尾数を参照して将来予測をスタートする年
+                                           start_F_year_name = 2018, # この関数で指定したFに置き換える最初の年
+                                           start_biopar_year_name=2018, # この関数で指定した生物パラメータに置き換える最初の年
+                                           start_random_rec_year_name = 2018, # この関数で指定した再生産関係からの加入の予測値に置き換える最初の年
+                                           # biopar setting
+                                           waa_year=2015:2017, waa=NULL, # 将来の年齢別体重の設定。過去の年を指定し、その平均値を使うか、直接ベクトルで指定するか。以下も同じ。
+                                           waa_catch_year=2015:2017, waa_catch=NULL,
+                                           maa_year=2015:2017, maa=NULL,
+                                           M_year=2015:2017, M=NULL,
+                                           # faa setting
+                                           faa_year=2015:2017, # currentF, futureFが指定されない場合だけ有効になる。将来のFを指定の年の平均値とする
+                                           currentF=NULL,futureF=NULL, # 将来のABC.year以前のFとABC.year以降のFのベクトル 
+                                           # HCR setting (not work when using TMB)
+                                           start_ABC_year_name=2019, # HCRを適用する最初の年
+                                           HCR_beta=1, # HCRのbeta
+                                           HCR_Blimit=-1, # HCRのBlimit
+                                           HCR_Bban=-1, # HCRのBban
+                                           HCR_year_lag=0, # HCRで何年遅れにするか
+                                           # SR setting
+                                           res_SR=res_sr_HSL2, # 将来予測に使いたい再生産関係の推定結果が入っているfit.SRの返り値
+                                           seed_number=1, # シード番号
+                                           resid_type="backward", # 加入の誤差分布（"lognormal": 対数正規分布、"resample": 残差リサンプリング）
+                                           resample_year_range=0, # リサンプリングの場合、残差をリサンプリングする年の範囲
+                                           backward_duration=5,
+                                           bias_correction=TRUE, # バイアス補正をするかどうか
+                                           recruit_intercept=0, # 移入や放流などで一定の加入がある場合に足す加入尾数
+                                           # Other
+                                           Pope=res_vpa$input$Pope,
+                                           fix_recruit=list(year=c(2020,2021),rec=c(1000,2000)),
+                                           fix_wcatch=list(year=c(2020,2021),wcatch=c(1000,2000))		 
+  )     
+  
+  # 単なる将来予測の場合(simple)
+  res_future_test <- future_vpa(tmb_data=data_future_test$data,
+                                optim_method="none", 
+                                multi_init = 1) 
+  # option fix_recruit、fix_wcatchのチェック
+  catch <- apply(res_future_test$wcaa,c(2,3),sum)
+  expect_equal(mean(res_future_test$naa[1,"2020",]), 1000)
+  expect_equal(mean(catch["2020",]), 1000, tol=0.001)
+  expect_equal(mean(catch["2021",]), 2000, tol=0.001)
+  
+  # 単なる将来予測の場合(backward)
+  res_future_backward <- future_vpa(tmb_data=data_future_backward$data, 
+                                    optim_method="none", 
+                                    multi_init = 1) 
+  # option fix_recruit、fix_wcatchのチェック
+  expect_equal(mean(res_future_backward$naa[1,"2020",]), 1000)
+  catch <- apply(res_future_backward$wcaa,c(2,3),sum)
+  expect_equal(mean(catch["2020",]), 1000, tol=0.001)
+  expect_equal(mean(catch["2021",]), 2000, tol=0.001)
+  
+  # MSY計算の場合(MSY estimation)
+  res_future_test_R <- future_vpa(tmb_data=data_future_test$data, 
+                                  optim_method="R", 
+                                  multi_init  = 1,
+                                  multi_lower = 0.001, multi_upper = 5,
+                                  objective="MSY")
+  # [1] 0.5269326
+  expect_equal(round(res_future_test_R$multi,3),0.527)
+  
+  # MSY計算の場合(MSY estimation)
+  res_future_test_backward <- future_vpa(tmb_data=data_future_backward$data, 
+                                  optim_method="R", 
+                                  multi_init  = 1,
+                                  multi_lower = 0.001, multi_upper = 5,
+                                  objective="MSY")
+  expect_equal(round(res_future_test_backward$multi,3),0.525)
+  
+  
+  if(sum(installed.packages()[,1]=="TMB")){
+      # res_future_test_tmb <- future_vpa(tmb_data=data_future_test$data,
+      #                                  optim_method="tmb", 
+      #                                  multi_init  = 1,
+      #                                  multi_lower = 0.001, multi_upper = 5,
+      #                                  objective="MSY")
+      # expect_equal(round(res_future_test_tmb$multi,3),0.527)
+  }
+  
   
 })
 
+# check future_vpa with dummy data ----
+context("check future_vpa_function2 with dummy data") 
 
-context("future future.vpa (option of futureF)")
+test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
 
-test_that("oututput value check (iteration for future sim is fixed as 2) ",{
-  caa <- read.csv(system.file("extdata","caa_pma.csv",package="frasyr"),row.names=1)
-  waa <- read.csv(system.file("extdata","waa_pma.csv",package="frasyr"),row.names=1)
-  maa <- read.csv(system.file("extdata","maa_pma.csv",package="frasyr"),row.names=1)
-  dat <- data.handler(caa=caa, waa=waa, maa=maa, M=0.5)
-  res.pma <- vpa(dat,fc.year=2009:2011,rec=585,rec.year=2011,tf.year = 2008:2010,
-                 term.F="max",stat.tf="mean",Pope=TRUE,tune=FALSE,p.init=1.0)
-  SRdata <- get.SRdata(res.pma)
+  # test-data.handler.Rで作成したVPAオブジェクトを読み込んでそれを使う  
+  load("res_vpa_files.rda")
+  
+  # estimate SR function ----
+  # VPA結果がほとんど同じになるres_vpa_base0_nontune, res_vpa_base1_nontune, res_vpa_rec0$nontueの
+  # パラメータ推定値は同じになる。
+  vpa_list <- tibble::lst(res_vpa_base0_nontune,
+                          res_vpa_base1_nontune,
+                          res_vpa_pgc0_nontune,
+                          res_vpa_rec0_nontune)
+  res_sr_list <- list()
+  for(i in 1:length(vpa_list)){
+      x <- vpa_list[[i]]
+      res_sr <- res_sr_list[[i]] <- get.SRdata(x) %>% fit.SR(AR=0, SR="HS")
+      # SB、Rが同じにならない（SD>0）ケースは単純テストから除く
+      if(res_sr$pars$sd < 0.001){
+        const_ssr <- mean(colSums(x$ssb))
+        const_R   <- mean(unlist(x$naa[1,]))
+        expect_equal(res_sr$pars$sd, 0, tol=0.000001)
+        expect_equal(res_sr$pars$b, const_ssr, tol=0.000001)
+        expect_equal(const_R/const_ssr, res_sr$pars$a)
+  }}
 
-  HS.par0 <- fit.SR(SRdata,SR="HS",method="L2",AR=0,hessian=FALSE)
-  HS.par1 <- fit.SR(SRdata,SR="HS",method="L2",AR=1,hessian=FALSE)
+  names(res_sr_list) <- names(vpa_list)
+  
+  # res_sr_listの２つのパラメータ推定値はほとんど同じだが、res_vpa_rec0のほうは加入年齢が１歳からなので、再生産関係に使うデータ（SRdata）は一点少ない
+  expect_equal(length(res_sr_list$res_vpa_base0_nontune$input$SRdata$SSB),
+               length(res_sr_list$res_vpa_rec0_nontune$input$SRdata$SSB)+1)           
+  
+  # future projection with dummy data ----
+  
+  max_vpa_year <- max(as.numeric(colnames(res_vpa_base0_nontune$naa)))
+  bio_year <- rev(as.numeric(colnames(res_vpa_base0_nontune$naa)))[1:3]
+  
+  target_eq_naa <- 12
+  f <- function (x) 4+4*x+4*x^2+4*x^3 - target_eq_naa
+  x <- uniroot(f, c(0, 1))$root
+  Fvalue <- -log(x)
+  data_future_test <- 
+    make_future_data(res_vpa_base0_nontune, 
+                     nsim = 10,
+                     nyear = 20, 
+                     future_initial_year_name = max_vpa_year, # 年齢別資源尾数を参照して将来予測をスタートする年
+                     start_F_year_name = max_vpa_year+1, # この関数で指定したFに置き換える最初の年
+                     start_biopar_year_name=max_vpa_year+1, # この関数で指定した生物パラメータに置き換える最初の年
+                     start_random_rec_year_name = max_vpa_year+1, # この関数で指定した再生産関係からの加入の予測値に置き換える最初の年
+                     # biopar setting
+                     waa_year=bio_year, waa=NULL, # 将来の年齢別体重の設定。過去の年を指定し、その平均値を使うか、直接ベクトルで指定するか。以下も同じ。
+                     waa_catch_year=bio_year, waa_catch=NULL,
+                     maa_year=bio_year, maa=NULL,
+                     M_year=bio_year, M=c(0,0,0,Inf),
+                     # faa setting
+                     faa_year=2015:2017, # currentF, futureFが指定されない場合だけ有効になる。将来のFを指定の年の平均値とする
+                     currentF=rep(Fvalue,4),futureF=rep(Fvalue,4), # 将来のABC.year以前のFとABC.year以降のFのベクトル 
+                     # HCR setting (not work when using TMB)
+                     start_ABC_year_name=max_vpa_year+2, # HCRを適用する最初の年
+                     HCR_beta=1, # HCRのbeta
+                     HCR_Blimit=-1, # HCRのBlimit
+                     HCR_Bban=-1, # HCRのBban
+                     HCR_year_lag=0, # HCRで何年遅れにするか
+                     # SR setting
+                     res_SR=res_sr_list$res_vpa_base0_nontune, # 将来予測に使いたい再生産関係の推定結果が入っているfit.SRの返り値
+                     seed_number=1, 
+                     resid_type="lognormal", # 加入の誤差分布（"lognormal": 対数正規分布、"resample": 残差リサンプリング）
+                     resample_year_range=0, # リサンプリングの場合、残差をリサンプリングする年の範囲
+                     bias_correction=TRUE, # バイアス補正をするかどうか
+                     recruit_intercept=0, # 移入や放流などで一定の加入がある場合に足す加入尾数
+                     # Other
+                     Pope=res_vpa_base0_nontune$input$Pope,
+                     fix_recruit=NULL,
+                     fix_wcatch=NULL 
+    ) 
+  
+  # simple
+  res_future_F0.1 <- future_vpa(tmb_data=data_future_test$data,
+                                optim_method="none", 
+                                multi_init = 1) 
+  # 平衡状態ではtarget_eq_naaと一致する（そのようなFを使っているので）
+  expect_equal(mean(colSums(res_future_F0.1$naa[,"2035",])),
+               target_eq_naa, tol=0.0001)
+  
+  
+  # simple, MSY
+  res_future_MSY <- future_vpa(tmb_data=data_future_test$data,
+                               optim_method="R", objective ="MSY",
+                               multi_init = 2, multi_lower=0.01) 
+  # expect_equal(round(res_future_MSY$multi,4),2.8273)
+  
+  # F=0
+  res_future_F0 <- data_future_test$input %>%
+    list_modify(currentF=rep(0,4),
+                futureF =rep(0,4)) %>%
+    safe_call(make_future_data,.) %>%
+    future_vpa(tmb_data=.$data, optim_method="none", multi_init = 1)
+  # 平衡状態ではすべて４匹づつになる
+  expect_equal(mean(res_future_F0$naa[,as.character(2025:2030),]),4, tol=0.0001)
+  
+  # specific weight at age, F=0.1
+  res_future_F0.1_wcatch <- data_future_test$input %>%
+    list_modify(res_vpa = res_vpa_base1_nontune) %>%
+    safe_call(make_future_data,.) %>%
+    future_vpa(tmb_data=.$data, optim_method="none", multi_init=1)
+  
+  # waa.catchを別に与えた場合の総漁獲量は倍になっているはず
+  expect_equal(sum(res_future_F0.1$wcaa[,,1])*2,
+               sum(res_future_F0.1_wcatch$wcaa[,,1]))
 
-  currentF.test <- 1:4/10
-  futureF.test <- 5:8/10
-  fres.HS.check <- future.vpa(res.pma,
-                              multi=2,
-                              currentF=currentF.test,
-                              futureF=5:8/10,
-                              nyear=50,
-                              start.year=2012,
-                              N=2, ABC.year=2013,
-                        waa.year=2009:2011,
-                        maa.year=2009:2011,
-                        M.year=2009:2011,
-                        is.plot=TRUE,
-                        seed=1,
-                        silent=TRUE,
-                        recfunc=HS.recAR,
-                        rec.arg=list(a=HS.par0$pars$a,b=HS.par0$pars$b,
-                                     rho=HS.par0$pars$rho,
-                                     sd=HS.par0$pars$sd,resid=HS.par0$resid)
-                        )
+  # change plus group (途中でプラスグループが変わるVPA結果でもエラーなく計算できることだけ確認（レベル１）
+  res_future_pgc <- data_future_test$input %>%
+    list_modify(res_vpa = res_vpa_pgc0_nontune) %>%
+    safe_call(make_future_data,.) %>%
+    future_vpa(tmb_data=.$data, optim_method="none", multi_init=1)  
+  
+  # backward resampling 
+  res_future_backward <- data_future_test$input %>%
+    list_modify(resid_type="backward", # 加入の誤差分布（"lognormal": 対数正規分布、"resample": 残差リサンプリング）
+                resample_year_range=0, # リサンプリングの場合、残差をリサンプリングする年の範囲
+                backward_duration=5) %>%
+    safe_call(make_future_data,.) %>%
+      future_vpa(tmb_data=.$data, optim_method="none", multi_init=1)
 
-
-  # faaが想定通りに入っていればOKくらいのテストです
-  for(i in 1:4){
-      expect_true(mean(fres.HS.check$faa[i,dimnames(fres.HS.check$faa)[[2]]==2012,])==currentF.test[i])
-      expect_true(mean(fres.HS.check$faa[i,dimnames(fres.HS.check$faa)[[2]]>2012,])==futureF.test[i]*2)
-  }
+  # 残差がゼロのVPA結果なので、バックワードでも対数正規でも結果は同じ
+  expect_equal(res_future_backward$naa[,as.character(2025:2030),],
+               res_future_F0.1$naa[,as.character(2025:2030),])
 })
-
 
