@@ -72,12 +72,182 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
   expect_equal(res_vpa_base0_nontune$wcaa*2,
                res_vpa_base1_nontune$wcaa)
   
-  # vpa (tuning) ----
+  
+  # vpa (tuning) (all is level2: don't know the REAL answer)----
   # この記述は正しいか不明。計算しただけ。
-  res_vpa_base0_tune <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
-                            Pope = TRUE, p.init = 0.5, tune=TRUE, sel.update=TRUE)
+  
+  
+  # PART1: 二段階法によるtuning ----
+ 
+  sel.f1<-res_vpa_base0_nontune$saa$"2017"
+  round(sel.f1,3)
+  
+  #  dataset 1/4: vpadat_base0 に対するテストを行う
+  #二段階法：est.method=最小二乗法による推定
+  res_vpa_base0_tune1l <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
+                              Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.f=sel.f1,sel.update=TRUE, est.method="ls", b.est="FALSE",abund=c("SSB","SSB"),min.age=c(NA,NA),max.age=c(NA,NA))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune1l$naa),2)),c(4.15,3.09,2.04,2.04))
+  expect_equal(as.numeric(round(res_vpa_base0_tune1l$sigma,2)),c(0.34))
 
-  save(res_vpa_base0_nontune,
+  #二段階法：est.method=最尤法による推定
+  res_vpa_base0_tune1m <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
+                              Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.f=sel.f1,sel.update=TRUE, est.method="ml", b.est="FALSE",abund=c("SSB","SSB"),min.age=c(NA,NA),max.age=c(NA,NA))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune1m$naa),2)),c(4.15,3.09,2.04,2.04))
+  expect_equal(as.numeric(round(res_vpa_base0_tune1m$sigma,2)),c(0.33,0.34))
+  
+  #二段階法：est.method=最小二乗法による推定＋指標値の非線形性bの推定
+  res_vpa_base0_tune1l_b <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
+                                Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.f=sel.f1,sel.update=TRUE, est.method="ls", b.est="TRUE",abund=c("SSB","SSB"),min.age=c(NA,NA),max.age=c(NA,NA))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune1l_b$naa),2)),c(3.70,2.83,1.91,1.91))
+  expect_equal(as.numeric(round(res_vpa_base0_tune1l_b$b,2)),c(-0.42,-0.31))
+  expect_equal(as.numeric(round(res_vpa_base0_tune1l_b$sigma,2)),c(0.33))
+  
+  #二段階法：est.method=最尤法による推定＋指標値の非線形性bの推定
+  res_vpa_base0_tune1m_b <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
+                                Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.f=sel.f1,sel.update=TRUE, est.method="ml", b.est="TRUE",abund=c("SSB","SSB"),min.age=c(NA,NA),max.age=c(NA,NA))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune1m_b$naa),2)),c(3.70,2.83,1.91,1.91))
+  expect_equal(as.numeric(round(res_vpa_base0_tune1m_b$b,2)),c(-0.42,-0.31))
+  expect_equal(as.numeric(round(res_vpa_base0_tune1m_b$sigma,2)),c(0.32,0.34))
+  
+  #二段階法：est.method=最尤法による推定＋指標値の非線形性bの推定＋一部のbは固定
+  res_vpa_base0_tune1m_b_fix <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
+                                Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.f=sel.f1,sel.update=TRUE, est.method="ml", b.est="TRUE",abund=c("SSB","SSB"),min.age=c(NA,NA),max.age=c(NA,NA),b.fix=c(NA,-0.1))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune1m_b_fix$naa),2)),c(3.70,2.83,1.91,1.91))
+  expect_equal(as.numeric(round(res_vpa_base0_tune1m_b_fix$b,2)),c(-0.42,-0.10))
+  expect_equal(as.numeric(round(res_vpa_base0_tune1m_b_fix$sigma,2)),c(0.32,0.34))
+  
+  
+  #PART2: 選択率更新法によるtuning ----
+  
+  #  dataset 1/4: vpadat_base0
+  #選択率更新法：選択率の計算方法は，最高齢を１とする．最小二乗法
+  res_vpa_base0_tune2l <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
+                              Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.def="max",sel.update=TRUE, est.method="ls", b.est="FALSE",abund=c("B","B"))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune2l$naa),2)),c(4.10,3.06,2.03,2.03))
+  expect_equal(as.numeric(round(res_vpa_base0_tune2l$sigma,2)),c(0.34))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune2l$saa),2)),c(0.41,0.58,1.00,1.00))
+  
+  #選択率更新法：選択率の計算方法は，最高齢を１とする．最尤法
+  res_vpa_base0_tune2m <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
+                              Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.def="max",sel.update=TRUE, est.method="ml", b.est="FALSE",abund=c("B","B"))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune2m$naa),2)),c(4.10,3.06,2.03,2.03))
+  expect_equal(as.numeric(round(res_vpa_base0_tune2m$sigma,2)),c(0.33,0.34))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune2m$saa),2)),c(0.41,0.58,1.00,1.00))
+  
+  #選択率更新法：選択率の計算方法は，最高齢を１とする．最小二乗法．b推定する
+  res_vpa_base0_tune2l_b <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
+                                Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.def="max",sel.update=TRUE, est.method="ls", b.est="TRUE",abund=c("B","B"))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune2l_b$naa),2)),c(3.70,2.83,1.91,1.91))
+  expect_equal(as.numeric(round(res_vpa_base0_tune2l_b$b,2)),c(-0.22,-0.16))
+  expect_equal(as.numeric(round(res_vpa_base0_tune2l_b$sigma,2)),c(0.34))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune2l_b$saa),2)),c(0.44,0.59,1.00,1.00))
+  
+  #選択率更新法：選択率の計算方法は，最高齢を１とする．最尤法．b推定する
+  res_vpa_base0_tune2m_b <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
+                                Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.def="max",sel.update=TRUE, est.method="ml", b.est="TRUE",abund=c("B","B"))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune2m_b$naa),2)),c(3.70,2.83,1.91,1.91))
+  expect_equal(as.numeric(round(res_vpa_base0_tune2m_b$b,2)),c(-0.22,-0.16))
+  expect_equal(as.numeric(round(res_vpa_base0_tune2m_b$sigma,2)),c(0.33,0.34))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune2m_b$saa),2)),c(0.44,0.59,1.00,1.00))
+  
+  #選択率更新法：選択率の計算方法は，最高齢を１とする．最尤法．b推定する．1部のｂは固定
+  res_vpa_base0_tune2m_b_fix <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
+                                Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.def="max",sel.update=TRUE, est.method="ml", b.est="TRUE",abund=c("B","B"),b.fix=c(NA,-0.1))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune2m_b_fix$naa),2)),c(3.70,2.83,1.91,1.91))
+  expect_equal(as.numeric(round(res_vpa_base0_tune2m_b_fix$b,2)),c(-0.22,-0.10))
+  expect_equal(as.numeric(round(res_vpa_base0_tune2m_b_fix$sigma,2)),c(0.33,0.34))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune2m_b_fix$saa),2)),c(0.44,0.59,1.00,1.00))
+  
+  #選択率更新法：平均値Fで割る（sel.def="mean")．最小二乗法．
+  res_vpa_base0_tune3l <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
+                              Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.def="mean",sel.update=TRUE, est.method="ls" ,b.est="FALSE",abund=c("B","B"))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune3l$naa),2)),c(4.10,3.06,2.03,2.03))
+  expect_equal(as.numeric(round(res_vpa_base0_tune3l$sigma,2)),c(0.34))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune3l$saa),2)),c(0.14,0.19,0.33,0.33))
+  
+  #選択率更新法：平均値Fで割る（sel.def="mean")．最尤法
+  res_vpa_base0_tune3m <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
+                              Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.def="mean",sel.update=TRUE, est.method="ml",b.est="FALSE",abund=c("B","B"))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune3m$naa),2)),c(4.10,3.06,2.03,2.03))
+  expect_equal(as.numeric(round(res_vpa_base0_tune3m$sigma,2)),c(0.33,0.34))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune3m$saa),2)),c(0.14,0.19,0.33,0.33))
+  
+  #選択率更新法：平均値Fで割る（sel.def="mean")．最小二乗法．ｂを推定する
+  res_vpa_base0_tune3lb <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
+                               Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.def="mean",sel.update=TRUE, est.method="ls" ,b.est="TRUE",abund=c("B","B"))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune3lb$naa),2)),c(4.50,3.27,2.14,2.14))
+  expect_equal(as.numeric(round(res_vpa_base0_tune3lb$b,2)),c(0.35,0.21))
+  expect_equal(as.numeric(round(res_vpa_base0_tune3lb$sigma,2)),c(0.34))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune3lb$saa),2)),c(0.14,0.19,0.33,0.33))
+  
+  #選択率更新法：平均値Fで割る（sel.def="mean")．最尤法．ｂを推定する
+  res_vpa_base0_tune3mb <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
+                               Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.def="mean",sel.update=TRUE, est.method="ml",b.est="TRUE",abund=c("B","B"))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune3mb$naa),2)),c(3.70,2.83,1.91,1.91))
+  expect_equal(as.numeric(round(res_vpa_base0_tune3mb$b,2)),c(-0.22,-0.16))
+  expect_equal(as.numeric(round(res_vpa_base0_tune3mb$sigma,2)),c(0.33,0.34))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune3mb$saa),2)),c(0.14,0.19,0.33,0.33))
+  
+  #選択率更新法：平均値Fで割る（sel.def="mean")．最尤法．ｂを推定する．一部のbを固定する
+  res_vpa_base0_tune3mb_fix <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
+                               Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.def="mean",sel.update=TRUE, est.method="ml",b.est="TRUE",abund=c("B","B"),b.fix=c(NA,-0.1))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune3mb_fix $naa),2)),c(3.70,2.83,1.91,1.91))
+  expect_equal(as.numeric(round(res_vpa_base0_tune3mb_fix $b,2)),c(-0.22,-0.10))
+  expect_equal(as.numeric(round(res_vpa_base0_tune3mb_fix $sigma,2)),c(0.33,0.34))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune3mb_fix $saa),2)),c(0.14,0.19,0.33,0.33))
+  
+  
+  #PART3: 全F法によるtuning ----
+  
+  #  dataset 1/4: vpadat_base0
+  #  全F推定法．最小二乗法．
+  res_vpa_base0_tune4l <- vpa(vpadat_base0,  last.catch.zero = FALSE, 
+                              Pope = TRUE,  tune=TRUE, term.F="all",sel.def="mean", est.method="ls" ,b.est="FALSE",p.init=c(0.2,0.3,0.6,0.6),abund=c("B","B"))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune4l$naa),2)),c(4.18,3.08,2.12,2.12))
+  expect_equal(as.numeric(round(res_vpa_base0_tune4l$sigma,2)),c(0.29))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune4l$saa),2)),c(0.14,0.20,0.33,0.33))
+  
+  #  全F推定法．最尤法
+  res_vpa_base0_tune4m <- vpa(vpadat_base0, last.catch.zero = FALSE, 
+                              Pope = TRUE,  tune=TRUE, term.F="all",sel.def="mean", est.method="ml" ,b.est="FALSE",p.init=c(0.2,0.3,0.6,0.6),abund=c("B","B"))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune4m$naa),2)),c(4.19,3.09,2.13,2.13))
+  expect_equal(as.numeric(round(res_vpa_base0_tune4m$sigma,2)),c(0.26,0.31))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune4m$saa),2)),c(0.14,0.20,0.33,0.33))
+  
+  #  全F推定法．最小二乗法．b推定あり
+  res_vpa_base0_tune4l_b <- vpa(vpadat_base0, last.catch.zero = FALSE, 
+                                Pope = TRUE,  tune=TRUE, term.F="all",sel.def="mean", est.method="ls" ,b.est="TRUE",p.init=c(0.2,0.3,0.6,0.6),abund=c("B","B"))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune4l_b$naa),2)),c(3.90,2.95,1.91,1.91))
+  expect_equal(as.numeric(round(res_vpa_base0_tune4l_b$b,2)),c(-1.25,-1.08))
+  expect_equal(as.numeric(round(res_vpa_base0_tune4l_b$sigma,2)),c(0.29))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune4l_b$saa),2)),c(0.13,0.19,0.34,0.34))
+  
+  #  全F推定法．最尤法．b推定あり
+  res_vpa_base0_tune4m_b <- vpa(vpadat_base0, last.catch.zero = FALSE, 
+                                Pope = TRUE,  tune=TRUE, term.F="all",sel.def="mean", est.method="ml" ,b.est="TRUE",p.init=c(0.2,0.3,0.6,0.6),abund=c("B","B"))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune4m_b$naa),2)),c(3.89,2.95,1.91,1.91))
+  expect_equal(as.numeric(round(res_vpa_base0_tune4m_b$b,2)),c(-1.34,-1.12))
+  expect_equal(as.numeric(round(res_vpa_base0_tune4m_b$sigma,2)),c(0.25,0.31))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune4m_b$saa),2)),c(0.13,0.19,0.34,0.34))
+  
+  # 　全F推定法．最尤法．b推定あり， Pope=FALSE
+  res_vpa_base0_tune4m_b_baranov <- vpa(vpadat_base0, last.catch.zero = FALSE, 
+                                Pope = FALSE,  tune=TRUE, term.F="all",sel.def="mean", est.method="ml" ,b.est="TRUE",p.init=c(0.2,0.3,0.6,0.6),abund=c("B","B"))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune4m_b_baranov$naa),2)),c(3.89,2.95,1.91,1.91))
+  expect_equal(as.numeric(round(res_vpa_base0_tune4m_b_baranov$b,2)),c(-1.34,-1.12))
+  expect_equal(as.numeric(round(res_vpa_base0_tune4m_b_baranov$sigma,2)),c(0.25,0.31))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune4m_b_baranov$saa),2)),c(0.13,0.19,0.34,0.34))
+  
+  # 　全F推定法．最尤法．b推定あり，alpha=0.3(最高齢と最高齢―1のFの比：Fa=alpha*Fa-1)
+  res_vpa_base0_tune4m_b_alpha <- vpa(vpadat_base0, last.catch.zero = FALSE, 
+                                        Pope = TRUE,  tune=TRUE, term.F="all",sel.def="mean", est.method="ml" ,b.est="TRUE",p.init=c(0.2,0.3,0.6,0.6),abund=c("B","B"),alpha=0.3)
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune4m_b_alpha$naa),2)),c(4.01,3.04,2.00,2.07))
+  expect_equal(as.numeric(round(res_vpa_base0_tune4m_b_alpha$b,2)),c(-1.85,-1.82))
+  expect_equal(as.numeric(round(res_vpa_base0_tune4m_b_alpha$sigma,2)),c(0.23,0.29))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune4m_b_alpha$saa),2)),c(0.18,0.25,0.44,0.13))
+  
+  
+   save(res_vpa_base0_nontune,
        res_vpa_base1_nontune,
        res_vpa_pgc0_nontune,
        res_vpa_rec0_nontune,
