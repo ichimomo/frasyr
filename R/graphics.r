@@ -119,7 +119,7 @@ plot_vpa <- function(vpalist,
   g1 <- g1 +
     facet_wrap(~stat, scale="free_y", ncol=ncol) + ylim(0,NA) +
     theme_SH(legend.position=legend.position) +
-    ylab("Year") + xlab("Value")
+    ylab("value") + xlab("Year")
   
   g1
 }
