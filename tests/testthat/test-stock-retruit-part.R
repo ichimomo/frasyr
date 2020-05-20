@@ -1,24 +1,20 @@
-library(frasyr)
+load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
+load(system.file("extdata","SRdata_pma.rda",package = "frasyr"))
 
 context("stock-recruitment SRdata")
 
-test_that("oututput value check",{
-  load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
-  SRdata_pma_check <- get.SRdata(res_vpa_pma)
+test_that("get.SRdata() returns data as expected",{
+  output   <- get.SRdata(res_vpa_pma)
+  expected <- SRdata_pma
 
-  #上記引数での計算結果を読み込み
-  load(system.file("extdata","SRdata_pma.rda",package = "frasyr"))
-
-  #結果の数値を照合
-  expect_equal(SRdata_pma_check$year, SRdata_pma$year)
-  expect_equal(SRdata_pma_check$SSB, SRdata_pma$SSB)
-  expect_equal(SRdata_pma_check$R, SRdata_pma$R)
+  expect_equal(output$year, expected$year)
+  expect_equal(output$SSB,  expected$SSB)
+  expect_equal(output$R,    expected$R)
 })
 
 context("stock-recruitment fitSR")
 
 test_that("oututput value check",{
-  load(system.file("extdata","SRdata_pma.rda",package = "frasyr"))
 
   SRmodel.list <- expand.grid(SR.rel = c("HS","BH","RI"), AR.type = c(0, 1), out.AR=c(TRUE,FALSE), L.type = c("L1", "L2"))
   SR.list <- list()
@@ -223,7 +219,6 @@ test_that("tentative test for sd of L1 and L2",{
 context("stock-recruitment fit.SRregime")
 
 test_that("check matching of fit.SRregime and fit.SR",{
-  load(system.file("extdata","SRdata_pma.rda",package = "frasyr"))
   SRdata = SRdata_pma
   SRmodel.list <- expand.grid(SR.rel = c("HS","BH","RI"), L.type = c("L1", "L2"))
   # regime_year = ceiling(mean(SRdata$year))
