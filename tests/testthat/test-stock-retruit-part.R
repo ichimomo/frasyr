@@ -104,7 +104,7 @@ test_that("oututput value check",{
     if(i!=6) expect_equal(eval(parse(text=paste("SRpma_HS_L2_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("SRpma_HS_L2_AR1_outAR1_check$",testcontents[i]))))
     else{
       expect_equal(eval(parse(text=paste("SRpma_HS_L2_AR1_outAR1$",testcontents[i])))[1:3],eval(parse(text=paste("SRpma_HS_L2_AR1_outAR1_check$",testcontents[i])))[1:3])
-      expect_equal(eval(parse(text=paste("SRpma_HS_L2_AR1_outAR1$",testcontents[i])))[4],eval(parse(text=paste("SRpma_HS_L2_AR1_outAR1_check$",testcontents[i])))[4],tolerance=0.001,scale=as.numeric(eval(parse(text=paste("SRpma_HS_L2_AR1_outAR1_check$",testcontents[i])))[4]))
+      expect_equal(eval(parse(text=paste("SRpma_HS_L2_AR1_outAR1$",testcontents[i])))[4],eval(parse(text=paste("SRpma_HS_L2_AR1_outAR1_check$",testcontents[i])))[4],tolerance=0.001,scale=as.numeric(eval(parse(text=paste("SRpma_HS_L2_AR1_outAR1$",testcontents[i])))[4]))
     }
   }
 
@@ -133,7 +133,7 @@ test_that("oututput value check",{
     if(i!=6) expect_equal(eval(parse(text=paste("SRpma_BH_L1_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("SRpma_BH_L1_AR1_outAR1_check$",testcontents[i]))))
     else {
       expect_equal(eval(parse(text=paste("SRpma_BH_L1_AR1_outAR1$",testcontents[i])))[1:3],eval(parse(text=paste("SRpma_BH_L1_AR1_outAR1_check$",testcontents[i])))[1:3])
-      expect_equal(eval(parse(text=paste("SRpma_BH_L1_AR1_outAR1$",testcontents[i])))[4],eval(parse(text=paste("SRpma_BH_L1_AR1_outAR1_check$",testcontents[i])))[4],tolerance=0.001,scale=as.numeric(eval(parse(text=paste("SRpma_BH_L1_AR1_outAR1_check$",testcontents[i])))[4]))
+      expect_equal(eval(parse(text=paste("SRpma_BH_L1_AR1_outAR1$",testcontents[i])))[4],eval(parse(text=paste("SRpma_BH_L1_AR1_outAR1_check$",testcontents[i])))[4],tolerance=0.001,scale=as.numeric(eval(parse(text=paste("SRpma_BH_L1_AR1_outAR1$",testcontents[i])))[4]))
     }
   }
   # BH L2 AR0 ----
@@ -159,7 +159,7 @@ test_that("oututput value check",{
     if(i!=6) expect_equal(eval(parse(text=paste("SRpma_BH_L2_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("SRpma_BH_L2_AR1_outAR1_check$",testcontents[i]))))
     else {
       expect_equal(eval(parse(text=paste("SRpma_BH_L2_AR1_outAR1$",testcontents[i])))[1:3],eval(parse(text=paste("SRpma_BH_L2_AR1_outAR1_check$",testcontents[i])))[1:3])
-      expect_equal(eval(parse(text=paste("SRpma_BH_L2_AR1_outAR1$",testcontents[i])))[4],eval(parse(text=paste("SRpma_BH_L2_AR1_outAR1_check$",testcontents[i])))[4],tolerance=0.001,scale=as.numeric(eval(parse(text=paste("SRpma_BH_L2_AR1_outAR1_check$",testcontents[i])))[4]))
+      expect_equal(eval(parse(text=paste("SRpma_BH_L2_AR1_outAR1$",testcontents[i])))[4],eval(parse(text=paste("SRpma_BH_L2_AR1_outAR1_check$",testcontents[i])))[4],tolerance=0.001,scale=as.numeric(eval(parse(text=paste("SRpma_BH_L2_AR1_outAR1$",testcontents[i])))[4]))
     }
   }
 
@@ -188,7 +188,7 @@ test_that("oututput value check",{
     if(i!=6) expect_equal(eval(parse(text=paste("SRpma_RI_L1_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("SRpma_RI_L1_AR1_outAR1_check$",testcontents[i]))))
     else {
       expect_equal(eval(parse(text=paste("SRpma_RI_L1_AR1_outAR1$",testcontents[i])))[1:3],eval(parse(text=paste("SRpma_RI_L1_AR1_outAR1_check$",testcontents[i])))[1:3])
-      expect_equal(eval(parse(text=paste("SRpma_RI_L1_AR1_outAR1$",testcontents[i])))[4],eval(parse(text=paste("SRpma_RI_L1_AR1_outAR1_check$",testcontents[i])))[4],tolerance=0.001,scale=as.numeric(eval(parse(text=paste("SRpma_RI_L1_AR1_outAR1_check$",testcontents[i])))[4]))
+      expect_equal(eval(parse(text=paste("SRpma_RI_L1_AR1_outAR1$",testcontents[i])))[4],eval(parse(text=paste("SRpma_RI_L1_AR1_outAR1_check$",testcontents[i])))[4],tolerance=0.001,scale=as.numeric(eval(parse(text=paste("SRpma_RI_L1_AR1_outAR1$",testcontents[i])))[4]))
     }
   }
 
@@ -215,7 +215,7 @@ test_that("oututput value check",{
     if(i!=6) expect_equal(eval(parse(text=paste("SRpma_RI_L2_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("SRpma_RI_L2_AR1_outAR1_check$",testcontents[i]))))
     else {
       expect_equal(eval(parse(text=paste("SRpma_RI_L2_AR1_outAR1$",testcontents[i])))[1:3],eval(parse(text=paste("SRpma_RI_L2_AR1_outAR1_check$",testcontents[i])))[1:3])
-      expect_equal(eval(parse(text=paste("SRpma_RI_L2_AR1_outAR1$",testcontents[i])))[4],eval(parse(text=paste("SRpma_RI_L2_AR1_outAR1_check$",testcontents[i])))[4],tolerance=0.001,scale=as.numeric(eval(parse(text=paste("SRpma_RI_L2_AR1_outAR1_check$",testcontents[i])))[4]))
+      expect_equal(eval(parse(text=paste("SRpma_RI_L2_AR1_outAR1$",testcontents[i])))[4],eval(parse(text=paste("SRpma_RI_L2_AR1_outAR1_check$",testcontents[i])))[4],tolerance=0.001,scale=as.numeric(eval(parse(text=paste("SRpma_RI_L2_AR1_outAR1$",testcontents[i])))[4]))
     }
   }
 
