@@ -220,7 +220,7 @@ test_that("tentative test for sd of L1 and L2",{
       res_BH_L2 <- fit.SR(SRdata_BH,SR="BH",method="L2",AR=0)
       res_RI_L2 <- fit.SR(SRdata_RI,SR="RI",method="L2",AR=0)
       #res_L2$pars
-      res_HS_L1 <- fit.SR(SRdata_SH,method="L1",AR=0)
+      res_HS_L1 <- fit.SR(SRdata_HS,method="L1",AR=0)
       res_BH_L1 <- fit.SR(SRdata_BH,SR="BH",method="L1",AR=0)
       res_RI_L1 <- fit.SR(SRdata_RI,SR="RI",method="L1",AR=0)
       #res_L1$pars
