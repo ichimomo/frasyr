@@ -237,11 +237,11 @@ test_that("tentative test for sd of L1 and L2",{
       SRF <- function(x,a,b) a*x*exp(-b*x)
       SRdata_RI <- list(year=2000:2019,SSB=SSB,R=SRF(SSB,1,0.8)*exp(CV))
 
-      res_HS_L2 <- fit.SR(SRdata,method="L2",AR=0)
+      res_HS_L2 <- fit.SR(SRdata_HS,method="L2",AR=0)
       res_BH_L2 <- fit.SR(SRdata_BH,SR="BH",method="L2",AR=0)
       res_RI_L2 <- fit.SR(SRdata_RI,SR="RI",method="L2",AR=0)
       #res_L2$pars
-      res_HS_L1 <- fit.SR(SRdata,method="L1",AR=0)
+      res_HS_L1 <- fit.SR(SRdata_HS,method="L1",AR=0)
       res_BH_L1 <- fit.SR(SRdata_BH,SR="BH",method="L1",AR=0)
       res_RI_L1 <- fit.SR(SRdata_RI,SR="RI",method="L1",AR=0)
       #res_L1$pars
