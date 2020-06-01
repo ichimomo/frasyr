@@ -28,3 +28,8 @@ for (i in 1:nrow(SRmodel.list)) {
   save(list=paste("SRpma_",SRmodel.list$SR.rel[i],"_",SRmodel.list$L.type[i],"_AR", SRmodel.list$AR.type[i],"_outAR",as.numeric(SRmodel.list$out.AR[i]), sep=""),file=savefilenameresfres)
 
 }
+
+SRpma_HS_L1_AR1_outAR0_repoptT <- fit.SR(SRdata_pma, SR = "HS", method = "L1",AR = 1, out.AR =FALSE, hessian = FALSE, rep.opt = TRUE)
+
+savefilenameresfres <- sprintf("./inst/extdata/SRpma_HS_L1_AR1_outAR0_repoptT.rda")
+save(SRpma_HS_L1_AR1_outAR0_repoptT,file=savefilenameresfres)

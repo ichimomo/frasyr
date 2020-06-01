@@ -61,13 +61,24 @@ test_that("oututput value check",{
     expect_equal(eval(parse(text=paste("SRpma_HS_L1_AR0_outAR0$",testcontents[i]))),eval(parse(text=paste("SRpma_HS_L1_AR0_outAR0_check$",testcontents[i]))))
   }
 
-  # HS L1 AR1 outAR False ----
+  # HS L1 AR1 outAR False rep.opt False ----
+  # stock_recruit.r 2019/11/26 ver. のfit.SRにはrep.optというオプションによりoptimでの最適化を収束するまで実行。ver2.1からrep.opt=Tで関数内で固定された。
+
   load(system.file("extdata","SRpma_HS_L1_AR1_outAR0.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
   for(i in 1:length(testcontents)){
-    if(i!=6) expect_equal(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0$",testcontents[i]))),eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0_check$",testcontents[i]))))
-    else expect_equal(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0$",testcontents[i])))[1:2],eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0_check$",testcontents[i])))[1:2])
+    if(i!=6) expect_equal(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0$",testcontents[i]))),eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0_check$",testcontents[i]))),tolerance=0.001,scale=as.numeric(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0$",testcontents[i])))))
+    else expect_equal(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0$",testcontents[i])))[1:2],eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0_check$",testcontents[i])))[1:2],tolerance=0.001,scale=as.numeric(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0$",testcontents[i])))[1:2]))
+  }
+
+  # HS L1 AR1 outAR False rep.opt True----
+  load(system.file("extdata","SRpma_HS_L1_AR1_outAR0_repoptT.rda",package = "frasyr"))
+
+  #読み込んだ結果と照合
+  for(i in 1:length(testcontents)){
+    if(i!=6) expect_equal(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0_repoptT$",testcontents[i]))),eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0_check$",testcontents[i]))))
+    else expect_equal(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0_repoptT$",testcontents[i])))[1:2],eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0_check$",testcontents[i])))[1:2])
   }
 
   # HS L1 AR1 outAR True ----
