@@ -75,9 +75,12 @@ test_that("oututput value check",{
 
   #読み込んだ結果と照合
   for(i in 1:length(testcontents)){
-    expect_equal(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("SRpma_HS_L1_AR1_outAR1_check$",testcontents[i]))))
+    if(i!=6) expect_equal(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("SRpma_HS_L1_AR1_outAR1_check$",testcontents[i]))))
+    else {
+      expect_equal(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR1$",testcontents[i])))[1:3],eval(parse(text=paste("SRpma_HS_L1_AR1_outAR1_check$",testcontents[i])))[1:3])
+      expect_equal(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR1$",testcontents[i])))[4],eval(parse(text=paste("SRpma_HS_L1_AR1_outAR1_check$",testcontents[i])))[4],tolerance=0.001,scale=as.numeric(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR1$",testcontents[i])))[4]))
+    }
   }
-
   # HS L2 AR0 ----
   load(system.file("extdata","SRpma_HS_L2_AR0_outAR0.rda",package = "frasyr"))
   #読み込んだ結果と照合
@@ -98,7 +101,11 @@ test_that("oututput value check",{
 
   #読み込んだ結果と照合
   for(i in 1:length(testcontents)){
-    expect_equal(eval(parse(text=paste("SRpma_HS_L2_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("SRpma_HS_L2_AR1_outAR1_check$",testcontents[i]))))
+    if(i!=6) expect_equal(eval(parse(text=paste("SRpma_HS_L2_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("SRpma_HS_L2_AR1_outAR1_check$",testcontents[i]))))
+    else{
+      expect_equal(eval(parse(text=paste("SRpma_HS_L2_AR1_outAR1$",testcontents[i])))[1:3],eval(parse(text=paste("SRpma_HS_L2_AR1_outAR1_check$",testcontents[i])))[1:3])
+      expect_equal(eval(parse(text=paste("SRpma_HS_L2_AR1_outAR1$",testcontents[i])))[4],eval(parse(text=paste("SRpma_HS_L2_AR1_outAR1_check$",testcontents[i])))[4],tolerance=0.001,scale=as.numeric(eval(parse(text=paste("SRpma_HS_L2_AR1_outAR1$",testcontents[i])))[4]))
+    }
   }
 
   # BH L1 AR0 ----
@@ -123,9 +130,12 @@ test_that("oututput value check",{
 
   #読み込んだ結果と照合
   for(i in 1:length(testcontents)){
-    expect_equal(eval(parse(text=paste("SRpma_BH_L1_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("SRpma_BH_L1_AR1_outAR1_check$",testcontents[i]))))
+    if(i!=6) expect_equal(eval(parse(text=paste("SRpma_BH_L1_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("SRpma_BH_L1_AR1_outAR1_check$",testcontents[i]))))
+    else {
+      expect_equal(eval(parse(text=paste("SRpma_BH_L1_AR1_outAR1$",testcontents[i])))[1:3],eval(parse(text=paste("SRpma_BH_L1_AR1_outAR1_check$",testcontents[i])))[1:3])
+      expect_equal(eval(parse(text=paste("SRpma_BH_L1_AR1_outAR1$",testcontents[i])))[4],eval(parse(text=paste("SRpma_BH_L1_AR1_outAR1_check$",testcontents[i])))[4],tolerance=0.001,scale=as.numeric(eval(parse(text=paste("SRpma_BH_L1_AR1_outAR1$",testcontents[i])))[4]))
+    }
   }
-
   # BH L2 AR0 ----
   load(system.file("extdata","SRpma_BH_L2_AR0_outAR0.rda",package = "frasyr"))
   #読み込んだ結果と照合
@@ -146,7 +156,11 @@ test_that("oututput value check",{
 
   #読み込んだ結果と照合
   for(i in 1:length(testcontents)){
-    expect_equal(eval(parse(text=paste("SRpma_BH_L2_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("SRpma_BH_L2_AR1_outAR1_check$",testcontents[i]))))
+    if(i!=6) expect_equal(eval(parse(text=paste("SRpma_BH_L2_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("SRpma_BH_L2_AR1_outAR1_check$",testcontents[i]))))
+    else {
+      expect_equal(eval(parse(text=paste("SRpma_BH_L2_AR1_outAR1$",testcontents[i])))[1:3],eval(parse(text=paste("SRpma_BH_L2_AR1_outAR1_check$",testcontents[i])))[1:3])
+      expect_equal(eval(parse(text=paste("SRpma_BH_L2_AR1_outAR1$",testcontents[i])))[4],eval(parse(text=paste("SRpma_BH_L2_AR1_outAR1_check$",testcontents[i])))[4],tolerance=0.001,scale=as.numeric(eval(parse(text=paste("SRpma_BH_L2_AR1_outAR1$",testcontents[i])))[4]))
+    }
   }
 
   # RI L1 AR0 ----
@@ -171,7 +185,11 @@ test_that("oututput value check",{
 
   #読み込んだ結果と照合
   for(i in 1:length(testcontents)){
-    expect_equal(eval(parse(text=paste("SRpma_RI_L1_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("SRpma_RI_L1_AR1_outAR1_check$",testcontents[i]))))
+    if(i!=6) expect_equal(eval(parse(text=paste("SRpma_RI_L1_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("SRpma_RI_L1_AR1_outAR1_check$",testcontents[i]))))
+    else {
+      expect_equal(eval(parse(text=paste("SRpma_RI_L1_AR1_outAR1$",testcontents[i])))[1:3],eval(parse(text=paste("SRpma_RI_L1_AR1_outAR1_check$",testcontents[i])))[1:3])
+      expect_equal(eval(parse(text=paste("SRpma_RI_L1_AR1_outAR1$",testcontents[i])))[4],eval(parse(text=paste("SRpma_RI_L1_AR1_outAR1_check$",testcontents[i])))[4],tolerance=0.001,scale=as.numeric(eval(parse(text=paste("SRpma_RI_L1_AR1_outAR1$",testcontents[i])))[4]))
+    }
   }
 
   # RI L2 AR0 ----
@@ -194,7 +212,11 @@ test_that("oututput value check",{
 
   #読み込んだ結果と照合
   for(i in 1:length(testcontents)){
-    expect_equal(eval(parse(text=paste("SRpma_RI_L2_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("SRpma_RI_L2_AR1_outAR1_check$",testcontents[i]))))
+    if(i!=6) expect_equal(eval(parse(text=paste("SRpma_RI_L2_AR1_outAR1$",testcontents[i]))),eval(parse(text=paste("SRpma_RI_L2_AR1_outAR1_check$",testcontents[i]))))
+    else {
+      expect_equal(eval(parse(text=paste("SRpma_RI_L2_AR1_outAR1$",testcontents[i])))[1:3],eval(parse(text=paste("SRpma_RI_L2_AR1_outAR1_check$",testcontents[i])))[1:3])
+      expect_equal(eval(parse(text=paste("SRpma_RI_L2_AR1_outAR1$",testcontents[i])))[4],eval(parse(text=paste("SRpma_RI_L2_AR1_outAR1_check$",testcontents[i])))[4],tolerance=0.001,scale=as.numeric(eval(parse(text=paste("SRpma_RI_L2_AR1_outAR1$",testcontents[i])))[4]))
+    }
   }
 
 
@@ -215,6 +237,7 @@ test_that("tentative test for sd of L1 and L2",{
       SR <- "RI"
       SRF <- function(x,a,b) a*x*exp(-b*x)
       SRdata_RI <- list(year=2000:2019,SSB=SSB,R=SRF(SSB,1,0.8)*exp(CV))
+
 
       res_HS_L2 <- fit.SR(SRdata_HS,method="L2",AR=0)
       res_BH_L2 <- fit.SR(SRdata_BH,SR="BH",method="L2",AR=0)
