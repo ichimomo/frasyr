@@ -12,6 +12,8 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
   data_estb <-readr::read_csv(system.file("extdata","all_dummy_data_estb.csv",package="frasyr"))
   # plus group change of the above
   data_pgc_estb<-readr::read_csv(system.file("extdata","all_dummy_data_pgc_estb.csv",package="frasyr"))
+  # data with caa=maa=waa=1, M=0 but first recruit age is 2
+  data_rec2 <- readr::read_csv(system.file("extdata","all_dummy_data_rec2.csv",package="frasyr")) 
   
   # create various vpa data ----
   vpadat_base0 <- data.handler(caa=to_vpa_data(data_base, label_name="caa"),
@@ -68,6 +70,15 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
                               waa.catch = NULL,
                               catch.prop = NULL)
  
+  vpadat_rec2 <- data.handler(caa=to_vpa_data(data_rec2, label_name="caa"),
+                              waa=to_vpa_data(data_rec2, label_name="waa"),
+                              maa=to_vpa_data(data_rec2, label_name="maa"),
+                              M  = 0,
+                              index = to_vpa_data(data_rec2, label_name="abund"),
+                              maa.tune = NULL,
+                              waa.catch = NULL,
+                              catch.prop = NULL)
+  
   # vpa (no tuning) ----
 
   # 普通のVPAの場合、0-3歳の尾数は4,3,2,2になる。それをtrue.numberとして格納しておく
@@ -95,6 +106,9 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
                               Pope = TRUE, p.init = 0.5) 
   expect_equal(as.numeric(rowMeans(res_vpa_rec0_nontune$naa)), 
                true_number)
+  
+  res_vpa_rec2_nontune <- vpa(vpadat_rec2, tf.year=2015:2016, last.catch.zero = FALSE, 
+                              Pope = TRUE, p.init = 0.5) 
   
   # catch計算用のwaaを２倍にしているbase1データでは漁獲量が倍になる
   expect_equal(res_vpa_base0_nontune$wcaa*2,
@@ -320,12 +334,23 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
   #1-5: test abund.extractor function----
   naa_base0<-res_vpa_base0_nontune$naa
   faa_base0<-res_vpa_base0_nontune$faa
-
+  omega_base0<-matrix(0.5,nrow=4,ncol=23) 
+  colnames(omega_base0)<-c(1995:2017)
+  rownames(omega_base0)<-c(0:3)
+  naa_base2<-res_vpa_rec2_nontune$naa
+  faa_base2<-res_vpa_rec2_nontune$faa
+  
   true_abun_N<-rep(11,length(naa_base0))
   true_abun_Nm<-rep(8.742,length(naa_base0))
   true_abun_B<-rep(0.011,length(naa_base0))
   true_abun_Bm<-rep(0.009,length(naa_base0))
   true_abun_SSB<-rep(0.007,length(naa_base0))
+  true_abun_Bs<-rep(0.0074,length(naa_base0))
+  true_abun_Bo<-rep(0.0025,length(naa_base0))
+  true_abun_Ns<-rep(7.415,length(naa_base0))
+  true_abun_SSBm<-rep(0.0053,length(naa_base0))
+  true_abun_N1sj<-c(3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,0)
+  true_abun_N0sj<-c(3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,0)
   
   # when abund="N" :abundance
   abund_vpadat_base0_N <- abund.extractor(dat=vpadat_base0,abund="N", naa=naa_base0, faa=faa_base0, min.age=0, max.age=3)
@@ -347,6 +372,29 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
   abund_vpadat_base0_SSB <- abund.extractor(dat=vpadat_base0,abund="SSB", naa=naa_base0, faa=faa_base0, min.age=0, max.age=3)
   expect_equal(as.numeric(round(abund_vpadat_base0_SSB,3)),true_abun_SSB,tol=0.001)
   
+  # when abund="Bs":biomass multiplied by normal selectivity
+  abund_vpadat_base0_Bs <- abund.extractor(dat=vpadat_base0,abund="Bs", naa=naa_base0, faa=faa_base0, min.age=0, max.age=3)
+  expect_equal(as.numeric(round(abund_vpadat_base0_Bs,4)),true_abun_Bs,tol=0.0001)
+  
+  # when abund="Bo":adjust selectivity with par omega (=ratio of catch between different fishery) since the tuning index is only from some certain fishery. Use that omega tuned selectivity and multiply with biomass
+  abund_vpadat_base0_Bo <- abund.extractor(dat=vpadat_base0,abund="Bo", naa=naa_base0, faa=faa_base0, min.age=0, max.age=3, omega=omega_base0)
+  expect_equal(as.numeric(round(abund_vpadat_base0_Bo,4)),true_abun_Bo,tol=0.0001)
+  
+  # when abund="Ns":number multipled by normal selectivity
+  abund_vpadat_base0_Ns<- abund.extractor(dat=vpadat_base0,abund="Ns", naa=naa_base0, faa=faa_base0, min.age=0, max.age=3)
+  expect_equal(as.numeric(round(abund_vpadat_base0_Ns,4)),true_abun_Ns,tol=0.0001)
+  
+  # when abund="SSBm":SSB at the middle of the year
+  abund_vpadat_base0_SSBm<- abund.extractor(dat=vpadat_base0,abund="SSBm", naa=naa_base0, faa=faa_base0, min.age=0, max.age=3)
+  expect_equal(as.numeric(round(abund_vpadat_base0_SSBm,4)),true_abun_SSBm,tol=0.0001)
+  
+  # when abund="N1sj": This is a special case for Sukesoudara-Japan Sea stock. Enter fishery from 2years old, but the abundance index is for 0 and 1 year olds. So here estimates the number of age 1
+  abund_vpadat_rec2_N1sj<- abund.extractor(dat=vpadat_rec2,abund="N1sj", naa=naa_base2, faa=faa_base2, min.age=2, max.age=4)
+  expect_equal(as.numeric(abund_vpadat_rec2_N1sj),true_abun_N1sj)
+  
+  # when abund="N0sj": This is a special case for Sukesoudara-Japan Sea stock. Enter fishery from 2years old, but the abundance index is for 0 and 1 year olds. So here estimates the number of age 0
+  abund_vpadat_rec2_N0sj<- abund.extractor(dat=vpadat_rec2,abund="N0sj", naa=naa_base2, faa=faa_base2, min.age=2, max.age=4)
+  expect_equal(as.numeric(abund_vpadat_rec2_N0sj),true_abun_N0sj)
   
   # Part2: dataset is "vpadat_pgc0" for b.est=F, and "vpadat_pgc0_estb" for b.est=T (plus group changes in some years)----
   #現状では，Pope=FALSE（Baranovの方程式）の場合には対応していないのでPope=FALSEのテストは省略
