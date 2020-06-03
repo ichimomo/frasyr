@@ -2,7 +2,7 @@ library(frasyr)
 
 context("stock-recruitment SRdata")
 
-test_that("oututput value check",{
+test_that("output value check",{
   load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
   SRdata_pma_check <- get.SRdata(res_vpa_pma)
 
@@ -17,7 +17,7 @@ test_that("oututput value check",{
 
 context("stock-recruitment fitSR")
 
-test_that("oututput value check",{
+test_that("output value check",{
   load(system.file("extdata","SRdata_pma.rda",package = "frasyr"))
 
   SRmodel.list <- expand.grid(SR.rel = c("HS","BH","RI"), AR.type = c(0, 1), out.AR=c(TRUE,FALSE), L.type = c("L1", "L2"))
@@ -52,7 +52,6 @@ test_that("oututput value check",{
   testcontents <-c("opt$par","opt$value",#"opt$counts", # 最適化したときの繰り返し回数は環境によって異なることがあるためコメントアウト
                    "opt$convergence","resid","resid2","pars","loglik","pred","k","AIC","AICc","BIC")
 
-
   # HS L1 AR0 ----
   load(system.file("extdata","SRpma_HS_L1_AR0_outAR0.rda",package = "frasyr"))
 
@@ -66,8 +65,28 @@ test_that("oututput value check",{
 
   #読み込んだ結果と照合
   for(i in 1:length(testcontents)){
-    if(i!=6) expect_equal(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0$",testcontents[i]))),eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0_check$",testcontents[i]))),tolerance=0.01,scale=as.numeric(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0$",testcontents[i])))))
-    else expect_equal(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0$",testcontents[i])))[1:2],eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0_check$",testcontents[i])))[1:2],tolerance=0.01,scale=as.numeric(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0$",testcontents[i])))[1:2]))
+    #pars (a,b)
+    if(i==6) {
+      for(j in 1:2){
+      expect_equal(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0$",testcontents[i])))[j],eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0_check$",testcontents[i])))[j],tolerance=0.012,scale=as.numeric(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0$",testcontents[i])))[j]))
+      }
+    }
+    #pred (SSB,Rに0データ含むので絶対誤差)
+    else if(i==8) expect_equal(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0$",testcontents[i]))),eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0_check$",testcontents[i]))),tolerance=0.01)
+    #opt$convergence (0データ含む(というか0)ので絶対誤差)
+    else if(i==3) expect_equal(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0$",testcontents[i]))),eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0_check$",testcontents[i]))),tolerance=0.0001)
+    #resid (負値データ含むのでscaleにabs)
+    else if(i==4){for(j in 1:length(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0$",testcontents[i]))))){
+      expect_equal(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0$",testcontents[i])))[j],eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0_check$",testcontents[i])))[j],tolerance=0.015,scale=abs(as.numeric(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0$",testcontents[i])))[j])))
+      }
+    }
+    #データ長1
+    else if(length(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0$",testcontents[i])))) == 1 ) expect_equal(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0$",testcontents[i]))),eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0_check$",testcontents[i]))),tolerance=0.01,scale=abs(as.numeric(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0$",testcontents[i]))))))
+    #データ長>1で相対誤差の場合だと要素ごとにscale
+    else {for(j in 1:length(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0$",testcontents[i]))))){
+      expect_equal(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0$",testcontents[i])))[j],eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0_check$",testcontents[i])))[j],tolerance=0.1,scale=abs(as.numeric(eval(parse(text=paste("SRpma_HS_L1_AR1_outAR0$",testcontents[i])))[j])))
+      }
+    }
   }
 
   # HS L1 AR1 outAR False rep.opt True ----
@@ -302,8 +321,8 @@ test_that("check matching of fit.SRregime and fit.SR",{
   SRdata2 = list(year=regime2, R=SRdata$R[SRdata$year %in% regime2],SSB=SRdata$SSB[SRdata$year %in% regime2])
   # レジームを完全に分けたときのfit.SRregimeの結果とfit.SRの結果が一致するかのテスト
   for (i in 1:nrow(SRmodel.list)) {
-    resSR1 <- fit.SR(SRdata1, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],AR = 0, hessian = FALSE,rep.opt=TRUE,length=20)
-    resSR2 <- fit.SR(SRdata2, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],AR = 0, hessian = FALSE,rep.opt=TRUE,length=20)
+    resSR1 <- fit.SR(SRdata1, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],AR = 0, hessian = FALSE,length=20)
+    resSR2 <- fit.SR(SRdata2, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],AR = 0, hessian = FALSE,length=20)
     resSRregime <- fit.SRregime(SRdata, SR = as.character(SRmodel.list$SR.rel[i]), method = as.character(SRmodel.list$L.type[i]), regime.year = regime_year, regime.key = 0:1, regime.par = c("a","b","sd"), use.fit.SR = TRUE)
     expect_equal(c(resSR1$pars$a,resSR2$pars$a)/resSRregime$pars$a,c(1,1),label=i,tol=1.0e-2)
     expect_equal(c(resSR1$pars$a,resSR2$pars$a)/resSRregime$regime_pars$a,c(1,1),label=i,tol=1.0e-2)
