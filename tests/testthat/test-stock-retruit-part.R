@@ -61,6 +61,7 @@ test_that("output value check",{
   }
 
   # HS L1 AR1 outAR False rep.out False----
+  # HS L1 AR1 は奨励されていないため、計算時に警告が出る。また、rep.opt（optimでの最適化を収束するまで繰り返す）オプションがfit.SRで廃止（現状ではrep.opt=Tで固定）されたのでこのtestでは結果の値が大きく食い違うものを照合している。testを通すために照合するオブジェクトごとに許容範囲を変更しているためにtestが複雑になっている。
   load(system.file("extdata","SRpma_HS_L1_AR1_outAR0.rda",package = "frasyr"))
 
   #読み込んだ結果と照合
