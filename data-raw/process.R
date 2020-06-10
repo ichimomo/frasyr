@@ -99,4 +99,5 @@ vpadat_base0 <- data.handler(caa=to_vpa_data(data_base, label_name="caa"),
 res_vpa_base0_tune <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, abund = c("B", "B"),
                             Pope = TRUE, p.init = 0.5, tune=TRUE, sel.update=TRUE)
 res_vpa_example <- res_vpa_base0_tune
+save(vpadat_base0,   file="../data/vpadat_base0.rda")
 save(res_vpa_example,file="../data/res_vpa_example.rda")
