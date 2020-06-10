@@ -25,7 +25,7 @@ plot_resboot_vpa(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
 ブートストラップ法による信頼区間の算出と作図を自動で行う関数
 }
 \examples{
-GitHubにつながるようにする？
+# GitHubにつながるようにする？
 
 }
 \seealso{
