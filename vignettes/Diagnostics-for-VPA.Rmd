@@ -488,7 +488,7 @@ frasyrの中にはブートストラップ法を自動で行う`boo.vpa`関数�
 
 - 引数`ci_range`で信頼区間の値を指定できます。デフォルトは0.95です（95％信頼区間の表記）。
 
-```{r}
+```{r, eval=FALSE}
 
 res_vpa_bootstrap <- plot_resboot_vpa(res_vpa_example, B_ite = 50)
 res_vpa_bootstrap$plot_ssb
