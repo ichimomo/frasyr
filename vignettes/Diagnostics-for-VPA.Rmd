@@ -27,7 +27,7 @@ knitr::opts_chunk$set(echo=TRUE,
                warning=FALSE,
 	       fig.width=6,fig.height=3)
 devtools::load_all()
-
+library(tidyverse)
 ```
 
 ## 本ドキュメントの趣旨
@@ -39,7 +39,7 @@ devtools::load_all()
 
 - frasyrやtidyverseをインストールして呼び出しておいてください
 
-```{r eval = FALSE}
+```{r, eval = FALSE}
 
 # frasyrの最新版（dev）をインストールする
 devtools::install_github("ichimomo/frasyr@dev")
@@ -67,7 +67,7 @@ library(tidyverse)
 
 関数の引数について（__特に`value`に与える<font color="red">データの型</font>について__）、不明点等ありましたら、以下のように`help`を使って確認してみてください。
 
-```{r eval = FALSE}
+```{r, eval = TRUE}
 #help(do_sensitivity_vpa)
 ```
 
@@ -225,7 +225,7 @@ res_vpa_sensitivity$graph
 それぞれ行います。リッジVPAのペナルティ(lambda)について感度分析したい場合は、`index = "lambda"`としてください。（次のセクションを参照）
 
 
-```{r eval=FALSE}
+```{r, eval=TRUE}
 # チューニングなしVPAの場合
 tmp <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
            Pope = TRUE, p.init = 0.5, tune=FALSE) %>% 
@@ -270,7 +270,7 @@ bを推定した場合、bを推定しない(b=1)場合について、感度分�
 - bの値を与えたい場合、`numeric`型で値を入れる（ベースケースでbを推定しているが、bを推定しない感度分析を実施する場合は`value=1`を与える）
 - bを推定したい場合、`"b.est"`と入れる
 
-```{r eval=FALSE}
+```{r, eval=TRUE}
 
 # b推定しているが、bを固定する場合
 tmp <- do_sensitivity_vpa(res_vpa_example, what_replace = "b", value = 1) ## 結果は変わらないはずだがなぜ変わる？
