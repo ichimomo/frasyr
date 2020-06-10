@@ -853,3 +853,98 @@ plot_resboot_vpa <- function(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
   ))
 
 } # function(plot_resboot_vpa)
+
+
+
+
+
+#' 年齢別漁獲尾数の不確実性評価の関数
+#'
+#' 年齢別漁獲尾数を乱数で再生成した後、VPA計算を行う関数
+#'
+#' @param res VPAの結果のオブジェクト
+#' @param B_ite ブートストラップ計算の数。デフォルトで1000。
+#' @param B_sd 乱数生成の標準誤差。
+#' @param ci_range 信頼区間の幅。デフォルトでは0.95（95％信頼区間）
+#'
+#' @return 返ってくる値:
+#'     \code{plot} 親魚重量、資源尾数、資源重量それぞれについて信頼区間のプロットが得られる。
+#'     \code{caa_boot_sample} 年齢別漁獲尾数のブートストラップ標本が得られる。
+#'
+#' @author 濵邉昂平, 市野川桃子
+#'
+#'
+#' @examples GitHubにつながるようにする？
+#'
+#' @encoding UTF-8
+#'
+#' @export
+
+# author: Kohei Hamabe
+
+do_caaboot_vpa <-  function(res, B_ite = 1000, B_sd = 1, ci_range = 0.95){
+  year <- colnames(res$input$dat$caa) %>% as.numeric()
+  age <- rownames(res$input$dat$caa) %>% as.numeric()
+  caa_base <- res$input$dat$caa %>% unlist() %>% as.numeric()
+  caa_boot <- list()
+  for(i in 1:length(caa_base)) caa_boot[[i]] <- exp(log(caa_base[i])+rnorm(B_ite, -0.5*B_sd, B_sd))
+
+  name_tmp <- list() ; tmp <- numeric()
+  for(i in 1:length(year)){
+    for(j in 1:length(age)){
+      tmp[j] <- paste0('age',age[j],'_',year[i])
+    }
+    name_tmp[[i]] <- tmp
+  }
+  names(caa_boot) <- unlist(name_tmp)
+
+  input0 <- res$input ; input0$plot <- FALSE
+  tmp <- numeric()
+  ssb_mat <- abund_mat <- biomass_mat <- matrix(NA, ncol = length(year), nrow = B_ite)
+  for(i in 1:B_ite){
+    for(j in 1:length(caa_boot)) tmp[j] <- caa_boot[[j]][i]
+    caa_tmp <- matrix(tmp, ncol = length(year)) %>% as.data.frame()
+    colnames(caa_tmp) <- year
+    rownames(caa_tmp) <- age
+    input0$dat$caa <- caa_tmp
+    res_tmp <- do.call(vpa, input0)
+    ssb_mat[i,] <- colSums(res_tmp$ssb)
+    abund_mat[i,] <- colSums(res_tmp$naa)
+    biomass_mat[i,] <- colSums(res_tmp$baa)
+  }
+
+  PB_value <- c((1-ci_range)/2, 0.5, 1-(1-ci_range)/2)
+  d_ssb <- t(apply(ssb_mat, 2, quantile, probs = PB_value))
+  d_abund <- t(apply(abund_mat, 2, quantile, probs = PB_value))
+  d_biomass <- t(apply(biomass_mat, 2, quantile, probs = PB_value))
+  colnames(d_ssb) <- c("Lower", "SSB", "Upper")
+  colnames(d_abund) <- c("Lower", "Abundance", "Upper")
+  colnames(d_biomass) <- c("Lower", "Biomass", "Upper")
+  d_ssb <- cbind.data.frame(Year = year, d_ssb)
+  d_abund <- cbind.data.frame(Year = year, d_abund)
+  d_biomass <- cbind.data.frame(Year = year, d_biomass)
+
+  g1 <- ggplot(d_ssb, aes(x = Year, y = SSB))+
+    geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, fill = "blue")+
+    geom_line(size = 1.5)+
+    theme_SH()
+
+  g2 <- ggplot(d_biomass, aes(x = Year, y = Abundance))+
+    geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, fill = "blue")+
+    geom_line(size = 1.5)+
+    theme_SH()
+
+  g3 <- ggplot(d_biomass, aes(x = Year, y = Biomass))+
+    geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, fill = "blue")+
+    geom_line(size = 1.5)+
+    theme_SH()
+
+  return(list(plot_ssb = g1,
+              plot_abund = g2,
+              plot_biomass = g3,
+              caa_boot_sample = caa_boot
+  ))
+
+}
+
+
