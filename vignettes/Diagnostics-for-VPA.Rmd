@@ -2,14 +2,17 @@
 title: "VPAモデル診断スクリプト"
 author: "Kohei Hamabe & Momoko Ichinokawa"
 date: "`r Sys.Date()`"
-output:
-  md_document
+  html_document:
+    highlight: kate
+    toc: yes
+    toc_float: yes
+vignette: >
+  %\VignetteIndexEntry{2. model diagnostics with VPA}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r, echo=FALSE}
-library(knitr)
-library(rmarkdown)
-library(tidyverse, quietly = TRUE)
 
 #render("text.Rmd")
 
@@ -23,61 +26,28 @@ knitr::opts_chunk$set(echo=TRUE,
                message=FALSE,
                warning=FALSE,
 	       fig.width=6,fig.height=3)
+devtools::load_all()
 
-```
-
-```{r, echo=FALSE}
-# 事前準備（テストで使われているデータを使う）
-# devtools::load_all("../frasyr/")
-library(frasyr)
-# 関数が実装され次第、以下のsource(コード)は不要
-source("do_sensitivity_vpa.R")
-source("do_retrospective_vpa.R")
-source("do_estcheck_vpa.R")
-source("plot_residual_vpa.R", encoding = "UTF-8")
-source("do_jackknife_vpa.R")
-
-to_vpa_data <- function(x, label_name){
-  vpa_data <- x %>% dplyr::filter(label==label_name) %>% as.data.frame()
-  if(label_name!="abund"){  
-    rownames(vpa_data) <- str_c("X",vpa_data$year)
-    vpa_data <- vpa_data %>% select(-year, -label) 
-    vpa_data$value <- vpa_data$fishery <- NULL    
-    vpa_data <- as.data.frame(t(vpa_data))
-    rownames(vpa_data) <- str_sub(rownames(vpa_data),5,5)
-  }
-  else{
-    vpa_data <- vpa_data %>% 
-      select(-starts_with("age_")) %>%
-      pivot_wider(names_from=year, values_from=value) 
-    abund_name <- vpa_data$fishery
-    vpa_data <- as.data.frame(vpa_data)
-    vpa_data$label <- vpa_data$fishery <- NULL
-    rownames(vpa_data) <- abund_name
-    colnames(vpa_data) <- str_c("X",colnames(vpa_data))
-  }
-  vpa_data  
-}
-
-#data_base <- readr::read_csv(system.file("extdata","all_dummy_data_base.csv",package="frasyr"))
-data_base <- readr::read_csv("all_dummy_data_base.csv") 
-vpadat_base0 <- data.handler(caa=to_vpa_data(data_base, label_name="caa"),
-                             waa=to_vpa_data(data_base, label_name="waa"),
-                             maa=to_vpa_data(data_base, label_name="maa"),
-                             M  = 0.2,
-                             index = to_vpa_data(data_base, label_name="abund"),
-                             maa.tune = NULL,
-                             waa.catch = NULL,
-                             catch.prop = NULL)
-res_vpa_base0_tune <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, abund = c("B", "B"),
-                            Pope = TRUE, p.init = 0.5, tune=TRUE, sel.update=TRUE)
-res_vpa_example <- res_vpa_base0_tune
 ```
 
 ## 本ドキュメントの趣旨
 - モデル診断は重要なので、ある程度網羅的に実施できるスクリプトや関数の使用例を配布する
 - 基本的には「チューニングあり」VPAが対象だが、一番最初の「感度分析」の項目はチューニングなしVPAでも実施できるのでやること
 - ここで用いているデータ（vpadat_base0）は非常に単純なダミーデータである
+
+## 0. 事前準備
+
+- frasyrやtidyverseをインストールして呼び出しておいてください
+
+```{r eval = FALSE}
+
+# frasyrの最新版（dev）をインストールする
+devtools::install_github("ichimomo/frasyr@dev")
+library(frasyr)
+library(tidyverse)
+
+```
+
 
 ## 1. 感度分析(チューニングあり・なし）
 - 資源評価モデルにおけるさまざまな仮定の変化が推定資源量などにどのような影響を与えるか確認するために実施するもの。
@@ -402,9 +372,9 @@ res_vpa_retrospective$graph
 
 以降、チューニングありのみの診断法となるため、最尤法(`est.method = "ml"`)を用いてダミーデータを再解析します。また、資源評価最終年のFをすべて推定する全F推定法で解析を行います。
 
-（ちょっとめんどくさいですが、最小二乗法でパラメータ推定しているケースもあるので、それにも対応できるように関数を修正してもらってもよいでしょうか？）
+__（ちょっとめんどくさいですが、最小二乗法でパラメータ推定しているケースもあるので、それにも対応できるように関数を修正してもらってもよいでしょうか？）__
 
-```{r}
+```{r, eval=FALSE}
 res_vpa_base0_tune <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
                           abund = c("B","B"), est.method = "ml", Pope = TRUE,
                           p.init = 0.5, tune=TRUE, term.F = "all")
@@ -527,6 +497,24 @@ res_vpa_bootstrap$plot_ssb
 
 
 ## 2. 年齢別漁獲尾数について乱数生成する方法
+
+VPAでは年齢別漁獲尾数（catch at age）が真であると仮定して推定するため、catch at ageの不確実性を評価することが出来ないモデルです。
+ここで紹介する'do_caaboot_vpa'関数は、引数として与えている年齢別漁獲尾数(`$input$dat$caa`)の対数を取った後、正規分布乱数で生成した疑似年齢別漁獲尾数を用いて、再度VPA計算を行います。
+
+
+```{r}
+
+res_vpa_caaboot <- do_caaboot_vpa(res_vpa_example, B_ite = 50)
+res_vpa_caaboot$plot_ssb
+
+```
+
+一般に、VPAの資源量推定結果を信頼区間と重ねてプロットすると、先程の`res_vpa_bootstrap$plot_ssb`のように最近年で信頼区間が広く、古くにさかのぼるほど信頼区間は狭くなっています。
+
+__ここの書き方（統計的に正しい記述をしないと）__
+これは決して過去の推定結果が正しいからではなく、確率変数として考えている資源量指数の不確実性を考慮しただけでは、過去の資源量推定値について考慮しきれていないだけだからです。
+
+年齢別漁獲尾数の不確実性を考慮すると図のように、時系列に関係なく資源量推定結果に不確実性があることが明らかになるかと思います。
 
 
 # 7. 尤度プロファイルによる信頼区間推定
