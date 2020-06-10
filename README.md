@@ -40,13 +40,18 @@ library(frasyr)
 - v2.10 : 6月上旬ごろアップ予定   
 
 # マニュアル
-- VPAによる資源量推定　https://ichimomo.github.io/frasyr/doc/vpa.html
-- 将来予測関数の使い方：https://github.com/ichimomo/frasyr/wiki/future_new
-<!---
+- VPAによる資源量推定　[html](https://ichimomo.github.io/frasyr/doc/vpa.html)
+- VPAモデル診断スクリプト　[html](https://ichimomo.github.io/frasyr/doc/vpa.html)
+- 再生産関係のモデル診断スクリプト [wiki](https://ichimomo.github.io/frasyr/doc/SRR-guidline.html)
+- 将来予測関数の使い方：[wiki](https://github.com/ichimomo/frasyr/wiki/future_new)
+
+
+<!--
 - 新ルールのもとでの将来予測計算 https://ichimomo.github.io/frasyr/doc/future.html
 - 管理基準値の計算 https://ichimomo.github.io/frasyr/doc/estMSY.html
---->
-- 再生産関係決定ガイドライン https://ichimomo.github.io/frasyr/doc/SRR-guidline.html
+-->
+
+
 
 =======
 
