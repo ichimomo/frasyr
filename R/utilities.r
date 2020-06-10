@@ -563,6 +563,7 @@ make_summary_table <- function(mat_data,side=1,probs=c(0.1,0.5,0.8)){
 
 #'
 #' VPA結果をcsvファイルに出力する
+#' 
 #' @param res  VPAの結果
 #' @param srres fit.SRの結果
 #' @param msyres est.MSYの結果

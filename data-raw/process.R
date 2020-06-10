@@ -85,3 +85,18 @@ res_MSY_HSL1 <- est.MSY(res_vpa, # VPAの計算結果
 
 use_data(res_MSY_HSL1)
 use_data(res_MSY_HSL2)
+
+# VPA dummy data
+data_base <- readr::read_csv("all_dummy_data_base.csv") 
+vpadat_base0 <- data.handler(caa=to_vpa_data(data_base, label_name="caa"),
+                             waa=to_vpa_data(data_base, label_name="waa"),
+                             maa=to_vpa_data(data_base, label_name="maa"),
+                             M  = 0.2,
+                             index = to_vpa_data(data_base, label_name="abund"),
+                             maa.tune = NULL,
+                             waa.catch = NULL,
+                             catch.prop = NULL)
+res_vpa_base0_tune <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, abund = c("B", "B"),
+                            Pope = TRUE, p.init = 0.5, tune=TRUE, sel.update=TRUE)
+res_vpa_example <- res_vpa_base0_tune
+save(res_vpa_example,file="../data/res_vpa_example.rda")
