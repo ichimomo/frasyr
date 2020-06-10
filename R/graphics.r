@@ -119,7 +119,7 @@ plot_vpa <- function(vpalist,
   g1 <- g1 +
     facet_wrap(~stat, scale="free_y", ncol=ncol) + ylim(0,NA) +
     theme_SH(legend.position=legend.position) +
-    ylab("Year") + xlab("Value")
+    ylab("value") + xlab("Year")
   
   g1
 }
@@ -188,8 +188,8 @@ plot_Fcurrent <- function(vpares,
 plot_Fref <- function(rres,xlabel="max", # or, "mean","Fref/Fcur"
                       vline.text=c("F0.1","Fmax","Fcurrent","Fmed") # and "FpSPR.20.SPR" etc..
 ){
-  old.par <- par()
-  par(mar=c(4,4,1,4))
+  #old.par <- par()
+  #par(mar=c(4,4,1,4))
   F.range <- rres$ypr.spr$F.range
   if(xlabel=="Fref/Fcur") F.range <- F.range/rres$summary$Fcurrent[1]*rres$summary$Fcurrent[3]
   if(xlabel=="mean") F.range <- F.range/rres$summary$Fcurrent[1]*rres$summary$Fcurrent[2]    
@@ -204,8 +204,8 @@ plot_Fref <- function(rres,xlabel="max", # or, "mean","Fref/Fcur"
   abline(v=xx <- c(rres$summary[vline.text][n.line,]))
   text(xx,max(ypr)*seq(from=0.5,to=0.3,length=length(vline.text)),vline.text)
   legend("topright",lty=1:2,legend=c("SPR","YPR"))
-  old.par[c("cin","cxy","csi","cra","csy","din","page")] <- NULL
-  par(old.par)
+  #old.par[c("cin","cxy","csi","cra","csy","din","page")] <- NULL
+  #par(old.par)
 }
 
 # 再生産関係推定 ----

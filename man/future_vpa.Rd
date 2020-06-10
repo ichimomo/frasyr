@@ -9,7 +9,7 @@ future_vpa(
   tmb_data,
   optim_method = "none",
   multi_init = 1,
-  multi_lower = 0,
+  multi_lower = 1e-04,
   multi_upper = 10,
   objective = "MSY",
   obj_value = 0,

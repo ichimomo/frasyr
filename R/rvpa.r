@@ -1,34 +1,3 @@
-#------ 2015. 7. 08
-#----------------------- RVPA program -----------------------------
-# written by Hiroshi Okamura (VPA & reference point) 
-#                     and Momoko Ichinokawa (future projection & reference point)
-#
-# (*) macで読む場合は、
-# source("rvpa1.6.r",encoding="shift-jis")
-# として、文字コードを指定して読んでください
-# (*) vpaを使う場合、初期値の指定によっては収束しない場合があります。p.initの値をいろいろ変えて試して下さい
-#
-#
-#
-# 変更履歴
-# rvpa0.9 - 2013.7.3. 将来予測関数；将来予測のdeterminisitc runでのrpsの参照範囲と、
-#   stochastic runでのrpsの参照範囲が異なる場合のオプション(sample.yearで指定)を追加
-#   リサンプリングされるRPS = RPS[sample.yearの範囲]/mean(RPS[sample.yearの範囲])*median(RPS[rps.yearの範囲])
-#   (bias.adjustedしていない場合は関係ない。sample.yearを設定しない場合、自動的にsample.year=rps.yearとなる)
-# rvpa0.92 - vpaのsel.update部分の修正とprofile likelihood信頼区間関数の修正・追加
-# rvpa0.95 - 管理基準値計算のところに、nlmでの計算回数の上限を設定する引数を追加（デフォルトでは１０００）
-# rvpa0.96 - likelihood profile用に、CPUEごとに目的関数の値を出力するオプションを追加。その他
-# rvpa1.0 - パッケージとして公開したバージョン
-# rvpa1.3 - 重み付け計算を追加
-# rvpa1.6 -warningsメッセージを追加．vpaでindexの一部だけ利用するオプション(use.index)を追加．MSY.EST2関数を追加
-# rvpa1.7 - selupdate+F推定オプション．制約付最適化．
-# rvpa.1.8 - Retrospective analysisを行うための関数 (retro.est, retro.est2) と、リッジ回帰を行うための引数 (lambda) を追加(2017/05/29)
-# rvpa1.9 - maa.tune（tuning時だけ使用のmaa）, waa.catch（資源と漁獲でwaaが違う場合に対応）を使用可能に．index=NULLでtune=FALSEのときエラーが出ないように修正．
-# rvpa1.9.2 - 各indexに対する分散に制約をかけられるように修正。例えばindexが５本ある場合、sigma.constraint=c(1,2,2,3,3)とすると2,3本めと4,5本目のindexに対する分散は等しいとして推定する。180522中山
-# rvpa1.9.3 - Popeの近似式を一般化
-# rvpa1.9.4 - ridge vpaにF centering optionを追加 (penalty = "p")
-##
-
 #' csvデータを読み込んでvpa用のデータを作成する関数
 #'
 #' @param caa catch at age
@@ -168,14 +137,16 @@ fp.forward.est <- function(caa,naa,M,i,k,alpha=1,maxit=5,d=0.0001){
 
 #' @export
                              
-backward.calc <- function(caa,naa,M,na,k,min.caa=0.001,p=0.5,plus.group=TRUE){
+backward.calc <- function(caa,naa,M,na,k,min.caa=0.001,p=0.5,plus.group=TRUE,sel.update){
   out <- rep(NA, na[k])
   if(na[k+1] > na[k]){
+    if(isTRUE(sel.update)){stop("Selectivity update method is currently not supported for the plus group change scenario")}
     for (i in 1:(na[k]-2)){
       out[i] <- naa[i+1,k+1]*exp(M[i,k])+caa[i,k]*exp(p*M[i,k])
     }
     if (isTRUE(plus.group)){
-      out[(na[k]-1):na[k]] <- pmax(caa[(na[k]-1):na[k],k],min.caa)/sum(pmax(caa[(na[k]-1):na[k],k],min.caa))*naa[na[k],k+1]*exp(M[(na[k]-1):na[k],k])+caa[(na[k]-1):na[k],k]*exp(p*M[(na[k]-1):na[k],k])
+      out[na[k]-1]<- (caa[na[k]-1,k] * (naa[na[k],k+1]+naa[na[k+1],k+1]) * exp(M[na[k]-1,k]))/(caa[na[k]-1,k]+caa[na[k],k]) + caa[na[k]-1,k] * exp(p * M[na[k]-1,k]) 
+      out[na[k]]  <- out[na[k]-1] * caa[na[k],k]/caa[na[k]-1,k] 
     }
     else{
       out[na[k]-1] <- naa[na[k],k+1]*exp(M[na[k]-1,k])+caa[na[k]-1,k]*exp(p*M[na[k]-1,k])
@@ -759,7 +730,7 @@ vpa <- function(
   
       if (isTRUE(Pope)){
         for (i in (ny-1):1){
-         naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group)
+         naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update)
          faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha)
        }
      }
@@ -803,7 +774,7 @@ vpa <- function(
        }
        naa[, ny] <- vpa.core.Pope(caa,faa,M,ny,p=p.pope)
        for (i in (ny-1):(ny-na[ny]+1)){
-         naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group)
+         naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update)
        }
      }
 
@@ -815,7 +786,7 @@ vpa <- function(
       }
       naa[, ny] <- vpa.core.Pope(caa,faa,M,ny,p=p.pope)
       for (i in (ny-1):(ny-na[ny]+1)){
-        naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group)
+        naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update)
         faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha)
       }
     }   
@@ -824,7 +795,7 @@ vpa <- function(
    if (!isTRUE(sel.update)){
    if (isTRUE(Pope)){
      for (i in (ny-1):1){
-       naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group)
+       naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update)
        faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha)
       }
    }
