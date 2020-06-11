@@ -874,7 +874,7 @@ plot_resboot_vpa <- function(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
 #' @author 濵邉昂平, 市野川桃子
 #'
 #'
-#' @examples GitHubにつながるようにする？
+#' @examples # GitHubにつながるようにする？
 #'
 #' @encoding UTF-8
 #'
