@@ -124,7 +124,7 @@ solv.Feq <- function(cvec,nvec,mvec){
 #' VPAの結果に格納されている生物パラメータから世代時間を計算
 #'
 #' @export
-#' 
+#' @encoding UTF-8
 
 Generation.Time <- function(vpares,
                             maa.year=2014:2015,
@@ -479,7 +479,8 @@ ref.F <- function(
 #' plot(colnames(res_vpa$naa),Fratio,type="b")
 #' 
 #'
-#' @export 
+#' @export
+#' @encoding UTF-8
 
 get.SPR <- function(dres,target.SPR=30,Fmax=10,max.age=Inf){
   dres$ysdata <- matrix(0,ncol(dres$faa),5)
@@ -551,6 +552,7 @@ convert_faa_perSPR <- function(res_vpa, sel_year, faa_year, Fcurrent_MSY=NULL, F
 
 
 #' @export
+#' @encoding UTF-8
 make_summary_table <- function(mat_data,side=1,probs=c(0.1,0.5,0.8)){
   res_mat <- cbind(apply(mat_data,side,mean),
                    t(apply(mat_data,side,quantile,probs=probs)))
@@ -563,6 +565,7 @@ make_summary_table <- function(mat_data,side=1,probs=c(0.1,0.5,0.8)){
 
 #'
 #' VPA結果をcsvファイルに出力する
+#' 
 #' @param res  VPAの結果
 #' @param srres fit.SRの結果
 #' @param msyres est.MSYの結果
@@ -852,6 +855,7 @@ read.vpa <- function(tfile,
 #' tidy形式のVPAへのインプットデータをdata_dandlerへ渡す形式に変換する（暫定版）
 #'
 #' @export
+#' @encoding UTF-8
 #' 
 
 to_vpa_data <- function(x, label_name){
@@ -878,6 +882,7 @@ to_vpa_data <- function(x, label_name){
 
 
 #' @export
+#' @encoding UTF-8
 #' 
 
 get.stat <- function(fout,eyear=0,tmp.year=NULL, use_new_output=FALSE){
@@ -1063,6 +1068,7 @@ convert_df <- function(df,name){
 
 #'
 #' @export
+#' @encoding UTF-8
 convert_2d_future <- function(df, name, label="tmp"){
   df %>%
     as_tibble %>%

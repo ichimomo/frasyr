@@ -84,6 +84,7 @@ get.SRdata <- function(vpares,R.dat = NULL,
 #' }
 #'
 #' @export
+#' 
 
 fit.SR <- function(SRdata,
                    SR="HS",
