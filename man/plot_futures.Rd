@@ -6,7 +6,7 @@
 \title{将来予測の複数の結果をggplotで重ね書きする}
 \usage{
 plot_futures(
-  vpares,
+  vpares = NULL,
   future.list = NULL,
   future.name = names(future.list),
   future_tibble = NULL,
@@ -35,15 +35,53 @@ plot_futures(
 )
 }
 \arguments{
-\item{vpares}{VPAの結果のオブジェクト}
+\item{vpares}{VPAの結果のオブジェクト(NULLでもOK)}
 
-\item{future.list}{将来予測の結果をリストで並べたもの}
+\item{future.list}{将来予測の結果をリストで並べたもの(こちらは必須)}
+
+\item{future.name}{将来予測のリストの名前。ない場合はfuture.listについている名前を使う}
+
+\item{CI_range}{予測区間の範囲。デフォルトは８０\%でc(0.1,0.9)}
+
+\item{maxyear}{表示する年の最大}
+
+\item{is.plot.CIrange}{予測区間を表示するかどうか}
+
+\item{what.plot}{Recruitment,SSB,biomass,catch,beta_gamma,U,Fratioのうち何をプロットするか。これらの文字列のベクトルで指定する}
+
+\item{biomass.unit}{量の単位}
+
+\item{number.name}{尾数の凡例をどのように表示するか（「億尾」とか）}
+
+\item{RP_name}{管理基準値をどのように名前つけるか}
+
+\item{Btarget}{Btargetの値}
+
+\item{Blimit}{Blimitの値}
+
+\item{Bban}{Bbanの値}
+
+\item{MSY}{MSYの値}
+
+\item{Umsy}{Umsyの値}
+
+\item{SPRtarget}{MSYのときのSPRの値}
+
+\item{exclude.japanese.font}{日本語を図中に表示しない}
 
 \item{n_example}{個々のシミュレーションの例を示す数}
 
 \item{future.replicate}{どのreplicateを選ぶかを選択する。この場合n_exampleによる指定は無効になる}
 
+\item{legend.position}{凡例の位置。top, right, left, bottomなど}
+
+\item{font.size}{フォントの大きさ}
+
+\item{ncol}{図を並べるときの列数}
+
 \item{width_example}{個々のシミュレーションをプロットする場合の線の太さ (default=0.7)}
+
+\item{number.init}{尾数（加入尾数とか）のときの単位}
 }
 \description{
 将来予測の複数の結果をggplotで重ね書きする
