@@ -2,17 +2,18 @@
 title: "VPAモデル診断スクリプト"
 author: "Kohei Hamabe & Momoko Ichinokawa"
 date: "`r Sys.Date()`"
+output:
   html_document:
     highlight: kate
     toc: yes
     toc_float: yes
 vignette: >
-  %\VignetteIndexEntry{2. model diagnostics with VPA}
+  %\VignetteIndexEntry{2. Model diagnostics with VPA}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, include=FALSE}
 
 #render("text.Rmd")
 
