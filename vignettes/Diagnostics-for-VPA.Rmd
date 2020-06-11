@@ -28,11 +28,7 @@ knitr::opts_chunk$set(echo=TRUE,
                warning=FALSE,
 	       fig.width=6,fig.height=3)
 #devtools::load_all()
-library(tidyr)
-library(purrr)
-library(ggplot2)
-library(dplyr)
-
+#library(tidyverse)
 ```
 
 ## 本ドキュメントの趣旨
@@ -49,7 +45,7 @@ library(dplyr)
 # frasyrの最新版（dev）をインストールする
 #devtools::install_github("ichimomo/frasyr@dev")
 library(frasyr)
-#library(tidyverse)
+library(tidyverse)
 
 ```
 
