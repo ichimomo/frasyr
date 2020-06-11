@@ -46,7 +46,7 @@
 #' vpa計算について:  \code{\link{vpa}}
 #' 作図について: \code{\link{plot_vpa}}
 #'
-#' @examples WikiかVignetteにつながるようにする？
+#' @examples # WikiかVignetteにつながるようにする？
 #'
 #' @encoding UTF-8
 #'
@@ -309,7 +309,7 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
 #' レトロスペクティブ解析について:  \code{\link{retro.est}}
 #' 作図について: \code{\link{plot_vpa}}
 #'
-#' @examples GitHubにつながるようにする？
+#' @examples # GitHubにつながるようにする？
 #'
 #' @encoding UTF-8
 #'
@@ -798,7 +798,7 @@ do_jackknife_vpa <- function(res){
 #' @seealso
 #' ブートストラップ法について:  \code{\link{boo.vpa}}
 #'
-#' @examples GitHubにつながるようにする？
+#' @examples # GitHubにつながるようにする？
 #'
 #' @encoding UTF-8
 #'
