@@ -34,7 +34,7 @@ do_retrospective_vpa(
 VPAのレトロスペクティブ解析結果を自動生成する関数
 }
 \examples{
-# GitHubにつながるようにする？
+# GitHub縺ｫ縺､縺ｪ縺後ｋ繧医≧縺ｫ縺吶ｋ<ef>ｼ<9f>
 
 }
 \seealso{
