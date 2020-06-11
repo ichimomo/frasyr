@@ -52,7 +52,7 @@ SRregime_plot(
 data(res_vpa)
 SRdata <- get.SRdata(res_vpa)
 resSRregime <- fit.SRregime(SRdata, SR="HS", method="L2",
-                            regime.year=c(1977,1989), regime.key=c(0,1,0),
+                            regime.year=c(1994,2003), regime.key=c(0,1,0),
                             regime.par = c("a","b","sd")[2:3])
 g1 <- SRregime_plot(resSRregime, regime.name=c("Low","High"))
 g1

@@ -228,6 +228,19 @@ plot_SRdata <- function(SRdata, type=c("classic","gg")[1]){
                                 xlab="SSB",ylab="R",xlim=c(0,max(SRdata$SSB)),ylim=c(0,max(SRdata$R))) + theme_SH()
 }
 
+#' 再生産関係をプロットする一般関数
+#'
+#' @param SR_result fit.SRの結果のオブジェクト
+#' @encoding UTF-8
+#'
+#' @export
+#'
+
+plot_SR <- function(...){
+  g1 <- SRplot_gg(...)
+  g1
+}
+
 #' 再生産関係をプロットする関数
 #'
 #' @param SR_result fit.SRの結果のオブジェクト
@@ -377,7 +390,7 @@ compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000){
 #' data(res_vpa)
 #' SRdata <- get.SRdata(res_vpa)
 #' resSRregime <- fit.SRregime(SRdata, SR="HS", method="L2",
-#'                             regime.year=c(1977,1989), regime.key=c(0,1,0),
+#'                             regime.year=c(1994,2003), regime.key=c(0,1,0),
 #'                             regime.par = c("a","b","sd")[2:3])
 #' g1 <- SRregime_plot(resSRregime, regime.name=c("Low","High"))
 #' g1
@@ -404,7 +417,7 @@ SRregime_plot <- function (SRregime_result,xscale=1000,xlabel="SSB",yscale=1,yla
     xlab(xlabel)+ylab(ylabel)+
     ggrepel::geom_label_repel()+
     theme_bw(base_size=base_size)+
-    coord_cartesian(ylim=c(0,combined_data$R*1.05),expand=0)
+    coord_cartesian(ylim=c(0,max(combined_data$R)*1.05),expand=0)
   if (show.legend) {
     if (is.null(regime.name)) {
       regime.name = unique(combined_data$Regime)
@@ -445,15 +458,35 @@ SRregime_plot <- function (SRregime_result,xscale=1000,xlabel="SSB",yscale=1,yla
 
 #' 将来予測の複数の結果をggplotで重ね書きする
 #'
-#' @param vpares VPAの結果のオブジェクト
-#' @param future.list 将来予測の結果をリストで並べたもの
+#' @param vpares VPAの結果のオブジェクト(NULLでもOK)
+#' @param future.list 将来予測の結果をリストで並べたもの(こちらは必須)
+#' @param future.name 将来予測のリストの名前。ない場合はfuture.listについている名前を使う
+#' @param CI_range 予測区間の範囲。デフォルトは８０\%でc(0.1,0.9)
+#' @param maxyear 表示する年の最大
+#' @param is.plot.CIrange 予測区間を表示するかどうか
+#' @param what.plot Recruitment,SSB,biomass,catch,beta_gamma,U,Fratioのうち何をプロットするか。これらの文字列のベクトルで指定する
 #' @param n_example 個々のシミュレーションの例を示す数
 #' @param width_example 個々のシミュレーションをプロットする場合の線の太さ (default=0.7)
 #' @param future.replicate どのreplicateを選ぶかを選択する。この場合n_exampleによる指定は無効になる
+#' @param number.init 尾数（加入尾数とか）のときの単位
+#' @param biomass.unit 量の単位
+#' @param number.name 尾数の凡例をどのように表示するか（「億尾」とか）
+#' @param RP_name 管理基準値をどのように名前つけるか
+#' @param Btarget Btargetの値
+#' @param Blimit Blimitの値
+#' @param Bban Bbanの値
+#' @param MSY MSYの値
+#' @param Umsy  Umsyの値
+#' @param SPRtarget MSYのときのSPRの値
+#' @param exclude.japanese.font 日本語を図中に表示しない
+#' @param font.size フォントの大きさ
+#' @param ncol 図を並べるときの列数
+#' @param legend.position 凡例の位置。top, right, left, bottomなど
+#' 
 #' @encoding UTF-8
 #' @export
 
-plot_futures <- function(vpares,
+plot_futures <- function(vpares=NULL,
                          future.list=NULL,
                          future.name=names(future.list),
                          future_tibble=NULL,
@@ -552,21 +585,27 @@ plot_futures <- function(vpares,
     group_by(sim,scenario)
   
   if(is.null(maxyear)) maxyear <- max(future_tibble$year)
+
+  #  min.age <- as.numeric(rownames(vpares$naa)[1])
+  if(!is.null(vpares)){
+    vpa_tb <- convert_vpa_tibble(vpares,SPRtarget=SPRtarget) %>%
+      mutate(scenario=type,year=as.numeric(year),
+             stat=factor(stat,levels=rename_list$stat),
+             mean=value,sim=0)%>%
+      dplyr::filter(stat%in%rename_list$stat) %>%
+      left_join(rename_list) %>%
+      mutate(value=value/unit,mean=mean/unit)
   
-  min.age <- as.numeric(rownames(vpares$naa)[1])
-  vpa_tb <- convert_vpa_tibble(vpares,SPRtarget=SPRtarget) %>%
-    mutate(scenario=type,year=as.numeric(year),
-           stat=factor(stat,levels=rename_list$stat),
-           mean=value,sim=0)%>%
-    dplyr::filter(stat%in%rename_list$stat) %>%
-    left_join(rename_list) %>%
-    mutate(value=value/unit,mean=mean/unit)
-  
-  # 将来と過去をつなげるためのダミーデータ
-  tmp <- vpa_tb %>% group_by(stat) %>%
-    summarise(value=tail(value[!is.na(value)],n=1,na.rm=T),year=tail(year[!is.na(value)],n=1,na.rm=T),sim=0)
-  future.dummy <- purrr::map_dfr(future.name,function(x) mutate(tmp,scenario=x))
-  
+    # 将来と過去をつなげるためのダミーデータ
+    tmp <- vpa_tb %>% group_by(stat) %>%
+      summarise(value=tail(value[!is.na(value)],n=1,na.rm=T),
+                year=tail(year[!is.na(value)],n=1,na.rm=T),sim=0)
+    future.dummy <- purrr::map_dfr(future.name,function(x) mutate(tmp,scenario=x))
+  }
+  else{
+    future.dummy <- NULL
+    vpa_tb <- NULL
+  }
   org.warn <- options()$warn
   options(warn=-1)
   future_tibble <-
