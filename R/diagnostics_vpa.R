@@ -461,7 +461,7 @@ do_estcheck_vpa <- function(res, n_ite = 100, sd_jitter = 1, what_plot = NULL, T
   }
   return(list(initial_value = init_list, #初期値の乱数
               p_name = name_tmp, # 初期値の名前
-              value = value_tmp, #　推定値と尤度のリスト
+              value = value_tmp, # 推定値と尤度のリスト
               graph = list(estimated = g1, likelihood = g2)
               ))
 } # function(do_estcheck_vpa)
@@ -516,7 +516,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_scale = FALSE){
       # 資源重量の場合、リスケーリング分かけて補正
       d_tmp[,(i+length(res$q)*1+4)] <- (res$pred.index[i,]/res$q[i])^(1/res$b[i])*res$input$scale
     }
-    d_tmp[,(i+length(res$q)*2+4)] <- res$pred.index[i,]　# q*N^B計算結果
+    d_tmp[,(i+length(res$q)*2+4)] <- res$pred.index[i,] # q*N^B計算結果
     d_tmp[,(i+length(res$q)*3+4)] <- resid_tmp
     d_tmp[,(i+length(res$q)*4+4)] <- sd_resid_tmp
     d_tmp[,(i+length(res$q)*5+4)] <- rep(res$q[i], length(d_tmp[,1]))
