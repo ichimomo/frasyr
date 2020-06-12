@@ -13,7 +13,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, include=FALSE}
 
 #render("text.Rmd")
 
@@ -28,7 +28,12 @@ knitr::opts_chunk$set(echo=TRUE,
                warning=FALSE,
 	       fig.width=6,fig.height=3)
 
-devtools::load_all()
+#devtools::load_all()
+library(tidyr)
+library(dplyr)
+library(purrr)
+library(ggplot2)
+library(stringr)
 
 ```
 
@@ -48,7 +53,7 @@ devtools::load_all()
 #devtools::install_github("ichimomo/frasyr@dev")
 
 library(frasyr)
-library(tidyverse)
+#library(tidyverse)
 
 ```
 
@@ -289,7 +294,7 @@ tmp <- do_sensitivity_vpa(res_vpa_example, what_replace = "b", value = c("b.est"
 以上で、感度分析関数`do_sensitivity_vpa`の説明は終わりです。
 
 
-# 2. レトロスペクティブ解析(チューニングあり・なし）
+## 2. レトロスペクティブ解析(チューニングあり・なし）
 
 - 過去～7年分くらいのデータを削除して資源計算をしなおした場合に資源量やFの推定値が傾向を持って変化するようなレトロスペクティブパターンが見られるかどうかを調べます。そのさいには
   - 非線形パラメータbを推定しなおすかどうか
@@ -299,8 +304,10 @@ tmp <- do_sensitivity_vpa(res_vpa_example, what_replace = "b", value = c("b.est"
 レトロスペクティブ解析は`do_retrospective_vpa`関数を用いることで、
 - 結果の出力
 - Mohn's rhoの出力
+- bの再推定結果の値
 - 作図
 までを一貫して行えます。
+
 
 引数として、
 - `res` : vpa計算の結果のオブジェクトの他に
@@ -321,19 +328,11 @@ res_vpa_retrospective$mohn_rho
 
 ```
 
-結果はlist型式でまとめてあり、`$`を使って呼び出すことが可能です。resultはVPAの推定結果、mohn_rhoはmorhのrhoの値、graphはグラフです。 
+結果はlist型式でまとめてあり、`$`を使って呼び出すことが可能です。resultはVPAの推定結果、mohn_rhoはmorhのrhoの値、graphはグラフ、b_resはbの再推定結果です。またMohn's rhoは、グラフ中にも併記してあります。 
 
 ```{r}
-# こんなかんじで、グラフにmohn'sを重ね書きするようにしてください
-rho_data <- tibble(index=names(res_vpa_retrospective$mohn_rho),value=res_vpa_retrospective$mohn_rho) %>%
-    left_join(tibble(index=c("N","B","SSB","R","F"),
-                     stat=c("fish_number","biomass","SSB","Recruitment","fishing_mortality"))) %>%
-    mutate(y=0,x=as.numeric(max(colnames(res_vpa_retrospective[[1]][[1]][[1]]$naa))))
 
-res_vpa_retrospective$graph +
-    geom_label(data=rho_data,
-               mapping=aes(x=x,y=y,label=str_c("rho=",round(value,2))),
-               vjust="inward",hjust="inward")
+res_vpa_retrospective$graph
     
 ```
 
@@ -345,20 +344,14 @@ res_vpa_retrospective <-
       p.init = 0.5, tune=TRUE, sel.update=FALSE, term.F = "all", b.est = TRUE) %>% 
                                                               # まずbを推定するvpaを実行しています
   do_retrospective_vpa(n_retro = 5,
-                       b_reest = TRUE,
+                       b_reest = TRUE, # ここをTRUEにしてください!!
                        what_plot = c("SSB", "Recruitment",
                                      "fish_number", "fishing_mortality"),
                        ncol = 2
                        )
 
 # 推定されたbの値 => 5番目の結果にNAが入っていますが大丈夫ですか？
-tmp <- list()
-for(i in 1:5)tmp[[i]] <- res_vpa_retrospective$result$Res[[i]]$b
-tmp
-
-# または
-purrr::map_dfc(res_vpa_retrospective$result$Res, function(x) as_tibble(x$b))
-# とか。別にいいですが。すいていされたｂの値もmorh_rhoみたいに結果に入れて置くと良いかも
+res_vpa_retrospective$b_res
 
 ```
 
@@ -375,11 +368,12 @@ res_vpa_retrospective$graph
 レトロスペクティブ解析の説明は以上です。
 
 
-# 3. パラメータの収束の確認 (jitter analysis)(以降はチューニングありのみ）
+## 3. パラメータの収束の確認 (jitter analysis)(以降はチューニングありのみ）
 
-以降、チューニングありのみの診断法となるため、最尤法(`est.method = "ml"`)を用いてダミーデータを再解析します。また、資源評価最終年のFをすべて推定する全F推定法で解析を行います。
+以降、チューニングありのみの診断法となります。
+以下の例では、資源評価最終年のFをすべて推定した場合も関数が正常に動くことを示すために、全F推定法（`term.F = "all`）として、解析しました。
 
-__（ちょっとめんどくさいですが、最小二乗法でパラメータ推定しているケースもあるので、それにも対応できるように関数を修正してもらってもよいでしょうか？）__
+また、`term.F = "ml"`と最尤法での推定となっていますが、以下の関数は最小二乗法`term.F = "ls"`でも機能します。
 
 ```{r}
 
@@ -391,7 +385,7 @@ res_vpa_example <- res_vpa_base0_tune
 ```
 
 
-Fの推定結果が初期値に依存せずに、安定した結果となっているかを診断するために、jitter analysis（初期値を乱数で生成し、vpa計算を繰り返し実施する）をおこないます。`vpa`関数では推定パラメータの初期値は引数`p.init`で与えられますが、全F推定方の場合最終年の各年齢のFの初期値になります（年齢によって異なる初期値を与えることは（現状では）できません）。Fの結果が初期値に依存する場合、乱数の値に応じて推定結果も変わるので、注意が必要です。jitter analysisはこのようなことがおこっていないか確認するための解析です。
+Fの推定結果が初期値に依存せずに、安定した結果となっているかを診断するために、jitter analysis（初期値を乱数で生成し、vpa計算を繰り返し実施する）をおこないます。`vpa`関数では推定パラメータの初期値は引数`p.init`で与えられますが、全F推定法の場合、最終年の各年齢のFの初期値になります。Fの結果が初期値に依存する場合、乱数の値に応じて推定結果も変わります。このような場合、パラメータのの初期値への依存が高く、局所的な最適解に引っ張られている可能性などが考えられます。すなわち、データの持つ情報量が低いことが考えられるため注意が必要です。jitter analysisはこのようなことがおこっていないか確認するための解析です。
 
 `do_estcheck_vpa`関数で、自動的にjitter analysisとその結果の作図が行われます。
 
@@ -412,7 +406,7 @@ res_vpa_jitter <- do_estcheck_vpa(res_vpa_example, n_ite = 10)
 - ヘッセ行列の対角成分が正であるか
 - パラメータの推定結果が収束してるか
 を知らせてくれます。ヘッセ行列に負がある（ヘッセ行列が負だとなにがいけないのか？）、あるいは収束していない場合、ここで関数が止まります。
-再度、`VPA`関数を使って解析してください。（初期値を変える、全F推定の場合パラメータを減らすなどの工夫が必要となります）
+再度、`VPA`関数を使って解析してください。（初期値を変える、全F推定の場合パラメータを減らす、資源量指数の非線形性を考慮している場合はbを与えるあるいは1にする、などの工夫が必要となります）
 
 次に、関数内でjitter analysisが行われます。n_ite数分のVPA計算を行います。
 その結果が`res_vpa_jitter`内にあり、それぞれ、
@@ -431,7 +425,7 @@ res_vpa_jitter$graph$likelihood # 尤度
 
 
 
-# 4. 残差プロット
+## 4. 残差プロット
 
 残差プロットはモデル診断の中でも、最も重要なパートの1つです。残差とは、CPUEとその予測値(q*N^b)の差のことを指し、これが小さいほうがよりフィッティングの良いモデルとなります。残差の対数（対数残差）プロットは0を平均とした分布になります。また、 __残差プロットが時系列的に一貫して増える（または減る）傾向（自己相関）__がみられる場合、モデルとデータの間に何らかの齟齬がある可能性があり、注意が必要です。この他、 __他の残差に比べて著しく大きい残差は、そのデータ（CPUE）が外れ値___である場合があります。外れ値はパラメータ推定に大きな影響を及ぼすので、外れ値と思われるデータを解析に含めるか再考する必要があります。
 残差プロットを行うことでこれらの傾向を一目にして把握することができます。
@@ -454,10 +448,12 @@ plot_example$abund_CPUE
 ```
 
 
-# 5. ジャックナイフ法
+## 5. ジャックナイフ法
 
-観測値（CPUE）を1つずつ抜いて解析を行うことで、影響力の強いデータや外れ値を検出する方法です。
+観測値（資源量指数）を1つずつ抜いて解析を行うことで、影響力の強いデータや外れ値を検出する方法です。
 `do_jackknife_vpa`関数で自動で観測値を抜いて再解析を行います。
+
+引数`method`はデフォルトで"index"となっており、資源量指数の種類ごとに取り除いて解析を行います（つまり、資源量指数の種類分、結果が返ってきます）。一方、それぞれの種類を年ごとに取り除きたい場合は"all"を選択してください。この場合、資源量指数の種類×年数分、取り除いて計算するためデータ数によっては多くの計算時間を必要とする点に気を付けてください。
 
 ```{r}
 
@@ -473,7 +469,7 @@ res_vpa_jackknife$JKplot_par
  
  
   
-# 6. ブートストラップによる信頼区間推定
+## 6. ブートストラップによる信頼区間推定
 
 ブートストラップ法は乱数でデータを再生成し、信頼区間等を推定する方法です。
 ここでは
@@ -485,7 +481,7 @@ res_vpa_jackknife$JKplot_par
 また時間の都合上、生成するブートストラップ標本数は50個としていますが、デフォルトで与えられている1000個ほどを目途に行うようにしてください。
 
 
-## 1. 観測値のブートストラップ法について
+### 1. 観測値のブートストラップ法について
 
 frasyrの中にはブートストラップ法を自動で行う`boo.vpa`関数がありますが、今回作成した`plot_resboot_vpa`関数内でも`boo.vpa`関数を使っています。したがって、`plot_resboot_vpa`関数に直接vpa計算結果のオブジェクトを入れてください。
 
@@ -505,7 +501,7 @@ res_vpa_bootstrap$plot_ssb
 ```
 
 
-## 2. 年齢別漁獲尾数について乱数生成する方法
+### 2. 年齢別漁獲尾数について乱数生成する方法
 
 VPAでは年齢別漁獲尾数（catch at age）が真であると仮定して推定するため、catch at ageの不確実性を評価することが出来ないモデルです。
 ここで紹介する'do_caaboot_vpa'関数は、引数として与えている年齢別漁獲尾数(`$input$dat$caa`)の対数を取った後、正規分布乱数で生成した疑似年齢別漁獲尾数を用いて、再度VPA計算を行います。
@@ -518,26 +514,13 @@ res_vpa_caaboot$plot_ssb
 
 ```
 
-一般に、VPAの資源量推定結果を信頼区間と重ねてプロットすると、先程の`res_vpa_bootstrap$plot_ssb`のように最近年で信頼区間が広く、古くにさかのぼるほど信頼区間は狭くなっています。
+一般に、VPAの資源量推定結果を信頼区間と重ねてプロットすると、先程の`res_vpa_bootstrap$plot_ssb`のように最近年で信頼区間が広く、過去にさかのぼるほど信頼区間は狭くなっています。
 
-__ここの書き方（統計的に正しい記述をしないと）__
-これは決して過去の推定結果が正しいからではなく、確率変数として考えている資源量指数の不確実性を考慮しただけでは、過去の資源量推定値について考慮しきれていないだけだからです。
-
+これは決して過去の推定結果が正しいからではなく、確率変数として考えている資源量指数の不確実性を考慮しただけでは、最近の資源量の不確実性しか考慮できず、それより過去は正しいと仮定されている年齢別漁獲尾数データによって、決定的に求まっているだけなのです。
 年齢別漁獲尾数の不確実性を考慮すると図のように、時系列に関係なく資源量推定結果に不確実性があることが明らかになるかと思います。
 
 
-# 7. 尤度プロファイルによる信頼区間推定
-
-  - 既存関数がある
-  - 複数CPUEがある場合、できれば、要素ごとの尤度プロファイルを示してほしい
-
-
-
-
-
-
-```{r, echo=TRUE, fig.width=7,fig.height=5}
-
-
-
-```
+## 7. おわりに
+以上が、現在開発配布されている、VPAのモデル診断関数です。
+VPAのモデル診断結果が芳しくない場合、そこから推定される再生産関係、Reference pointの推定、更には将来予測などに、大きな影響を及ぼします。
+VPA関数が無事に動くと、一安心してしまう所ではありますが、併せてモデル診断も行って結果の妥当性を評価してください。
