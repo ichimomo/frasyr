@@ -1768,7 +1768,7 @@ compare_future_performance <- function(future_list,res_vpa,res_MSY,
 
 
 #'
-#' calculate F/Ftarget based on F_%SPR multiplier
+#' calculate F/Ftarget based on F_\%SPR multiplier
 #'
 #' @param faa F at age
 #' @param waa weight at age

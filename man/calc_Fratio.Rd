@@ -3,7 +3,7 @@
 \encoding{UTF-8}
 \name{calc_Fratio}
 \alias{calc_Fratio}
-\title{calculate F/Ftarget based on F_%SPR multiplier}
+\title{calculate F/Ftarget based on F_\%SPR multiplier}
 \usage{
 calc_Fratio(faa, waa, maa, M, SPRtarget = 30, waa.catch = NULL, Pope = TRUE)
 }
@@ -19,5 +19,5 @@ calc_Fratio(faa, waa, maa, M, SPRtarget = 30, waa.catch = NULL, Pope = TRUE)
 \item{SPRtarget}{target SPR}
 }
 \description{
-calculate F/Ftarget based on F_%SPR multiplier
+calculate F/Ftarget based on F_\%SPR multiplier
 }
