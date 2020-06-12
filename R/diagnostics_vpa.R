@@ -506,7 +506,7 @@ do_estcheck_vpa <- function(res, n_ite = 100, sd_jitter = 1, what_plot = NULL, T
 
 # author: Kohei Hamabe
 
-plot_residual_vpa <- function(res, index_name = NULL, plot_scale = FALSE){
+plot_residual_vpa <- function(res, index_name = NULL, plot_scale = FALSE, plot_smooth = FALSE){
   d_tmp <- matrix(NA,
                   nrow = length(res$input$dat$index[1,]),
                   ncol = length(res$input$dat$index[,1])*8+4)
@@ -573,20 +573,33 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_scale = FALSE){
     d_tidy$CPUE_Label <- rep(index_name, length(d_tmp[,1]))
   }
 
-  if(plot_scale) scale_tmp <- "fixed" else scale_tmp <- "free"
+  if(plot_scale) scale_tmp <- "fixed" else scale_tmp <- "free" # グラフ間のスケールを統一するか否か
 
-  g1 <- ggplot(d_tidy) +
-    geom_point(aes(x=year, y=resid, colour = CPUE_Label), size = 2) +
-    geom_smooth(aes(x=year, y=resid, colour = CPUE_Label), size = 1.5) +
-    facet_wrap(~CPUE_Label, scale=scale_tmp)+
-    geom_hline(yintercept = 0, size = 1)+
-    theme_SH(base_size = 14)
-  g1_sd <- ggplot(d_tidy) +
-    geom_point(aes(x=year, y=sd.resid, colour = CPUE_Label), size = 2) +
-    geom_smooth(aes(x=year, y=sd.resid, colour = CPUE_Label), size = 1.5) +
-    facet_wrap(~CPUE_Label, scale=scale_tmp) +
-    geom_hline(yintercept = 0, size = 1)+
-    theme_SH(base_size = 14)
+  if(isTRUE(plot_smooth)){
+    g1 <- ggplot(d_tidy) +
+      geom_point(aes(x=year, y=resid, colour = CPUE_Label), size = 2) +
+      geom_smooth(aes(x=year, y=resid, colour = CPUE_Label), size = 1.5) +
+      facet_wrap(~CPUE_Label, scale=scale_tmp)+
+      geom_hline(yintercept = 0, size = 1)+
+      theme_SH(base_size = 14)
+    g1_sd <- ggplot(d_tidy) +
+      geom_point(aes(x=year, y=sd.resid, colour = CPUE_Label), size = 2) +
+      geom_smooth(aes(x=year, y=sd.resid, colour = CPUE_Label), size = 1.5) +
+      facet_wrap(~CPUE_Label, scale=scale_tmp) +
+      geom_hline(yintercept = 0, size = 1)+
+      theme_SH(base_size = 14)
+  } else {
+    g1 <- ggplot(d_tidy) +
+      geom_point(aes(x=year, y=resid, colour = CPUE_Label), size = 2) +
+      facet_wrap(~CPUE_Label, scale=scale_tmp)+
+      geom_hline(yintercept = 0, size = 1)+
+      theme_SH(base_size = 14)
+    g1_sd <- ggplot(d_tidy) +
+      geom_point(aes(x=year, y=sd.resid, colour = CPUE_Label), size = 2) +
+      facet_wrap(~CPUE_Label, scale=scale_tmp) +
+      geom_hline(yintercept = 0, size = 1)+
+      theme_SH(base_size = 14)
+  }
 
   g2 <- ggplot(d_tidy) +
     geom_point(aes(x=year, y=obs, colour = CPUE_Label), size = 2) +
