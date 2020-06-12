@@ -224,22 +224,22 @@ plot_Fref <- function(rres,xlabel="max", # or, "mean","Fref/Fcur"
 
 plot_SRdata <- function(SRdata, type=c("classic","gg")[1]){
   if(type=="classic") plot(SRdata$SSB,SRdata$R,xlab="SSB",ylab="R",xlim=c(0,max(SRdata$SSB)),ylim=c(0,max(SRdata$R)))
-  if(type=="gg") ggplot2::qplot(y=R,x=SSB,data=as_tibble(SRdata),
-                                xlab="SSB",ylab="R",xlim=c(0,max(SRdata$SSB)),ylim=c(0,max(SRdata$R))) + theme_SH()
+  if(type=="gg"){
+    if(!"id"%in%names(SRdata)){
+      ggplot2::qplot(y=R,x=SSB,data=as_tibble(SRdata),
+                     xlab="SSB",ylab="R",xlim=c(0,max(SRdata$SSB)),ylim=c(0,max(SRdata$R))) + theme_SH()
+    }
+    else{
+      ggplot(SRdata)+
+        geom_point(aes(y=R,x=SSB,color=id),
+                    xlab="SSB",ylab="R",
+                    xlim=c(0,max(SRdata$SSB)),ylim=c(0,max(SRdata$R))) +
+        theme_SH()+
+        theme(legend.position="top")
+    }
+  }
 }
 
-#' 再生産関係をプロットする一般関数
-#'
-#' @param SR_result fit.SRの結果のオブジェクト
-#' @encoding UTF-8
-#'
-#' @export
-#'
-
-plot_SR <- function(...){
-  g1 <- SRplot_gg(...)
-  g1
-}
 
 #' 再生産関係をプロットする関数
 #'
@@ -355,17 +355,56 @@ SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千ト�
 #' 
 
 compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000){
-  SRdata <- SRlist[[1]]$input$SRdata %>%
-    as_tibble() %>%
-    mutate(SSB=SSB/biomass.unit, R=R/number.unit)
+
+  if(!is.null(SRlist[[1]]$input)){
+    SRdata <- purrr::map_dfr(SRlist, function(x){
+      x$input$SRdata %>%
+        as_tibble() %>%
+        mutate(SSB=SSB/biomass.unit, R=R/number.unit)
+    },.id="id")
+  }
+  else{ # for model average
+    SRdata <- purrr::map_dfr(SRlist, function(x){
+      x[[1]]$input$SRdata %>%
+        as_tibble() %>%
+        mutate(SSB=SSB/biomass.unit, R=R/number.unit)
+    },.id="id")    
+    
+  }
+
+  if(is.null(SRlist)) names(SRlist) <- 1:length(SRlist)
+
   g1 <- plot_SRdata(SRdata,type="gg")
-  
-  SRpred <- purrr::map_dfr(SRlist,
-                           function(x) x$pred, .id="SR_type")
-  g1 <- g1+geom_line(data=SRpred,mapping=aes(x=SSB/biomass.unit,y=R/number.unit,col=SR_type)) +
+
+  if(class(SRlist[[1]])=="fit.SRregime"){
+    predtable <- purrr::map_dfr(SRlist, function(x) x$pred, .id="id")%>%
+      mutate(SSB=SSB/biomass.unit, R=R/number.unit)
+    g1 <- g1 + geom_line(aes(x=SSB,y=R,color=id,lty=Regime),
+                         data=predtable)    
+  }
+  else{
+    if(!is.null(SRlist[[1]][[1]]$pars)){ # when model averaging
+      predtable <- NULL
+      for(i in 1:length(SRlist)){
+        tmp <- purrr::map_dfr(SRlist[[i]],function(x) x$pred, .id="type") %>%
+          mutate(id=names(SRlist)[i])%>%
+          mutate(SSB=SSB/biomass.unit, R=R/number.unit)
+        predtable <- bind_rows(predtable,tmp)
+      }
+      g1 <- g1 + geom_line(aes(x=SSB,y=R,color=id,lty=type),
+                           data=predtable)
+    }
+    else{ # normal case
+      predtable <- purrr::map_dfr(SRlist, function(x) x$pred, .id="id") %>%
+        mutate(SSB=SSB/biomass.unit, R=R/number.unit)
+      g1 <- g1 + geom_line(aes(x=SSB,y=R,color=id),
+                           data=predtable)      
+    }}
+
+  g1 <- g1+
     theme(legend.position="top") +
     xlab(str_c("SSB (x",biomass.unit,")")) +
-    ylab(str_c("Number (x",number.unit,")")) 
+    ylab(str_c("Number (x",number.unit,")"))
   
   g1
 }

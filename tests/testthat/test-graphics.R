@@ -27,5 +27,21 @@ test_that("SRregime_plot",{
                               regime.par = c("a","b","sd")[2:3])
   g1 <- SRregime_plot(resSRregime, regime.name=c("Low","High"))
   # 本当の意味でのテストにはなっていない
+  expect_equal(class(g1)[1],"gg")
+  (g1 <- compare_SRfit(list(resSRregime, resSRregime),
+                       biomass.unit=1000, number.unit=1000))
   expect_equal(class(g1)[1],"gg")  
+})
+
+test_that("SRregime_plot",{
+    data(res_sr_HSL1)
+    data(res_sr_HSL2)
+    (g1 <- compare_SRfit(list(HSL1=res_sr_HSL1, HSL2=res_sr_HSL2),
+                         biomass.unit=1000, number.unit=1000))
+    expect_equal(class(g1)[1],"gg")      
+    (g1 <- compare_SRfit(list(L1=list(res_sr_HSL1,res_sr_HSL1),
+                              L2=list(res_sr_HSL1,res_sr_HSL2)),
+                         biomass.unit=1000, number.unit=1000))    
+    expect_equal(class(g1)[1],"gg")      
+
 })
