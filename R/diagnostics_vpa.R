@@ -45,8 +45,8 @@
 #' @seealso
 #' vpa計算について:  \code{\link{vpa}}
 #' 作図について: \code{\link{plot_vpa}}
+#' https://ichimomo.github.io/frasyr/doc/Diagnostics-for-VPA.html
 #'
-#' @examples # WikiかVignetteにつながるようにする？
 #'
 #' @encoding UTF-8
 #'
@@ -309,8 +309,6 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
 #' レトロスペクティブ解析について:  \code{\link{retro.est}}
 #' 作図について: \code{\link{plot_vpa}}
 #'
-#' @examples # GitHubにつながるようにする？
-#'
 #' @encoding UTF-8
 #'
 #' @export
@@ -327,8 +325,23 @@ do_retrospective_vpa <- function(res, n_retro = 5, b_reest = FALSE, what_plot = 
   dat_graph <- list()
   for(i in 1:n_retro) dat_graph[[i]] <- res_retro$Res[[i]]
   names(dat_graph) <- rev(colnames(res$ssb))[1:n_retro]  # 図にinputされる結果に名前をつける
-  g1 <- plot_vpa(dat_graph, what.plot = what_plot, ncol = ncol)
-  return(list(result = res_retro, mohn_rho = res_retro$mohn, graph = g1))
+
+  # 図にMohn's rhoの重ね書き用rho data from 市野川さん
+  rho_data <- tibble(index = names(res_retro$mohn), value = res_retro$mohn) %>%
+    left_join(tibble(index = c("N", "B", "SSB", "R", "F"),
+                     stat = c("fish_number", "biomass" ,"SSB" ,"Recruitment" ,"fishing_mortality"))) %>%
+    mutate(y=0, x=as.numeric(max(colnames(res_retro[[1]][[1]]$naa))))
+
+  g1 <- plot_vpa(dat_graph, what.plot = what_plot, ncol = ncol) +
+    geom_label(data = rho_data,
+               mapping = aes(x = x, y = y, label = str_c("rho=", round(value,2))),
+               vjust="inward", hjust="inward")
+
+  # bの結果出力用 from 市野川さん
+  b_tmp <- purrr::map_dfc(res_retro$Res, function(x) as_tibble(x$b))
+  colnames(b_tmp) <- rev(colnames(res$ssb))[1:n_retro]
+
+  return(list(result = res_retro, mohn_rho = res_retro$mohn, graph = g1, b_res = b_tmp))
 } # function(do_retrospective_vpa)
 
 
@@ -359,6 +372,7 @@ do_retrospective_vpa <- function(res, n_retro = 5, b_reest = FALSE, what_plot = 
 #'
 #' @export
 
+# author: Kohei Hamabe
 
 do_estcheck_vpa <- function(res, n_ite = 100, sd_jitter = 1, what_plot = NULL, TMB = FALSE){
   # resの中身の診断
@@ -461,7 +475,7 @@ do_estcheck_vpa <- function(res, n_ite = 100, sd_jitter = 1, what_plot = NULL, T
   }
   return(list(initial_value = init_list, #初期値の乱数
               p_name = name_tmp, # 初期値の名前
-              value = value_tmp, #　推定値と尤度のリスト
+              value = value_tmp, # 推定値と尤度のリスト
               graph = list(estimated = g1, likelihood = g2)
               ))
 } # function(do_estcheck_vpa)
@@ -490,6 +504,8 @@ do_estcheck_vpa <- function(res, n_ite = 100, sd_jitter = 1, what_plot = NULL, T
 #'
 #' @export
 
+# author: Kohei Hamabe
+
 plot_residual_vpa <- function(res, index_name = NULL, plot_scale = FALSE){
   d_tmp <- matrix(NA,
                   nrow = length(res$input$dat$index[1,]),
@@ -516,7 +532,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_scale = FALSE){
       # 資源重量の場合、リスケーリング分かけて補正
       d_tmp[,(i+length(res$q)*1+4)] <- (res$pred.index[i,]/res$q[i])^(1/res$b[i])*res$input$scale
     }
-    d_tmp[,(i+length(res$q)*2+4)] <- res$pred.index[i,]　# q*N^B計算結果
+    d_tmp[,(i+length(res$q)*2+4)] <- res$pred.index[i,] # q*N^B計算結果
     d_tmp[,(i+length(res$q)*3+4)] <- resid_tmp
     d_tmp[,(i+length(res$q)*4+4)] <- sd_resid_tmp
     d_tmp[,(i+length(res$q)*5+4)] <- rep(res$q[i], length(d_tmp[,1]))
@@ -623,6 +639,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_scale = FALSE){
 #' モデル診断法の一つです。影響力の強いデータや外れ値の検出に用いることができます。
 #'
 #' @param res VPAの結果のオブジェクト
+#' @param method データの抜き方。デフォルトは指数ごとに抜く("index")。他に各指数を各点ごとに抜く場合は"all"。各年ごとの場合は"year"。
 #'
 #' @return 返ってくる値:
 #'     \code{JKplot_abund} ジャックナイフ法を行った資源尾数の時系列プロット。
@@ -632,6 +649,11 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_scale = FALSE){
 #'     \code{data1} 資源尾数の時系列プロットに用いたtidyデータ。
 #'     \code{data2} ターミナルFのプロットに用いたtidyデータ。
 #'
+#' @details method :
+#' \code{"index"}を行うことで、どの指数シリーズの影響が大きいのか見ることができます（例：漁業CPUEより調査船調査の方が推定の影響が大きい）。
+#' \code{"all"}を行うことで、どの指数シリーズのどの年の影響が大きいのか見ることができます。ただし組み合わせが多くなるので、結果が得られるまでに時間を要します。
+#' \code{"year"}を行うことで、どの年が影響を与えているかを見ることができます（例：200X年のみ調査漁業関係なく影響がある）。
+#'
 #'
 #' @author 濵邉昂平, 市野川桃子
 #'
@@ -639,57 +661,84 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_scale = FALSE){
 #'
 #' @export
 
-do_jackknife_vpa <- function(res){
+# author: Kohei Hamabe
+
+do_jackknife_vpa <- function(res, method = "index"){
   year <- as.numeric(colnames(res$input$dat$index))
   res_list <- list()
   abund_tmp <- ssb_tmp <- biom_tmp <- tf_tmp <- list()
-  name_tmp <- rep(NA, length = length(res$input$dat$index[!is.na(res$input$dat$index)]))*3
-  #tf_mat <- matrix(NA, ncol = length(res$term.f), nrow = length(name_tmp)*length(year))
-  for(i in 1:(dim(res$input$dat$index)[1])){
-    #for(i in 1:(dim(res$input$dat$index)[1])){
-    index_label <- which(is.na(res$input$dat$index[i,])==FALSE)
-    year_tmp <- as.numeric(colnames(res$input$dat$index[i,]))[index_label]
 
-    for(j in 1:length(index_label)){
-      #for(j in 1:2){
+  if(method == "index"){
+
+    name_tmp <- rep(NA, length = length(row.names(res$input$dat$index)))
+    for(i in 1:length(name_tmp)){
       input0 <- res$input
-      index_tmp <- as.numeric(res$input$dat$index[i,])
-      index_tmp[index_label[j]] <- NA
-      input0$dat$index[i,] <- index_tmp
+      input0$dat$index <- res$input$dat$index[-i,]
+      input0$abund <- input0$abund[-i]
       input0$plot <- FALSE
       res_tmp <- do.call(vpa, input0)  # vpa関数の実行
 
-      if(i == 1){
-        res_list[[j]] <- res_tmp
-        abund_tmp[[j]] <- apply(res_tmp$naa,2,sum)
-        ssb_tmp[[j]] <- apply(res_tmp$ssb,2,sum)
-        biom_tmp[[j]] <- apply(res_tmp$baa,2,sum)
-        name_tmp[j] <- paste0('CPUE0',i," ",year_tmp[j])
-        #tmp <- length(year)*(j-1)+1
-        #tf_mat[tmp:tmp+length(year),] <- res_tmp$term.f
-        tf_tmp[[j]] <- res_tmp$term.f
-      } else if(i <= 9) {
-        next_label <- which(is.na(name_tmp))[1]
-        res_list[[next_label]] <- res_tmp
-        abund_tmp[[next_label]] <- apply(res_tmp$naa,2,sum)
-        ssb_tmp[[next_label]] <- apply(res_tmp$ssb,2,sum)
-        biom_tmp[[next_label]] <- apply(res_tmp$baa,2,sum)
-        name_tmp[next_label] <- paste0('CPUE0',i,' ',year_tmp[j])
-        #tf_mat[next_label:(next_label+length(year)-1),] <- res_tmp$term.f
-        tf_tmp[[next_label]] <- res_tmp$term.f
+      res_list[[i]] <- res_tmp
+      abund_tmp[[i]] <- apply(res_tmp$naa,2,sum)
+      ssb_tmp[[i]] <- apply(res_tmp$ssb,2,sum)
+      biom_tmp[[i]] <- apply(res_tmp$baa,2,sum)
+      tf_tmp[[i]] <- res_tmp$term.f
+
+      if(i <= 9){
+        name_tmp[i] <- paste0('CPUE0',i)
       } else {
-        next_label <- which(is.na(name_tmp))[1]
-        res_list[[next_label]] <- res_tmp
-        abund_tmp[[next_label]] <- apply(res_tmp$naa,2,sum)
-        ssb_tmp[[next_label]] <- apply(res_tmp$ssb,2,sum)
-        biom_tmp[[next_label]] <- apply(res_tmp$baa,2,sum)
-        name_tmp[next_label] <- paste0('CPUE',i,' ',year_tmp[j])
-        #tf_mat[next_label:(next_label+length(year)-1),] <- res_tmp$term.f
-        tf_tmp[[next_label]] <- res_tmp$term.f
+        name_tmp[i] <- paste0('CPUE',i)
       }
-    } #for(j) 各データの時系列について
-    #res_tmp2[[i]] <- res_tmp
-  } #for(i) データの種類について
+    } #for(i) データの種類について
+
+  } else if(method == "all"){
+
+    name_tmp <- rep(NA, length = length(res$input$dat$index[!is.na(res$input$dat$index)]))
+    for(i in 1:(dim(res$input$dat$index)[1])){
+      index_label <- which(is.na(res$input$dat$index[i,])==FALSE)
+      year_tmp <- as.numeric(colnames(res$input$dat$index[i,]))[index_label]
+
+      for(j in 1:length(index_label)){
+        input0 <- res$input
+        index_tmp <- as.numeric(res$input$dat$index[i,])
+        index_tmp[index_label[j]] <- NA
+        input0$dat$index[i,] <- index_tmp
+        input0$plot <- FALSE
+        res_tmp <- do.call(vpa, input0)  # vpa関数の実行
+
+        if(i == 1){
+          res_list[[j]] <- res_tmp
+          abund_tmp[[j]] <- apply(res_tmp$naa,2,sum)
+          ssb_tmp[[j]] <- apply(res_tmp$ssb,2,sum)
+          biom_tmp[[j]] <- apply(res_tmp$baa,2,sum)
+          name_tmp[j] <- paste0('CPUE0',i," ",year_tmp[j])
+          #tmp <- length(year)*(j-1)+1
+          #tf_mat[tmp:tmp+length(year),] <- res_tmp$term.f
+          tf_tmp[[j]] <- res_tmp$term.f
+        } else if(i <= 9) {
+          next_label <- which(is.na(name_tmp))[1]
+          res_list[[next_label]] <- res_tmp
+          abund_tmp[[next_label]] <- apply(res_tmp$naa,2,sum)
+          ssb_tmp[[next_label]] <- apply(res_tmp$ssb,2,sum)
+          biom_tmp[[next_label]] <- apply(res_tmp$baa,2,sum)
+          name_tmp[next_label] <- paste0('CPUE0',i,' ',year_tmp[j])
+          tf_tmp[[next_label]] <- res_tmp$term.f
+        } else {
+          next_label <- which(is.na(name_tmp))[1]
+          res_list[[next_label]] <- res_tmp
+          abund_tmp[[next_label]] <- apply(res_tmp$naa,2,sum)
+          ssb_tmp[[next_label]] <- apply(res_tmp$ssb,2,sum)
+          biom_tmp[[next_label]] <- apply(res_tmp$baa,2,sum)
+          name_tmp[next_label] <- paste0('CPUE',i,' ',year_tmp[j])
+          tf_tmp[[next_label]] <- res_tmp$term.f
+        }
+      } #for(j) 各データの時系列について
+      #res_tmp2[[i]] <- res_tmp
+    } #for(i) データの種類について
+
+  } else {
+    stop(paste0('Method must be "index" or "all" ! '))
+  }
 
   tf_name <- numeric()
   age_tmp <- as.numeric(rownames(res$input$dat$caa))
@@ -710,51 +759,62 @@ do_jackknife_vpa <- function(res){
     t()
   colnames(tf_tmp2) <- tf_name
 
-  d_tidy_abund <- data.frame(year = rep(year[1]:year[length(year)], length(abund_tmp)),
-                             abundance = unlist(abund_tmp),
-                             ssb = unlist(ssb_tmp),
-                             biomass = unlist(biom_tmp)
-  ) %>%
-    cbind.data.frame(JK_index = map(strsplit(name_tmp," "), ~ first(.)) %>%
-                       unlist()  %>%  rep(each = length(year))) %>%
-    cbind.data.frame(JK_year = map(strsplit(name_tmp," "), ~ last(.)) %>%
-                       unlist()  %>%  rep(each = length(year)))
 
+
+
+  if(method == "index"){
+    d_tidy_abund <- data.frame(year = rep(year[1]:year[length(year)], length(abund_tmp)),
+                               abundance = unlist(abund_tmp),
+                               ssb = unlist(ssb_tmp),
+                               biomass = unlist(biom_tmp)) %>%
+      cbind.data.frame(JK = map(strsplit(name_tmp," "), ~ first(.)) %>%
+                         unlist()  %>%  rep(each = length(year)))
+    d_tidy_par <- data.frame(tf_tmp2,
+                             JK = map(strsplit(name_tmp," "), ~ first(.)) %>%  unlist()
+    ) %>%
+      pivot_longer(col = c(-JK),
+                   names_to = c(".value", "age"),
+                   names_sep = "_",
+                   values_drop_na = TRUE)
+  } else if(method == "year"){
+    d_tidy_abund <- data.frame(year = rep(year[1]:year[length(year)], length(abund_tmp)),
+                               abundance = unlist(abund_tmp),
+                               ssb = unlist(ssb_tmp),
+                               biomass = unlist(biom_tmp)) %>%
+      cbind.data.frame(JK = map(strsplit(name_tmp," "), ~ first(.)) %>%
+                         unlist()  %>%  rep(each = length(year)))
+    d_tidy_par <- data.frame(tf_tmp2,
+                             JK = map(strsplit(name_tmp," "), ~ first(.)) %>%  unlist()
+    ) %>%
+      pivot_longer(col = c(-JK),
+                   names_to = c(".value", "age"),
+                   names_sep = "_",
+                   values_drop_na = TRUE)
+  } else {
+    d_tidy_abund <- data.frame(year = rep(year[1]:year[length(year)], length(abund_tmp)),
+                               abundance = unlist(abund_tmp),
+                               ssb = unlist(ssb_tmp),
+                               biomass = unlist(biom_tmp)) %>%
+      cbind.data.frame(JK_index = map(strsplit(name_tmp," "), ~ first(.)) %>%
+                         unlist()  %>%  rep(each = length(year))) %>%
+      cbind.data.frame(JK_year = map(strsplit(name_tmp," "), ~ last(.)) %>%
+                         unlist()  %>%  rep(each = length(year)))
+    d_tidy_par <- data.frame(tf_tmp2,
+                             JK_index = map(strsplit(name_tmp," "), ~ first(.)) %>%  unlist(),
+                             JK_year = map(strsplit(name_tmp," "), ~ last(.)) %>%  unlist()
+    ) %>%
+      pivot_longer(col = c(-JK_year, -JK_index),
+                   names_to = c(".value", "age"),
+                   names_sep = "_",
+                   values_drop_na = TRUE)
+  }
 
   #inputしたvpa結果を作図用のtidy dataに成形
   result <- data.frame(year = year,
                        abundance = apply(res$naa, 2, sum),
                        ssb = apply(res$ssb, 2, sum),
-                       biomass = apply(res$baa, 2, sum)
-  )
-
-  g1 <- ggplot(d_tidy_abund) +
-    geom_line(data = result, aes(x = year, y = abundance), size = 2)+
-    geom_line(aes(x = year, y = abundance, color = JK_year)) +
-    facet_wrap(~ JK_index, scale="free_y")+
-    theme_SH()
-
-  g2 <- ggplot(d_tidy_abund) +
-    geom_line(data = result, aes(x = year, y = ssb), size = 2)+
-    geom_line(aes(x = year, y = ssb, color = JK_year)) +
-    facet_wrap(~ JK_index, scale="free_y")+
-    theme_SH()
-
-  g3 <- ggplot(d_tidy_abund) +
-    geom_line(data = result, aes(x = year, y = biomass), size = 2)+
-    geom_line(aes(x = year, y = biomass, color = JK_year)) +
-    facet_wrap(~ JK_index, scale="free_y")+
-    theme_SH()
-
-
-  d_tidy_par <- data.frame(tf_tmp2,
-                           JK_index = map(strsplit(name_tmp," "), ~ first(.)) %>%  unlist(),
-                           JK_year = map(strsplit(name_tmp," "), ~ last(.)) %>%  unlist()
-  ) %>%
-    pivot_longer(col = c(-JK_year, -JK_index),
-                 names_to = c(".value", "age"),
-                 names_sep = "_",
-                 values_drop_na = TRUE)
+                       biomass = apply(res$baa, 2, sum))
+  #inputしたvpa結果のターミナルF推定値の作図用のtidy dataに成形
   result_tf <- matrix(res$term.f, ncol = length(res$term.f)) %>% as.data.frame()
   colnames(result_tf) <- tf_name
   result_tf <- pivot_longer(result_tf,
@@ -762,12 +822,44 @@ do_jackknife_vpa <- function(res){
                             names_to = c(".value", "age"),
                             names_sep = "_",
                             values_drop_na = TRUE)
-
-  g4 <- ggplot(data = d_tidy_par) +
-    geom_point(aes(x = JK_year, y = tf, col = age)) +
-    #for(i in 1:length(result_tf$age)) geom_hline(yintercept =  result_tf$tf[i]) +
-    facet_wrap(~ JK_index) +
-    theme_SH()
+  # 作図
+  if(method == "all"){
+    g1 <- ggplot(d_tidy_abund) +
+      geom_line(data = result, aes(x = year, y = abundance), size = 2)+
+      geom_line(aes(x = year, y = abundance, color = JK_year)) +
+      facet_wrap(~ JK_index)+
+      theme_SH(legend.position = "top", base_size = 14)
+    g2 <- ggplot(d_tidy_abund) +
+      geom_line(data = result, aes(x = year, y = ssb), size = 2)+
+      geom_line(aes(x = year, y = ssb, color = JK_year)) +
+      facet_wrap(~ JK_index)+
+      theme_SH(legend.position = "top", base_size = 14)
+    g3 <- ggplot(d_tidy_abund) +
+      geom_line(data = result, aes(x = year, y = biomass), size = 2)+
+      geom_line(aes(x = year, y = biomass, color = JK_year)) +
+      facet_wrap(~ JK_index)+
+      theme_SH(legend.position = "top", base_size = 14)
+    g4 <- ggplot(data = d_tidy_par) +
+      geom_point(aes(x = JK_year, y = tf, col = age)) +
+      facet_wrap(~ JK_index) +
+      theme_SH(legend.position = "top", base_size = 14)
+  } else {
+    g1 <- ggplot(d_tidy_abund) +
+      geom_line(data = result, aes(x = year, y = abundance), size = 2)+
+      geom_line(aes(x = year, y = abundance, color = JK)) +
+      theme_SH(legend.position = "top", base_size = 14)
+    g2 <- ggplot(d_tidy_abund) +
+      geom_line(data = result, aes(x = year, y = ssb), size = 2)+
+      geom_line(aes(x = year, y = ssb, color = JK)) +
+      theme_SH(legend.position = "top", base_size = 14)
+    g3 <- ggplot(d_tidy_abund) +
+      geom_line(data = result, aes(x = year, y = biomass), size = 2)+
+      geom_line(aes(x = year, y = biomass, color = JK)) +
+      theme_SH(legend.position = "top", base_size = 14)
+    g4 <- ggplot(data = d_tidy_par) +
+      geom_point(aes(x = JK, y = tf, col = age)) +
+      theme_SH(legend.position = "top", base_size = 14)
+  }
 
   return(list(JKplot_abund = g1,
               JKplot_ssb = g2,
@@ -797,8 +889,6 @@ do_jackknife_vpa <- function(res){
 #'
 #' @seealso
 #' ブートストラップ法について:  \code{\link{boo.vpa}}
-#'
-#' @examples # GitHubにつながるようにする？
 #'
 #' @encoding UTF-8
 #'
@@ -873,9 +963,6 @@ plot_resboot_vpa <- function(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
 #'
 #' @author 濵邉昂平, 市野川桃子
 #'
-#'
-#' @examples # GitHubにつながるようにする？
-#'
 #' @encoding UTF-8
 #'
 #' @export
@@ -944,7 +1031,4 @@ do_caaboot_vpa <-  function(res, B_ite = 1000, B_sd = 1, ci_range = 0.95){
               plot_biomass = g3,
               caa_boot_sample = caa_boot
   ))
-
 }
-
-
