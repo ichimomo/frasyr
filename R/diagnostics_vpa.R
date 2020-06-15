@@ -689,6 +689,8 @@ do_jackknife_vpa <- function(res, method = "index"){
       input0$dat$index <- res$input$dat$index[-i,]
       input0$abund <- input0$abund[-i]
       input0$plot <- FALSE
+      input0$sigma.const <- input0$sigma.const[-i]
+      input0$sigma.constraint <- input0$sigma.constraint[-i]
       res_tmp <- do.call(vpa, input0)  # vpa関数の実行
 
       res_list[[i]] <- res_tmp
@@ -1007,16 +1009,24 @@ do_caaboot_vpa <-  function(res, B_ite = 1000, B_sd = 1, ci_range = 0.95){
     colnames(caa_tmp) <- year
     rownames(caa_tmp) <- age
     input0$dat$caa <- caa_tmp
-    res_tmp <- do.call(vpa, input0)
-    ssb_mat[i,] <- colSums(res_tmp$ssb)
-    abund_mat[i,] <- colSums(res_tmp$naa)
-    biomass_mat[i,] <- colSums(res_tmp$baa)
+    res_tmp <- try(do.call(vpa, input0))
+    if(class(res_tmp) == "try-error"){
+      message(paste('Iteration',i,'was errored ...', sep = " "))
+      ssb_mat[i,] <- rep(NA, length(year))
+      abund_mat[i,] <- rep(NA, length(year))
+      biomass_mat[i,] <- rep(NA, length(year))
+    } else {
+      ssb_mat[i,] <- colSums(res_tmp$ssb)
+      abund_mat[i,] <- colSums(res_tmp$naa)
+      biomass_mat[i,] <- colSums(res_tmp$baa)
+      message(paste('Iteration',i,'has done ...', sep = " "))
+    }
   }
 
   PB_value <- c((1-ci_range)/2, 0.5, 1-(1-ci_range)/2)
-  d_ssb <- t(apply(ssb_mat, 2, quantile, probs = PB_value))
-  d_abund <- t(apply(abund_mat, 2, quantile, probs = PB_value))
-  d_biomass <- t(apply(biomass_mat, 2, quantile, probs = PB_value))
+  d_ssb <- t(apply(ssb_mat, 2, quantile, probs = PB_value, na.rm = T))
+  d_abund <- t(apply(abund_mat, 2, quantile, probs = PB_value, na.rm = T))
+  d_biomass <- t(apply(biomass_mat, 2, quantile, probs = PB_value, na.rm = T))
   colnames(d_ssb) <- c("Lower", "SSB", "Upper")
   colnames(d_abund) <- c("Lower", "Abundance", "Upper")
   colnames(d_biomass) <- c("Lower", "Biomass", "Upper")
@@ -1029,7 +1039,7 @@ do_caaboot_vpa <-  function(res, B_ite = 1000, B_sd = 1, ci_range = 0.95){
     geom_line(size = 1.5)+
     theme_SH()
 
-  g2 <- ggplot(d_biomass, aes(x = Year, y = Abundance))+
+  g2 <- ggplot(d_abund, aes(x = Year, y = Abundance))+
     geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, fill = "blue")+
     geom_line(size = 1.5)+
     theme_SH()
