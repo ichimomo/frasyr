@@ -357,19 +357,19 @@ SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千ト�
 compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000){
 
   if(!is.null(SRlist[[1]]$input)){
-    SRdata <- purrr::map_dfr(SRlist, function(x){
+    SRdata <- purrr::map_dfr(SRlist[], function(x){
       x$input$SRdata %>%
         as_tibble() %>%
         mutate(SSB=SSB/biomass.unit, R=R/number.unit)
     },.id="id")
   }
   else{ # for model average
+    browser()
     SRdata <- purrr::map_dfr(SRlist, function(x){
       x[[1]]$input$SRdata %>%
         as_tibble() %>%
         mutate(SSB=SSB/biomass.unit, R=R/number.unit)
     },.id="id")    
-    
   }
 
   if(is.null(SRlist)) names(SRlist) <- 1:length(SRlist)
@@ -1620,3 +1620,47 @@ plot_bias_in_MSE <- function(fout, out="graph", error_scale="log", yrange=NULL){
 }
 
 
+#' 複数のKobe II tableの結果を重ね書きする
+#'
+#' @param kobeII_list betaをいろいろ変えたbeta.simulationの結果のオブジェクトのリスト
+#' @param target_stat 目的とする統計量。デフォルトは"prob.over.ssbtarget"と"prob.over.ssblimit"。beta.simulationの返り値オブジェクトのリストの名前を必要に応じてとってくる
+#' @param legend.position 凡例の位置
+#' @param target_beta kobeII table から取り出すベータの値。デフォルトは0.8。
+#'
+#' @examples
+#' \dontrun{
+#' }
+#'
+#' @encoding UTF-8
+#'
+#' @export
+#'
+#' 
+
+compare_kobeII <- function(kobeII_list,
+                           target_stat = c("prob.over.ssbtarget","prob.over.ssblimit",
+                                           "prob.over.ssbban"),
+                           legend_position = "top",
+                           target_beta = 0.8){
+  
+  prob_data <- NULL
+
+  for(i in 1:length(target_stat)){
+    tmp_data <- purrr::map_dfr(kobeII_list[!is.na(kobeII_list)],
+                                function(x){
+                                  x[target_stat[i]][[1]] %>%
+                                    dplyr::filter(beta==target_beta) %>%
+                                    tidyr::pivot_longer(col=c(-HCR_name,-beta,-stat_name),
+                                                        names_to="Year",values_to="Percent")},
+                                .id="data_type") %>%
+      mutate(Year=as.numeric(Year))
+    prob_data <- rbind(prob_data,tmp_data)
+  }
+
+  g1 <- prob_data %>% ggplot() +
+    geom_line(aes(x=Year,y=Percent,color=data_type))+
+    facet_wrap(.~stat_name,scale="free_y")+
+    theme_SH(legend="top")+ylim(0,NA)
+  
+  return(g1)
+}
