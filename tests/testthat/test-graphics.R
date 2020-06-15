@@ -45,3 +45,13 @@ test_that("SRregime_plot",{
     expect_equal(class(g1)[1],"gg")      
 
 })
+
+test_that("compare_MSY",{
+    data(res_MSY)
+    MSY_list <- tibble::lst(res_MSY_HSL1, res_MSY_HSL2)
+#    g1 <- compare_MSY(list(res_MSY, res_MSY))    
+})
+
+test_that("compare_kobeII",{
+
+})

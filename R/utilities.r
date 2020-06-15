@@ -1809,3 +1809,41 @@ calc_Fratio <- function(faa, waa, maa, M, SPRtarget=30, waa.catch=NULL,Pope=TRUE
 
 calc_akaike_weight <- function(AIC) exp(-AIC/2)/sum(exp(-AIC/2))
 
+#'
+#' 使うフォルダ名を与えると一連の結果の関数を読み込む関数
+#' 
+#' @export
+#' @encoding UTF-8 
+#'
+
+load_folder <- function(folder_name){
+
+  tmpfunc <- function(folder_name, file_name){
+    if(isTRUE(file.exists(str_c(folder_name,"/",file_name)))){
+      if(isTRUE(str_detect(file_name, pattern=".rda"))){
+        a <- load(str_c(folder_name,"/",file_name))
+        a <- get(a)
+      }
+      if(isTRUE(str_detect(file_name, pattern=".csv"))){
+        a <- read_csv(str_c(folder_name,"/",file_name))
+      }      
+    }
+    else{
+      a <- NA
+    }
+    return(a)
+  }
+    
+  file_name <- c("res_MSY.rda","res_SR.rda","res_future_0.8HCR.rda","kobeII.table.rda","model_selection.csv")
+
+  res_all <- list()
+  for(i in 1:length(file_name)){
+    res_all[[i]] <- purrr::map(folder_name, function(x) tmpfunc(x,file_name[i]))
+    res_all[[i]] <- res_all[[i]][!is.na(res_all[[i]])]
+  }
+  names(res_all) <- file_name
+
+  res_all$res_vpa <- purrr::map(res_all$res_MSY.rda, function(x) if(!is.na(x)) x$res_vpa else NA)
+  res_all$res_vpa <- res_all$res_vpa[!is.na(res_all$res_vpa)]
+  invisible(res_all)
+}
