@@ -29,7 +29,7 @@ data(res_vpa)
 SRdata <- get.SRdata(res_vpa)
 resSR <- fit.SR(SRdata, SR = c("HS","BH","RI")[1],
                 method = c("L1","L2")[1], AR = 0,
-                out.AR = FALSE, rep.opt = TRUE)
+                out.AR = FALSE)
 resSR_post = calc.residAR(resSR)
 resSR_post$AICc
 resSR_post$pars
@@ -40,5 +40,5 @@ resSRregime_post = calc.residAR(resSRregime, per_regime = TRUE)
 resSRregime_post$AICc
 resSRregime_post$regime$pars
 }
-                            
+
 }
