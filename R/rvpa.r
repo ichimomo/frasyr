@@ -276,11 +276,11 @@ tmpfunc2 <- function(x=1,y=2,z=3){
 #
 ##
 
-qbs.f <- function(q.const, b.const, sigma.const, index, Abund, nindex, index.w, max.dd=0.0001, max.iter=100){
+qbs.f <- function(q.const, b.const, sigma.constraint, index, Abund, nindex, index.w, max.dd=0.0001, max.iter=100){
   
   np.q <- length(unique(q.const[q.const > 0])) 
   np.b <- length(unique(b.const[b.const > 0])) 
-  np.s <- length(unique(sigma.const[sigma.const > 0]))
+  np.s <- length(unique(sigma.constraint[sigma.constraint > 0]))
   
   q <- b <- sigma <- numeric(nindex)
   
@@ -324,7 +324,7 @@ qbs.f <- function(q.const, b.const, sigma.const, index, Abund, nindex, index.w, 
     }
     if (np.s > 0){
       for(i in 1:np.s){
-        id <- which(sigma.const==i)
+        id <- which(sigma.constraint==i)
         num <- den <- 0
         for (j in id){
           avail <- which(!is.na(as.numeric(index[j,])))
@@ -338,7 +338,7 @@ qbs.f <- function(q.const, b.const, sigma.const, index, Abund, nindex, index.w, 
     
     q[which(q.const>0)] <- q[q.const[which(q.const>0)]]
     b[which(b.const>0)] <- b[b.const[which(b.const>0)]]
-    sigma[which(sigma.const>0)] <- sigma[sigma.const[which(sigma.const>0)]]
+    sigma[which(sigma.constraint>0)] <- sigma[sigma.constraint[which(sigma.constraint>0)]]
     
     delta <- max(c(sqrt((q-q0)^2),sqrt((b-b0)^2),sqrt((sigma-sigma0)^2)))
   }
@@ -418,7 +418,7 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param af      資源量指数が年の中央のとき，af=0なら漁期前，af=1なら漁期真ん中，af=2なら漁期後となる
 #' @param p.m 
 #' @param index.w  tuning indexの重み
-#' @param use.index 
+#' @param use.index   indexのなにを使うか．c(1,3)というような与え方ができる.デフォルトは"all"
 #' @param scale  重量のscaling
 #' @param hessian 
 #' @param alpha  最高齢と最高齢-1のFの比 F_a = alpha*F_{a-1}
@@ -446,7 +446,6 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param b.const  bパラメータの制約（0は推定しないで1にfix）
 #' @param q.fix 
 #' @param b.fix 
-#' @param sigma.const  sigmaパラメータの制約
 #' @param fixed.index.var 
 #' @param max.iter  q,b,sigma計算の際の最大繰り返し数
 #' @param optimizer 
@@ -461,7 +460,7 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param TMB  TMBで高速計算する場合TMB=TRUE (事前にuse_rvpa_tmb()を実行)
 #' @param sel.rank
 #' @param p.init 
-#' @param sigma.constraint
+#' @param sigma.constraint  sigmaパラメータの制約.使い方としては，指標が５つあり，2番目と3番目の指標のsigmaは同じとしたい場合はc(1,2,2,3,4)と指定する
 #' @param eta  Fのpenaltyを分けて与えるときにeta.ageで指定した年齢への相対的なpenalty (0~1)
 #' @param eta.age  Fのpenaltyを分けるときにetaを与える年齢(0 = 0歳（加入）,0:1 = 0~1歳)
 #' @param tmb.file  TMB=TRUEのとき使用するcppファイルの名前
@@ -524,7 +523,6 @@ vpa <- function(
   b.const = 1:length(abund),   # bパラメータの制約（0は推定しないで1にfix）
   q.fix = NULL,
   b.fix = NULL,
-  sigma.const = 1:length(abund),   # sigmaパラメータの制約
   fixed.index.var = NULL,
   max.iter = 100,    # q,b,sigma計算の際の最大繰り返し数
   optimizer = "nlm",
@@ -918,8 +916,8 @@ vpa <- function(
          Abund <- rbind(Abund, abundance)
        }
    
-       if (is.null(fixed.index.var)) est.qbs <- qbs.f(q.const, b.const, sigma.const, index, Abund, nindex, index.w, max.dd, max.iter) else {
-       p00 <- c(log(q.const[which(index.w >0)]), log(sigma.const[which(index.w >0)]))
+       if (is.null(fixed.index.var)) est.qbs <- qbs.f(q.const, b.const, sigma.constraint, index, Abund, nindex, index.w, max.dd, max.iter) else {
+       p00 <- c(log(q.const[which(index.w >0)]), log(sigma.constraint[which(index.w >0)]))
        est.qbs <- qbs.f2(p00, index, Abund, nindex, index.w, fixed.index.var)
        }
       
@@ -1114,7 +1112,7 @@ vpa <- function(
             if (est.constraint){
               names(q) <- q.const
               names(b) <- b.const              
-              names(sigma) <- sigma.const          
+              names(sigma) <- sigma.constraint          
             }
             obj$convergence <- convergence  
             obj$q <- q
