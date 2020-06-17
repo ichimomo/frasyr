@@ -308,6 +308,8 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
 #' @seealso
 #' レトロスペクティブ解析について:  \code{\link{retro.est}}
 #' 作図について: \code{\link{plot_vpa}}
+#' https://ichimomo.github.io/frasyr/doc/Diagnostics-for-VPA.html
+#'
 #'
 #' @encoding UTF-8
 #'
@@ -367,6 +369,10 @@ do_retrospective_vpa <- function(res, n_retro = 5, b_reest = FALSE, what_plot = 
 #'
 #'
 #' @author 濵邉昂平, 市野川桃子
+#'
+#' @seealso
+#' https://ichimomo.github.io/frasyr/doc/Diagnostics-for-VPA.html
+#'
 #'
 #' @encoding UTF-8
 #'
@@ -500,13 +506,17 @@ do_estcheck_vpa <- function(res, n_ite = 100, sd_jitter = 1, what_plot = NULL, T
 #'
 #' @author 濵邉昂平, 市野川桃子
 #'
+#' @seealso
+#' https://ichimomo.github.io/frasyr/doc/Diagnostics-for-VPA.html
+#'
+#'
 #' @encoding UTF-8
 #'
 #' @export
 
 # author: Kohei Hamabe
 
-plot_residual_vpa <- function(res, index_name = NULL, plot_scale = FALSE, plot_smooth = FALSE){
+plot_residual_vpa <- function(res, index_name = NULL, plot_scale = FALSE, plot_smooth = FALSE, plot_year = FALSE){
   d_tmp <- matrix(NA,
                   nrow = length(res$input$dat$index[1,]),
                   ncol = length(res$input$dat$index[,1])*8+4)
@@ -573,7 +583,10 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_scale = FALSE, plot_s
     d_tidy$CPUE_Label <- rep(index_name, length(d_tmp[,1]))
   }
 
-  if(plot_scale) scale_tmp <- "fixed" else scale_tmp <- "free" # グラフ間のスケールを統一するか否か
+  # グラフ間のスケールを統一するか否か
+  if(plot_scale) scale_tmp <- "fixed" else scale_tmp <- "free"
+  # x軸の範囲
+  if(is.numeric(plot_year)) xlim_year <- c(min(plot_year), max(plot_year)) else xlim_year <- c(min(d_tidy$year), max(d_tidy$year))
 
   if(isTRUE(plot_smooth)){
     g1 <- ggplot(d_tidy) +
@@ -581,23 +594,27 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_scale = FALSE, plot_s
       geom_smooth(aes(x=year, y=resid, colour = CPUE_Label), size = 1.5) +
       facet_wrap(~CPUE_Label, scale=scale_tmp)+
       geom_hline(yintercept = 0, size = 1)+
+      xlim(xlim_year) +
       theme_SH(base_size = 14)
     g1_sd <- ggplot(d_tidy) +
       geom_point(aes(x=year, y=sd.resid, colour = CPUE_Label), size = 2) +
       geom_smooth(aes(x=year, y=sd.resid, colour = CPUE_Label), size = 1.5) +
       facet_wrap(~CPUE_Label, scale=scale_tmp) +
       geom_hline(yintercept = 0, size = 1)+
+      xlim(xlim_year) +
       theme_SH(base_size = 14)
   } else {
     g1 <- ggplot(d_tidy) +
       geom_point(aes(x=year, y=resid, colour = CPUE_Label), size = 2) +
       facet_wrap(~CPUE_Label, scale=scale_tmp)+
       geom_hline(yintercept = 0, size = 1)+
+      xlim(xlim_year) +
       theme_SH(base_size = 14)
     g1_sd <- ggplot(d_tidy) +
       geom_point(aes(x=year, y=sd.resid, colour = CPUE_Label), size = 2) +
       facet_wrap(~CPUE_Label, scale=scale_tmp) +
       geom_hline(yintercept = 0, size = 1)+
+      xlim(xlim_year) +
       theme_SH(base_size = 14)
   }
 
@@ -605,6 +622,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_scale = FALSE, plot_s
     geom_point(aes(x=year, y=obs, colour = CPUE_Label), size = 2) +
     geom_line(aes(x=year, y=pred, colour = CPUE_Label), size = 1) +
     facet_wrap(~CPUE_Label, scale=scale_tmp) +
+    xlim(xlim_year) +
     theme_SH(base_size = 14)
 
   # 資源量と指数の（非）線形性のプロット
@@ -669,6 +687,10 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_scale = FALSE, plot_s
 #'
 #'
 #' @author 濵邉昂平, 市野川桃子
+#'
+#' @seealso
+#' https://ichimomo.github.io/frasyr/doc/Diagnostics-for-VPA.html
+#'
 #'
 #' @encoding UTF-8
 #'
@@ -904,6 +926,8 @@ do_jackknife_vpa <- function(res, method = "index"){
 #'
 #' @seealso
 #' ブートストラップ法について:  \code{\link{boo.vpa}}
+#' https://ichimomo.github.io/frasyr/doc/Diagnostics-for-VPA.html
+#'
 #'
 #' @encoding UTF-8
 #'
@@ -977,6 +1001,10 @@ plot_resboot_vpa <- function(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
 #'     \code{caa_boot_sample} 年齢別漁獲尾数のブートストラップ標本が得られる。
 #'
 #' @author 濵邉昂平, 市野川桃子
+#'
+#' @seealso
+#' https://ichimomo.github.io/frasyr/doc/Diagnostics-for-VPA.html
+#'
 #'
 #' @encoding UTF-8
 #'
@@ -1054,4 +1082,4 @@ do_caaboot_vpa <-  function(res, B_ite = 1000, B_sd = 1, ci_range = 0.95){
               plot_biomass = g3,
               caa_boot_sample = caa_boot
   ))
-}
+} # function(do_caaboot_vpa)
