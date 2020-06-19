@@ -28,8 +28,6 @@ plot_HCR_by_catch(
 )
 }
 \arguments{
-\item{trace}{}
-
 \item{fout}{将来予測のアウトプット（finputがない場合)}
 
 \item{Fvector}{Fのベクトル}

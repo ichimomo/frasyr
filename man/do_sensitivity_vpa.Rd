@@ -55,7 +55,7 @@ bを推定した場合、bを推定しない(b=1)の感度分析を行う。
 bを1以外の値で固定した、あるいはbを考慮しなかった場合、\code{value="b.est"}とするとbの推定を、仮定したいbを\code{numeric}で与えるとbを固定して考慮出来る。
 }
 \examples{
-# WikiかVignetteにつながるようにする？
+# Wiki縺儀ignette縺ｫ縺､縺ｪ縺後ｋ繧医≧縺ｫ縺吶ｋ<ef>ｼ<9f>
 
 }
 \seealso{
