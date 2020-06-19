@@ -547,7 +547,8 @@ vpa <- function(
   tmb.file = "rvpa_tmb"
 )
 {
-  #
+  #sigma.constで引数を指定してしまったときは，sigma.constraintで引数を指定しなおしてもらうようにする
+  if(length(sigma.const)>length(unique(sigma.const))){print("Try again!: please set sigma.const as sigma.constraint in the argument.");stop()}
 
   # if (TMB.compile) {
   #   library(TMB)
