@@ -40,6 +40,7 @@ get.SRdata <- function(vpares,R.dat = NULL,
     }
 
     class(dat) <- "SRdata"
+    assertthat::assert_that(all(dat[["R"]] > 0))
     if (return.df == TRUE) return(data.frame(year = dat$year,
                                              SSB  = dat$SSB,
                                              R    = dat$R))
