@@ -56,11 +56,15 @@ library(stringr)
 #devtools::install_github("ichimomo/frasyr@dev")
 
 library(frasyr)
+<<<<<<< HEAD
 library(tidyr)
 library(dplyr)
 library(purrr)
 library(ggplot2)
 library(stringr)
+=======
+#library(tidyverse)
+>>>>>>> 1b0f5a6d5d872407722388dd08418f79e0b9abf0
 
 ```
 

@@ -369,43 +369,20 @@ compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000){
       x[[1]]$input$SRdata %>%
         as_tibble() %>%
         mutate(SSB=SSB/biomass.unit, R=R/number.unit)
-    },.id="id")    
+    },.id="id")
   }
 
   if(is.null(SRlist)) names(SRlist) <- 1:length(SRlist)
 
   g1 <- plot_SRdata(SRdata,type="gg")
 
-  if(class(SRlist[[1]])=="fit.SRregime"){
-    predtable <- purrr::map_dfr(SRlist, function(x) x$pred, .id="id")%>%
-      mutate(SSB=SSB/biomass.unit, R=R/number.unit)
-    g1 <- g1 + geom_line(aes(x=SSB,y=R,color=id,lty=Regime),
-                         data=predtable)    
-  }
-  else{
-    if(!is.null(SRlist[[1]][[1]]$pars)){ # when model averaging
-      predtable <- NULL
-      for(i in 1:length(SRlist)){
-        tmp <- purrr::map_dfr(SRlist[[i]],function(x) x$pred, .id="type") %>%
-          mutate(id=names(SRlist)[i])%>%
-          mutate(SSB=SSB/biomass.unit, R=R/number.unit)
-        predtable <- bind_rows(predtable,tmp)
-      }
-      g1 <- g1 + geom_line(aes(x=SSB,y=R,color=id,lty=type),
-                           data=predtable)
-    }
-    else{ # normal case
-      predtable <- purrr::map_dfr(SRlist, function(x) x$pred, .id="id") %>%
-        mutate(SSB=SSB/biomass.unit, R=R/number.unit)
-      g1 <- g1 + geom_line(aes(x=SSB,y=R,color=id),
-                           data=predtable)      
-    }}
-
-  g1 <- g1+
+  SRpred <- purrr::map_dfr(SRlist,
+                           function(x) x$pred, .id="SR_type")
+  g1 <- g1+geom_line(data=SRpred,mapping=aes(x=SSB/biomass.unit,y=R/number.unit,col=SR_type)) +
     theme(legend.position="top") +
     xlab(str_c("SSB (x",biomass.unit,")")) +
     ylab(str_c("Number (x",number.unit,")"))
-  
+
   g1
 }
 
@@ -521,7 +498,7 @@ SRregime_plot <- function (SRregime_result,xscale=1000,xlabel="SSB",yscale=1,yla
 #' @param font.size フォントの大きさ
 #' @param ncol 図を並べるときの列数
 #' @param legend.position 凡例の位置。top, right, left, bottomなど
-#' 
+#'
 #' @encoding UTF-8
 #' @export
 
@@ -634,7 +611,7 @@ plot_futures <- function(vpares=NULL,
       dplyr::filter(stat%in%rename_list$stat) %>%
       left_join(rename_list) %>%
       mutate(value=value/unit,mean=mean/unit)
-  
+
     # 将来と過去をつなげるためのダミーデータ
     tmp <- vpa_tb %>% group_by(stat) %>%
       summarise(value=tail(value[!is.na(value)],n=1,na.rm=T),
@@ -645,6 +622,7 @@ plot_futures <- function(vpares=NULL,
     future.dummy <- NULL
     vpa_tb <- NULL
   }
+
   org.warn <- options()$warn
   options(warn=-1)
   future_tibble <-
@@ -1635,14 +1613,14 @@ plot_bias_in_MSE <- function(fout, out="graph", error_scale="log", yrange=NULL){
 #'
 #' @export
 #'
-#' 
+#'
 
 compare_kobeII <- function(kobeII_list,
                            target_stat = c("prob.over.ssbtarget","prob.over.ssblimit",
                                            "prob.over.ssbban"),
                            legend_position = "top",
                            target_beta = 0.8){
-  
+
   prob_data <- NULL
 
   for(i in 1:length(target_stat)){
@@ -1661,6 +1639,6 @@ compare_kobeII <- function(kobeII_list,
     geom_line(aes(x=Year,y=Percent,color=data_type))+
     facet_wrap(.~stat_name,scale="free_y")+
     theme_SH(legend="top")+ylim(0,NA)
-  
+
   return(g1)
 }

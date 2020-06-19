@@ -576,6 +576,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_scale = FALSE, plot_s
     tmp <- str_split(res$input$abund[i], "") %>% unlist()
     if(sum(tmp == "N") == 0){
       d_tmp[,(i+length(res$q)*1+4)] <- (res$pred.index[i,]/res$q[i])^(1/res$b[i])*res$input$scale
+
       # 資源重量の場合、リスケーリング分かけて補正
     } else {
       d_tmp[,(i+length(res$q)*1+4)] <- (res$pred.index[i,]/res$q[i])^(1/res$b[i])
