@@ -44,7 +44,8 @@ library(stringr)
 
 ## 0. 事前準備
 
-- frasyrやtidyverseをインストールして呼び出しておいてください
+- frasyrの他にggplot2など必要なパッケージをインストールして呼び出しておいてください
+- frasyr以外のパッケージ群はまとめてtidyverseというパッケージからもインストールできます
 
 
 ```{r, eval = TRUE}
@@ -53,7 +54,11 @@ library(stringr)
 #devtools::install_github("ichimomo/frasyr@dev")
 
 library(frasyr)
-#library(tidyverse)
+library(tidyr)
+library(dplyr)
+library(purrr)
+library(ggplot2)
+library(stringr)
 
 ```
 
