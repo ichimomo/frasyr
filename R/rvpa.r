@@ -525,6 +525,7 @@ vpa <- function(
   b.const = 1:length(abund),   # bパラメータの制約（0は推定しないで1にfix）
   q.fix = NULL,
   b.fix = NULL,
+  sigma.const = 1:length(abund),
   fixed.index.var = NULL,
   max.iter = 100,    # q,b,sigma計算の際の最大繰り返し数
   optimizer = "nlm",
@@ -554,7 +555,7 @@ vpa <- function(
   #   compile(cpp_name)
   #   dyn.load(dynlib(tmb.file))
   # }
-
+  
   # inputデータをリスト化
 
   argname <- ls()  # 関数が呼び出されたばかりのときのls()は引数のみが入っている
