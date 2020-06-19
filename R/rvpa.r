@@ -1281,8 +1281,10 @@ Ft <- mean(faa[,ny],na.rm=TRUE)
       } # for(i) 従来のplot
     } else {
       gridExtra::grid.arrange(graph$year_resid, graph$fitting_CPUE,graph$abund_CPUE) # 3つのggplotを並べる
+      res <- c(res, list(plot = graph))
     } # 加筆（浜辺）
   }
+
   return(invisible(res))
 
 

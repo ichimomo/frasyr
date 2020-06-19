@@ -224,9 +224,22 @@ plot_Fref <- function(rres,xlabel="max", # or, "mean","Fref/Fcur"
 
 plot_SRdata <- function(SRdata, type=c("classic","gg")[1]){
   if(type=="classic") plot(SRdata$SSB,SRdata$R,xlab="SSB",ylab="R",xlim=c(0,max(SRdata$SSB)),ylim=c(0,max(SRdata$R)))
-  if(type=="gg") ggplot2::qplot(y=R,x=SSB,data=as_tibble(SRdata),
-                                xlab="SSB",ylab="R",xlim=c(0,max(SRdata$SSB)),ylim=c(0,max(SRdata$R))) + theme_SH()
+  if(type=="gg"){
+    if(!"id"%in%names(SRdata)){
+      ggplot2::qplot(y=R,x=SSB,data=as_tibble(SRdata),
+                     xlab="SSB",ylab="R",xlim=c(0,max(SRdata$SSB)),ylim=c(0,max(SRdata$R))) + theme_SH()
+    }
+    else{
+      ggplot(SRdata)+
+        geom_point(aes(y=R,x=SSB,color=id),
+                    xlab="SSB",ylab="R",
+                    xlim=c(0,max(SRdata$SSB)),ylim=c(0,max(SRdata$R))) +
+        theme_SH()+
+        theme(legend.position="top")
+    }
+  }
 }
+
 
 #' 再生産関係をプロットする関数
 #'
@@ -342,18 +355,57 @@ SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千ト�
 #'
 
 compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000){
-  SRdata <- SRlist[[1]]$input$SRdata %>%
-    as_tibble() %>%
-    mutate(SSB=SSB/biomass.unit, R=R/number.unit)
+
+  if(!is.null(SRlist[[1]]$input)){
+    SRdata <- purrr::map_dfr(SRlist[], function(x){
+      x$input$SRdata %>%
+        as_tibble() %>%
+        mutate(SSB=SSB/biomass.unit, R=R/number.unit)
+    },.id="id")
+  }
+  else{ # for model average
+    browser()
+    SRdata <- purrr::map_dfr(SRlist, function(x){
+      x[[1]]$input$SRdata %>%
+        as_tibble() %>%
+        mutate(SSB=SSB/biomass.unit, R=R/number.unit)
+    },.id="id")    
+  }
+
+  if(is.null(SRlist)) names(SRlist) <- 1:length(SRlist)
+
   g1 <- plot_SRdata(SRdata,type="gg")
 
-  SRpred <- purrr::map_dfr(SRlist,
-                           function(x) x$pred, .id="SR_type")
-  g1 <- g1+geom_line(data=SRpred,mapping=aes(x=SSB/biomass.unit,y=R/number.unit,col=SR_type)) +
+  if(class(SRlist[[1]])=="fit.SRregime"){
+    predtable <- purrr::map_dfr(SRlist, function(x) x$pred, .id="id")%>%
+      mutate(SSB=SSB/biomass.unit, R=R/number.unit)
+    g1 <- g1 + geom_line(aes(x=SSB,y=R,color=id,lty=Regime),
+                         data=predtable)    
+  }
+  else{
+    if(!is.null(SRlist[[1]][[1]]$pars)){ # when model averaging
+      predtable <- NULL
+      for(i in 1:length(SRlist)){
+        tmp <- purrr::map_dfr(SRlist[[i]],function(x) x$pred, .id="type") %>%
+          mutate(id=names(SRlist)[i])%>%
+          mutate(SSB=SSB/biomass.unit, R=R/number.unit)
+        predtable <- bind_rows(predtable,tmp)
+      }
+      g1 <- g1 + geom_line(aes(x=SSB,y=R,color=id,lty=type),
+                           data=predtable)
+    }
+    else{ # normal case
+      predtable <- purrr::map_dfr(SRlist, function(x) x$pred, .id="id") %>%
+        mutate(SSB=SSB/biomass.unit, R=R/number.unit)
+      g1 <- g1 + geom_line(aes(x=SSB,y=R,color=id),
+                           data=predtable)      
+    }}
+
+  g1 <- g1+
     theme(legend.position="top") +
     xlab(str_c("SSB (x",biomass.unit,")")) +
     ylab(str_c("Number (x",number.unit,")"))
-
+  
   g1
 }
 
@@ -377,7 +429,7 @@ compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000){
 #' data(res_vpa)
 #' SRdata <- get.SRdata(res_vpa)
 #' resSRregime <- fit.SRregime(SRdata, SR="HS", method="L2",
-#'                             regime.year=c(1977,1989), regime.key=c(0,1,0),
+#'                             regime.year=c(1994,2003), regime.key=c(0,1,0),
 #'                             regime.par = c("a","b","sd")[2:3])
 #' g1 <- SRregime_plot(resSRregime, regime.name=c("Low","High"))
 #' g1
@@ -404,7 +456,7 @@ SRregime_plot <- function (SRregime_result,xscale=1000,xlabel="SSB",yscale=1,yla
     xlab(xlabel)+ylab(ylabel)+
     ggrepel::geom_label_repel()+
     theme_bw(base_size=base_size)+
-    coord_cartesian(ylim=c(0,combined_data$R*1.05),expand=0)
+    coord_cartesian(ylim=c(0,max(combined_data$R)*1.05),expand=0)
   if (show.legend) {
     if (is.null(regime.name)) {
       regime.name = unique(combined_data$Regime)
@@ -445,15 +497,35 @@ SRregime_plot <- function (SRregime_result,xscale=1000,xlabel="SSB",yscale=1,yla
 
 #' 将来予測の複数の結果をggplotで重ね書きする
 #'
-#' @param vpares VPAの結果のオブジェクト
-#' @param future.list 将来予測の結果をリストで並べたもの
+#' @param vpares VPAの結果のオブジェクト(NULLでもOK)
+#' @param future.list 将来予測の結果をリストで並べたもの(こちらは必須)
+#' @param future.name 将来予測のリストの名前。ない場合はfuture.listについている名前を使う
+#' @param CI_range 予測区間の範囲。デフォルトは８０\%でc(0.1,0.9)
+#' @param maxyear 表示する年の最大
+#' @param is.plot.CIrange 予測区間を表示するかどうか
+#' @param what.plot Recruitment,SSB,biomass,catch,beta_gamma,U,Fratioのうち何をプロットするか。これらの文字列のベクトルで指定する
 #' @param n_example 個々のシミュレーションの例を示す数
 #' @param width_example 個々のシミュレーションをプロットする場合の線の太さ (default=0.7)
 #' @param future.replicate どのreplicateを選ぶかを選択する。この場合n_exampleによる指定は無効になる
+#' @param number.init 尾数（加入尾数とか）のときの単位
+#' @param biomass.unit 量の単位
+#' @param number.name 尾数の凡例をどのように表示するか（「億尾」とか）
+#' @param RP_name 管理基準値をどのように名前つけるか
+#' @param Btarget Btargetの値
+#' @param Blimit Blimitの値
+#' @param Bban Bbanの値
+#' @param MSY MSYの値
+#' @param Umsy  Umsyの値
+#' @param SPRtarget MSYのときのSPRの値
+#' @param exclude.japanese.font 日本語を図中に表示しない
+#' @param font.size フォントの大きさ
+#' @param ncol 図を並べるときの列数
+#' @param legend.position 凡例の位置。top, right, left, bottomなど
+#' 
 #' @encoding UTF-8
 #' @export
 
-plot_futures <- function(vpares,
+plot_futures <- function(vpares=NULL,
                          future.list=NULL,
                          future.name=names(future.list),
                          future_tibble=NULL,
@@ -553,20 +625,26 @@ plot_futures <- function(vpares,
 
   if(is.null(maxyear)) maxyear <- max(future_tibble$year)
 
-  min.age <- as.numeric(rownames(vpares$naa)[1])
-  vpa_tb <- convert_vpa_tibble(vpares,SPRtarget=SPRtarget) %>%
-    mutate(scenario=type,year=as.numeric(year),
-           stat=factor(stat,levels=rename_list$stat),
-           mean=value,sim=0)%>%
-    dplyr::filter(stat%in%rename_list$stat) %>%
-    left_join(rename_list) %>%
-    mutate(value=value/unit,mean=mean/unit)
-
-  # 将来と過去をつなげるためのダミーデータ
-  tmp <- vpa_tb %>% group_by(stat) %>%
-    summarise(value=tail(value[!is.na(value)],n=1,na.rm=T),year=tail(year[!is.na(value)],n=1,na.rm=T),sim=0)
-  future.dummy <- purrr::map_dfr(future.name,function(x) mutate(tmp,scenario=x))
-
+  #  min.age <- as.numeric(rownames(vpares$naa)[1])
+  if(!is.null(vpares)){
+    vpa_tb <- convert_vpa_tibble(vpares,SPRtarget=SPRtarget) %>%
+      mutate(scenario=type,year=as.numeric(year),
+             stat=factor(stat,levels=rename_list$stat),
+             mean=value,sim=0)%>%
+      dplyr::filter(stat%in%rename_list$stat) %>%
+      left_join(rename_list) %>%
+      mutate(value=value/unit,mean=mean/unit)
+  
+    # 将来と過去をつなげるためのダミーデータ
+    tmp <- vpa_tb %>% group_by(stat) %>%
+      summarise(value=tail(value[!is.na(value)],n=1,na.rm=T),
+                year=tail(year[!is.na(value)],n=1,na.rm=T),sim=0)
+    future.dummy <- purrr::map_dfr(future.name,function(x) mutate(tmp,scenario=x))
+  }
+  else{
+    future.dummy <- NULL
+    vpa_tb <- NULL
+  }
   org.warn <- options()$warn
   options(warn=-1)
   future_tibble <-
@@ -1542,3 +1620,47 @@ plot_bias_in_MSE <- function(fout, out="graph", error_scale="log", yrange=NULL){
 }
 
 
+#' 複数のKobe II tableの結果を重ね書きする
+#'
+#' @param kobeII_list betaをいろいろ変えたbeta.simulationの結果のオブジェクトのリスト
+#' @param target_stat 目的とする統計量。デフォルトは"prob.over.ssbtarget"と"prob.over.ssblimit"。beta.simulationの返り値オブジェクトのリストの名前を必要に応じてとってくる
+#' @param legend.position 凡例の位置
+#' @param target_beta kobeII table から取り出すベータの値。デフォルトは0.8。
+#'
+#' @examples
+#' \dontrun{
+#' }
+#'
+#' @encoding UTF-8
+#'
+#' @export
+#'
+#' 
+
+compare_kobeII <- function(kobeII_list,
+                           target_stat = c("prob.over.ssbtarget","prob.over.ssblimit",
+                                           "prob.over.ssbban"),
+                           legend_position = "top",
+                           target_beta = 0.8){
+  
+  prob_data <- NULL
+
+  for(i in 1:length(target_stat)){
+    tmp_data <- purrr::map_dfr(kobeII_list[!is.na(kobeII_list)],
+                                function(x){
+                                  x[target_stat[i]][[1]] %>%
+                                    dplyr::filter(beta==target_beta) %>%
+                                    tidyr::pivot_longer(col=c(-HCR_name,-beta,-stat_name),
+                                                        names_to="Year",values_to="Percent")},
+                                .id="data_type") %>%
+      mutate(Year=as.numeric(Year))
+    prob_data <- rbind(prob_data,tmp_data)
+  }
+
+  g1 <- prob_data %>% ggplot() +
+    geom_line(aes(x=Year,y=Percent,color=data_type))+
+    facet_wrap(.~stat_name,scale="free_y")+
+    theme_SH(legend="top")+ylim(0,NA)
+  
+  return(g1)
+}
