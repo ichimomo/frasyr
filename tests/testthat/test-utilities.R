@@ -1,4 +1,17 @@
 context("Utilities")
+test_that("make_kobe_ratio", {
+
+  result_vpa  <- load_data("../../inst/extdata/res_vpa_pma.rda")
+  result_msy  <- load_data("../../inst/extdata/res_MSY_pma_pre.rda")
+
+  kobe_ratio <- make_kobe_ratio(result_vpa, result_msy)
+
+  expect_is(kobe_ratio, "data.frame")
+  expect_equal(colnames(kobe_ratio), c("year", "Fratio", "Bratio"))
+  expect_equal(kobe_ratio$year, as.character(1982:2011))
+  expect_is(kobe_ratio$Fratio, "numeric")
+  expect_is(kobe_ratio$Bratio, "numeric")
+})
 
 test_that("pull single table from table list", {
   # pull_var_from_kobeII_table() is not tested yet
@@ -34,3 +47,4 @@ test_that("test for HCR function", {
     res_HCR <- HCR_default(matrix(1:10,2,5),matrix(5,2,5),matrix(1,2,5),matrix(0.8,2,5))
     expect_equal(res_HCR, matrix(c(0,0.2,0.4,0.6,rep(0.8,6)),2,5))
 })
+
