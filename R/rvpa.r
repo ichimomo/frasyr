@@ -1557,6 +1557,7 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE){
      res.c$input$dat$maa <- res.c$input$dat$maa[,-nc]
      res.c$input$dat$maa.tune <- res.c$input$dat$maa.tune[,-nc]
      res.c$input$dat$waa <- res.c$input$dat$waa[,-nc]
+     res.c$input$dat$waa.catch <- res.c$input$dat$waa.catch[,-nc]
      res.c$input$dat$M <- res.c$input$dat$M[,-nc]
      res.c$input$dat$index <- res.c$input$dat$index[,-nc,drop=FALSE]
      res.c$input$dat$catch.prop <- res.c$input$dat$catch.prop[,-nc]
