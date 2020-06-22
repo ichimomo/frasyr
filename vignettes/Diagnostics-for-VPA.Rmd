@@ -28,12 +28,13 @@ knitr::opts_chunk$set(echo=TRUE,
                warning=FALSE,
 	       fig.width=7,fig.height=5)
 
-devtools::load_all()
+#devtools::load_all()
 library(tidyr)
 library(dplyr)
 library(purrr)
 library(ggplot2)
 library(stringr)
+library(GGally)
 
 ```
 
