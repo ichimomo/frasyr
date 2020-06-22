@@ -487,11 +487,12 @@ do_estcheck_vpa <- function(res, n_ite = 20, sd_jitter = 1, what_plot = NULL, TM
   )
   #est_res <- data.frame(age = name_tmp, estimated = res$term.f)
 
+  yvalue <- max(res$term.F)*2
   g1 <- ggplot(data = d_tmp[d_tmp$age == plot_name,]) +
     geom_segment(aes(x=0, xend = 4, y = result_est, yend = result_est), color = "red", size = 1.3)+
     geom_point(aes(x = initial, y = estimated), size = 5) +
+    ylim(c(0, yvalue)) +
     facet_wrap( ~ age) +
-    ylim(c(0,4)) +
     xlab("initial value") +
     theme_SH(base_size = 14)
   g2 <- ggplot(data = d_tmp[d_tmp$age == "max",]) +
@@ -966,17 +967,20 @@ plot_resboot_vpa <- function(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
   g1 <- ggplot(d_ssb, aes(x = Year, y = SSB))+
     geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, fill = "blue")+
     geom_line(size = 1.5)+
+    ylim(c(0, NA)) +
     theme_SH()
 
   g2 <- ggplot(d_abund, aes(x = Year, y = Abundance))+
     geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, fill = "blue")+
     geom_line(size = 1.5)+
     ylab("Recruitment") +
+    ylim(c(0, NA)) +
     theme_SH()
 
   g3 <- ggplot(d_biomass, aes(x = Year, y = Biomass))+
     geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, fill = "blue")+
     geom_line(size = 1.5)+
+    ylim(c(0, NA)) +
     theme_SH()
 
 
@@ -1085,16 +1089,20 @@ do_caaboot_vpa <-  function(res, B_ite = 1000, B_cv = 0.2, ci_range = 0.95){
   g1 <- ggplot(d_ssb, aes(x = Year, y = SSB))+
     geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, fill = "blue")+
     geom_line(size = 1.5)+
+    ylim(c(0, NA)) +
     theme_SH()
 
   g2 <- ggplot(d_abund, aes(x = Year, y = Abundance))+
     geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, fill = "blue")+
+    ylab("Recruitment") +
     geom_line(size = 1.5)+
+    ylim(c(0, NA)) +
     theme_SH()
 
   g3 <- ggplot(d_biomass, aes(x = Year, y = Biomass))+
     geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, fill = "blue")+
     geom_line(size = 1.5)+
+    ylim(c(0, NA)) +
     theme_SH()
 
   return(list(plot_ssb = g1,
