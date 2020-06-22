@@ -25,7 +25,8 @@ Imports:
     TMB,
     rmutil,
     gridExtra,
-    EnvStats    
+    EnvStats,
+    GGally
 Suggests:
     knitr,
     rmarkdown,

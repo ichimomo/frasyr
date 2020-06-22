@@ -933,11 +933,23 @@ plot_resboot_vpa <- function(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
 
   year <- res_boo[[1]]$index %>% colnames() %>% as.numeric()
   ssb_mat <- abund_mat <- biomass_mat <- matrix(NA, nrow = B_ite, ncol = length(year))
+  cor_mat <- matrix(NA, nrow = B_ite,
+                    ncol = length(res_boo[[1]]$Fc.at.age)+length(res_boo[[1]]$q)+
+                      length(res_boo[[1]]$b)+length(res_boo[[1]]$sigma)+2)
   for(i in  1:B_ite){
     tmp <- res_boo[[i]]
     ssb_mat[i,] <- colSums(tmp$ssb)
     abund_mat[i,] <- as.numeric(tmp$naa[1,])
     biomass_mat[i,] <- colSums(tmp$baa)
+    cor_mat[i, 1:length(tmp$Fc.at.age)] <- tmp$Fc.at.age
+    cor_mat[i, (length(tmp$Fc.at.age)+1):
+              (length(tmp$Fc.at.age)+length(tmp$q))] <- tmp$q
+    cor_mat[i, (length(tmp$Fc.at.age)+length(tmp$q)+1):
+              (length(tmp$Fc.at.age)+length(tmp$q)+length(tmp$b))] <- tmp$b
+    cor_mat[i, (length(tmp$Fc.at.age)+length(tmp$q)+length(tmp$b)+1):
+              (length(tmp$Fc.at.age)+length(tmp$q)+length(tmp$b)+length(tmp$sigma))] <- tmp$sigma
+    cor_mat[i, length(tmp$Fc.at.age)+length(tmp$q)+length(tmp$b)+length(tmp$sigma)+1] <- last(colSums(tmp$ssb))
+    cor_mat[i, length(tmp$Fc.at.age)+length(tmp$q)+length(tmp$b)+length(tmp$sigma)+2] <- last(tmp$naa[1,])
   }
 
   PB_value <- c((1-ci_range)/2, 0.5, 1-(1-ci_range)/2)
@@ -967,10 +979,26 @@ plot_resboot_vpa <- function(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
     geom_line(size = 1.5)+
     theme_SH()
 
+
+  row_damy <- apply(cor_mat, 1, function(x) if(sum(is.nan(x))>=1)0 else 1)
+  if(class(which(row_damy == 0)) == "numeric") cor_mat <- cor_mat[-which(row_damy == 0),]
+  cor_mat <- as.data.frame(cor_mat)
+  names(cor_mat) <- c(paste0("term.F_age",1:length(tmp$Fc.at.age)-1),
+                      paste0("q",1:length(tmp$q)),
+                      paste0("b",1:length(tmp$b)),
+                      paste0("sigma",1:length(tmp$sigma)),
+                      paste0("SSB_last"),
+                      paste0("Recruitment_last")
+  )
+  cor_mat2 <- cor(cor_mat)
+  g4 <- ggpairs(cor_mat) + theme_SH()
+
   return(list(plot_ssb = g1,
               plot_rec = g2,
               plot_biomass = g3,
-              res_boot = res_boo
+              res_boot = res_boo,
+              cor_mat = cor_mat2,
+              plot_cor = g4
   ))
 
 } # function(plot_resboot_vpa)
