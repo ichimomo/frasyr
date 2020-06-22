@@ -525,6 +525,7 @@ vpa <- function(
   b.const = 1:length(abund),   # bパラメータの制約（0は推定しないで1にfix）
   q.fix = NULL,
   b.fix = NULL,
+  sigma.const = 1:length(abund),
   fixed.index.var = NULL,
   max.iter = 100,    # q,b,sigma計算の際の最大繰り返し数
   optimizer = "nlm",
@@ -546,7 +547,8 @@ vpa <- function(
   tmb.file = "rvpa_tmb"
 )
 {
-  #
+  #sigma.constで引数を指定してしまったときは，sigma.constraintで引数を指定しなおしてもらうようにする
+  if(length(sigma.const)>length(unique(sigma.const))){print("Try again!: please set sigma.const as sigma.constraint in the argument.");stop()}
 
   # if (TMB.compile) {
   #   library(TMB)
@@ -554,7 +556,7 @@ vpa <- function(
   #   compile(cpp_name)
   #   dyn.load(dynlib(tmb.file))
   # }
-
+  
   # inputデータをリスト化
 
   argname <- ls()  # 関数が呼び出されたばかりのときのls()は引数のみが入っている
@@ -1555,6 +1557,7 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE){
      res.c$input$dat$maa <- res.c$input$dat$maa[,-nc]
      res.c$input$dat$maa.tune <- res.c$input$dat$maa.tune[,-nc]
      res.c$input$dat$waa <- res.c$input$dat$waa[,-nc]
+     res.c$input$dat$waa.catch <- res.c$input$dat$waa.catch[,-nc]
      res.c$input$dat$M <- res.c$input$dat$M[,-nc]
      res.c$input$dat$index <- res.c$input$dat$index[,-nc,drop=FALSE]
      res.c$input$dat$catch.prop <- res.c$input$dat$catch.prop[,-nc]
