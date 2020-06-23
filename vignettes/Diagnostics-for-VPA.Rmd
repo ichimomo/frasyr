@@ -38,11 +38,14 @@ library(GGally)
 
 ```
 
+
 ## 本ドキュメントの趣旨
 
-- モデル診断は重要なので、ある程度網羅的に実施できるスクリプトや関数の使用例を配布すします
+
+- モデル診断は重要なので、ある程度網羅的に実施できるスクリプトや関数の使用例を配布します
 - 基本的には「チューニングあり」VPAが対象ですが、「感度分析」と「レトロスペクティブ解析」はチューニングなしVPAでも実施できます
 - ここで用いているデータ（vpadat_base0）は非常に単純なダミーデータです
+
 
 
 ## 0. 事前準備
@@ -306,8 +309,6 @@ tmp <- do_sensitivity_vpa(res_tmp, what_replace = "tuning", value = list(2015:20
 res_tmp <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
                Pope = TRUE, p.init = 0.5, tune=TRUE, term.F = "all", lambda = 0.2)
 tmp <- do_sensitivity_vpa(res_tmp, what_replace = "tuning", value = list(2015:2016))
-                                                      # lambdaの値を"numeric型"で与えています
-                                                      # list型ではないので気を付けてください
 
 ```
 
@@ -325,8 +326,8 @@ tmp <- do_sensitivity_vpa(res_tmp, what_replace = "lambda", value = c(0,0.1,0.5,
                           what_plot=c("SSB","biomass","U","Recruitment",
                                       "fish_number","fishing_mortality"), 
                           ncol=3)
-                                                      # lambdaの値を"numeric型"で与えています
-# list型ではないので気を付けてください
+                                    # lambdaの値を"numeric型"で与えています
+                                    # list型ではないので気を付けてください
 
 ```
 
@@ -573,7 +574,7 @@ res_vpa_bootstrap$plot_biomass
 
 ```
 
-このようにSSB、加入量、バイオマスそれぞれについて95％信頼区間とともに資源動態の作図ができます。
+このようにSSB、加入量、バイオマスそれぞれについて95％信頼区間とともに資源動態の作図ができます。（**ダミーデータなので信頼区間が変な結果となっています**）
 
 またブートストラップ法は資源量の信頼区間だけでなく、パラメータの信頼区間も算出出来ます。
 ここでは最終年最高齢のFの信頼区間を出しています。
@@ -622,5 +623,7 @@ res_vpa_caaboot$plot_biomass
 
 ## 7. おわりに
 以上が、現在開発配布されている、VPAのモデル診断関数です。
+
 VPAのモデル診断結果が芳しくない場合、そこから推定される再生産関係、Reference pointの推定、更には将来予測などに、大きな影響を及ぼします。
+
 VPA関数が無事に動くと一安心してしまう所ではありますが、併せてモデル診断も行って結果の妥当性を評価してください。
