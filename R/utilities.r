@@ -1847,3 +1847,61 @@ load_folder <- function(folder_name){
   res_all$res_vpa <- res_all$res_vpa[!is.na(res_all$res_vpa)]
   invisible(res_all)
 }
+
+
+#' Make Kobe ratio (?) for frasyr_tool
+#'
+#' @param result_vpa object createb dy vpa()
+#' @param result_msy object created by script 1do_MSYest.R of SC meeting
+#' @return A tibble object
+#' @export
+make_kobe_ratio <- function(result_vpa, result_msy) {
+
+  assertthat::assert_that(
+    assertthat::has_name(result_vpa, c("ssb")),
+    assertthat::has_name(result_msy, c("summary")),
+    assertthat::has_name(result_msy$summary, c("perSPR"))
+  )
+
+  return_kobe_ratio <- function() {
+    tibble::tibble(year   = get_year(),
+                   Fratio = get_f_ratio(),
+                   Bratio = calc_b_ratio()) %>%
+      ad_hoc_filter()
+  }
+
+  get_year <- function() {
+    colnames(result_vpa$ssb)
+  }
+
+  get_f_ratio <- function() {
+    target_spr  <- derive_RP_value(result_msy$summary,"Btarget0")$perSPR * 100
+    spr_history <- get.SPR(result_vpa,
+                           target_spr,
+                           max.age = Inf, Fmax = 1)
+
+    assertthat::assert_that(
+      assertthat::validate_that(is.list(spr_history)),
+      assertthat::has_name(spr_history, "ysdata"),
+      assertthat::has_name(spr_history$ysdata, "F/Ftarget"),
+      assertthat::are_equal(rownames(spr_history$ysdata),
+                            colnames(result_vpa$ssb))
+    )
+
+    force(spr_history$ysdata$`F/Ftarget`)
+  }
+
+
+  calc_b_ratio <- function() {
+    ssb        <- colSums(result_vpa$ssb, na.rm=T)
+    target_ssb <- derive_RP_value(result_msy$summary,"Btarget0")$SSB
+
+    force(ssb / target_ssb)
+  }
+
+  ad_hoc_filter <- function(koberatio) {
+    dplyr::filter(koberatio, !is.na(Bratio)) # When does Bratio become 'NA'?
+  }
+
+  return_kobe_ratio()
+}

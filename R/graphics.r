@@ -364,7 +364,6 @@ compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000){
     },.id="id")
   }
   else{ # for model average
-    browser()
     SRdata <- purrr::map_dfr(SRlist, function(x){
       x[[1]]$input$SRdata %>%
         as_tibble() %>%
