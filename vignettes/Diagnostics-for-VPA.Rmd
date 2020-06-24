@@ -34,19 +34,15 @@ library(dplyr)
 library(purrr)
 library(ggplot2)
 library(stringr)
-library(GGally)
 
 ```
 
 
-## 本ドキュメントの趣旨
+## VPAモデル診断用スクリプト
 
 
-- モデル診断は重要なので、ある程度網羅的に実施できるスクリプトや関数の使用例を配布します
-- 基本的には「チューニングあり」VPAが対象ですが、「感度分析」と「レトロスペクティブ解析」はチューニングなしVPAでも実施できます
-- ここで用いているデータ（vpadat_base0）は非常に単純なダミーデータです
-
-
+- VPAのモデル診断を網羅的に実施できる関数と、使用例のスクリプトを配布します
+- 基本的には「チューニングあり」VPAが対象ですが、「感度分析」と「レトロスペクティブ解析」はチューニングなしVPAでも実施できまするので、実施してください
 
 ## 0. 事前準備
 
@@ -67,7 +63,6 @@ library(dplyr)
 library(purrr)
 library(ggplot2)
 library(stringr)
-library(GGally)
 
 ```
 
@@ -107,7 +102,7 @@ help(do_sensitivity_vpa)
 
 ```{r}
 
-res_vpa_sensitivity <- do_sensitivity_vpa(res_vpa_example,
+res_vpa_sensitivity <- do_sensitivity_vpa(res_vpa_estb,
                                           what_replace = "M", 
                                           value = c(0.5, 1.5, 2))
 
@@ -144,7 +139,7 @@ res_vpa_sensitivity$graph
 
 ```{r}
 
-res_vpa_sensitivity <- do_sensitivity_vpa(res_vpa_example,
+res_vpa_sensitivity <- do_sensitivity_vpa(res_vpa_estb,
                                           what_replace = "waa",
                                           value = c(0.8, 1.2),
                                           what_plot=c("SSB","biomass","U","Recruitment",
@@ -160,10 +155,10 @@ res_vpa_sensitivity$graph
 
 ```{r}
 
-res_vpa_sensitivity <- do_sensitivity_vpa(res_vpa_example,
+res_vpa_sensitivity <- do_sensitivity_vpa(res_vpa_estb,
                                           what_replace = "waa",
-                                          value = list(matrix(rep(1:4,23),nrow = 4),
-                                                       matrix(rep(c(1,2,4,8),23),nrow = 4)
+                                          value = list(matrix(rep(1:4,10),nrow = 4),
+                                                       matrix(rep(c(1,2,4,8),10),nrow = 4)
                                                        ),
                                           what_plot=c("SSB","biomass","U","Recruitment",
                                                       "fish_number","fishing_mortality"), 
@@ -182,7 +177,7 @@ res_vpa_sensitivity$graph
 
 ```{r, eval=FALSE}
 
-res_vpa_sensitivity <- do_sensitivity_vpa(res_vpa_example,
+res_vpa_sensitivity <- do_sensitivity_vpa(res_vpa_estb,
                                           what_replace = "waa.catch",
                                           value = c(0.8, 1.2),
                                           what_plot=c("SSB","biomass","U","Recruitment",
@@ -198,10 +193,10 @@ res_vpa_sensitivity <- do_sensitivity_vpa(res_vpa_example,
 
 ```{r}
 
-res_vpa_sensitivity <- do_sensitivity_vpa(res_vpa_example, 
+res_vpa_sensitivity <- do_sensitivity_vpa(res_vpa_estb, 
                                           what_replace = "maa", 
-                                          value = list(matrix(rep(seq(0,1,length=4),23),nrow = 4),
-                                                       matrix(rep(c(0,0,.5,1),23),nrow = 4)
+                                          value = list(matrix(rep(seq(0,1,length=4),10),nrow = 4),
+                                                       matrix(rep(c(0,0,.5,1),10),nrow = 4)
                                                        ),
                                           what_plot=c("SSB","biomass","U","Recruitment",
                                                       "fish_number","fishing_mortality"), 
@@ -219,7 +214,7 @@ res_vpa_sensitivity$graph
 
 ```{r}
 
-res_vpa_sensitivity <- do_sensitivity_vpa(res_vpa_example, 
+res_vpa_sensitivity <- do_sensitivity_vpa(res_vpa_estb, 
                                           what_replace = "alpha", 
                                           value = c(0.9,0.8),
                                           what_plot=c("SSB","biomass","U","Recruitment",
@@ -239,10 +234,6 @@ res_vpa_sensitivity$graph
 - チューニングVPA(`tune=TRUE`で解析している)
   - 選択率更新法(`sel.update=TRUE`) : 選択率更新法の代わりに全F推定法を行います
   - 全F推定法(`term.f="all"`) : 全F推定の代わりに選択率更新法を行います
-- リッジVPA
-  - リッジVPAで最終年最高齢のFのみ推定(`sel.update=TRUE`) : 選択率更新法の代わりにリッジVPAで全F推定法を行います
-  - リッジVPAで最終年のFを全推定(`term.f="all"`) : 全F推定の代わりにリッジVPAで選択率更新法を行います
-
 
 #### チューニングなしVPAの場合
 
@@ -251,10 +242,10 @@ res_vpa_sensitivity$graph
 ```{r, eval=FALSE}
 
 # チューニングなしVPAの場合
-res_tmp <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
-               Pope = TRUE, p.init = 0.5, tune=FALSE)
-tmp <-   do_sensitivity_vpa(what_replace = "tuning", value = list(2015:2016, 2014:2016, 2013:2016))
-                                                      # 3つの数列をlist型にしてvalueを与えています
+res_tmp <- vpa(vpadat_estb, tf.year=1996:1999, last.catch.zero = FALSE, 
+               Pope = TRUE, p.init = 0.8, tune=FALSE)
+tmp <-   do_sensitivity_vpa(res_tmp,what_replace = "tuning", value = list(1995:1999, 1998:1999))
+                                                      # 2つの数列をlist型にしてvalueを与えています
 
 ```
 
@@ -266,8 +257,9 @@ tmp <-   do_sensitivity_vpa(what_replace = "tuning", value = list(2015:2016, 201
 **選択率更新法の代わりに感度分析で全F推定を行う場合、`value`に値を入れる必要はありません**
 
 ```{r}
-
-res_vpa_sensitivity <- do_sensitivity_vpa(res_vpa_example, 
+res_tmp <- vpa(vpadat_estb, tf.year=1998:2000, last.catch.zero = FALSE, 
+               Pope = TRUE, p.init = 0.5, tune=TRUE, sel.update=TRUE)
+res_vpa_sensitivity <- do_sensitivity_vpa(res_tmp, 
                                           what_replace = "tuning",
                                           what_plot=c("SSB","biomass","U","Recruitment",
                                                       "fish_number","fishing_mortality"), 
@@ -286,32 +278,12 @@ res_vpa_sensitivity$graph
 ```{r, eval=FALSE}
 
 # 全F推定法の場合
-res_tmp <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
+res_tmp <- vpa(vpadat_estb, tf.year=2015:2016, last.catch.zero = FALSE, 
                Pope = TRUE, p.init = 0.5, tune=TRUE, sel.update=FALSE, term.F = "all") 
-tmp <- do_sensitivity_vpa(res_tmp, what_replace = "tuning", value = list(2015:2016))
+tmp <- do_sensitivity_vpa(res_tmp, what_replace = "tuning", value = list(1995:2000))
                                                       # 数列をlist型にしてvalueを与えています
                                                       # チューニングなしVPAと同じです
 ```
-
-
-#### リッジVPAの場合
-
-- 最終年のFを全推定(term.F="all")していれば、選択率更新法を感度分析で行います
-- 最終年最高齢のFのみ推定を(sel.update=TRUE)していれば、全F推定を感度分析で行います
-
-
-リッジVPAのペナルティ(lambda)について感度分析したい場合は、`index = "lambda"`としてください。（次のセクションを参照）
-
-
-```{r, eval=FALSE}
-
-# リッジVPAの場合
-res_tmp <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
-               Pope = TRUE, p.init = 0.5, tune=TRUE, term.F = "all", lambda = 0.2)
-tmp <- do_sensitivity_vpa(res_tmp, what_replace = "tuning", value = list(2015:2016))
-
-```
-
 
 ### リッジペナルティλについて
 
@@ -320,7 +292,7 @@ tmp <- do_sensitivity_vpa(res_tmp, what_replace = "tuning", value = list(2015:20
 ```{r}
 
 # リッジVPAの場合
-res_tmp <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
+res_tmp <- vpa(vpadat_estb, tf.year=2015:2016, last.catch.zero = FALSE, 
                Pope = TRUE, p.init = 0.5, tune=TRUE, term.F = "all", lambda = 0.2)
 tmp <- do_sensitivity_vpa(res_tmp, what_replace = "lambda", value = c(0,0.1,0.5,0.7),
                           what_plot=c("SSB","biomass","U","Recruitment",
@@ -341,9 +313,9 @@ bを推定した場合、bを推定しない(b=1)場合について、感度分�
 ```{r, eval=FALSE}
 
 # b推定しているが、bを固定する場合
-tmp <- do_sensitivity_vpa(res_vpa_example, what_replace = "b", value = list(c(1,1),c(1.2,1.2))) 
+tmp <- do_sensitivity_vpa(res_vpa_estb, what_replace = "b", value = list(c(1,1),c(1.2,1.2))) 
 # bを固定しているが、bを推定する場合
-tmp <- do_sensitivity_vpa(res_vpa_example, what_replace = "b", value = c("b.est"))
+tmp <- do_sensitivity_vpa(res_vpa_estb, what_replace = "b", value = c("b.est"))
 
 ```
 
@@ -377,11 +349,11 @@ tmp <- do_sensitivity_vpa(res_vpa_example, what_replace = "b", value = c("b.est"
 
 があります。
 
-今回の解析結果`res_vpa_example`を使って、7年分をさかのぼってレトロスペクティブ解析する場合、以下のようにコードします。
+今回の解析結果`res_vpa_estb`を使って、7年分をさかのぼってレトロスペクティブ解析する場合、以下のようにコードします。
 
 ```{r}
 
-res_vpa_retrospective <- do_retrospective_vpa(res_vpa_example,
+res_vpa_retrospective <- do_retrospective_vpa(res_vpa_estb,
                                               n_retro = 7,
                                               b_reest = FALSE)
 res_vpa_retrospective$mohn_rho
@@ -401,7 +373,7 @@ res_vpa_retrospective$graph
 
 ```{r}
 
-res_tmp <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, Pope = TRUE, 
+res_tmp <- vpa(vpadat_estb, tf.year=2015:2016, last.catch.zero = FALSE, Pope = TRUE, 
                p.init = 0.5, tune=TRUE, sel.update=FALSE, term.F = "all", b.est = TRUE) 
                                                               # まずbを推定するvpaを実行しています
 
@@ -417,22 +389,7 @@ res_vpa_retrospective$b_res
 
 
 
-## 3. パラメータの収束の確認 (jitter analysis)(以降はチューニングありのみ）
-
-以降、チューニングありのみの診断法となります。
-以下の例では、資源評価最終年のFをすべて推定した場合も関数が正常に動くことを示すために、全F推定法（`term.F = "all"`）として、解析しました。
-
-また、`est.method = "ml"`と最尤法での推定となっていますが、以下の関数は最小二乗法`est.method = "ls"`でも機能します。
-
-```{r}
-
-res_vpa_base0_tune <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
-                          abund = c("B","B"), est.method = "ml", Pope = TRUE,
-                          p.init = 0.5, tune=TRUE, term.F = "all")
-res_vpa_example <- res_vpa_base0_tune
-
-```
-
+## 3. パラメータの収束の確認 (jitter analysis)
 
 Fの推定結果が初期値に依存せずに、安定した結果となっているかを診断するために、jitter analysis（初期値を乱数で生成し、vpa計算を繰り返し実施する）をおこないます。`vpa`関数では推定パラメータの初期値は引数`p.init`で与えられますが、全F推定法の場合、最終年の各年齢のFの初期値になります。
 
@@ -448,9 +405,11 @@ Fの結果が初期値に依存する場合、初期値に応じて推定結果�
 - `what_plot` : 作図したい年齢
 - `TMB` : TMBで解析する（ **PCのスペックによってはRが爆発するので非推奨** ）
 
+を指定します。コマンドは以下の通りです。
+
 ```{r}
 
-res_vpa_jitter <- do_estcheck_vpa(res_vpa_example)
+res_vpa_jitter <- do_estcheck_vpa(res_vpa_estb, n_ite=20)
 
 ```
 
@@ -463,6 +422,7 @@ res_vpa_jitter <- do_estcheck_vpa(res_vpa_example)
 再度、`VPA`関数を使って解析してください。（初期値を変える、全F推定の場合パラメータを減らす、資源量指数の非線形性を考慮している場合はbを与えるあるいは1にする、などの工夫が必要となります）
 
 次に、関数内でjitter analysisが行われます。n_ite数分のVPA計算を行います。
+ここでは計算時間の削減のため20としていますが、実際は50回〜すると良いと思います。
 その結果が`res_vpa_jitter`内にあり、それぞれ、
 
 - `$initial_value`に初期値
@@ -470,17 +430,16 @@ res_vpa_jitter <- do_estcheck_vpa(res_vpa_example)
 - `$value`推定値や尤度、収束の値を返す
 - `$graph`初期値と推定値or尤度の関係の図
 
-が入っている。
+が入っています。
 
 ```{r}
 res_vpa_jitter$graph$estimated # 推定されたF
-res_vpa_jitter$graph$likelihood # 尤度
+res_vpa_jitter$graph$likelihood # 対数尤度（大きいほど良い）
 ```
 
-ここで赤い横線は与えた結果の推定値と尤度を表している。
+ここで赤い横線は与えた結果の推定値と尤度を表しています。
 
-結果の図を見ると、初期値に対して推定結果、尤度ともにほぼ変化せず（プロットが横一直線）、結果の推定値および尤度と重なっている（赤線上にプロットがある）ことから、推定パラメータは初期値に対して頑健であることが確認できました。
-（**ここではダミーデータを与えているため、推定値が初期値に応じて多少ばらついているが、尤度はほぼ変化がないことが分かる**）
+結果の図を見ると、いくつかの初期値のセットではFが0におちたり、Fが高い値になってしまっていることがわかります。これらのときの尤度は、推定値が得られたときの対数尤度（赤線）よりも小さい値になっていることから、推定パラメータから計算される尤度はほかの初期値を与えたときの推定値から得られる尤度と比較しても最大になっている(=最尤推定値が得られている)ことが確かめられました。関数を実施したとき、"Maximum likelihood in jitter analysis is: , Likelihood with estimated parameters is : " という表示が出ますので、上下の値が一致している、または上の値よりも下の値のほうが大きければOKです。逆に、上の値（Maximum likelihood in jitter analysis）のほうが大きい場合には、最尤推定値は他にある可能性があるので初期値を変えて計算しなおしてください。
 
 
 ## 4. 残差プロット
@@ -499,7 +458,7 @@ res_vpa_jitter$graph$likelihood # 尤度
 
 ```{r}
 
-plot_example <- plot_residual_vpa(res_vpa_example, index_name = c("CPUE_Trawl1", "Survey1"))
+plot_example <- plot_residual_vpa(res_vpa_estb, index_name = c("CPUE1", "CPUE2","CPUE3","CPUE4","CPUE5","CPUE6"),plot_smooth=TRUE)
 plot_example$year_resid
 plot_example$abund_Index
 
@@ -510,7 +469,7 @@ plot_example$abund_Index
 
 ```{r}
 
-plot_example <- plot_residual_vpa(res_vpa_example, plot_year = 2010:2017)
+plot_example <- plot_residual_vpa(res_vpa_estb, plot_year = 1995:2000)
 plot_example$fitting_Index
 
 ```
@@ -527,12 +486,12 @@ plot_example$fitting_Index
 
 ```{r}
 
-res_vpa_jackknife <- do_jackknife_vpa(res_vpa_example,
+res_vpa_jackknife <- do_jackknife_vpa(res_vpa_estb,
                                       what_plot = c("SSB", "biomass", "U", "Recruitment",
                                                     "fish_number", "fishing_mortality"),
                                       ncol = 3)
-res_vpa_jackknife$JKplot_vpa
-
+res_vpa_jackknife$JKplot_vpa # 全体の結果
+res_vpa_jackknife$JKplot_par + ylim(0,1) # 最終年のFの比較 (ここではylimで縦軸を調整しています)
 ```
  
  
@@ -567,14 +526,14 @@ frasyrの中にはブートストラップ法を自動で行う`boo.vpa`関数�
 
 ```{r}
 
-res_vpa_bootstrap <- plot_resboot_vpa(res_vpa_example, B_ite = 50)
+res_vpa_bootstrap <- plot_resboot_vpa(res_vpa_estb, B_ite = 50)
 res_vpa_bootstrap$plot_ssb
 res_vpa_bootstrap$plot_rec
 res_vpa_bootstrap$plot_biomass
 
 ```
 
-このようにSSB、加入量、バイオマスそれぞれについて95％信頼区間とともに資源動態の作図ができます。（**ダミーデータなので信頼区間が変な結果となっています**）
+このようにSSB、加入量、バイオマスそれぞれについて95％信頼区間とともに資源動態の作図ができます。
 
 またブートストラップ法は資源量の信頼区間だけでなく、パラメータの信頼区間も算出出来ます。
 ここでは最終年最高齢のFの信頼区間を出しています。
@@ -590,7 +549,7 @@ quantile(res_tmp, probs = c(0.025,0.5,0.975))
 
 この他、各パラメータの相関関係について、ブートストラップ標本を基にプロットが得られます。
 
-```{r}
+```{r,fig.width=12,fig.height=10}
 
 res_vpa_bootstrap$plot_cor
 
@@ -606,9 +565,9 @@ VPAは年齢別漁獲尾数（catch at age）が真であると仮定して推�
 引数`B_cv`で乱数生成の変動係数を決めることができます。デフォルトで0.2となっていますが、年齢別漁獲尾数データの不確実性が大きいことが想定される場合、この値を適宜大きくして検討してみてください。
 
 
-```{r}
+```{r,fig.width=10,fig.height=10}
 
-res_vpa_caaboot <- do_caaboot_vpa(res_vpa_example, B_ite = 50)
+res_vpa_caaboot <- do_caaboot_vpa(res_vpa_estb, B_ite = 50)
 res_vpa_caaboot$plot_ssb
 res_vpa_caaboot$plot_rec
 res_vpa_caaboot$plot_biomass

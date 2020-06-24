@@ -452,7 +452,7 @@ do_estcheck_vpa <- function(res, n_ite = 20, sd_jitter = 1, what_plot = NULL, TM
     if(class(tmp) == "try-error"){
       value_tmp[[i]] <- NA
       ite_tmp[[i]] <- rep(i, length(res$term.f))
-      ll_tmp[[i]] <- rep(res$logLik, length(res$logLik))
+      ll_tmp[[i]] <- NA#rep(res$logLik, length(res$logLik))
       Finit[[i]] <- init_tmp
       Fest[[i]] <- NA
     } else {
@@ -462,7 +462,8 @@ do_estcheck_vpa <- function(res, n_ite = 20, sd_jitter = 1, what_plot = NULL, TM
                              hessian = tmp$hessian,
                              gradient = tmp$gradient)
       ite_tmp[[i]] <- rep(i, length(res$term.f))
-      ll_tmp[[i]] <- rep(res$logLik, length(res$logLik))
+      #      ll_tmp[[i]] <- rep(res$logLik, length(res$term.f))
+      ll_tmp[[i]] <- rep(tmp$logLik, length(res$term.f))      
       Finit[[i]] <- init_tmp
       Fest[[i]] <- tmp$term.f
     }
@@ -514,6 +515,11 @@ do_estcheck_vpa <- function(res, n_ite = 20, sd_jitter = 1, what_plot = NULL, TM
     lab_tmp <- which(!Conv_check == 1)
     message(paste('Iterations in ', lab_tmp, ' were not convergence ...'))
   }
+
+  maxlike <- max(sapply(value_tmp, function(x) x$logLik))  
+  cat("Maximum likelihood in jitter analysis is: ",maxlike ,"\n")
+  cat("Likelihood with estimated parameters is: ", res$logLik, "\n")    
+        
   return(list(initial_value = init_list, #初期値の乱数
               p_name = name_tmp, # 初期値の名前
               value = value_tmp, # 推定値と尤度のリスト
@@ -551,7 +557,7 @@ do_estcheck_vpa <- function(res, n_ite = 20, sd_jitter = 1, what_plot = NULL, TM
 
 # author: Kohei Hamabe
 
-plot_residual_vpa <- function(res, index_name = NULL, plot_scale = FALSE, plot_smooth = FALSE, plot_year = FALSE){
+plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_year = FALSE){
   d_tmp <- matrix(NA,
                   nrow = length(res$input$dat$index[1,]),
                   ncol = length(res$input$dat$index[,1])*8+4)
@@ -625,15 +631,15 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_scale = FALSE, plot_s
   }
 
   # グラフ間のスケールを統一するか否か
-  if(plot_scale) scale_tmp <- "fixed" else scale_tmp <- "free"
+#  if(plot_scale) scale_tmp <- "fixed" else scale_tmp <- "free"
   # x軸の範囲
   if(is.numeric(plot_year)) xlim_year <- c(min(plot_year), max(plot_year)) else xlim_year <- c(min(d_tidy$year), max(d_tidy$year))
 
   if(isTRUE(plot_smooth)){
     g1 <- ggplot(d_tidy) +
       geom_point(aes(x=year, y=resid, colour = Index_Label), size = 2) +
-      geom_smooth(aes(x=year, y=resid, colour = Index_Label), size = 1.5) +
-      facet_wrap(~Index_Label, scale=scale_tmp)+
+      geom_smooth(aes(x=year, y=resid, colour = Index_Label), lwd = 0.5, se=FALSE, lty=2) +
+      facet_wrap(~Index_Label, scale="fixed")+
       geom_hline(yintercept = 0, size = 1)+
       xlab("Year") +
       xlim(xlim_year) +
@@ -641,8 +647,8 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_scale = FALSE, plot_s
       theme_SH(base_size = 14)
     g1_sd <- ggplot(d_tidy) +
       geom_point(aes(x=year, y=sd.resid, colour = Index_Label), size = 2) +
-      geom_smooth(aes(x=year, y=sd.resid, colour = Index_Label), size = 1.5) +
-      facet_wrap(~Index_Label, scale=scale_tmp) +
+      geom_smooth(aes(x=year, y=sd.resid, colour = Index_Label), lwd = 0.5, se=FALSE, lty=2) +
+      facet_wrap(~Index_Label, scale="fixed") +
       geom_hline(yintercept = 0, size = 1)+
       xlab("Year") +
       xlim(xlim_year) +
@@ -651,7 +657,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_scale = FALSE, plot_s
   } else {
     g1 <- ggplot(d_tidy) +
       geom_point(aes(x=year, y=resid, colour = Index_Label), size = 2) +
-      facet_wrap(~Index_Label, scale=scale_tmp)+
+      facet_wrap(~Index_Label, scale="fixed")+
       geom_hline(yintercept = 0, size = 1)+
       xlab("Year") +
       xlim(xlim_year) +
@@ -659,7 +665,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_scale = FALSE, plot_s
       theme_SH(base_size = 14)
     g1_sd <- ggplot(d_tidy) +
       geom_point(aes(x=year, y=sd.resid, colour = Index_Label), size = 2) +
-      facet_wrap(~Index_Label, scale=scale_tmp) +
+      facet_wrap(~Index_Label, scale="fixed") +
       geom_hline(yintercept = 0, size = 1)+
       xlab("Year") +
       xlim(xlim_year) +
@@ -670,7 +676,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_scale = FALSE, plot_s
   g2 <- ggplot(d_tidy) +
     geom_point(aes(x=year, y=obs, colour = Index_Label), size = 2) +
     geom_line(aes(x=year, y=pred, colour = Index_Label), size = 1) +
-    facet_wrap(~Index_Label, scale=scale_tmp) +
+    facet_wrap(~Index_Label, scale="free") +
     xlim(xlim_year) + ylim(0, NA) +
     ylab("Abundance index") +
     xlab("Year") +
@@ -700,7 +706,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_scale = FALSE, plot_s
   g3 <- ggplot(d_tidy) +
     geom_point(aes(x=predabund, y=obs, color = Index_Label), size = 2) +
     geom_line(aes(x = X, y = Y), data = ab_Index_tmp, color = "red") +
-    facet_wrap(~Index_Label, scales = scale_tmp) +
+    facet_wrap(~Index_Label, scales = "free") +
     xlab("Abundance / Biomass / SSB") +
     ylab("Abundance index") +
     xlim(c(0, NA)) + ylim(c(0, NA)) +
@@ -883,18 +889,18 @@ do_jackknife_vpa <- function(res, method = "index", what_plot = NULL, ncol = 5){
   # 作図
   if(method == "all"){
     g4 <- ggplot(data = d_tidy_par) +
-      geom_point(aes(x = age, y = tf, col = JK)) +
+      geom_point(aes(x = age, y = tf, col = JK, shape = JK)) +
       facet_wrap(~ Removed_index) +
       theme_SH(legend.position = "top", base_size = 14)
   } else {
     g4 <- ggplot(data = d_tidy_par) +
-      geom_point(aes(x = age, y = tf, col = JK)) +
+      geom_point(aes(x = age, y = tf, col = JK, shape = JK)) +
       theme_SH(legend.position = "top", base_size = 14)
   }
   ## ----------------------------------------------------------------- ##
 
-  return(list(JKplot_vpa = gg#,
-              #JKplot_par = g4
+  return(list(JKplot_vpa = gg,
+              JKplot_par = g4
               # 一応オブジェクト残しているが、JKplot_vpaで事足りるな...
   ))
 } # function(do_jackknife_vpa)
@@ -935,22 +941,23 @@ plot_resboot_vpa <- function(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
   year <- res_boo[[1]]$index %>% colnames() %>% as.numeric()
   ssb_mat <- abund_mat <- biomass_mat <- matrix(NA, nrow = B_ite, ncol = length(year))
   cor_mat <- matrix(NA, nrow = B_ite,
-                    ncol = length(res_boo[[1]]$Fc.at.age)+length(res_boo[[1]]$q)+
-                      length(res_boo[[1]]$b)+length(res_boo[[1]]$sigma)+2)
+                    ncol = length(res_boo[[1]]$Fc.at.age)+#length(res_boo[[1]]$q)+
+                        length(res_boo[[1]]$b)#+length(res_boo[[1]]$sigma
+                    +2)
   for(i in  1:B_ite){
     tmp <- res_boo[[i]]
     ssb_mat[i,] <- colSums(tmp$ssb)
     abund_mat[i,] <- as.numeric(tmp$naa[1,])
     biomass_mat[i,] <- colSums(tmp$baa)
     cor_mat[i, 1:length(tmp$Fc.at.age)] <- tmp$Fc.at.age
+#    cor_mat[i, (length(tmp$Fc.at.age)+1):
+#              (length(tmp$Fc.at.age)+length(tmp$q))] <- tmp$q
     cor_mat[i, (length(tmp$Fc.at.age)+1):
-              (length(tmp$Fc.at.age)+length(tmp$q))] <- tmp$q
-    cor_mat[i, (length(tmp$Fc.at.age)+length(tmp$q)+1):
-              (length(tmp$Fc.at.age)+length(tmp$q)+length(tmp$b))] <- tmp$b
-    cor_mat[i, (length(tmp$Fc.at.age)+length(tmp$q)+length(tmp$b)+1):
-              (length(tmp$Fc.at.age)+length(tmp$q)+length(tmp$b)+length(tmp$sigma))] <- tmp$sigma
-    cor_mat[i, length(tmp$Fc.at.age)+length(tmp$q)+length(tmp$b)+length(tmp$sigma)+1] <- last(colSums(tmp$ssb))
-    cor_mat[i, length(tmp$Fc.at.age)+length(tmp$q)+length(tmp$b)+length(tmp$sigma)+2] <- last(tmp$naa[1,])
+              (length(tmp$Fc.at.age)+length(tmp$b))] <- tmp$b
+#    cor_mat[i, (length(tmp$Fc.at.age)+length(tmp$q)+length(tmp$b)+1):
+#              (length(tmp$Fc.at.age)+length(tmp$q)+length(tmp$b)+length(tmp$sigma))] <- tmp$sigma
+    cor_mat[i, length(tmp$Fc.at.age)+length(tmp$b)+1] <- last(colSums(tmp$ssb))
+    cor_mat[i, length(tmp$Fc.at.age)+length(tmp$b)+2] <- last(tmp$naa[1,])
   }
 
   PB_value <- c((1-ci_range)/2, 0.5, 1-(1-ci_range)/2)
@@ -988,14 +995,14 @@ plot_resboot_vpa <- function(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
   if(class(which(row_damy == 0)) == "numeric") cor_mat <- cor_mat[-which(row_damy == 0),]
   cor_mat <- as.data.frame(cor_mat)
   names(cor_mat) <- c(paste0("term.F_age",1:length(tmp$Fc.at.age)-1),
-                      paste0("q",1:length(tmp$q)),
+#                      paste0("q",1:length(tmp$q)),
                       paste0("b",1:length(tmp$b)),
-                      paste0("sigma",1:length(tmp$sigma)),
+#                      paste0("sigma",1:length(tmp$sigma)),
                       paste0("SSB_last"),
                       paste0("Recruitment_last")
   )
   cor_mat2 <- cor(cor_mat)
-  g4 <- ggpairs(cor_mat) + theme_SH()
+  g4 <- GGally::ggpairs(cor_mat) + theme_SH()
 
   return(list(plot_ssb = g1,
               plot_rec = g2,
