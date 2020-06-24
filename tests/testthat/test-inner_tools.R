@@ -69,7 +69,7 @@ test_that("extract_fmsy()", {
 
 context("- extract_year_from()")
 
-test_that("from vpa object", {
+test_that("vpa object", {
   years <- as.numeric(colnames(vpadata$faa))
 
   expect_equal(extract_year_from(vpadata = vpadata), years)
@@ -83,7 +83,7 @@ test_that("from vpa object", {
                "Give me either 'vpadata' or 'msydata'")
 })
 
-test_that("from vpa object", {
+test_that("msy object", {
   expect_error(extract_year_from(msydata = "input_MSY_object_here"),
                "Not implemented")
 })
