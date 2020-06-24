@@ -24,12 +24,9 @@ plot_resboot_vpa(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
 \description{
 ブートストラップ法による信頼区間の算出と作図を自動で行う関数
 }
-\examples{
-# GitHub縺ｫ縺､縺ｪ縺後ｋ繧医≧縺ｫ縺吶ｋ<ef>ｼ<9f>
-
-}
 \seealso{
 ブートストラップ法について:  \code{\link{boo.vpa}}
+https://ichimomo.github.io/frasyr/doc/Diagnostics-for-VPA.html
 }
 \author{
 濵邉昂平, 市野川桃子

@@ -5,7 +5,13 @@
 \alias{plot_residual_vpa}
 \title{残差プロットの関数}
 \usage{
-plot_residual_vpa(res, index_name = NULL, plot_scale = FALSE)
+plot_residual_vpa(
+  res,
+  index_name = NULL,
+  plot_scale = FALSE,
+  plot_smooth = TRUE,
+  plot_year = FALSE
+)
 }
 \arguments{
 \item{res}{VPAの結果のオブジェクト}
@@ -22,6 +28,9 @@ plot_residual_vpa(res, index_name = NULL, plot_scale = FALSE)
 }
 \description{
 残差プロットの関数
+}
+\seealso{
+https://ichimomo.github.io/frasyr/doc/Diagnostics-for-VPA.html
 }
 \author{
 濵邉昂平, 市野川桃子
