@@ -9,11 +9,17 @@ assertthat::assert_that(
 )
 recent_years <- 2008:2011
 
+test_colname <- function(tbl) {
+  expect_equal(colnames(tbl), c("項目", "値", "備考"))
+}
+expect_df <- function(tbl) {
+  expect_is(tbl, "data.frame")
+}
 
 test_that("make_stock_table() works", {
   tbl <- make_stock_table(result_vpa, result_msy,
                           yr_pre_abc = recent_years)
-  expect_is(tbl, "data.frame")
+  expect_df(tbl)
   expect_equal(colnames(tbl),
                c("Year", "Biomass", "SSB", "Catch", "F.Fmsy", "HarvestRate"))
   expect_equal(tbl$Year,
@@ -23,8 +29,8 @@ test_that("make_stock_table() works", {
 test_that("table1() works", {
   tbl <- table1(result_vpa = result_vpa,
                 yrs_preabc = recent_years)
-  expect_is(tbl, "data.frame")
-  expect_equal(colnames(tbl), c("項目", "値", "備考"))
+  expect_df(tbl)
+  test_colname(tbl)
 
   expect_equal(tbl$項目, c("SB2011", "F2011"))
 })
@@ -32,8 +38,8 @@ test_that("table1() works", {
 test_that("table2() works", {
   tbl <- table2(result_vpa = result_vpa,
                 yrs_preabc = recent_years)
-  expect_is(tbl, "data.frame")
-  expect_equal(colnames(tbl), c("項目", "値", "備考"))
+  expect_df(tbl)
+  test_colname(tbl)
 
   expect_equal(tbl$項目, c("%SPR(2011)", "%SPR(2008--2011)"))
 })
@@ -41,11 +47,19 @@ test_that("table2() works", {
 test_that("make_table() works for fit.SR object", {
   obj <- fit.SR(load_data("../inst/extdata/SRdata_pma.rda"))
   tbl <- make_table(obj)
-  expect_is(tbl, "data.frame")
+  expect_df(tbl)
   expect_equal(
     colnames(tbl),
     c("再生産関係式", "最適化法", "自己相関", "a", "b", "S.D.", "rho")
   )
+})
+
+test_that("make_msytable() works", {
+  tbl <- make_msytable(result_msy)
+  expect_df(tbl)
+  test_colname(tbl)
+  expect_equal(tbl$項目,
+               c("SBtarget", "SBlimit", "SBban", "Fmsy", "%SPR (Fmsy)", "MSY"))
 })
 
 
@@ -55,8 +69,8 @@ test_that("make_row() works", {
 
   row <- make_row(key = "foo", value = 1)
 
-  expect_is(row, "data.frame")
-  expect_equal(colnames(row), c("項目", "値", "備考"))
+  expect_df(row)
+  test_colname(row)
   expect_equal(row$項目, "foo")
   expect_equal(row$値,   1)
   expect_equal(row$備考, "")

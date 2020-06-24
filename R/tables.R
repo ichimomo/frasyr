@@ -172,3 +172,43 @@ format_x_at_age <- function(df, round = 2) {
     add_age_suffix()
   force(paste0(wrap_by_paren(ages), " = ", wrap_by_paren(xvec)))
 }
+
+make_msytable <- function(result_msy) {
+  return_ <- function() {
+    rbind(sbrows_(),
+          msyrows_())
+  }
+  sbrows_ <- function() {
+    rbind(
+      make_sbrow_(name    = "target",
+                  remarks = "目標管理基準値。最大持続生産量MSYを実現する親魚量（SBmsy）"),
+      make_sbrow_(name    = "limit",
+                  remarks = "限界管理基準値。MSYの60%の漁獲量が得られる親魚量（SB0.6msy）"),
+      make_sbrow_(name    = "ban",
+                  remarks = "禁漁水準。 MSYの10%の漁獲量が得られる親魚量（SB0.1msy）")
+    )
+  }
+  make_sbrow_ <- function(name, remarks) {
+    ssb <- derive_RP_value(result_msy$summary, paste0("B", name, "0"))$SSB
+    make_row(key     = paste0("SB", name),
+             value   = convert_unit(ssb, to ="千トン", round = 0, add_unit = TRUE),
+             remarks = remarks)
+  }
+  msyrows_ <- function() {
+    perspr <- derive_RP_value(result_msy$summary, "Btarget0")$perSPR
+    ssb    <- derive_RP_value(result_msy$summary, "Btarget0")$SSB
+    rbind(
+      make_row(key   = "Fmsy",
+               value = extract_fmsy(result_msy) %>% format_x_at_age()),
+      make_row(key     = "%SPR (Fmsy)",
+               value   = paste0(round(perspr * 100, 0), "%"),
+               remarks = "Fmsy に対応する %SPR"),
+      make_row(key     = "MSY",
+               value   =  convert_unit(ssb, to = "千トン",
+                                       round = 0,
+                                       add_unit = TRUE),
+               remarks = "最大持続生産量 MSY")
+    )
+  }
+  return_()
+}
