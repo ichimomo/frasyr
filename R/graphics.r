@@ -1663,3 +1663,14 @@ compare_kobeII <- function(kobeII_list,
   
   return(g1)
 }
+
+plot_sprypr <- function(result_vpa, type) {
+  df <- get.SPR(result_vpa, target.SPR = 30, Fmax = 10, max.age=Inf)$ysdata
+  if (type == "perspr") {
+    df$Year <- as.numeric(rownames(df))
+    plot <- df %>%
+      ggplot(aes(Year, perSPR)) +
+      geom_line()
+  }
+  force(plot)
+}
