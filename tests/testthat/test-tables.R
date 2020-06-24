@@ -62,6 +62,15 @@ test_that("make_msytable() works", {
                c("SBtarget", "SBlimit", "SBban", "Fmsy", "%SPR (Fmsy)", "MSY"))
 })
 
+test_that("table4() works", {
+  tbl <- table4(result_vpa = result_vpa,
+                yrs_preabc = recent_years,
+                fmsy       = c(0.123, 0.234, 0.345),
+                sbtarget   = 12345)
+  expect_df(tbl)
+  test_colname(tbl)
+  expect_equal(tbl$項目, c("SB2011/ SBtarget(SBmsy)", "F2011/ Fmsy"))
+})
 
 context("Inner functions for making tables")
 

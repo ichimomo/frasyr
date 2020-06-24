@@ -76,6 +76,10 @@ table2 <- function(...) {
   adhoc_table(number = "two", ...)
 }
 
+table4 <- function(...) {
+  adhoc_table(number = "four", ...)
+}
+
 adhoc_table <- function(result_vpa, yrs_preabc, number, sbtarget = NULL, fmsy = NULL) {
   return_ <- function() {
     switch(number,
