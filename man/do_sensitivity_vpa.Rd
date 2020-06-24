@@ -44,7 +44,7 @@ resの計算方法に応じて\code{value}に入れる値が変わる。
 チューニングしていないVPAの場合、感度分析も同様にチューニングしないVPAを異なるターミナルFの仮定で行う。\code{value}は仮定したい\code{tf.year}を\code{list}型で記述のこと。
 全F推定の場合、感度分析では選択率更新法を行う。\code{value}は仮定したい\code{tf.year}を\code{list}型で記述のこと。
 選択率更新法の場合、感度分析では全F推定を行う。\code{value}は入力不要である。
-リッジVPAの場合、感度分析では異なるlambdaでの解析を行う。\code{value}は仮定したい\code{tf.year}を\code{numeric}型で記述のこと。
+リッジVPAの場合、感度分析では異なるlambdaでの解析を行う。\code{value}は仮定したい\code{tf.year}を\code{list}型で記述のこと。
 
 "lambda"（リッジVPAのペナルティ）: \code{value}は与えたいlambdaを\code{numeric}型で記述のこと。
 
@@ -52,15 +52,12 @@ resの計算方法に応じて\code{value}に入れる値が変わる。
 
 "b"(hyperstability/depletion):
 bを推定した場合、bを推定しない(b=1)の感度分析を行う。
-bを1以外の値で固定した、あるいはbを考慮しなかった場合、\code{value="b.est"}とするとbの推定を、仮定したいbを\code{numeric}で与えるとbを固定して考慮出来る。
-}
-\examples{
-# Wiki縺儀ignette縺ｫ縺､縺ｪ縺後ｋ繧医≧縺ｫ縺吶ｋ<ef>ｼ<9f>
-
+bを1以外の値で固定した、あるいはbを考慮しなかった場合、\code{value="b.est"}とするとbの推定を、仮定したいbを\code{list}で与えるとbを固定して考慮出来る。
 }
 \seealso{
 vpa計算について:  \code{\link{vpa}}
 作図について: \code{\link{plot_vpa}}
+https://ichimomo.github.io/frasyr/doc/Diagnostics-for-VPA.html
 }
 \author{
 濵邉昂平, 市野川桃子

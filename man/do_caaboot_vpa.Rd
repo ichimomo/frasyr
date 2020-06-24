@@ -5,14 +5,14 @@
 \alias{do_caaboot_vpa}
 \title{年齢別漁獲尾数の不確実性評価の関数}
 \usage{
-do_caaboot_vpa(res, B_ite = 1000, B_sd = 1, ci_range = 0.95)
+do_caaboot_vpa(res, B_ite = 1000, B_cv = 0.2, ci_range = 0.95)
 }
 \arguments{
 \item{res}{VPAの結果のオブジェクト}
 
 \item{B_ite}{ブートストラップ計算の数。デフォルトで1000。}
 
-\item{B_sd}{乱数生成の標準誤差。}
+\item{B_cv}{乱数生成の変動係数。デフォルトは0.2。}
 
 \item{ci_range}{信頼区間の幅。デフォルトでは0.95（95％信頼区間）}
 }
@@ -24,9 +24,8 @@ do_caaboot_vpa(res, B_ite = 1000, B_sd = 1, ci_range = 0.95)
 \description{
 年齢別漁獲尾数を乱数で再生成した後、VPA計算を行う関数
 }
-\examples{
-# GitHub縺ｫ縺､縺ｪ縺後ｋ繧医≧縺ｫ縺吶ｋ<ef>ｼ<9f>
-
+\seealso{
+https://ichimomo.github.io/frasyr/doc/Diagnostics-for-VPA.html
 }
 \author{
 濵邉昂平, 市野川桃子
