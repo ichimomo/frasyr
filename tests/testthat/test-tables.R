@@ -38,6 +38,16 @@ test_that("table2() works", {
   expect_equal(tbl$項目, c("%SPR(2011)", "%SPR(2008--2011)"))
 })
 
+test_that("make_table() works for fit.SR object", {
+  obj <- fit.SR(load_data("../inst/extdata/SRdata_pma.rda"))
+  tbl <- make_table(obj)
+  expect_is(tbl, "data.frame")
+  expect_equal(
+    colnames(tbl),
+    c("再生産関係式", "最適化法", "自己相関", "a", "b", "S.D.", "rho")
+  )
+})
+
 
 context("Inner functions for making tables")
 

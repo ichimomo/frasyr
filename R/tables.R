@@ -53,6 +53,20 @@ make_stock_table <- function(result_vpa, result_msy,
   return_()
 }
 
+make_table <- function(...) {
+  UseMethod("make_table")
+}
+
+make_table.fit.SR <- function(result_sr) {
+  data.frame(kankei     = result_sr$input$SR,
+             saitekika  = result_sr$input$method,
+             jikosoukan = result_sr$input$AR,
+             result_sr$pars) %>%
+    magrittr::set_colnames(
+      c("再生産関係式", "最適化法", "自己相関", "a", "b", "S.D.", "rho")
+    )
+}
+
 table1 <- function(...) {
   adhoc_table(number = "one", ...)
 }
