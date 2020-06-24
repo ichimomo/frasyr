@@ -216,3 +216,41 @@ make_msytable <- function(result_msy) {
   }
   return_()
 }
+
+make_abctable <- function(kobe_table, result_future, beta, year, faa_pre, faa_after, yr_preabc) {
+  return_ <- function() {
+    df <- data.frame(abc_(),
+                     ssb_mean_(),
+                     f_over_recentf_(),
+                     harvest_rate_())
+    colnames(df) <- c(paste0(year, "年漁期のABC(千トン)"),
+                      paste0(year, "年漁期の親魚量予測平均値(千トン)"),
+                      paste0("現状の漁獲圧に対する比(F/F", yr_preabc[1], "--", yr_preabc[length(yr_preabc)], ")"),
+                      paste0(year, "年漁期の漁獲割合（%）"))
+    force(df)
+  }
+
+  abc_ <- function() {
+    extract_from_kobe_table(kobe_table,
+                            beta = 0.8,
+                            what  = "catch.mean",
+                            year = year,
+                            unit = "千トン")
+  }
+  ssb_mean_  <- function(){
+    extract_from_kobe_table(kobe_table,
+                            what  = "ssb.mean",
+                            year = year,
+                            unit = "千トン")
+  }
+  f_over_recentf_ <- function() {
+    round(mean(faa_pre) / mean(faa_after), 2)
+  }
+  harvest_rate_ <- function() {
+    biomass_abcyear <- extract_value(from = result_future,
+                                     what = "biomass",
+                                     year = year)[["average"]]
+    round(abc_() / biomass_abcyear * 100, 0)
+  }
+  return_()
+}

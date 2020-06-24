@@ -122,3 +122,34 @@ convert_unit <- function(tons, to = "千トン", add_unit = FALSE, round = NULL)
 
   force(value)
 }
+
+extract_from_kobe_table <- function(kobe_table, beta = 1.0, what, year, unit = "千トン") {
+  tbl <- switch(what,
+                "catch.mean" = kobe_table$catch.mean,
+                "ssb.mean"   = kobe_table$ssb.mean)
+  bt <- beta
+  tbl %>%
+    dplyr::filter(beta == bt) %>%
+    dplyr::pull(as.character(year)) %>%
+    convert_unit(to = unit) %>%
+    round(0)
+}
+
+extract_value <- function(...) {
+  UseMethod("extract_value")
+}
+
+extract_value.future_new <- function(from, what, year = NULL, unit = "千トン") {
+  name <- switch(what,
+                 "biomass" = "vbiom",
+                 "catch"   = "vwcaa",
+                 stop("Not implemented"))
+
+  tbl <- make_summary_table(format_to_old_future(from)[[name]],
+                            side  = 1,
+                            probs = c(0.1, 0.5, 0.9)) %>%
+    convert_unit(to = unit)
+  if (is.null(year)) return(tbl)
+
+  force(tbl[rownames(tbl) == year, ])
+}
