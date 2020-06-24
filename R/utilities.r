@@ -557,7 +557,7 @@ make_summary_table <- function(mat_data,side=1,probs=c(0.1,0.5,0.8)){
   res_mat <- cbind(apply(mat_data,side,mean),
                    t(apply(mat_data,side,quantile,probs=probs)))
   colnames(res_mat)[1] <- "average"
-  res_mat %>% as_tibble()
+  res_mat
 }
 
 
