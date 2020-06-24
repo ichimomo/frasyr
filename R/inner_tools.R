@@ -13,7 +13,7 @@ return_file_type <- function(fname) {
 
 #' Extract value at age from vpadata
 #'
-#' @param vpadata Object return from \code(vpa)
+#' @param vpadata Object return from \code{vpa}
 #' @param x Character one of 'f', 'c', 'w', 'n', 's' or 'wc'
 #' @param mean_by If non-null, return mean value:
 #' \describe{
