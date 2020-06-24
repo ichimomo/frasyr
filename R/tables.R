@@ -1,12 +1,13 @@
 make_stock_table <- function(result_vpa, result_msy,
-                             yr_pre_abc, unit = "百トン") {
+                             yr_future_start, unit = "百トン") {
   return_ <- function() {
     rbind(recent_five_years_(),
           future_start_year_())
   }
 
-  yr_newest_recent    <- yr_pre_abc[length(yr_pre_abc)]
-  yr_oldest_recent    <- yr_pre_abc[1]
+  n_years_to_display  <- 6
+  yr_newest_recent    <- yr_future_start - 1
+  yr_oldest_recent    <- yr_future_start - (n_years_to_display - 1)
   recent_five_years_ <- function() {
     data.frame(Year     = yr_oldest_recent:yr_newest_recent,
                Biomass  = get_x_from_vpa_("biomass"),
@@ -17,7 +18,7 @@ make_stock_table <- function(result_vpa, result_msy,
   }
   future_start_year_ <- function() {
     # not implemented
-    data.frame(Year = yr_newest_recent + 1,
+    data.frame(Year = yr_future_start,
                Biomass = NA,
                SSB     = NA,
                Catch   = NA,
