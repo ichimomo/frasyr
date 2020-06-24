@@ -7,7 +7,7 @@
 extract_xaa(vpadata, x, year, mean_by = NULL)
 }
 \arguments{
-\item{vpadata}{Object return from \code(vpa)}
+\item{vpadata}{Object return from \code{vpa}}
 
 \item{x}{Character one of 'f', 'c', 'w', 'n', 's' or 'wc'}
 
