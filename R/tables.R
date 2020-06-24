@@ -52,3 +52,104 @@ make_stock_table <- function(result_vpa, result_msy,
 
   return_()
 }
+
+table1 <- function(...) {
+  adhoc_table(number = "one", ...)
+}
+
+adhoc_table <- function(result_vpa, yrs_preabc, number, sbtarget = NULL, fmsy = NULL) {
+  return_ <- function() {
+    switch(number,
+           "one" = {
+             rbind(sb_latest_(),
+                   f_latest_())
+           },
+           "two" = {
+             rbind(pspr_latest_(),
+                   pspr_recent_())
+           },
+           "four" = {
+             rbind(sb_latest_over_target_(),
+                   f_latest_over_msy_())
+           })
+  }
+  oldest_recentyr <- yrs_preabc[1]
+  yr_latest       <- yrs_preabc[length(yrs_preabc)]
+  sb_latest_ <- function() {
+    make_row(key     = paste0("SB", yr_latest),
+             value   = extract_from_vpa_("ssb", mean_by = "year"),
+             remarks = paste0(yr_latest, "年漁期の親魚量"))
+  }
+  f_latest_  <- function(numeric = FALSE) {
+    value <- extract_from_vpa_("faa")
+    if (numeric) {
+      value <- mean(unlist(value))
+    } else {
+      value <- format_x_at_age(value)
+    }
+    make_row(key   = paste0("F", yr_latest),
+             value = value)
+  }
+  pspr_latest_ <- function() {
+    make_row(key     = paste0("%SPR", wrap_by_paren(yr_latest)),
+             value   = perspr_from_latest_(to = yr_latest),
+             remarks = paste0(yr_latest, "年漁期の%SPR"))
+  }
+  pspr_recent_ <- function() {
+    years <- paste0(oldest_recentyr, "--", yr_latest)
+    make_row(key     = paste0("%SPR", wrap_by_paren(years)),
+             value   = perspr_from_latest_(to = oldest_recentyr),
+             remarks = paste0("現状", wrap_by_paren(years, "年漁期"),
+                               "の漁獲圧に対応する%SPR"))
+  }
+  sb_latest_over_target_ <- function() {
+    make_row(key     = paste0(sb_latest_()$項目, "/ SBtarget(SBmsy)"),
+             value   = sb_latest_()$値 / sbtarget,
+             remarks = paste0("目標管理基準値（最大持続生産量を実現する親魚量）に対する",
+                               yr_latest,
+                               "年漁期の親魚量の比"))
+  }
+  f_latest_over_msy_ <- function() {
+    if (length(fmsy) > 1) {
+      fmsy <- mean(fmsy)
+    }
+    make_row(key     = paste0(f_latest_()$項目, "/ Fmsy"),
+             value   = f_latest_(numeric = TRUE)$値 / fmsy,
+             remarks = paste0("最大持続生産量を実現する漁獲圧に対する",
+                              yr_latest,
+                              "年漁期の漁獲圧の比"))
+  }
+  perspr_from_latest_ <- function(to) {
+    purrr::map_dbl(yr_latest:to,
+                   extract_x,
+                   x       = "perSPR",
+                   vpadata = result_vpa) %>%
+      mean()
+  }
+  extract_from_vpa_ <- function(what, mean_by = NULL) {
+    extract_x(vpadata = result_vpa, what, yr_latest, mean_by = mean_by)
+  }
+  return_()
+}
+
+make_row <- function(key, value, remarks = "") {
+  if (length(value) > 1) stop("Only one-length vector is allowed")
+
+  rm_rownames_ <- function(x) {
+    row.names(x) <- NULL
+    force(x)
+  }
+
+  data.frame("項目" = key,
+             "値"   = value,
+             "備考" = remarks,
+             stringsAsFactors = FALSE) %>%
+    rm_rownames_()
+}
+
+format_x_at_age <- function(df, round = 2) {
+  xvec <- unlist(df) %>% round(round)
+  ages <- (seq_len(length(xvec)) - 1) %>%
+    add_age_suffix()
+  force(paste0(wrap_by_paren(ages), " = ", wrap_by_paren(xvec)))
+}

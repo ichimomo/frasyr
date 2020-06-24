@@ -7,10 +7,10 @@ assertthat::assert_that(
   head(colnames(result_vpa$ssb), 1) == "1982",
   tail(colnames(result_vpa$ssb), 1) == "2011"
 )
+recent_years <- 2008:2011
 
 
 test_that("make_stock_table() works", {
-  recent_years <- 2008:2011
   tbl <- make_stock_table(result_vpa, result_msy,
                           yr_pre_abc = recent_years)
   expect_is(tbl, "data.frame")
@@ -18,4 +18,75 @@ test_that("make_stock_table() works", {
                c("Year", "Biomass", "SSB", "Catch", "F.Fmsy", "HarvestRate"))
   expect_equal(tbl$Year,
                c(recent_years, 2012))
+})
+
+test_that("table1() works", {
+  tbl <- table1(result_vpa = result_vpa,
+                yrs_preabc = recent_years)
+  expect_is(tbl, "data.frame")
+  expect_equal(colnames(tbl), c("項目", "値", "備考"))
+
+  expect_equal(tbl$項目, c("SB2011", "F2011"))
+})
+
+context("Inner functions for making tables")
+
+test_that("make_row() works", {
+
+  row <- make_row(key = "foo", value = 1)
+
+  expect_is(row, "data.frame")
+  expect_equal(colnames(row), c("項目", "値", "備考"))
+  expect_equal(row$項目, "foo")
+  expect_equal(row$値,   1)
+  expect_equal(row$備考, "")
+
+  expect_equal(
+    make_row(key   = "foo",
+             value = "character is allowed for 'value'")$値,
+    "character is allowed for 'value'"
+  )
+  expect_equal(
+    make_row(key     = "foo",
+             value   = "bar",
+             remarks = "you can write remarks here")$備考,
+    "you can write remarks here"
+  )
+
+  expect_error(
+    make_row(key = "foo", value = 1:3),
+    "Only one-length vector is allowed"
+  )
+})
+
+test_that("format_x_at_age() to present vpa results", {
+  # Usage in practice
+  xaa_in_specific_year <- result_vpa$faa["2011"]
+  expect_equal(
+    format_x_at_age(xaa_in_specific_year),
+    "(0歳, 1歳, 2歳, 3歳以上) = (0.64, 1.23, 1.3, 1.3)"
+  )
+
+  # Basic behavior
+  expect_equal(
+    format_x_at_age(data.frame("foo" = c(1.23, 2.34, 3.45))),
+    "(0歳, 1歳, 2歳以上) = (1.23, 2.34, 3.45)"
+  )
+  expect_equal(
+    format_x_at_age(data.frame("foo" = 1:10)),
+    "(0歳, 1歳, 2歳, 3歳, 4歳, 5歳, 6歳, 7歳, 8歳, 9歳以上) = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)" # nolint
+  )
+
+  # Rounding values
+  expect_equal(
+    format_x_at_age(data.frame("foo" = c(1.234567, 2.345678, 3.456789))),
+    "(0歳, 1歳, 2歳以上) = (1.23, 2.35, 3.46)"
+  )
+  expect_equal(
+    format_x_at_age(
+      data.frame("foo" = c(1.234567, 2.345678, 3.456789)),
+      round = 1
+    ),
+    "(0歳, 1歳, 2歳以上) = (1.2, 2.3, 3.5)"
+  )
 })

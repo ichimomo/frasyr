@@ -20,9 +20,12 @@ return_file_type <- function(fname) {
 #'   \item{"age"}{Return values averaged by age}
 #'   \item{"year"}{Return values averaged by year}
 #' }
-extract_xaa <- function(vpadata, x, year, mean_by = NULL) {
-  xaa       <- paste0(x, "aa")
-  vars      <- vpadata[[xaa]]
+extract_x <- function(vpadata, x, year, mean_by = NULL) {
+  if (x == "perSPR") {
+    perspr <- get.SPR(vpadata)$ysdata[x]
+    return(perspr[rownames(perspr) == year, ])
+  }
+  vars      <- vpadata[[x]]
   extracted <- vars[colnames(vars) %in% as.character(year)]
 
   if (is.null(mean_by)) return(extracted)
@@ -67,6 +70,7 @@ add_age_suffix <- function(agevec) {
   ages[length(ages)] <- paste0(ages[length(ages)], "以上")
   ages
 }
+
 #' Give age names starts from zero and ends with plus group
 #'
 #' @param x object to name
@@ -82,6 +86,11 @@ give_agename.numeric <- function(x) {
   names(x) <- add_age_suffix(ages)
   force(x)
 }
+
+wrap_by_paren <- function(..., collapse = ", ") {
+  paste0("(", paste(..., sep = "", collapse = collapse), ")")
+}
+
 extract_fmsy <- function(result_msy, refpoint_name = "Btarget0", mean = FALSE) {
   # ad-hoc function
   assertthat::assert_that(

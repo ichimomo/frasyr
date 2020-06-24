@@ -33,19 +33,19 @@ context("Extract something from object")
 
 vpadata <- load_data("../../inst/extdata/res_vpa_pma.rda")
 
-test_that("extract_xaa() extracts values from VPA result", {
+test_that("extract_x() extracts values from VPA result", {
   expect_equal(
-    extract_xaa(vpadata, "f", 2011), vpadata$faa["2011"]
+    extract_x(vpadata, "faa", 2011), vpadata$faa["2011"]
   )
   expect_equal(
-    extract_xaa(vpadata, "f", 2010:2011), vpadata$faa[as.character(2010:2011)]
+    extract_x(vpadata, "faa", 2010:2011), vpadata$faa[as.character(2010:2011)]
   )
 
   expect_equal(
-    extract_xaa(vpadata, "n", 2011), vpadata$naa["2011"]
+    extract_x(vpadata, "naa", 2011), vpadata$naa["2011"]
   )
   expect_equal(
-    extract_xaa(vpadata, "n", 2010:2011), vpadata$naa[as.character(2010:2011)]
+    extract_x(vpadata, "naa", 2010:2011), vpadata$naa[as.character(2010:2011)]
   )
 })
 context("- extract_fmsy()")
@@ -194,4 +194,16 @@ test_that("convert_unit() works", {
   msg <- "'to' should be either '百トン' or '千トン'"
   expect_error(convert_unit(tons = 1000, to = "万トン"), msg)
   expect_error(convert_unit(tons = 1000, to = "foo"),    msg)
+})
+
+test_that("wrap_by_paren() works", {
+
+  expect_equal(wrap_by_paren(1), "(1)")
+  expect_equal(wrap_by_paren("a"), "(a)")
+  expect_equal(wrap_by_paren(NA), "(NA)")
+  expect_equal(wrap_by_paren(NULL), "()")
+
+  expect_equal(wrap_by_paren(1:3), "(1, 2, 3)")
+  expect_equal(wrap_by_paren(c(1, 2, 3)), "(1, 2, 3)")
+  expect_equal(wrap_by_paren(c(1, NA, 3)), "(1, NA, 3)")
 })
