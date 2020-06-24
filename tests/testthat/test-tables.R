@@ -29,6 +29,16 @@ test_that("table1() works", {
   expect_equal(tbl$項目, c("SB2011", "F2011"))
 })
 
+test_that("table2() works", {
+  tbl <- table2(result_vpa = result_vpa,
+                yrs_preabc = recent_years)
+  expect_is(tbl, "data.frame")
+  expect_equal(colnames(tbl), c("項目", "値", "備考"))
+
+  expect_equal(tbl$項目, c("%SPR(2011)", "%SPR(2008--2011)"))
+})
+
+
 context("Inner functions for making tables")
 
 test_that("make_row() works", {
