@@ -105,8 +105,6 @@ vpa(
 
 \item{naa0}{sel.update=TRUEのとき，初期値となるnaa}
 
-\item{f.new}{}
-
 \item{Pope}{Popeの近似式を使うかどうか}
 
 \item{p.pope}{Popeの式でどこで漁獲するか（0.5 = 真ん中の時期）}
@@ -125,15 +123,11 @@ vpa(
 
 \item{af}{資源量指数が年の中央のとき，af=0なら漁期前，af=1なら漁期真ん中，af=2なら漁期後となる}
 
-\item{p.m}{}
-
 \item{index.w}{tuning indexの重み}
 
-\item{use.index}{}
+\item{use.index}{indexのなにを使うか．c(1,3)というような与え方ができる.デフォルトは"all"}
 
 \item{scale}{重量のscaling}
-
-\item{hessian}{}
 
 \item{alpha}{最高齢と最高齢-1のFの比 F_a = alpha*F_{a-1}}
 
@@ -149,13 +143,9 @@ vpa(
 
 \item{term.F}{terminal Fの何を推定するか: "max" or "all"}
 
-\item{plus.group}{}
-
 \item{stat.tf}{最終年のFを推定する統計量（年齢別に与えること可）}
 
 \item{add.p.est}{追加で最高齢以外のfaaを推定する際．年齢を指定する．}
-
-\item{add.p.ini}{}
 
 \item{sel.update}{チューニングVPAにおいて，選択率を更新しながら推定}
 
@@ -185,25 +175,13 @@ vpa(
 
 \item{b.fix}{}
 
-\item{sigma.const}{sigmaパラメータの制約}
-
 \item{fixed.index.var}{}
 
 \item{max.iter}{q,b,sigma計算の際の最大繰り返し数}
 
-\item{optimizer}{}
-
-\item{Lower}{}
-
-\item{Upper}{}
-
-\item{p.fix}{}
-
 \item{lambda}{ridge回帰係数}
 
 \item{beta}{penaltyのexponent  (beta = 1: lasso, 2: ridge)}
-
-\item{penalty}{}
 
 \item{ssb.def}{i: 年はじめ，m: 年中央, l: 年最後}
 
@@ -212,6 +190,8 @@ vpa(
 \item{TMB}{TMBで高速計算する場合TMB=TRUE (事前にuse_rvpa_tmb()を実行)}
 
 \item{p.init}{}
+
+\item{sigma.constraint}{sigmaパラメータの制約.使い方としては，指標が５つあり，2番目と3番目の指標のsigmaは同じとしたい場合はc(1,2,2,3,4)と指定する}
 
 \item{eta}{Fのpenaltyを分けて与えるときにeta.ageで指定した年齢への相対的なpenalty (0~1)}
 
