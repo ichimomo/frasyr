@@ -557,7 +557,7 @@ do_estcheck_vpa <- function(res, n_ite = 20, sd_jitter = 1, what_plot = NULL, TM
 
 # author: Kohei Hamabe
 
-plot_residual_vpa <- function(res, index_name = NULL, plot_scale = FALSE, plot_smooth = TRUE, plot_year = FALSE){
+plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_year = FALSE){
   d_tmp <- matrix(NA,
                   nrow = length(res$input$dat$index[1,]),
                   ncol = length(res$input$dat$index[,1])*8+4)
