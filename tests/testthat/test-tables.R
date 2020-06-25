@@ -72,6 +72,20 @@ test_that("table4() works", {
   expect_equal(tbl$項目, c("SB2011/ SBtarget(SBmsy)", "F2011/ Fmsy"))
 })
 
+test_that("summary_of_summary() works", {
+  tbl <- summary_of_summary(tbl_msy = make_msytable(result_msy),
+                            tbl1    = table1(result_vpa = result_vpa,
+                                             yrs_preabc = yrs_pre_abc),
+                            tbl2    = table2(result_vpa = result_vpa,
+                                             yrs_preabc = yrs_pre_abc),
+                            tbl4    = table4(result_vpa = result_vpa,
+                                             yrs_preabc = yrs_pre_abc,
+                                             fmsy = c(0.123, 0.234, 0.345),
+                                             sbtarget = 12345))
+  expect_df(tbl)
+  test_colname(tbl)
+})
+
 context("Inner functions for making tables")
 
 test_that("make_row() works", {

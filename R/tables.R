@@ -255,3 +255,25 @@ make_abctable <- function(kobe_table, result_future, beta, year, faa_pre, faa_af
   }
   return_()
 }
+
+summary_of_summary <- function(tbl_msy, tbl1, tbl2, tbl4) {
+  characterize_valuecol_ <- function(tb) {
+    tb$値 <- as.character(tb$値)
+    force(tb)
+  }
+  extract_yr_from_tbl_ <- function() {
+    force(stringr::str_extract(tbl1$項目[1], "[0-9]{4}"))
+  }
+  name1 <- "管理基準値とMSYに関係する値"
+  name2 <- paste0(extract_yr_from_tbl_(), "漁期の親魚量と漁獲圧")
+  name3 <- "MSYを実現する水準に対する比率"
+
+  dplyr::bind_rows(
+    make_row(key = name1, value = ""),
+    characterize_valuecol_(tbl_msy),
+    characterize_valuecol_(tbl1),
+    make_row(key = name2, value = ""),
+    characterize_valuecol_(tbl2),
+    make_row(key = name3, value = ""),
+    characterize_valuecol_(tbl4))
+}
