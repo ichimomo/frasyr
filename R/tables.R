@@ -1,12 +1,13 @@
 make_stock_table <- function(result_vpa, result_msy,
-                             yr_pre_abc, unit = "百トン") {
+                             yr_future_start, unit = "百トン") {
   return_ <- function() {
     rbind(recent_five_years_(),
           future_start_year_())
   }
 
-  yr_newest_recent    <- yr_pre_abc[length(yr_pre_abc)]
-  yr_oldest_recent    <- yr_pre_abc[1]
+  n_years_to_display  <- 6
+  yr_newest_recent    <- yr_future_start - 1
+  yr_oldest_recent    <- yr_future_start - (n_years_to_display - 1)
   recent_five_years_ <- function() {
     data.frame(Year     = yr_oldest_recent:yr_newest_recent,
                Biomass  = get_x_from_vpa_("biomass"),
@@ -17,7 +18,7 @@ make_stock_table <- function(result_vpa, result_msy,
   }
   future_start_year_ <- function() {
     # not implemented
-    data.frame(Year = yr_newest_recent + 1,
+    data.frame(Year = yr_future_start,
                Biomass = NA,
                SSB     = NA,
                Catch   = NA,
@@ -253,4 +254,73 @@ make_abctable <- function(kobe_table, result_future, beta, year, faa_pre, faa_af
     round(abc_() / biomass_abcyear * 100, 0)
   }
   return_()
+}
+
+summary_of_summary <- function(tbl_msy, tbl1, tbl2, tbl4) {
+  characterize_valuecol_ <- function(tb) {
+    tb$値 <- as.character(tb$値)
+    force(tb)
+  }
+  extract_yr_from_tbl_ <- function() {
+    force(stringr::str_extract(tbl1$項目[1], "[0-9]{4}"))
+  }
+  name1 <- "管理基準値とMSYに関係する値"
+  name2 <- paste0(extract_yr_from_tbl_(), "漁期の親魚量と漁獲圧")
+  name3 <- "MSYを実現する水準に対する比率"
+
+  dplyr::bind_rows(
+    make_row(key = name1, value = ""),
+    characterize_valuecol_(tbl_msy),
+    characterize_valuecol_(tbl1),
+    make_row(key = name2, value = ""),
+    characterize_valuecol_(tbl2),
+    make_row(key = name3, value = ""),
+    characterize_valuecol_(tbl4))
+}
+
+
+#' Export tables to csv
+#'
+#' @param to Name of file
+#' @param ... Table objects
+#'
+#' \dontrun{
+#' export_tables(to = "hoge.csv",
+#'               table1, table2, table3)
+#' }
+export_tables <- function(to, ...) {
+
+  write_tables_to_csv_ <- function() {
+    initialize_csv_()
+    list2csv_()
+  }
+
+  initialize_csv_ <- function() {
+    readr::write_excel_csv(data.frame(this_is_dummy = ""),
+                           path      = to,
+                           append    = FALSE,
+                           col_names = FALSE)
+  }
+
+  list2csv_ <- function() {
+
+    add_blank_line_ <- function(df) {
+      blank <- ""
+      suppressWarnings(
+        rbind(dplyr::mutate_all(df, as.character()),
+              blank,
+              stringsAsFactors = FALSE)
+      )
+    }
+
+    purrr::map(purrr::map(list(...), add_blank_line_),
+               readr::write_excel_csv,
+               path      = to,
+               append    = TRUE,
+               col_names = TRUE,
+               delim     = ",") %>%
+      invisible()
+  }
+
+  write_tables_to_csv_()
 }

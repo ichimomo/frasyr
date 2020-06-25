@@ -7,7 +7,7 @@ assertthat::assert_that(
   head(colnames(result_vpa$ssb), 1) == "1982",
   tail(colnames(result_vpa$ssb), 1) == "2011"
 )
-recent_years <- 2008:2011
+yrs_pre_abc <- 2008:2011
 
 test_colname <- function(tbl) {
   expect_equal(colnames(tbl), c("項目", "値", "備考"))
@@ -18,17 +18,17 @@ expect_df <- function(tbl) {
 
 test_that("make_stock_table() works", {
   tbl <- make_stock_table(result_vpa, result_msy,
-                          yr_pre_abc = recent_years)
+                          yr_future_start = 2012)
   expect_df(tbl)
   expect_equal(colnames(tbl),
                c("Year", "Biomass", "SSB", "Catch", "F.Fmsy", "HarvestRate"))
   expect_equal(tbl$Year,
-               c(recent_years, 2012))
+               2007:2012) # Six years including yr_future_start
 })
 
 test_that("table1() works", {
   tbl <- table1(result_vpa = result_vpa,
-                yrs_preabc = recent_years)
+                yrs_preabc = yrs_pre_abc)
   expect_df(tbl)
   test_colname(tbl)
 
@@ -37,7 +37,7 @@ test_that("table1() works", {
 
 test_that("table2() works", {
   tbl <- table2(result_vpa = result_vpa,
-                yrs_preabc = recent_years)
+                yrs_preabc = yrs_pre_abc)
   expect_df(tbl)
   test_colname(tbl)
 
@@ -64,12 +64,26 @@ test_that("make_msytable() works", {
 
 test_that("table4() works", {
   tbl <- table4(result_vpa = result_vpa,
-                yrs_preabc = recent_years,
+                yrs_preabc = yrs_pre_abc,
                 fmsy       = c(0.123, 0.234, 0.345),
                 sbtarget   = 12345)
   expect_df(tbl)
   test_colname(tbl)
   expect_equal(tbl$項目, c("SB2011/ SBtarget(SBmsy)", "F2011/ Fmsy"))
+})
+
+test_that("summary_of_summary() works", {
+  tbl <- summary_of_summary(tbl_msy = make_msytable(result_msy),
+                            tbl1    = table1(result_vpa = result_vpa,
+                                             yrs_preabc = yrs_pre_abc),
+                            tbl2    = table2(result_vpa = result_vpa,
+                                             yrs_preabc = yrs_pre_abc),
+                            tbl4    = table4(result_vpa = result_vpa,
+                                             yrs_preabc = yrs_pre_abc,
+                                             fmsy = c(0.123, 0.234, 0.345),
+                                             sbtarget = 12345))
+  expect_df(tbl)
+  test_colname(tbl)
 })
 
 context("Inner functions for making tables")
