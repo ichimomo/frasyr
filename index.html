@@ -31,7 +31,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">frasyr</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.01</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.1.0.0</span>
       </span>
     </div>
 
@@ -96,15 +96,15 @@
 install.packages("devtools")
 
 # マスター版（最新・安定版）をインストールする場合
-devtools::install_github("ichimomo/frasyr", build_vignettes=TRUE)
+devtools::install_github("ichimomo/frasyr")
 
 # 開発中の最新版をインストールする場合（バグ可能性あり！）
 # ref=""で開発中のブランチを指定します。だいたい、"dev"ブランチに開発中のものがあります
-devtools::install_github("ichimomo/frasyr", ref="dev", build_vignettes=TRUE)
+devtools::install_github("ichimomo/frasyr", ref="dev")
 
 # 過去の安定版を指定してインストールする場合
 # @以下にリリースバージョンを指定します
-devtools::install_github("ichimomo/frasyr@v1.00", build_vignettes=TRUE)
+devtools::install_github("ichimomo/frasyr@v1.00")
 
 # 以上の操作をしてfrasyrをインストールしてから、以下のコマンドで呼び出します
 library(frasyr)
@@ -140,13 +140,14 @@ library(frasyr)
 <h1 class="hasAnchor">
 <a href="#%E3%83%9E%E3%83%8B%E3%83%A5%E3%82%A2%E3%83%AB" class="anchor"></a>マニュアル</h1>
 <ul>
-<li>VPAによる資源量推定　<a href="https://ichimomo.github.io/frasyr/doc/vpa.html">vignette</a>
+<li>VPAによる資源量推定　<a href="https://ichimomo.github.io/frasyr/articles/vpa.html">vignette</a>
 </li>
-<li>VPAモデル診断スクリプト　<a href="https://ichimomo.github.io/frasyr/doc/Diagnostics-for-VPA.html">vignette</a>
+<li>VPAモデル診断スクリプト　<a href="https://ichimomo.github.io/frasyr/articles/Diagnostics-for-VPA.html">vignette</a>
 </li>
 </ul>
-<p>上記2つについてはRコマンドで以下のようにしても見れます。</p>
-<pre><code>library(frasyr)
+<p>これらはRコマンドで以下のようにしても見れます。</p>
+<pre><code>devtools::install_github("ichimomo/frasyr", ref="dev", build_vignettes=TRUE) # インストールするときにvignetteを作る（時間かかります）
+library(frasyr)
 vignette(package="frasyr") # 利用可能なvignetteを調べる
 vignette("vpa",package="frasyr") # VPAの実施のしかた
 vignette("Diagnostics-for-VPA",package="frasyr") # VPAのモデル診断</code></pre>
@@ -176,6 +177,10 @@ vignette("Diagnostics-for-VPA",package="frasyr") # VPAのモデル診断</code><
 <h2>Developers</h2>
 <ul class="list-unstyled">
 <li>Momoko Ichinokawa <br><small class="roles"> Author, maintainer </small>  </li>
+<li>Akira Hayashi <br><small class="roles"> Author </small>  </li>
+<li>Mitsuyo Miyagawa <br><small class="roles"> Author </small>  </li>
+<li>Shin Fukui <br><small class="roles"> Author </small>  </li>
+<li>Kohei Hamabe <br><small class="roles"> Author </small>  </li>
 <li>Shota Nishijima <br><small class="roles"> Author </small>  </li>
 <li>Hiroshi Okamura <br><small class="roles"> Author </small>  </li>
 </ul>
@@ -193,7 +198,7 @@ vignette("Diagnostics-for-VPA",package="frasyr") # VPAのモデル診断</code><
 
 
       <footer><div class="copyright">
-  <p>Developed by Momoko Ichinokawa, Shota Nishijima, Hiroshi Okamura.</p>
+  <p>Developed by Momoko Ichinokawa, Akira Hayashi, Mitsuyo Miyagawa, Shin Fukui, Kohei Hamabe, Shota Nishijima, Hiroshi Okamura.</p>
 </div>
 
 <div class="pkgdown">
