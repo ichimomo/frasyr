@@ -43,8 +43,8 @@ library(frasyr)
    - ほか、関数のテストを充実。
 
 # マニュアル
-- VPAによる資源量推定　[vignette](https://ichimomo.github.io/frasyr/doc/vpa.html)
-- VPAモデル診断スクリプト　[vignette](https://ichimomo.github.io/frasyr/doc/Diagnostics-for-VPA.html)
+- VPAによる資源量推定　[vignette](https://ichimomo.github.io/frasyr/articles/vpa.html)
+- VPAモデル診断スクリプト　[vignette](https://ichimomo.github.io/frasyr/articles/Diagnostics-for-VPA.html)
 
 上記2つについてはRコマンドで以下のようにしても見れます。
 ```
