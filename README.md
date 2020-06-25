@@ -14,15 +14,15 @@ https://ichimomo.github.io/main/ に一括した情報へのリンクがあり�
 install.packages("devtools")
 
 # マスター版（最新・安定版）をインストールする場合
-devtools::install_github("ichimomo/frasyr", build_vignettes=TRUE)
+devtools::install_github("ichimomo/frasyr")
 
 # 開発中の最新版をインストールする場合（バグ可能性あり！）
 # ref=""で開発中のブランチを指定します。だいたい、"dev"ブランチに開発中のものがあります
-devtools::install_github("ichimomo/frasyr", ref="dev", build_vignettes=TRUE)
+devtools::install_github("ichimomo/frasyr", ref="dev")
 
 # 過去の安定版を指定してインストールする場合
 # @以下にリリースバージョンを指定します
-devtools::install_github("ichimomo/frasyr@v1.00", build_vignettes=TRUE)
+devtools::install_github("ichimomo/frasyr@v1.00")
 
 # 以上の操作をしてfrasyrをインストールしてから、以下のコマンドで呼び出します
 library(frasyr)
@@ -46,8 +46,9 @@ library(frasyr)
 - VPAによる資源量推定　[vignette](https://ichimomo.github.io/frasyr/articles/vpa.html)
 - VPAモデル診断スクリプト　[vignette](https://ichimomo.github.io/frasyr/articles/Diagnostics-for-VPA.html)
 
-上記2つについてはRコマンドで以下のようにしても見れます。
+これらはRコマンドで以下のようにしても見れます。
 ```
+devtools::install_github("ichimomo/frasyr", ref="dev", build_vignettes=TRUE) # インストールするときにvignetteを作る（時間かかります）
 library(frasyr)
 vignette(package="frasyr") # 利用可能なvignetteを調べる
 vignette("vpa",package="frasyr") # VPAの実施のしかた
