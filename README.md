@@ -2,7 +2,7 @@
   [![Travis build status](https://travis-ci.com/ichimomo/frasyr.svg?branch=master)](https://travis-ci.com/ichimomo/frasyr)
   [![Codecov test coverage](https://codecov.io/gh/ichimomo/frasyr/branch/master/graph/badge.svg)](https://codecov.io/gh/ichimomo/frasyr?branch=master)
 - Fisheries Research Agency (FRA) provides the method for calculating sustainable yield (SY) with R
-- 水研機構で開発した，MSYを基礎とした目標管理基準値を計算するためのRのパッケージです．開発途中のものであること，ご承知おきください．
+- VPAを用いた資源量推定と，その推定結果をもとにしてMSYを基礎とした目標管理基準値を計算するためのRのパッケージです．開発途中のものであること，ご承知おきください．
 
 # 使い方など
 https://ichimomo.github.io/main/ に一括した情報へのリンクがあります
@@ -14,15 +14,15 @@ https://ichimomo.github.io/main/ に一括した情報へのリンクがあり�
 install.packages("devtools")
 
 # マスター版（最新・安定版）をインストールする場合
-devtools::install_github("ichimomo/frasyr")
+devtools::install_github("ichimomo/frasyr", build_vignettes=TRUE)
 
 # 開発中の最新版をインストールする場合（バグ可能性あり！）
 # ref=""で開発中のブランチを指定します。だいたい、"dev"ブランチに開発中のものがあります
-devtools::install_github("ichimomo/frasyr", ref="dev")
+devtools::install_github("ichimomo/frasyr", ref="dev", build_vignettes=TRUE)
 
 # 過去の安定版を指定してインストールする場合
 # @以下にリリースバージョンを指定します
-devtools::install_github("ichimomo/frasyr@v1.00")
+devtools::install_github("ichimomo/frasyr@v1.00", build_vignettes=TRUE)
 
 # 以上の操作をしてfrasyrをインストールしてから、以下のコマンドで呼び出します
 library(frasyr)
@@ -37,11 +37,23 @@ library(frasyr)
    - 将来予測のメイン関数をfuture.vpaからfuture_vpaに移行。基本的な使い方は以下のマニュアルのリンク先を参照のこと
 - v2.01 : 2020年アジ・イワシ研究機関会議用(最終版)
    - fit.parでL1の場合のSDをRMSEに統一
-- v2.10 : 6月上旬ごろアップ予定   
+- v2.1.0.0 : 2020年度資源評価会議用プロトタイプバージョン
+   - VPAを用いたモデル診断スクリプトをvignetteに追加
+   - 途中でプラスグループが変わる（対馬マイワシ）VPAの計算を修正
+   - ほか、関数のテストを充実。
 
 # マニュアル
 - VPAによる資源量推定　[vignette](https://ichimomo.github.io/frasyr/doc/vpa.html)
 - VPAモデル診断スクリプト　[vignette](https://ichimomo.github.io/frasyr/doc/Diagnostics-for-VPA.html)
+
+上記2つについてはRコマンドで以下のようにしても見れます。
+```
+library(frasyr)
+vignette(package="frasyr") # 利用可能なvignetteを調べる
+vignette("vpa",package="frasyr") # VPAの実施のしかた
+vignette("Diagnostics-for-VPA",package="frasyr") # VPAのモデル診断
+```
+
 - 再生産関係のモデル診断スクリプト [wiki](https://ichimomo.github.io/frasyr/doc/SRR-guidline.html)
 - 将来予測関数の使い方：[wiki](https://github.com/ichimomo/frasyr/wiki/future_new)
 
