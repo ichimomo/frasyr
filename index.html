@@ -81,7 +81,7 @@
 
 <ul>
 <li>Fisheries Research Agency (FRA) provides the method for calculating sustainable yield (SY) with R</li>
-<li>水研機構で開発した，MSYを基礎とした目標管理基準値を計算するためのRのパッケージです．開発途中のものであること，ご承知おきください．</li>
+<li>VPAを用いた資源量推定と，その推定結果をもとにしてMSYを基礎とした目標管理基準値を計算するためのRのパッケージです．開発途中のものであること，ご承知おきください．</li>
 </ul>
 </div>
 <div id="使い方など" class="section level1">
@@ -96,15 +96,15 @@
 install.packages("devtools")
 
 # マスター版（最新・安定版）をインストールする場合
-devtools::install_github("ichimomo/frasyr")
+devtools::install_github("ichimomo/frasyr", build_vignettes=TRUE)
 
 # 開発中の最新版をインストールする場合（バグ可能性あり！）
 # ref=""で開発中のブランチを指定します。だいたい、"dev"ブランチに開発中のものがあります
-devtools::install_github("ichimomo/frasyr", ref="dev")
+devtools::install_github("ichimomo/frasyr", ref="dev", build_vignettes=TRUE)
 
 # 過去の安定版を指定してインストールする場合
 # @以下にリリースバージョンを指定します
-devtools::install_github("ichimomo/frasyr@v1.00")
+devtools::install_github("ichimomo/frasyr@v1.00", build_vignettes=TRUE)
 
 # 以上の操作をしてfrasyrをインストールしてから、以下のコマンドで呼び出します
 library(frasyr)
@@ -127,7 +127,13 @@ library(frasyr)
 <li>fit.parでL1の場合のSDをRMSEに統一</li>
 </ul>
 </li>
-<li>v2.10 : 6月上旬ごろアップ予定</li>
+<li>v2.1.0.0 : 2020年度資源評価会議用プロトタイプバージョン
+<ul>
+<li>VPAを用いたモデル診断スクリプトをvignetteに追加</li>
+<li>途中でプラスグループが変わる（対馬マイワシ）VPAの計算を修正</li>
+<li>ほか、関数のテストを充実。</li>
+</ul>
+</li>
 </ul>
 </div>
 <div id="マニュアル" class="section level1">
@@ -138,6 +144,13 @@ library(frasyr)
 </li>
 <li>VPAモデル診断スクリプト　<a href="https://ichimomo.github.io/frasyr/doc/Diagnostics-for-VPA.html">vignette</a>
 </li>
+</ul>
+<p>上記2つについてはRコマンドで以下のようにしても見れます。</p>
+<pre><code>library(frasyr)
+vignette(package="frasyr") # 利用可能なvignetteを調べる
+vignette("vpa",package="frasyr") # VPAの実施のしかた
+vignette("Diagnostics-for-VPA",package="frasyr") # VPAのモデル診断</code></pre>
+<ul>
 <li>再生産関係のモデル診断スクリプト <a href="https://ichimomo.github.io/frasyr/doc/SRR-guidline.html">wiki</a>
 </li>
 <li>将来予測関数の使い方：<a href="https://github.com/ichimomo/frasyr/wiki/future_new">wiki</a>

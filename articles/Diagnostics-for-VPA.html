@@ -604,8 +604,8 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 <span class="co">for</span>(<span class="kw">i</span> <span class="co">in</span> <span class="fl">1</span><span class="op">:</span><span class="fl">50</span>) <span class="kw">res_tmp</span>[<span class="kw">i</span>] <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html">as.numeric</a></span>(<span class="kw">res_vpa_bootstrap</span><span class="op">$</span><span class="kw">res_boot</span>[[<span class="kw">i</span>]]<span class="op">$</span><span class="kw">Fc.at.age</span>[<span class="fl">4</span>])
 <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html">quantile</a></span>(<span class="kw">res_tmp</span>, probs = <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">0.025</span>,<span class="fl">0.5</span>,<span class="fl">0.975</span>))
 </pre></div>
-<pre><code>      2.5%        50%      97.5% 
- 0.4492490  0.8023649 21.8158190 </code></pre>
+<pre><code>        2.5%          50%        97.5% 
+   0.4449771    0.6731903 2346.9839502 </code></pre>
 <p>この他、各パラメータの相関関係について、ブートストラップ標本を基にプロットが得られます。</p>
 <div class="sourceCode" id="cb38"><pre class="downlit">
 <span class="kw">res_vpa_bootstrap</span><span class="op">$</span><span class="kw">plot_cor</span>
