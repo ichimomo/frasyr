@@ -85,3 +85,36 @@ res_MSY_HSL1 <- est.MSY(res_vpa, # VPAの計算結果
 
 use_data(res_MSY_HSL1)
 use_data(res_MSY_HSL2)
+
+# VPA dummy data
+data_base <- readr::read_csv("all_dummy_data_base.csv") 
+vpadat_base0 <- data.handler(caa=to_vpa_data(data_base, label_name="caa"),
+                             waa=to_vpa_data(data_base, label_name="waa"),
+                             maa=to_vpa_data(data_base, label_name="maa"),
+                             M  = 0.2,
+                             index = to_vpa_data(data_base, label_name="abund"),
+                             maa.tune = NULL,
+                             waa.catch = NULL,
+                             catch.prop = NULL)
+res_vpa_base0_tune <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, abund = c("B", "B"),
+                            Pope = TRUE, p.init = 0.5, tune=TRUE, sel.update=TRUE)
+#res_vpa_example <- res_vpa_base0_tune
+save(vpadat_base0,   file="../data/vpadat_base0.rda")
+#save(res_vpa_example,file="../data/res_vpa_example.rda")
+
+data_estb <-readr::read_csv("../inst/extdata/all_dummy_data_estb.csv")
+vpadat_estb <- data.handler(caa=to_vpa_data(data_estb, label_name="caa"),
+                            waa=to_vpa_data(data_estb, label_name="waa"),
+                            maa=to_vpa_data(data_estb, label_name="maa"),
+                            M  = 0.4,
+                            index = to_vpa_data(data_estb, label_name="abund"),
+                            maa.tune = NULL,
+                            waa.catch = NULL,
+                            catch.prop = NULL)
+
+res_vpa_estb_tune4l_b <- vpa(vpadat_estb,last.catch.zero = FALSE, min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
+                             Pope = TRUE,  tune=TRUE, term.F="all", est.method="ml" ,b.est=TRUE,p.init=c(0.2,0.3,0.6,0.6),abund=c("N","N","N","N","N","N"),fc.year=1998:2000)
+
+res_vpa_estb <- res_vpa_estb_tune4l_b
+save(vpadat_estb,file="../data/vpadat_estb.rda")
+save(res_vpa_estb,file="../data/res_vpa_estb.rda")
