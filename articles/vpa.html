@@ -78,7 +78,7 @@
       <h1 data-toc-skip>VPA関数を使った資源量推定</h1>
                         <h4 class="author">市野川桃子</h4>
             
-            <h4 class="date">2020-06-26</h4>
+            <h4 class="date">2020-06-29</h4>
       
       
       <div class="hidden name"><code>vpa.Rmd</code></div>
@@ -113,10 +113,10 @@
 <span class="kw">caa</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html">read.csv</a></span>(<span class="st">"https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex2_caa.csv"</span>,  row.names=<span class="fl">1</span>)
 <span class="kw">waa</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html">read.csv</a></span>(<span class="st">"https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex2_waa.csv"</span>,  row.names=<span class="fl">1</span>)
 <span class="kw">maa</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html">read.csv</a></span>(<span class="st">"https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex2_maa.csv"</span>,  row.names=<span class="fl">1</span>)
-<span class="kw">dat</span> <span class="op">&lt;-</span> <span class="fu">data.handler</span>(caa=<span class="kw">caa</span>, waa=<span class="kw">waa</span>, maa=<span class="kw">maa</span>, M=<span class="fl">0.5</span>)
+<span class="kw">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/data.handler.html">data.handler</a></span>(caa=<span class="kw">caa</span>, waa=<span class="kw">waa</span>, maa=<span class="kw">maa</span>, M=<span class="fl">0.5</span>)
 
 <span class="co"># VPAによる資源量推定</span>
-<span class="kw">res_vpa</span> <span class="op">&lt;-</span> <span class="fu">vpa</span>(<span class="kw">dat</span>,fc.year=<span class="fl">2015</span><span class="op">:</span><span class="fl">2017</span>,tf.year = <span class="fl">2015</span><span class="op">:</span><span class="fl">2016</span>,
+<span class="kw">res_vpa</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span>(<span class="kw">dat</span>,fc.year=<span class="fl">2015</span><span class="op">:</span><span class="fl">2017</span>,tf.year = <span class="fl">2015</span><span class="op">:</span><span class="fl">2016</span>,
                term.F=<span class="st">"max"</span>,stat.tf=<span class="st">"mean"</span>,Pope=<span class="fl">TRUE</span>,tune=<span class="fl">FALSE</span>,p.init=<span class="fl">0.5</span>)
 <span class="kw">res_vpa</span><span class="op">$</span><span class="kw">Fc.at.age</span> <span class="co"># 将来予測やMSY計算で使うcurrent F (fc.yearのオプションでいつのFの平均かが指定される)</span>
 <span class="co">#&gt;         0         1         2         3 </span>
@@ -134,7 +134,7 @@
 </ul>
 <div class="sourceCode" id="cb2"><pre class="downlit">
 <span class="co">#out.vpa(res_vpa) # vpa.csvというファイルが作成されます。VPAの結果のグラフ出力となるvpa.pdfも出力されます。</span>
-<span class="kw">res_vpa2</span> <span class="op">&lt;-</span> <span class="fu">read.vpa</span>(<span class="st">"https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex2_vpa.csv"</span>) <span class="co"># vpa.csvを編集後、read.vpa関数で読み込みます</span>
+<span class="kw">res_vpa2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read.vpa.html">read.vpa</a></span>(<span class="st">"https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex2_vpa.csv"</span>) <span class="co"># vpa.csvを編集後、read.vpa関数で読み込みます</span>
 <span class="co">#&gt; Pope is TRUE... OK? (mean difference= 0 )</span>
 </pre></div>
 </div>
@@ -154,7 +154,7 @@
 <span class="kw">index</span>     <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html">read.csv</a></span>(<span class="st">"https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex1_index.csv"</span>,  row.names=<span class="fl">1</span>)
 
 <span class="co"># 整形</span>
-<span class="kw">dat</span> <span class="op">&lt;-</span> <span class="fu">data.handler</span>(caa=<span class="kw">caa</span>, waa=<span class="kw">waa</span>, maa=<span class="kw">maa</span>, index=<span class="kw">index</span>, M=<span class="fl">0.4</span>)
+<span class="kw">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/data.handler.html">data.handler</a></span>(caa=<span class="kw">caa</span>, waa=<span class="kw">waa</span>, maa=<span class="kw">maa</span>, index=<span class="kw">index</span>, M=<span class="fl">0.4</span>)
 </pre></div>
 </div>
 <div id="チューニングなしvpaのバリエーション" class="section level2">
@@ -163,10 +163,10 @@
 <div class="sourceCode" id="cb4"><pre class="downlit">
   <span class="co"># p.initは初期値。収束しない場合（Fがゼロになる場合など）は、初期値を変えてみる</span>
   <span class="co"># fc.yearは、Fcurrentを計算する範囲。管理基準値と将来予測で使われる。</span>
-<span class="kw">vout1</span> <span class="op">&lt;-</span> <span class="fu">vpa</span>(<span class="kw">dat</span>,tf.year=<span class="fl">1997</span><span class="op">:</span><span class="fl">1999</span>,Pope=<span class="fl">TRUE</span>,fc.year=<span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span>,alpha=<span class="fl">1</span>,p.init=<span class="fl">0.5</span>) 
-<span class="kw">vout1a</span> <span class="op">&lt;-</span> <span class="fu">vpa</span>(<span class="kw">dat</span>,tf.year=<span class="fl">1997</span><span class="op">:</span><span class="fl">1999</span>,Pope=<span class="fl">FALSE</span>,fc.year=<span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span>,alpha=<span class="fl">1</span>,p.init=<span class="fl">0.5</span>)
-<span class="kw">vout1b</span> <span class="op">&lt;-</span> <span class="fu">vpa</span>(<span class="kw">dat</span>,tf.year=<span class="fl">1997</span><span class="op">:</span><span class="fl">1999</span>,Pope=<span class="fl">TRUE</span>,fc.year=<span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span>,alpha=<span class="fl">0.5</span>,p.init=<span class="fl">0.5</span>)
-<span class="kw">vout1c</span> <span class="op">&lt;-</span> <span class="fu">vpa</span>(<span class="kw">dat</span>,tf.year=<span class="fl">1999</span><span class="op">:</span><span class="fl">1999</span>,Pope=<span class="fl">TRUE</span>,fc.year=<span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span>,alpha=<span class="fl">1</span>,p.init=<span class="fl">0.5</span>) 
+<span class="kw">vout1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span>(<span class="kw">dat</span>,tf.year=<span class="fl">1997</span><span class="op">:</span><span class="fl">1999</span>,Pope=<span class="fl">TRUE</span>,fc.year=<span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span>,alpha=<span class="fl">1</span>,p.init=<span class="fl">0.5</span>) 
+<span class="kw">vout1a</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span>(<span class="kw">dat</span>,tf.year=<span class="fl">1997</span><span class="op">:</span><span class="fl">1999</span>,Pope=<span class="fl">FALSE</span>,fc.year=<span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span>,alpha=<span class="fl">1</span>,p.init=<span class="fl">0.5</span>)
+<span class="kw">vout1b</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span>(<span class="kw">dat</span>,tf.year=<span class="fl">1997</span><span class="op">:</span><span class="fl">1999</span>,Pope=<span class="fl">TRUE</span>,fc.year=<span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span>,alpha=<span class="fl">0.5</span>,p.init=<span class="fl">0.5</span>)
+<span class="kw">vout1c</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span>(<span class="kw">dat</span>,tf.year=<span class="fl">1999</span><span class="op">:</span><span class="fl">1999</span>,Pope=<span class="fl">TRUE</span>,fc.year=<span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span>,alpha=<span class="fl">1</span>,p.init=<span class="fl">0.5</span>) 
 </pre></div>
 </div>
 <div id="チューニングvpaのバリエーション" class="section level2">
@@ -174,21 +174,21 @@
 <a href="#%E3%83%81%E3%83%A5%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0vpa%E3%81%AE%E3%83%90%E3%83%AA%E3%82%A8%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3" class="anchor"></a>チューニングVPAのバリエーション</h2>
 <div class="sourceCode" id="cb5"><pre class="downlit">
 <span class="co">## vout2; チューニング，選択率updateなし</span>
-<span class="kw">vout2</span> <span class="op">&lt;-</span> <span class="fu">vpa</span>(<span class="kw">dat</span>,tune=<span class="fl">TRUE</span>,sel.update=<span class="fl">FALSE</span>,Pope=<span class="fl">FALSE</span>,
+<span class="kw">vout2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span>(<span class="kw">dat</span>,tune=<span class="fl">TRUE</span>,sel.update=<span class="fl">FALSE</span>,Pope=<span class="fl">FALSE</span>,
              tf.year=<span class="kw">NULL</span>,sel.f=<span class="kw">vout1</span><span class="op">$</span><span class="kw">saa</span><span class="op">$</span><span class="st">"2000"</span>, <span class="co"># 選択率の仮定</span>
              abund=<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"N"</span>),min.age=<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">0</span>),max.age=<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">6</span>), <span class="co"># 資源量指数の設定</span>
              alpha=<span class="fl">1</span>,p.init=<span class="fl">0.5</span>,max.dd = <span class="fl">0.00001</span>,fc.year=<span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span>)
 
 <span class="co">## vout3; チューニング，選択率update</span>
   <span class="co"># tf.yearは選択率の初期値として用いられる。</span>
-<span class="kw">vout3</span> <span class="op">&lt;-</span> <span class="fu">vpa</span>(<span class="kw">dat</span>,tune=<span class="fl">TRUE</span>,sel.update=<span class="fl">TRUE</span>,Pope=<span class="fl">FALSE</span>,
+<span class="kw">vout3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span>(<span class="kw">dat</span>,tune=<span class="fl">TRUE</span>,sel.update=<span class="fl">TRUE</span>,Pope=<span class="fl">FALSE</span>,
              tf.year=<span class="fl">1997</span><span class="op">:</span><span class="fl">1999</span>,sel.f=<span class="kw">NULL</span>, 
              abund=<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"N"</span>),min.age=<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">0</span>),max.age=<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">7</span>), <span class="co"># 資源量指数の設定</span>
              alpha=<span class="fl">1</span>,p.init=<span class="fl">0.5</span>,max.dd = <span class="fl">0.00001</span>,fc.year=<span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span>)
 
 <span class="co">## チューニング，選択率全推定</span>
   <span class="co"># tf.yearも sel.fも必要ない</span>
-<span class="kw">vout4</span> <span class="op">&lt;-</span> <span class="fu">vpa</span>(<span class="kw">dat</span>,tune=<span class="fl">TRUE</span>,sel.update=<span class="fl">FALSE</span>,term.F=<span class="st">"all"</span>,
+<span class="kw">vout4</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span>(<span class="kw">dat</span>,tune=<span class="fl">TRUE</span>,sel.update=<span class="fl">FALSE</span>,term.F=<span class="st">"all"</span>,
              tf.year=<span class="kw">NULL</span>,sel.f=<span class="kw">NULL</span>,
              abund=<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"N"</span>),min.age=<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">0</span>),max.age=<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">6</span>), <span class="co"># 資源量指数の設定</span>
              alpha=<span class="fl">1</span>,p.init=<span class="fl">0.5</span>,max.dd = <span class="fl">0.00001</span>,fc.year=<span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span>)
@@ -202,7 +202,7 @@
 <h2 class="hasAnchor">
 <a href="#%E5%B0%A4%E5%BA%A6%E3%83%97%E3%83%AD%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB" class="anchor"></a>尤度プロファイル</h2>
 <div class="sourceCode" id="cb6"><pre class="downlit">
-<span class="kw">ci0</span> <span class="op">&lt;-</span> <span class="fu">profile_likelihood.vpa</span>(<span class="kw">vout3</span>, method=<span class="st">"ci"</span>,Alpha=<span class="fl">0.80</span>)<span class="op">$</span><span class="kw">ci</span>
+<span class="kw">ci0</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/profile_likelihood.vpa.html">profile_likelihood.vpa</a></span>(<span class="kw">vout3</span>, method=<span class="st">"ci"</span>,Alpha=<span class="fl">0.80</span>)<span class="op">$</span><span class="kw">ci</span>
 </pre></div>
 </div>
 <div id="ブートストラップ" class="section level2">
@@ -211,7 +211,7 @@
 <div class="sourceCode" id="cb7"><pre class="downlit">
 <span class="co">## ノンパラメトリックブートストラップ(method="n")</span>
 <span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span>(<span class="fl">1</span>)
-<span class="kw">boot.sim1</span> <span class="op">&lt;-</span> <span class="fu">boo.vpa</span>(<span class="kw">vout3</span>,B=<span class="fl">10</span>,method=<span class="st">"n"</span>)
+<span class="kw">boot.sim1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/boo.vpa.html">boo.vpa</a></span>(<span class="kw">vout3</span>,B=<span class="fl">10</span>,method=<span class="st">"n"</span>)
 <span class="co">#&gt; [1] 1</span>
 <span class="co">#&gt; [1] 2</span>
 <span class="co">#&gt; [1] 3</span>
@@ -230,7 +230,7 @@
 
 <span class="co">## パラメトリックブートストラップ(method="p")</span>
 <span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span>(<span class="fl">1</span>)
-<span class="kw">boot.sim2</span> <span class="op">&lt;-</span> <span class="fu">boo.vpa</span>(<span class="kw">vout3</span>,B=<span class="fl">10</span>,method=<span class="st">"p"</span>) <span class="co"># 実際には1000回以上(B=1000)やってください</span>
+<span class="kw">boot.sim2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/boo.vpa.html">boo.vpa</a></span>(<span class="kw">vout3</span>,B=<span class="fl">10</span>,method=<span class="st">"p"</span>) <span class="co"># 実際には1000回以上(B=1000)やってください</span>
 <span class="co">#&gt; [1] 1</span>
 <span class="co">#&gt; [1] 2</span>
 <span class="co">#&gt; [1] 3</span>
@@ -246,7 +246,7 @@
 
 <span class="co">## 平滑化ブートストラップ(method="r")</span>
 <span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span>(<span class="fl">1</span>) 
-<span class="kw">boot.sim3</span> <span class="op">&lt;-</span> <span class="fu">boo.vpa</span>(<span class="kw">vout3</span>,B=<span class="fl">10</span>,method=<span class="st">"r"</span>) <span class="co"># 実際には1000回以上(B=1000)やってください</span>
+<span class="kw">boot.sim3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/boo.vpa.html">boo.vpa</a></span>(<span class="kw">vout3</span>,B=<span class="fl">10</span>,method=<span class="st">"r"</span>) <span class="co"># 実際には1000回以上(B=1000)やってください</span>
 <span class="co">#&gt; [1] 1</span>
 <span class="co">#&gt; [1] 2</span>
 <span class="co">#&gt; [1] 3</span>
@@ -270,7 +270,7 @@
 
 <span class="co">## ノンパラメトリックブートストラップ for vout4</span>
 <span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span>(<span class="fl">1</span>)
-<span class="kw">boot.sim4</span> <span class="op">&lt;-</span> <span class="fu">boo.vpa</span>(<span class="kw">vout4</span>,B=<span class="fl">10</span>,method=<span class="st">"n"</span>) <span class="co"># 実際には1000回以上(B=1000)やってください</span>
+<span class="kw">boot.sim4</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/boo.vpa.html">boo.vpa</a></span>(<span class="kw">vout4</span>,B=<span class="fl">10</span>,method=<span class="st">"n"</span>) <span class="co"># 実際には1000回以上(B=1000)やってください</span>
 <span class="co">#&gt; [1] 1</span>
 <span class="co">#&gt; [1] 2</span>
 <span class="co">#&gt; [1] 3</span>
