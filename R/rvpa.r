@@ -278,11 +278,11 @@ tmpfunc2 <- function(x=1,y=2,z=3){
 
 
 qbs.f <- function(q.const, b.const, sigma.constraint, index, Abund, nindex, index.w, max.dd=0.0001, max.iter=100){
-  
-  np.q <- length(unique(q.const[q.const > 0])) 
-  np.b <- length(unique(b.const[b.const > 0])) 
+
+  np.q <- length(unique(q.const[q.const > 0]))
+  np.b <- length(unique(b.const[b.const > 0]))
   np.s <- length(unique(sigma.constraint[sigma.constraint > 0]))
-  
+
   q <- b <- sigma <- numeric(nindex)
 
   q[1:nindex] <- b[1:nindex] <- sigma[1:nindex] <- 1
@@ -341,7 +341,7 @@ qbs.f <- function(q.const, b.const, sigma.constraint, index, Abund, nindex, inde
     b[which(b.const>0)] <- b[b.const[which(b.const>0)]]
 
     sigma[which(sigma.constraint>0)] <- sigma[sigma.constraint[which(sigma.constraint>0)]]
-    
+
     delta <- max(c(sqrt((q-q0)^2),sqrt((b-b0)^2),sqrt((sigma-sigma0)^2)))
   }
 
@@ -446,9 +446,9 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param est.constraint  制約付き推定をするかどうか
 #' @param q.const  qパラメータの制約（0は推定しないで1にfix）
 #' @param b.const  bパラメータの制約（0は推定しないで1にfix）
-#' @param q.fix 
-#' @param b.fix 
-#' @param fixed.index.var 
+#' @param q.fix
+#' @param b.fix
+#' @param fixed.index.var
 #' @param max.iter  q,b,sigma計算の際の最大繰り返し数
 #' @param optimizer
 #' @param Lower
@@ -461,7 +461,7 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param ssb.lag  0: no lag, 1: lag 1
 #' @param TMB  TMBで高速計算する場合TMB=TRUE (事前にuse_rvpa_tmb()を実行)
 #' @param sel.rank
-#' @param p.init 
+#' @param p.init
 #' @param sigma.constraint  sigmaパラメータの制約.使い方としては，指標が５つあり，2番目と3番目の指標のsigmaは同じとしたい場合はc(1,2,2,3,4)と指定する
 #' @param eta  Fのpenaltyを分けて与えるときにeta.ageで指定した年齢への相対的なpenalty (0~1)
 #' @param eta.age  Fのpenaltyを分けるときにetaを与える年齢(0 = 0歳（加入）,0:1 = 0~1歳)
@@ -556,7 +556,7 @@ vpa <- function(
   #   compile(cpp_name)
   #   dyn.load(dynlib(tmb.file))
   # }
-  
+
   # inputデータをリスト化
 
   argname <- ls()  # 関数が呼び出されたばかりのときのls()は引数のみが入っている
@@ -919,7 +919,7 @@ vpa <- function(
          abundance <- abund.extractor(abund=abund[i], naa, faa, dat, min.age=min.age[i], max.age=max.age[i], link=link[i], base=base[i], af=af[i], catch.prop=catch.prop, sel.def=sel.def, p.m=p.m, omega=omega, scale=scale)
          Abund <- rbind(Abund, abundance)
        }
-  
+
        if (is.null(fixed.index.var)) est.qbs <- qbs.f(q.const, b.const, sigma.constraint, index, Abund, nindex, index.w, max.dd, max.iter) else {
        p00 <- c(log(q.const[which(index.w >0)]), log(sigma.constraint[which(index.w >0)]))
        est.qbs <- qbs.f2(p00, index, Abund, nindex, index.w, fixed.index.var)
@@ -1115,8 +1115,8 @@ vpa <- function(
           if (est.method=="ml"|est.constraint| !is.null(fixed.index.var)){
             if (est.constraint){
               names(q) <- q.const
-              names(b) <- b.const              
-              names(sigma) <- sigma.constraint          
+              names(b) <- b.const
+              names(sigma) <- sigma.constraint
             }
             obj$convergence <- convergence
             obj$q <- q
@@ -1282,7 +1282,7 @@ Ft <- mean(faa[,ny],na.rm=TRUE)
         lines(years[Y],out$Abund[i,Y],col=2,lwd=2)
       } # for(i) 従来のplot
     } else {
-      gridExtra::grid.arrange(graph$year_resid, graph$fitting_CPUE,graph$abund_CPUE) # 3つのggplotを並べる
+      gridExtra::grid.arrange(graph$year_resid, graph$fitting_Index, graph$abund_Index) # 3つのggplotを並べる
       res <- c(res, list(plot = graph))
     } # 加筆（浜辺）
   }
