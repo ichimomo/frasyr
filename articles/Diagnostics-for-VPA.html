@@ -464,9 +464,9 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 <li>
 <code>$year_resid</code>: 対数残差を時系列にプロットしたもの。先述の残差の傾向と外れ値の把握に利用。標準化残差のプロットについては<code>$year_sd_resid</code>中にある。</li>
 <li>
-<code>$fitting_CPUE</code>: CPUEと予測CPUEをそれぞれ重ねてプロットしたもの。データと推定結果のフィッティングを見るもの。</li>
+<code>$fitting_Index</code>: CPUEと予測CPUEをそれぞれ重ねてプロットしたもの。データと推定結果のフィッティングを見るもの。</li>
 <li>
-<code>$abund_CPUE</code>: 資源量/資源重量/親魚重量とその予測CPUEとの関係。赤い線が推定した資源量とその指数の線形/非線形性を表す。</li>
+<code>$abund_Index</code>: 資源量/資源重量/親魚重量とその予測CPUEとの関係。赤い線が推定した資源量とその指数の線形/非線形性を表す。</li>
 </ul>
 <p>また<code>index_name</code>引数中に、各指標の名前を与えるとプロットに反映されます（ない場合はIndex01、Index02・・・となります）。与える場合、用いた指標の数分引数に入れてください。</p>
 <div class="sourceCode" id="cb26"><pre class="downlit">
@@ -564,8 +564,8 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 <span class="co">for</span>(<span class="kw">i</span> <span class="co">in</span> <span class="fl">1</span><span class="op">:</span><span class="fl">10</span>) <span class="kw">res_tmp</span>[<span class="kw">i</span>] <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html">as.numeric</a></span>(<span class="kw">res_vpa_bootstrap</span><span class="op">$</span><span class="kw">res_boot</span>[[<span class="kw">i</span>]]<span class="op">$</span><span class="kw">Fc.at.age</span>[<span class="fl">4</span>])
 <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html">quantile</a></span>(<span class="kw">res_tmp</span>, probs = <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">0.025</span>,<span class="fl">0.5</span>,<span class="fl">0.975</span>))
 </pre></div>
-<pre><code>     2.5%       50%     97.5% 
-0.3902345 0.8430607 7.7641335 </code></pre>
+<pre><code>        2.5%          50%        97.5% 
+   0.4337684    0.7095744 3252.3000313 </code></pre>
 <p>この他、各パラメータの相関関係について、ブートストラップ標本を基にプロットが得られます。</p>
 <div class="sourceCode" id="cb38"><pre class="downlit">
 <span class="kw">res_vpa_bootstrap</span><span class="op">$</span><span class="kw">plot_cor</span>
