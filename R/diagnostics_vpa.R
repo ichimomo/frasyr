@@ -463,7 +463,7 @@ do_estcheck_vpa <- function(res, n_ite = 20, sd_jitter = 1, what_plot = NULL, TM
                              gradient = tmp$gradient)
       ite_tmp[[i]] <- rep(i, length(res$term.f))
       #      ll_tmp[[i]] <- rep(res$logLik, length(res$term.f))
-      ll_tmp[[i]] <- rep(tmp$logLik, length(res$term.f))      
+      ll_tmp[[i]] <- rep(tmp$logLik, length(res$term.f))
       Finit[[i]] <- init_tmp
       Fest[[i]] <- tmp$term.f
     }
@@ -499,7 +499,7 @@ do_estcheck_vpa <- function(res, n_ite = 20, sd_jitter = 1, what_plot = NULL, TM
   g2 <- ggplot(data = d_tmp[d_tmp$age == "max",]) +
     geom_segment(aes(x=0, xend = 4, y = result_lk, yend = result_lk), color = "red", size = 1.3)+
     geom_point(aes(x = initial, y = likelihood), size = 5) +
-    ylab("log Likelihood") + xlab("initial value") +
+    ylab("log Likelihood") + xlab("initial value of F of age Max") +
     theme_SH(base_size = 14)
 
   # Hessianの結果をメッセージで返す
@@ -516,10 +516,10 @@ do_estcheck_vpa <- function(res, n_ite = 20, sd_jitter = 1, what_plot = NULL, TM
     message(paste('Iterations in ', lab_tmp, ' were not convergence ...'))
   }
 
-  maxlike <- max(sapply(value_tmp, function(x) x$logLik))  
+  maxlike <- max(sapply(value_tmp, function(x) x$logLik))
   cat("Maximum likelihood in jitter analysis is: ",maxlike ,"\n")
-  cat("Likelihood with estimated parameters is: ", res$logLik, "\n")    
-        
+  cat("Likelihood with estimated parameters is: ", res$logLik, "\n")
+
   return(list(initial_value = init_list, #初期値の乱数
               p_name = name_tmp, # 初期値の名前
               value = value_tmp, # 推定値と尤度のリスト
