@@ -111,10 +111,12 @@ plot_vpa <- function(vpalist,
   # シナリオの違いを線種+shapeにした(浜辺'20/06/30)
   g1 <- vpadata %>% ggplot()
   if(all(is.na(vpadata$age))){
-    g1 <- try(g1+ geom_line(aes(x=year, y=value,lty=id,shape=id)))
+    g1 <- g1+ geom_line(aes(x=year, y=value,lty=id))
+    g1 <- try(g1 + geom_point(aes(x=year, y=value, shape=id)))
   }
   else{
-    g1 <- try(g1+ geom_line(aes(x=year, y=value,color=age,lty=id,shape=id)))
+    g1 <- g1+ geom_line(aes(x=year, y=value, color=age, lty=id))
+    g1 <- try(g1 + geom_point(aes(x=year, y=value, color=age, shape=id)))
   }
   # 上のがダメな場合にオリジナルで対応
   if(class(g1)=="try-error"){
