@@ -74,6 +74,7 @@ ggsave_SH_large <- function(...){
 plot_vpa <- function(vpalist,
                      vpatibble=NULL,
                      what.plot=NULL,
+                     plot_year=NULL,  # 浜辺加筆(2020/06/30)
                      legend.position="top",
                      vpaname=NULL, ncol=2){
 
@@ -135,7 +136,13 @@ plot_vpa <- function(vpalist,
     ylab("value") + xlab("Year")+
     guides(color=guide_legend(nrow=2))
 
-  g1
+  if(!(is.null(plot_year))){
+    g2 <- g1 + xlim(plot_year[1], max(plot_year))
+  } else {
+    g2 <- g1
+  } # もし動かない場合はこれまで通りに作図(浜辺'20/06/30)
+
+  g2
 }
 
 #' F currentをプロットする
