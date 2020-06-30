@@ -65,7 +65,7 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
     for(i in 1:length(value)){
       input0 <- res$input
       input0$dat$M <- input0$dat$M *value[i]
-      res_vpa.s[[i]] <- do.call(vpa, input0)
+      res_vpa.s[[i]] <- safe_call(vpa, input0, force=TRUERUE)
       lab.tmp[i] <- paste("Sensitivity M= x", value[i], sep = "")
     } # for
 
@@ -78,7 +78,7 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
       for(i in 1:length(value)){
         input0 <- res$input
         input0$dat$waa <- input0$dat$waa *value[i]
-        res_vpa.s[[i]] <- do.call(vpa, input0)
+        res_vpa.s[[i]] <- safe_call(vpa, input0, force=TRUE)
         lab.tmp[i] <- paste("Sensitivity waa= x", value[i], sep = "")
       } # for
 
@@ -98,7 +98,7 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
         input0 <- res$input
         input0$dat$waa <- value[[i]]
         colnames(input0$dat$waa) <- colnames.tmp ; rownames(input0$dat$waa) <- rownames.tmp
-        res_vpa.s[[i]] <- do.call(vpa, input0)
+        res_vpa.s[[i]] <- safe_call(vpa, input0, force=TRUE)
         lab.tmp[i] <- paste("Sensitivity waa case:", i, sep = "")
       } # for
 
@@ -114,7 +114,7 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
       for(i in 1:length(value)){
         input0 <- res$input
         input0$dat$waa.catch <- input0$dat$waa.catch *value[i]
-        res_vpa.s[[i]] <- do.call(vpa, input0)
+        res_vpa.s[[i]] <- safe_call(vpa, input0, force=TRUE)
         lab.tmp[i] <- paste("Sensitivity waa.catch= x", value[i], sep = "")
       } # for
 
@@ -134,7 +134,7 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
         input0 <- res$input
         input0$dat$waa.catch <- value[[i]]
         colnames(input0$dat$waa.catch) <- colnames.tmp ; rownames(input0$dat$waa.catch) <- rownames.tmp
-        res_vpa.s[[i]] <- do.call(vpa, input0)
+        res_vpa.s[[i]] <- safe_call(vpa, input0, force=TRUE)
         lab.tmp[i] <- paste("Sensitivity waa.catch case:", i, sep = "")
       } # for
 
@@ -165,7 +165,7 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
       input0$dat$maa <- value[[i]]
       colnames(input0$dat$maa) <- colnames.tmp
       rownames(input0$dat$maa) <- rownames.tmp
-      res_vpa.s[[i]] <- do.call(vpa, input0)
+      res_vpa.s[[i]] <- safe_call(vpa, input0, force=TRUE)
       lab.tmp[i] <- paste("Sensitivity maa case:", i, sep = "")
     } # for
 
@@ -175,7 +175,7 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
     for(i in 1:length(value)){
       input0 <- res$input
       input0$alpha <- value[i]
-      res_vpa.s[[i]] <- do.call(vpa, input0)
+      res_vpa.s[[i]] <- safe_call(vpa, input0, force=TRUE)
       lab.tmp[i] <- paste("Sensitivity alpha=", value[i], sep = "")
     } # for
 
@@ -191,7 +191,7 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
         input0$term.F <- "max"
         input0$sel.update <- FALSE
         input0$tf.year <- value[[i]]
-        res_vpa.s[[i]] <- do.call(vpa, input0)
+        res_vpa.s[[i]] <- safe_call(vpa, input0, force=TRUE)
         lab.tmp[i] <- paste("tf.year = ", value[[i]][1], ":", value[[i]][length(value[[i]])], sep = "")
       }
     } else if(res$input$sel.update == TRUE){  # resは選択率更新
@@ -199,7 +199,7 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
       input0 <- res$input
       input0$sel.update <- FALSE
       input0$term.F <- "all"
-      res_vpa.s[[1]] <- do.call(vpa, input0)
+      res_vpa.s[[1]] <- safe_call(vpa, input0, force=TRUE)
       lab.tmp <- "ALL_F.est"
       #   } else if(!res$input$lambda == 0){  # resはRidge VPA
       #       # lambdaを変えて感度分析
@@ -207,7 +207,7 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
       #      for(i in 1:length(value)){
       #        input0 <- res$input
       #        input0$lambda <- value[i]
-      #        res_vpa.s[[i]] <- do.call(vpa, input0)
+      #        res_vpa.s[[i]] <- safe_call(vpa, input0, force=TRUE)
       #        lab.tmp[i] <- paste("lambda = ", value[i], sep = "")
       #      }
     } else  {
@@ -218,7 +218,7 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
         input0$sel.update <- TRUE
         input0$term.F <- "max"
         input0$tf.year <- value[[i]]
-        res_vpa.s[[i]] <- do.call(vpa, input0)
+        res_vpa.s[[i]] <- safe_call(vpa, input0, force=TRUE)
         lab.tmp[i] <- paste("sel.update, tf.year = ", value[[i]][1], ":", value[[i]][length(value[[i]])], sep = "")
       }
     }
@@ -229,7 +229,7 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
     for(i in 1:length(value)){
       input0 <- res$input
       input0$lambda <- value[i]
-      res_vpa.s[[i]] <- do.call(vpa, input0)
+      res_vpa.s[[i]] <- safe_call(vpa, input0, force=TRUE)
       lab.tmp[i] <- paste("lambda = ", value[i], sep = "")
     }
 
@@ -239,20 +239,20 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
     if(res$input$b.est == TRUE){
       input0 <- res$input
       input0$b.est <- FALSE
-      res_vpa.s[[1]] <- do.call(vpa, input0)
+      res_vpa.s[[1]] <- safe_call(vpa, input0, force=TRUE)
       lab.tmp <- "b = 1"
     } else if(class(value) == "numeric") {
       if(!length(value) == length(res$b)) stop(paste0("Length of b was different !!"))
       input0 <- res$input
       input0$b.fix <- value
-      res_vpa.s[[1]] <- do.call(vpa, input0)
+      res_vpa.s[[1]] <- safe_call(vpa, input0, force=TRUE)
       lab.tmp <- paste("b.fix", sep = "")
     } else if(class(value) == "list") {
       for(j in 1:length(value)){
         if(!length(value[[j]]) == length(res$b)) stop(paste0("Length of b was different !!"))
         input0 <- res$input
         input0$b.fix <- value[[j]]
-        res_vpa.s[[j]] <- do.call(vpa, input0)
+        res_vpa.s[[j]] <- safe_call(vpa, input0, force=TRUE)
         lab.tmp[j] <- paste("b.fix: pattern", j, sep = "")
       }
     } else {
@@ -260,7 +260,7 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
       input0 <- res$input
       input0$b.fix <- NULL
       input0$b.est <- TRUE
-      res_vpa.s[[1]] <- do.call(vpa, input0)
+      res_vpa.s[[1]] <- safe_call(vpa, input0, force=TRUE)
       lab.tmp <- "b.est: TRUE"
     }
 
@@ -273,12 +273,12 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
       #input0$abund <- value    # $abundで資源量指数の対応するものを明記。デフォだと長さがずれてしまう#
       #input0$sigma.const<- input0$sigma.constraint <- 1:length(input0$abund)
       # valueをlistにして、分散の傾斜をオプションでいじれてもいいかも
-      res_vpa.s[[1]] <- do.call(vpa, input0)
+      res_vpa.s[[1]] <- safe_call(vpa, input0, force=TRUE)
       lab.tmp <- "est.method: ml"
     } else {
       input0 <- res$input
       input0$est.method <- "ls"
-      res_vpa.s[[1]] <- do.call(vpa, input0)
+      res_vpa.s[[1]] <- safe_call(vpa, input0, force=TRUE)
       lab.tmp <- "est.method: ls"
     }
 
@@ -448,7 +448,7 @@ do_estcheck_vpa <- function(res, n_ite = 20, sd_jitter = 1, what_plot = NULL, TM
       init_tmp[j] <- init_list[[j]][i]
     }  # for(j)
     input0$p.init <- init_tmp
-    tmp <- try(do.call(vpa, input0))
+    tmp <- try(safe_call(vpa, input0, force=TRUE))
     if(class(tmp) == "try-error"){
       value_tmp[[i]] <- NA
       ite_tmp[[i]] <- rep(i, length(res$term.f))
@@ -768,7 +768,7 @@ do_jackknife_vpa <- function(res, method = "index", what_plot = NULL, ncol = 5){
       input0$plot <- FALSE
       input0$sigma.const <- input0$sigma.const[-i]
       input0$sigma.constraint <- input0$sigma.constraint[-i]
-      res_tmp <- do.call(vpa, input0)  # vpa関数の実行
+      res_tmp <- safe_call(vpa, input0, force=TRUE)  # vpa関数の実行
 
       res_list[[i]] <- res_tmp
       abund_tmp[[i]] <- apply(res_tmp$naa,2,sum)
@@ -796,7 +796,7 @@ do_jackknife_vpa <- function(res, method = "index", what_plot = NULL, ncol = 5){
         index_tmp[index_label[j]] <- NA
         input0$dat$index[i,] <- index_tmp
         input0$plot <- FALSE
-        res_tmp <- do.call(vpa, input0)  # vpa関数の実行
+        res_tmp <- safe_call(vpa, input0, force=TRUE)  # vpa関数の実行
 
         if(i == 1){
           res_list[[j]] <- res_tmp
@@ -1068,7 +1068,7 @@ do_caaboot_vpa <-  function(res, B_ite = 1000, B_cv = 0.2, ci_range = 0.95){
     colnames(caa_tmp) <- year
     rownames(caa_tmp) <- age
     input0$dat$caa <- caa_tmp
-    res_tmp <- try(do.call(vpa, input0))
+    res_tmp <- try(safe_call(vpa, input0, force=TRUE))
     if(class(res_tmp) == "try-error"){
       message(paste('Iteration',i,'was errored ...', sep = " "))
       ssb_mat[i,] <- rep(NA, length(year))

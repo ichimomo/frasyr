@@ -1488,7 +1488,7 @@ boo.vpa <- function(res,B=5,method="p",mean.correction=FALSE){
 
     res.c$input$dat$index <- b.index
 
-    res1 <- try(do.call(vpa,res.c$input))
+    res1 <- try(safe_call(vpa,res.c$input, force=TRUE))  # do.callからsafe_callに変更(浜辺'20/06/30)
     if(class(res1)=="try-error"){
       Res1[[b]] <- "try-error"
     }
@@ -1568,7 +1568,7 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE){
 
      if (isTRUE(init.est)) res.c$input$p.init <- res.c$term.f
 
-     res1 <- do.call(vpa,res.c$input)
+     res1 <- safe_call(vpa,res.c$input, force=TRUE) # do.callからsafe_callに変更(浜辺'20/06/30)
 
      Res[[i]] <- res1
 
