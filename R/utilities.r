@@ -570,8 +570,8 @@ make_summary_table <- function(mat_data,side=1,probs=c(0.1,0.5,0.8)){
 #' @param res  VPAの結果
 #' @param srres fit.SRの結果
 #' @param msyres est.MSYの結果
-#' @param fres_current future.vpaの結果(Fcurrent)
-#' @param fres_HCR future.vpaの結果(F with HCR)
+#' @param fres_current future_vpaの結果(Fcurrent)
+#' @param fres_HCR future_vpaの結果(F with HCR)
 #' @param kobeII kobeII.matrixの結果
 #' @param filename csvファイルとpdfファイルの両方のファイル名を指定する場合（拡張子なしで指定）
 #' @param csvname csvファイルのファイル名
@@ -1078,9 +1078,9 @@ convert_2d_future <- function(df, name, label="tmp"){
     mutate(year=as.numeric(year), stat=name, label=label)
 }
 
-#' future.vpaの結果オブジェクトをtibble形式に変換する関数
+#' future_vpaの結果オブジェクトをtibble形式に変換する関数
 #'
-#' @param fout future.vpaの結果のオブジェクト
+#' @param fout future_vpaの結果のオブジェクト
 #'
 #' @encoding UTF-8
 #' @export
@@ -1403,10 +1403,11 @@ beta.simulation <- function(finput,beta_vector,year.lag=0,type="old"){
 
   for(i in 1:length(beta_vector)){
     if(type=="old"){
-      finput$HCR$beta <- beta_vector[i]
-      finput$is.plot <- FALSE
-      finput$silent <- TRUE
-      fres_base <- do.call(future.vpa,finput) # デフォルトルールの結果→図示などに使う
+        #      finput$HCR$beta <- beta_vector[i]
+        #      finput$is.plot <- FALSE
+        #      finput$silent <- TRUE
+        #      fres_base <- do.call(future.vpa,finput) # デフォルトルールの結果→図示などに使う
+        stop("old function of future.vpa is not supported now")
     }
     else{
       finput$tmb_data$HCR_mat[,,"beta"] <- beta_vector[i]
@@ -1424,43 +1425,41 @@ beta.simulation <- function(finput,beta_vector,year.lag=0,type="old"){
 
 #' MSYを達成するときの\%SPRを計算する
 #'
-#' @param finput 将来予測インプット
 #' @param fout 将来予測のアウトプット（finputがない場合)
+#' @param res_vpa ダミー。この内容によって結果は変わらないので将来的には削除すべき引数
 #' @param Fvector Fのベクトル
+#' @param max.age SPR計算のときに考慮する最大年齢。デフォルトは無限大。
+#' 
 #' @encoding UTF-8
 #' @export
-calc_perspr <- function(finput=NULL,
-                        fout=NULL,
+#' 
+
+calc_perspr <- function(fout=NULL,
                         res_vpa=NULL,
                         Fvector,
                         Fmax=10,
                         max.age=Inf,
                         target.col=NULL
 ){
-  if(!is.null(finput)){
-    # MSYにおける将来予測計算をやりなおし
-    finput$outtype <- "FULL"
-    fout.tmp <- do.call(future.vpa,finput)
-    res_vpa <- finput$res0
-  }
-  else{
-    fout.tmp <- fout
-  }
-  # 生物パラメータはその将来予測で使われているものを使う
+
+  fout.tmp <- fout
+
+  # 生物パラメータはその将来予測で使われている最終年のシミュレーションの平均値を使う
   if(is.null(target.col)){
-    waa.tmp           <- fout.tmp$waa[,dim(fout.tmp$waa)[[2]],1]
-    waa.catch.tmp <- fout.tmp$waa.catch[,dim(fout.tmp$waa.catch)[[2]],1]
-    maa.tmp           <- fout.tmp$maa[,dim(fout.tmp$maa)[[2]],1]
-    M.tmp                <- fout.tmp$M[,dim(fout.tmp$M)[[2]],1]
+    waa.tmp       <- fout.tmp$waa      [,dim(fout.tmp$waa)      [[2]],] %>% apply(1,mean) 
+    waa.catch.tmp <- fout.tmp$waa.catch[,dim(fout.tmp$waa.catch)[[2]],] %>% apply(1,mean)
+    maa.tmp       <- fout.tmp$maa      [,dim(fout.tmp$maa)      [[2]],] %>% apply(1,mean)
+    M.tmp         <- fout.tmp$M        [,dim(fout.tmp$M)        [[2]],] %>% apply(1,mean)
   }
   else{
-    waa.tmp           <- fout.tmp$waa[,target.col,1]
-    waa.catch.tmp <- fout.tmp$waa.catch[,target.col,1]
-    maa.tmp           <- fout.tmp$maa[,target.col,1]
-    M.tmp               <- fout.tmp$M[,target.col,1]
+    waa.tmp       <- fout.tmp$waa[,target.col,]       %>% apply(1,mean)
+    waa.catch.tmp <- fout.tmp$waa.catch[,target.col,] %>% apply(1,mean)
+    maa.tmp       <- fout.tmp$maa[,target.col,]       %>% apply(1,mean)
+    M.tmp         <- fout.tmp$M[,target.col,]         %>% apply(1,mean)
   }
 
   # 緊急措置。本来ならどこをプラスグループとして与えるかを引数として与えないといけない
+  # 現状で、すべてのカラムがゼロ＝資源計算では考慮されていないセルとして認識されている
   allsumpars <- waa.tmp+waa.catch.tmp+maa.tmp+M.tmp
   waa.tmp <- waa.tmp[allsumpars!=0]
   waa.catch.tmp <- waa.catch.tmp[allsumpars!=0]
@@ -1471,10 +1470,13 @@ calc_perspr <- function(finput=NULL,
   ## ここまで緊急措置
 
   # SPRを計算
-  spr.current <- ref.F(res_vpa,Fcurrent=Fvector,
+  spr.current <- ref.F(res_vpa,
+                       Fcurrent=Fvector,
                        waa=waa.tmp,
-                       waa.catch=waa.catch.tmp,pSPR=NULL,
-                       maa=maa.tmp,M=M.tmp,rps.year=as.numeric(colnames(res_vpa$naa)),
+                       waa.catch=waa.catch.tmp,
+                       maa=maa.tmp,
+                       M=M.tmp,
+                       rps.year=as.numeric(colnames(res_vpa$naa)),pSPR=NULL,
                        F.range=c(seq(from=0,to=ceiling(max(res_vpa$Fc.at.age,na.rm=T)*Fmax),
                                      length=101),max(res_vpa$Fc.at.age,na.rm=T)),
                        plot=FALSE,max.age=max.age)$currentSPR$perSPR

@@ -48,3 +48,9 @@ test_that("test for HCR function", {
     expect_equal(res_HCR, matrix(c(0,0.2,0.4,0.6,rep(0.8,6)),2,5))
 })
 
+test_that("test for calculation of %SPR conversion", {
+    perSPR_Fvector <- calc_perspr(fout=res_future_current,res_vpa=res_vpa_example,Fvector=rep(1,5))
+    expect_equal(round(perSPR_Fvector,4),0.1343)
+
+})
+
