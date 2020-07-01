@@ -56,7 +56,7 @@
 
 # author: Kohei Hamabe
 
-do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol = 5){
+do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol = 5, plot_year = NULL){
   res_vpa.s <- list() ; lab.tmp <- numeric()
   res$input$plot <- FALSE # 背後で沢山plotするのを防ぐ
 
@@ -290,9 +290,10 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
 
   names(res_vpa.s) <- lab.tmp
   # 結果のラベルに名前を付ける
-  if(!(is.null(what_plot)) )what.plot <- factor(what_plot, levels = as.character(what_plot))
+  if(!(is.null(what_plot)))what.plot <- factor(what_plot, levels = as.character(what_plot))
   g1 <- plot_vpa(c(list(Base=res), res_vpa.s),
-                 what.plot = what_plot, ncol = ncol)
+                 what.plot = what_plot, ncol = ncol, plot_year = plot_year)
+
   return(list(result = res_vpa.s, graph = g1))
 } # function(do_sensitivity_vpa)
 
@@ -330,6 +331,7 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
 do_retrospective_vpa <- function(res, n_retro = 5, b_reest = FALSE,
                                  what_plot = c("SSB", "biomass", "Recruitment",
                                                "fish_number", "fishing_mortality"),
+                                 plot_year = NULL,
                                  ncol = 3){
 
   if(b_reest == TRUE && res$input$b.est == FALSE)message(paste('b was not estimated in your vpa model'))
@@ -349,7 +351,7 @@ do_retrospective_vpa <- function(res, n_retro = 5, b_reest = FALSE,
 
   g1 <- plot_vpa(dat_graph,
                  what.plot = factor(what_plot, levels = as.character(what_plot)),
-                 ncol = ncol) +
+                 ncol = ncol, plot_year = plot_year) +
     geom_label(data = rho_data,
                mapping = aes(x = x, y = y, label = str_c("rho=", round(value,2))),
                vjust="inward", hjust="inward")
@@ -753,7 +755,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
 
 # author: Kohei Hamabe
 
-do_jackknife_vpa <- function(res, method = "index", what_plot = NULL, ncol = 5){
+do_jackknife_vpa <- function(res, method = "index", what_plot = NULL, ncol = 5, plot_year = NULL){
   year <- as.numeric(colnames(res$input$dat$index))
   res_list <- list()
   abund_tmp <- ssb_tmp <- biom_tmp <- tf_tmp <- list()
@@ -835,7 +837,7 @@ do_jackknife_vpa <- function(res, method = "index", what_plot = NULL, ncol = 5){
   # plot_vpaですっきり作図！
   names(res_list) <- name_tmp
   gg <- plot_vpa(c(list(Base=res), res_list),
-                 what.plot = what_plot, ncol = ncol)
+                 what.plot = what_plot, ncol = ncol, plot_year = plot_year)
 
   ## ----------------------------------------------------------------- ##
   ## 問題なさそうなら、この区間は消して問題ない

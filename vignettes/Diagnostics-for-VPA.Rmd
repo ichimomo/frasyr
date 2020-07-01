@@ -137,6 +137,9 @@ res_vpa_sensitivity$graph
 
 また、`what_plot`に作図で出力したい結果を指定することができます。
 
+**この他、`plot_year`に作図したい年（x軸の範囲）を指定することもできます**
+
+
 ```{r}
 
 res_vpa_sensitivity <- do_sensitivity_vpa(res_vpa_estb,
@@ -144,6 +147,7 @@ res_vpa_sensitivity <- do_sensitivity_vpa(res_vpa_estb,
                                           value = c(0.8, 1.2),
                                           what_plot=c("SSB","biomass","U","Recruitment",
                                                       "fish_number","fishing_mortality"), 
+                                          plot_year = c(1997, 2000),
                                           ncol=3
                                           )
 res_vpa_sensitivity$graph
@@ -345,6 +349,7 @@ tmp <- do_sensitivity_vpa(res_vpa_estb, what_replace = "b", value = c("b.est"))
 - `n_retro` : レトロスペクティブ解析を何年さかのぼって実行するか（デフォルトで5年）
 - `b_reest` : b(hyperstability/depletion)をレトロスペクティブ解析内で再推定するか
 - `what_plot` : 作図で何を出力するか
+- **`plot_year` : 作図したい年（作図のx軸の範囲）**
 - `ncol` : 作図の列数
 
 があります。
@@ -456,6 +461,7 @@ res_vpa_jitter$graph$likelihood # 対数尤度（大きいほど良い）
 
 また`index_name`引数中に、各指標の名前を与えるとプロットに反映されます（ない場合はIndex01、Index02・・・となります）。与える場合、用いた指標の数分引数に入れてください。
 
+
 ```{r}
 
 plot_example <- plot_residual_vpa(res_vpa_estb, index_name = c("CPUE1", "CPUE2","CPUE3","CPUE4","CPUE5","CPUE6"),plot_smooth=TRUE)
@@ -482,14 +488,18 @@ plot_example$fitting_Index
 観測値（資源量指数）を1つずつ抜いて解析を行うことで、影響力の強いデータや外れ値を検出する方法です。
 `do_jackknife_vpa`関数で自動で観測値を抜いて再解析を行います。
 
+**また、`plot_year`に作図したい年（x軸の範囲）を指定することもできます**
+
+
 引数`method`はデフォルトで"index"となっており、資源量指数の種類ごとに取り除いて解析を行います（つまり、資源量指数の種類分、結果が返ってきます）。一方、それぞれの種類を年ごとに取り除きたい場合は"all"を選択してください。この場合、資源量指数の種類×年数分、取り除いて計算するためデータ数によっては多くの計算時間を必要とする点に気を付けてください。
+
 
 ```{r}
 
 res_vpa_jackknife <- do_jackknife_vpa(res_vpa_estb,
                                       what_plot = c("SSB", "biomass", "U", "Recruitment",
                                                     "fish_number", "fishing_mortality"),
-                                      ncol = 3)
+                                      ncol = 3, plot_year = c(1995, 2000))
 res_vpa_jackknife$JKplot_vpa # 全体の結果
 res_vpa_jackknife$JKplot_par + ylim(0,1) # 最終年のFの比較 (ここではylimで縦軸を調整しています)
 ```
