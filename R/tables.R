@@ -146,7 +146,7 @@ adhoc_table <- function(result_vpa, yrs_preabc, number, sbtarget = NULL, fmsy = 
   f_latest_  <- function(numeric = FALSE) {
     value <- extract_from_vpa_("faa")
     if (numeric) {
-      value <- mean(unlist(value))
+      value <- mean(unlist(value), na.rm = TRUE)
     } else {
       value <- format_x_at_age(value)
     }
@@ -298,7 +298,7 @@ make_abctable <- function(kobe_table, result_future, beta, year, faa_pre, faa_af
                             unit = "千トン")
   }
   f_over_recentf_ <- function() {
-    round(mean(faa_pre) / mean(faa_after), 2)
+    round(mean(faa_pre, na.rm = TRUE) / mean(faa_after), 2)
   }
   harvest_rate_ <- function() {
     biomass_abcyear <- extract_value(from = result_future,
