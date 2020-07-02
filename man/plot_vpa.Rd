@@ -9,6 +9,7 @@ plot_vpa(
   vpalist,
   vpatibble = NULL,
   what.plot = NULL,
+  plot_year = NULL,
   legend.position = "top",
   vpaname = NULL,
   ncol = 2

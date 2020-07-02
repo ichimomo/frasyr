@@ -171,12 +171,6 @@ vpa(
 
 \item{b.const}{bパラメータの制約（0は推定しないで1にfix）}
 
-\item{q.fix}{}
-
-\item{b.fix}{}
-
-\item{fixed.index.var}{}
-
 \item{max.iter}{q,b,sigma計算の際の最大繰り返し数}
 
 \item{lambda}{ridge回帰係数}
@@ -188,8 +182,6 @@ vpa(
 \item{ssb.lag}{0: no lag, 1: lag 1}
 
 \item{TMB}{TMBで高速計算する場合TMB=TRUE (事前にuse_rvpa_tmb()を実行)}
-
-\item{p.init}{}
 
 \item{sigma.constraint}{sigmaパラメータの制約.使い方としては，指標が５つあり，2番目と3番目の指標のsigmaは同じとしたい場合はc(1,2,2,3,4)と指定する}
 

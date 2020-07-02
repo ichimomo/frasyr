@@ -8,7 +8,6 @@
 plot_residual_vpa(
   res,
   index_name = NULL,
-  plot_scale = FALSE,
   plot_smooth = TRUE,
   plot_year = FALSE
 )
