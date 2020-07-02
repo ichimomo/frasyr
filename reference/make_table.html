@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>ジャックナイフ法を行う関数 — do_jackknife_vpa • frasyr</title>
+<title>Make table depending on the class of given object — make_table • frasyr</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,8 @@
 
 
 
-<meta property="og:title" content="ジャックナイフ法を行う関数 — do_jackknife_vpa" />
-<meta property="og:description" content="モデル診断法の一つです。影響力の強いデータや外れ値の検出に用いることができます。" />
+<meta property="og:title" content="Make table depending on the class of given object — make_table" />
+<meta property="og:description" content="Make table depending on the class of given object" />
 
 
 
@@ -118,60 +118,18 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>ジャックナイフ法を行う関数</h1>
+    <h1>Make table depending on the class of given object</h1>
     
-    <div class="hidden name"><code>do_jackknife_vpa.Rd</code></div>
+    <div class="hidden name"><code>make_table.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>モデル診断法の一つです。影響力の強いデータや外れ値の検出に用いることができます。</p>
+    <p>Make table depending on the class of given object</p>
     </div>
 
-    <pre class="usage"><span class='fu'>do_jackknife_vpa</span>(
-  <span class='kw'>res</span>,
-  method = <span class='st'>"index"</span>,
-  what_plot = <span class='kw'>NULL</span>,
-  ncol = <span class='fl'>5</span>,
-  plot_year = <span class='kw'>NULL</span>
-)</pre>
+    <pre class="usage"><span class='fu'>make_table</span>(<span class='kw'>...</span>)</pre>
 
-    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
-    <table class="ref-arguments">
-    <colgroup><col class="name" /><col class="desc" /></colgroup>
-    <tr>
-      <th>res</th>
-      <td><p>VPAの結果のオブジェクト</p></td>
-    </tr>
-    <tr>
-      <th>method</th>
-      <td><p>データの抜き方。デフォルトは指数ごとに抜く("index")。他に各指数を各点ごとに抜く場合は"all"。</p></td>
-    </tr>
-    <tr>
-      <th>what_plot</th>
-      <td><p>作図したい項目を選べる。引数を与えない場合（<code>NULL</code>）、全て（SSB, biomass, U, catch, Recruitment, fish_number, fishing_mortality, weight, maturity, catch_number）をプロットする。</p></td>
-    </tr>
-    <tr>
-      <th>ncol</th>
-      <td><p>作図の列数。標準で5列なので、<code>what_plot</code>の数が5以下の場合は適宜変えた方がよい。</p></td>
-    </tr>
-    </table>
 
-    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
-
-    <p>返ってくる値:
-    <code>JKplot_vpa</code> ジャックナイフ法を行った結果のプロット。</p>
-    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
-
-    <p>method :
-<code>"index"</code>を行うことで、どの指数シリーズの影響が大きいのか見ることができます（例：漁業CPUEより調査船調査の方が推定の影響が大きい）。
-<code>"all"</code>を行うことで、どの指数シリーズのどの年の影響が大きいのか見ることができます。ただし組み合わせが多くなるので、結果が得られるまでに時間を要します。</p>
-    <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
-
-    <div class='dont-index'><p>作図について: <code>plot_vpa</code>
-https://ichimomo.github.io/frasyr/doc/Diagnostics-for-VPA.html</p></div>
-    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
-
-    <p>濵邉昂平, 市野川桃子</p>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
