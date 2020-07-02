@@ -852,6 +852,9 @@ make_array <- function(d3_mat, pars, pars.year, year_replace_future){
 }
 
 
+#' @param weight
+#' @param nsim
+#' @export
 arrange_weight <- function(weight, nsim){
   weight <- weight / sum(weight)
   weight <- round(cumsum(weight) * nsim)
