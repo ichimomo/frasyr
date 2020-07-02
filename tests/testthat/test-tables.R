@@ -1,8 +1,8 @@
 context("Making tables")
 
-result_vpa <- load_data("../../inst/extdata/res_vpa_pma.rda")
-result_msy <- load_data("../inst/extdata/res_MSY_pma_pre.rda")
-
+result_vpa    <- load_data("../../inst/extdata/res_vpa_pma.rda")
+result_msy    <- load_data("../../inst/extdata/res_MSY_pma_pre.rda")
+result_future <- load_data(".../../inst/extdata/res_future_Fcurrent_pma.rda")
 assertthat::assert_that(
   head(colnames(result_vpa$ssb), 1) == "1982",
   tail(colnames(result_vpa$ssb), 1) == "2011"
@@ -17,13 +17,29 @@ expect_df <- function(tbl) {
 }
 
 test_that("make_stock_table() works", {
-  tbl <- make_stock_table(result_vpa, result_msy,
-                          yr_future_start = 2012)
+  future_new_object_ <- function() {
+    data(res_vpa)
+    data(res_sr_HSL2)
+    dummy_yr    <- 2015:2017
+    future_data <- make_future_data(res_vpa,
+                     res_SR = res_sr_HSL2,
+                     M_year = dummy_yr,
+                     maa_year = dummy_yr,
+                     waa_catch_year = dummy_yr,
+                     waa_year = dummy_yr)
+    force(future_vpa(future_data$data))
+  }
+  tbl <- make_stock_table(result_vpa        = result_vpa,
+                          result_msy        = result_msy,
+                          result_future     = future_new_object_(),
+                          yr_future_start   = 2012)
+
   expect_df(tbl)
   expect_equal(colnames(tbl),
                c("Year", "Biomass", "SSB", "Catch", "F.Fmsy", "HarvestRate"))
   expect_equal(tbl$Year,
                2007:2012) # Six years including yr_future_start
+  expect_true(all(!is.na(tbl$Biomass)))
 })
 
 test_that("table1() works", {
