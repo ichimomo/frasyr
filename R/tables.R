@@ -2,9 +2,10 @@
 #'
 #' @param result_vpa Obejct returned from \code{vpa()}
 #' @param result_msy Object MSY result created previous SC meeting...?
+#' @param result_future Object returnd from \code{future_vpa()}
 #' @param yr_future_start Year when future projection starts
 #' @export
-make_stock_table <- function(result_vpa, result_msy,
+make_stock_table <- function(result_vpa, result_msy, result_future,
                              yr_future_start, unit = "百トン") {
   return_ <- function() {
     rbind(recent_five_years_(),
@@ -22,14 +23,24 @@ make_stock_table <- function(result_vpa, result_msy,
                `F/Fmsy` = f_per_fmsy_()) %>%
       dplyr::mutate(HarvestRate = round(Catch / Biomass * 100, 0))
   }
+
   future_start_year_ <- function() {
     # not implemented
     data.frame(Year = yr_future_start,
-               Biomass = NA,
-               SSB     = NA,
-               Catch   = NA,
-               `F/Fmsy` = NA,
-               HarvestRate = NA)
+               Biomass  = x_finalyr_("biomass"),
+               SSB      = "-",
+               Catch    = "-",
+               `F/Fmsy` = "-",
+               HarvestRate = "-")
+  }
+
+  x_finalyr_ <- function(x) {
+    result_future %>%
+      extract_value.future_new(what = x,
+                               year = yr_future_start,
+                               unit = unit) %>%
+      dplyr::pull(average) %>%
+      round(0)
   }
 
   get_x_from_vpa_ <- function(x) {
