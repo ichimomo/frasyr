@@ -48,3 +48,4 @@ test_that("test for HCR function", {
     expect_equal(res_HCR, matrix(c(0,0.2,0.4,0.6,rep(0.8,6)),2,5))
 })
 
+

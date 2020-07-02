@@ -3,25 +3,10 @@
 \encoding{UTF-8}
 \name{calc_perspr}
 \alias{calc_perspr}
-\title{MSYを達成するときの\%SPRを計算する}
+\title{MSYを達成するときの\%SPRを計算する(calc_future_perSPRのwrapper)}
 \usage{
-calc_perspr(
-  finput = NULL,
-  fout = NULL,
-  res_vpa = NULL,
-  Fvector,
-  Fmax = 10,
-  max.age = Inf,
-  target.col = NULL
-)
-}
-\arguments{
-\item{finput}{将来予測インプット}
-
-\item{fout}{将来予測のアウトプット（finputがない場合)}
-
-\item{Fvector}{Fのベクトル}
+calc_perspr(...)
 }
 \description{
-MSYを達成するときの\%SPRを計算する
+MSYを達成するときの\%SPRを計算する(calc_future_perSPRのwrapper)
 }

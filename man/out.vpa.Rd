@@ -25,9 +25,9 @@ out.vpa(
 
 \item{msyres}{est.MSYの結果}
 
-\item{fres_current}{future.vpaの結果(Fcurrent)}
+\item{fres_current}{future_vpaの結果(Fcurrent)}
 
-\item{fres_HCR}{future.vpaの結果(F with HCR)}
+\item{fres_HCR}{future_vpaの結果(F with HCR)}
 
 \item{kobeII}{kobeII.matrixの結果}
 
