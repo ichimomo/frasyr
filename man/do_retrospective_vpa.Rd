@@ -10,6 +10,7 @@ do_retrospective_vpa(
   n_retro = 5,
   b_reest = FALSE,
   what_plot = c("SSB", "biomass", "Recruitment", "fish_number", "fishing_mortality"),
+  plot_year = NULL,
   ncol = 3
 )
 }

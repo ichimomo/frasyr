@@ -5,7 +5,14 @@
 \alias{do_sensitivity_vpa}
 \title{VPAの感度分析のための関数}
 \usage{
-do_sensitivity_vpa(res, what_replace, value, what_plot = NULL, ncol = 5)
+do_sensitivity_vpa(
+  res,
+  what_replace,
+  value,
+  what_plot = NULL,
+  ncol = 5,
+  plot_year = NULL
+)
 }
 \arguments{
 \item{res}{VPAの結果のオブジェクト}
