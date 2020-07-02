@@ -4,12 +4,20 @@
 \alias{make_stock_table}
 \title{Make table for stock assessment result}
 \usage{
-make_stock_table(result_vpa, result_msy, yr_future_start, unit = "百トン")
+make_stock_table(
+  result_vpa,
+  result_msy,
+  result_future,
+  yr_future_start,
+  unit = "百トン"
+)
 }
 \arguments{
 \item{result_vpa}{Obejct returned from \code{vpa()}}
 
 \item{result_msy}{Object MSY result created previous SC meeting...?}
+
+\item{result_future}{Object returnd from \code{future_vpa()}}
 
 \item{yr_future_start}{Year when future projection starts}
 }
