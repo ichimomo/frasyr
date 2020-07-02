@@ -665,7 +665,7 @@ vpa <- function(
   if (!tune & sel.update) print("sel.update = TRUE but tune=FALSE. So, the results are unreliable.")
   if (tune & is.null(sel.f) & (!sel.update & term.F=="max")) print("sel.f=NULL although tune=TRUE & sel.update=FALSE & term.F=max. The results are unreliable.")
   if (tune) if(length(abund)!=nrow(index)) print("Check!: The number of abundance definition is different from the number of indices.")
-  if (Pope & alpha!=1) print("Warning! The estimated F for the older ages may not be precise if C<<N is not satisfied for the older ages.")
+  if (Pope & alpha!=1) print("Warning! The estimated F for the older ages may not be accurate if C<<N is not satisfied for the older ages.")
 #  ssb.def
 
   if (ssb.def=="i") ssb.coef <- 0
