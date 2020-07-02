@@ -1,3 +1,9 @@
+#' Make table for stock assessment result
+#'
+#' @param result_vpa Obejct returned from \code{vpa()}
+#' @param result_msy Object MSY result created previous SC meeting...?
+#' @param yr_future_start Year when future projection starts
+#' @export
 make_stock_table <- function(result_vpa, result_msy,
                              yr_future_start, unit = "百トン") {
   return_ <- function() {
@@ -54,10 +60,15 @@ make_stock_table <- function(result_vpa, result_msy,
   return_()
 }
 
+#' Make table depending on the class of given object
+#'
+#' @inheritParams make_table.fit.SR
+#' @export
 make_table <- function(...) {
   UseMethod("make_table")
 }
 
+#' @param result_sr Return of \code{fit.SR}
 make_table.fit.SR <- function(result_sr) {
   data.frame(kankei     = result_sr$input$SR,
              saitekika  = result_sr$input$method,
@@ -68,19 +79,35 @@ make_table.fit.SR <- function(result_sr) {
     )
 }
 
+#' Make table of latest SB and F
+#'
+#' @inheritParams adhoc_table
+#' @export
 table1 <- function(...) {
   adhoc_table(number = "one", ...)
 }
 
-
+#' Make tables of %SPRs
+#' @inheritParams adhoc_table
+#' @export
 table2 <- function(...) {
   adhoc_table(number = "two", ...)
 }
 
+#' Make tables of latest SB and F relative to MSY values
+#' @inheritParams adhoc_table
+#' @export
 table4 <- function(...) {
   adhoc_table(number = "four", ...)
 }
 
+#' Dispacher function for making table
+#'
+#' @inheritParams make_stock_table
+#' @param yrs_preabc Vector of future years preceding ABC year
+#' @param number Table number
+#' @param sbtarget Value of SB target
+#' @param fmsy Value of Fmsy
 adhoc_table <- function(result_vpa, yrs_preabc, number, sbtarget = NULL, fmsy = NULL) {
   return_ <- function() {
     switch(number,
@@ -178,6 +205,10 @@ format_x_at_age <- function(df, round = 2) {
   force(paste0(wrap_by_paren(ages), " = ", wrap_by_paren(xvec)))
 }
 
+#' Make summary table of MSY estimation
+#'
+#' @param result_msy Object of msy result
+#' @export
 make_msytable <- function(result_msy) {
   return_ <- function() {
     rbind(sbrows_(),
@@ -218,6 +249,16 @@ make_msytable <- function(result_msy) {
   return_()
 }
 
+#' Make summary table of ABC estimation
+#'
+#' @param kobe_table Return of \code{make_kobeII_table}
+#' @param result_future Return of \code{future_vpa}
+#' @param beta Value of beta to extract from Kobe table
+#' @param year ABC year
+#' @param faa_pre F at age of \code{yr_preabc}
+#' @param faa_after F at age under HCR
+#' @param yr_preabc Vector of future years preceding ABC year
+#' @export
 make_abctable <- function(kobe_table, result_future, beta, year, faa_pre, faa_after, yr_preabc) {
   return_ <- function() {
     df <- data.frame(abc_(),
@@ -233,14 +274,14 @@ make_abctable <- function(kobe_table, result_future, beta, year, faa_pre, faa_af
 
   abc_ <- function() {
     extract_from_kobe_table(kobe_table,
-                            beta = 0.8,
-                            what  = "catch.mean",
+                            beta = beta,
+                            what = "catch.mean",
                             year = year,
                             unit = "千トン")
   }
   ssb_mean_  <- function(){
     extract_from_kobe_table(kobe_table,
-                            what  = "ssb.mean",
+                            what = "ssb.mean",
                             year = year,
                             unit = "千トン")
   }
@@ -256,6 +297,7 @@ make_abctable <- function(kobe_table, result_future, beta, year, faa_pre, faa_af
   return_()
 }
 
+#' @export
 summary_of_summary <- function(tbl_msy, tbl1, tbl2, tbl4) {
   characterize_valuecol_ <- function(tb) {
     tb$値 <- as.character(tb$値)
@@ -288,6 +330,7 @@ summary_of_summary <- function(tbl_msy, tbl1, tbl2, tbl4) {
 #' export_tables(to = "hoge.csv",
 #'               table1, table2, table3)
 #' }
+#' @export
 export_tables <- function(to, ...) {
 
   write_tables_to_csv_ <- function() {

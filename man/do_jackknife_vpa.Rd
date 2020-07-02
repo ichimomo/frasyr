@@ -5,7 +5,13 @@
 \alias{do_jackknife_vpa}
 \title{ジャックナイフ法を行う関数}
 \usage{
-do_jackknife_vpa(res, method = "index", what_plot = NULL, ncol = 5)
+do_jackknife_vpa(
+  res,
+  method = "index",
+  what_plot = NULL,
+  ncol = 5,
+  plot_year = NULL
+)
 }
 \arguments{
 \item{res}{VPAの結果のオブジェクト}
