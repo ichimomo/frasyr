@@ -127,7 +127,16 @@
     <p>calculate F/Ftarget based on F_%SPR multiplier</p>
     </div>
 
-    <pre class="usage"><span class='fu'>calc_Fratio</span>(<span class='kw'>faa</span>, <span class='kw'>waa</span>, <span class='kw'>maa</span>, <span class='kw'>M</span>, SPRtarget = <span class='fl'>30</span>, waa.catch = <span class='kw'>NULL</span>, Pope = <span class='fl'>TRUE</span>)</pre>
+    <pre class="usage"><span class='fu'>calc_Fratio</span>(
+  <span class='kw'>faa</span>,
+  <span class='kw'>waa</span>,
+  <span class='kw'>maa</span>,
+  <span class='kw'>M</span>,
+  SPRtarget = <span class='fl'>30</span>,
+  waa.catch = <span class='kw'>NULL</span>,
+  Pope = <span class='fl'>TRUE</span>,
+  return_SPR = <span class='fl'>FALSE</span>
+)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -150,7 +159,11 @@
     </tr>
     <tr>
       <th>SPRtarget</th>
-      <td><p>target SPR</p></td>
+      <td><p>target SPR (NULLの場合には最適化しない)</p></td>
+    </tr>
+    <tr>
+      <th>return_SPR</th>
+      <td><p>return SPR as well as Fratio</p></td>
     </tr>
     </table>
 

@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>future_vpaの結果オブジェクトをtibble形式に変換する関数 — convert_future_table • frasyr</title>
+<title>将来予測の結果オブジェクトから生物パラメータを取り出して、その生物パラメータをベースに、Fvectorで与えたF at ageに対応するSPRを計算して返す — calc_future_perSPR • frasyr</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,7 @@
 
 
 
-<meta property="og:title" content="future_vpaの結果オブジェクトをtibble形式に変換する関数 — convert_future_table" />
-<meta property="og:description" content="future_vpaの結果オブジェクトをtibble形式に変換する関数" />
+<meta property="og:title" content="将来予測の結果オブジェクトから生物パラメータを取り出して、その生物パラメータをベースに、Fvectorで与えたF at ageに対応するSPRを計算して返す — calc_future_perSPR" />
 
 
 
@@ -118,23 +117,56 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>future_vpaの結果オブジェクトをtibble形式に変換する関数</h1>
+    <h1>将来予測の結果オブジェクトから生物パラメータを取り出して、その生物パラメータをベースに、Fvectorで与えたF at ageに対応するSPRを計算して返す</h1>
     
-    <div class="hidden name"><code>convert_future_table.Rd</code></div>
+    <div class="hidden name"><code>calc_future_perSPR.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>future_vpaの結果オブジェクトをtibble形式に変換する関数</p>
     </div>
 
-    <pre class="usage"><span class='fu'>convert_future_table</span>(<span class='kw'>fout</span>, label = <span class='st'>"tmp"</span>)</pre>
+    <pre class="usage"><span class='fu'>calc_future_perSPR</span>(
+  fout = <span class='kw'>NULL</span>,
+  res_vpa = <span class='kw'>NULL</span>,
+  <span class='kw'>Fvector</span>,
+  Fmax = <span class='fl'>10</span>,
+  max.age = <span class='fl'>Inf</span>,
+  target.col = <span class='kw'>NULL</span>,
+  target.year = <span class='kw'>NULL</span>,
+  SPRtarget = <span class='kw'>NULL</span>,
+  SPR_unit = <span class='st'>"digit"</span>
+)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>fout</th>
-      <td><p>future_vpaの結果のオブジェクト</p></td>
+      <td><p>将来予測のアウトプット（finputがない場合)。future_vpaの結果はformat_to_old_future関数をかまさないと動かない。</p></td>
+    </tr>
+    <tr>
+      <th>res_vpa</th>
+      <td><p>Popeの式を使うかどうかだけのために利用。実際、漁獲量は計算していないので、不要といえば不要。</p></td>
+    </tr>
+    <tr>
+      <th>Fvector</th>
+      <td><p>Fのベクトル</p></td>
+    </tr>
+    <tr>
+      <th>max.age</th>
+      <td><p>SPR計算のときに考慮する最大年齢。デフォルトは無限大。</p></td>
+    </tr>
+    <tr>
+      <th>target.col</th>
+      <td><p>将来予測の何列目の年を取り出すか（NULLの場合、最後の年）</p></td>
+    </tr>
+    <tr>
+      <th>target.year</th>
+      <td><p>将来予測の何年目を取り出すか（年の名前）（NULLの場合、最後の年）</p></td>
+    </tr>
+    <tr>
+      <th>SPRtarget</th>
+      <td><p>これを与えると、Fvectorを何倍すればここで指定した<!-- %SPRと一致するかを返すようになる} --></p></td>
     </tr>
     </table>
 
