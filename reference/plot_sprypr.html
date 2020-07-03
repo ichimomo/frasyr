@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Make table for stock assessment result — make_stock_table • frasyr</title>
+<title>Plot SPR figure — plot_sprypr • frasyr</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,8 @@
 
 
 
-<meta property="og:title" content="Make table for stock assessment result — make_stock_table" />
-<meta property="og:description" content="Make table for stock assessment result" />
+<meta property="og:title" content="Plot SPR figure — plot_sprypr" />
+<meta property="og:description" content="Plot SPR figure" />
 
 
 
@@ -118,22 +118,16 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Make table for stock assessment result</h1>
+    <h1>Plot SPR figure</h1>
     
-    <div class="hidden name"><code>make_stock_table.Rd</code></div>
+    <div class="hidden name"><code>plot_sprypr.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Make table for stock assessment result</p>
+    <p>Plot SPR figure</p>
     </div>
 
-    <pre class="usage"><span class='fu'>make_stock_table</span>(
-  <span class='kw'>result_vpa</span>,
-  <span class='kw'>result_msy</span>,
-  <span class='kw'>result_future</span>,
-  <span class='kw'>yr_future_start</span>,
-  unit = <span class='st'>"百トン"</span>
-)</pre>
+    <pre class="usage"><span class='fu'>plot_sprypr</span>(<span class='kw'>result_vpa</span>, <span class='kw'>type</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -141,18 +135,6 @@
     <tr>
       <th>result_vpa</th>
       <td><p>Obejct returned from <code>vpa()</code></p></td>
-    </tr>
-    <tr>
-      <th>result_msy</th>
-      <td><p>Object MSY result created previous SC meeting...?</p></td>
-    </tr>
-    <tr>
-      <th>result_future</th>
-      <td><p>Object returnd from <code>future_vpa()</code></p></td>
-    </tr>
-    <tr>
-      <th>yr_future_start</th>
-      <td><p>Year when future projection starts</p></td>
     </tr>
     </table>
 
