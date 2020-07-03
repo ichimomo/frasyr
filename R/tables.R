@@ -2,9 +2,10 @@
 #'
 #' @param result_vpa Obejct returned from \code{vpa()}
 #' @param result_msy Object MSY result created previous SC meeting...?
+#' @param result_future Object returnd from \code{future_vpa()}
 #' @param yr_future_start Year when future projection starts
 #' @export
-make_stock_table <- function(result_vpa, result_msy,
+make_stock_table <- function(result_vpa, result_msy, result_future,
                              yr_future_start, unit = "百トン") {
   return_ <- function() {
     rbind(recent_five_years_(),
@@ -22,14 +23,24 @@ make_stock_table <- function(result_vpa, result_msy,
                `F/Fmsy` = f_per_fmsy_()) %>%
       dplyr::mutate(HarvestRate = round(Catch / Biomass * 100, 0))
   }
+
   future_start_year_ <- function() {
     # not implemented
     data.frame(Year = yr_future_start,
-               Biomass = NA,
-               SSB     = NA,
-               Catch   = NA,
-               `F/Fmsy` = NA,
-               HarvestRate = NA)
+               Biomass  = x_finalyr_("biomass"),
+               SSB      = "-",
+               Catch    = "-",
+               `F/Fmsy` = "-",
+               HarvestRate = "-")
+  }
+
+  x_finalyr_ <- function(x) {
+    result_future %>%
+      extract_value.future_new(what = x,
+                               year = yr_future_start,
+                               unit = unit) %>%
+      dplyr::pull(average) %>%
+      round(0)
   }
 
   get_x_from_vpa_ <- function(x) {
@@ -69,6 +80,7 @@ make_table <- function(...) {
 }
 
 #' @param result_sr Return of \code{fit.SR}
+#' @export
 make_table.fit.SR <- function(result_sr) {
   data.frame(kankei     = result_sr$input$SR,
              saitekika  = result_sr$input$method,
@@ -76,6 +88,17 @@ make_table.fit.SR <- function(result_sr) {
              result_sr$pars) %>%
     magrittr::set_colnames(
       c("再生産関係式", "最適化法", "自己相関", "a", "b", "S.D.", "rho")
+    )
+}
+
+#' @inheritParams make_table.fit.SR Return of \code{fit.SR}
+#' @export
+make_table.fit.SRregime <- function(result_sr) {
+  data.frame(kankei     = result_sr$input$SR,
+             saitekika  = result_sr$input$method,
+             result_sr$pars) %>%
+    magrittr::set_colnames(
+      c("再生産関係式", "最適化法", "a", "b", "S.D.")
     )
 }
 
@@ -134,7 +157,7 @@ adhoc_table <- function(result_vpa, yrs_preabc, number, sbtarget = NULL, fmsy = 
   f_latest_  <- function(numeric = FALSE) {
     value <- extract_from_vpa_("faa")
     if (numeric) {
-      value <- mean(unlist(value))
+      value <- mean(unlist(value), na.rm = TRUE)
     } else {
       value <- format_x_at_age(value)
     }
@@ -286,7 +309,7 @@ make_abctable <- function(kobe_table, result_future, beta, year, faa_pre, faa_af
                             unit = "千トン")
   }
   f_over_recentf_ <- function() {
-    round(mean(faa_pre) / mean(faa_after), 2)
+    round(mean(faa_pre, na.rm = TRUE) / mean(faa_after), 2)
   }
   harvest_rate_ <- function() {
     biomass_abcyear <- extract_value(from = result_future,

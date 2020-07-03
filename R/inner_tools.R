@@ -31,7 +31,7 @@ extract_x <- function(vpadata, x, year, mean_by = NULL) {
   if (is.null(mean_by)) return(extracted)
 
   if (mean_by == "year") {
-      colMeans(extracted)
+      colMeans(extracted, na.rm = TRUE)
   } else if (mean_by == "age") {
       rowMeans(extracted)
   } else {

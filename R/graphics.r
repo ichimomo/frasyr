@@ -1663,6 +1663,10 @@ compare_kobeII <- function(kobeII_list,
   return(g1)
 }
 
+#' Plot SPR figure
+#'
+#' @inheritParams make_stock_table
+#' @export
 plot_sprypr <- function(result_vpa, type) {
   df <- get.SPR(result_vpa, target.SPR = 30, Fmax = 10, max.age=Inf)$ysdata
   if (type == "perspr") {
