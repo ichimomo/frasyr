@@ -1673,7 +1673,13 @@ plot_sprypr <- function(result_vpa, type) {
     df$Year <- as.numeric(rownames(df))
     plot <- df %>%
       ggplot(aes(Year, perSPR)) +
-      geom_line()
+      geom_line() +
+      geom_point() +
+      scale_y_continuous(trans = "reverse",
+                         breaks = seq(100, 0, -20),
+                         limits = c(100, 0)) +
+      xlab("年") +
+      ylab("%SPR")
   }
   force(plot)
 }
