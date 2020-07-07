@@ -145,7 +145,7 @@ backward.calc <- function(caa,naa,M,na,k,min.caa=0.001,p=0.5,plus.group=TRUE,sel
       out[i] <- naa[i+1,k+1]*exp(M[i,k])+caa[i,k]*exp(p*M[i,k])
     }
     if (isTRUE(plus.group)){
-      out[na[k]-1]<- (caa[na[k]-1,k]*alpha  * (naa[na[k],k+1]+naa[na[k+1],k+1]) * exp(M[na[k]-1,k]))/(caa[na[k]-1,k]*alpha +caa[na[k],k]) + caa[na[k]-1,k] * exp(p * M[na[k]-1,k]) 
+      out[na[k]-1]<- (caa[na[k]-1,k]*alpha  * (naa[na[k],k+1]+naa[na[k+1],k+1]) * exp(M[na[k]-1,k]))/(caa[na[k]-1,k]*alpha +caa[na[k],k]) + caa[na[k]-1,k] * exp(p * M[na[k]-1,k])
       out[na[k]]  <- (caa[na[k],k] * (naa[na[k],k+1]+naa[na[k+1],k+1]) * exp(M[na[k],k]))/(caa[na[k]-1,k]*alpha +caa[na[k],k]) + caa[na[k],k] * exp(p * M[na[k],k])
     }
     else{
@@ -1560,8 +1560,12 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE){
      res.c$input$dat$waa <- res.c$input$dat$waa[,-nc]
      res.c$input$dat$waa.catch <- res.c$input$dat$waa.catch[,-nc]
      res.c$input$dat$M <- res.c$input$dat$M[,-nc]
-     res.c$input$dat$index <- res.c$input$dat$index[,-nc,drop=FALSE]
      res.c$input$dat$catch.prop <- res.c$input$dat$catch.prop[,-nc]
+
+     # 毎年等しく取り除くのではなく、データごとに1年分取り除くように修正（浜辺07/07）
+     label_tmp <- which(is.na(res.c$input$dat$index[,nc]))
+     res.c$input$dat$index <- res.c$input$dat$index[,-nc,drop=FALSE]
+     res.c$input$dat$index[label_tmp,length(res.c$input$dat$index[1,])] <- NA
 
      res.c$input$tf.year <- res.c$input$tf.year-1
      res.c$input$fc.year <- res.c$input$fc.year-1
