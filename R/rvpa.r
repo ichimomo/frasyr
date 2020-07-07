@@ -260,6 +260,7 @@ abund.extractor <- function(
  if (abund=="F") if (is.null(catch.prop)) res <- colMeans(faa[min.age:max.age,], na.rm=TRUE) else res <- colMeans(catch.prop[min.age:max.age, ]*faa[min.age:max.age,], na.rm=TRUE)
 
  if (link=="log") res <- log(res, base=base)
+ if (link=="exp") res <- exp(res)
 
   return(invisible(res))
 }
