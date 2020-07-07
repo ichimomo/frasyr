@@ -560,11 +560,17 @@ do_estcheck_vpa <- function(res, n_ite = 20, sd_jitter = 1, what_plot = NULL, TM
 # author: Kohei Hamabe
 
 plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_year = FALSE){
+  if(res$input$use.index == "all"){
+    used_index <- res$input$dat$index
+  } else {
+    used_index <- res$input$dat$index[res$input$use.index,]
+  } # 7月7日加筆（浜辺）vpa関数の引数use.index対策
+
   d_tmp <- matrix(NA,
-                  nrow = length(res$input$dat$index[1,]),
-                  ncol = length(res$input$dat$index[,1])*8+4)
-  d_tmp[,1] <- as.numeric(colnames(res$input$dat$index))
-  d_tmp[,2:(1+length(res$q))] <- as.numeric(t(res$input$dat$index))
+                  nrow = length(used_index[1,]),
+                  ncol = length(used_index[,1])*8+4)
+  d_tmp[,1] <- as.numeric(colnames(used_index))
+  d_tmp[,2:(1+length(res$q))] <- as.numeric(t(used_index))
   d_tmp[,(2+length(res$q))] <- as.numeric(apply(res$naa, 2, sum))
   d_tmp[,(3+length(res$q))] <- as.numeric(apply(res$baa, 2, sum))
   d_tmp[,(4+length(res$q))] <- as.numeric(apply(res$ssb, 2, sum))
@@ -756,81 +762,170 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
 # author: Kohei Hamabe
 
 do_jackknife_vpa <- function(res, method = "index", what_plot = NULL, ncol = 5, plot_year = NULL){
+  if(res$input$use.index == "all"){
+    used_index <- res$input$dat$index
+  } else {
+    used_index <- res$input$dat$index[res$input$use.index,]
+  } # 7月7日加筆（浜辺）vpa関数の引数use.index対策
+
   year <- as.numeric(colnames(res$input$dat$index))
   res_list <- list()
   abund_tmp <- ssb_tmp <- biom_tmp <- tf_tmp <- list()
 
   if(method == "index"){
+    if(length(used_index[,1]) == 1) stop(paste0('The number of indicies is only 1 !!'))
 
-    name_tmp <- rep(NA, length = length(row.names(res$input$dat$index)))
-    for(i in 1:length(name_tmp)){
-      input0 <- res$input
-      input0$dat$index <- res$input$dat$index[-i,]
-      input0$abund <- input0$abund[-i]
-      input0$plot <- FALSE
-      input0$sigma.const <- input0$sigma.const[-i]
-      input0$sigma.constraint <- input0$sigma.constraint[-i]
-      res_tmp <- safe_call(vpa, input0, force=TRUE)  # vpa関数の実行
-
-      res_list[[i]] <- res_tmp
-      abund_tmp[[i]] <- apply(res_tmp$naa,2,sum)
-      ssb_tmp[[i]] <- apply(res_tmp$ssb,2,sum)
-      biom_tmp[[i]] <- apply(res_tmp$baa,2,sum)
-      tf_tmp[[i]] <- res_tmp$term.f
-
-      if(i <= 9){
-        name_tmp[i] <- paste0('Removed index0',i)
-      } else {
-        name_tmp[i] <- paste0('Removed index',i)
-      }
-    } #for(i) データの種類について
-
-  } else if(method == "all"){
-
-    name_tmp <- rep(NA, length = length(res$input$dat$index[!is.na(res$input$dat$index)]))
-    for(i in 1:(dim(res$input$dat$index)[1])){
-      index_label <- which(is.na(res$input$dat$index[i,])==FALSE)
-      year_tmp <- as.numeric(colnames(res$input$dat$index[i,]))[index_label]
-
-      for(j in 1:length(index_label)){
+    if(res$input$use.index == "all"){
+      name_tmp <- rep(NA, length = length(row.names(res$input$dat$index)))
+      for(i in 1:length(name_tmp)){
         input0 <- res$input
-        index_tmp <- as.numeric(res$input$dat$index[i,])
-        index_tmp[index_label[j]] <- NA
-        input0$dat$index[i,] <- index_tmp
+        input0$dat$index <- res$input$dat$index[-i,]
+        input0$abund <- input0$abund[-i]
         input0$plot <- FALSE
+        input0$sigma.const <- input0$sigma.const[-i]
+        input0$sigma.constraint <- input0$sigma.constraint[-i]
         res_tmp <- safe_call(vpa, input0, force=TRUE)  # vpa関数の実行
 
-        if(i == 1){
-          res_list[[j]] <- res_tmp
-          abund_tmp[[j]] <- apply(res_tmp$naa,2,sum)
-          ssb_tmp[[j]] <- apply(res_tmp$ssb,2,sum)
-          biom_tmp[[j]] <- apply(res_tmp$baa,2,sum)
-          name_tmp[j] <- paste0('Removed index0',i," ",year_tmp[j])
-          #tmp <- length(year)*(j-1)+1
-          #tf_mat[tmp:tmp+length(year),] <- res_tmp$term.f
-          tf_tmp[[j]] <- res_tmp$term.f
-        } else if(i <= 9) {
-          next_label <- which(is.na(name_tmp))[1]
-          res_list[[next_label]] <- res_tmp
-          abund_tmp[[next_label]] <- apply(res_tmp$naa,2,sum)
-          ssb_tmp[[next_label]] <- apply(res_tmp$ssb,2,sum)
-          biom_tmp[[next_label]] <- apply(res_tmp$baa,2,sum)
-          name_tmp[next_label] <- paste0('Removed index0',i,' ',year_tmp[j])
-          tf_tmp[[next_label]] <- res_tmp$term.f
-        } else {
-          next_label <- which(is.na(name_tmp))[1]
-          res_list[[next_label]] <- res_tmp
-          abund_tmp[[next_label]] <- apply(res_tmp$naa,2,sum)
-          ssb_tmp[[next_label]] <- apply(res_tmp$ssb,2,sum)
-          biom_tmp[[next_label]] <- apply(res_tmp$baa,2,sum)
-          name_tmp[next_label] <- paste0('Removed index',i,' ',year_tmp[j])
-          tf_tmp[[next_label]] <- res_tmp$term.f
-        }
-      } #for(j) 各データの時系列について
-      #res_tmp2[[i]] <- res_tmp
-    } #for(i) データの種類について
+        res_list[[i]] <- res_tmp
+        abund_tmp[[i]] <- apply(res_tmp$naa,2,sum)
+        ssb_tmp[[i]] <- apply(res_tmp$ssb,2,sum)
+        biom_tmp[[i]] <- apply(res_tmp$baa,2,sum)
+        tf_tmp[[i]] <- res_tmp$term.f
 
-  } else {
+        if(i <= 9){
+          name_tmp[i] <- paste0('Removed index0',i)
+        } else {
+          name_tmp[i] <- paste0('Removed index',i)
+        }
+      } #for(i) データの種類について
+    } else {
+      # use.indexに指定がある場合用のif文分岐の追加
+      ## ------------------------------------------------ ##
+      # ここエラー出ないようにコンサバにコーディングしてます
+      # 2021年度までにはここ修正加えたい
+      ## ------------------------------------------------ ##
+      name_tmp <- rep(NA, length = length(row.names(used_index)))
+      for(i in 1:length(name_tmp)){
+        input0 <- res$input
+        input0$use.index <- input0$use.index[-i]
+        #input0$dat$index <- res$input$dat$index[-i,]
+        input0$abund <- input0$abund[-i]
+        input0$plot <- FALSE
+        input0$sigma.const <- input0$sigma.const[-i]
+        input0$sigma.constraint <- input0$sigma.constraint[-i]
+        res_tmp <- safe_call(vpa, input0, force=TRUE)  # vpa関数の実行
+
+        res_list[[i]] <- res_tmp
+        abund_tmp[[i]] <- apply(res_tmp$naa,2,sum)
+        ssb_tmp[[i]] <- apply(res_tmp$ssb,2,sum)
+        biom_tmp[[i]] <- apply(res_tmp$baa,2,sum)
+        tf_tmp[[i]] <- res_tmp$term.f
+
+        if(i <= 9){
+          name_tmp[i] <- paste0('Removed index0',i)
+        } else {
+          name_tmp[i] <- paste0('Removed index',i)
+        }
+      } #for(i) データの種類について
+    }
+
+  } else if(method == "all"){ ####-----------------------------------------------------####
+
+    if(res$input$use.index == "all"){
+      name_tmp <- rep(NA, length = length(res$input$dat$index[!is.na(res$input$dat$index)]))
+      for(i in 1:(dim(res$input$dat$index)[1])){
+        index_label <- which(is.na(res$input$dat$index[i,])==FALSE)
+        year_tmp <- as.numeric(colnames(res$input$dat$index[i,]))[index_label]
+
+        for(j in 1:length(index_label)){
+          input0 <- res$input
+          index_tmp <- as.numeric(res$input$dat$index[i,])
+          index_tmp[index_label[j]] <- NA
+          input0$dat$index[i,] <- index_tmp
+          input0$plot <- FALSE
+          res_tmp <- safe_call(vpa, input0, force=TRUE)  # vpa関数の実行
+
+          if(i == 1){
+            res_list[[j]] <- res_tmp
+            abund_tmp[[j]] <- apply(res_tmp$naa,2,sum)
+            ssb_tmp[[j]] <- apply(res_tmp$ssb,2,sum)
+            biom_tmp[[j]] <- apply(res_tmp$baa,2,sum)
+            name_tmp[j] <- paste0('Removed index0',i," ",year_tmp[j])
+            #tmp <- length(year)*(j-1)+1
+            #tf_mat[tmp:tmp+length(year),] <- res_tmp$term.f
+            tf_tmp[[j]] <- res_tmp$term.f
+          } else if(i <= 9) {
+            next_label <- which(is.na(name_tmp))[1]
+            res_list[[next_label]] <- res_tmp
+            abund_tmp[[next_label]] <- apply(res_tmp$naa,2,sum)
+            ssb_tmp[[next_label]] <- apply(res_tmp$ssb,2,sum)
+            biom_tmp[[next_label]] <- apply(res_tmp$baa,2,sum)
+            name_tmp[next_label] <- paste0('Removed index0',i,' ',year_tmp[j])
+            tf_tmp[[next_label]] <- res_tmp$term.f
+          } else {
+            next_label <- which(is.na(name_tmp))[1]
+            res_list[[next_label]] <- res_tmp
+            abund_tmp[[next_label]] <- apply(res_tmp$naa,2,sum)
+            ssb_tmp[[next_label]] <- apply(res_tmp$ssb,2,sum)
+            biom_tmp[[next_label]] <- apply(res_tmp$baa,2,sum)
+            name_tmp[next_label] <- paste0('Removed index',i,' ',year_tmp[j])
+            tf_tmp[[next_label]] <- res_tmp$term.f
+          }
+        } #for(j) 各データの時系列について
+        #res_tmp2[[i]] <- res_tmp
+      } #for(i) データの種類について
+
+    } else {
+      ## ------------------------------------------------ ##
+      # ここエラー出ないようにコンサバにコーディングしてます
+      # 2021年度までにはここ修正加えたい
+      ## ------------------------------------------------ ##
+      name_tmp <- rep(NA, length = length(used_index[!is.na(used_index)]))
+      for(i in 1:(dim(used_index)[1])){
+        index_label <- which(is.na(used_index[i,])==FALSE)
+        year_tmp <- as.numeric(colnames(used_index[i,]))[index_label]
+        use.index_tmp <- res$input$use.index[i]
+
+        for(j in 1:length(index_label)){
+          input0 <- res$input
+          index_tmp <- as.numeric(res$input$dat$index[use.index_tmp,])
+          index_tmp[index_label[j]] <- NA
+          input0$dat$index[use.index_tmp,] <- index_tmp
+          input0$plot <- FALSE
+          res_tmp <- safe_call(vpa, input0, force=TRUE)  # vpa関数の実行
+
+          if(i == 1){
+            res_list[[j]] <- res_tmp
+            abund_tmp[[j]] <- apply(res_tmp$naa,2,sum)
+            ssb_tmp[[j]] <- apply(res_tmp$ssb,2,sum)
+            biom_tmp[[j]] <- apply(res_tmp$baa,2,sum)
+            name_tmp[j] <- paste0('Removed index0',i," ",year_tmp[j])
+            #tmp <- length(year)*(j-1)+1
+            #tf_mat[tmp:tmp+length(year),] <- res_tmp$term.f
+            tf_tmp[[j]] <- res_tmp$term.f
+          } else if(i <= 9) {
+            next_label <- which(is.na(name_tmp))[1]
+            res_list[[next_label]] <- res_tmp
+            abund_tmp[[next_label]] <- apply(res_tmp$naa,2,sum)
+            ssb_tmp[[next_label]] <- apply(res_tmp$ssb,2,sum)
+            biom_tmp[[next_label]] <- apply(res_tmp$baa,2,sum)
+            name_tmp[next_label] <- paste0('Removed index0',i,' ',year_tmp[j])
+            tf_tmp[[next_label]] <- res_tmp$term.f
+          } else {
+            next_label <- which(is.na(name_tmp))[1]
+            res_list[[next_label]] <- res_tmp
+            abund_tmp[[next_label]] <- apply(res_tmp$naa,2,sum)
+            ssb_tmp[[next_label]] <- apply(res_tmp$ssb,2,sum)
+            biom_tmp[[next_label]] <- apply(res_tmp$baa,2,sum)
+            name_tmp[next_label] <- paste0('Removed index',i,' ',year_tmp[j])
+            tf_tmp[[next_label]] <- res_tmp$term.f
+          }
+        } #for(j) 各データの時系列について
+        #res_tmp2[[i]] <- res_tmp
+      } #for(i) データの種類について
+    }
+
+  } else {                  ####-----------------------------------------------------####
     stop(paste0('Method must be "index" or "all" ! '))
   }
 

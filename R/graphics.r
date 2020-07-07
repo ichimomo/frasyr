@@ -120,7 +120,7 @@ plot_vpa <- function(vpalist,
     g1 <- try(g1 + geom_point(aes(x=year, y=value, color=age, shape=id)))
   }
   # 上のがダメな場合にオリジナルで対応
-  if(class(g1)=="try-error"){
+  if(class(g1[1])=="try-error"){ # g1の長さは2あって警告が頻発するので[1]を加えた
     g1 <- vpadata %>% ggplot()
     if(all(is.na(vpadata$age))){
       g1 <- g1+ geom_line(aes(x=year, y=value,lty=id))
