@@ -78,7 +78,7 @@
       <h1 data-toc-skip>VPAモデル診断スクリプト</h1>
                         <h4 class="author">Kohei Hamabe &amp; Momoko Ichinokawa</h4>
             
-            <h4 class="date">2020-07-03</h4>
+            <h4 class="date">2020-07-07</h4>
       
       
       <div class="hidden name"><code>Diagnostics-for-VPA.Rmd</code></div>
@@ -431,7 +431,7 @@
 <div class="sourceCode" id="cb24"><pre class="downlit">
 <span class="kw">res_vpa_jitter</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_estcheck_vpa.html">do_estcheck_vpa</a></span>(<span class="kw">res_vpa_estb</span>, n_ite=<span class="fl">10</span>)
 </pre></div>
-<pre><code>Maximum likelihood in jitter analysis is:  23.60018 
+<pre><code>Maximum likelihood in jitter analysis is:  23.36542 
 Likelihood with estimated parameters is:  23.60018 </code></pre>
 <p>最初に引数で与えたVPA結果について、</p>
 <ul>
@@ -572,8 +572,8 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 <span class="co">for</span>(<span class="kw">i</span> <span class="co">in</span> <span class="fl">1</span><span class="op">:</span><span class="fl">10</span>) <span class="kw">res_tmp</span>[<span class="kw">i</span>] <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html">as.numeric</a></span>(<span class="kw">res_vpa_bootstrap</span><span class="op">$</span><span class="kw">res_boot</span>[[<span class="kw">i</span>]]<span class="op">$</span><span class="kw">Fc.at.age</span>[<span class="fl">4</span>])
 <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html">quantile</a></span>(<span class="kw">res_tmp</span>, probs = <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">0.025</span>,<span class="fl">0.5</span>,<span class="fl">0.975</span>))
 </pre></div>
-<pre><code>    2.5%      50%    97.5% 
-0.638945 3.160442 7.428267 </code></pre>
+<pre><code>     2.5%       50%     97.5% 
+0.3699995 0.5661006 7.8681408 </code></pre>
 <p>この他、各パラメータの相関関係について、ブートストラップ標本を基にプロットが得られます。</p>
 <div class="sourceCode" id="cb40"><pre class="downlit">
 <span class="kw">res_vpa_bootstrap</span><span class="op">$</span><span class="kw">plot_cor</span>
