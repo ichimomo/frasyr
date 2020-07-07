@@ -264,136 +264,6 @@ abund.extractor <- function(
   return(invisible(res))
 }
 
-#
-
-tmpfunc2 <- function(x=1,y=2,z=3){
-  argname <- ls()  # 関数が呼び出されたばかりのときのls()は引数のみが入っている
-  arglist <- lapply(argname,function(xx) eval(parse(text=xx)))
-  names(arglist) <- argname
-  value <- x+y+z
-  return(list(value=value,args=arglist))
-}
-
-#
-##
-
-
-qbs.f <- function(q.const, b.const, sigma.constraint, index, Abund, nindex, index.w, max.dd=0.0001, max.iter=100){
-
-  np.q <- length(unique(q.const[q.const > 0]))
-  np.b <- length(unique(b.const[b.const > 0]))
-  np.s <- length(unique(sigma.constraint[sigma.constraint > 0]))
-
-  q <- b <- sigma <- numeric(nindex)
-
-  q[1:nindex] <- b[1:nindex] <- sigma[1:nindex] <- 1
-
-  delta <- 1
-
-  obj <- NULL
-
-  NN <- 0
-
-  while(delta > max.dd & NN < max.iter){
-    NN <- NN+1
-    q0 <- q
-    b0 <- b
-    sigma0 <- sigma
-
-    if (np.q > 0){
-      for(i in 1:np.q){
-        id <- which(q.const==i)
-        num <- den <- 0
-        for (j in id){
-          avail <- which(!is.na(as.numeric(index[j,])))
-          num <- num+index.w[j]*mean(log(as.numeric(index[j,avail]))-b[j]*log(as.numeric(Abund[j,avail])))/sigma[j]^2
-          den <- den+index.w[j]/sigma[j]^2
-        }
-        q[i] <- num/den
-      }
-    }
-    if (np.b > 0){
-      for(i in 1:np.b){
-        id <- which(b.const==i)
-        num <- den <- 0
-        for (j in id){
-          avail <- which(!is.na(as.numeric(index[j,])))
-          num <- num+index.w[j]*cov(log(as.numeric(index[j,avail])),log(as.numeric(Abund[j,avail])))/var(log(as.numeric(Abund[j,avail])))/sigma[j]^2
-          den <- den+index.w[j]/sigma[j]^2
-        }
-        b[i] <- num/den
-      }
-    }
-    if (np.s > 0){
-      for(i in 1:np.s){
-        id <- which(sigma.constraint==i)
-        num <- den <- 0
-        for (j in id){
-          avail <- which(!is.na(as.numeric(index[j,])))
-          nn <- length(avail)
-          num <- num+index.w[j]*sum((log(as.numeric(index[j,avail]))-q[j]-b[j]*log(as.numeric(Abund[j,avail])))^2)
-          den <- den+index.w[j]*nn
-        }
-        sigma[i] <- sqrt(num/den)
-      }
-    }
-
-    q[which(q.const>0)] <- q[q.const[which(q.const>0)]]
-    b[which(b.const>0)] <- b[b.const[which(b.const>0)]]
-
-    sigma[which(sigma.constraint>0)] <- sigma[sigma.constraint[which(sigma.constraint>0)]]
-
-    delta <- max(c(sqrt((q-q0)^2),sqrt((b-b0)^2),sqrt((sigma-sigma0)^2)))
-  }
-
-  for (i in 1:nindex){
-    avail <- which(!is.na(as.numeric(index[i,])))
-    obj <- c(obj, index.w[i]*(-as.numeric(na.omit(dnorm(log(as.numeric(index[i,avail])),log(q[i])+b[i]*log(as.numeric(Abund[i,avail])),sigma[i],log=TRUE)))))
-  }
-
-  convergence <- ifelse(delta <= max.dd, 1, 0)
-
-  return(list(q=q, b=b, sigma=sigma, obj=sum(obj), convergence=convergence))
-}
-
-qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
-
-  if (is.null(fixed.index.var)) fixed.index.var <- matrix(0, nrow=nrow(index), ncol=ncol(index))
-  if (class(fixed.index.var)=="numeric") fixed.index.var <- matrix(fixed.index.var, nrow=1)
-  if (class(fixed.index.var)=="matrix" | class(fixed.index.var)=="data.frame") fixed.index.var <- array(fixed.index.var, dim=c(dim(fixed.index.var),1))
-
-  np <- min(nindex,sum(index.w>0))
-
-  p <- vector(length=2*np)
-  q <- sigma <- vector(length=np)
-
-  obj.f <- function(p){
-    obj <- j <- 0
-
-    for (i in 1:nindex){
-      if (index.w[i] > 0 ){
-      j <- j + 1
-      q[j] <- exp(p[2*j-1])
-      sigma[j] <- exp(p[2*j])
-
-      avail <- which(!is.na(as.numeric(index[i,])))
-      obj <- obj+index.w[i]*(-as.numeric(na.omit(dmvnorm(log(as.numeric(index[i,avail])),log(q[j])+log(as.numeric(Abund[i,avail])),as.matrix(fixed.index.var[avail,avail,j])+sigma[j]^2*diag(length(avail)),log=TRUE))))
-      }
-    }
-
-    sum(obj)
-  }
-
-  res <- nlm(obj.f,p0)
-
-  q <- res$estimate[1:np]
-  sigma <- exp(res$estimate[1:np+np])
-  obj <- res$minimum
-  convergence <- res$code
-
-   return(list(q=q, b=rep(1,np), sigma=sigma, obj=obj, convergence=convergence))
-}
-
 
 #' VPAによる資源計算を実施する
 #'
@@ -940,19 +810,22 @@ vpa <- function(
     if (est.method=="ls")
     {
         Abund <- nn <- sigma <- b <- NULL
+       
         for (i in 1:nindex)
         {
+         
             abundance <- abund.extractor(abund=abund[i], naa, faa, dat, min.age=min.age[i], max.age=max.age[i], link=link[i], base=base[i], af=af[i], catch.prop=catch.prop, sel.def=sel.def, p.m=p.m, omega=omega, scale=scale)
             Abund <- rbind(Abund, abundance)
-            avail <- which(!is.na(as.numeric(index[i,])))
+            avail<- which(!is.na(as.numeric(index[i,])))
+           
             if (b.est)
             {
                 if (is.null(b.fix))
                 {
-                    b[i] <- cov(log(as.numeric(index[i,avail])),log(as.numeric(abundance[avail])))/var(log(as.numeric(abundance[avail])))
+                    b[i] <- cov(log(as.numeric(index[i,avail ])),log(as.numeric(abundance[avail ])))/var(log(as.numeric(abundance[avail ])))
                 }else
                 {
-                    if (is.na(b.fix[i])) b[i] <- cov(log(as.numeric(index[i,avail])),log(as.numeric(abundance[avail])))/var(log(as.numeric(abundance[avail]))) else b[i] <- b.fix[i]
+                    if (is.na(b.fix[i])) b[i] <- cov(log(as.numeric(index[i,avail ])),log(as.numeric(abundance[avail ])))/var(log(as.numeric(abundance[avail ]))) else b[i] <- b.fix[i]
                 }
             }else
             {
@@ -960,12 +833,21 @@ vpa <- function(
             }
             if (is.null(q.fix))
             {
-                q[i] <- exp(mean(log(as.numeric(index[i,avail]))-b[i]*log(as.numeric(abundance[avail]))))
-            }else
+             
+             
+                q[i] <- sum(as.numeric(index[i,avail])*as.numeric(abundance[avail]))/sum(as.numeric(abundance[avail])^(1+b[i])) #changed
+             
+             
+		 }else
             {
                 q[i] <- q.fix[i]
             }
-            obj <- c(obj,index.w[i]*sum((log(as.numeric(index[i,avail]))-log(q[i])-b[i]*log(as.numeric(abundance[avail])))^2))
+           
+           
+           
+           
+            obj <- c(obj,index.w[i]*sum((as.numeric(index[i,avail])-q[i]*as.numeric(abundance[avail ])^b[i])^2)) #changed
+            
         }
     }
     if (est.method=="ml")
@@ -1010,7 +892,11 @@ vpa <- function(
             }
             if (is.null(q.fix))
             {
-                q[i] <- exp(mean(log(as.numeric(index[i,avail]))-b[i]*log(as.numeric(abundance[avail]))))
+             
+                q[i] <- sum(as.numeric(index[i,avail])*as.numeric(abundance[avail]))/sum(as.numeric(abundance[avail])^(1+b[i])) #changed
+              
+              
+				
             }else
             {
                 q[i] <- q.fix[i]
