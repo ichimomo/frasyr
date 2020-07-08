@@ -5,10 +5,26 @@
 \alias{retro.est}
 \title{レトロスペクティブ解析の実施}
 \usage{
-retro.est(res, n = 5, stat = "mean", init.est = FALSE, b.fix = TRUE)
+retro.est(
+  res,
+  n = 5,
+  stat = "mean",
+  init.est = FALSE,
+  b.fix = TRUE,
+  remove.maxAgeF = FALSE,
+  ssb.forecast = FALSE
+)
 }
 \arguments{
 \item{res}{VPAの出力}
+
+\item{n}{除く年数}
+
+\item{b.fix}{b推定してる場合にbを固定するかどうか}
+
+\item{remove.maxAgeF}{Mohn's rhoを計算する際に最高齢のFを除くか（alphaを仮定して計算していることが多いから）}
+
+\item{ssb.forecast}{Mohn's rhoを計算する際にSSBは1年後を計算するか(last.catch.zero=TRUEのときのみ有効)}
 }
 \description{
 レトロスペクティブ解析の実施

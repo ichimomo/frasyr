@@ -6,7 +6,7 @@ Authors@R: c(person(given="Momoko", family="Ichinokawa", email = "ichimomo@fra.a
 	   person(given="Mitsuyo", family="Miyagawa", email = "mmiyagawa@fra.affrc.go.jp", role = c("aut")),
 	   person(given="Shin", family="Fukui", email = "shinfukui@fra.affrc.go.jp", role = c("aut")),
 	   person(given="Kohei", family="Hamabe", email = "hamabek@fra.affrc.go.jp", role = c("aut")),
-             person(given="Shota", family="Nishijima", email = "nishijimaash@affrc.go.jp", role = c("aut")),
+             person(given="Shota", family="Nishijima", email = "nishijimash@affrc.go.jp", role = c("aut")),
              person(given="Hiroshi", family="Okamura", email = "okamura@fra.affrc.go.jp", role = c("aut")))
 Description: Estimating stock status with stock assessment models and calculating RPs and ABC for Japanese fisheries management
 Depends: R (>= 3.5.0)
