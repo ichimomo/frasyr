@@ -1543,7 +1543,7 @@ cv.est <- function(res,n=5){
 #'
 
 retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE,
-                      remove.maxAgeF=FALSE,ssb.forecast=FALSE){
+                      remove.maxAgeF=FALSE,ssb.forecast=FALSE,sel.mat=NULL){
    res.c <- res
    res.c$input$plot <- FALSE
    Res <- list()
@@ -1581,6 +1581,13 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE,
      res.c$input$fc.year <- res.c$input$fc.year-1
      if (!is.null(res.c$input$tf.mat)) res.c$input$tf.mat <- res.c$input$tf.mat[,-1]
 
+     if (!is.null(sel.mat)) {
+       if (any(dim(sel.mat) != c(nrow(res$saa),n))) {
+         stop("Dimension of 'sel.mat' is not appropriate")
+       } else {
+         res.c$input$sel.f <- sel.mat[,i] #2stepの方のときチューニングなしの時の選択率を行列で使う
+       }
+     }
      if (isTRUE(init.est)) res.c$input$p.init <- res.c$term.f
 
      # last.catch.zero = TRUE用に修正
