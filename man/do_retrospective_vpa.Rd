@@ -11,7 +11,9 @@ do_retrospective_vpa(
   b_reest = FALSE,
   what_plot = c("SSB", "biomass", "Recruitment", "fish_number", "fishing_mortality"),
   plot_year = NULL,
-  ncol = 3
+  ncol = 3,
+  remove_maxAge = FALSE,
+  ssb_forecast = FALSE
 )
 }
 \arguments{
@@ -24,6 +26,10 @@ do_retrospective_vpa(
 \item{what_plot}{作図したい項目を選べる。\code{NULL}の場合、全て（SSB, biomass, U, catch, Recruitment, fish_number, fishing_mortality, weight, maturity, catch_number）をプロットする。}
 
 \item{ncol}{作図の列数。標準で5列なので、\code{what_plot}の数が5以下の場合は適宜変えた方がよい。}
+
+\item{ssb_forecast}{Mohn's rhoを計算する際にSSBは1年後を計算するか(last.catch.zero=TRUEのときのみ有効)}
+
+\item{remove_maxAgeF}{Mohn's rhoを計算する際に最高齢のFを除くか（alphaを仮定して計算していることが多いから）}
 }
 \value{
 返ってくる値:
