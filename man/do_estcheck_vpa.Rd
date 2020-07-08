@@ -5,7 +5,7 @@
 \alias{do_estcheck_vpa}
 \title{vpa結果の収束診断のための関数}
 \usage{
-do_estcheck_vpa(res, n_ite = 100, sd_jitter = 1, what_plot = NULL, TMB = FALSE)
+do_estcheck_vpa(res, n_ite = 20, sd_jitter = 1, what_plot = NULL, TMB = FALSE)
 }
 \arguments{
 \item{res}{VPAの結果のオブジェクト}
@@ -28,6 +28,9 @@ do_estcheck_vpa(res, n_ite = 100, sd_jitter = 1, what_plot = NULL, TMB = FALSE)
 \description{
 この関数ではJitter analysisを行います。
 乱数で生成した初期値を使ってvpa計算を再度行い、推定結果が同一になるかを確認することで、収束の良さを測る診断法です。
+}
+\seealso{
+https://ichimomo.github.io/frasyr/doc/Diagnostics-for-VPA.html
 }
 \author{
 濵邉昂平, 市野川桃子

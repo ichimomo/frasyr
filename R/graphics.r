@@ -74,6 +74,7 @@ ggsave_SH_large <- function(...){
 plot_vpa <- function(vpalist,
                      vpatibble=NULL,
                      what.plot=NULL,
+                     plot_year=NULL,  # 浜辺加筆(2020/06/30)
                      legend.position="top",
                      vpaname=NULL, ncol=2){
 
@@ -108,20 +109,40 @@ plot_vpa <- function(vpalist,
       mutate(stat=factor(stat,levels=c(biomass_factor, age_factor)))
   }
 
+  # シナリオの違いを線種+shapeにした(浜辺'20/06/30)
   g1 <- vpadata %>% ggplot()
   if(all(is.na(vpadata$age))){
     g1 <- g1+ geom_line(aes(x=year, y=value,lty=id))
+    g1 <- try(g1 + geom_point(aes(x=year, y=value, shape=id)))
   }
   else{
-    g1 <- g1+ geom_line(aes(x=year, y=value,color=age,lty=id))
+    g1 <- g1+ geom_line(aes(x=year, y=value, color=age, lty=id))
+    g1 <- try(g1 + geom_point(aes(x=year, y=value, color=age, shape=id)))
+  }
+  # 上のがダメな場合にオリジナルで対応
+  if(class(g1[1])=="try-error"){ # g1の長さは2あって警告が頻発するので[1]を加えた
+    g1 <- vpadata %>% ggplot()
+    if(all(is.na(vpadata$age))){
+      g1 <- g1+ geom_line(aes(x=year, y=value,lty=id))
+    }
+    else{
+      g1 <- g1+ geom_line(aes(x=year, y=value,color=age,lty=id))
+    }
   }
 
   g1 <- g1 +
     facet_wrap(~stat, scale="free_y", ncol=ncol) + ylim(0,NA) +
     theme_SH(legend.position=legend.position) +
-    ylab("value") + xlab("Year")
+    ylab("value") + xlab("Year")+
+    guides(color=guide_legend(nrow=2))
 
-  g1
+  if(!(is.null(plot_year))){
+    g2 <- g1 + xlim(plot_year[1], max(plot_year))
+  } else {
+    g2 <- g1
+  } # もし動かない場合はこれまで通りに作図(浜辺'20/06/30)
+
+  g2
 }
 
 #' F currentをプロットする
@@ -364,7 +385,6 @@ compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000){
     },.id="id")
   }
   else{ # for model average
-    browser()
     SRdata <- purrr::map_dfr(SRlist, function(x){
       x[[1]]$input$SRdata %>%
         as_tibble() %>%
@@ -1641,4 +1661,19 @@ compare_kobeII <- function(kobeII_list,
     theme_SH(legend="top")+ylim(0,NA)
 
   return(g1)
+}
+
+#' Plot SPR figure
+#'
+#' @inheritParams make_stock_table
+#' @export
+plot_sprypr <- function(result_vpa, type) {
+  df <- get.SPR(result_vpa, target.SPR = 30, Fmax = 10, max.age=Inf)$ysdata
+  if (type == "perspr") {
+    df$Year <- as.numeric(rownames(df))
+    plot <- df %>%
+      ggplot(aes(Year, perSPR)) +
+      geom_line()
+  }
+  force(plot)
 }

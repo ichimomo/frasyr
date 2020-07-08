@@ -557,7 +557,8 @@ make_summary_table <- function(mat_data,side=1,probs=c(0.1,0.5,0.8)){
   res_mat <- cbind(apply(mat_data,side,mean),
                    t(apply(mat_data,side,quantile,probs=probs)))
   colnames(res_mat)[1] <- "average"
-  res_mat %>% as_tibble()
+
+  as.data.frame(res_mat)
 }
 
 
@@ -569,8 +570,8 @@ make_summary_table <- function(mat_data,side=1,probs=c(0.1,0.5,0.8)){
 #' @param res  VPAの結果
 #' @param srres fit.SRの結果
 #' @param msyres est.MSYの結果
-#' @param fres_current future.vpaの結果(Fcurrent)
-#' @param fres_HCR future.vpaの結果(F with HCR)
+#' @param fres_current future_vpaの結果(Fcurrent)
+#' @param fres_HCR future_vpaの結果(F with HCR)
 #' @param kobeII kobeII.matrixの結果
 #' @param filename csvファイルとpdfファイルの両方のファイル名を指定する場合（拡張子なしで指定）
 #' @param csvname csvファイルのファイル名
@@ -1077,9 +1078,9 @@ convert_2d_future <- function(df, name, label="tmp"){
     mutate(year=as.numeric(year), stat=name, label=label)
 }
 
-#' future.vpaの結果オブジェクトをtibble形式に変換する関数
+#' future_vpaの結果オブジェクトをtibble形式に変換する関数
 #'
-#' @param fout future.vpaの結果のオブジェクト
+#' @param fout future_vpaの結果のオブジェクト
 #'
 #' @encoding UTF-8
 #' @export
@@ -1402,10 +1403,11 @@ beta.simulation <- function(finput,beta_vector,year.lag=0,type="old"){
 
   for(i in 1:length(beta_vector)){
     if(type=="old"){
-      finput$HCR$beta <- beta_vector[i]
-      finput$is.plot <- FALSE
-      finput$silent <- TRUE
-      fres_base <- do.call(future.vpa,finput) # デフォルトルールの結果→図示などに使う
+        #      finput$HCR$beta <- beta_vector[i]
+        #      finput$is.plot <- FALSE
+        #      finput$silent <- TRUE
+        #      fres_base <- do.call(future.vpa,finput) # デフォルトルールの結果→図示などに使う
+        stop("old function of future.vpa is not supported now")
     }
     else{
       finput$tmb_data$HCR_mat[,,"beta"] <- beta_vector[i]
@@ -1421,45 +1423,71 @@ beta.simulation <- function(finput,beta_vector,year.lag=0,type="old"){
 }
 
 
-#' MSYを達成するときの\%SPRを計算する
-#'
-#' @param finput 将来予測インプット
-#' @param fout 将来予測のアウトプット（finputがない場合)
-#' @param Fvector Fのベクトル
+#' MSYを達成するときの\%SPRを計算する(calc_future_perSPRのwrapper)
+#' 
 #' @encoding UTF-8
 #' @export
-calc_perspr <- function(finput=NULL,
-                        fout=NULL,
+#'
+
+calc_perspr <- function(...){
+  calc_future_perSPR(...)
+}
+
+#' 将来予測の結果オブジェクトから生物パラメータを取り出して、その生物パラメータをベースに、Fvectorで与えたF at ageに対応するSPRを計算して返す
+#'
+#' @param fout 将来予測のアウトプット（finputがない場合)。future_vpaの結果はformat_to_old_future関数をかまさないと動かない。
+#' @param res_vpa Popeの式を使うかどうかだけのために利用。実際、漁獲量は計算していないので、不要といえば不要。
+#' @param Fvector Fのベクトル
+#' @param max.age SPR計算のときに考慮する最大年齢。デフォルトは無限大。
+#' @param target.col 将来予測の何列目の年を取り出すか（NULLの場合、最後の年）
+#' @param target.year 将来予測の何年目を取り出すか（年の名前）（NULLの場合、最後の年）
+#' @param SPRtarget これを与えると、Fvectorを何倍すればここで指定した%SPRと一致するかを返すようになる
+#' 
+#' @encoding UTF-8
+#' @export
+#' 
+
+calc_future_perSPR <- function(fout=NULL,
                         res_vpa=NULL,
                         Fvector,
                         Fmax=10,
                         max.age=Inf,
-                        target.col=NULL
+                        target.col=NULL,
+                        target.year=NULL,
+                        SPRtarget=NULL,
+                        SPR_unit="digit" # or "%"
 ){
-  if(!is.null(finput)){
-    # MSYにおける将来予測計算をやりなおし
-    finput$outtype <- "FULL"
-    fout.tmp <- do.call(future.vpa,finput)
-    res_vpa <- finput$res0
+
+  fout.tmp <- fout
+
+  SPR_multi <- ifelse(SPR_unit=="%", 100, 1)
+
+  # シミュレーションが複数回ある場合には、その平均値を用いる
+  if(is.null(target.col) && is.null(target.year)){
+    waa.tmp       <- fout.tmp$waa      [,dim(fout.tmp$waa)      [[2]],] %>% apply(1,mean) 
+    waa.catch.tmp <- fout.tmp$waa.catch[,dim(fout.tmp$waa.catch)[[2]],] %>% apply(1,mean)
+    maa.tmp       <- fout.tmp$maa      [,dim(fout.tmp$maa)      [[2]],] %>% apply(1,mean)
+    M.tmp         <- fout.tmp$M        [,dim(fout.tmp$M)        [[2]],] %>% apply(1,mean)
   }
   else{
-    fout.tmp <- fout
-  }
-  # 生物パラメータはその将来予測で使われているものを使う
-  if(is.null(target.col)){
-    waa.tmp           <- fout.tmp$waa[,dim(fout.tmp$waa)[[2]],1]
-    waa.catch.tmp <- fout.tmp$waa.catch[,dim(fout.tmp$waa.catch)[[2]],1]
-    maa.tmp           <- fout.tmp$maa[,dim(fout.tmp$maa)[[2]],1]
-    M.tmp                <- fout.tmp$M[,dim(fout.tmp$M)[[2]],1]
-  }
-  else{
-    waa.tmp           <- fout.tmp$waa[,target.col,1]
-    waa.catch.tmp <- fout.tmp$waa.catch[,target.col,1]
-    maa.tmp           <- fout.tmp$maa[,target.col,1]
-    M.tmp               <- fout.tmp$M[,target.col,1]
+    # 年の範囲を指定する場合、年で平均してから、シミュレーション回数で平均する
+    if(!is.null(target.year)){
+      target.year.char <- as.character(target.year)
+      waa.tmp       <- fout.tmp$waa      [,target.year.char,,drop=FALSE] %>% apply(c(1,3),mean) %>% apply(1,mean)
+      waa.catch.tmp <- fout.tmp$waa.catch[,target.year.char,,drop=FALSE] %>% apply(c(1,3),mean) %>% apply(1,mean)
+      maa.tmp       <- fout.tmp$maa      [,target.year.char,,drop=FALSE] %>% apply(c(1,3),mean) %>% apply(1,mean)
+      M.tmp         <- fout.tmp$M        [,target.year.char,,drop=FALSE] %>% apply(c(1,3),mean) %>% apply(1,mean)
+    }    
+    if(!is.null(target.col)){
+      waa.tmp       <- fout.tmp$waa[,target.col,]       %>% apply(1,mean)
+      waa.catch.tmp <- fout.tmp$waa.catch[,target.col,] %>% apply(1,mean)
+      maa.tmp       <- fout.tmp$maa[,target.col,]       %>% apply(1,mean)
+      M.tmp         <- fout.tmp$M[,target.col,]         %>% apply(1,mean)
+    }
   }
 
   # 緊急措置。本来ならどこをプラスグループとして与えるかを引数として与えないといけない
+  # 現状で、すべてのカラムがゼロ＝資源計算では考慮されていないセルとして認識されている
   allsumpars <- waa.tmp+waa.catch.tmp+maa.tmp+M.tmp
   waa.tmp <- waa.tmp[allsumpars!=0]
   waa.catch.tmp <- waa.catch.tmp[allsumpars!=0]
@@ -1470,14 +1498,17 @@ calc_perspr <- function(finput=NULL,
   ## ここまで緊急措置
 
   # SPRを計算
-  spr.current <- ref.F(res_vpa,Fcurrent=Fvector,
-                       waa=waa.tmp,
-                       waa.catch=waa.catch.tmp,pSPR=NULL,
-                       maa=maa.tmp,M=M.tmp,rps.year=as.numeric(colnames(res_vpa$naa)),
-                       F.range=c(seq(from=0,to=ceiling(max(res_vpa$Fc.at.age,na.rm=T)*Fmax),
-                                     length=101),max(res_vpa$Fc.at.age,na.rm=T)),
-                       plot=FALSE,max.age=max.age)$currentSPR$perSPR
-  spr.current
+  if(!is.null(SPRtarget)) SPRtarget_tmp <- SPRtarget/SPR_multi*100 else SPRtarget_tmp <- NULL
+  tmp <- calc_Fratio(Fvector,waa.tmp,maa=maa.tmp,M=M.tmp,SPRtarget=SPRtarget_tmp,
+                     waa.catch=waa.catch.tmp,Pope=res_vpa$input$Pope,
+                     return_SPR=TRUE)
+  if(is.null(SPRtarget))  return(ifelse(length(tmp)==1,1*SPR_multi,tmp$SPR_original/100*SPR_multi))
+  else{
+    tmp$SPR_original <- tmp$SPR_original/100*SPR_multi
+    tmp$SPR_est <- tmp$SPR_est/100*SPR_multi
+    tmp$SPR_target <- tmp$SPR_target/100*SPR_multi
+    return(tmp)
+  }
 }
 
 #' kobeIItable から任意の表を指名して取り出す
@@ -1774,14 +1805,15 @@ compare_future_performance <- function(future_list,res_vpa,res_MSY,
 #' @param waa weight at age
 #' @param maa maturity at age
 #' @param M natural morality at age
-#' @param SPRtarget target SPR
+#' @param SPRtarget target SPR (NULLの場合には最適化しない)
+#' @param return_SPR return SPR as well as Fratio
 #'
 #' @export
 #' @encoding UTF-8
 #'
 
 
-calc_Fratio <- function(faa, waa, maa, M, SPRtarget=30, waa.catch=NULL,Pope=TRUE){
+calc_Fratio <- function(faa, waa, maa, M, SPRtarget=30, waa.catch=NULL,Pope=TRUE, return_SPR=FALSE){
   tmpfunc <- function(x,SPR0=0,...){
     SPR_tmp <- calc.rel.abund(sel=faa,Fr=exp(x),na=length(faa),M=M, waa=waa, waa.catch=waa.catch,
                               min.age=0,max.age=Inf,Pope=Pope,ssb.coef=0,maa=maa)$spr %>% sum()
@@ -1792,13 +1824,29 @@ calc_Fratio <- function(faa, waa, maa, M, SPRtarget=30, waa.catch=NULL,Pope=TRUE
     tmp <- !is.na(faa)
     SPR0 <- calc.rel.abund(sel=faa,Fr=0,na=length(faa),M=M, waa=waa, waa.catch=waa.catch,maa=maa,
                            min.age=0,max.age=Inf,Pope=Pope,ssb.coef=0)$spr %>% sum()
-    opt_res <- optimize(tmpfunc,interval=c(-10,10),SPR0=SPR0)
-    SPR_est <- calc.rel.abund(sel=faa,Fr=exp(opt_res$minimum),na=length(faa),
-                              M=M, waa=waa, waa.catch=waa.catch,maa=maa,
-                              min.age=0,max.age=Inf,Pope=Pope,ssb.coef=0)$spr %>% sum()
-    SPR_est <- SPR_est/SPR0 * 100
-    if(abs(SPR_est-SPRtarget)>0.01) {browser(); return(NA)}
-    else return(1/exp(opt_res$minimum))
+    SPR_original <- calc.rel.abund(sel=faa,Fr=1,na=length(faa),M=M, waa=waa, waa.catch=waa.catch,maa=maa,
+                                   min.age=0,max.age=Inf,Pope=Pope,ssb.coef=0)$spr %>% sum()
+    SPR_original <- SPR_original/SPR0*100
+    if(!is.null(SPRtarget)){
+        opt_res <- optimize(tmpfunc,interval=c(-10,10),SPR0=SPR0)
+        SPR_est <- calc.rel.abund(sel=faa,Fr=exp(opt_res$minimum),na=length(faa),
+                                  M=M, waa=waa, waa.catch=waa.catch,maa=maa,
+                                  min.age=0,max.age=Inf,Pope=Pope,ssb.coef=0)$spr %>% sum()
+        SPR_est <- SPR_est/SPR0 * 100
+        if(abs(SPR_est-SPRtarget)>0.01) {browser(); return(NA)}
+        Fratio <- 1/exp(opt_res$minimum)
+    }
+    else{
+      SPR_est <- SPR_original
+      Fratio <- 1
+    }
+    
+    if(isTRUE(return_SPR)){
+        list(Fratio=Fratio, SPR_est=SPR_est, SPR_target=SPRtarget, SPR_original=SPR_original)
+    }
+    else{
+        return(Fratio)
+    }
   }
 }
 
@@ -1846,4 +1894,62 @@ load_folder <- function(folder_name){
   res_all$res_vpa <- purrr::map(res_all$res_MSY.rda, function(x) if(!is.na(x)) x$res_vpa else NA)
   res_all$res_vpa <- res_all$res_vpa[!is.na(res_all$res_vpa)]
   invisible(res_all)
+}
+
+
+#' Make Kobe ratio (?) for frasyr_tool
+#'
+#' @param result_vpa object createb dy vpa()
+#' @param result_msy object created by script 1do_MSYest.R of SC meeting
+#' @return A tibble object
+#' @export
+make_kobe_ratio <- function(result_vpa, result_msy) {
+
+  assertthat::assert_that(
+    assertthat::has_name(result_vpa, c("ssb")),
+    assertthat::has_name(result_msy, c("summary")),
+    assertthat::has_name(result_msy$summary, c("perSPR"))
+  )
+
+  return_kobe_ratio <- function() {
+    tibble::tibble(year   = get_year(),
+                   Fratio = get_f_ratio(),
+                   Bratio = calc_b_ratio()) %>%
+      ad_hoc_filter()
+  }
+
+  get_year <- function() {
+    colnames(result_vpa$ssb)
+  }
+
+  get_f_ratio <- function() {
+    target_spr  <- derive_RP_value(result_msy$summary,"Btarget0")$perSPR * 100
+    spr_history <- get.SPR(result_vpa,
+                           target_spr,
+                           max.age = Inf, Fmax = 1)
+
+    assertthat::assert_that(
+      assertthat::validate_that(is.list(spr_history)),
+      assertthat::has_name(spr_history, "ysdata"),
+      assertthat::has_name(spr_history$ysdata, "F/Ftarget"),
+      assertthat::are_equal(rownames(spr_history$ysdata),
+                            colnames(result_vpa$ssb))
+    )
+
+    force(spr_history$ysdata$`F/Ftarget`)
+  }
+
+
+  calc_b_ratio <- function() {
+    ssb        <- colSums(result_vpa$ssb, na.rm=T)
+    target_ssb <- derive_RP_value(result_msy$summary,"Btarget0")$SSB
+
+    force(ssb / target_ssb)
+  }
+
+  ad_hoc_filter <- function(koberatio) {
+    dplyr::filter(koberatio, !is.na(Bratio)) # When does Bratio become 'NA'?
+  }
+
+  return_kobe_ratio()
 }

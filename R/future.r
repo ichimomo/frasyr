@@ -702,15 +702,21 @@ set_SR_mat <- function(res_vpa=NULL,
     SR_mat[as.character(regime_data$year),,"a"] <- regime_data$a
     SR_mat[as.character(regime_data$year),,"b"] <- regime_data$b
     SR_mat[as.character(regime_data$year),,"sd"] <- regime_data$sd
-    SR_mat[random_rec_year_period,,"a"] <- res_SR$regime_pars %>%
-      dplyr::filter(regime==regime_shift_option$future_regime) %>%
-      select(a) %>% as.numeric()
-    SR_mat[random_rec_year_period,,"b"] <- res_SR$regime_pars %>%
-      dplyr::filter(regime==regime_shift_option$future_regime) %>%
-      select(b) %>% as.numeric()
-    SR_mat[random_rec_year_period,,"sd"] <- res_SR$regime_pars %>%
-      dplyr::filter(regime==regime_shift_option$future_regime) %>%
-      select(sd) %>% as.numeric()
+    future_regime_par <- res_SR$regime_pars %>% dplyr::filter(regime==regime_shift_option$future_regime)
+    SR_mat[random_rec_year_period,,"a"] <- future_regime_par$a 
+    SR_mat[random_rec_year_period,,"b"] <- future_regime_par$b 
+    SR_mat[random_rec_year_period,,"sd"] <- future_regime_par$sd
+
+    # どのレジームに属するか明示的に指定されないケースが出てくる。
+    # そういう場合は将来予測のレジームのパラメータを使うようにする→要改善
+    missing_year <- which(!(1:dim(SR_mat)[[1]] %in% c(which(allyear_name %in% as.character(regime_data$year)),random_rec_year_period)))
+
+    if(length(missing_year)>0){
+        SR_mat[missing_year,,"a"] <- future_regime_par$a 
+        SR_mat[missing_year,,"b"] <- future_regime_par$b 
+        SR_mat[missing_year,,"sd"] <- future_regime_par$sd        
+    }
+
     res_SR$pars$rho <- 0
   }
   SR_mat[,,"rho"] <- res_SR$pars$rho            
@@ -846,6 +852,9 @@ make_array <- function(d3_mat, pars, pars.year, year_replace_future){
 }
 
 
+#' @param weight
+#' @param nsim
+#' @export
 arrange_weight <- function(weight, nsim){
   weight <- weight / sum(weight)
   weight <- round(cumsum(weight) * nsim)

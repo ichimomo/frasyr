@@ -9,8 +9,9 @@ do_retrospective_vpa(
   res,
   n_retro = 5,
   b_reest = FALSE,
-  what_plot = NULL,
-  ncol = 5
+  what_plot = c("SSB", "biomass", "Recruitment", "fish_number", "fishing_mortality"),
+  plot_year = NULL,
+  ncol = 3
 )
 }
 \arguments{
@@ -20,7 +21,7 @@ do_retrospective_vpa(
 
 \item{b_reest}{bをレトロスペクティブ解析中で再推定するか}
 
-\item{what_plot}{作図したい項目を選べる。引数を与えない場合（\code{NULL}）、全て（SSB, biomass, U, catch, Recruitment, fish_number, fishing_mortality, weight, maturity, catch_number）をプロットする。}
+\item{what_plot}{作図したい項目を選べる。\code{NULL}の場合、全て（SSB, biomass, U, catch, Recruitment, fish_number, fishing_mortality, weight, maturity, catch_number）をプロットする。}
 
 \item{ncol}{作図の列数。標準で5列なので、\code{what_plot}の数が5以下の場合は適宜変えた方がよい。}
 }
@@ -33,13 +34,10 @@ do_retrospective_vpa(
 \description{
 VPAのレトロスペクティブ解析結果を自動生成する関数
 }
-\examples{
-# GitHub縺ｫ縺､縺ｪ縺後ｋ繧医≧縺ｫ縺吶ｋ<ef>ｼ<9f>
-
-}
 \seealso{
 レトロスペクティブ解析について:  \code{\link{retro.est}}
 作図について: \code{\link{plot_vpa}}
+https://ichimomo.github.io/frasyr/doc/Diagnostics-for-VPA.html
 }
 \author{
 濵邉昂平, 市野川桃子

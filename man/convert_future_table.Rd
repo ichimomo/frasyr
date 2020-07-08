@@ -3,13 +3,13 @@
 \encoding{UTF-8}
 \name{convert_future_table}
 \alias{convert_future_table}
-\title{future.vpaの結果オブジェクトをtibble形式に変換する関数}
+\title{future_vpaの結果オブジェクトをtibble形式に変換する関数}
 \usage{
 convert_future_table(fout, label = "tmp")
 }
 \arguments{
-\item{fout}{future.vpaの結果のオブジェクト}
+\item{fout}{future_vpaの結果のオブジェクト}
 }
 \description{
-future.vpaの結果オブジェクトをtibble形式に変換する関数
+future_vpaの結果オブジェクトをtibble形式に変換する関数
 }
