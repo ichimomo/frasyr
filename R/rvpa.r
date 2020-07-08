@@ -1549,7 +1549,7 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE){
      res.c$input$b.est <- FALSE
    }
 
-   if (res$input$last.catch.zero) res.c$input$last.catch.zero <- FALSE
+   #if (res$input$last.catch.zero) res.c$input$last.catch.zero <- FALSE
 
    for (i in 1:n){
      nc <- ncol(res.c$input$dat$caa)
@@ -1573,16 +1573,19 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE){
 
      if (isTRUE(init.est)) res.c$input$p.init <- res.c$term.f
 
+     # last.catch.zero = TRUE用に修正
+     if (res.c$input$last.catch.zero) {res.c$input$dat$caa[,nc-1] <- 0; Y <- nc-2} else Y <- nc-1
+
      res1 <- safe_call(vpa,res.c$input, force=TRUE) # do.callからsafe_callに変更(浜辺'20/06/30)
 
      Res[[i]] <- res1
 
-     if ((max(abs(res1$gradient)) < 10^(-3) & !isTRUE(res1$input$TMB)) | (max(abs(res1$gradient)) > 0 & max(abs(res1$gradient)) < 10^(-3) & isTRUE(res1$input$TMB)) | (is.na(max(abs(res1$gradient))) & res1$input$optimizer=="nlminb")){
-        obj.n <- c(obj.n, (sum(res1$naa[,nc-1])-sum(res$naa[,nc-1]))/sum(res$naa[,nc-1]))
-        obj.b <- c(obj.b, (sum(res1$baa[,nc-1])-sum(res$baa[,nc-1]))/sum(res$baa[,nc-1]))
-        obj.s <- c(obj.s, (sum(res1$ssb[,nc-1])-sum(res$ssb[,nc-1]))/sum(res$ssb[,nc-1]))
-        obj.r <- c(obj.r, (res1$naa[1,nc-1]-res$naa[1,nc-1])/res$naa[1,nc-1])
-        obj.f <- c(obj.f, (sum(res1$faa[,nc-1])-sum(res$faa[,nc-1]))/sum(res$faa[,nc-1]))
+     if ((max(abs(res1$gradient)) < 10^(-3) & !isTRUE(res1$input$ADMB)) | (max(abs(res1$gradient)) > 0 & max(abs(res1$gradient)) < 10^(-3) & isTRUE(res1$input$ADMB)) | (is.na(max(abs(res1$gradient))) & res1$input$optimizer=="nlminb")){
+       obj.n <- c(obj.n, (sum(res1$naa[,Y])-sum(res$naa[,Y]))/sum(res$naa[,Y]))
+       obj.b <- c(obj.b, (sum(res1$baa[,Y])-sum(res$baa[,Y]))/sum(res$baa[,Y]))
+       obj.s <- c(obj.s, (sum(res1$ssb[,Y])-sum(res$ssb[,Y]))/sum(res$ssb[,Y]))
+       obj.r <- c(obj.r, (res1$naa[1,Y]-res$naa[1,Y])/res$naa[1,Y])
+       obj.f <- c(obj.f, (sum(res1$faa[,Y])-sum(res$faa[,Y]))/sum(res$faa[,Y]))
      } else {
        obj.n <- c(obj.n, NA)
        obj.b <- c(obj.b, NA)
@@ -1600,6 +1603,10 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE){
 }
 
 #最新年の漁獲量が0の場合 (last.zero.catch=0)、最新年のFが0となり、加入量も推定できないため、もう1年前の推定値でMohn's rhoを計算するための関数
+## ------------------------------------------------------  ##
+# retro.est中にlast.zero.catch=0の場合のif文加えた
+# retro.estが問題なければ以下関数は捨てても大丈夫（浜辺07/07）
+## ------------------------------------------------------  ##
 retro.est2 <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE){
    res.c <- res
    res.c$input$plot <- FALSE
