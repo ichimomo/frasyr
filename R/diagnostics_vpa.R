@@ -341,13 +341,16 @@ do_retrospective_vpa <- function(res, n_retro = 5, b_reest = FALSE,
   res_retro <- retro.est(res, n = n_retro, b.fix = !b_reest)
   dat_graph <- list()
   for(i in 1:n_retro) dat_graph[[i]] <- res_retro$Res[[i]]
-  names(dat_graph) <- rev(colnames(res$ssb))[1:n_retro]  # 図にinputされる結果に名前をつける
+  dat_graph <- c(list(res), dat_graph) # Base case(全データで解析)の追加（浜辺07/08）
+  names(dat_graph) <- rev(colnames(res$ssb))[1:(n_retro+1)]  # 図にinputされる結果に名前をつける
 
   # 図にMohn's rhoの重ね書き用rho data from 市野川さん
   rho_data <- tibble(index = names(res_retro$mohn), value = res_retro$mohn) %>%
     left_join(tibble(index = c("N", "B", "SSB", "R", "F"),
                      stat = c("fish_number", "biomass" ,"SSB" ,"Recruitment" ,"fishing_mortality"))) %>%
-    mutate(y=0, x=as.numeric(min(colnames(res_retro[[1]][[1]]$naa))))
+    #mutate(y=0, x=as.numeric(min(colnames(res_retro[[1]][[1]]$naa))))
+    mutate(y = 0,
+           x = if(is.null(plot_year))as.numeric(min(colnames(res_retro[[1]][[1]]$naa))) else plot_year[1])
 
   g1 <- plot_vpa(dat_graph,
                  what.plot = factor(what_plot, levels = as.character(what_plot)),
