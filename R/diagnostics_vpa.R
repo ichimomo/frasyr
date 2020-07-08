@@ -348,7 +348,9 @@ do_retrospective_vpa <- function(res, n_retro = 5, b_reest = FALSE,
   rho_data <- tibble(index = names(res_retro$mohn), value = res_retro$mohn) %>%
     left_join(tibble(index = c("N", "B", "SSB", "R", "F"),
                      stat = c("fish_number", "biomass" ,"SSB" ,"Recruitment" ,"fishing_mortality"))) %>%
-    mutate(y=0, x=as.numeric(min(colnames(res_retro[[1]][[1]]$naa))))
+    #mutate(y=0, x=as.numeric(min(colnames(res_retro[[1]][[1]]$naa))))
+    mutate(y = 0,
+           x = if(is.null(plot_year))as.numeric(min(colnames(res_retro[[1]][[1]]$naa))) else plot_year[1])
 
   g1 <- plot_vpa(dat_graph,
                  what.plot = factor(what_plot, levels = as.character(what_plot)),
