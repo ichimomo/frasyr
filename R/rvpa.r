@@ -1200,7 +1200,7 @@ vpa <- function(
       log_F=log(p.init)
     )
 
-    obj <- try(MakeADFun(data2, parameters, DLL=tmb.file))
+    obj <- try(TMB::MakeADFun(data2, parameters, DLL=tmb.file))
     if (class(obj) == "try-error") {
       stop("Please run use_rvpa_tmb() first!")
     }
