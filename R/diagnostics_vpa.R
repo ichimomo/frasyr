@@ -341,8 +341,13 @@ do_retrospective_vpa <- function(res, n_retro = 5, b_reest = FALSE,
   res_retro <- retro.est(res, n = n_retro, b.fix = !b_reest)
   dat_graph <- list()
   for(i in 1:n_retro) dat_graph[[i]] <- res_retro$Res[[i]]
-  dat_graph <- c(list(res), dat_graph) # Base case(全データで解析)の追加（浜辺07/08）
-  names(dat_graph) <- rev(colnames(res$ssb))[1:(n_retro+1)]  # 図にinputされる結果に名前をつける
+
+  if(res$input$last.catch.zero){ # last.catch.zero=Tの場合、最終年のプロットはしない（Mohn's rhoとずれるから）（浜辺07/08）
+    names(dat_graph) <- rev(colnames(res$ssb))[2:(n_retro+1)]
+  } else {
+    dat_graph <- c(list(res), dat_graph) # Base case(全データで解析)の追加（浜辺07/08）
+    names(dat_graph) <- rev(colnames(res$ssb))[1:(n_retro+1)]  # 図にinputされる結果に名前をつける
+  }
 
   # 図にMohn's rhoの重ね書き用rho data from 市野川さん
   rho_data <- tibble(index = names(res_retro$mohn), value = res_retro$mohn) %>%
