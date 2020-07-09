@@ -308,15 +308,6 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
 #' @param b_reest bをレトロスペクティブ解析中で再推定するか
 #' @param what_plot 作図したい項目を選べる。\code{NULL}の場合、全て（SSB, biomass, U, catch, Recruitment, fish_number, fishing_mortality, weight, maturity, catch_number）をプロットする。
 #' @param ncol 作図の列数。標準で5列なので、\code{what_plot}の数が5以下の場合は適宜変えた方がよい。
-<<<<<<< HEAD
-#' @param remove_maxAgeF Mohn's rhoを計算する際に最高齢のFを除くか（alphaを仮定して計算していることが多いから）
-#' @param ssb_forecast Mohn's rhoを計算する際にSSBは1年後を計算するか(last.catch.zero=TRUEのときのみ有効)
-<<<<<<< HEAD
-#' @param res_step1 2段階法のレトロ解析をやる場合の1段階目の\code{vpa}オブジェクト
-=======
->>>>>>> parent of c99e76d... fix retro analysis #374
-=======
->>>>>>> parent of 715de97... add two arguments in retro analysis #409
 #'
 #' @return 返ってくる値:
 #'     \code{result} 感度分析の結果が\code{list}型式で得られる。
