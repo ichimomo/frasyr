@@ -127,7 +127,16 @@
     <p>レトロスペクティブ解析の実施</p>
     </div>
 
-    <pre class="usage"><span class='fu'>retro.est</span>(<span class='kw'>res</span>, n = <span class='fl'>5</span>, stat = <span class='st'>"mean"</span>, init.est = <span class='fl'>FALSE</span>, b.fix = <span class='fl'>TRUE</span>)</pre>
+    <pre class="usage"><span class='fu'>retro.est</span>(
+  <span class='kw'>res</span>,
+  n = <span class='fl'>5</span>,
+  stat = <span class='st'>"mean"</span>,
+  init.est = <span class='fl'>FALSE</span>,
+  b.fix = <span class='fl'>TRUE</span>,
+  remove.maxAgeF = <span class='fl'>FALSE</span>,
+  ssb.forecast = <span class='fl'>FALSE</span>,
+  sel.mat = <span class='kw'>NULL</span>
+)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -135,6 +144,22 @@
     <tr>
       <th>res</th>
       <td><p>VPAの出力</p></td>
+    </tr>
+    <tr>
+      <th>n</th>
+      <td><p>除く年数</p></td>
+    </tr>
+    <tr>
+      <th>b.fix</th>
+      <td><p>b推定してる場合にbを固定するかどうか</p></td>
+    </tr>
+    <tr>
+      <th>remove.maxAgeF</th>
+      <td><p>Mohn's rhoを計算する際に最高齢のFを除くか（alphaを仮定して計算していることが多いから）</p></td>
+    </tr>
+    <tr>
+      <th>ssb.forecast</th>
+      <td><p>Mohn's rhoを計算する際にSSBは1年後を計算するか(last.catch.zero=TRUEのときのみ有効)</p></td>
     </tr>
     </table>
 

@@ -133,7 +133,10 @@
   b_reest = <span class='fl'>FALSE</span>,
   what_plot = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"SSB"</span>, <span class='st'>"biomass"</span>, <span class='st'>"Recruitment"</span>, <span class='st'>"fish_number"</span>, <span class='st'>"fishing_mortality"</span>),
   plot_year = <span class='kw'>NULL</span>,
-  ncol = <span class='fl'>3</span>
+  ncol = <span class='fl'>3</span>,
+  remove_maxAgeF = <span class='fl'>FALSE</span>,
+  ssb_forecast = <span class='fl'>FALSE</span>,
+  res_step1 = <span class='kw'>NULL</span>
 )</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -158,6 +161,18 @@
     <tr>
       <th>ncol</th>
       <td><p>作図の列数。標準で5列なので、<code>what_plot</code>の数が5以下の場合は適宜変えた方がよい。</p></td>
+    </tr>
+    <tr>
+      <th>remove_maxAgeF</th>
+      <td><p>Mohn's rhoを計算する際に最高齢のFを除くか（alphaを仮定して計算していることが多いから）</p></td>
+    </tr>
+    <tr>
+      <th>ssb_forecast</th>
+      <td><p>Mohn's rhoを計算する際にSSBは1年後を計算するか(last.catch.zero=TRUEのときのみ有効)</p></td>
+    </tr>
+    <tr>
+      <th>res_step1</th>
+      <td><p>2段階法のレトロ解析をやる場合の1段階目の<code>vpa</code>オブジェクト</p></td>
     </tr>
     </table>
 
