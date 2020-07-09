@@ -311,6 +311,7 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
 #' @param remove_maxAgeF Mohn's rhoを計算する際に最高齢のFを除くか（alphaを仮定して計算していることが多いから）
 #' @param ssb_forecast Mohn's rhoを計算する際にSSBは1年後を計算するか(last.catch.zero=TRUEのときのみ有効)
 #' @param res_step1 2段階法のレトロ解析をやる場合の1段階目の\code{vpa}オブジェクト
+#'
 #' @return 返ってくる値:
 #'     \code{result} 感度分析の結果が\code{list}型式で得られる。
 #'     \code{mohn_rho}
@@ -341,7 +342,7 @@ do_retrospective_vpa <- function(res, n_retro = 5, b_reest = FALSE,
   # vpa内でbの推定をしていないにもかかわらず、b_reestがtrueで入力された場合
   # 推定結果(bを推定している)は得られるが、メッセージを出す
 
-  if (!is.null(res_step1)) { #二段階法の場合のレトロ    i
+  if (!is.null(res_step1)) { #二段階法の場合のレトロ 
     retro_step_one <- retro.est(res_step1, n = n_retro)
     yy <- ifelse(res$input$last.catch.zero,2,1)
     sel_mat <- sapply(1:n_retro, function(i) rev(retro_step_one$Res[[i]]$saa)[,yy])

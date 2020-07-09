@@ -1534,10 +1534,6 @@ cv.est <- function(res,n=5){
 #' レトロスペクティブ解析の実施
 #'
 #' @param res VPAの出力
-#' @param n 除く年数
-#' @param b.fix b推定してる場合にbを固定するかどうか
-#' @param remove.maxAgeF Mohn's rhoを計算する際に最高齢のFを除くか（alphaを仮定して計算していることが多いから）
-#' @param ssb.forecast Mohn's rhoを計算する際にSSBは1年後を計算するか(last.catch.zero=TRUEのときのみ有効)
 #' @encoding UTF-8
 #' @export
 #'
@@ -1548,7 +1544,6 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE,
    res.c$input$plot <- FALSE
    Res <- list()
    obj.n <- obj.b <- obj.s <- obj.r <- obj.f <- NULL
-   A <- nrow(res$faa)
 
    if (isTRUE(b.fix)){
      res.c$input$b.fix <- res$b
@@ -1556,10 +1551,6 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE,
    }
 
    #if (res$input$last.catch.zero) res.c$input$last.catch.zero <- FALSE
-   if (ssb.forecast && !(res.c$input$last.catch.zero)) {
-     warning("'ssb.forecast' is usable only when 'last.catch.zero=TRUE' and so ignored")
-   }
-     
 
    for (i in 1:n){
      nc <- ncol(res.c$input$dat$caa)
@@ -1600,17 +1591,9 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE,
      if ((max(abs(res1$gradient)) < 10^(-3) & !isTRUE(res1$input$ADMB)) | (max(abs(res1$gradient)) > 0 & max(abs(res1$gradient)) < 10^(-3) & isTRUE(res1$input$ADMB)) | (is.na(max(abs(res1$gradient))) & res1$input$optimizer=="nlminb")){
        obj.n <- c(obj.n, (sum(res1$naa[,Y])-sum(res$naa[,Y]))/sum(res$naa[,Y]))
        obj.b <- c(obj.b, (sum(res1$baa[,Y])-sum(res$baa[,Y]))/sum(res$baa[,Y]))
-       if (ssb.forecast && res.c$input$last.catch.zero) {
-         obj.s <- c(obj.s, (sum(res1$ssb[,Y+1])-sum(res$ssb[,Y+1]))/sum(res$ssb[,Y+1]))
-       } else {
-         obj.s <- c(obj.s, (sum(res1$ssb[,Y])-sum(res$ssb[,Y]))/sum(res$ssb[,Y]))
-       }
+       obj.s <- c(obj.s, (sum(res1$ssb[,Y])-sum(res$ssb[,Y]))/sum(res$ssb[,Y]))
        obj.r <- c(obj.r, (res1$naa[1,Y]-res$naa[1,Y])/res$naa[1,Y])
-       if (remove.maxAgeF) {
-         obj.f <- c(obj.f, (sum(res1$faa[-A,Y])-sum(res$faa[-A,Y]))/sum(res$faa[-A,Y]))
-         } else {
-           obj.f <- c(obj.f, (sum(res1$faa[,Y])-sum(res$faa[,Y]))/sum(res$faa[,Y]))
-         }
+       obj.f <- c(obj.f, (sum(res1$faa[,Y])-sum(res$faa[,Y]))/sum(res$faa[,Y]))
      } else {
        obj.n <- c(obj.n, NA)
        obj.b <- c(obj.b, NA)
