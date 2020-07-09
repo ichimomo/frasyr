@@ -1200,7 +1200,7 @@ vpa <- function(
       log_F=log(p.init)
     )
 
-    obj <- try(MakeADFun(data2, parameters, DLL=tmb.file))
+    obj <- try(TMB::MakeADFun(data2, parameters, DLL=tmb.file))
     if (class(obj) == "try-error") {
       stop("Please run use_rvpa_tmb() first!")
     }
@@ -1534,15 +1534,21 @@ cv.est <- function(res,n=5){
 #' レトロスペクティブ解析の実施
 #'
 #' @param res VPAの出力
+#' @param n 除く年数
+#' @param b.fix b推定してる場合にbを固定するかどうか
+#' @param remove.maxAgeF Mohn's rhoを計算する際に最高齢のFを除くか（alphaを仮定して計算していることが多いから）
+#' @param ssb.forecast Mohn's rhoを計算する際にSSBは1年後を計算するか(last.catch.zero=TRUEのときのみ有効)
 #' @encoding UTF-8
 #' @export
 #'
 
-retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE){
+retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE,
+                      remove.maxAgeF=FALSE,ssb.forecast=FALSE,sel.mat=NULL){
    res.c <- res
    res.c$input$plot <- FALSE
    Res <- list()
    obj.n <- obj.b <- obj.s <- obj.r <- obj.f <- NULL
+   A <- nrow(res$faa)
 
    if (isTRUE(b.fix)){
      res.c$input$b.fix <- res$b
@@ -1550,6 +1556,10 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE){
    }
 
    #if (res$input$last.catch.zero) res.c$input$last.catch.zero <- FALSE
+   if (ssb.forecast && !(res.c$input$last.catch.zero)) {
+     warning("'ssb.forecast' is usable only when 'last.catch.zero=TRUE' and so ignored")
+   }
+     
 
    for (i in 1:n){
      nc <- ncol(res.c$input$dat$caa)
@@ -1571,6 +1581,13 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE){
      res.c$input$fc.year <- res.c$input$fc.year-1
      if (!is.null(res.c$input$tf.mat)) res.c$input$tf.mat <- res.c$input$tf.mat[,-1]
 
+     if (!is.null(sel.mat)) {
+       if (any(dim(sel.mat) != c(nrow(res$saa),n))) {
+         stop("Dimension of 'sel.mat' is not appropriate")
+       } else {
+         res.c$input$sel.f <- sel.mat[,i] #2stepの方のときチューニングなしの時の選択率を行列で使う
+       }
+     }
      if (isTRUE(init.est)) res.c$input$p.init <- res.c$term.f
 
      # last.catch.zero = TRUE用に修正
@@ -1583,9 +1600,17 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE){
      if ((max(abs(res1$gradient)) < 10^(-3) & !isTRUE(res1$input$ADMB)) | (max(abs(res1$gradient)) > 0 & max(abs(res1$gradient)) < 10^(-3) & isTRUE(res1$input$ADMB)) | (is.na(max(abs(res1$gradient))) & res1$input$optimizer=="nlminb")){
        obj.n <- c(obj.n, (sum(res1$naa[,Y])-sum(res$naa[,Y]))/sum(res$naa[,Y]))
        obj.b <- c(obj.b, (sum(res1$baa[,Y])-sum(res$baa[,Y]))/sum(res$baa[,Y]))
-       obj.s <- c(obj.s, (sum(res1$ssb[,Y])-sum(res$ssb[,Y]))/sum(res$ssb[,Y]))
+       if (ssb.forecast && res.c$input$last.catch.zero) {
+         obj.s <- c(obj.s, (sum(res1$ssb[,Y+1])-sum(res$ssb[,Y+1]))/sum(res$ssb[,Y+1]))
+       } else {
+         obj.s <- c(obj.s, (sum(res1$ssb[,Y])-sum(res$ssb[,Y]))/sum(res$ssb[,Y]))
+       }
        obj.r <- c(obj.r, (res1$naa[1,Y]-res$naa[1,Y])/res$naa[1,Y])
-       obj.f <- c(obj.f, (sum(res1$faa[,Y])-sum(res$faa[,Y]))/sum(res$faa[,Y]))
+       if (remove.maxAgeF) {
+         obj.f <- c(obj.f, (sum(res1$faa[-A,Y])-sum(res$faa[-A,Y]))/sum(res$faa[-A,Y]))
+         } else {
+           obj.f <- c(obj.f, (sum(res1$faa[,Y])-sum(res$faa[,Y]))/sum(res$faa[,Y]))
+         }
      } else {
        obj.n <- c(obj.n, NA)
        obj.b <- c(obj.b, NA)
