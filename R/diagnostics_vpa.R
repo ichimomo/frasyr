@@ -308,12 +308,15 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
 #' @param b_reest bをレトロスペクティブ解析中で再推定するか
 #' @param what_plot 作図したい項目を選べる。\code{NULL}の場合、全て（SSB, biomass, U, catch, Recruitment, fish_number, fishing_mortality, weight, maturity, catch_number）をプロットする。
 #' @param ncol 作図の列数。標準で5列なので、\code{what_plot}の数が5以下の場合は適宜変えた方がよい。
+<<<<<<< HEAD
 #' @param remove_maxAgeF Mohn's rhoを計算する際に最高齢のFを除くか（alphaを仮定して計算していることが多いから）
 #' @param ssb_forecast Mohn's rhoを計算する際にSSBは1年後を計算するか(last.catch.zero=TRUEのときのみ有効)
 <<<<<<< HEAD
 #' @param res_step1 2段階法のレトロ解析をやる場合の1段階目の\code{vpa}オブジェクト
 =======
 >>>>>>> parent of c99e76d... fix retro analysis #374
+=======
+>>>>>>> parent of 715de97... add two arguments in retro analysis #409
 #'
 #' @return 返ってくる値:
 #'     \code{result} 感度分析の結果が\code{list}型式で得られる。
@@ -338,21 +341,13 @@ do_retrospective_vpa <- function(res, n_retro = 5, b_reest = FALSE,
                                  what_plot = c("SSB", "biomass", "Recruitment",
                                                "fish_number", "fishing_mortality"),
                                  plot_year = NULL,
-                                 ncol = 3, 
-                                 remove_maxAge=FALSE,ssb_forecast=FALSE){
+                                 ncol = 3){
 
   if(b_reest == TRUE && res$input$b.est == FALSE)message(paste('b was not estimated in your vpa model'))
   # vpa内でbの推定をしていないにもかかわらず、b_reestがtrueで入力された場合
   # 推定結果(bを推定している)は得られるが、メッセージを出す
 
-  if (!is.null(res_step1)) { #二段階法の場合のレトロ 
-    retro_step_one <- retro.est(res_step1, n = n_retro)
-    yy <- ifelse(res$input$last.catch.zero,2,1)
-    sel_mat <- sapply(1:n_retro, function(i) rev(retro_step_one$Res[[i]]$saa)[,yy])
-    res_retro <- retro.est(res, n = n_retro, b.fix = !b_reest, remove.maxAgeF=remove_maxAgeF, ssb.forecast=ssb_forecast,sel.mat=sel_mat)
-    } else {
-    res_retro <- retro.est(res, n = n_retro, b.fix = !b_reest, remove.maxAgeF=remove_maxAgeF, ssb.forecast=ssb_forecast)
-  }
+  res_retro <- retro.est(res, n = n_retro, b.fix = !b_reest)
   dat_graph <- list()
   for(i in 1:n_retro) dat_graph[[i]] <- res_retro$Res[[i]]
 

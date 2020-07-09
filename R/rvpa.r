@@ -1538,8 +1538,7 @@ cv.est <- function(res,n=5){
 #' @export
 #'
 
-retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE,
-                      remove.maxAgeF=FALSE,ssb.forecast=FALSE){
+retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE){
    res.c <- res
    res.c$input$plot <- FALSE
    Res <- list()
