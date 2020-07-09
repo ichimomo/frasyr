@@ -12,8 +12,7 @@ retro.est(
   init.est = FALSE,
   b.fix = TRUE,
   remove.maxAgeF = FALSE,
-  ssb.forecast = FALSE,
-  sel.mat = NULL
+  ssb.forecast = FALSE
 )
 }
 \arguments{
