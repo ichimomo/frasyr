@@ -151,7 +151,7 @@ adhoc_table <- function(result_vpa, yrs_preabc, number, sbtarget = NULL, fmsy = 
   yr_latest       <- yrs_preabc[length(yrs_preabc)]
   sb_latest_ <- function() {
     make_row(key     = paste0("SB", yr_latest),
-             value   = extract_from_vpa_("ssb", mean_by = "year"),
+             value   = colSums(extract_from_vpa_("ssb"), na.rm = TRUE),
              remarks = paste0(yr_latest, "年漁期の親魚量"))
   }
   f_latest_  <- function(numeric = FALSE) {

@@ -49,6 +49,7 @@ test_that("table1() works", {
   test_colname(tbl)
 
   expect_equal(tbl$項目, c("SB2011", "F2011"))
+  expect_equal(tbl$値[1], as.character(colSums(result_vpa$ssb["2011"])))
 })
 
 test_that("table2() works", {
