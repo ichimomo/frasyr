@@ -131,7 +131,8 @@ table4 <- function(...) {
 #' @param number Table number
 #' @param sbtarget Value of SB target
 #' @param fmsy Value of Fmsy
-adhoc_table <- function(result_vpa, yrs_preabc, number, sbtarget = NULL, fmsy = NULL) {
+adhoc_table <- function(result_vpa, yrs_preabc, number, sbtarget = NULL, fmsy = NULL,
+                        data_future = NULL, yr_biopar = NULL) {
   return_ <- function() {
     switch(number,
            "one" = {
@@ -166,15 +167,25 @@ adhoc_table <- function(result_vpa, yrs_preabc, number, sbtarget = NULL, fmsy = 
   }
   pspr_latest_ <- function() {
     make_row(key     = paste0("%SPR", wrap_by_paren(yr_latest)),
-             value   = perspr_from_latest_(to = yr_latest),
+             value   = mean(extract_x(vpadata = result_vpa,
+                                      x       = "perSPR",
+                                      year    = yr_latest)),
              remarks = paste0(yr_latest, "年漁期の%SPR"))
   }
   pspr_recent_ <- function() {
     years <- paste0(oldest_recentyr, "--", yr_latest)
+    pspr  <- calc_future_perSPR(
+      fout        = list(waa       = data_future$data$waa_mat,
+                         maa       = data_future$data$maa_mat,
+                         M         = data_future$data$M_mat,
+                         waa.catch = data_future$data$waa_catch_mat),
+      Fvector     = apply_year_colum(result_vpa$faa, yr_latest:oldest_recentyr),
+      target.year = yr_biopar
+    )
     make_row(key     = paste0("%SPR", wrap_by_paren(years)),
-             value   = perspr_from_latest_(to = oldest_recentyr),
+             value   = pspr * 100,
              remarks = paste0("現状", wrap_by_paren(years, "年漁期"),
-                               "の漁獲圧に対応する%SPR"))
+                              "の漁獲圧に対応する%SPR"))
   }
   sb_latest_over_target_ <- function() {
     make_row(key     = paste0(sb_latest_()$項目, "/ SBtarget(SBmsy)"),
@@ -192,13 +203,6 @@ adhoc_table <- function(result_vpa, yrs_preabc, number, sbtarget = NULL, fmsy = 
              remarks = paste0("最大持続生産量を実現する漁獲圧に対する",
                               yr_latest,
                               "年漁期の漁獲圧の比"))
-  }
-  perspr_from_latest_ <- function(to) {
-    purrr::map_dbl(yr_latest:to,
-                   extract_x,
-                   x       = "perSPR",
-                   vpadata = result_vpa) %>%
-      mean()
   }
   extract_from_vpa_ <- function(what, mean_by = NULL) {
     extract_x(vpadata = result_vpa, what, yr_latest, mean_by = mean_by)
