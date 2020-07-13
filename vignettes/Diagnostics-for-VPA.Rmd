@@ -282,7 +282,7 @@ res_vpa_sensitivity$graph
 ```{r, eval=FALSE}
 
 # 全F推定法の場合
-res_tmp <- vpa(vpadat_estb, tf.year=2015:2016, last.catch.zero = FALSE, 
+res_tmp <- vpa(vpadat_estb, tf.year=1997:1999, last.catch.zero = FALSE, 
                Pope = TRUE, p.init = 0.5, tune=TRUE, sel.update=FALSE, term.F = "all") 
 tmp <- do_sensitivity_vpa(res_tmp, what_replace = "tuning", value = list(1995:2000))
                                                       # 数列をlist型にしてvalueを与えています
@@ -296,7 +296,7 @@ tmp <- do_sensitivity_vpa(res_tmp, what_replace = "tuning", value = list(1995:20
 ```{r}
 
 # リッジVPAの場合
-res_tmp <- vpa(vpadat_estb, tf.year=2015:2016, last.catch.zero = FALSE, 
+res_tmp <- vpa(vpadat_estb, tf.year=1997:1999, last.catch.zero = FALSE, 
                Pope = TRUE, p.init = 0.5, tune=TRUE, term.F = "all", lambda = 0.2)
 tmp <- do_sensitivity_vpa(res_tmp, what_replace = "lambda", value = c(0,0.1,0.5,0.7),
                           what_plot=c("SSB","biomass","U","Recruitment",
@@ -374,11 +374,13 @@ res_vpa_retrospective$graph
 ```
 
 
+#### レトロスペクティブ解析中でbの再推定を行う場合
+
 また、bをレトロスペクティブ解析内で再推定したい場合は以下のようにコードしてください。
 
 ```{r}
 
-res_tmp <- vpa(vpadat_estb, tf.year=2015:2016, last.catch.zero = FALSE, Pope = TRUE, 
+res_tmp <- vpa(vpadat_estb, tf.year=1997:1999, last.catch.zero = FALSE, Pope = TRUE, 
                p.init = 0.5, tune=TRUE, sel.update=FALSE, term.F = "all", b.est = TRUE) 
                                                               # まずbを推定するvpaを実行しています
 
@@ -391,6 +393,33 @@ res_vpa_retrospective$b_res
 ```
 
 このように各レトロスペクティブ解析ごとに、bを推定していることが確認できました。（**ダミーデータなので変な値となっています**）
+
+
+#### 2段階法の場合
+
+VPAを2段階法で行っている場合は、`res_step1`引数に1段階目のVPA結果のオブジェクトを与えてください。
+
+```{r}
+
+res_tmp1 <- vpa(vpadat_estb, tf.year=1997:1999, last.catch.zero = FALSE, Pope = TRUE, 
+                p.init = 0.5, tune=FALSE, term.F = "max", b.est = FALSE,fc.year=1998:2000) 
+res_tmp2 <- vpa(vpadat_estb, tf.year=1997:1999, last.catch.zero = FALSE, Pope = TRUE, 
+                p.init = 0.5, tune=TRUE, term.F = "max", b.est = TRUE, fc.year=1998:2000, 
+                sel.f = res_tmp1$saa$`2000`)   # sel.fで2段階目の選択率の初期値を与えます
+
+res_vpa_retrospective <- do_retrospective_vpa(res_tmp2,
+                                              n_retro = 3,
+                                              plot_year = c(1995, 2000),
+                                              b_reest = TRUE,
+                                              res_step1 = res_tmp1
+                                              # ここに1段階目のチューニングなしVPAを与えてください
+                                              )
+res_vpa_retrospective$graph
+
+
+```
+
+
 
 
 
