@@ -3,6 +3,7 @@ context("Making tables")
 result_vpa    <- load_data("../../inst/extdata/res_vpa_pma.rda")
 result_msy    <- load_data("../../inst/extdata/res_MSY_pma_pre.rda")
 result_future <- load_data(".../../inst/extdata/res_future_Fcurrent_pma.rda")
+yrs_bio       <- 2009:2011
 assertthat::assert_that(
   head(colnames(result_vpa$ssb), 1) == "1982",
   tail(colnames(result_vpa$ssb), 1) == "2011"
@@ -49,11 +50,14 @@ test_that("table1() works", {
   test_colname(tbl)
 
   expect_equal(tbl$項目, c("SB2011", "F2011"))
+  expect_equal(tbl$値[1], as.character(colSums(result_vpa$ssb["2011"])))
 })
 
 test_that("table2() works", {
   tbl <- table2(result_vpa = result_vpa,
-                yrs_preabc = yrs_pre_abc)
+                yrs_preabc = yrs_pre_abc,
+                data_future = generate_dummy_future_data(result_vpa),
+                yr_biopar = yrs_bio)
   expect_df(tbl)
   test_colname(tbl)
 
@@ -93,7 +97,9 @@ test_that("summary_of_summary() works", {
                             tbl1    = table1(result_vpa = result_vpa,
                                              yrs_preabc = yrs_pre_abc),
                             tbl2    = table2(result_vpa = result_vpa,
-                                             yrs_preabc = yrs_pre_abc),
+                                             yrs_preabc = yrs_pre_abc,
+                                             data_future = generate_dummy_future_data(result_vpa),
+                                             yr_biopar = yrs_bio) ,
                             tbl4    = table4(result_vpa = result_vpa,
                                              yrs_preabc = yrs_pre_abc,
                                              fmsy = c(0.123, 0.234, 0.345),
