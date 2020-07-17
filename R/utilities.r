@@ -1472,7 +1472,7 @@ calc_future_perSPR <- function(fout=NULL,
   else{
     # 年の範囲を指定する場合、年で平均してから、シミュレーション回数で平均する
     if(!is.null(target.year)){
-      if(!is.data.frame(target.year)){
+      if(!is.list(target.year)){
         target.year.char <- as.character(target.year)
         waa.tmp       <- fout.tmp$waa      [,target.year.char,,drop=FALSE] %>% apply(c(1,3),mean) %>% apply(1,mean)
         waa.catch.tmp <- fout.tmp$waa.catch[,target.year.char,,drop=FALSE] %>% apply(c(1,3),mean) %>% apply(1,mean)
