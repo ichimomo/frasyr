@@ -1507,6 +1507,10 @@ calc_future_perSPR <- function(fout=NULL,
     tmp$SPR_original <- tmp$SPR_original/100*SPR_multi
     tmp$SPR_est <- tmp$SPR_est/100*SPR_multi
     tmp$SPR_target <- tmp$SPR_target/100*SPR_multi
+    tmp$waa <- waa.tmp
+    tmp$waa.catch <- waa.catch.tmp
+    tmp$maa <- maa.tmp
+    tmp$M <- M.tmp            
     return(tmp)
   }
 }
