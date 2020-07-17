@@ -225,6 +225,8 @@ plot_Fref <- function(rres,xlabel="max", # or, "mean","Fref/Fcur"
   abline(v=xx <- c(rres$summary[vline.text][n.line,]))
   text(xx,max(ypr)*seq(from=0.5,to=0.3,length=length(vline.text)),vline.text)
   legend("topright",lty=1:2,legend=c("SPR","YPR"))
+
+  invisible(data.frame(F.range=F.range,spr=spr,ypr=spr))  
   #old.par[c("cin","cxy","csi","cra","csy","din","page")] <- NULL
   #par(old.par)
 }
