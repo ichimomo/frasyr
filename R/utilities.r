@@ -1480,11 +1480,10 @@ calc_future_perSPR <- function(fout=NULL,
         M.tmp         <- fout.tmp$M        [,target.year.char,,drop=FALSE] %>% apply(c(1,3),mean) %>% apply(1,mean)
       }
       else{
-        target.year <- purrr::map_dfc(target.year,as.character)  
-        waa.tmp       <- fout.tmp$waa      [,target.year$waa,,drop=FALSE] %>% apply(c(1,3),mean) %>% apply(1,mean)
-        waa.catch.tmp <- fout.tmp$waa.catch[,target.year$waa.catch,,drop=FALSE] %>% apply(c(1,3),mean) %>% apply(1,mean)
-        maa.tmp       <- fout.tmp$maa      [,target.year$maa,,drop=FALSE] %>% apply(c(1,3),mean) %>% apply(1,mean)
-        M.tmp         <- fout.tmp$M        [,target.year$M,,drop=FALSE] %>% apply(c(1,3),mean) %>% apply(1,mean)          
+        waa.tmp       <- fout.tmp$waa      [,as.character(target.year$waa),,drop=FALSE] %>% apply(c(1,3),mean) %>% apply(1,mean)
+        waa.catch.tmp <- fout.tmp$waa.catch[,as.character(target.year$waa.catch),,drop=FALSE] %>% apply(c(1,3),mean) %>% apply(1,mean)
+        maa.tmp       <- fout.tmp$maa      [,as.character(target.year$maa),,drop=FALSE] %>% apply(c(1,3),mean) %>% apply(1,mean)
+        M.tmp         <- fout.tmp$M        [,as.character(target.year$M),,drop=FALSE] %>% apply(c(1,3),mean) %>% apply(1,mean)
       }
     }    
     if(!is.null(target.col)){
