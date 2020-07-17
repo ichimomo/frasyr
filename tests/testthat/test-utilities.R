@@ -1,9 +1,9 @@
 context("Utilities")
+
+result_vpa  <- load_data("../../inst/extdata/res_vpa_pma.rda")
+result_msy  <- load_data("../../inst/extdata/res_MSY_pma_pre.rda")
+
 test_that("make_kobe_ratio", {
-
-  result_vpa  <- load_data("../../inst/extdata/res_vpa_pma.rda")
-  result_msy  <- load_data("../../inst/extdata/res_MSY_pma_pre.rda")
-
   kobe_ratio <- make_kobe_ratio(result_vpa, result_msy)
 
   expect_is(kobe_ratio, "data.frame")
@@ -48,4 +48,17 @@ test_that("test for HCR function", {
     expect_equal(res_HCR, matrix(c(0,0.2,0.4,0.6,rep(0.8,6)),2,5))
 })
 
+test_that("calc_future_perSPR accepts list with different length vectors", {
+  future_data <- generate_dummy_future_data(result_vpa)
 
+  perspr <- calc_future_perSPR(fout = list(waa       = future_data$data$waa_mat,
+                                           maa       = future_data$data$maa_mat,
+                                           M         = future_data$data$M_mat,
+                                           waa.catch = future_data$data$waa_catch_mat),
+                               Fvector = apply_year_colum(result_vpa$faa, 2007:2011),
+                               target.year = list(waa       = 2014:2018,
+                                                  waa.catch = 2014:2018,
+                                                  maa       = 2016:2018,
+                                                  M         = 2014:2018))
+  expect_is(perspr, "numeric")
+})
