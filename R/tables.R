@@ -260,7 +260,7 @@ make_msytable <- function(result_msy) {
   }
   msyrows_ <- function() {
     perspr <- derive_RP_value(result_msy$summary, "Btarget0")$perSPR
-    ssb    <- derive_RP_value(result_msy$summary, "Btarget0")$SSB
+    ssb    <- derive_RP_value(result_msy$summary, "Btarget0")$B
     rbind(
       make_row(key   = "Fmsy",
                value = extract_fmsy(result_msy) %>% format_x_at_age()),
