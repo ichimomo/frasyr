@@ -132,7 +132,7 @@ table4 <- function(...) {
 #' @param sbtarget Value of SB target
 #' @param fmsy Value of Fmsy
 adhoc_table <- function(result_vpa, yrs_preabc, number, sbtarget = NULL, fmsy = NULL,
-                        data_future = NULL, yr_biopar = NULL) {
+                        data_future = NULL, yr_biopar = NULL, result_msy = NULL) {
   return_ <- function() {
     switch(number,
            "one" = {
@@ -196,11 +196,11 @@ adhoc_table <- function(result_vpa, yrs_preabc, number, sbtarget = NULL, fmsy = 
                                "年漁期の親魚量の比"))
   }
   f_latest_over_msy_ <- function() {
-    if (length(fmsy) > 1) {
-      fmsy <- mean(fmsy)
-    }
+    value <- make_kobe_ratio(result_vpa, result_msy) %>%
+      dplyr::filter(year == yr_latest) %>%
+      dplyr::pull(Fratio)
     make_row(key     = paste0(f_latest_()$項目, "/ Fmsy"),
-             value   = f_latest_(numeric = TRUE)$値 / fmsy,
+             value   = value,
              remarks = paste0("最大持続生産量を実現する漁獲圧に対する",
                               yr_latest,
                               "年漁期の漁獲圧の比"))
@@ -260,7 +260,7 @@ make_msytable <- function(result_msy) {
   }
   msyrows_ <- function() {
     perspr <- derive_RP_value(result_msy$summary, "Btarget0")$perSPR
-    ssb    <- derive_RP_value(result_msy$summary, "Btarget0")$SSB
+    ssb    <- derive_RP_value(result_msy$summary, "Btarget0")$B
     rbind(
       make_row(key   = "Fmsy",
                value = extract_fmsy(result_msy) %>% format_x_at_age()),

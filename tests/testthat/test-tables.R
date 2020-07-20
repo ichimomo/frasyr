@@ -80,16 +80,23 @@ test_that("make_msytable() works", {
   test_colname(tbl)
   expect_equal(tbl$項目,
                c("SBtarget", "SBlimit", "SBban", "Fmsy", "%SPR (Fmsy)", "MSY"))
+  expect_equal(tbl[tbl$項目 == "MSY", ]$値,
+               paste0(substr(derive_RP_value(result_msy$summary, "Btarget0")$B, 1, 3), " 千トン"))
 })
 
 test_that("table4() works", {
   tbl <- table4(result_vpa = result_vpa,
                 yrs_preabc = yrs_pre_abc,
                 fmsy       = c(0.123, 0.234, 0.345),
-                sbtarget   = 12345)
+                sbtarget   = 12345,
+                result_msy = result_msy)
   expect_df(tbl)
   test_colname(tbl)
   expect_equal(tbl$項目, c("SB2011/ SBtarget(SBmsy)", "F2011/ Fmsy"))
+  expect_equal(tbl[tbl$項目 == "F2011/ Fmsy", ]$値,
+               make_kobe_ratio(result_vpa, result_msy) %>%
+               dplyr::filter(year == 2011) %>%
+               dplyr::pull(Fratio))
 })
 
 test_that("summary_of_summary() works", {
@@ -103,7 +110,8 @@ test_that("summary_of_summary() works", {
                             tbl4    = table4(result_vpa = result_vpa,
                                              yrs_preabc = yrs_pre_abc,
                                              fmsy = c(0.123, 0.234, 0.345),
-                                             sbtarget = 12345))
+                                             sbtarget = 12345,
+                                             result_msy = result_msy))
   expect_df(tbl)
   test_colname(tbl)
 })
