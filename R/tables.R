@@ -260,7 +260,7 @@ make_msytable <- function(result_msy) {
   }
   msyrows_ <- function() {
     perspr <- derive_RP_value(result_msy$summary, "Btarget0")$perSPR
-    ssb    <- derive_RP_value(result_msy$summary, "Btarget0")$B
+    msy    <- derive_RP_value(result_msy$summary, "Btarget0")$Catch
     rbind(
       make_row(key   = "Fmsy",
                value = extract_fmsy(result_msy) %>% format_x_at_age()),
@@ -268,7 +268,7 @@ make_msytable <- function(result_msy) {
                value   = paste0(round(perspr * 100, 0), "%"),
                remarks = "Fmsy に対応する %SPR"),
       make_row(key     = "MSY",
-               value   =  convert_unit(ssb, to = "千トン",
+               value   =  convert_unit(msy, to = "千トン",
                                        round = 0,
                                        add_unit = TRUE),
                remarks = "最大持続生産量 MSY")

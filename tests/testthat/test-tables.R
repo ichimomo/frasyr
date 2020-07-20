@@ -81,7 +81,7 @@ test_that("make_msytable() works", {
   expect_equal(tbl$項目,
                c("SBtarget", "SBlimit", "SBban", "Fmsy", "%SPR (Fmsy)", "MSY"))
   expect_equal(tbl[tbl$項目 == "MSY", ]$値,
-               paste0(substr(derive_RP_value(result_msy$summary, "Btarget0")$B, 1, 3), " 千トン"))
+               paste0(round(derive_RP_value(result_msy$summary, "Btarget0")$Catch / 1000, 0), " 千トン"))
 })
 
 test_that("table4() works", {
