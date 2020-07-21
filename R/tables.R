@@ -17,7 +17,9 @@ make_stock_table <- function(result_vpa, result_msy, result_future,
   yr_abc              <- yr_future_start + 1
   yr_newest_recent    <- yr_abc - 2
   yr_oldest_recent    <- yr_abc - (n_years_to_display - 1)
+
   recent_four_years_ <- function() {
+
     f_per_fmsy_ <- function(year) {
       make_kobe_ratio(result_vpa, result_msy) %>%
         dplyr::select(year, Fratio) %>%
@@ -25,10 +27,22 @@ make_stock_table <- function(result_vpa, result_msy, result_future,
         dplyr::pull(Fratio) %>%
         round(2)
     }
+
+    pull_x_from_vpa_result_ <- function(x) {
+      result_vpa %>%
+        convert_vpa_tibble() %>%
+        dplyr::filter(dplyr::between(year, yr_oldest_recent, yr_newest_recent),
+                      stat == x) %>%
+        dplyr::group_by(year) %>%
+        dplyr::summarize(output = convert_unit(value, to = unit)) %>%
+        dplyr::pull(output) %>%
+        round(0)
+    }
+
     data.frame(Year     = yr_oldest_recent:yr_newest_recent,
-               Biomass  = get_x_from_vpa_("biomass"),
-               SSB      = get_x_from_vpa_("SSB"),
-               Catch    = get_x_from_vpa_("catch"),
+               Biomass  = pull_x_from_vpa_result_(x = "biomass"),
+               SSB      = pull_x_from_vpa_result_(x = "SSB"),
+               Catch    = pull_x_from_vpa_result_(x = "catch"),
                `F/Fmsy` = f_per_fmsy_()) %>%
       dplyr::mutate(HarvestRate = round(Catch / Biomass * 100, 0))
   }
@@ -63,25 +77,6 @@ make_stock_table <- function(result_vpa, result_msy, result_future,
       round(0)
   }
 
-  get_x_from_vpa_ <- function(x) {
-    tbl <- result_vpa %>%
-      convert_vpa_tibble() %>%
-      dplyr::filter(dplyr::between(year, yr_oldest_recent, yr_newest_recent))
-    if (x == "fishing_mortality") {
-      tbl %>%
-        dplyr::filter(stat == x) %>%
-        dplyr::group_by(year) %>%
-        dplyr::summarize(output = mean(value)) %>%
-        dplyr::pull(output)
-    } else {
-      tbl %>%
-        dplyr::filter(stat == x) %>%
-        dplyr::group_by(year) %>%
-        dplyr::summarize(output = convert_unit(value, to = unit)) %>%
-        dplyr::pull(output) %>%
-        round(0)
-    }
-  }
 
   return_()
 }
