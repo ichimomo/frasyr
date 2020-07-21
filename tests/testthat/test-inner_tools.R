@@ -100,7 +100,6 @@ test_that("future_new", {
 
   quick_test("biomass")
   quick_test("catch")
-  quick_test("fratio")
 })
 
 
