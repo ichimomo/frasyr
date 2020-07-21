@@ -15,8 +15,7 @@ test_that("make_stock_table() works", {
                           result_msy        = result_msy,
                           result_future     = generate_dummy_future_new_object(),
                           yr_future_start   = 2012,
-                          yrs_preabc        = 2009:2011,
-                          yrs_biopar        = 2008:2010)
+                          faa_pre_abc       = c(0.123, 0.234, 0.345, 0.345))
 
   expect_df(tbl)
   expect_equal(colnames(tbl),
