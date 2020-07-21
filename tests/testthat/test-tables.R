@@ -10,36 +10,19 @@ assertthat::assert_that(
 )
 yrs_pre_abc <- 2008:2011
 
-test_colname <- function(tbl) {
-  expect_equal(colnames(tbl), c("項目", "値", "備考"))
-}
-expect_df <- function(tbl) {
-  expect_is(tbl, "data.frame")
-}
-
 test_that("make_stock_table() works", {
-  future_new_object_ <- function() {
-    data(res_vpa)
-    data(res_sr_HSL2)
-    dummy_yr    <- 2015:2017
-    future_data <- make_future_data(res_vpa,
-                     res_SR = res_sr_HSL2,
-                     M_year = dummy_yr,
-                     maa_year = dummy_yr,
-                     waa_catch_year = dummy_yr,
-                     waa_year = dummy_yr)
-    force(future_vpa(future_data$data))
-  }
   tbl <- make_stock_table(result_vpa        = result_vpa,
                           result_msy        = result_msy,
-                          result_future     = future_new_object_(),
-                          yr_future_start   = 2012)
+                          result_future     = generate_dummy_future_new_object(),
+                          yr_future_start   = 2012,
+                          yrs_preabc        = 2009:2011,
+                          yrs_biopar        = 2008:2010)
 
   expect_df(tbl)
   expect_equal(colnames(tbl),
                c("Year", "Biomass", "SSB", "Catch", "F.Fmsy", "HarvestRate"))
   expect_equal(tbl$Year,
-               2007:2012) # Six years including yr_future_start
+               2008:2013) # Six years until (yr_future_start + 1)
   expect_true(all(!is.na(tbl$Biomass)))
 })
 
