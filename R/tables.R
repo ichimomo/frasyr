@@ -275,7 +275,7 @@ make_msytable <- function(result_msy) {
       make_row(key   = "Fmsy",
                value = extract_fmsy(result_msy) %>% format_x_at_age()),
       make_row(key     = "%SPR (Fmsy)",
-               value   = paste0(round(perspr * 100, 0), "%"),
+               value   = paste0(round(perspr * 100, 1), "%"),
                remarks = "Fmsy に対応する %SPR"),
       make_row(key     = "MSY",
                value   =  convert_unit(msy, to = "千トン",
