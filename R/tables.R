@@ -62,7 +62,7 @@ make_stock_table <- function(result_vpa, result_msy, result_future,
   abc_year_ <- function() {
     data.frame(Year = yr_abc,
                Biomass  = calc_x_from_future_result_(x = "biomass", yr = yr_abc),
-               SSB      = "-",
+               SSB      = calc_x_from_future_result_(x = "ssb"    , yr = yr_abc),
                Catch    = "-",
                `F/Fmsy` = "-",
                HarvestRate = "-")
