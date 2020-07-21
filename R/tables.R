@@ -38,23 +38,23 @@ make_stock_table <- function(result_vpa, result_msy, result_future,
     fratio <- mean(faa_pre_abc) / extract_fmsy(result_msy, mean = TRUE)
 
     data.frame(Year = yr_future_start,
-               Biomass  = x_from_future_("biomass", yr_future_start),
-               SSB      = x_from_future_("ssb", yr_future_start),
-               Catch    = x_from_future_("catch", yr_future_start),
+               Biomass  = calc_x_from_future_result_(x = "biomass", yr = yr_future_start),
+               SSB      = calc_x_from_future_result_(x = "ssb",     yr = yr_future_start),
+               Catch    = calc_x_from_future_result_(x = "catch",   yr = yr_future_start),
                `F/Fmsy` = round(fratio, 2)) %>%
       dplyr::mutate(HarvestRate = round(Catch / Biomass * 100, 0))
   }
 
   abc_year_ <- function() {
     data.frame(Year = yr_abc,
-               Biomass  = x_from_future_("biomass", yr_abc),
+               Biomass  = calc_x_from_future_result_(x = "biomass", yr = yr_abc),
                SSB      = "-",
                Catch    = "-",
                `F/Fmsy` = "-",
                HarvestRate = "-")
   }
 
-  x_from_future_ <- function(x, yr) {
+  calc_x_from_future_result_ <- function(x, yr) {
     result_future %>%
       extract_value.future_new(what = x,
                                year = yr,
