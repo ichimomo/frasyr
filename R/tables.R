@@ -6,7 +6,7 @@
 #' @param yr_future_start Year when future projection starts
 #' @export
 make_stock_table <- function(result_vpa, result_msy, result_future,
-                             yr_future_start, faa_pre_abc, unit = "百トン") {
+                             yr_future_start, yr_abc, faa_pre_abc, unit = "百トン") {
   return_ <- function() {
     rbind(recent_four_years_(),
           future_start_year_(),
@@ -14,7 +14,6 @@ make_stock_table <- function(result_vpa, result_msy, result_future,
   }
 
   n_years_to_display  <- 6
-  yr_abc              <- yr_future_start + 1
   yr_newest_recent    <- yr_abc - 2
   yr_oldest_recent    <- yr_abc - (n_years_to_display - 1)
 
