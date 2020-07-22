@@ -32,3 +32,24 @@ generate_dummy_future_data <- function(result_vpa) {
                    recruit_intercept = 0,
                    Pope = result_vpa$input$Pope)
 }
+
+generate_dummy_future_new_object <- function() {
+  data(res_vpa)
+  data(res_sr_HSL2)
+  dummy_yr    <- 2015:2017
+  future_data <- make_future_data(res_vpa,
+                   res_SR = res_sr_HSL2,
+                   M_year = dummy_yr,
+                   maa_year = dummy_yr,
+                   waa_catch_year = dummy_yr,
+                   waa_year = dummy_yr)
+  force(future_vpa(future_data$data))
+}
+
+test_colname <- function(tbl) {
+  expect_equal(colnames(tbl), c("項目", "値", "備考"))
+}
+
+expect_df <- function(tbl) {
+  expect_is(tbl, "data.frame")
+}

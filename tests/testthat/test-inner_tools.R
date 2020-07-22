@@ -88,6 +88,20 @@ test_that("msy object", {
                "Not implemented")
 })
 
+context("- extract_value()")
+
+test_that("future_new", {
+  expect_df(extract_value(from = generate_dummy_future_new_object(),
+                          what = "ssb"))
+  quick_test <- function(name) {
+    expect_df(extract_value(from = generate_dummy_future_new_object(),
+                            what = name))
+  }
+
+  quick_test("biomass")
+  quick_test("catch")
+})
+
 
 context("Handling vectors")
 
