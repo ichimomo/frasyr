@@ -1938,7 +1938,7 @@ make_kobe_ratio <- function(result_vpa, result_msy) {
     target_spr  <- derive_RP_value(result_msy$summary,"Btarget0")$perSPR * 100
     spr_history <- get.SPR(result_vpa,
                            target_spr,
-                           max.age = Inf, Fmax = 3)
+                           max.age = Inf, Fmax = 7)
 
     assertthat::assert_that(
       assertthat::validate_that(is.list(spr_history)),
