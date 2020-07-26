@@ -4,7 +4,16 @@
 \alias{adhoc_table}
 \title{Dispacher function for making table}
 \usage{
-adhoc_table(result_vpa, yrs_preabc, number, sbtarget = NULL, fmsy = NULL)
+adhoc_table(
+  result_vpa,
+  yrs_preabc,
+  number,
+  sbtarget = NULL,
+  fmsy = NULL,
+  data_future = NULL,
+  yr_biopar = NULL,
+  result_msy = NULL
+)
 }
 \arguments{
 \item{result_vpa}{Obejct returned from \code{vpa()}}
@@ -16,6 +25,8 @@ adhoc_table(result_vpa, yrs_preabc, number, sbtarget = NULL, fmsy = NULL)
 \item{sbtarget}{Value of SB target}
 
 \item{fmsy}{Value of Fmsy}
+
+\item{result_msy}{Object MSY result created previous SC meeting...?}
 }
 \description{
 Dispacher function for making table
