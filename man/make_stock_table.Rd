@@ -9,6 +9,8 @@ make_stock_table(
   result_msy,
   result_future,
   yr_future_start,
+  yr_abc,
+  faa_pre_abc,
   unit = "百トン"
 )
 }
