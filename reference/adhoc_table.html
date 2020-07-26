@@ -127,7 +127,16 @@
     <p>Dispacher function for making table</p>
     </div>
 
-    <pre class="usage"><span class='fu'>adhoc_table</span>(<span class='kw'>result_vpa</span>, <span class='kw'>yrs_preabc</span>, <span class='kw'>number</span>, sbtarget = <span class='kw'>NULL</span>, fmsy = <span class='kw'>NULL</span>)</pre>
+    <pre class="usage"><span class='fu'>adhoc_table</span>(
+  <span class='kw'>result_vpa</span>,
+  <span class='kw'>yrs_preabc</span>,
+  <span class='kw'>number</span>,
+  sbtarget = <span class='kw'>NULL</span>,
+  fmsy = <span class='kw'>NULL</span>,
+  data_future = <span class='kw'>NULL</span>,
+  yr_biopar = <span class='kw'>NULL</span>,
+  result_msy = <span class='kw'>NULL</span>
+)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -151,6 +160,10 @@
     <tr>
       <th>fmsy</th>
       <td><p>Value of Fmsy</p></td>
+    </tr>
+    <tr>
+      <th>result_msy</th>
+      <td><p>Object MSY result created previous SC meeting...?</p></td>
     </tr>
     </table>
 

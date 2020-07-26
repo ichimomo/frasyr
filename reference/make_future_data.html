@@ -40,7 +40,8 @@
 
 
 <meta property="og:title" content="future_vpaにインプットとして入れる将来予測の空のarrayを生成する関数 — make_future_data" />
-<meta property="og:description" content="future_vpaにインプットとして入れる将来予測の空のarrayを生成する関数" />
+<meta property="og:description" content="future_vpaにインプットとして入れる将来予測の空のarrayを生成する関数
+future_vpaにインプットとして入れる将来予測の空のarrayを生成する関数" />
 
 
 
@@ -125,6 +126,7 @@
 
     <div class="ref-description">
     <p>future_vpaにインプットとして入れる将来予測の空のarrayを生成する関数</p>
+<p>future_vpaにインプットとして入れる将来予測の空のarrayを生成する関数</p>
     </div>
 
     <pre class="usage"><span class='fu'>make_future_data</span>(
@@ -140,8 +142,6 @@
   waa = <span class='kw'>NULL</span>,
   <span class='kw'>waa_catch_year</span>,
   waa_catch = <span class='kw'>NULL</span>,
-  waa_fun = <span class='fl'>FALSE</span>,
-  start_waafun_year_name = <span class='kw'>start_biopar_year_name</span>,
   <span class='kw'>maa_year</span>,
   maa = <span class='kw'>NULL</span>,
   <span class='kw'>M_year</span>,
@@ -166,9 +166,47 @@
   backward_duration = <span class='fl'>5</span>,
   recruit_intercept = <span class='fl'>0</span>,
   model_average_option = <span class='kw'>NULL</span>,
-  regime_shift_option = <span class='kw'>NULL</span>,
-  silent = <span class='fl'>FALSE</span>,
-  special_setting = <span class='kw'>NULL</span>
+  regime_shift_option = <span class='kw'>NULL</span>
+)
+
+<span class='fu'>make_future_data</span>(
+  <span class='kw'>res_vpa</span>,
+  nsim = <span class='fl'>1000</span>,
+  nyear = <span class='fl'>50</span>,
+  plus_age = <span class='kw'>NULL</span>,
+  future_initial_year_name = <span class='fl'>2017</span>,
+  start_F_year_name = <span class='fl'>2018</span>,
+  start_biopar_year_name = <span class='fl'>2018</span>,
+  start_random_rec_year_name = <span class='fl'>2018</span>,
+  <span class='kw'>waa_year</span>,
+  waa = <span class='kw'>NULL</span>,
+  <span class='kw'>waa_catch_year</span>,
+  waa_catch = <span class='kw'>NULL</span>,
+  <span class='kw'>maa_year</span>,
+  maa = <span class='kw'>NULL</span>,
+  <span class='kw'>M_year</span>,
+  M = <span class='kw'>NULL</span>,
+  faa_year = <span class='kw'>NULL</span>,
+  currentF = <span class='kw'>NULL</span>,
+  futureF = <span class='kw'>NULL</span>,
+  start_ABC_year_name = <span class='fl'>2019</span>,
+  HCR_beta = <span class='fl'>1</span>,
+  HCR_Blimit = <span class='op'>-</span><span class='fl'>1</span>,
+  HCR_Bban = <span class='op'>-</span><span class='fl'>1</span>,
+  HCR_year_lag = <span class='fl'>0</span>,
+  HCR_beta_year = <span class='kw'>NULL</span>,
+  Pope = <span class='kw'>res_vpa</span><span class='op'>$</span><span class='kw'>input</span><span class='op'>$</span><span class='kw'>Pope</span>,
+  fix_recruit = <span class='kw'>NULL</span>,
+  fix_wcatch = <span class='kw'>NULL</span>,
+  res_SR = <span class='kw'>NULL</span>,
+  seed_number = <span class='fl'>1</span>,
+  resid_type = <span class='st'>"lognormal"</span>,
+  bias_correction = <span class='fl'>TRUE</span>,
+  resample_year_range = <span class='fl'>0</span>,
+  backward_duration = <span class='fl'>5</span>,
+  recruit_intercept = <span class='fl'>0</span>,
+  model_average_option = <span class='kw'>NULL</span>,
+  regime_shift_option = <span class='kw'>NULL</span>
 )</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -188,7 +226,7 @@
     </tr>
     <tr>
       <th>plus_age</th>
-      <td><p>プラスグループとして計算する行（年齢ではないことに注意）。デフォルト値（NULL）ならfuture_initial_year_name年にNA以外の数値が入っている一番大きい年齢をプラスグループの年齢とする</p></td>
+      <td><p>プラスグループの年齢。デフォルト値（NULL）ならfuture_initial_year_name年にNA以外の数値が入っている一番大きい年齢をプラスグループの年齢とする</p></td>
     </tr>
     <tr>
       <th>future_initial_year_name</th>
@@ -213,14 +251,6 @@
     <tr>
       <th>waa</th>
       <td><p>将来の年齢別体重を直接与える場合, maa, M_yearも同様</p></td>
-    </tr>
-    <tr>
-      <th>waa_fun</th>
-      <td><p>log(weight)~log(number)の回帰式から将来のweightを予測する</p></td>
-    </tr>
-    <tr>
-      <th>start_waafun_year_name</th>
-      <td><p>上記の設定がスタートする最初の年。それ以外の年は上で設定されたパラメータが使われる</p></td>
     </tr>
     <tr>
       <th>faa_year</th>
@@ -301,6 +331,14 @@
     <tr>
       <th>regime_shift_option</th>
       <td><p>res_SRにfit.SRregimeの返り値を入れた場合に指定する。将来予測で再生産関係のどのフェーズがおこるかを指定する。list(future_regime=将来のregimeの仮定。keyで指定された番号を入れる)</p></td>
+    </tr>
+    <tr>
+      <th>waa_fun</th>
+      <td><p>log(weight)~log(number)の回帰式から将来のweightを予測する</p></td>
+    </tr>
+    <tr>
+      <th>start_waafun_year_name</th>
+      <td><p>上記の設定がスタートする最初の年。それ以外の年は上で設定されたパラメータが使われる</p></td>
     </tr>
     <tr>
       <th>special_setting</th>
