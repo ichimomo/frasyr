@@ -1,10 +1,10 @@
-## ----setup, include = FALSE----------------------------------------------
+## ----setup, include = FALSE---------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
 
-## ---- fig.show='hold'----------------------------------------------------
+## ---- fig.show='hold'---------------------------------------------------------
 library(frasyr)
 caa   <- read.csv("https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex2_caa.csv",  row.names=1)
 waa   <- read.csv("https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex2_waa.csv",  row.names=1)
@@ -17,11 +17,11 @@ res_vpa <- vpa(dat,fc.year=2015:2017,tf.year = 2015:2016,
 res_vpa$Fc.at.age # 将来予測やMSY計算で使うcurrent F (fc.yearのオプションでいつのFの平均かが指定される)
 plot(res_vpa$Fc.at.age,type="b",xlab="Age",ylab="F",ylim=c(0,max(res_vpa$Fc.at.age)))
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 #out.vpa(res_vpa) # vpa.csvというファイルが作成されます。VPAの結果のグラフ出力となるvpa.pdfも出力されます。
 res_vpa2 <- read.vpa("https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex2_vpa.csv") # vpa.csvを編集後、read.vpa関数で読み込みます
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 # 読み込み
 caa   <- read.csv("https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex1_caa.csv",  row.names=1)
 waa   <- read.csv("https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex1_waa.csv",  row.names=1)
@@ -32,7 +32,7 @@ index     <- read.csv("https://raw.githubusercontent.com/ichimomo/frasyr/dev/dat
 # 整形
 dat <- data.handler(caa=caa, waa=waa, maa=maa, index=index, M=0.4)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
   # p.initは初期値。収束しない場合（Fがゼロになる場合など）は、初期値を変えてみる
   # fc.yearは、Fcurrentを計算する範囲。管理基準値と将来予測で使われる。
 vout1 <- vpa(dat,tf.year=1997:1999,Pope=TRUE,fc.year=1998:2000,alpha=1,p.init=0.5) 
@@ -40,7 +40,7 @@ vout1a <- vpa(dat,tf.year=1997:1999,Pope=FALSE,fc.year=1998:2000,alpha=1,p.init=
 vout1b <- vpa(dat,tf.year=1997:1999,Pope=TRUE,fc.year=1998:2000,alpha=0.5,p.init=0.5)
 vout1c <- vpa(dat,tf.year=1999:1999,Pope=TRUE,fc.year=1998:2000,alpha=1,p.init=0.5) 
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 ## vout2; チューニング，選択率updateなし
 vout2 <- vpa(dat,tune=TRUE,sel.update=FALSE,Pope=FALSE,
              tf.year=NULL,sel.f=vout1$saa$"2000", # 選択率の仮定
@@ -61,10 +61,10 @@ vout4 <- vpa(dat,tune=TRUE,sel.update=FALSE,term.F="all",
              abund=c("N"),min.age=c(0),max.age=c(6), # 資源量指数の設定
              alpha=1,p.init=0.5,max.dd = 0.00001,fc.year=1998:2000)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 ci0 <- profile_likelihood.vpa(vout3, method="ci",Alpha=0.80)$ci
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 ## ノンパラメトリックブートストラップ(method="n")
 set.seed(1)
 boot.sim1 <- boo.vpa(vout3,B=10,method="n")
@@ -103,7 +103,7 @@ x <- t(apply(ssb.boot,1,quantile,probs=c(0.1,0.5,0.9)))
 matplot(Years,x,ylim=c(0,max(x)),col=1,type=c("l","b","l"),
         pch=1,lty=c(2,1,2),ylab="Spawning biomass")
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 resid <- as.numeric(log(vout3$pred.index) - log(dat$index))
 plot(resid,type="b")
 acf(resid) # 自己相関は特にない

@@ -15,6 +15,7 @@ Type objective_function<Type>::operator() ()
   DATA_SCALAR(beta);  
   DATA_IVECTOR(Ab_type);  // Ab_type = 1: SSB, Ab_type = 2: number at age, Ab_type = 3: biomass at age
   DATA_IVECTOR(Ab_type_age);
+  DATA_IVECTOR(Ab_type_max_age);
   DATA_VECTOR(w);
   DATA_VECTOR(af);
   DATA_MATRIX(CATCH);
@@ -143,84 +144,103 @@ Type objective_function<Type>::operator() ()
        sd_log_abund(k) = pow(sd_log_abund(k), Type(0.5));
        q(k) /= nI(k);
        q(k) = exp(q(k));
+       for (int j=0;j<Y;j++){
+         sigma2(k) += pow(log(CPUE(j,k)+MISS(j,k))-NM(j,k)*(log(q(k))+b(k)*log(SSB(j))),2);
+       }
     }
     if (Ab_type(k)==2){
       sum_log_N=0.0;
       mean_log_abund(k)=0.0;
       sd_log_abund(k)=0.0;
+      vector<Type> sum_N(Y);
       for (int j=0;j<Y;j++){
-           sum_log_cpue(k) += log(CPUE(j,k)+MISS(j,k));
-           sum_log_N += NM(j,k)*log(N(j,Ab_type_age(k)));
+        sum_N(j)=0.0;
+        for (int l=Ab_type_age(k);l<Ab_type_max_age(k);l++){
+          sum_N(j) += N(j,l);
+        }
+        sum_log_cpue(k) += log(CPUE(j,k)+MISS(j,k));
+        sum_log_N += NM(j,k)*log(sum_N(j));
        }
        if (b_fix(k)==0){
          for (int h=0;h<Y;h++){
-           b(k) += NM(h,k)*((log(CPUE(h,k)+MISS(h,k))-sum_log_cpue(k)/nI(k))*(NM(h,k)*log(N(h,Ab_type_age(k)))-sum_log_N/nI(k)));
-           denom += NM(h,k)*((NM(h,k)*log(N(h,Ab_type_age(k)))-sum_log_N/nI(k))*(NM(h,k)*log(N(h,Ab_type_age(k)))-sum_log_N/nI(k)));
+           b(k) += NM(h,k)*((log(CPUE(h,k)+MISS(h,k))-sum_log_cpue(k)/nI(k))*(NM(h,k)*log(sum_N(h))-sum_log_N/nI(k)));
+           denom += NM(h,k)*((NM(h,k)*log(sum_N(h))-sum_log_N/nI(k))*(NM(h,k)*log(sum_N(h))-sum_log_N/nI(k)));
          }
          b(k) /= denom;
        } else b(k) = b_fix(k);
        for (int h=0;h<Y;h++){
-         q(k) += log(CPUE(h,k)+MISS(h,k))-b(k)*NM(h,k)*log(N(h,Ab_type_age(k)));
-         mean_log_abund(k) += NM(h,k)*log(N(h,Ab_type_age(k)));
+         q(k) += log(CPUE(h,k)+MISS(h,k))-b(k)*NM(h,k)*log(sum_N(h));
+         mean_log_abund(k) += NM(h,k)*log(sum_N(h));
        }
        mean_log_abund(k) /= nI(k);
        for (int h=0;h<Y;h++){
-         sd_log_abund(k) += pow(NM(h,k)*(log(N(h,Ab_type_age(k)))-mean_log_abund(k)),Type(2.0));
+         sd_log_abund(k) += pow(NM(h,k)*(log(sum_N(h))-mean_log_abund(k)),Type(2.0));
        }
        sd_log_abund(k) /= nI(k);
        sd_log_abund(k) = pow(sd_log_abund(k), Type(0.5));
        q(k) /= nI(k);
        q(k) = exp(q(k));
+       for (int j=0;j<Y;j++){
+         sigma2(k) += pow(log(CPUE(j,k)+MISS(j,k))-NM(j,k)*(log(q(k))+b(k)*log(sum_N(j))),2);
+       }
     }
     if (Ab_type(k)==3){
       sum_log_B=0.0;
       mean_log_abund(k)=0.0;
       sd_log_abund(k)=0.0;
-       for (int j=0;j<Y;j++){
-           sum_log_cpue(k) += log(CPUE(j,k)+MISS(j,k));
-           sum_log_B += NM(j,k)*log(B(j,Ab_type_age(k)));
+      vector<Type> sum_B(Y);
+      for (int j=0;j<Y;j++){
+         sum_B(j)=0.0;
+         for (int l=Ab_type_age(k);l<Ab_type_max_age(k);l++){
+           sum_B(j) += B(j,l);
+         }
+         sum_log_cpue(k) += log(CPUE(j,k)+MISS(j,k));
+         sum_log_B += NM(j,k)*log(sum_B(j));
        }
        if (b_fix(k)==0){
          for (int h=0;h<Y;h++){
-           b(k) += NM(h,k)*((log(CPUE(h,k)+MISS(h,k))-sum_log_cpue(k)/nI(k))*(NM(h,k)*log(B(h,Ab_type_age(k)))-sum_log_B/nI(k)));
-           denom += NM(h,k)*((NM(h,k)*log(B(h,Ab_type_age(k)))-sum_log_B/nI(k))*(NM(h,k)*log(B(h,Ab_type_age(k)))-sum_log_B/nI(k)));
+           b(k) += NM(h,k)*((log(CPUE(h,k)+MISS(h,k))-sum_log_cpue(k)/nI(k))*(NM(h,k)*log(sum_B(h))-sum_log_B/nI(k)));
+           denom += NM(h,k)*((NM(h,k)*log(sum_B(h))-sum_log_B/nI(k))*(NM(h,k)*log(sum_B(h))-sum_log_B/nI(k)));
          }
          b(k) /= denom;  
        } else b(k)=b_fix(k);
        for (int h=0;h<Y;h++){
-         q(k) += log(CPUE(h,k)+MISS(h,k))-b(k)*NM(h,k)*log(B(h,Ab_type_age(k)));
-         mean_log_abund(k) += NM(h,k)*log(B(h,Ab_type_age(k)));
+         q(k) += log(CPUE(h,k)+MISS(h,k))-b(k)*NM(h,k)*log(sum_B(h));
+         mean_log_abund(k) += NM(h,k)*log(sum_B(h));
        }
        mean_log_abund(k) /= nI(k);
        for (int h=0;h<Y;h++){
-         sd_log_abund(k) += pow(NM(h,k)*(log(B(h,Ab_type_age(k)))-mean_log_abund(k)),Type(2.0));
+         sd_log_abund(k) += pow(NM(h,k)*(log(sum_B(h))-mean_log_abund(k)),Type(2.0));
        }
        sd_log_abund(k) /= nI(k);
        sd_log_abund(k) = pow(sd_log_abund(k), Type(0.5));
        q(k) /= nI(k);
        q(k) = exp(q(k));
+       for (int j=0;j<Y;j++){
+         sigma2(k) += pow(log(CPUE(j,k)+MISS(j,k))-NM(j,k)*(log(q(k))+b(k)*log(sum_B(j))),2);
+       }
     }
   }  
   
   Type f=0;
   
-  for (int k=0;k<K;k++){
-    if(Ab_type(k)==1){
-      for (int j=0;j<Y;j++){
-        sigma2(k) += pow(log(CPUE(j,k)+MISS(j,k))-NM(j,k)*(log(q(k))+b(k)*log(SSB(j))),2);
-      }
-    }
-    if(Ab_type(k)==2){
-      for (int j=0;j<Y;j++){
-        sigma2(k) += pow(log(CPUE(j,k)+MISS(j,k))-NM(j,k)*(log(q(k))+b(k)*log(N(j,Ab_type_age(k)))),2);
-      }
-    }
-    if(Ab_type(k)==3){
-      for (int j=0;j<Y;j++){
-        sigma2(k) += pow(log(CPUE(j,k)+MISS(j,k))-NM(j,k)*(log(q(k))+b(k)*log(B(j,Ab_type_age(k)))),2);
-      }
-    }
-  }
+  // for (int k=0;k<K;k++){
+  //   if(Ab_type(k)==1){
+  //     for (int j=0;j<Y;j++){
+  //       sigma2(k) += pow(log(CPUE(j,k)+MISS(j,k))-NM(j,k)*(log(q(k))+b(k)*log(SSB(j))),2);
+  //     }
+  //   }
+  //   if(Ab_type(k)==2){
+  //     for (int j=0;j<Y;j++){
+  //       sigma2(k) += pow(log(CPUE(j,k)+MISS(j,k))-NM(j,k)*(log(q(k))+b(k)*log(sum_N(j))),2);
+  //     }
+  //   }
+  //   if(Ab_type(k)==3){
+  //     for (int j=0;j<Y;j++){
+  //       sigma2(k) += pow(log(CPUE(j,k)+MISS(j,k))-NM(j,k)*(log(q(k))+b(k)*log(sum_B(j))),2);
+  //     }
+  //   }
+  // }
   // sigma2 = Residual of sum of square
   
   if (Est==0){

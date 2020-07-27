@@ -1,0 +1,244 @@
+---
+title: "新しい将来予測関数：future_vpaを使った将来予測"
+author: "市野川桃子"
+date: "`r Sys.Date()`"
+output:
+  md_document:
+vignette: >
+  %\VignetteIndexEntry{4. new function of future_vpa}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width=5,
+  fig.height=5
+)
+```
+
+# 将来予測
+従来使われていたfuture.vpaにかわって、新しいfuture_vpa関数を使うやりかたです。新しい関数での将来予測は、1) 将来予測用のデータフレームを作る, 2) 実際に将来予測をするの２つのステップで実施します。個々のステップについて以下説明します。
+
+## 将来予測用のデータフレームを作る(make_future_data)
+
+- VPAの結果(res_vpa)と再生産関係のパラメータが入っているfit.SR(res_SR)の結果は用意しておきます
+
+```{r make_future_data}
+
+data(res_vpa)
+data(res_sr_HSL2)
+
+data_future_test <- make_future_data(res_vpa, # VPAの結果
+	         nsim = 1000, # シミュレーション回数
+                 nyear = 50, # 将来予測の年数
+                 future_initial_year_name = 2017, # 年齢別資源尾数を参照して将来予測をスタートする年
+                 start_F_year_name = 2018, # この関数で指定したFに置き換える最初の年
+                 start_biopar_year_name=2018, # この関数で指定した生物パラメータに置き換える最初の年
+                 start_random_rec_year_name = 2018, # この関数で指定した再生産関係からの加入の予測値に置き換える最初の年
+                 # biopar setting
+                 waa_year=2015:2017, waa=NULL, # 将来の年齢別体重の設定。過去の年を指定し、その平均値を使うか、直接ベクトルで指定するか。以下も同じ。
+                 waa_catch_year=2015:2017, waa_catch=NULL,
+                 maa_year=2015:2017, maa=NULL,
+                 M_year=2015:2017, M=NULL,
+                 # faa setting
+                 faa_year=2015:2017, # currentF, futureFが指定されない場合だけ有効になる。将来のFを指定の年の平均値とする
+                 currentF=NULL,futureF=NULL, # 将来のABC.year以前のFとABC.year以降のFのベクトル 
+                 # HCR setting (not work when using TMB)
+                 start_ABC_year_name=2019, # HCRを適用する最初の年
+                 HCR_beta=1, # HCRのbeta
+                 HCR_Blimit=-1, # HCRのBlimit
+                 HCR_Bban=-1, # HCRのBban
+                 HCR_year_lag=0, # HCRで何年遅れにするか
+                 # SR setting
+                 res_SR=res_sr_HSL2, # 将来予測に使いたい再生産関係の推定結果が入っているfit.SRの返り値
+                 seed_number=1, # シード番号
+                 resid_type="lognormal", # 加入の誤差分布（"lognormal": 対数正規分布、"resample": 残差リサンプリング）
+                 resample_year_range=0, # リサンプリングの場合、残差をリサンプリングする年の範囲
+                 bias_correction=TRUE, # バイアス補正をするかどうか
+                 recruit_intercept=0, # 移入や放流などで一定の加入がある場合に足す加入尾数
+                 # Other
+                 Pope=res_vpa$input$Pope,
+		 fix_recruit=list(year=c(2020,2021),rec=c(1000,2000)),
+		 fix_wcatch=list(year=c(2020,2021),wcatch=c(1000,2000))		 
+                 ) 
+# data_future_testには、将来予測に使うデータ(data)とdata_futureを作るときに使った引数一覧(input)が入っている
+names(data_future_test)
+# data_future_test$dataには年齢別資源尾数naa_matなど。naa_matの将来予測部分にはまだNAが入っており、次のfuture_vpa関数でこのNAを埋める
+names(data_future_test$data)
+
+# backward-resamplingの場合
+data_future_backward <- make_future_data(res_vpa, # VPAの結果
+	         nsim = 1000, # シミュレーション回数
+                 nyear = 50, # 将来予測の年数
+                 future_initial_year_name = 2017, # 年齢別資源尾数を参照して将来予測をスタートする年
+                 start_F_year_name = 2018, # この関数で指定したFに置き換える最初の年
+                 start_biopar_year_name=2018, # この関数で指定した生物パラメータに置き換える最初の年
+                 start_random_rec_year_name = 2018, # この関数で指定した再生産関係からの加入の予測値に置き換える最初の年
+                 # biopar setting
+                 waa_year=2015:2017, waa=NULL, # 将来の年齢別体重の設定。過去の年を指定し、その平均値を使うか、直接ベクトルで指定するか。以下も同じ。
+                 waa_catch_year=2015:2017, waa_catch=NULL,
+                 maa_year=2015:2017, maa=NULL,
+                 M_year=2015:2017, M=NULL,
+                 # faa setting
+                 faa_year=2015:2017, # currentF, futureFが指定されない場合だけ有効になる。将来のFを指定の年の平均値とする
+                 currentF=NULL,futureF=NULL, # 将来のABC.year以前のFとABC.year以降のFのベクトル 
+                 # HCR setting (not work when using TMB)
+                 start_ABC_year_name=2019, # HCRを適用する最初の年
+                 HCR_beta=1, # HCRのbeta
+                 HCR_Blimit=-1, # HCRのBlimit
+                 HCR_Bban=-1, # HCRのBban
+                 HCR_year_lag=0, # HCRで何年遅れにするか
+                 # SR setting
+                 res_SR=res_sr_HSL2, # 将来予測に使いたい再生産関係の推定結果が入っているfit.SRの返り値
+                 seed_number=1, # シード番号
+                 resid_type="backward", # 加入の誤差分布（"lognormal": 対数正規分布、"resample": 残差リサンプリング）
+                 resample_year_range=0, # リサンプリングの場合、残差をリサンプリングする年の範囲
+                 backward_duration=5,
+                 bias_correction=TRUE, # バイアス補正をするかどうか
+                 recruit_intercept=0, # 移入や放流などで一定の加入がある場合に足す加入尾数
+                 # Other
+                 Pope=res_vpa$input$Pope,
+		 fix_recruit=list(year=c(2020,2021),rec=c(1000,2000)),
+		 fix_wcatch=list(year=c(2020,2021),wcatch=c(1000,2000))		 
+                 ) 
+
+```
+
+## 将来予測する(future_vpa)
+
+- 基本的にdata_future_test$data$naa内のNAを埋める作業がfuture_vpaで実行されます
+- optim_method="R" or "tmb"にすると、指定された条件下で最適化されます（MSY推定などができる）
+
+
+```{r future_vpa, eval=TRUE}
+
+# 単なる将来予測の場合
+res_future_test <- future_vpa(tmb_data=data_future_test$data, # さっき作成した将来予測用のデータフレーム
+		              optim_method="none", # "none": 単なる将来予測, "R" or "tmb": 以下、objective, obj_value等で指定した目的関数を満たすように将来のFに乗じる係数を最適化する
+                    	      multi_init = 1) # 将来予測のさい、将来のFに乗じる乗数
+
+# 単なる将来予測の場合
+res_future_backward <- future_vpa(tmb_data=data_future_backward$data, # さっき作成した将来予測用のデータフレーム
+		              optim_method="none", # "none": 単なる将来予測, "R" or "tmb": 以下、objective, obj_value等で指定した目的関数を満たすように将来のFに乗じる係数を最適化する
+                    	      multi_init = 1) # 将来予測のさい、将来のFに乗じる乗数
+
+# MSY計算の場合
+res_future_test <- future_vpa(tmb_data=data_future_test$data, # さっき作成した将来予測用のデータフレーム
+		              optim_method="R", 
+                    	      multi_init  = 1,
+			      multi_lower = 0.001, multi_upper = 5,
+			      objective="MSY")
+res_future_test$multi
+# [1] 0.5269326
+
+```
+
+## カスタマイズの方法
+- future_vpaに渡すdata_future_test内をカスタマイズすることで、自分の好きな設定で将来予測を実行できます
+   - 例：data_future_test$data$SR_matは年xシミュレーション回数x再生産関係のパラメータ（a, b, rho, 再生産関係のタイプ（SR_type）,ランダム残差, 予測値からのdeviance、加入尾数、ssb、将来の予測加入に足す一定加入尾数）になっているので、data_future_test$data$SR_matを上書きすれば、いろいろな設定のシミュレーションができます。（たとえば年代によって異なる再生産パラメータを用いる場合など）
+
+## MSEの実施
+
+```{r mse, eval=TRUE}
+
+# 通常の将来予測と同じように将来予測用(真の個体群動態)のデータを作成する
+# (MSEは時間がかかるのでシミュレーション回数・年数は減らしたほうが良い)
+data_future_as_true <- make_future_data(res_vpa, 
+	         nsim = 30, nyear = 10, 
+                 future_initial_year_name = 2017, 
+                 start_F_year_name = 2018, 
+                 start_biopar_year_name=2018, 
+                 start_random_rec_year_name = 2018, 
+                 # biopar setting
+                 waa_year=2015:2017, waa=NULL, 
+                 waa_catch_year=2015:2017, waa_catch=NULL,
+                 maa_year=2015:2017, maa=NULL,
+                 M_year=2015:2017, M=NULL,
+                 faa_year=NULL, 
+                 currentF=apply_year_colum(res_vpa$faa,2015:2017),
+		 futureF=apply_year_colum(res_vpa$faa,2015:2017)*0.6,
+                 # HCR setting (not work when using TMB)
+                 start_ABC_year_name=2019,
+                 # MSEの場合、ABC計算から漁獲量を決め、そのとおりに漁獲するので
+                 # 以下のHCRの設定は関係ない                 
+                 HCR_beta=0.8, HCR_Blimit=30000, HCR_Bban=0, 
+                 HCR_year_lag=0,
+                 # SR setting
+                 res_SR=res_sr_HSL2, seed_number=1, 
+                 resid_type="lognormal", 
+                 resample_year_range=0, bias_correction=TRUE, 
+                 recruit_intercept=0, 
+                 Pope=res_vpa$input$Pope)
+
+# ABC計算用の設定をした将来予測用のデータを作成する
+data_future_for_ABC <- make_future_data(res_vpa, 
+	         nsim = 30, nyear = 10, 
+                 future_initial_year_name = 2017, 
+                 start_F_year_name = 2018, 
+                 start_biopar_year_name=2018, 
+                 start_random_rec_year_name = 2018, 
+                 # biopar setting
+                 waa_year=2015:2017, waa=NULL, 
+                 waa_catch_year=2015:2017, waa_catch=NULL,
+                 maa_year=2015:2017, maa=NULL,
+                 M_year=2015:2017, M=NULL,
+                 faa_year=NULL, 
+                 currentF=apply_year_colum(res_vpa$faa,2015:2017),
+		 futureF=apply_year_colum(res_vpa$faa,2015:2017)*0.6,
+                 # HCR setting (not work when using TMB)
+                 start_ABC_year_name=2019,
+                 # ここの管理基準値などを、別の再生産関係などから推定されたものにする
+                 HCR_beta=0.8, HCR_Blimit=30000, HCR_Bban=0, 
+                 HCR_year_lag=0,
+                 # SR setting
+                 # ここも真の再生産関係とは異なるものにする
+                 res_SR=res_sr_HSL1, seed_number=1, 
+                 resid_type="lognormal", 
+                 resample_year_range=0, bias_correction=TRUE, 
+                 recruit_intercept=0, 
+                 Pope=res_vpa$input$Pope)
+
+# MSEするとき
+res_future_MSE <- future_vpa(tmb_data=data_future_as_true$data, # 真の個体群動態
+		   	do_MSE=TRUE,
+                        MSE_input_data=data_future_for_ABC, # ABC計算用の個体群動態
+                        optim_method="none", # "none"にする
+                        multi_init = 1)
+# MSEしないとき
+res_future_noMSE <- future_vpa(tmb_data=data_future_as_true$data, # 真の個体群動態
+		   	do_MSE=FALSE,
+                        MSE_input_data=data_future_for_ABC, # ABC計算用の個体群動態
+                        optim_method="none", # "none"にする
+                        multi_init = 1)
+
+# MSEする場合としない場合の比較
+plot_futures(res_vpa,list(res_future_MSE,res_future_noMSE))
+
+
+### MSEプログラムが想定通り動いているかの確認
+dummy_future <- data_future_as_true
+# 将来予測の加入の確率変動をゼロにする→全く同じ再生産関係を使えば、同じ結果になるはず
+dummy_future$data$SR_mat[,,"deviance"] <- 0
+dummy_future$data$SR_mat[,,"rand_resid"] <- 0
+dummy_future$input$res_SR$pars$sd <- 0
+
+res_test1 <- future_vpa(tmb_data=dummy_future$data, 
+		   	do_MSE=TRUE,
+		              MSE_input_data=dummy_future, 
+			      optim_method="none", 
+                    	      multi_init = 1)
+
+res_test2 <- future_vpa(tmb_data=dummy_future$data, 
+	  		   	do_MSE=FALSE,
+		              MSE_input_data=dummy_future, # MSE内の将来予測で用いるためのデータフレーム
+			      optim_method="none", # "none"または"R"のみ有効
+                    	      multi_init = 1)
+
+# 全く同じ結果になる
+plot_futures(res_vpa,list(res_test1,res_test2))
+
+```

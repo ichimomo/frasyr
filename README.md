@@ -1,64 +1,71 @@
 # frasyr
+  [![Travis build status](https://travis-ci.com/ichimomo/frasyr.svg?branch=master)](https://travis-ci.com/ichimomo/frasyr)
+  [![Codecov test coverage](https://codecov.io/gh/ichimomo/frasyr/branch/master/graph/badge.svg)](https://codecov.io/gh/ichimomo/frasyr?branch=master)
 - Fisheries Research Agency (FRA) provides the method for calculating sustainable yield (SY) with R
-- 水研機構で開発した，MSYを基礎とした目標管理基準値を計算するためのRのパッケージです．開発途中のものであること，ご承知おきください．
+- VPAを用いた資源量推定と，その推定結果をもとにしてMSYを基礎とした目標管理基準値を計算するためのRのパッケージです．開発途中のものであること，ご承知おきください．
 
-# 使い方
+# 使い方など
+https://ichimomo.github.io/main/ に一括した情報へのリンクがあります
+
+# インストール方法
 
 ```
-
-# install.package("devtools") # <-- devtoolsをインストールしていない人はインストールする
+# devtoolsをインストールしていない人はインストールする
+install.packages("devtools")
 
 # マスター版（最新・安定版）をインストールする場合
-devtools::install_github("ichimomo/frasyr") 
+devtools::install_github("ichimomo/frasyr")
 
 # 開発中の最新版をインストールする場合（バグ可能性あり！）
-#    ref=""で開発中のブランチを指定します。だいたい、"dev"ブランチに開発中のものがあります
-devtools::install_github("ichimomo/frasyr", ref="dev") 
+# ref=""で開発中のブランチを指定します。だいたい、"dev"ブランチに開発中のものがあります
+devtools::install_github("ichimomo/frasyr", ref="dev")
 
 # 過去の安定版を指定してインストールする場合
-#     @以下にしてしたリリースバージョンを指定します
+# @以下にリリースバージョンを指定します
 devtools::install_github("ichimomo/frasyr@v1.00")
 
 # 以上の操作をしてfrasyrをインストールしてから、以下のコマンドで呼び出します
-library(frasyr) 
+library(frasyr)
 
 ```
 
 # リリースバージョン
 - v1.00 : future-rvpaから移動してきたほぼそのままのバージョン
+- v1.10 : future.vpaにuse.MSEオプションを追加
+- v1.20 : 2019年アジ・イワシ事前検討会用
+- v2.00 : 2020年アジ・イワシ研究機関会議用(事前配布版)
+   - 将来予測のメイン関数をfuture.vpaからfuture_vpaに移行。基本的な使い方は以下のマニュアルのリンク先を参照のこと
+- v2.01 : 2020年アジ・イワシ研究機関会議用(最終版)
+   - fit.parでL1の場合のSDをRMSEに統一
+- v2.1.0.0 : 2020年度資源評価会議用プロトタイプバージョン
+   - VPAを用いたモデル診断スクリプトをvignetteに追加
+   - 途中でプラスグループが変わる（対馬マイワシ）VPAの計算を修正
+   - ほか、関数のテストを充実。
 
 # マニュアル
-- VPAによる資源量推定　https://ichimomo.github.io/frasyr/doc/vpa.html
+- VPAによる資源量推定　[vignette](https://ichimomo.github.io/frasyr/articles/vpa.html)
+- VPAモデル診断スクリプト　[vignette](https://ichimomo.github.io/frasyr/articles/Diagnostics-for-VPA.html)
+
+これらはRコマンドで以下のようにしても見れます。
+```
+devtools::install_github("ichimomo/frasyr", ref="dev", build_vignettes=TRUE) # インストールするときにvignetteを作る（時間かかります）
+library(frasyr)
+vignette(package="frasyr") # 利用可能なvignetteを調べる
+vignette("vpa",package="frasyr") # VPAの実施のしかた
+vignette("Diagnostics-for-VPA",package="frasyr") # VPAのモデル診断
+```
+
+- 再生産関係のモデル診断スクリプト [wiki](https://ichimomo.github.io/frasyr/doc/SRR-guidline.html)
+- 将来予測関数の使い方：[wiki](https://github.com/ichimomo/frasyr/wiki/future_new)
+
+
+<!--
 - 新ルールのもとでの将来予測計算 https://ichimomo.github.io/frasyr/doc/future.html
-- 今後追加予定
+- 管理基準値の計算 https://ichimomo.github.io/frasyr/doc/estMSY.html
+-->
 
 
 
-# 開発ワークフロー（開発者向け）
-## ブランチ構成
-- master: 公開用のブランチ．いつでも動くようにしておく
-- dev：開発用ブランチ．新規変更はこちらのブランチにアップすること
-- dev - 個人の名前（たとえばichimomo）：個人の作業用ブランチ．このブランチで作業して，ある程度たまったらdevに変更をアップ
-- bug_fix: masterにすぐに反映させたい細かいバグの修正
-- web_edit: githubのウェブ上でファイルを編集する用．たとえばreadmeなど．編集が終わったらmaster?にmergeする・
-## ワークフロー
-1. 本レポジトリを直接cloneするか，自分のところにfolkしてからcloneする
-2. 自分の環境下でコードを修正
-   - インポートするパッケージの追加などは，自分の関数の近くに @import パッケージ名，または@importFrom パッケージ名 関数名として定義しておくと，checkのときにroxygen2が自動的にNAMESPACEを置き換えてくれるので，NAMESPACEは直接いじらない
-3. パッケージをビルド，テスト，インストール
-```{r}
-devtools::load_all() 
-```
-4. 2,3を繰り返してコードの修正を完了させる
-5. テストコードを走らせて確認
-```{r}
-devtoos::test()
-```
-6. 仕上げ（vignetteも作り直す）
-```{r}
-devtoos::check()
-```
-7. 修正した一連の変更を 個人の名前のブランチichimomoに push する
-8. Githubのウェブ上で，ichimomoからdevにpull request => merge
-9. 安定版が完成した段階でmasterも変更
+=======
 
+frasyr_tool群の全体説明は[こちら](https://ichimomo.github.io/main/)
