@@ -72,11 +72,14 @@ ggsave_SH_large <- function(...){
 #'
 
 plot_vpa <- function(vpalist,
-                     vpatibble=NULL,
-                     what.plot=NULL,
-                     plot_year=NULL,  # 浜辺加筆(2020/06/30)
-                     legend.position="top",
-                     vpaname=NULL, ncol=2){
+                     vpatibble = NULL,
+                     what.plot = NULL,
+                     plot_year = NULL,  # 浜辺加筆(2020/06/30)
+                     legend.position = "top",
+                     vpaname = NULL,
+                     ncol = 2,
+                     scale_value = NULL # 浜辺加筆(2020/07/29)
+                     ){
 
   if(!is.null(vpaname)){
     if(length(vpaname)!=length(vpalist)) stop("Length of vpalist and vpaname is different")
@@ -109,15 +112,23 @@ plot_vpa <- function(vpalist,
       mutate(stat=factor(stat,levels=c(biomass_factor, age_factor)))
   }
 
+  # scale_shape_manual関数のvalueを設定(浜辺'20/07/29)
+  if(is.null(scale_value))scale_value <- 1:(length(unique(vpadata$id)))
+  if(!(length(scale_value)==length(unique(vpadata$id)))){
+    scale_value <- 1:(length(unique(vpadata$id)))
+    print("Note! Length of scale value was different although plot was done...")
+  }
   # シナリオの違いを線種+shapeにした(浜辺'20/06/30)
   g1 <- vpadata %>% ggplot()
   if(all(is.na(vpadata$age))){
     g1 <- g1+ geom_line(aes(x=year, y=value,lty=id))
-    g1 <- try(g1 + geom_point(aes(x=year, y=value, shape=id)))
+    g1 <- try(g1 + geom_point(aes(x=year, y=value, shape=id)) +
+                scale_shape_manual(values = scale_value))
   }
   else{
     g1 <- g1+ geom_line(aes(x=year, y=value, color=age, lty=id))
-    g1 <- try(g1 + geom_point(aes(x=year, y=value, color=age, shape=id)))
+    g1 <- try(g1 + geom_point(aes(x=year, y=value, color=age, shape=id)) +
+                scale_shape_manual(values = scale_value))
   }
   # 上のがダメな場合にオリジナルで対応
   if(class(g1[1])=="try-error"){ # g1の長さは2あって警告が頻発するので[1]を加えた
