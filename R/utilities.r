@@ -1441,7 +1441,7 @@ calc_perspr <- function(...){
 #' @param max.age SPR計算のときに考慮する最大年齢。デフォルトは無限大。
 #' @param target.col 将来予測の何列目の年を取り出すか（NULLの場合、最後の年）
 #' @param target.year 将来予測の何年目を取り出すか（年の名前）（NULLの場合、最後の年）
-#' @param SPRtarget これを与えると、Fvectorを何倍すればここで指定した%SPRと一致するかを返すようになる
+#' @param SPRtarget これを与えると、Fvectorを何倍すればここで指定した\%SPRと一致するかを返すようになる
 #' 
 #' @encoding UTF-8
 #' @export

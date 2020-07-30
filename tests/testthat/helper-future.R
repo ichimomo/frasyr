@@ -46,9 +46,6 @@ generate_dummy_future_new_object <- function() {
   force(future_vpa(future_data$data))
 }
 
-test_colname <- function(tbl) {
-  expect_equal(colnames(tbl), c("項目", "値", "備考"))
-}
 
 expect_df <- function(tbl) {
   expect_is(tbl, "data.frame")
