@@ -78,7 +78,7 @@
       <h1 data-toc-skip>VPAモデル診断スクリプト</h1>
                         <h4 class="author">Kohei Hamabe &amp; Momoko Ichinokawa</h4>
             
-            <h4 class="date">2020-07-26</h4>
+            <h4 class="date">2020-07-30</h4>
       
       
       <div class="hidden name"><code>Diagnostics-for-VPA.Rmd</code></div>
@@ -523,13 +523,18 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 <h2 class="hasAnchor">
 <a href="#%E3%82%B8%E3%83%A3%E3%83%83%E3%82%AF%E3%83%8A%E3%82%A4%E3%83%95%E6%B3%95" class="anchor"></a>5. ジャックナイフ法</h2>
 <p>観測値（資源量指数）を1つずつ抜いて解析を行うことで、影響力の強いデータや外れ値を検出する方法です。 <code>do_jackknife_vpa</code>関数で自動で観測値を抜いて再解析を行います。</p>
-<p><strong>また、<code>plot_year</code>に作図したい年（x軸の範囲）を指定することもできます</strong></p>
+<ul>
+<li><p><code>plot_year</code>に作図したい年（x軸の範囲）を指定することもできます</p></li>
+<li><p><strong><code>scale_value</code>に任意の値を与えることで、プロットの点の形を任意で指定できます（ベースモデル＋ジャックナイフの数分与えてください）</strong></p></li>
+<li><p>　<strong>=&gt; ジャックナイフ法の他に、感度分析、レトロスペクティブ解析でも指定できます</strong></p></li>
+</ul>
 <p>引数<code>method</code>はデフォルトで“index”となっており、資源量指数の種類ごとに取り除いて解析を行います（つまり、資源量指数の種類分、結果が返ってきます）。一方、それぞれの種類を年ごとに取り除きたい場合は“all”を選択してください。この場合、資源量指数の種類×年数分、取り除いて計算するためデータ数によっては多くの計算時間を必要とする点に気を付けてください。</p>
 <div class="sourceCode" id="cb32"><pre class="downlit">
 <span class="kw">res_vpa_jackknife</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_jackknife_vpa.html">do_jackknife_vpa</a></span>(<span class="kw">res_vpa_estb</span>,
                                       what_plot = <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"SSB"</span>, <span class="st">"biomass"</span>, <span class="st">"U"</span>, <span class="st">"Recruitment"</span>,
                                                     <span class="st">"fish_number"</span>, <span class="st">"fishing_mortality"</span>),
-                                      ncol = <span class="fl">3</span>, plot_year = <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">1995</span>, <span class="fl">2000</span>))
+                                      ncol = <span class="fl">3</span>, plot_year = <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">1995</span>, <span class="fl">2000</span>),
+                                      scale_value = <span class="fl">2</span><span class="op">:</span><span class="fl">8</span>)
 <span class="kw">res_vpa_jackknife</span><span class="op">$</span><span class="kw">JKplot_vpa</span> <span class="co"># 全体の結果</span>
 </pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-25-1.png" width="672"></p>
@@ -599,7 +604,7 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html">quantile</a></span>(<span class="kw">res_tmp</span>, probs = <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">0.025</span>,<span class="fl">0.5</span>,<span class="fl">0.975</span>))
 </pre></div>
 <pre><code>     2.5%       50%     97.5% 
-0.5687467 0.8245193 8.6039570 </code></pre>
+0.4470435 0.6519618 7.6227770 </code></pre>
 <p>この他、各パラメータの相関関係について、ブートストラップ標本を基にプロットが得られます。</p>
 <div class="sourceCode" id="cb41"><pre class="downlit">
 <span class="kw">res_vpa_bootstrap</span><span class="op">$</span><span class="kw">plot_cor</span>
