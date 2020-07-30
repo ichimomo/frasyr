@@ -27,20 +27,3 @@ test_that("make_stock_table() works", {
 })
 
 
-
-test_that("summary_of_summary() works", {
-  tbl <- summary_of_summary(tbl_msy = make_msytable(result_msy),
-                            tbl1    = table1(result_vpa = result_vpa,
-                                             yrs_preabc = yrs_pre_abc),
-                            tbl2    = table2(result_vpa = result_vpa,
-                                             yrs_preabc = yrs_pre_abc,
-                                             data_future = generate_dummy_future_data(result_vpa),
-                                             yr_biopar = yrs_bio) ,
-                            tbl4    = table4(result_vpa = result_vpa,
-                                             yrs_preabc = yrs_pre_abc,
-                                             fmsy = c(0.123, 0.234, 0.345),
-                                             sbtarget = 12345,
-                                             result_msy = result_msy))
-  expect_df(tbl)
-})
-
