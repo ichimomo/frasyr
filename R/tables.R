@@ -119,7 +119,7 @@ table1 <- function(...) {
   adhoc_table(number = "one", ...)
 }
 
-#' Make tables of %SPRs
+#' Make tables of \%SPRs
 #' @inheritParams adhoc_table
 #' @export
 table2 <- function(...) {

@@ -2,10 +2,10 @@
 % Please edit documentation in R/tables.R
 \name{table2}
 \alias{table2}
-\title{Make tables of %SPRs}
+\title{Make tables of \%SPRs}
 \usage{
 table2(...)
 }
 \description{
-Make tables of %SPRs
+Make tables of \%SPRs
 }

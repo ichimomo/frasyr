@@ -30,7 +30,7 @@ calc_future_perSPR(
 
 \item{target.year}{将来予測の何年目を取り出すか（年の名前）（NULLの場合、最後の年）}
 
-\item{SPRtarget}{これを与えると、Fvectorを何倍すればここで指定した%SPRと一致するかを返すようになる}
+\item{SPRtarget}{これを与えると、Fvectorを何倍すればここで指定した\%SPRと一致するかを返すようになる}
 }
 \description{
 将来予測の結果オブジェクトから生物パラメータを取り出して、その生物パラメータをベースに、Fvectorで与えたF at ageに対応するSPRを計算して返す
