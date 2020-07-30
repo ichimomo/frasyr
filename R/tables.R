@@ -198,8 +198,8 @@ adhoc_table <- function(result_vpa, yrs_preabc, number, sbtarget = NULL, fmsy = 
                               "の漁獲圧に対応する%SPR"))
   }
   sb_latest_over_target_ <- function() {
-    make_row(key     = paste0(sb_latest_()[["項目"]], "/ SBtarget(SBmsy)"),
-             value   = sb_latest_()[["値"]] / sbtarget,
+    make_row(key     = paste0(sb_latest_()[["\u5024"]], "/ SBtarget(SBmsy)"),
+             value   = sb_latest_()[["\u5024"]] / sbtarget,
              remarks = paste0("目標管理基準値（最大持続生産量を実現する親魚量）に対する",
                                yr_latest,
                                "年漁期の親魚量の比"))
@@ -208,7 +208,7 @@ adhoc_table <- function(result_vpa, yrs_preabc, number, sbtarget = NULL, fmsy = 
     value <- make_kobe_ratio(result_vpa, result_msy) %>%
       dplyr::filter(year == yr_latest) %>%
       dplyr::pull(Fratio)
-    make_row(key     = paste0(f_latest_()[["項目"]], "/ Fmsy"),
+    make_row(key     = paste0(f_latest_()[["\u5024"]], "/ Fmsy"),
              value   = value,
              remarks = paste0("最大持続生産量を実現する漁獲圧に対する",
                               yr_latest,
@@ -337,11 +337,11 @@ make_abctable <- function(kobe_table, result_future, beta, year, faa_pre, faa_af
 #' @export
 summary_of_summary <- function(tbl_msy, tbl1, tbl2, tbl4) {
   characterize_valuecol_ <- function(tb) {
-    tb[["値"]] <- as.character(tb[["値"]])
+    tb[["\u5024"]] <- as.character(tb[["\u5024"]])
     force(tb)
   }
   extract_yr_from_tbl_ <- function() {
-    force(stringr::str_extract(tbl1[["項目"]][1], "[0-9]{4}"))
+    force(stringr::str_extract(tbl1[["\u9805\u76ee"]][1], "[0-9]{4}"))
   }
   name1 <- "管理基準値とMSYに関係する値"
   name2 <- paste0(extract_yr_from_tbl_(), "漁期の親魚量と漁獲圧")
