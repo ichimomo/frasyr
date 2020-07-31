@@ -750,6 +750,10 @@ prof.lik <- function(Res,a=Res$pars$a,b=Res$pars$b,sd=Res$pars$sd,rho=ifelse(Res
 #' レジーム分けを考慮した再生産関係の推定
 #'
 #' レジームシフトが生じた年やレジームであるパラメータが共通する場合やレジームのパターンがA->B->CなのかA->B->Aなのか等が検討できる
+#' @importFrom dplyr mutate
+#' @importFrom dplyr group_by
+#' @importFrom dplyr summarise
+#' @importFrom dplyr select
 #' @param SRdata \code{get.SRdata}で作成した再生産関係データ
 #' @param SR 再生産関係 (\code{"HS"}: Hockey-stick, \code{"BH"}: Beverton-Holt, \code{"RI"}: Ricker)
 #' @param method 最適化法（\code{"L2"}: 最小二乗法, \code{"L1"}: 最小絶対値法）
@@ -758,7 +762,7 @@ prof.lik <- function(Res,a=Res$pars$a,b=Res$pars$b,sd=Res$pars$sd,rho=ifelse(Res
 #' @param regime.par レジームによって変化するパラメータ(\code{c("a","b","sd")}の中から選ぶ)
 #' @param length 初期値を決める際のgridの長さ
 #' @param p0 \code{optim}で設定する初期値
-#' @inheritParams fit.SR
+#' @inheritParams frasyr::fit.SR
 #' @encoding UTF-8
 #' @examples
 #' \dontrun{
@@ -840,13 +844,13 @@ fit.SRregime <- function(
       tbl = tibble(resid=resid,sd_key=sd_key,w=w) %>%
         mutate(resid2 = resid^2) %>%
         group_by(sd_key) %>%
-        summarise(rss = sum(w*resid2), n = sum(w)) %>%
+        summarise(rss = sum(w*resid2), n = sum(w),.groups="drop") %>%
         mutate(sd = sqrt(rss/n))
     } else {
       tbl = tibble(resid=resid,sd_key=sd_key,w=w) %>%
         # mutate(resid2 = resid^2) %>%
         group_by(sd_key) %>%
-        summarise(rss = sum(w*abs(resid)), n = sum(w)) %>%
+        summarise(rss = sum(w*abs(resid)), n = sum(w),.groups="drop") %>%
         mutate(sd = rss/n)
     }
     SD = tbl$sd %>% as.numeric()
@@ -1917,3 +1921,40 @@ bootSR.ggplot = function(boot.res, CI=0.80) {
     theme_SH()
   g1
 }
+
+#' 再生産関係の推定パラメータの相関を出力する関数
+#' 
+#' @inheritParams fit.SR
+#' @inheritParams fit.SRregime
+#' @param \code{fit.SR}または{fit.SRregime}のオブジェクト
+#' @return 以下の要素からなるリスト
+#' \describe{
+#' \item{\code{hessian}}{ヘッセ行列}
+#' \item{\code{cov}}{推定されたパラメータの分散共分散行列}
+#' \item{\code{cor}}{推定されたパラメータの相関行列}
+#' }
+#' @examples
+#' \dontrun{
+#' data(res_vpa)
+#' SRdata <- get.SRdata(res_vpa)
+#' resSR <- fit.SR(SRdata, SR = c("HS","BH","RI")[1],
+#'                 method = c("L1","L2")[2], AR = 1,
+#'                 out.AR = TRUE)
+#' corRes = corSR(resSR)
+#' corRes$cor
+#' }
+#' @encoding UTF-8
+#' @export
+corSR = function(resSR) {
+  if (!resSR$input$hessian) {
+    resSR$input$hessian <- TRUE
+    resSR$input$p0 = resSR$opt$par
+    if (class(resSR) == "fit.SR") resSR = do.call(fit.SR, resSR$input)
+    if (class(resSR) == "fit.SRregime") resSR = do.call(fit.SRregime, resSR$input)
+  }
+  hessian = resSR$opt$hessian
+  cov = solve(hessian)
+  cor = stats::cov2cor(cov)
+  return (list(hessian=hessian,cov=cov,cor=cor))
+}
+
