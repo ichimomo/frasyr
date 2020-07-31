@@ -5,6 +5,10 @@
 #' @import tibble
 #' @importFrom magrittr %>%
 #' @importFrom dplyr filter
+#' @importFrom dplyr mutate
+#' @importFrom dplyr group_by
+#' @importFrom dplyr select
+
 #'
 NULL
 
@@ -750,10 +754,6 @@ prof.lik <- function(Res,a=Res$pars$a,b=Res$pars$b,sd=Res$pars$sd,rho=ifelse(Res
 #' レジーム分けを考慮した再生産関係の推定
 #'
 #' レジームシフトが生じた年やレジームであるパラメータが共通する場合やレジームのパターンがA->B->CなのかA->B->Aなのか等が検討できる
-#' @importFrom dplyr mutate
-#' @importFrom dplyr group_by
-#' @importFrom dplyr summarise
-#' @importFrom dplyr select
 #' @param SRdata \code{get.SRdata}で作成した再生産関係データ
 #' @param SR 再生産関係 (\code{"HS"}: Hockey-stick, \code{"BH"}: Beverton-Holt, \code{"RI"}: Ricker)
 #' @param method 最適化法（\code{"L2"}: 最小二乗法, \code{"L1"}: 最小絶対値法）
@@ -762,7 +762,7 @@ prof.lik <- function(Res,a=Res$pars$a,b=Res$pars$b,sd=Res$pars$sd,rho=ifelse(Res
 #' @param regime.par レジームによって変化するパラメータ(\code{c("a","b","sd")}の中から選ぶ)
 #' @param length 初期値を決める際のgridの長さ
 #' @param p0 \code{optim}で設定する初期値
-#' @inheritParams frasyr::fit.SR
+#' @inheritParams fit.SR
 #' @encoding UTF-8
 #' @examples
 #' \dontrun{
@@ -1926,7 +1926,7 @@ bootSR.ggplot = function(boot.res, CI=0.80) {
 #' 
 #' @inheritParams fit.SR
 #' @inheritParams fit.SRregime
-#' @param \code{fit.SR}または{fit.SRregime}のオブジェクト
+#' @param resSR \code{fit.SR}または\code{fit.SRregime}のオブジェクト
 #' @return 以下の要素からなるリスト
 #' \describe{
 #' \item{\code{hessian}}{ヘッセ行列}

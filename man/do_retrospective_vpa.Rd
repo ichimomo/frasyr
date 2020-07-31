@@ -14,7 +14,8 @@ do_retrospective_vpa(
   ncol = 3,
   remove_maxAgeF = FALSE,
   ssb_forecast = FALSE,
-  res_step1 = NULL
+  res_step1 = NULL,
+  scale_value = NULL
 )
 }
 \arguments{
