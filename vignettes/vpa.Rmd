@@ -23,7 +23,7 @@ knitr::opts_chunk$set(
 こちら　http://cse.fra.affrc.go.jp/ichimomo/fish/rvpa.html　のサイトからの転載になります．
 データも，このサイトから持ってきています．
 
-# VPA実施の概要
+# VPAの実施
 ## データの読み込み
 ```{r, fig.show='hold'}
 library(frasyr)

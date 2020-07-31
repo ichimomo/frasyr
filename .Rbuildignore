@@ -7,3 +7,5 @@ vignettes/future-old.Rmd
 
 
 ^\.travis\.yml$
+^codecov\.yml$
+^\.github$

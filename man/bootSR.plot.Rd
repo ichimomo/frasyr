@@ -3,7 +3,7 @@
 \encoding{UTF-8}
 \name{bootSR.plot}
 \alias{bootSR.plot}
-\title{再生産関係の残差ブートストラップ}
+\title{再生産関係の残差ブートストラップをプロットする関数}
 \usage{
 bootSR.plot(
   boot.res,
@@ -25,5 +25,5 @@ bootSR.plot(
 \item{filename}{ファイル名}
 }
 \description{
-再生産関係の残差ブートストラップ
+再生産関係の残差ブートストラップをプロットする関数
 }

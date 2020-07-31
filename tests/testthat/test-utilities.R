@@ -1,5 +1,18 @@
 context("Utilities")
 
+result_vpa  <- load_data("../../inst/extdata/res_vpa_pma.rda")
+result_msy  <- load_data("../../inst/extdata/res_MSY_pma_pre.rda")
+
+test_that("make_kobe_ratio", {
+  kobe_ratio <- make_kobe_ratio(result_vpa, result_msy)
+
+  expect_is(kobe_ratio, "data.frame")
+  expect_equal(colnames(kobe_ratio), c("year", "Fratio", "Bratio"))
+  expect_equal(kobe_ratio$year, as.character(1982:2011))
+  expect_is(kobe_ratio$Fratio, "numeric")
+  expect_is(kobe_ratio$Bratio, "numeric")
+})
+
 test_that("pull single table from table list", {
   # pull_var_from_kobeII_table() is not tested yet
   expect_equal(1, 1)
@@ -33,4 +46,19 @@ test_that("convert table from kobeIItable to the required format", {
 test_that("test for HCR function", {
     res_HCR <- HCR_default(matrix(1:10,2,5),matrix(5,2,5),matrix(1,2,5),matrix(0.8,2,5))
     expect_equal(res_HCR, matrix(c(0,0.2,0.4,0.6,rep(0.8,6)),2,5))
+})
+
+test_that("calc_future_perSPR accepts list with different length vectors", {
+  future_data <- generate_dummy_future_data(result_vpa)
+
+  perspr <- calc_future_perSPR(fout = list(waa       = future_data$data$waa_mat,
+                                           maa       = future_data$data$maa_mat,
+                                           M         = future_data$data$M_mat,
+                                           waa.catch = future_data$data$waa_catch_mat),
+                               Fvector = apply_year_colum(result_vpa$faa, 2007:2011),
+                               target.year = list(waa       = 2014:2018,
+                                                  waa.catch = 2014:2018,
+                                                  maa       = 2016:2018,
+                                                  M         = 2014:2018))
+  expect_is(perspr, "numeric")
 })

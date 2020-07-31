@@ -30,7 +30,7 @@ test_that("output value check",{
 
   #読み込んだ結果と照合
 
-  for(i in length(testcontents)){
+  for(i in 1:length(testcontents)){
     expect_equal(eval(parse(text=paste("res_vpa_pma$",testcontents[i]))),eval(parse(text=paste("res_vpa_pma_check$",testcontents[i]))))
   }
 

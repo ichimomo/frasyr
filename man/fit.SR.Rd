@@ -10,14 +10,12 @@ fit.SR(
   SR = "HS",
   method = "L2",
   AR = 1,
-  TMB = FALSE,
   hessian = FALSE,
   w = rep(1, length(SRdata$R)),
   length = 20,
   max.ssb.pred = 1.3,
   p0 = NULL,
-  out.AR = TRUE,
-  rep.opt = FALSE
+  out.AR = TRUE
 )
 }
 \arguments{
@@ -34,8 +32,6 @@ fit.SR(
 \item{p0}{\code{optim}で設定する初期値}
 
 \item{out.AR}{自己相関係数を一度再生産関係を推定したのちに、外部から推定するか（1), 内部で推定するか(0)}
-
-\item{rep.opt}{\code{TRUE}で\code{optim}による最適化を収束するまで繰り返す}
 }
 \value{
 以下の要素からなるリスト
@@ -63,7 +59,7 @@ data(res_vpa)
 SRdata <- get.SRdata(res_vpa)
 resSR <- fit.SR(SRdata, SR = c("HS","BH","RI")[1],
                 method = c("L1","L2")[2], AR = 1,
-                out.AR = TRUE, rep.opt = TRUE)
+                out.AR = TRUE)
 resSR$pars
 }
 }
