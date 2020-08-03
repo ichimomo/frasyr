@@ -73,7 +73,7 @@ do_sensitivity_vpa <- function(res,
     for(i in 1:length(value)){
       input0 <- res$input
       input0$dat$M <- input0$dat$M *value[i]
-      res_vpa.s[[i]] <- safe_call(vpa, input0, force=TRUERUE)
+      res_vpa.s[[i]] <- safe_call(vpa, input0, force=TRUE)
       lab.tmp[i] <- paste("Sensitivity M= x", value[i], sep = "")
     } # for
 
