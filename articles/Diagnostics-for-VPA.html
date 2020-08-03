@@ -78,7 +78,7 @@
       <h1 data-toc-skip>VPAモデル診断スクリプト</h1>
                         <h4 class="author">Kohei Hamabe &amp; Momoko Ichinokawa</h4>
             
-            <h4 class="date">2020-07-30</h4>
+            <h4 class="date">2020-08-03</h4>
       
       
       <div class="hidden name"><code>Diagnostics-for-VPA.Rmd</code></div>
@@ -457,7 +457,7 @@
 <div class="sourceCode" id="cb25"><pre class="downlit">
 <span class="kw">res_vpa_jitter</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_estcheck_vpa.html">do_estcheck_vpa</a></span>(<span class="kw">res_vpa_estb</span>, n_ite=<span class="fl">10</span>)
 </pre></div>
-<pre><code>Maximum likelihood in jitter analysis is:  23.60018 
+<pre><code>Maximum likelihood in jitter analysis is:  22.5652 
 Likelihood with estimated parameters is:  23.60018 </code></pre>
 <p>最初に引数で与えたVPA結果について、</p>
 <ul>
@@ -604,7 +604,7 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html">quantile</a></span>(<span class="kw">res_tmp</span>, probs = <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">0.025</span>,<span class="fl">0.5</span>,<span class="fl">0.975</span>))
 </pre></div>
 <pre><code>     2.5%       50%     97.5% 
-0.4757379 0.6030961 7.3526321 </code></pre>
+0.4520544 1.0140212 6.3926839 </code></pre>
 <p>この他、各パラメータの相関関係について、ブートストラップ標本を基にプロットが得られます。</p>
 <div class="sourceCode" id="cb41"><pre class="downlit">
 <span class="kw">res_vpa_bootstrap</span><span class="op">$</span><span class="kw">plot_cor</span>
