@@ -380,6 +380,9 @@ do_retrospective_vpa <- function(res,
     #mutate(y=0, x=as.numeric(min(colnames(res_retro[[1]][[1]]$naa))))
     mutate(y = 0,
            x = if(is.null(plot_year))as.numeric(min(colnames(res_retro[[1]][[1]]$naa))) else plot_year[1])
+  if(!length(what_plot) == 5) rho_data <- rho_data[match(what_plot, rho_data$stat),]
+  # ここもしかすると長さが5でもwhat_plotのデフォルトと一致しないとエラー出るかも
+  # そういった変数についてはレトロして見る需要は少ないのだろうけど
 
   g1 <- plot_vpa(dat_graph,
                  what.plot = factor(what_plot, levels = as.character(what_plot)),
