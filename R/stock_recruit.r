@@ -325,7 +325,7 @@ fit.SR <- function(SRdata,
 
 
 
-#' 再生産関係の推定
+#' L1とL2のmixtureによる再生産関係の推定（beta版なのでexportしない）
 #'
 #' 3種類の再生産関係の推定を、最小二乗法か最小絶対値法で、さらに加入の残差の自己相関を考慮して行うことができる
 #' @param SRdata \code{get.SRdata}で作成した再生産関係データ
@@ -335,8 +335,9 @@ fit.SR <- function(SRdata,
 #' @param rep.opt \code{TRUE}で\code{optim}による最適化を収束するまで繰り返す
 #' @param p0 \code{optim}で設定する初期値
 #' @encoding UTF-8
-#' @export
-
+# #' @export
+#' @noRd  
+#' 
 fit.SRalpha <- function(SRdata,
                    SR="HS",
                    alpha=0,
