@@ -31,7 +31,7 @@ test_that("output value check",{
   testcontens.h <-c("SPR0","SB0","R0","h")
   SPR0_by_getSPR <- get.SPR(res_vpa_pma)
 
-  # test the result of each SR based on SRmodel.list
+  # test the returens of corSR and calc_steepness for each SR based on the SRmodel.list array
   i <- 3 #skip first 3 (AR=0 outAR=T)
   # HS L1 AR1 outAR True ----
   i<-i+1
