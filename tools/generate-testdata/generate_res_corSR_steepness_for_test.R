@@ -1,7 +1,7 @@
 source("./tools/generate-testdata/rvpa1.9.4.r")
 #source("./tools/generate-testdata/future2.1.r")
 #source("./tools/generate-testdata/stock_recruit.r") #stock_recruit.r 2019/11/26 ver.
-source("./tools/generate-testdata/stock_recruit_pulreq446.R") #from stock_recruit.r after issue #446
+source("./tools/generate-testdata/stock_recruit_pulreq446.R") #from stock_recruit.r based on pull request #446
 
 caa <- read.csv("./inst/extdata/caa_pma.csv",row.names=1)
 waa <- read.csv("./inst/extdata/waa_pma.csv",row.names=1)
