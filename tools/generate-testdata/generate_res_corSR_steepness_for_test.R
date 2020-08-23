@@ -1,7 +1,7 @@
 source("./tools/generate-testdata/rvpa1.9.4.r")
 #source("./tools/generate-testdata/future2.1.r")
-source("./tools/generate-testdata/stock_recruit.r") #stock_recruit.r 2019/11/26 ver.
-source("./tools/generate-testdata/par_cor_and_h.r") #from stock_recruit.r after issue #446
+#source("./tools/generate-testdata/stock_recruit.r") #stock_recruit.r 2019/11/26 ver.
+source("./tools/generate-testdata/stock_recruit_pulreq446.R") #from stock_recruit.r after issue #446
 
 caa <- read.csv("./inst/extdata/caa_pma.csv",row.names=1)
 waa <- read.csv("./inst/extdata/waa_pma.csv",row.names=1)
@@ -18,16 +18,15 @@ SR.list <- list()
 
 for (i in 1:nrow(SRmodel.list)) {
 
-  resSR_pma <- fit.SR(SRdata_pma, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i], AR = SRmodel.list$AR.type[i], out.AR =SRmodel.list$out.AR[i], hessian = FALSE)
+    resSR_pma <- fit.SR(SRdata_pma, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i], AR = SRmodel.list$AR.type[i], out.AR =SRmodel.list$out.AR[i])
 
-  if(SRmodel.list$SR.rel[i] !="HS") {
-    corSR_pma <- corSR(resSR=resSR_pma)
-  }
-  #assign(sprintf("res_corSR_pma_%s_%s_AR%d_outAR%d",SRmodel.list$SR.rel[i],SRmodel.list$L.type[i], SRmodel.list$AR.type[i],SRmodel.list$out.AR[i]),corSR_pma)
+  corSR_pma <- corSR(resSR=resSR_pma)
 
-  #savefilenamerescorSR <- sprintf("./inst/extdata/res_corSR_pma_%s_%s_AR%d_outAR%d.rda",SRmodel.list$SR.rel[i],SRmodel.list$L.type[i], SRmodel.list$AR.type[i],SRmodel.list$out.AR[i])
+  assign(sprintf("res_corSR_pma_%s_%s_AR%d_outAR%d",SRmodel.list$SR.rel[i],SRmodel.list$L.type[i], SRmodel.list$AR.type[i],SRmodel.list$out.AR[i]),corSR_pma)
 
-  #save(list=paste("res_corSR_pma_",SRmodel.list$SR.rel[i],"_",SRmodel.list$L.type[i],"_AR", SRmodel.list$AR.type[i],"_outAR",as.numeric(SRmodel.list$out.AR[i]), sep=""),file=savefilenamerescorSR)
+  savefilenamerescorSR <- sprintf("./inst/extdata/res_corSR_pma_%s_%s_AR%d_outAR%d.rda",SRmodel.list$SR.rel[i],SRmodel.list$L.type[i], SRmodel.list$AR.type[i],SRmodel.list$out.AR[i])
+
+  save(list=paste("res_corSR_pma_",SRmodel.list$SR.rel[i],"_",SRmodel.list$L.type[i],"_AR", SRmodel.list$AR.type[i],"_outAR",as.numeric(SRmodel.list$out.AR[i]), sep=""),file=savefilenamerescorSR)
 
   res_steepness_pma <- calc_steepness(SR=SRmodel.list$SR.rel,rec_pars=SR.list[[i]]$pars,M=res_vpa_pma$input$dat$M[,year],waa=res_vpa_pma$input$dat$waa[,year],maa=res_vpa_pma$input$dat$maa[,year])
 
