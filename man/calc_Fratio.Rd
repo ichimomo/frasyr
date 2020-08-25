@@ -5,7 +5,16 @@
 \alias{calc_Fratio}
 \title{calculate F/Ftarget based on F_\%SPR multiplier}
 \usage{
-calc_Fratio(faa, waa, maa, M, SPRtarget = 30, waa.catch = NULL, Pope = TRUE)
+calc_Fratio(
+  faa,
+  waa,
+  maa,
+  M,
+  SPRtarget = 30,
+  waa.catch = NULL,
+  Pope = TRUE,
+  return_SPR = FALSE
+)
 }
 \arguments{
 \item{faa}{F at age}
@@ -16,7 +25,9 @@ calc_Fratio(faa, waa, maa, M, SPRtarget = 30, waa.catch = NULL, Pope = TRUE)
 
 \item{M}{natural morality at age}
 
-\item{SPRtarget}{target SPR}
+\item{SPRtarget}{target SPR (NULLの場合には最適化しない)}
+
+\item{return_SPR}{return SPR as well as Fratio}
 }
 \description{
 calculate F/Ftarget based on F_\%SPR multiplier

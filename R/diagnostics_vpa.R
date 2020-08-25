@@ -56,7 +56,15 @@
 
 # author: Kohei Hamabe
 
-do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol = 5){
+do_sensitivity_vpa <- function(res,
+                               what_replace,
+                               value,
+                               what_plot = NULL,
+                               ncol = 5,
+                               plot_year = NULL,
+                               scale_value = NULL
+                               ){
+
   res_vpa.s <- list() ; lab.tmp <- numeric()
   res$input$plot <- FALSE # 背後で沢山plotするのを防ぐ
 
@@ -65,7 +73,7 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
     for(i in 1:length(value)){
       input0 <- res$input
       input0$dat$M <- input0$dat$M *value[i]
-      res_vpa.s[[i]] <- do.call(vpa, input0)
+      res_vpa.s[[i]] <- safe_call(vpa, input0, force=TRUE)
       lab.tmp[i] <- paste("Sensitivity M= x", value[i], sep = "")
     } # for
 
@@ -78,7 +86,7 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
       for(i in 1:length(value)){
         input0 <- res$input
         input0$dat$waa <- input0$dat$waa *value[i]
-        res_vpa.s[[i]] <- do.call(vpa, input0)
+        res_vpa.s[[i]] <- safe_call(vpa, input0, force=TRUE)
         lab.tmp[i] <- paste("Sensitivity waa= x", value[i], sep = "")
       } # for
 
@@ -98,7 +106,7 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
         input0 <- res$input
         input0$dat$waa <- value[[i]]
         colnames(input0$dat$waa) <- colnames.tmp ; rownames(input0$dat$waa) <- rownames.tmp
-        res_vpa.s[[i]] <- do.call(vpa, input0)
+        res_vpa.s[[i]] <- safe_call(vpa, input0, force=TRUE)
         lab.tmp[i] <- paste("Sensitivity waa case:", i, sep = "")
       } # for
 
@@ -114,7 +122,7 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
       for(i in 1:length(value)){
         input0 <- res$input
         input0$dat$waa.catch <- input0$dat$waa.catch *value[i]
-        res_vpa.s[[i]] <- do.call(vpa, input0)
+        res_vpa.s[[i]] <- safe_call(vpa, input0, force=TRUE)
         lab.tmp[i] <- paste("Sensitivity waa.catch= x", value[i], sep = "")
       } # for
 
@@ -134,7 +142,7 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
         input0 <- res$input
         input0$dat$waa.catch <- value[[i]]
         colnames(input0$dat$waa.catch) <- colnames.tmp ; rownames(input0$dat$waa.catch) <- rownames.tmp
-        res_vpa.s[[i]] <- do.call(vpa, input0)
+        res_vpa.s[[i]] <- safe_call(vpa, input0, force=TRUE)
         lab.tmp[i] <- paste("Sensitivity waa.catch case:", i, sep = "")
       } # for
 
@@ -165,7 +173,7 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
       input0$dat$maa <- value[[i]]
       colnames(input0$dat$maa) <- colnames.tmp
       rownames(input0$dat$maa) <- rownames.tmp
-      res_vpa.s[[i]] <- do.call(vpa, input0)
+      res_vpa.s[[i]] <- safe_call(vpa, input0, force=TRUE)
       lab.tmp[i] <- paste("Sensitivity maa case:", i, sep = "")
     } # for
 
@@ -175,7 +183,7 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
     for(i in 1:length(value)){
       input0 <- res$input
       input0$alpha <- value[i]
-      res_vpa.s[[i]] <- do.call(vpa, input0)
+      res_vpa.s[[i]] <- safe_call(vpa, input0, force=TRUE)
       lab.tmp[i] <- paste("Sensitivity alpha=", value[i], sep = "")
     } # for
 
@@ -191,7 +199,7 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
         input0$term.F <- "max"
         input0$sel.update <- FALSE
         input0$tf.year <- value[[i]]
-        res_vpa.s[[i]] <- do.call(vpa, input0)
+        res_vpa.s[[i]] <- safe_call(vpa, input0, force=TRUE)
         lab.tmp[i] <- paste("tf.year = ", value[[i]][1], ":", value[[i]][length(value[[i]])], sep = "")
       }
     } else if(res$input$sel.update == TRUE){  # resは選択率更新
@@ -199,7 +207,7 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
       input0 <- res$input
       input0$sel.update <- FALSE
       input0$term.F <- "all"
-      res_vpa.s[[1]] <- do.call(vpa, input0)
+      res_vpa.s[[1]] <- safe_call(vpa, input0, force=TRUE)
       lab.tmp <- "ALL_F.est"
       #   } else if(!res$input$lambda == 0){  # resはRidge VPA
       #       # lambdaを変えて感度分析
@@ -207,7 +215,7 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
       #      for(i in 1:length(value)){
       #        input0 <- res$input
       #        input0$lambda <- value[i]
-      #        res_vpa.s[[i]] <- do.call(vpa, input0)
+      #        res_vpa.s[[i]] <- safe_call(vpa, input0, force=TRUE)
       #        lab.tmp[i] <- paste("lambda = ", value[i], sep = "")
       #      }
     } else  {
@@ -218,7 +226,7 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
         input0$sel.update <- TRUE
         input0$term.F <- "max"
         input0$tf.year <- value[[i]]
-        res_vpa.s[[i]] <- do.call(vpa, input0)
+        res_vpa.s[[i]] <- safe_call(vpa, input0, force=TRUE)
         lab.tmp[i] <- paste("sel.update, tf.year = ", value[[i]][1], ":", value[[i]][length(value[[i]])], sep = "")
       }
     }
@@ -229,7 +237,7 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
     for(i in 1:length(value)){
       input0 <- res$input
       input0$lambda <- value[i]
-      res_vpa.s[[i]] <- do.call(vpa, input0)
+      res_vpa.s[[i]] <- safe_call(vpa, input0, force=TRUE)
       lab.tmp[i] <- paste("lambda = ", value[i], sep = "")
     }
 
@@ -239,20 +247,20 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
     if(res$input$b.est == TRUE){
       input0 <- res$input
       input0$b.est <- FALSE
-      res_vpa.s[[1]] <- do.call(vpa, input0)
+      res_vpa.s[[1]] <- safe_call(vpa, input0, force=TRUE)
       lab.tmp <- "b = 1"
     } else if(class(value) == "numeric") {
       if(!length(value) == length(res$b)) stop(paste0("Length of b was different !!"))
       input0 <- res$input
       input0$b.fix <- value
-      res_vpa.s[[1]] <- do.call(vpa, input0)
+      res_vpa.s[[1]] <- safe_call(vpa, input0, force=TRUE)
       lab.tmp <- paste("b.fix", sep = "")
     } else if(class(value) == "list") {
       for(j in 1:length(value)){
         if(!length(value[[j]]) == length(res$b)) stop(paste0("Length of b was different !!"))
         input0 <- res$input
         input0$b.fix <- value[[j]]
-        res_vpa.s[[j]] <- do.call(vpa, input0)
+        res_vpa.s[[j]] <- safe_call(vpa, input0, force=TRUE)
         lab.tmp[j] <- paste("b.fix: pattern", j, sep = "")
       }
     } else {
@@ -260,7 +268,7 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
       input0 <- res$input
       input0$b.fix <- NULL
       input0$b.est <- TRUE
-      res_vpa.s[[1]] <- do.call(vpa, input0)
+      res_vpa.s[[1]] <- safe_call(vpa, input0, force=TRUE)
       lab.tmp <- "b.est: TRUE"
     }
 
@@ -273,12 +281,12 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
       #input0$abund <- value    # $abundで資源量指数の対応するものを明記。デフォだと長さがずれてしまう#
       #input0$sigma.const<- input0$sigma.constraint <- 1:length(input0$abund)
       # valueをlistにして、分散の傾斜をオプションでいじれてもいいかも
-      res_vpa.s[[1]] <- do.call(vpa, input0)
+      res_vpa.s[[1]] <- safe_call(vpa, input0, force=TRUE)
       lab.tmp <- "est.method: ml"
     } else {
       input0 <- res$input
       input0$est.method <- "ls"
-      res_vpa.s[[1]] <- do.call(vpa, input0)
+      res_vpa.s[[1]] <- safe_call(vpa, input0, force=TRUE)
       lab.tmp <- "est.method: ls"
     }
 
@@ -290,9 +298,10 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
 
   names(res_vpa.s) <- lab.tmp
   # 結果のラベルに名前を付ける
-  if(!(is.null(what_plot)) )what.plot <- factor(what_plot, levels = as.character(what_plot))
-  g1 <- plot_vpa(c(list(Base=res), res_vpa.s),
-                 what.plot = what_plot, ncol = ncol)
+  if(!(is.null(what_plot)))what.plot <- factor(what_plot, levels = as.character(what_plot))
+  g1 <- plot_vpa(c(list(Base=res), res_vpa.s), what.plot = what_plot,
+                 ncol = ncol, plot_year = plot_year, scale_value = scale_value)
+
   return(list(result = res_vpa.s, graph = g1))
 } # function(do_sensitivity_vpa)
 
@@ -307,7 +316,9 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
 #' @param b_reest bをレトロスペクティブ解析中で再推定するか
 #' @param what_plot 作図したい項目を選べる。\code{NULL}の場合、全て（SSB, biomass, U, catch, Recruitment, fish_number, fishing_mortality, weight, maturity, catch_number）をプロットする。
 #' @param ncol 作図の列数。標準で5列なので、\code{what_plot}の数が5以下の場合は適宜変えた方がよい。
-#'
+#' @param remove_maxAgeF Mohn's rhoを計算する際に最高齢のFを除くか（alphaを仮定して計算していることが多いから）
+#' @param ssb_forecast Mohn's rhoを計算する際にSSBは1年後を計算するか(last.catch.zero=TRUEのときのみ有効)
+#' @param res_step1 2段階法のレトロ解析をやる場合の1段階目の\code{vpa}オブジェクト
 #' @return 返ってくる値:
 #'     \code{result} 感度分析の結果が\code{list}型式で得られる。
 #'     \code{mohn_rho}
@@ -327,29 +338,55 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
 
 # author: Kohei Hamabe
 
-do_retrospective_vpa <- function(res, n_retro = 5, b_reest = FALSE,
+do_retrospective_vpa <- function(res,
+                                 n_retro = 5,
+                                 b_reest = FALSE,
                                  what_plot = c("SSB", "biomass", "Recruitment",
                                                "fish_number", "fishing_mortality"),
-                                 ncol = 3){
+                                 plot_year = NULL,
+                                 ncol = 3,
+                                 remove_maxAgeF = FALSE,
+                                 ssb_forecast = FALSE,
+                                 res_step1 = NULL,
+                                 scale_value = NULL
+                                 ){
 
   if(b_reest == TRUE && res$input$b.est == FALSE)message(paste('b was not estimated in your vpa model'))
   # vpa内でbの推定をしていないにもかかわらず、b_reestがtrueで入力された場合
   # 推定結果(bを推定している)は得られるが、メッセージを出す
 
-  res_retro <- retro.est(res, n = n_retro, b.fix = !b_reest)
+  if (!is.null(res_step1)) { #二段階法の場合のレトロ    i
+    retro_step_one <- retro.est(res_step1, n = n_retro)
+    yy <- ifelse(res$input$last.catch.zero,2,1)
+    sel_mat <- sapply(1:n_retro, function(i) rev(retro_step_one$Res[[i]]$saa)[,yy])
+    res_retro <- retro.est(res, n = n_retro, b.fix = !b_reest, remove.maxAgeF=remove_maxAgeF, ssb.forecast=ssb_forecast,sel.mat=sel_mat)
+    } else {
+    res_retro <- retro.est(res, n = n_retro, b.fix = !b_reest, remove.maxAgeF=remove_maxAgeF, ssb.forecast=ssb_forecast)
+  }
   dat_graph <- list()
   for(i in 1:n_retro) dat_graph[[i]] <- res_retro$Res[[i]]
-  names(dat_graph) <- rev(colnames(res$ssb))[1:n_retro]  # 図にinputされる結果に名前をつける
+
+  if(res$input$last.catch.zero){ # last.catch.zero=Tの場合、最終年のプロットはしない（Mohn's rhoとずれるから）（浜辺07/08）
+    names(dat_graph) <- rev(colnames(res$ssb))[2:(n_retro+1)]
+  } else {
+    dat_graph <- c(list(res), dat_graph) # Base case(全データで解析)の追加（浜辺07/08）
+    names(dat_graph) <- rev(colnames(res$ssb))[1:(n_retro+1)]  # 図にinputされる結果に名前をつける
+  }
 
   # 図にMohn's rhoの重ね書き用rho data from 市野川さん
   rho_data <- tibble(index = names(res_retro$mohn), value = res_retro$mohn) %>%
     left_join(tibble(index = c("N", "B", "SSB", "R", "F"),
                      stat = c("fish_number", "biomass" ,"SSB" ,"Recruitment" ,"fishing_mortality"))) %>%
-    mutate(y=0, x=as.numeric(min(colnames(res_retro[[1]][[1]]$naa))))
+    #mutate(y=0, x=as.numeric(min(colnames(res_retro[[1]][[1]]$naa))))
+    mutate(y = 0,
+           x = if(is.null(plot_year))as.numeric(min(colnames(res_retro[[1]][[1]]$naa))) else plot_year[1])
+  if(!length(what_plot) == 5) rho_data <- rho_data[match(what_plot, rho_data$stat),]
+  # ここもしかすると長さが5でもwhat_plotのデフォルトと一致しないとエラー出るかも
+  # そういった変数についてはレトロして見る需要は少ないのだろうけど
 
   g1 <- plot_vpa(dat_graph,
                  what.plot = factor(what_plot, levels = as.character(what_plot)),
-                 ncol = ncol) +
+                 ncol = ncol, plot_year = plot_year, scale_value = scale_value) +
     geom_label(data = rho_data,
                mapping = aes(x = x, y = y, label = str_c("rho=", round(value,2))),
                vjust="inward", hjust="inward")
@@ -448,7 +485,7 @@ do_estcheck_vpa <- function(res, n_ite = 20, sd_jitter = 1, what_plot = NULL, TM
       init_tmp[j] <- init_list[[j]][i]
     }  # for(j)
     input0$p.init <- init_tmp
-    tmp <- try(do.call(vpa, input0))
+    tmp <- try(safe_call(vpa, input0, force=TRUE))
     if(class(tmp) == "try-error"){
       value_tmp[[i]] <- NA
       ite_tmp[[i]] <- rep(i, length(res$term.f))
@@ -463,7 +500,7 @@ do_estcheck_vpa <- function(res, n_ite = 20, sd_jitter = 1, what_plot = NULL, TM
                              gradient = tmp$gradient)
       ite_tmp[[i]] <- rep(i, length(res$term.f))
       #      ll_tmp[[i]] <- rep(res$logLik, length(res$term.f))
-      ll_tmp[[i]] <- rep(tmp$logLik, length(res$term.f))      
+      ll_tmp[[i]] <- rep(tmp$logLik, length(res$term.f))
       Finit[[i]] <- init_tmp
       Fest[[i]] <- tmp$term.f
     }
@@ -499,7 +536,7 @@ do_estcheck_vpa <- function(res, n_ite = 20, sd_jitter = 1, what_plot = NULL, TM
   g2 <- ggplot(data = d_tmp[d_tmp$age == "max",]) +
     geom_segment(aes(x=0, xend = 4, y = result_lk, yend = result_lk), color = "red", size = 1.3)+
     geom_point(aes(x = initial, y = likelihood), size = 5) +
-    ylab("log Likelihood") + xlab("initial value") +
+    ylab("log Likelihood") + xlab("initial value of F of age Max") +
     theme_SH(base_size = 14)
 
   # Hessianの結果をメッセージで返す
@@ -516,10 +553,10 @@ do_estcheck_vpa <- function(res, n_ite = 20, sd_jitter = 1, what_plot = NULL, TM
     message(paste('Iterations in ', lab_tmp, ' were not convergence ...'))
   }
 
-  maxlike <- max(sapply(value_tmp, function(x) x$logLik))  
+  maxlike <- max(sapply(value_tmp, function(x) x$logLik))
   cat("Maximum likelihood in jitter analysis is: ",maxlike ,"\n")
-  cat("Likelihood with estimated parameters is: ", res$logLik, "\n")    
-        
+  cat("Likelihood with estimated parameters is: ", res$logLik, "\n")
+
   return(list(initial_value = init_list, #初期値の乱数
               p_name = name_tmp, # 初期値の名前
               value = value_tmp, # 推定値と尤度のリスト
@@ -558,11 +595,17 @@ do_estcheck_vpa <- function(res, n_ite = 20, sd_jitter = 1, what_plot = NULL, TM
 # author: Kohei Hamabe
 
 plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_year = FALSE){
+  if(res$input$use.index == "all"){
+    used_index <- res$input$dat$index
+  } else {
+    used_index <- res$input$dat$index[res$input$use.index,]
+  } # 7月7日加筆（浜辺）vpa関数の引数use.index対策
+
   d_tmp <- matrix(NA,
-                  nrow = length(res$input$dat$index[1,]),
-                  ncol = length(res$input$dat$index[,1])*8+4)
-  d_tmp[,1] <- as.numeric(colnames(res$input$dat$index))
-  d_tmp[,2:(1+length(res$q))] <- as.numeric(t(res$input$dat$index))
+                  nrow = length(used_index[1,]),
+                  ncol = length(used_index[,1])*8+4)
+  d_tmp[,1] <- as.numeric(colnames(used_index))
+  d_tmp[,2:(1+length(res$q))] <- as.numeric(t(used_index))
   d_tmp[,(2+length(res$q))] <- as.numeric(apply(res$naa, 2, sum))
   d_tmp[,(3+length(res$q))] <- as.numeric(apply(res$baa, 2, sum))
   d_tmp[,(4+length(res$q))] <- as.numeric(apply(res$ssb, 2, sum))
@@ -753,89 +796,185 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
 
 # author: Kohei Hamabe
 
-do_jackknife_vpa <- function(res, method = "index", what_plot = NULL, ncol = 5){
+do_jackknife_vpa <- function(res,
+                             method = "index",
+                             what_plot = NULL,
+                             ncol = 5,
+                             plot_year = NULL,
+                             scale_value = NULL
+                             ){
+
+  if(res$input$use.index == "all"){
+    used_index <- res$input$dat$index
+  } else {
+    used_index <- res$input$dat$index[res$input$use.index,]
+  } # 7月7日加筆（浜辺）vpa関数の引数use.index対策
+
   year <- as.numeric(colnames(res$input$dat$index))
   res_list <- list()
   abund_tmp <- ssb_tmp <- biom_tmp <- tf_tmp <- list()
 
   if(method == "index"){
+    if(length(used_index[,1]) == 1) stop(paste0('The number of indicies is only 1 !!'))
 
-    name_tmp <- rep(NA, length = length(row.names(res$input$dat$index)))
-    for(i in 1:length(name_tmp)){
-      input0 <- res$input
-      input0$dat$index <- res$input$dat$index[-i,]
-      input0$abund <- input0$abund[-i]
-      input0$plot <- FALSE
-      input0$sigma.const <- input0$sigma.const[-i]
-      input0$sigma.constraint <- input0$sigma.constraint[-i]
-      res_tmp <- do.call(vpa, input0)  # vpa関数の実行
-
-      res_list[[i]] <- res_tmp
-      abund_tmp[[i]] <- apply(res_tmp$naa,2,sum)
-      ssb_tmp[[i]] <- apply(res_tmp$ssb,2,sum)
-      biom_tmp[[i]] <- apply(res_tmp$baa,2,sum)
-      tf_tmp[[i]] <- res_tmp$term.f
-
-      if(i <= 9){
-        name_tmp[i] <- paste0('Removed index0',i)
-      } else {
-        name_tmp[i] <- paste0('Removed index',i)
-      }
-    } #for(i) データの種類について
-
-  } else if(method == "all"){
-
-    name_tmp <- rep(NA, length = length(res$input$dat$index[!is.na(res$input$dat$index)]))
-    for(i in 1:(dim(res$input$dat$index)[1])){
-      index_label <- which(is.na(res$input$dat$index[i,])==FALSE)
-      year_tmp <- as.numeric(colnames(res$input$dat$index[i,]))[index_label]
-
-      for(j in 1:length(index_label)){
+    if(res$input$use.index == "all"){
+      name_tmp <- rep(NA, length = length(row.names(res$input$dat$index)))
+      for(i in 1:length(name_tmp)){
         input0 <- res$input
-        index_tmp <- as.numeric(res$input$dat$index[i,])
-        index_tmp[index_label[j]] <- NA
-        input0$dat$index[i,] <- index_tmp
+        input0$dat$index <- res$input$dat$index[-i,]
+        input0$abund <- input0$abund[-i]
         input0$plot <- FALSE
-        res_tmp <- do.call(vpa, input0)  # vpa関数の実行
+        input0$sigma.const <- input0$sigma.const[-i]
+        input0$sigma.constraint <- input0$sigma.constraint[-i]
+        res_tmp <- safe_call(vpa, input0, force=TRUE)  # vpa関数の実行
 
-        if(i == 1){
-          res_list[[j]] <- res_tmp
-          abund_tmp[[j]] <- apply(res_tmp$naa,2,sum)
-          ssb_tmp[[j]] <- apply(res_tmp$ssb,2,sum)
-          biom_tmp[[j]] <- apply(res_tmp$baa,2,sum)
-          name_tmp[j] <- paste0('Removed index0',i," ",year_tmp[j])
-          #tmp <- length(year)*(j-1)+1
-          #tf_mat[tmp:tmp+length(year),] <- res_tmp$term.f
-          tf_tmp[[j]] <- res_tmp$term.f
-        } else if(i <= 9) {
-          next_label <- which(is.na(name_tmp))[1]
-          res_list[[next_label]] <- res_tmp
-          abund_tmp[[next_label]] <- apply(res_tmp$naa,2,sum)
-          ssb_tmp[[next_label]] <- apply(res_tmp$ssb,2,sum)
-          biom_tmp[[next_label]] <- apply(res_tmp$baa,2,sum)
-          name_tmp[next_label] <- paste0('Removed index0',i,' ',year_tmp[j])
-          tf_tmp[[next_label]] <- res_tmp$term.f
+        res_list[[i]] <- res_tmp
+        abund_tmp[[i]] <- apply(res_tmp$naa,2,sum)
+        ssb_tmp[[i]] <- apply(res_tmp$ssb,2,sum)
+        biom_tmp[[i]] <- apply(res_tmp$baa,2,sum)
+        tf_tmp[[i]] <- res_tmp$term.f
+
+        if(i <= 9){
+          name_tmp[i] <- paste0('Removed index0',i)
         } else {
-          next_label <- which(is.na(name_tmp))[1]
-          res_list[[next_label]] <- res_tmp
-          abund_tmp[[next_label]] <- apply(res_tmp$naa,2,sum)
-          ssb_tmp[[next_label]] <- apply(res_tmp$ssb,2,sum)
-          biom_tmp[[next_label]] <- apply(res_tmp$baa,2,sum)
-          name_tmp[next_label] <- paste0('Removed index',i,' ',year_tmp[j])
-          tf_tmp[[next_label]] <- res_tmp$term.f
+          name_tmp[i] <- paste0('Removed index',i)
         }
-      } #for(j) 各データの時系列について
-      #res_tmp2[[i]] <- res_tmp
-    } #for(i) データの種類について
+      } #for(i) データの種類について
+    } else {
+      # use.indexに指定がある場合用のif文分岐の追加
+      ## ------------------------------------------------ ##
+      # ここエラー出ないようにコンサバにコーディングしてます
+      # 2021年度までにはここ修正加えたい
+      ## ------------------------------------------------ ##
+      name_tmp <- rep(NA, length = length(row.names(used_index)))
+      for(i in 1:length(name_tmp)){
+        input0 <- res$input
+        input0$use.index <- input0$use.index[-i]
+        #input0$dat$index <- res$input$dat$index[-i,]
+        input0$abund <- input0$abund[-i]
+        input0$plot <- FALSE
+        input0$sigma.const <- input0$sigma.const[-i]
+        input0$sigma.constraint <- input0$sigma.constraint[-i]
+        res_tmp <- safe_call(vpa, input0, force=TRUE)  # vpa関数の実行
 
-  } else {
+        res_list[[i]] <- res_tmp
+        abund_tmp[[i]] <- apply(res_tmp$naa,2,sum)
+        ssb_tmp[[i]] <- apply(res_tmp$ssb,2,sum)
+        biom_tmp[[i]] <- apply(res_tmp$baa,2,sum)
+        tf_tmp[[i]] <- res_tmp$term.f
+
+        if(i <= 9){
+          name_tmp[i] <- paste0('Removed index0',i)
+        } else {
+          name_tmp[i] <- paste0('Removed index',i)
+        }
+      } #for(i) データの種類について
+    }
+
+  } else if(method == "all"){ ####-----------------------------------------------------####
+
+    if(res$input$use.index == "all"){
+      name_tmp <- rep(NA, length = length(res$input$dat$index[!is.na(res$input$dat$index)]))
+      for(i in 1:(dim(res$input$dat$index)[1])){
+        index_label <- which(is.na(res$input$dat$index[i,])==FALSE)
+        year_tmp <- as.numeric(colnames(res$input$dat$index[i,]))[index_label]
+
+        for(j in 1:length(index_label)){
+          input0 <- res$input
+          index_tmp <- as.numeric(res$input$dat$index[i,])
+          index_tmp[index_label[j]] <- NA
+          input0$dat$index[i,] <- index_tmp
+          input0$plot <- FALSE
+          res_tmp <- safe_call(vpa, input0, force=TRUE)  # vpa関数の実行
+
+          if(i == 1){
+            res_list[[j]] <- res_tmp
+            abund_tmp[[j]] <- apply(res_tmp$naa,2,sum)
+            ssb_tmp[[j]] <- apply(res_tmp$ssb,2,sum)
+            biom_tmp[[j]] <- apply(res_tmp$baa,2,sum)
+            name_tmp[j] <- paste0('Removed index0',i," ",year_tmp[j])
+            #tmp <- length(year)*(j-1)+1
+            #tf_mat[tmp:tmp+length(year),] <- res_tmp$term.f
+            tf_tmp[[j]] <- res_tmp$term.f
+          } else if(i <= 9) {
+            next_label <- which(is.na(name_tmp))[1]
+            res_list[[next_label]] <- res_tmp
+            abund_tmp[[next_label]] <- apply(res_tmp$naa,2,sum)
+            ssb_tmp[[next_label]] <- apply(res_tmp$ssb,2,sum)
+            biom_tmp[[next_label]] <- apply(res_tmp$baa,2,sum)
+            name_tmp[next_label] <- paste0('Removed index0',i,' ',year_tmp[j])
+            tf_tmp[[next_label]] <- res_tmp$term.f
+          } else {
+            next_label <- which(is.na(name_tmp))[1]
+            res_list[[next_label]] <- res_tmp
+            abund_tmp[[next_label]] <- apply(res_tmp$naa,2,sum)
+            ssb_tmp[[next_label]] <- apply(res_tmp$ssb,2,sum)
+            biom_tmp[[next_label]] <- apply(res_tmp$baa,2,sum)
+            name_tmp[next_label] <- paste0('Removed index',i,' ',year_tmp[j])
+            tf_tmp[[next_label]] <- res_tmp$term.f
+          }
+        } #for(j) 各データの時系列について
+        #res_tmp2[[i]] <- res_tmp
+      } #for(i) データの種類について
+
+    } else {
+      ## ------------------------------------------------ ##
+      # ここエラー出ないようにコンサバにコーディングしてます
+      # 2021年度までにはここ修正加えたい
+      ## ------------------------------------------------ ##
+      name_tmp <- rep(NA, length = length(used_index[!is.na(used_index)]))
+      for(i in 1:(dim(used_index)[1])){
+        index_label <- which(is.na(used_index[i,])==FALSE)
+        year_tmp <- as.numeric(colnames(used_index[i,]))[index_label]
+        use.index_tmp <- res$input$use.index[i]
+
+        for(j in 1:length(index_label)){
+          input0 <- res$input
+          index_tmp <- as.numeric(res$input$dat$index[use.index_tmp,])
+          index_tmp[index_label[j]] <- NA
+          input0$dat$index[use.index_tmp,] <- index_tmp
+          input0$plot <- FALSE
+          res_tmp <- safe_call(vpa, input0, force=TRUE)  # vpa関数の実行
+
+          if(i == 1){
+            res_list[[j]] <- res_tmp
+            abund_tmp[[j]] <- apply(res_tmp$naa,2,sum)
+            ssb_tmp[[j]] <- apply(res_tmp$ssb,2,sum)
+            biom_tmp[[j]] <- apply(res_tmp$baa,2,sum)
+            name_tmp[j] <- paste0('Removed index0',i," ",year_tmp[j])
+            #tmp <- length(year)*(j-1)+1
+            #tf_mat[tmp:tmp+length(year),] <- res_tmp$term.f
+            tf_tmp[[j]] <- res_tmp$term.f
+          } else if(i <= 9) {
+            next_label <- which(is.na(name_tmp))[1]
+            res_list[[next_label]] <- res_tmp
+            abund_tmp[[next_label]] <- apply(res_tmp$naa,2,sum)
+            ssb_tmp[[next_label]] <- apply(res_tmp$ssb,2,sum)
+            biom_tmp[[next_label]] <- apply(res_tmp$baa,2,sum)
+            name_tmp[next_label] <- paste0('Removed index0',i,' ',year_tmp[j])
+            tf_tmp[[next_label]] <- res_tmp$term.f
+          } else {
+            next_label <- which(is.na(name_tmp))[1]
+            res_list[[next_label]] <- res_tmp
+            abund_tmp[[next_label]] <- apply(res_tmp$naa,2,sum)
+            ssb_tmp[[next_label]] <- apply(res_tmp$ssb,2,sum)
+            biom_tmp[[next_label]] <- apply(res_tmp$baa,2,sum)
+            name_tmp[next_label] <- paste0('Removed index',i,' ',year_tmp[j])
+            tf_tmp[[next_label]] <- res_tmp$term.f
+          }
+        } #for(j) 各データの時系列について
+        #res_tmp2[[i]] <- res_tmp
+      } #for(i) データの種類について
+    }
+
+  } else {                  ####-----------------------------------------------------####
     stop(paste0('Method must be "index" or "all" ! '))
   }
 
   # plot_vpaですっきり作図！
   names(res_list) <- name_tmp
-  gg <- plot_vpa(c(list(Base=res), res_list),
-                 what.plot = what_plot, ncol = ncol)
+  gg <- plot_vpa(c(list(Base=res), res_list), what.plot = what_plot,
+                 ncol = ncol, plot_year = plot_year, scale_value = scale_value)
 
   ## ----------------------------------------------------------------- ##
   ## 問題なさそうなら、この区間は消して問題ない
@@ -891,11 +1030,13 @@ do_jackknife_vpa <- function(res, method = "index", what_plot = NULL, ncol = 5){
     g4 <- ggplot(data = d_tidy_par) +
       geom_point(aes(x = age, y = tf, col = JK, shape = JK)) +
       facet_wrap(~ Removed_index) +
-      theme_SH(legend.position = "top", base_size = 14)
+      theme_SH(legend.position = "top", base_size = 14) +
+      scale_shape_manual(values = scale_value[-1])
   } else {
     g4 <- ggplot(data = d_tidy_par) +
       geom_point(aes(x = age, y = tf, col = JK, shape = JK)) +
-      theme_SH(legend.position = "top", base_size = 14)
+      theme_SH(legend.position = "top", base_size = 14) +
+      scale_shape_manual(values = scale_value[-1])
   }
   ## ----------------------------------------------------------------- ##
 
@@ -1068,7 +1209,7 @@ do_caaboot_vpa <-  function(res, B_ite = 1000, B_cv = 0.2, ci_range = 0.95){
     colnames(caa_tmp) <- year
     rownames(caa_tmp) <- age
     input0$dat$caa <- caa_tmp
-    res_tmp <- try(do.call(vpa, input0))
+    res_tmp <- try(safe_call(vpa, input0, force=TRUE))
     if(class(res_tmp) == "try-error"){
       message(paste('Iteration',i,'was errored ...', sep = " "))
       ssb_mat[i,] <- rep(NA, length(year))

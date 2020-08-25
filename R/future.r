@@ -290,7 +290,8 @@ future_vpa <- function(tmb_data,
                        compile=FALSE,
                        output_format="new",
                        attach_input=TRUE,
-                       SPRtarget=NULL){
+                       SPRtarget=NULL,
+                       calc_SPR_year_name=NULL){
   
   argname <- ls()
   input <- lapply(argname,function(x) eval(parse(text=x)))
@@ -382,7 +383,14 @@ future_vpa <- function(tmb_data,
   res_future$HCR_mat[1:(tmb_data$start_ABC_year-1),,] <- NA
   # add Fratio if needed
   if(!is.null(SPRtarget)){
-    for(i in 1:dim(res_future$faa)[[2]]){
+    if(is.null(calc_SPR_year_name)){
+       calc_SPR_year <- 1:dim(res_future$faa)[[2]]
+    }
+    else{
+       calc_SPR_year <- which(dimnames(res_future$faa)[[2]] %in% calc_SPR_year_name)
+    }
+    
+    for(i in calc_SPR_year){
       for(j in 1:dim(res_future$faa)[[3]]){
         if(j>2 &&
            all(res_future$faa[,i,j]==res_future$faa[,i,j-1]) &&
@@ -852,6 +860,9 @@ make_array <- function(d3_mat, pars, pars.year, year_replace_future){
 }
 
 
+#' @param weight
+#' @param nsim
+#' @export
 arrange_weight <- function(weight, nsim){
   weight <- weight / sum(weight)
   weight <- round(cumsum(weight) * nsim)

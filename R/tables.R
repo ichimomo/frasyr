@@ -1,63 +1,95 @@
-make_stock_table <- function(result_vpa, result_msy,
-                             yr_future_start, unit = "百トン") {
+#' Make table for stock assessment result
+#'
+#' @param result_vpa Obejct returned from \code{vpa()}
+#' @param result_msy Object MSY result created previous SC meeting...?
+#' @param result_future Object returnd from \code{future_vpa()}
+#' @param yr_future_start Year when future projection starts
+#' @export
+make_stock_table <- function(result_vpa, result_msy, result_future,
+                             yr_future_start, yr_abc, faa_pre_abc, unit = "百トン") {
   return_ <- function() {
-    rbind(recent_five_years_(),
-          future_start_year_())
+    rbind(recent_four_years_(),
+          future_start_year_(),
+          abc_year_())
   }
 
   n_years_to_display  <- 6
-  yr_newest_recent    <- yr_future_start - 1
-  yr_oldest_recent    <- yr_future_start - (n_years_to_display - 1)
-  recent_five_years_ <- function() {
-    data.frame(Year     = yr_oldest_recent:yr_newest_recent,
-               Biomass  = get_x_from_vpa_("biomass"),
-               SSB      = get_x_from_vpa_("SSB"),
-               Catch    = get_x_from_vpa_("catch"),
-               `F/Fmsy` = f_per_fmsy_()) %>%
-      dplyr::mutate(HarvestRate = round(Catch / Biomass * 100, 0))
-  }
-  future_start_year_ <- function() {
-    # not implemented
-    data.frame(Year = yr_future_start,
-               Biomass = NA,
-               SSB     = NA,
-               Catch   = NA,
-               `F/Fmsy` = NA,
-               HarvestRate = NA)
-  }
+  yr_newest_recent    <- yr_abc - 2
+  yr_oldest_recent    <- yr_abc - (n_years_to_display - 1)
 
-  get_x_from_vpa_ <- function(x) {
-    tbl <- result_vpa %>%
-      convert_vpa_tibble() %>%
-      dplyr::filter(dplyr::between(year, yr_oldest_recent, yr_newest_recent))
-    if (x == "fishing_mortality") {
-      tbl %>%
-        dplyr::filter(stat == x) %>%
-        dplyr::group_by(year) %>%
-        dplyr::summarize(output = mean(value)) %>%
-        dplyr::pull(output)
-    } else {
-      tbl %>%
-        dplyr::filter(stat == x) %>%
+  recent_four_years_ <- function() {
+
+    f_per_fmsy_ <- function(year) {
+      make_kobe_ratio(result_vpa, result_msy) %>%
+        dplyr::select(year, Fratio) %>%
+        dplyr::filter(year %in% as.character(yr_oldest_recent:yr_newest_recent)) %>%
+        dplyr::pull(Fratio) %>%
+        round(2)
+    }
+
+    pull_x_from_vpa_result_ <- function(x) {
+      result_vpa %>%
+        convert_vpa_tibble() %>%
+        dplyr::filter(dplyr::between(year, yr_oldest_recent, yr_newest_recent),
+                      stat == x) %>%
         dplyr::group_by(year) %>%
         dplyr::summarize(output = convert_unit(value, to = unit)) %>%
         dplyr::pull(output) %>%
         round(0)
     }
+
+    data.frame(Year     = yr_oldest_recent:yr_newest_recent,
+               Biomass  = pull_x_from_vpa_result_(x = "biomass"),
+               SSB      = pull_x_from_vpa_result_(x = "SSB"),
+               Catch    = pull_x_from_vpa_result_(x = "catch"),
+               `F/Fmsy` = f_per_fmsy_()) %>%
+      dplyr::mutate(HarvestRate = round(Catch / Biomass * 100, 0))
   }
-  f_per_fmsy_ <- function() {
-    f    <- get_x_from_vpa_("fishing_mortality")
-    fmsy <-  extract_fmsy(result_msy, mean = TRUE)
-    force(round(f / fmsy, 2))
+
+  future_start_year_ <- function() {
+
+    fratio <- mean(faa_pre_abc) / extract_fmsy(result_msy, mean = TRUE)
+
+    data.frame(Year = yr_future_start,
+               Biomass  = calc_x_from_future_result_(x = "biomass", yr = yr_future_start),
+               SSB      = calc_x_from_future_result_(x = "ssb",     yr = yr_future_start),
+               Catch    = calc_x_from_future_result_(x = "catch",   yr = yr_future_start),
+               `F/Fmsy` = round(fratio, 2)) %>%
+      dplyr::mutate(HarvestRate = round(Catch / Biomass * 100, 0))
   }
+
+  abc_year_ <- function() {
+    data.frame(Year = yr_abc,
+               Biomass  = calc_x_from_future_result_(x = "biomass", yr = yr_abc),
+               SSB      = calc_x_from_future_result_(x = "ssb"    , yr = yr_abc),
+               Catch    = "-",
+               `F/Fmsy` = "-",
+               HarvestRate = "-")
+  }
+
+  calc_x_from_future_result_ <- function(x, yr) {
+    result_future %>%
+      extract_value.future_new(what = x,
+                               year = yr,
+                               unit = unit) %>%
+      dplyr::pull(average) %>%
+      round(0)
+  }
+
 
   return_()
 }
 
+#' Make table depending on the class of given object
+#'
+#' @inheritParams make_table.fit.SR
+#' @export
 make_table <- function(...) {
   UseMethod("make_table")
 }
 
+#' @param result_sr Return of \code{fit.SR}
+#' @export
 make_table.fit.SR <- function(result_sr) {
   data.frame(kankei     = result_sr$input$SR,
              saitekika  = result_sr$input$method,
@@ -68,20 +100,48 @@ make_table.fit.SR <- function(result_sr) {
     )
 }
 
+#' @inheritParams make_table.fit.SR Return of \code{fit.SR}
+#' @export
+make_table.fit.SRregime <- function(result_sr) {
+  data.frame(kankei     = result_sr$input$SR,
+             saitekika  = result_sr$input$method,
+             result_sr$pars) %>%
+    magrittr::set_colnames(
+      c("再生産関係式", "最適化法", "a", "b", "S.D.")
+    )
+}
+
+#' Make table of latest SB and F
+#'
+#' @inheritParams adhoc_table
+#' @export
 table1 <- function(...) {
   adhoc_table(number = "one", ...)
 }
 
-
+#' Make tables of \%SPRs
+#' @inheritParams adhoc_table
+#' @export
 table2 <- function(...) {
   adhoc_table(number = "two", ...)
 }
 
+#' Make tables of latest SB and F relative to MSY values
+#' @inheritParams adhoc_table
+#' @export
 table4 <- function(...) {
   adhoc_table(number = "four", ...)
 }
 
-adhoc_table <- function(result_vpa, yrs_preabc, number, sbtarget = NULL, fmsy = NULL) {
+#' Dispacher function for making table
+#'
+#' @inheritParams make_stock_table
+#' @param yrs_preabc Vector of future years preceding ABC year
+#' @param number Table number
+#' @param sbtarget Value of SB target
+#' @param fmsy Value of Fmsy
+adhoc_table <- function(result_vpa, yrs_preabc, number, sbtarget = NULL, fmsy = NULL,
+                        data_future = NULL, yr_biopar = NULL, result_msy = NULL) {
   return_ <- function() {
     switch(number,
            "one" = {
@@ -97,17 +157,16 @@ adhoc_table <- function(result_vpa, yrs_preabc, number, sbtarget = NULL, fmsy = 
                    f_latest_over_msy_())
            })
   }
-  oldest_recentyr <- yrs_preabc[1]
-  yr_latest       <- yrs_preabc[length(yrs_preabc)]
+  yr_latest <- tail(extract_year_from(result_vpa), 1)
   sb_latest_ <- function() {
     make_row(key     = paste0("SB", yr_latest),
-             value   = extract_from_vpa_("ssb", mean_by = "year"),
+             value   = colSums(extract_from_vpa_("ssb"), na.rm = TRUE),
              remarks = paste0(yr_latest, "年漁期の親魚量"))
   }
   f_latest_  <- function(numeric = FALSE) {
     value <- extract_from_vpa_("faa")
     if (numeric) {
-      value <- mean(unlist(value))
+      value <- mean(unlist(value), na.rm = TRUE)
     } else {
       value <- format_x_at_age(value)
     }
@@ -116,39 +175,44 @@ adhoc_table <- function(result_vpa, yrs_preabc, number, sbtarget = NULL, fmsy = 
   }
   pspr_latest_ <- function() {
     make_row(key     = paste0("%SPR", wrap_by_paren(yr_latest)),
-             value   = perspr_from_latest_(to = yr_latest),
+             value   = mean(extract_x(vpadata = result_vpa,
+                                      x       = "perSPR",
+                                      year    = yr_latest)),
              remarks = paste0(yr_latest, "年漁期の%SPR"))
   }
   pspr_recent_ <- function() {
-    years <- paste0(oldest_recentyr, "--", yr_latest)
+    oldest_recentyr <- yrs_preabc[1]
+    latest_recentyr <- yrs_preabc[length(yrs_preabc)]
+    years <- paste0(oldest_recentyr, "--", latest_recentyr)
+    pspr  <- calc_future_perSPR(
+      fout        = list(waa       = data_future$data$waa_mat,
+                         maa       = data_future$data$maa_mat,
+                         M         = data_future$data$M_mat,
+                         waa.catch = data_future$data$waa_catch_mat),
+      Fvector     = apply_year_colum(result_vpa$faa, latest_recentyr:oldest_recentyr),
+      target.year = yr_biopar
+    )
     make_row(key     = paste0("%SPR", wrap_by_paren(years)),
-             value   = perspr_from_latest_(to = oldest_recentyr),
+             value   = pspr * 100,
              remarks = paste0("現状", wrap_by_paren(years, "年漁期"),
-                               "の漁獲圧に対応する%SPR"))
+                              "の漁獲圧に対応する%SPR"))
   }
   sb_latest_over_target_ <- function() {
-    make_row(key     = paste0(sb_latest_()$項目, "/ SBtarget(SBmsy)"),
-             value   = sb_latest_()$値 / sbtarget,
+    make_row(key     = paste0(sb_latest_()[["\u5024"]], "/ SBtarget(SBmsy)"),
+             value   = sb_latest_()[["\u5024"]] / sbtarget,
              remarks = paste0("目標管理基準値（最大持続生産量を実現する親魚量）に対する",
                                yr_latest,
                                "年漁期の親魚量の比"))
   }
   f_latest_over_msy_ <- function() {
-    if (length(fmsy) > 1) {
-      fmsy <- mean(fmsy)
-    }
-    make_row(key     = paste0(f_latest_()$項目, "/ Fmsy"),
-             value   = f_latest_(numeric = TRUE)$値 / fmsy,
+    value <- make_kobe_ratio(result_vpa, result_msy) %>%
+      dplyr::filter(year == yr_latest) %>%
+      dplyr::pull(Fratio)
+    make_row(key     = paste0(f_latest_()[["\u5024"]], "/ Fmsy"),
+             value   = value,
              remarks = paste0("最大持続生産量を実現する漁獲圧に対する",
                               yr_latest,
                               "年漁期の漁獲圧の比"))
-  }
-  perspr_from_latest_ <- function(to) {
-    purrr::map_dbl(yr_latest:to,
-                   extract_x,
-                   x       = "perSPR",
-                   vpadata = result_vpa) %>%
-      mean()
   }
   extract_from_vpa_ <- function(what, mean_by = NULL) {
     extract_x(vpadata = result_vpa, what, yr_latest, mean_by = mean_by)
@@ -178,6 +242,10 @@ format_x_at_age <- function(df, round = 2) {
   force(paste0(wrap_by_paren(ages), " = ", wrap_by_paren(xvec)))
 }
 
+#' Make summary table of MSY estimation
+#'
+#' @param result_msy Object of msy result
+#' @export
 make_msytable <- function(result_msy) {
   return_ <- function() {
     rbind(sbrows_(),
@@ -201,15 +269,15 @@ make_msytable <- function(result_msy) {
   }
   msyrows_ <- function() {
     perspr <- derive_RP_value(result_msy$summary, "Btarget0")$perSPR
-    ssb    <- derive_RP_value(result_msy$summary, "Btarget0")$SSB
+    msy    <- derive_RP_value(result_msy$summary, "Btarget0")$Catch
     rbind(
       make_row(key   = "Fmsy",
                value = extract_fmsy(result_msy) %>% format_x_at_age()),
       make_row(key     = "%SPR (Fmsy)",
-               value   = paste0(round(perspr * 100, 0), "%"),
+               value   = paste0(round(perspr * 100, 1), "%"),
                remarks = "Fmsy に対応する %SPR"),
       make_row(key     = "MSY",
-               value   =  convert_unit(ssb, to = "千トン",
+               value   =  convert_unit(msy, to = "千トン",
                                        round = 0,
                                        add_unit = TRUE),
                remarks = "最大持続生産量 MSY")
@@ -218,6 +286,16 @@ make_msytable <- function(result_msy) {
   return_()
 }
 
+#' Make summary table of ABC estimation
+#'
+#' @param kobe_table Return of \code{make_kobeII_table}
+#' @param result_future Return of \code{future_vpa}
+#' @param beta Value of beta to extract from Kobe table
+#' @param year ABC year
+#' @param faa_pre F at age of \code{yr_preabc}
+#' @param faa_after F at age under HCR
+#' @param yr_preabc Vector of future years preceding ABC year
+#' @export
 make_abctable <- function(kobe_table, result_future, beta, year, faa_pre, faa_after, yr_preabc) {
   return_ <- function() {
     df <- data.frame(abc_(),
@@ -233,19 +311,19 @@ make_abctable <- function(kobe_table, result_future, beta, year, faa_pre, faa_af
 
   abc_ <- function() {
     extract_from_kobe_table(kobe_table,
-                            beta = 0.8,
-                            what  = "catch.mean",
+                            beta = beta,
+                            what = "catch.mean",
                             year = year,
                             unit = "千トン")
   }
   ssb_mean_  <- function(){
     extract_from_kobe_table(kobe_table,
-                            what  = "ssb.mean",
+                            what = "ssb.mean",
                             year = year,
                             unit = "千トン")
   }
   f_over_recentf_ <- function() {
-    round(mean(faa_pre) / mean(faa_after), 2)
+    round(mean(faa_pre, na.rm = TRUE) / mean(faa_after), 2)
   }
   harvest_rate_ <- function() {
     biomass_abcyear <- extract_value(from = result_future,
@@ -256,13 +334,14 @@ make_abctable <- function(kobe_table, result_future, beta, year, faa_pre, faa_af
   return_()
 }
 
+#' @export
 summary_of_summary <- function(tbl_msy, tbl1, tbl2, tbl4) {
   characterize_valuecol_ <- function(tb) {
-    tb$値 <- as.character(tb$値)
+    tb[["\u5024"]] <- as.character(tb[["\u5024"]])
     force(tb)
   }
   extract_yr_from_tbl_ <- function() {
-    force(stringr::str_extract(tbl1$項目[1], "[0-9]{4}"))
+    force(stringr::str_extract(tbl1[["\u9805\u76ee"]][1], "[0-9]{4}"))
   }
   name1 <- "管理基準値とMSYに関係する値"
   name2 <- paste0(extract_yr_from_tbl_(), "漁期の親魚量と漁獲圧")
@@ -288,6 +367,7 @@ summary_of_summary <- function(tbl_msy, tbl1, tbl2, tbl4) {
 #' export_tables(to = "hoge.csv",
 #'               table1, table2, table3)
 #' }
+#' @export
 export_tables <- function(to, ...) {
 
   write_tables_to_csv_ <- function() {

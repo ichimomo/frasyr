@@ -137,7 +137,7 @@ fp.forward.est <- function(caa,naa,M,i,k,alpha=1,maxit=5,d=0.0001){
 
 #' @export
 
-backward.calc <- function(caa,naa,M,na,k,min.caa=0.001,p=0.5,plus.group=TRUE,sel.update){
+backward.calc <- function(caa,naa,M,na,k,min.caa=0.001,p=0.5,plus.group=TRUE,sel.update,alpha){
   out <- rep(NA, na[k])
   if(na[k+1] > na[k]){
     if(isTRUE(sel.update)){stop("Selectivity update method is currently not supported for the plus group change scenario")}
@@ -145,8 +145,8 @@ backward.calc <- function(caa,naa,M,na,k,min.caa=0.001,p=0.5,plus.group=TRUE,sel
       out[i] <- naa[i+1,k+1]*exp(M[i,k])+caa[i,k]*exp(p*M[i,k])
     }
     if (isTRUE(plus.group)){
-      out[na[k]-1]<- (caa[na[k]-1,k] * (naa[na[k],k+1]+naa[na[k+1],k+1]) * exp(M[na[k]-1,k]))/(caa[na[k]-1,k]+caa[na[k],k]) + caa[na[k]-1,k] * exp(p * M[na[k]-1,k])
-      out[na[k]]  <- out[na[k]-1] * caa[na[k],k]/caa[na[k]-1,k]
+      out[na[k]-1]<- (caa[na[k]-1,k]*alpha  * (naa[na[k],k+1]+naa[na[k+1],k+1]) * exp(M[na[k]-1,k]))/(caa[na[k]-1,k]*alpha +caa[na[k],k]) + caa[na[k]-1,k] * exp(p * M[na[k]-1,k])
+      out[na[k]]  <- (caa[na[k],k] * (naa[na[k],k+1]+naa[na[k+1],k+1]) * exp(M[na[k],k]))/(caa[na[k]-1,k]*alpha +caa[na[k],k]) + caa[na[k],k] * exp(p * M[na[k],k])
     }
     else{
       out[na[k]-1] <- naa[na[k],k+1]*exp(M[na[k]-1,k])+caa[na[k]-1,k]*exp(p*M[na[k]-1,k])
@@ -158,7 +158,8 @@ backward.calc <- function(caa,naa,M,na,k,min.caa=0.001,p=0.5,plus.group=TRUE,sel
       out[i] <- naa[i+1,k+1]*exp(M[i,k])+caa[i,k]*exp(p*M[i,k])
     }
     if (isTRUE(plus.group)){
-      out[(na[k+1]-1):na[k]] <- pmax(caa[(na[k+1]-1):na[k],k],min.caa)/sum(pmax(caa[(na[k+1]-1):na[k],k],min.caa))*naa[na[k+1],k+1]*exp(M[(na[k+1]-1):na[k],k])+caa[(na[k+1]-1):na[k],k]*exp(p*M[(na[k+1]-1):na[k],k])
+      pp <- c(1, 1/alpha)
+      out[(na[k+1]-1):na[k]] <- pp*pmax(caa[(na[k+1]-1):na[k],k],min.caa)/sum(pp*pmax(caa[(na[k+1]-1):na[k],k],min.caa))*naa[na[k+1],k+1]*exp(M[(na[k+1]-1):na[k],k])+caa[(na[k+1]-1):na[k],k]*exp(p*M[(na[k+1]-1):na[k],k])
     }
     else{
       out[na[k+1]-1] <- naa[na[k+1],k+1]*exp(M[na[k+1]-1,k])+caa[na[k+1]-1,k]*exp(p*M[na[k+1]-1,k])
@@ -278,11 +279,11 @@ tmpfunc2 <- function(x=1,y=2,z=3){
 
 
 qbs.f <- function(q.const, b.const, sigma.constraint, index, Abund, nindex, index.w, max.dd=0.0001, max.iter=100){
-  
-  np.q <- length(unique(q.const[q.const > 0])) 
-  np.b <- length(unique(b.const[b.const > 0])) 
+
+  np.q <- length(unique(q.const[q.const > 0]))
+  np.b <- length(unique(b.const[b.const > 0]))
   np.s <- length(unique(sigma.constraint[sigma.constraint > 0]))
-  
+
   q <- b <- sigma <- numeric(nindex)
 
   q[1:nindex] <- b[1:nindex] <- sigma[1:nindex] <- 1
@@ -341,7 +342,7 @@ qbs.f <- function(q.const, b.const, sigma.constraint, index, Abund, nindex, inde
     b[which(b.const>0)] <- b[b.const[which(b.const>0)]]
 
     sigma[which(sigma.constraint>0)] <- sigma[sigma.constraint[which(sigma.constraint>0)]]
-    
+
     delta <- max(c(sqrt((q-q0)^2),sqrt((b-b0)^2),sqrt((sigma-sigma0)^2)))
   }
 
@@ -446,9 +447,9 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param est.constraint  制約付き推定をするかどうか
 #' @param q.const  qパラメータの制約（0は推定しないで1にfix）
 #' @param b.const  bパラメータの制約（0は推定しないで1にfix）
-#' @param q.fix 
-#' @param b.fix 
-#' @param fixed.index.var 
+#' @param q.fix
+#' @param b.fix
+#' @param fixed.index.var
 #' @param max.iter  q,b,sigma計算の際の最大繰り返し数
 #' @param optimizer
 #' @param Lower
@@ -461,7 +462,7 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param ssb.lag  0: no lag, 1: lag 1
 #' @param TMB  TMBで高速計算する場合TMB=TRUE (事前にuse_rvpa_tmb()を実行)
 #' @param sel.rank
-#' @param p.init 
+#' @param p.init
 #' @param sigma.constraint  sigmaパラメータの制約.使い方としては，指標が５つあり，2番目と3番目の指標のsigmaは同じとしたい場合はc(1,2,2,3,4)と指定する
 #' @param eta  Fのpenaltyを分けて与えるときにeta.ageで指定した年齢への相対的なpenalty (0~1)
 #' @param eta.age  Fのpenaltyを分けるときにetaを与える年齢(0 = 0歳（加入）,0:1 = 0~1歳)
@@ -556,7 +557,7 @@ vpa <- function(
   #   compile(cpp_name)
   #   dyn.load(dynlib(tmb.file))
   # }
-  
+
   # inputデータをリスト化
 
   argname <- ls()  # 関数が呼び出されたばかりのときのls()は引数のみが入っている
@@ -664,7 +665,7 @@ vpa <- function(
   if (!tune & sel.update) print("sel.update = TRUE but tune=FALSE. So, the results are unreliable.")
   if (tune & is.null(sel.f) & (!sel.update & term.F=="max")) print("sel.f=NULL although tune=TRUE & sel.update=FALSE & term.F=max. The results are unreliable.")
   if (tune) if(length(abund)!=nrow(index)) print("Check!: The number of abundance definition is different from the number of indices.")
-
+  if (Pope & alpha!=1) print("Warning! The estimated F for the older ages may not be accurate if C<<N is not satisfied for the older ages.")
 #  ssb.def
 
   if (ssb.def=="i") ssb.coef <- 0
@@ -732,7 +733,7 @@ vpa <- function(
 
       if (isTRUE(Pope)){
         for (i in (ny-1):1){
-         naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update)
+         naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update,alpha=alpha)
          faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha)
        }
      }
@@ -776,7 +777,7 @@ vpa <- function(
        }
        naa[, ny] <- vpa.core.Pope(caa,faa,M,ny,p=p.pope)
        for (i in (ny-1):(ny-na[ny]+1)){
-         naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update)
+         naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update,alpha=alpha)
        }
      }
 
@@ -788,7 +789,7 @@ vpa <- function(
       }
       naa[, ny] <- vpa.core.Pope(caa,faa,M,ny,p=p.pope)
       for (i in (ny-1):(ny-na[ny]+1)){
-        naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update)
+        naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update,alpha=alpha)
         faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha)
       }
     }
@@ -797,7 +798,7 @@ vpa <- function(
    if (!isTRUE(sel.update)){
    if (isTRUE(Pope)){
      for (i in (ny-1):1){
-       naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update)
+       naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update,alpha=alpha)
        faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha)
       }
    }
@@ -919,7 +920,7 @@ vpa <- function(
          abundance <- abund.extractor(abund=abund[i], naa, faa, dat, min.age=min.age[i], max.age=max.age[i], link=link[i], base=base[i], af=af[i], catch.prop=catch.prop, sel.def=sel.def, p.m=p.m, omega=omega, scale=scale)
          Abund <- rbind(Abund, abundance)
        }
-  
+
        if (is.null(fixed.index.var)) est.qbs <- qbs.f(q.const, b.const, sigma.constraint, index, Abund, nindex, index.w, max.dd, max.iter) else {
        p00 <- c(log(q.const[which(index.w >0)]), log(sigma.constraint[which(index.w >0)]))
        est.qbs <- qbs.f2(p00, index, Abund, nindex, index.w, fixed.index.var)
@@ -1115,8 +1116,8 @@ vpa <- function(
           if (est.method=="ml"|est.constraint| !is.null(fixed.index.var)){
             if (est.constraint){
               names(q) <- q.const
-              names(b) <- b.const              
-              names(sigma) <- sigma.constraint          
+              names(b) <- b.const
+              names(sigma) <- sigma.constraint
             }
             obj$convergence <- convergence
             obj$q <- q
@@ -1199,7 +1200,7 @@ vpa <- function(
       log_F=log(p.init)
     )
 
-    obj <- try(MakeADFun(data2, parameters, DLL=tmb.file))
+    obj <- try(TMB::MakeADFun(data2, parameters, DLL=tmb.file))
     if (class(obj) == "try-error") {
       stop("Please run use_rvpa_tmb() first!")
     }
@@ -1282,7 +1283,7 @@ Ft <- mean(faa[,ny],na.rm=TRUE)
         lines(years[Y],out$Abund[i,Y],col=2,lwd=2)
       } # for(i) 従来のplot
     } else {
-      gridExtra::grid.arrange(graph$year_resid, graph$fitting_CPUE,graph$abund_CPUE) # 3つのggplotを並べる
+      gridExtra::grid.arrange(graph$year_resid, graph$fitting_Index, graph$abund_Index) # 3つのggplotを並べる
       res <- c(res, list(plot = graph))
     } # 加筆（浜辺）
   }
@@ -1488,7 +1489,7 @@ boo.vpa <- function(res,B=5,method="p",mean.correction=FALSE){
 
     res.c$input$dat$index <- b.index
 
-    res1 <- try(do.call(vpa,res.c$input))
+    res1 <- try(safe_call(vpa,res.c$input, force=TRUE))  # do.callからsafe_callに変更(浜辺'20/06/30)
     if(class(res1)=="try-error"){
       Res1[[b]] <- "try-error"
     }
@@ -1533,22 +1534,32 @@ cv.est <- function(res,n=5){
 #' レトロスペクティブ解析の実施
 #'
 #' @param res VPAの出力
+#' @param n 除く年数
+#' @param b.fix b推定してる場合にbを固定するかどうか
+#' @param remove.maxAgeF Mohn's rhoを計算する際に最高齢のFを除くか（alphaを仮定して計算していることが多いから）
+#' @param ssb.forecast Mohn's rhoを計算する際にSSBは1年後を計算するか(last.catch.zero=TRUEのときのみ有効)
 #' @encoding UTF-8
 #' @export
 #'
 
-retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE){
+retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE,
+                      remove.maxAgeF=FALSE,ssb.forecast=FALSE,sel.mat=NULL){
    res.c <- res
    res.c$input$plot <- FALSE
    Res <- list()
    obj.n <- obj.b <- obj.s <- obj.r <- obj.f <- NULL
+   A <- nrow(res$faa)
 
    if (isTRUE(b.fix)){
      res.c$input$b.fix <- res$b
      res.c$input$b.est <- FALSE
    }
 
-   if (res$input$last.catch.zero) res.c$input$last.catch.zero <- FALSE
+   #if (res$input$last.catch.zero) res.c$input$last.catch.zero <- FALSE
+   if (ssb.forecast && !(res.c$input$last.catch.zero)) {
+     warning("'ssb.forecast' is usable only when 'last.catch.zero=TRUE' and so ignored")
+   }
+     
 
    for (i in 1:n){
      nc <- ncol(res.c$input$dat$caa)
@@ -1559,25 +1570,47 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE){
      res.c$input$dat$waa <- res.c$input$dat$waa[,-nc]
      res.c$input$dat$waa.catch <- res.c$input$dat$waa.catch[,-nc]
      res.c$input$dat$M <- res.c$input$dat$M[,-nc]
-     res.c$input$dat$index <- res.c$input$dat$index[,-nc,drop=FALSE]
      res.c$input$dat$catch.prop <- res.c$input$dat$catch.prop[,-nc]
+
+     # 毎年等しく取り除くのではなく、データごとに1年分取り除くように修正（浜辺07/07）
+     label_tmp <- which(is.na(res.c$input$dat$index[,nc]))
+     res.c$input$dat$index <- res.c$input$dat$index[,-nc,drop=FALSE]
+     res.c$input$dat$index[label_tmp,length(res.c$input$dat$index[1,])] <- NA
 
      res.c$input$tf.year <- res.c$input$tf.year-1
      res.c$input$fc.year <- res.c$input$fc.year-1
      if (!is.null(res.c$input$tf.mat)) res.c$input$tf.mat <- res.c$input$tf.mat[,-1]
 
+     if (!is.null(sel.mat)) {
+       if (any(dim(sel.mat) != c(nrow(res$saa),n))) {
+         stop("Dimension of 'sel.mat' is not appropriate")
+       } else {
+         res.c$input$sel.f <- sel.mat[,i] #2stepの方のときチューニングなしの時の選択率を行列で使う
+       }
+     }
      if (isTRUE(init.est)) res.c$input$p.init <- res.c$term.f
 
-     res1 <- do.call(vpa,res.c$input)
+     # last.catch.zero = TRUE用に修正
+     if (res.c$input$last.catch.zero) {res.c$input$dat$caa[,nc-1] <- 0; Y <- nc-2} else Y <- nc-1
+
+     res1 <- safe_call(vpa,res.c$input, force=TRUE) # do.callからsafe_callに変更(浜辺'20/06/30)
 
      Res[[i]] <- res1
 
-     if ((max(abs(res1$gradient)) < 10^(-3) & !isTRUE(res1$input$TMB)) | (max(abs(res1$gradient)) > 0 & max(abs(res1$gradient)) < 10^(-3) & isTRUE(res1$input$TMB)) | (is.na(max(abs(res1$gradient))) & res1$input$optimizer=="nlminb")){
-        obj.n <- c(obj.n, (sum(res1$naa[,nc-1])-sum(res$naa[,nc-1]))/sum(res$naa[,nc-1]))
-        obj.b <- c(obj.b, (sum(res1$baa[,nc-1])-sum(res$baa[,nc-1]))/sum(res$baa[,nc-1]))
-        obj.s <- c(obj.s, (sum(res1$ssb[,nc-1])-sum(res$ssb[,nc-1]))/sum(res$ssb[,nc-1]))
-        obj.r <- c(obj.r, (res1$naa[1,nc-1]-res$naa[1,nc-1])/res$naa[1,nc-1])
-        obj.f <- c(obj.f, (sum(res1$faa[,nc-1])-sum(res$faa[,nc-1]))/sum(res$faa[,nc-1]))
+     if ((max(abs(res1$gradient)) < 10^(-3) & !isTRUE(res1$input$ADMB)) | (max(abs(res1$gradient)) > 0 & max(abs(res1$gradient)) < 10^(-3) & isTRUE(res1$input$ADMB)) | (is.na(max(abs(res1$gradient))) & res1$input$optimizer=="nlminb")){
+       obj.n <- c(obj.n, (sum(res1$naa[,Y])-sum(res$naa[,Y]))/sum(res$naa[,Y]))
+       obj.b <- c(obj.b, (sum(res1$baa[,Y])-sum(res$baa[,Y]))/sum(res$baa[,Y]))
+       if (ssb.forecast && res.c$input$last.catch.zero) {
+         obj.s <- c(obj.s, (sum(res1$ssb[,Y+1])-sum(res$ssb[,Y+1]))/sum(res$ssb[,Y+1]))
+       } else {
+         obj.s <- c(obj.s, (sum(res1$ssb[,Y])-sum(res$ssb[,Y]))/sum(res$ssb[,Y]))
+       }
+       obj.r <- c(obj.r, (res1$naa[1,Y]-res$naa[1,Y])/res$naa[1,Y])
+       if (remove.maxAgeF) {
+         obj.f <- c(obj.f, (sum(res1$faa[-A,Y])-sum(res$faa[-A,Y]))/sum(res$faa[-A,Y]))
+         } else {
+           obj.f <- c(obj.f, (sum(res1$faa[,Y])-sum(res$faa[,Y]))/sum(res$faa[,Y]))
+         }
      } else {
        obj.n <- c(obj.n, NA)
        obj.b <- c(obj.b, NA)
@@ -1595,6 +1628,10 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE){
 }
 
 #最新年の漁獲量が0の場合 (last.zero.catch=0)、最新年のFが0となり、加入量も推定できないため、もう1年前の推定値でMohn's rhoを計算するための関数
+## ------------------------------------------------------  ##
+# retro.est中にlast.zero.catch=0の場合のif文加えた
+# retro.estが問題なければ以下関数は捨てても大丈夫（浜辺07/07）
+## ------------------------------------------------------  ##
 retro.est2 <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE){
    res.c <- res
    res.c$input$plot <- FALSE

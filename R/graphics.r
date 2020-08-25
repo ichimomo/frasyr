@@ -72,10 +72,14 @@ ggsave_SH_large <- function(...){
 #'
 
 plot_vpa <- function(vpalist,
-                     vpatibble=NULL,
-                     what.plot=NULL,
-                     legend.position="top",
-                     vpaname=NULL, ncol=2){
+                     vpatibble = NULL,
+                     what.plot = NULL,
+                     plot_year = NULL,  # 浜辺加筆(2020/06/30)
+                     legend.position = "top",
+                     vpaname = NULL,
+                     ncol = 2,
+                     scale_value = NULL # 浜辺加筆(2020/07/29)
+                     ){
 
   if(!is.null(vpaname)){
     if(length(vpaname)!=length(vpalist)) stop("Length of vpalist and vpaname is different")
@@ -108,12 +112,33 @@ plot_vpa <- function(vpalist,
       mutate(stat=factor(stat,levels=c(biomass_factor, age_factor)))
   }
 
+  # scale_shape_manual関数のvalueを設定(浜辺'20/07/29)
+  if(is.null(scale_value))scale_value <- 1:(length(unique(vpadata$id)))
+  if(!(length(scale_value)==length(unique(vpadata$id)))){
+    scale_value <- 1:(length(unique(vpadata$id)))
+    print("Note! Length of scale value was different although plot was done...")
+  }
+  # シナリオの違いを線種+shapeにした(浜辺'20/06/30)
   g1 <- vpadata %>% ggplot()
   if(all(is.na(vpadata$age))){
     g1 <- g1+ geom_line(aes(x=year, y=value,lty=id))
+    g1 <- try(g1 + geom_point(aes(x=year, y=value, shape=id)) +
+                scale_shape_manual(values = scale_value))
   }
   else{
-    g1 <- g1+ geom_line(aes(x=year, y=value,color=age,lty=id))
+    g1 <- g1+ geom_line(aes(x=year, y=value, color=age, lty=id))
+    g1 <- try(g1 + geom_point(aes(x=year, y=value, color=age, shape=id)) +
+                scale_shape_manual(values = scale_value))
+  }
+  # 上のがダメな場合にオリジナルで対応
+  if(class(g1[1])=="try-error"){ # g1の長さは2あって警告が頻発するので[1]を加えた
+    g1 <- vpadata %>% ggplot()
+    if(all(is.na(vpadata$age))){
+      g1 <- g1+ geom_line(aes(x=year, y=value,lty=id))
+    }
+    else{
+      g1 <- g1+ geom_line(aes(x=year, y=value,color=age,lty=id))
+    }
   }
 
   g1 <- g1 +
@@ -122,7 +147,13 @@ plot_vpa <- function(vpalist,
     ylab("value") + xlab("Year")+
     guides(color=guide_legend(nrow=2))
 
-  g1
+  if(!(is.null(plot_year))){
+    g2 <- g1 + xlim(plot_year[1], max(plot_year))
+  } else {
+    g2 <- g1
+  } # もし動かない場合はこれまで通りに作図(浜辺'20/06/30)
+
+  g2
 }
 
 #' F currentをプロットする
@@ -205,6 +236,8 @@ plot_Fref <- function(rres,xlabel="max", # or, "mean","Fref/Fcur"
   abline(v=xx <- c(rres$summary[vline.text][n.line,]))
   text(xx,max(ypr)*seq(from=0.5,to=0.3,length=length(vline.text)),vline.text)
   legend("topright",lty=1:2,legend=c("SPR","YPR"))
+
+  invisible(data.frame(F.range=F.range,spr=spr,ypr=ypr))  
   #old.par[c("cin","cxy","csi","cra","csy","din","page")] <- NULL
   #par(old.par)
 }
@@ -1643,13 +1676,23 @@ compare_kobeII <- function(kobeII_list,
   return(g1)
 }
 
+#' Plot SPR figure
+#'
+#' @inheritParams make_stock_table
+#' @export
 plot_sprypr <- function(result_vpa, type) {
   df <- get.SPR(result_vpa, target.SPR = 30, Fmax = 10, max.age=Inf)$ysdata
   if (type == "perspr") {
     df$Year <- as.numeric(rownames(df))
     plot <- df %>%
       ggplot(aes(Year, perSPR)) +
-      geom_line()
+      geom_line() +
+      geom_point() +
+      scale_y_continuous(trans = "reverse",
+                         breaks = seq(100, 0, -20),
+                         limits = c(100, 0)) +
+      xlab("年") +
+      ylab("%SPR")
   }
   force(plot)
 }

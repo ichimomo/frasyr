@@ -10,7 +10,11 @@ do_retrospective_vpa(
   n_retro = 5,
   b_reest = FALSE,
   what_plot = c("SSB", "biomass", "Recruitment", "fish_number", "fishing_mortality"),
-  ncol = 3
+  plot_year = NULL,
+  ncol = 3,
+  remove_maxAgeF = FALSE,
+  ssb_forecast = FALSE,
+  res_step1 = NULL
 )
 }
 \arguments{
@@ -23,6 +27,12 @@ do_retrospective_vpa(
 \item{what_plot}{作図したい項目を選べる。\code{NULL}の場合、全て（SSB, biomass, U, catch, Recruitment, fish_number, fishing_mortality, weight, maturity, catch_number）をプロットする。}
 
 \item{ncol}{作図の列数。標準で5列なので、\code{what_plot}の数が5以下の場合は適宜変えた方がよい。}
+
+\item{remove_maxAgeF}{Mohn's rhoを計算する際に最高齢のFを除くか（alphaを仮定して計算していることが多いから）}
+
+\item{ssb_forecast}{Mohn's rhoを計算する際にSSBは1年後を計算するか(last.catch.zero=TRUEのときのみ有効)}
+
+\item{res_step1}{2段階法のレトロ解析をやる場合の1段階目の\code{vpa}オブジェクト}
 }
 \value{
 返ってくる値:

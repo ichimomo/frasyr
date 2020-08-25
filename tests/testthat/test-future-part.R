@@ -39,6 +39,32 @@ test_that("ref.F (level 2)",{
       # %SPRを計算するところで、初期値が変わると1e-4以下の誤差で値がずれるので1e-4をtoleranceに入れる
       # toleranceのつづりが間違っていても誰も教えてくれない（無言でtoleranceを無視する）ため注意
   }
+
+  # 同じ機能を持つcalc_Fratioとの整合性をチェック=> ref.Fとcalc_Fratioは同じ機能を提供
+  Fratio_test <- purrr::map_dfr((1:4) * 10, function(x)
+    calc_Fratio(res_vpa_pma$Fc.at.age,
+                rev(res_vpa_pma$input$dat$waa)[,1],
+                rev(res_vpa_pma$input$dat$maa)[,1],
+                rev(res_vpa_pma$input$dat$M  )[,1],
+                SPRtarget=x,
+                waa.catch=NULL,
+                Pope=res_vpa_pma$input$Pope,
+                return_SPR=TRUE))
+  for_test_tmp <- 1/res_ref_f_pma_check$summary[str_c("FpSPR.",1:4 * 10,".SPR")][3,] %>%
+    unlist() %>% as.numeric()
+  expect_equal(for_test_tmp,Fratio_test$Fratio,tol=0.0001)
+  expect_equal(1:4 * 10,Fratio_test$SPR_est,tol=0.0001)  
+
+  MSY_perSPR1 <- calc_future_perSPR(res_future_0.8HCR,res_vpa_example,res_MSY$F.msy)  
+  MSY_perSPR2 <- calc_future_perSPR(res_future_0.8HCR,res_vpa_example,res_MSY$F.msy,target.year=2040:2045)
+  MSY_perSPR3 <- calc_future_perSPR(res_future_0.8HCR,res_vpa_example,res_MSY$F.msy,target.col=30) 
+  expect_equal(MSY_perSPR1,0.2307774,tol=1e-4)
+  expect_equal(MSY_perSPR1,MSY_perSPR2,tol=1e-4)      
+  expect_equal(MSY_perSPR1,MSY_perSPR3,tol=1e-4)
+
+  # just for run
+  MSY_Fratio <- calc_perspr(res_future_0.8HCR,res_vpa_example,res_MSY$F.msy,SPRtarget=0.3)
+
 })
 
 # check SR data ----

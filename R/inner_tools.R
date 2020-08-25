@@ -31,7 +31,7 @@ extract_x <- function(vpadata, x, year, mean_by = NULL) {
   if (is.null(mean_by)) return(extracted)
 
   if (mean_by == "year") {
-      colMeans(extracted)
+      colMeans(extracted, na.rm = TRUE)
   } else if (mean_by == "age") {
       rowMeans(extracted)
   } else {
@@ -142,6 +142,7 @@ extract_value <- function(...) {
 extract_value.future_new <- function(from, what, year = NULL, unit = "千トン") {
   name <- switch(what,
                  "biomass" = "vbiom",
+                 "ssb"     = "vssb",
                  "catch"   = "vwcaa",
                  stop("Not implemented"))
 

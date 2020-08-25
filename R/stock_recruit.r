@@ -85,7 +85,7 @@ get.SRdata <- function(vpares,R.dat = NULL,
 #' }
 #'
 #' @export
-#' 
+#'
 
 fit.SR <- function(SRdata,
                    SR="HS",
@@ -1376,6 +1376,7 @@ jackknife.SR = function(resSR,is.plot=TRUE,output=FALSE,filename = "jackknife",y
         points(jack.res[[i]]$pred$SSB,jack.res[[i]]$pred$R,type="l",lwd=2,col=rgb(0,0,1,alpha=0.1))
       }
       points(resSR$pred$SSB,resSR$pred$R,col=2,type="l",lwd=3,lty=2)
+      legend("topright", legend=c("Estimated SR function","A jackkine SR function"),col=c("red",rgb(0,0,1,alpha=0.1)),lty=c(2,1), cex=0.8)
       if (output) dev.off()
 
     } else { #fit.SRregime
@@ -1413,6 +1414,8 @@ jackknife.SR = function(resSR,is.plot=TRUE,output=FALSE,filename = "jackknife",y
         }
         pred_data = resSR$pred %>% filter(Regime == regime_unique[i])
         points(pred_data$SSB,pred_data$R,col=2,type="l",lwd=3,lty=2)
+       if(output) legend("topright", legend=c("Estimated SR function","A jackkine SR function"),col=c("red",rgb(0,0,1,alpha=0.1)),lty=c(2,1), cex=0.8)
+       else if(i==1) legend("topleft", legend=c("Estimated SR function","A jackkine SR function"),col=c("red",rgb(0,0,1,alpha=0.1)),lty=c(2,1), cex=0.8)
       }
       if (output) dev.off()
     }
