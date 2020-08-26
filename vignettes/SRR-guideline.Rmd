@@ -13,22 +13,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-
-  ```{r setup, include=FALSE, warning=FALSE,eval=FALSE,echo=FALSE}
-# ここのチャンクはもう必要ないので，削除してもOKです
-library(rmdformats)
-## Global options
-options(max.print="75")
-opts_chunk$set(echo=TRUE,
-               cache=TRUE,
-               prompt=FALSE,
-               tidy=TRUE,
-               comment=NA,
-               message=FALSE,
-               warning=FALSE)
-```
-
-再生産関係の選択・診断を行うためのチェックリストです。ここで、将来予測・管理基準値計算チュートリアル (../docs/future-doc-abc.html) の例を使って説明します。
+再生産関係の選択・診断を行うためのチェックリストです。ここで、将来予測・管理基準値計算チュートリアル (../docs/future.html) の例を使って説明します。
 
 <!-- ## 0. 使用データ・解析コード等 -->
 
@@ -37,9 +22,9 @@ opts_chunk$set(echo=TRUE,
   <!-- 使用プログラム:future.vpa1.11   -->
   <!-- 環境要因データ：なし   -->
 
-  ## 1. 再生産関係型の比較
+  ## 1. 再生産関係型の比較（レジームなし）
 
-  Hockey-Stick型/Beverton-Holt型/Ricker型の再生産関係を比較します。
+  Hockey-Stick型/Beverton-Holt型/Ricker型の再生産関係を比較します。まずはレジームを考慮しない場合です。
 
 ```{r, warning=FALSE}
 library(frasyr)
@@ -65,6 +50,7 @@ resSR <- resHS #HSを選択
   理由（特にBHやRIの場合は詳しく）：
 BHとRIでは再生産関係がほぼ直線になるため、HSを選択した。AICcもHSがやや小さい。
 
+# 結果の出力と図示
 
 ## 2. 最小絶対値法や残差の自己相関の検討
 
@@ -222,7 +208,6 @@ points(resSR$pred$SSB,resSR$pred$R,col=2,type="l",lwd=3)
 そのほかのパラメータは各データの除去に対して比較的頑健である。
 
 
-
 ## 7. プロファイル尤度
 
 パラメータa, bの値を変えたときに尤度がどの程度変化するかを解析します。ここでは、sdやrhoは最尤推定値に固定しています。この結果とブートストラップ信頼区間およびジャックナイフ解析の結果も同時に図示します。
@@ -250,6 +235,27 @@ legend("bottomleft",c("Bootstrap CI(0.8)","Jackknife"),lty=1:0,pch=c("",1),col=c
 
 診断結果：パラメータbの値が大きくなっても尤度の変化は比較的小さい
 
+## 8. パラメータ間相関
+パラメータa, bの値がどれだけ相関を持つか、相関係数を算出します。
+
+```{r,warning=FALSE}
+res_corSR <- corSR(resSR=resSR)
+res_corSR$cor[1,2]
+```
+
+診断結果：相関係数の値は小さい。
+
+## 9. スティープネス
+F=0の時の初期資源量から理論上求められる加入量R0に対する、0.2B0の時の加入量Rの比であるスティープネスhを計算します。
+
+
+```{r,warning=FALSE}
+year <- as.character(max(res_vpa$input$rec.year))
+res_steepness <- calc_steepness(SR=resSR$input$SR,rec_pars=resSR$pars,M=res_vpa$input$dat$M[,year],waa=res_vpa$input$dat$waa[,year],maa=res_vpa$input$dat$maa[,year])
+res_steepness$h
+```
+
+診断結果：
 
 
 <!-- ## 7. まとめ -->
