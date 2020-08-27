@@ -46,6 +46,8 @@ calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=
 #'
 #' 年齢別生物パラメータとFと漁獲量を与えると与えた漁獲量と一致するFへの乗数を返す
 #' @param set_max1 廃止
+#' @param max_exploitation_rate 潜在的に漁獲できる漁獲量＜入力した漁獲量の場合、潜在的に漁獲できる漁獲量の何％まで実際に漁獲するか
+#' 
 #' @export
 #' @encoding UTF-8
 
@@ -68,9 +70,11 @@ caa.est.mat <- function(naa,saa,waa,M,catch.obs,Pope,set_max1=TRUE,max_exploitat
     }
   }
 
-  if(sum(naa*waa,na.rm=T) < catch.obs){
-    warning("Total biomass is under expected catch")
-    #catch.obs <- sum(naa*waa,na.rm=T) * max_exploitation_rate
+  C0 <- sum(tmpfunc(logx=100,catch.obs=catch.obs,naa=naa,saa=rep(1,length(saa)),waa=waa,M=M,Pope=Pope,out=TRUE) * waa)
+  if(C0 < catch.obs){
+    warning("The expected catch (", catch.obs, ") is over potential maximum catch (",round(C0,5),"). The expected catch is replaced by",round(C0,3),"x", max_exploitation_rate)
+    catch.obs <- C0 * max_exploitation_rate
+
   }
     
   tmp <- optimize(tmpfunc,c(-10,10),catch.obs=catch.obs,naa=naa,saa=saa,waa=waa,M=M,Pope=Pope,out=FALSE)#,tol=.Machine$double.eps)
