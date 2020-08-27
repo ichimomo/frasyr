@@ -635,7 +635,7 @@ test_that("future_vpa function (MSE) (level 2)",{
   res_future_noMSE <- future_vpa(tmb_data=data_future_test1000$data,
                            optim_method="none", 
                            multi_init = 1,SPRtarget=0.3,
-                           do_MSE=FALSE, MSE_input_data=data_future_test)
+                           do_MSE=FALSE, MSE_input_data=data_future_test1000)
 
   res_future_MSE <- future_vpa(tmb_data=data_future_test10$data,
                            optim_method="none", 
