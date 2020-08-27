@@ -127,8 +127,23 @@
     <p>kobeII matrixの簡易版（Btarget, Blimitは決め打ちでβのみ変える)</p>
     </div>
 
-    <pre class="usage"><span class='fu'>beta.simulation</span>(<span class='kw'>finput</span>, <span class='kw'>beta_vector</span>, year.lag = <span class='fl'>0</span>, type = <span class='st'>"old"</span>)</pre>
+    <pre class="usage"><span class='fu'>beta.simulation</span>(
+  <span class='kw'>finput</span>,
+  <span class='kw'>beta_vector</span>,
+  year.lag = <span class='fl'>0</span>,
+  type = <span class='st'>"old"</span>,
+  year_beta_change = <span class='kw'>NULL</span>,
+  output_type = <span class='st'>"tidy"</span>
+)</pre>
 
+    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
+    <table class="ref-arguments">
+    <colgroup><col class="name" /><col class="desc" /></colgroup>
+    <tr>
+      <th>year_beta_change</th>
+      <td><p>betaを変更する年の範囲。NULLの場合には全部の年を変える。</p></td>
+    </tr>
+    </table>
 
 
   </div>
