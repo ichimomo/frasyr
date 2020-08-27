@@ -546,6 +546,9 @@ future_vpa_R <- function(naa_mat,
         MSE_dummy_data$waa_catch_mat[] <-  waa_catch_mat[,,i] # in case
         MSE_dummy_data$maa_mat[] <-  maa_mat[,,i] # in case
         MSE_dummy_data$M_mat[]   <-  M_mat[,,i] # in case
+        # MSEのシミュレーション内では繰越設定はオフにする
+        MSE_dummy_data$HCR_mat[,,"TAC_reserve_rate"] <- NA
+        MSE_dummy_data$HCR_mat[,,"TAC_carry_rate"] <- NA        
         for(k in 1:MSE_nsim){
           MSE_dummy_data$SR_mat[,k,]  <- SR_mat[,i,]
           MSE_dummy_data$SR_mat[,k,"ssb"]  <- spawner_mat[,i] # true ssb
@@ -569,7 +572,7 @@ future_vpa_R <- function(naa_mat,
         
         res_tmp <- safe_call(future_vpa_R,MSE_dummy_data) # do future projection
         #                if(t>55) browser()
-        HCR_mat[t,i,"expect_wcatch"] <- mean(apply(res_tmp$wcaa[,t,],2,sum)) # determine ABC in year t
+        HCR_mat[t,i,"expect_wcatch"] <- mean(apply(res_tmp$wcaa[,t,],2,sum)) # determine ABC in year t here
         SR_MSE[t,i,"recruit"] <- mean(res_tmp$naa[1,t,])
         SR_MSE[t,i,"ssb"]     <- mean(res_tmp$SR_mat[t,,"ssb"])
 
@@ -587,8 +590,15 @@ future_vpa_R <- function(naa_mat,
 
     # TAC carry over setting
     if(sum(!is.na(HCR_mat[t,,"TAC_reserve_rate"]))>0){
-      HCR_realized[t,,"original_ABC"] <-
-        catch_equation(N_mat[,t,],F_mat[,t,],waa_catch_mat[,t,],M_mat[,t,],Pope=Pope) %>% colSums()
+      if(sum(HCR_mat[t,,"expect_wcatch"])==0){
+        # non-MSE
+        HCR_realized[t,,"original_ABC"] <-
+          catch_equation(N_mat[,t,],F_mat[,t,],waa_catch_mat[,t,],M_mat[,t,],Pope=Pope) %>% colSums()
+      }
+      else{
+        # MSE
+        HCR_realized[t,,"original_ABC"] <- HCR_mat[t,,"expect_wcatch"]
+      }
       HCR_realized[t,,"original_ABC_plus"] <- HCR_realized[t,,"original_ABC"] + HCR_realized[t,,"reserved_catch"]
       HCR_mat[t,,"expect_wcatch"] <- HCR_realized[t,,"original_ABC_plus"] * (1-HCR_mat[t,,"TAC_reserve_rate"])
       if(t<total_nyear) HCR_realized[t+1,,"reserved_catch"] <- HCR_realized[t,,"original_ABC"] * min(HCR_mat[t,,"TAC_reserve_rate"],HCR_mat[t,,"TAC_carry_rate"])
