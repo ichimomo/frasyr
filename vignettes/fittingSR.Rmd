@@ -43,10 +43,10 @@ resL1 = fit.SR(SRdata, SR = "HS", method = "L1", out.AR = FALSE, AR = 0)
 加入の残差に時間トレンドを考慮した自己相関のオプションには２通りの推定方法が設定されています。再生産関係の関数の中に自己相関を仮定する内側推定と、関数の推定の後から誤差に自己相関を推定する外側推定です。（内側・外側の表現は科学的に確立したものではなく、この関数を利用するにあたってさし当りの表現です。）
 
 ```{r, warning=FALSE}
-## 再生産関係にHockey-Stick型を指定（SR="HS"）し、推定方法を最小二乗法とし（method="L1"）、自己相関を外側で仮定する（AR=1）場合。
+## 再生産関係にHockey-Stick型を指定（SR="HS"）し、推定方法を最小二乗法とし（method="L1"）、自己相関を外側で仮定する（AR=1,out.AR=T）場合。
 resL1outer = fit.SR(SRdata, SR = "HS", method = "L1", out.AR = TRUE, AR = 1)
 
-## SR="HS", method="L2"として、自己相関を内側で仮定する場合。
+## SR="HS", method="L2"として、自己相関を内側で仮定する（AR=1,out.AR=F）場合。
 resL2inner = fit.SR(SRdata, SR = "HS", method = "L2", out.AR = FALSE, AR = 1)
 ```
 
