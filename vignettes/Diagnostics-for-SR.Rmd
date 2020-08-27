@@ -1,0 +1,83 @@
+---
+title: "再生産関係モデル診断スクリプト"
+author: "Shota Nishijima"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+  highlight: kate
+toc: yes
+toc_float: yes
+vignette: >
+  %\VignetteIndexEntry{Diagnostics-for-SR}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+再生産関係の選択・診断を行うためのチェックリストです。ここで、将来予測・管理基準値計算チュートリアル (../docs/future.html) の例を使って説明します。
+
+  <!-- ## 0. 使用データ・解析コード等 -->
+  <!-- 加入量・親魚量データ：平成29年度年度マサバ太平洋系群資源評価票における加入量・親魚量データ   -->
+  <!-- 期間：1970~2016年    -->
+  <!-- 使用プログラム:future.vpa1.11   -->
+  <!-- 環境要因データ：なし   -->
+
+  ## 1. 再生産関係型の比較
+
+  Hockey-Stick型/Beverton-Holt型/Ricker型の再生産関係を比較します。
+
+```{r setup}
+library(frasyr)
+data(res_vpa)
+SRdata <- get.SRdata(res_vpa)
+resHS <- fit.SR(SRdata,SR="HS",method="L2",AR=0)
+resBH <- fit.SR(SRdata,SR="BH",method="L2",AR=0)
+resRI <- fit.SR(SRdata,SR="RI",method="L2",AR=0)
+plot(SRdata$R ~ SRdata$SSB, cex=2, type = "b",xlab="SSB",ylab="R",
+     main="HS vs. BH vs. RI",ylim=c(0,max(SRdata$R)*1.3),xlim=c(0,max(SRdata$SSB)*1.1))
+points(rev(SRdata$SSB)[1],rev(SRdata$R)[1],col=1,type="p",lwd=3,pch=16,cex=2)
+points(resHS$pred$SSB,resHS$pred$R,col=2,type="l",lwd=3)
+points(resBH$pred$SSB,resBH$pred$R,col=3,type="l",lwd=3,lty=2)
+points(resRI$pred$SSB,resRI$pred$R,col=4,type="l",lwd=3,lty=3)
+legend("topleft",
+       legend=c(sprintf("HS %5.2f",resHS$AICc),sprintf("BH %5.2f",resBH$AICc),sprintf("RI %5.2f",resRI$AICc)),
+       lty=1:3,col=2:4,lwd=2,title="AICc",ncol=3)
+resSR <- resHS #HSを選択
+```
+**選択した再生産関係：Hockey-Stick**
+
+  理由（特にBHやRIの場合は詳しく）：
+BHとRIでは再生産関係がほぼ直線になるため、HSを選択した。AICcもHSがやや小さい。
+
+## 2. 最小絶対値法や残差の自己相関の検討
+
+サンプル数が少ない場合や残差が正規分布に従っていない場合（4節参照）、外れ値に対して頑健な推定方法である最小絶対値法（中央値推定）が有効なオプションとして考えられます。
+また、加入の残差が環境影響などにより時間的なトレンドをもつ場合には（4節参照）、残差の自己相関を考慮する方法が考えられます。
+ここでは、これらの手法により再生産関係がどの程度変わるのかをチェックします。
+
+```{r,message=FALSE,warning=FALSE}
+resL2 = fit.SR(SRdata, SR = "HS", method = "L2", out.AR = FALSE, AR = 0)
+resL2outer = fit.SR(SRdata, SR = "HS", method = "L2", out.AR = TRUE, AR = 1)
+resL2inner = fit.SR(SRdata, SR = "HS", method = "L2", out.AR = FALSE, AR = 1)
+resL1 = fit.SR(SRdata, SR = "HS", method = "L1", out.AR = FALSE, AR = 0)
+resL1outer = fit.SR(SRdata, SR = "HS", method = "L1", out.AR = TRUE, AR = 1)
+resL1inner = fit.SR(SRdata, SR = "HS", method = "L1", out.AR = FALSE, AR = 1)
+plot(SRdata$R ~ SRdata$SSB, cex=2, type = "b",xlab="SSB",ylab="R",
+     main="Effects of autocorrelation and L1",ylim=c(0,max(SRdata$R)*1.3),xlim=c(0,max(SRdata$SSB)*1.1))
+points(rev(SRdata$SSB)[1],rev(SRdata$R)[1],col=1,type="p",lwd=3,pch=16,cex=2)
+points(resL2$pred$SSB,resL2$pred$R,col=2,type="l",lwd=3)
+points(resL2inner$pred$SSB,resL2inner$pred$R,col=3,type="l",lwd=3,lty=2)
+points(resL2outer$pred$SSB,resL2outer$pred$R,col=4,type="l",lwd=3,lty=3)
+points(resL1$pred$SSB,resL1$pred$R,col=5,type="l",lwd=3)
+points(resL1inner$pred$SSB,resL1inner$pred$R,col=6,type="l",lwd=3,lty=2)
+points(resL1outer$pred$SSB,resL1outer$pred$R,col=7,type="l",lwd=3,lty=3)
+legend("topleft",
+       legend=c(sprintf("L2&AR0 %5.2f",resL2$AICc),sprintf("L1&AR0 %5.2f",resL1$AICc),sprintf("L2&AR1inner %5.2f",resL2inner$AICc),sprintf("L1&AR1inner %5.2f",resL1inner$AICc),sprintf("L2&AR1outer %5.2f",resL1outer$AICc),sprintf("L1&AR1outer %5.2f",resL1outer$AICc)),
+       lty=c(1,1,2,2,3,3),col=c(2,5,3,6,4,7),lwd=2,title="AICc",ncol=3)
+```

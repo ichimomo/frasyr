@@ -1,5 +1,5 @@
 ---
-  title: "fitSR関数を再生産関係の推定"
+title: "fitSR関数を再生産関係の推定"
 author: "Shota Nisijima & Shin Fukui"
 date: "`r Sys.Date()`"
 output:
@@ -8,17 +8,24 @@ output:
 toc: yes
 toc_float: yes
 vignette: >
-  %\VignetteIndexEntry{再生産関係の推定}
-%\VignetteEngine{knitr::rmarkdown}
-%\VignetteEncoding{UTF-8}
+  %\VignetteIndexEntry{fittingSR}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
 
 再生産関係の推定を行う手順を説明します。将来予測・管理基準値計算チュートリアル (../docs/future.html) の例を使います。
 
 # get.SRdataによるデータ整形
 パッケージfrasyrのvpa関数の返り値を再生産関係を推定するfitSR関数に渡すまえに、fitSRの引数のオブジェクトをget.SRdata関数を使って作成します。
 
-```{r, warning=FALSE}
+```{r setup}
 library(frasyr)
 data(res_vpa)
 SRdata <- get.SRdata(res_vpa)
@@ -29,7 +36,6 @@ names(SRdata)
 # fitSRによる再生産関係の推定
 
 引数を指定することでHockey-Stick型/Beverton-Holt型/Ricker型のそれぞれで再生産関係を推定できます。また、methodオプションで推定方法として最小絶対値法と最小二乗法を選べます。さらに、加入の残差に時間トレンドを考慮し、オプションAR=1として自己相関を考慮することができます。
-
 ```{r, warning=FALSE}
 ## 再生産関係にHockey-Stick型を指定（SR="HS"）します。推定方法を最小二乗法とし（method="L2"）、自己相関を仮定しない（AR=0）場合。
 resL2 = fit.SR(SRdata, SR = "HS", method = "L2", out.AR = FALSE, AR = 0)
