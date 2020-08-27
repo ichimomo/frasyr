@@ -675,7 +675,7 @@ test_that("future_vpa function (carry over TAC) (level 2)",{
   data(res_sr_HSL2)
 
   data_future_test <- make_future_data(res_vpa, # VPAの結果
-                                       nsim = 100, # シミュレーション回数
+                                       nsim = 10, # シミュレーション回数
                                        nyear = 10, # 将来予測の年数
                                        future_initial_year_name = 2017, 
                                        start_F_year_name = 2018,
