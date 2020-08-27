@@ -534,3 +534,63 @@ test_that("future_vpa function (with dummy vpa data) for regime shift (level 2-3
   
 })
 
+
+test_that("future_vpa function (flexible beta) (level 2)",{
+  
+  data(res_vpa)
+  data(res_sr_HSL2)
+
+  specific_beta <- 0.5
+  data_future_test <- make_future_data(res_vpa, # VPAの結果
+                                       nsim = 100, # シミュレーション回数
+                                       nyear = 30, # 将来予測の年数
+                                       future_initial_year_name = 2017, 
+                                       start_F_year_name = 2018,
+                                       start_biopar_year_name=2018,
+                                       start_random_rec_year_name = 2018,
+                                       waa_year=2015:2017, waa=NULL,
+                                       waa_catch_year=2015:2017, waa_catch=NULL,
+                                       maa_year=2015:2017, maa=NULL,
+                                       M_year=2015:2017, M=NULL,
+                                       faa_year=2015:2017,
+                                       currentF=NULL,futureF=NULL, 
+                                       # HCR setting (not work when using TMB)
+                                       start_ABC_year_name=2019, # HCRを適用する最初の年
+                                       HCR_beta=1, # HCRのbeta
+                                       HCR_Blimit=-1, # HCRのBlimit
+                                       HCR_Bban=-1, # HCRのBban
+                                       HCR_year_lag=0, # HCRで何年遅れにするか
+                                       HCR_beta_year = tibble(year=2021:2023,beta=specific_beta),
+                                       # SR setting
+                                       res_SR=res_sr_HSL2, 
+                                       seed_number=1, # シード番号
+                                       resid_type="lognormal", 
+                                       resample_year_range=0, 
+                                       bias_correction=TRUE, 
+                                       recruit_intercept=0, 
+                                       # Other
+                                       Pope=res_vpa$input$Pope,
+                                       fix_recruit=NULL,
+                                       fix_wcatch=NULL)
+
+  expect_equal(as.numeric(apply(data_future_test$data$HCR_mat[,,"beta"],1,mean)[c("2021","2023")]),
+               rep(specific_beta,2))
+  
+  res_future <- future_vpa(tmb_data=data_future_test$data,
+                           optim_method="none", 
+                           multi_init = 1,SPRtarget=0.3)
+
+  expect_equal(as.numeric(apply(res_future$HCR_mat[,,"beta"],1,mean)[c("2021","2023")]),
+               rep(specific_beta,2))
+
+  res_bs <- beta.simulation(res_future$input,beta_vector=c(0.8,1),type="new",
+                            year_beta_change=2024:2100)
+  
+  res_bs %>% dplyr::filter(stat=="Fratio" & year>2020 & year < 2025) %>%
+      group_by(beta,year) %>% summarise(mean=mean(value)) %>%
+      ungroup()  %>%
+      select(mean)  %>%
+      round(3) %>% unlist() %>% as.numeric() %>%
+      expect_equal(c(rep(0.072,3),0.115,rep(0.072,3),0.143))
+
+})
