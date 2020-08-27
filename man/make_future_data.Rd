@@ -33,6 +33,8 @@ make_future_data(
   HCR_Bban = -1,
   HCR_year_lag = 0,
   HCR_beta_year = NULL,
+  HCR_TAC_reserve_rate = NA,
+  HCR_TAC_carry_rate = NA,
   Pope = res_vpa$input$Pope,
   fix_recruit = NULL,
   fix_wcatch = NULL,
@@ -89,6 +91,10 @@ make_future_data(
 \item{HCR_year_lag}{HCRするときにいつのタイミングのssbを参照するか.0の場合、ABC計算年のSSBを参照する。正の値1を入れると1年前のssbを参照する}
 
 \item{HCR_beta_year}{betaを年によって変える場合。tibble(year=2020:2024, beta=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える}
+
+\item{HCR_TAC_reserve_rate}{TACの取り残し率}
+
+\item{HCR_TAC_carry_rate}{TACの何％まで持ち越せるか}
 
 \item{Pope}{漁獲方程式にPopeの近似式を使うかどうか。与えない場合には、VPAのオプションが引き継がれる}
 

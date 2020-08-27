@@ -1877,7 +1877,7 @@ calc_Fratio <- function(faa, waa, maa, M, SPRtarget=30, waa.catch=NULL,Pope=TRUE
                                   M=M, waa=waa, waa.catch=waa.catch,maa=maa,
                                   min.age=0,max.age=Inf,Pope=Pope,ssb.coef=0)$spr %>% sum()
         SPR_est <- SPR_est/SPR0 * 100
-        if(abs(SPR_est-SPRtarget)>0.01) {browser(); return(NA)}
+        if(abs(SPR_est-SPRtarget)>0.01) {return(NA)}
         Fratio <- 1/exp(opt_res$minimum)
     }
     else{
