@@ -1149,4 +1149,9 @@ update_waa_mat <- function(waa,rand,naa,pars_b0,pars_b1){
 }
 
 
+#' @export
+#' @encoding UTF-8
 
+get_wcatch <- function(res_future){
+    apply(res_future$wcaa,c(2,3),sum)
+}
