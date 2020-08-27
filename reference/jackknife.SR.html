@@ -130,6 +130,7 @@
     <pre class="usage"><span class='fu'>jackknife.SR</span>(
   <span class='kw'>resSR</span>,
   is.plot = <span class='fl'>TRUE</span>,
+  use.p0 = <span class='fl'>TRUE</span>,
   output = <span class='fl'>FALSE</span>,
   filename = <span class='st'>"jackknife"</span>,
   ylim.range = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>0.5</span>, <span class='fl'>1.5</span>),
@@ -148,6 +149,10 @@
     <tr>
       <th>is.plot</th>
       <td><p>プロットするかどうか</p></td>
+    </tr>
+    <tr>
+      <th>use.p0</th>
+      <td><p>初期値に<code>resSR</code>の結果を使うか否か</p></td>
     </tr>
     <tr>
       <th>output</th>

@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Fit and draw SR line(s) over observed stock-recruitment plots — fit_draw_SRline • frasyr</title>
+<title>Steepness (h) と関連するパラメータ (SB0,R0,B0)を計算する関数 — calc_steepness • frasyr</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,8 @@
 
 
 
-<meta property="og:title" content="Fit and draw SR line(s) over observed stock-recruitment plots — fit_draw_SRline" />
-<meta property="og:description" content="Fit and draw SR line(s) over observed stock-recruitment plots" />
+<meta property="og:title" content="Steepness (h) と関連するパラメータ (SB0,R0,B0)を計算する関数 — calc_steepness" />
+<meta property="og:description" content="Steepness (h) と関連するパラメータ (SB0,R0,B0)を計算する関数" />
 
 
 
@@ -118,36 +118,66 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Fit and draw SR line(s) over observed stock-recruitment plots</h1>
+    <h1>Steepness (h) と関連するパラメータ (SB0,R0,B0)を計算する関数</h1>
     
-    <div class="hidden name"><code>fit_draw_SRline.Rd</code></div>
+    <div class="hidden name"><code>calc_steepness.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Fit and draw SR line(s) over observed stock-recruitment plots</p>
+    <p>Steepness (h) と関連するパラメータ (SB0,R0,B0)を計算する関数</p>
     </div>
 
-    <pre class="usage"><span class='fu'>fit_draw_SRline</span>(<span class='kw'>vpares</span>, <span class='kw'>SR</span>, <span class='kw'>method</span>, show.year = <span class='fl'>FALSE</span>)</pre>
+    <pre class="usage"><span class='fu'>calc_steepness</span>(SR = <span class='st'>"HS"</span>, <span class='kw'>rec_pars</span>, <span class='kw'>M</span>, <span class='kw'>waa</span>, <span class='kw'>maa</span>, plus_group = <span class='fl'>TRUE</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>SR</th>
-      <td><p>Vector of multiple SR model described in <code><a href='fit.SR.html'>fit.SR</a></code></p></td>
+      <td><p>"HS", "BH", "RI"のいずれか</p></td>
     </tr>
     <tr>
-      <th>method</th>
-      <td><p>Vector of multiple method described in <code><a href='fit.SR.html'>fit.SR</a></code></p></td>
+      <th>rec_pars</th>
+      <td><p>再生産関係のパラメータで<code>rec_pars$a</code>,<code>rec_pars$b</code>で使用する</p></td>
+    </tr>
+    <tr>
+      <th>M</th>
+      <td><p>年齢別自然死亡係数 (ベクトルで与えるか、年齢共通の場合<code>M=0.4</code>のようにしてもよい)</p></td>
+    </tr>
+    <tr>
+      <th>waa</th>
+      <td><p>（親魚量の）年齢別体重</p></td>
+    </tr>
+    <tr>
+      <th>maa</th>
+      <td><p>年齢別親魚量</p></td>
+    </tr>
+    <tr>
+      <th>plus_group</th>
+      <td><p>最高齢がプラスグループかどうか</p></td>
     </tr>
     </table>
+
+    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
+
+    
+
 
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='co'>if</span> (<span class='fl'>FALSE</span>) {
-<span class='fu'><a href='draw_SRline.html'>draw_SRline</a></span>(vpares = <span class='kw'>res_vpa</span>,
-            SR = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"HS"</span>, <span class='st'>"RI"</span>, <span class='st'>"BH"</span>),
-            method = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"L1"</span>, <span class='st'>"L2"</span>))
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>res_vpa</span>)
+<span class='kw'>SRdata</span> <span class='op'>&lt;-</span> <span class='fu'><a href='get.SRdata.html'>get.SRdata</a></span>(<span class='kw'>res_vpa</span>)
+<span class='kw'>resSR</span> <span class='op'>&lt;-</span> <span class='fu'><a href='fit.SR.html'>fit.SR</a></span>(<span class='kw'>SRdata</span>, SR = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"HS"</span>,<span class='st'>"BH"</span>,<span class='st'>"RI"</span>)[<span class='fl'>1</span>],
+                method = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"L1"</span>,<span class='st'>"L2"</span>)[<span class='fl'>2</span>], AR = <span class='fl'>1</span>,
+               out.AR = <span class='fl'>TRUE</span>)
+<span class='kw'>rec_pars</span> <span class='op'>=</span> <span class='kw'>resSR</span><span class='op'>$</span><span class='kw'>pars</span>
+<span class='kw'>year</span> <span class='op'>&lt;-</span> <span class='st'>"2017"</span>
+<span class='kw'>M</span> <span class='op'>=</span> <span class='kw'>res_vpa</span><span class='op'>$</span><span class='kw'>input</span><span class='op'>$</span><span class='kw'>dat</span><span class='op'>$</span><span class='kw'>M</span>[,<span class='kw'>year</span>]
+<span class='kw'>waa</span> <span class='op'>=</span> <span class='kw'>res_vpa</span><span class='op'>$</span><span class='kw'>input</span><span class='op'>$</span><span class='kw'>dat</span><span class='op'>$</span><span class='kw'>waa</span>[,<span class='kw'>year</span>]
+<span class='kw'>maa</span> <span class='op'>=</span> <span class='kw'>res_vpa</span><span class='op'>$</span><span class='kw'>input</span><span class='op'>$</span><span class='kw'>dat</span><span class='op'>$</span><span class='kw'>maa</span>[,<span class='kw'>year</span>]
+<span class='kw'>Res_h</span> <span class='op'>=</span> <span class='fu'>calc_steepness</span>(SR=<span class='kw'>SR</span>,rec_pars=<span class='kw'>rec_pars</span>,M=<span class='kw'>M</span>,waa=<span class='kw'>waa</span>,maa=<span class='kw'>maa</span>,plus_group=<span class='fl'>TRUE</span>)
+<span class='kw'>Res_h</span>
 }
 </div></pre>
   </div>

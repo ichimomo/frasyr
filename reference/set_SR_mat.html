@@ -40,8 +40,7 @@
 
 
 <meta property="og:title" content="将来予測用の再生産関係の設定を行う関数 — set_SR_mat" />
-<meta property="og:description" content="再生産関係をres_SRで与えると、res_vpaを見ながら残差を再計算したのち、start_random_rec_year_name以降の加入のdeviationを計算しSR_mat[,,&quot;deviance&quot;]に入れる。
-再生産関係をres_SRで与えると、res_vpaを見ながら残差を再計算したのち、start_random_rec_year_name以降の加入のdeviationを計算しSR_mat[,,&quot;deviance&quot;]に入れる。" />
+<meta property="og:description" content="再生産関係をres_SRで与えると、res_vpaを見ながら残差を再計算したのち、start_random_rec_year_name以降の加入のdeviationを計算しSR_mat[,,&quot;deviance&quot;]に入れる。" />
 
 
 
@@ -126,26 +125,9 @@
 
     <div class="ref-description">
     <p>再生産関係をres_SRで与えると、res_vpaを見ながら残差を再計算したのち、start_random_rec_year_name以降の加入のdeviationを計算しSR_mat[,,"deviance"]に入れる。</p>
-<p>再生産関係をres_SRで与えると、res_vpaを見ながら残差を再計算したのち、start_random_rec_year_name以降の加入のdeviationを計算しSR_mat[,,"deviance"]に入れる。</p>
     </div>
 
     <pre class="usage"><span class='fu'>set_SR_mat</span>(
-  res_vpa = <span class='kw'>NULL</span>,
-  <span class='kw'>start_random_rec_year_name</span>,
-  <span class='kw'>SR_mat</span>,
-  <span class='kw'>res_SR</span>,
-  <span class='kw'>seed_number</span>,
-  resid_type = <span class='st'>"lognormal"</span>,
-  bias_correction = <span class='fl'>TRUE</span>,
-  resample_year_range = <span class='fl'>0</span>,
-  backward_duration = <span class='fl'>5</span>,
-  recruit_intercept = <span class='fl'>0</span>,
-  recruit_age = <span class='fl'>0</span>,
-  model_average_option = <span class='kw'>NULL</span>,
-  regime_shift_option = <span class='kw'>NULL</span>
-)
-
-<span class='fu'>set_SR_mat</span>(
   res_vpa = <span class='kw'>NULL</span>,
   <span class='kw'>start_random_rec_year_name</span>,
   <span class='kw'>SR_mat</span>,

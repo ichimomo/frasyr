@@ -40,8 +40,7 @@
 
 
 <meta property="og:title" content="将来予測の実施関数 — future_vpa" />
-<meta property="og:description" content="将来予測の実施関数
-将来予測の実施関数" />
+<meta property="og:description" content="将来予測の実施関数" />
 
 
 
@@ -126,14 +125,13 @@
 
     <div class="ref-description">
     <p>将来予測の実施関数</p>
-<p>将来予測の実施関数</p>
     </div>
 
     <pre class="usage"><span class='fu'>future_vpa</span>(
   <span class='kw'>tmb_data</span>,
   optim_method = <span class='st'>"none"</span>,
   multi_init = <span class='fl'>1</span>,
-  multi_lower = <span class='fl'>0</span>,
+  multi_lower = <span class='fl'>1e-04</span>,
   multi_upper = <span class='fl'>10</span>,
   objective = <span class='st'>"MSY"</span>,
   obj_value = <span class='fl'>0</span>,
@@ -143,24 +141,9 @@
   MSE_nsim = <span class='kw'>NULL</span>,
   compile = <span class='fl'>FALSE</span>,
   output_format = <span class='st'>"new"</span>,
-  attach_input = <span class='fl'>TRUE</span>
-)
-
-<span class='fu'>future_vpa</span>(
-  <span class='kw'>tmb_data</span>,
-  optim_method = <span class='st'>"none"</span>,
-  multi_init = <span class='fl'>1</span>,
-  multi_lower = <span class='fl'>0</span>,
-  multi_upper = <span class='fl'>10</span>,
-  objective = <span class='st'>"MSY"</span>,
-  obj_value = <span class='fl'>0</span>,
-  obj_stat = <span class='st'>"mean"</span>,
-  do_MSE = <span class='kw'>NULL</span>,
-  MSE_input_data = <span class='kw'>NULL</span>,
-  MSE_nsim = <span class='kw'>NULL</span>,
-  compile = <span class='fl'>FALSE</span>,
-  output_format = <span class='st'>"new"</span>,
-  attach_input = <span class='fl'>TRUE</span>
+  attach_input = <span class='fl'>TRUE</span>,
+  SPRtarget = <span class='kw'>NULL</span>,
+  calc_SPR_year_name = <span class='kw'>NULL</span>
 )</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
