@@ -12,23 +12,19 @@ test_that("output value check",{
 
   res.SRfit <- list()
 
-  # fit.SR計算結果の読み込み
+  # fit.SR計算
   for (i in 1:nrow(SRmodel.list)){
-    SRfile <- sprintf("SRpma_%s_%s_AR%d_outAR%d.rda",SRmodel.list$SR.rel[i],SRmodel.list$L.type[i], SRmodel.list$AR.type[i],SRmodel.list$out.AR[i])
-
-    load(system.file("extdata",SRfile,package = "frasyr"))
-
-    res.SRfit[[i]] <- eval(parse(text=paste(sprintf("SRpma_%s_%s_AR%d_outAR%d",SRmodel.list$SR.rel[i],SRmodel.list$L.type[i], SRmodel.list$AR.type[i],SRmodel.list$out.AR[i]))))
-    }
+    res.SRfit[[i]] <- fit.SR(SRdata = SRdata_pma,SR=SRmodel.list$SR.rel[i],method=SRmodel.list$L.type[i],AR=SRmodel.list$AR.type[i],out.AR=SRmodel.list$out.AR[i])
+  }
 
   year <- as.character(max(res_vpa_pma$input$rec.year))
 
   #各SR推定の設定でテスト
 
   # テスト項目corSR
-  testcontens.corSR <-c("hessian","cov","cor")
+  testcontents.corSR <-c("hessian","cov","cor")
   # テスト項目steepness
-  testcontens.h <-c("SPR0","SB0","R0","h")
+  testcontents.h <-c("SPR0","SB0","R0","h")
   SPR0_by_getSPR <- get.SPR(res_vpa_pma)
 
   # test the returens of corSR and calc_steepness for each SR based on the SRmodel.list array
