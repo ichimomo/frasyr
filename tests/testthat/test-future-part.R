@@ -642,7 +642,7 @@ test_that("future_vpa function (MSE) (level 2)",{
                            multi_init = 1,SPRtarget=0.3,
                            do_MSE=TRUE, MSE_input_data=data_future_test10,MSE_nsim=1000) 
   
-  expect_equal(round(mean(get_wcatch(res_future_noMSE)["2019",])),33311) # 上と下は十分な計算回数実施すれば一致するはずだが、シードのちがいにより一致はしていない
+  expect_equal(round(mean(get_wcatch(res_future_noMSE)["2019",])),32311) # 上と下は十分な計算回数実施すれば一致するはずだが、シードのちがいにより一致はしていない
   expect_equal(round(mean(get_wcatch(res_future_MSE)["2019",])),32370)
 
   # sd=0の場合
