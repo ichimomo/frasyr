@@ -129,7 +129,9 @@ make_future_data <- function(res_vpa,
   HCR_mat <- array(0, dim=c(total_nyear, nsim, 8),
                    dimnames=list(year=allyear_name, nsim=1:nsim,
                                  par=c("beta","Blimit","Bban","gamma","year_lag", #1-5
-                                       "beta_gamma","wcatch","Fratio")))  # 6-8
+                                       "beta_gamma", # 6. 将来のFに乗じるmultiplierで、デフォルトではHCR.defaultから計算した値を入れて、これに将来のFを乗じてFを決める。この時点では何も入っていない
+                                       "wcatch", # 漁獲量。ここにあらかじめ値を入れているとこの漁獲量どおりに漁獲する
+                                       "Fratio")))  # 7-8
   class(SR_mat)  <- "myarray"
   class(HCR_mat) <- "myarray"
   
@@ -270,7 +272,7 @@ make_future_data <- function(res_vpa,
 
 #' 将来予測の実施関数
 #'
-#' @param tmb_data make_future_dataの返り値
+#' @param tmb_data make_future_dataの返り値。将来の生物パラメータや再生産関係のシナリオを年齢×年×シミュレーション回数で指定した様々なarrayが含まれる。
 #' @param SPR_target 目標とする\%SPR。NULL以外の値の場合、過去〜将来のそれぞれの年・シミュレーションが、目標とするF\%SPRに対して何倍にあたるか(F/Ftarget)を計算して、HCR_matの"Fratio"に入れる。HCRが生きている年については"beta_gamma"と一致するはず。
 #'
 #' @export
@@ -521,7 +523,7 @@ future_vpa_R <- function(naa_mat,
         MSE_dummy_data$naa_mat[] <-  N_mat[,,i] # true dynamics
         MSE_dummy_data$naa_mat[,(t-1):t,] <-  0 # estiamted as future
         MSE_dummy_data$faa_mat[,1:(t-1),] <-  F_mat[,1:(t-1),i] # we know true F even in future
-        MSE_dummy_data$faa_mat[,t,] <-  MSE_input_data$data$faa[,t,i] # alpha in ABC year is depends on future SSB
+        MSE_dummy_data$faa_mat[,t,] <-  MSE_input_data$data$faa[,t,i] # alpha in ABC year depends on future SSB
         MSE_dummy_data$waa_mat[] <-  waa_mat[,,i] # in case
         MSE_dummy_data$waa_catch_mat[] <-  waa_catch_mat[,,i] # in case
         MSE_dummy_data$maa_mat[] <-  maa_mat[,,i] # in case
@@ -552,6 +554,8 @@ future_vpa_R <- function(naa_mat,
         HCR_mat[t,i,"wcatch"] <- mean(apply(res_tmp$wcaa[,t,],2,sum)) # determine ABC in year t
         SR_MSE[t,i,"recruit"] <- mean(res_tmp$naa[1,t,])
         SR_MSE[t,i,"ssb"]     <- mean(res_tmp$SR_mat[t,,"ssb"])
+
+        # MSEでなく本来のFで漁獲していたらどうなっていたかの計算
         if(Pope==1){
           SR_MSE[t,i,"real_true_catch"] <- sum(N_mat[,t,i]*(1-exp(-F_mat[,t,i]))*exp(-M_mat[,t,i]/2) * waa_catch_mat[,t,i])
         }

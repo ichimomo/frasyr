@@ -45,12 +45,12 @@ calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=
 
 #'
 #' 年齢別生物パラメータとFと漁獲量を与えると与えた漁獲量と一致するFへの乗数を返す
-#'
+#' @param set_max1 廃止
 #' @export
 #' @encoding UTF-8
 
-caa.est.mat <- function(naa,saa,waa,M,catch.obs,Pope,set_max1=TRUE){
-  if(set_max1==TRUE) saa <- saa/max(saa)
+caa.est.mat <- function(naa,saa,waa,M,catch.obs,Pope,set_max1=TRUE,max_exploitation_rate=0.99){
+
   tmpfunc <- function(logx,catch.obs=catch.obs,naa=naa,saa=saa,waa=waa,M=M,out=FALSE,Pope=Pope){
     x <- exp(logx)
     if(isTRUE(Pope)){
@@ -61,15 +61,23 @@ caa.est.mat <- function(naa,saa,waa,M,catch.obs,Pope,set_max1=TRUE){
     }
     wcaa <- caa*waa
     if(out==FALSE){
-      return(log((sum(wcaa,na.rm=T)-catch.obs)^2))
+        return(log((sum(wcaa,na.rm=T)-catch.obs)^2))
     }
     else{
       return(caa)
     }
   }
-  tmp <- optimize(tmpfunc,log(c(0.000001,10)),catch.obs=catch.obs,naa=naa,saa=saa,waa=waa,M=M,Pope=Pope,out=FALSE)#,tol=.Machine$double.eps)
+
+  if(sum(naa*waa,na.rm=T) < catch.obs){
+    warning("Total biomass is under expected catch")
+    #catch.obs <- sum(naa*waa,na.rm=T) * max_exploitation_rate
+  }
+    
+  tmp <- optimize(tmpfunc,c(-10,10),catch.obs=catch.obs,naa=naa,saa=saa,waa=waa,M=M,Pope=Pope,out=FALSE)#,tol=.Machine$double.eps)
   tmp2 <- tmpfunc(logx=tmp$minimum,catch.obs=catch.obs,naa=naa,saa=saa,waa=waa,M=M,Pope=Pope,out=TRUE)
-  return(list(x=exp(tmp$minimum),caa=tmp2))
+  realized.catch <- sum(tmp2*waa)
+  if(abs(realized.catch/catch.obs-1)>0.1) warning("expected catch:",catch.obs,", realized catch:",realized.catch)
+  return(list(x=exp(tmp$minimum),caa=tmp2,realized.catch=realized.catch, expected.catch=catch.obs))
 }
 
 # #　上の関数とどっちが使われているか不明,,,多分使われていないのでコメントアウトする
