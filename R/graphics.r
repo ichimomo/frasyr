@@ -1593,12 +1593,12 @@ plot_bias_in_MSE <- function(fout, out="graph", error_scale="log", yrange=NULL){
   tmp <- convert_2d_future(fout$naa[1,,],            name="Recruits", label="true")
   recruit_dat$value_true <- tmp$value
 
-  real_ABC_dat <- convert_2d_future(fout$HCR_mat[,,"wcatch"],    name="realABC", label="estimate") %>%
+  real_ABC_dat <- convert_2d_future(fout$HCR_realized[,,"wcatch"],    name="realABC", label="estimate") %>%
     rename(value_est=value)
   tmp  <- convert_2d_future(fout$SR_MSE[,,"real_true_catch"], name="realABC", label="true")
   real_ABC_dat$value_true <- tmp$value
 
-  pseudo_ABC_dat <- convert_2d_future(fout$HCR_mat[,,"wcatch"],    name="pseudoABC", label="estimate") %>%
+  pseudo_ABC_dat <- convert_2d_future(fout$HCR_realized[,,"wcatch"],    name="pseudoABC", label="estimate") %>%
     rename(value_est=value)
   tmp  <- convert_2d_future(fout$SR_MSE[,,"pseudo_true_catch"], name="pseudoABC", label="true")
   pseudo_ABC_dat$value_true <- tmp$value

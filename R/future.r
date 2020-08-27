@@ -126,18 +126,17 @@ make_future_data <- function(res_vpa,
                                       "intercept","sd",#9-10
                                       "bias_factor", #11
                                       "blank2","blank3","blank4","blank5")))  
-  HCR_mat <- array(0, dim=c(total_nyear, nsim, 8),
+  HCR_mat <- array(0, dim=c(total_nyear, nsim, 5),
                    dimnames=list(year=allyear_name, nsim=1:nsim,
-                                 par=c("beta","Blimit","Bban","gamma","year_lag", #1-5
-                                       "beta_gamma", # 6. 将来のFに乗じるmultiplierで、デフォルトではHCR.defaultから計算した値を入れて、これに将来のFを乗じてFを決める。この時点では何も入っていない
-                                       "expect_wcatch", # 漁獲量。ここにあらかじめ値を入れているとこの漁獲量どおりに漁獲する
-                                       "Fratio")))  # 7-8
+                                 par=c("beta","Blimit","Bban","year_lag", #1-4
+                                       "expect_wcatch"))) # 漁獲量。ここにあらかじめ値を入れているとこの漁獲量どおりに漁獲する
+
   class(SR_mat)  <- "myarray"
   class(HCR_mat) <- "myarray"
   
   HCR_mat[,,"Blimit"] <- HCR_mat[,,"Bban"] <- -1
-  HCR_mat[,,"beta"] <- HCR_mat[,,"beta_gamma"] <- 1
-  
+#  HCR_mat[,,"beta"] <- HCR_mat[,,"beta_gamma"] <- 1
+  HCR_mat[,,"beta"] <- 1  
   
   # fill vpa data 
   waa_mat[,1:vpa_nyear,] <- as.matrix(res_vpa$input$dat$waa)
@@ -273,7 +272,7 @@ make_future_data <- function(res_vpa,
 #' 将来予測の実施関数
 #'
 #' @param tmb_data make_future_dataの返り値。将来の生物パラメータや再生産関係のシナリオを年齢×年×シミュレーション回数で指定した様々なarrayが含まれる。
-#' @param SPR_target 目標とする\%SPR。NULL以外の値の場合、過去〜将来のそれぞれの年・シミュレーションが、目標とするF\%SPRに対して何倍にあたるか(F/Ftarget)を計算して、HCR_matの"Fratio"に入れる。HCRが生きている年については"beta_gamma"と一致するはず。
+#' @param SPR_target 目標とする\%SPR。NULL以外の値の場合、過去〜将来のそれぞれの年・シミュレーションが、目標とするF\%SPRに対して何倍にあたるか(F/Ftarget)を計算して、HCR_realizedの"Fratio"に入れる。HCRが生きている年については"beta_gamma"と一致するはず。
 #'
 #' @export
 #' @encoding UTF-8
@@ -400,11 +399,11 @@ future_vpa <- function(tmb_data,
            all(res_future$waa_catch_mat[,i,j:(j-1)]==res_future$waa_catch_mat[,i,j:(j)]) &&
            all(res_future$maa[,i,j]==res_future$maa[,i,j-1]) &&
            all(res_future$M  [,i,j]==res_future$M  [,i,j-1])){
-          res_future$HCR_mat[i,j,"Fratio"] <- res_future$HCR_mat[i,j-1,"Fratio"]
+          res_future$HCR_realized[i,j,"Fratio"] <- res_future$HCR_realized[i,j-1,"Fratio"]
         }
         else{
           tmp <- res_future$naa[,i,j]>0
-          res_future$HCR_mat[i,j,"Fratio"] <-
+          res_future$HCR_realized[i,j,"Fratio"] <-
             calc_Fratio(faa=res_future$faa[tmp,i,j],
                         waa=res_future$waa[tmp,i,j],
                         maa=res_future$input$tmb_data$maa_mat[tmp,i,j],
@@ -457,6 +456,12 @@ future_vpa_R <- function(naa_mat,
   argname <- ls()
   tmb_data <- lapply(argname,function(x) eval(parse(text=x)))
   names(tmb_data) <- argname
+
+  HCR_realized <- array(0,dim=c(dim(HCR_mat)[[1]],dim(HCR_mat)[[2]],3),
+                        dimnames=list(dimnames(HCR_mat)[[1]],
+                                      dimnames(HCR_mat)[[2]],
+                                      c("wcatch", "beta_gamma", "Fratio")))
+  class(HCR_realized) <- "myarray"
   
   if(isTRUE(do_MSE)){
     MSE_seed <- MSE_input_data$input$seed_number + 1        
@@ -503,9 +508,9 @@ future_vpa_R <- function(naa_mat,
     if(t>=start_ABC_year){
       # harvest control rule
       ssb_tmp <- spawner_mat[cbind(t-HCR_mat[t,,"year_lag"],1:nsim)]
-      HCR_mat[t,,"beta_gamma"] <- HCR_default(ssb_tmp, HCR_mat[t,,"Blimit"],
+      HCR_realized[t,,"beta_gamma"] <- HCR_default(ssb_tmp, HCR_mat[t,,"Blimit"],
                                               HCR_mat[t,,"Bban"], HCR_mat[t,,"beta"])
-      F_mat[,t,] <- sweep(F_mat[,t,],2,HCR_mat[t,,"beta_gamma"],FUN="*")
+      F_mat[,t,] <- sweep(F_mat[,t,],2,HCR_realized[t,,"beta_gamma"],FUN="*")
     }
     
     if(isTRUE(do_MSE) && t>=start_ABC_year){
@@ -578,7 +583,7 @@ future_vpa_R <- function(naa_mat,
                                                                      Pope=as.logical(Pope))$x)
       F_mat[,t,which(F_max_tmp>0)] <- sweep(F_mat[,t,which(F_max_tmp>0)],#saa.tmp[,which(F_max_tmp>0)],
                                             2, fix_catch_multiplier, FUN="*")
-      HCR_mat[t,which(F_max_tmp>0),"beta_gamma"] <- HCR_mat[t,which(F_max_tmp>0),"beta_gamma"]*fix_catch_multiplier
+      HCR_realized[t,which(F_max_tmp>0),"beta_gamma"] <- HCR_realized[t,which(F_max_tmp>0),"beta_gamma"]*fix_catch_multiplier
     }
     
     if(t<total_nyear){
@@ -597,6 +602,7 @@ future_vpa_R <- function(naa_mat,
   else{
     wcaa_mat <- N_mat*(1-exp(-F_mat-M_mat))*F_mat/(F_mat+M_mat) * waa_catch_mat
   }
+  HCR_realized[,,"wcatch"] <- apply(wcaa,c(2,3),sum)
   
   if(isTRUE(do_MSE)){
     F_pseudo_mat <- MSE_input_data$data$faa
@@ -638,7 +644,7 @@ future_vpa_R <- function(naa_mat,
     tmb_data$SR_mat[,,"ssb"]  <- spawner_mat
     tmb_data$SR_mat[,,"recruit"]  <- N_mat[1,,]
     res <- list(naa=N_mat, wcaa=wcaa_mat, faa=F_mat, SR_mat=tmb_data$SR_mat,
-                HCR_mat=HCR_mat,multi=exp(x),waa=waa_mat, waa_catch_mat=waa_catch_mat)
+                HCR_mat=HCR_mat,HCR_realized=HCR_realized,multi=exp(x),waa=waa_mat, waa_catch_mat=waa_catch_mat)
     if(isTRUE(do_MSE)) res$SR_MSE <- SR_MSE
     return(res)
   }
@@ -1089,9 +1095,9 @@ format_to_old_future <- function(fout){
   fout_old$caa       <- fout$wcaa/fout_old$waa
   fout_old$multi     <- fout$multi
   fout_old$recruit   <- fout$SR_mat[,,"recruit"]
-  fout_old$beta_gamma     <- fout$HCR_mat[,,"beta_gamma"]
-  fout_old$alpha     <- fout$HCR_mat[,,"beta_gamma"]
-  fout_old$Fratio     <- fout$HCR_mat[,,"Fratio"]        
+  fout_old$beta_gamma     <- fout$HCR_realized[,,"beta_gamma"]
+  fout_old$alpha     <- fout$HCR_realized[,,"beta_gamma"]
+  fout_old$Fratio     <- fout$HCR_realized[,,"Fratio"]        
   return(fout_old)
 }
 
