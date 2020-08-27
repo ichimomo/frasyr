@@ -130,7 +130,7 @@ make_future_data <- function(res_vpa,
                    dimnames=list(year=allyear_name, nsim=1:nsim,
                                  par=c("beta","Blimit","Bban","gamma","year_lag", #1-5
                                        "beta_gamma", # 6. 将来のFに乗じるmultiplierで、デフォルトではHCR.defaultから計算した値を入れて、これに将来のFを乗じてFを決める。この時点では何も入っていない
-                                       "wcatch", # 漁獲量。ここにあらかじめ値を入れているとこの漁獲量どおりに漁獲する
+                                       "expect_wcatch", # 漁獲量。ここにあらかじめ値を入れているとこの漁獲量どおりに漁獲する
                                        "Fratio")))  # 7-8
   class(SR_mat)  <- "myarray"
   class(HCR_mat) <- "myarray"
@@ -200,7 +200,7 @@ make_future_data <- function(res_vpa,
   #        tmp <- naa_mat*(1-exp(-faa_mat-M))*faa_mat/(faa_mat+M) * waa_catch_mat
   #    }
   #    HCR_mat[,,"wcatch"] <- apply(tmp,c(2,3),sum)
-  HCR_mat[as.character(fix_wcatch$year), ,"wcatch"] <- fix_wcatch$wcatch
+  HCR_mat[as.character(fix_wcatch$year), ,"expect_wcatch"] <- fix_wcatch$wcatch
   
   waa_mat[is.na(waa_mat)] <- 0
   waa_catch_mat[is.na(waa_catch_mat)] <- 0            
@@ -551,7 +551,7 @@ future_vpa_R <- function(naa_mat,
         
         res_tmp <- safe_call(future_vpa_R,MSE_dummy_data) # do future projection
         #                if(t>55) browser()
-        HCR_mat[t,i,"wcatch"] <- mean(apply(res_tmp$wcaa[,t,],2,sum)) # determine ABC in year t
+        HCR_mat[t,i,"expect_wcatch"] <- mean(apply(res_tmp$wcaa[,t,],2,sum)) # determine ABC in year t
         SR_MSE[t,i,"recruit"] <- mean(res_tmp$naa[1,t,])
         SR_MSE[t,i,"ssb"]     <- mean(res_tmp$SR_mat[t,,"ssb"])
 
@@ -567,13 +567,13 @@ future_vpa_R <- function(naa_mat,
       }
     }        
     
-    if(sum(HCR_mat[t,,"wcatch"])>0){
+    if(sum(HCR_mat[t,,"expect_wcatch"])>0){
       F_max_tmp <- apply(F_mat[,t,],2,max)
       #            saa.tmp <- sweep(F_mat[,t,],2,F_max_tmp,FUN="/")
       fix_catch_multiplier <- purrr::map_dbl(which(F_max_tmp>0),
                                              function(x) caa.est.mat(N_mat[,t,x],F_mat[,t,x],#saa.tmp[,x],
                                                                      waa_catch_mat[,t,x],M_mat[,t,x],
-                                                                     HCR_mat[t,x,"wcatch"],
+                                                                     HCR_mat[t,x,"expect_wcatch"],
                                                                      set_max1=FALSE,
                                                                      Pope=as.logical(Pope))$x)
       F_mat[,t,which(F_max_tmp>0)] <- sweep(F_mat[,t,which(F_max_tmp>0)],#saa.tmp[,which(F_max_tmp>0)],
