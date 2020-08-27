@@ -665,3 +665,86 @@ test_that("future_vpa function (MSE) (level 2)",{
 
 
 })
+
+
+test_that("future_vpa function (carry over TAC) (level 2)",{
+  
+  data(res_vpa)
+  data(res_sr_HSL2)
+
+  data_future_test <- make_future_data(res_vpa, # VPAの結果
+                                       nsim = 10, # シミュレーション回数
+                                       nyear = 10, # 将来予測の年数
+                                       future_initial_year_name = 2017, 
+                                       start_F_year_name = 2018,
+                                       start_biopar_year_name=2018,
+                                       start_random_rec_year_name = 2018,
+                                       waa_year=2015:2017, waa=NULL,
+                                       waa_catch_year=2015:2017, waa_catch=NULL,
+                                       maa_year=2015:2017, maa=NULL,
+                                       M_year=2015:2017, M=NULL,
+                                       faa_year=2015:2017,
+                                       currentF=NULL,futureF=NULL, 
+                                       # HCR setting (not work when using TMB)
+                                       start_ABC_year_name=2019, # HCRを適用する最初の年
+                                       HCR_beta=1, # HCRのbeta
+                                       HCR_Blimit=-1, # HCRのBlimit
+                                       HCR_Bban=-1, # HCRのBban
+                                       HCR_year_lag=0, # HCRで何年遅れにするか
+                                       HCR_TAC_reserve_rate=0.2,
+                                       HCR_TAC_carry_rate=0.2,
+                                       # SR setting
+                                       res_SR=res_sr_HSL2, 
+                                       seed_number=1, # シード番号
+                                       resid_type="lognormal", 
+                                       resample_year_range=0, 
+                                       bias_correction=TRUE, 
+                                       recruit_intercept=0, 
+                                       # Other
+                                       Pope=res_vpa$input$Pope,
+                                       fix_recruit=NULL,
+                                       fix_wcatch=NULL)
+ 
+  res_future_noMSE <- future_vpa(tmb_data=data_future_test$data,
+                           optim_method="none", 
+                           multi_init = 1,SPRtarget=0.3,
+                           do_MSE=FALSE, MSE_input_data=data_future_test)
+
+  # 取り残し分を考慮した想定される漁獲量
+  res_future_noMSE$HCR_mat[as.character(2018:2023),1:3,"expect_wcatch"]
+  # 実際の漁獲量
+  res_future_noMSE$HCR_realized[as.character(2018:2023),1:3,"wcatch"]
+  # 本当のABC
+  res_future_noMSE$HCR_realized[as.character(2018:2023),1:3,"original_ABC"]
+  # 全年の取り残し分を足したときの本当のABC
+  res_future_noMSE$HCR_realized[as.character(2018:2023),1:3,"original_ABC"]  
+  
+
+  res_future_MSE <- future_vpa(tmb_data=data_future_test$data,
+                           optim_method="none", 
+                           multi_init = 1,SPRtarget=0.3,
+                           do_MSE=TRUE, MSE_input_data=data_future_test10,MSE_nsim=10) 
+  
+  expect_equal(round(mean(get_wcatch(res_future_noMSE)["2019",])),32311) # 上と下は十分な計算回数実施すれば一致するはずだが、シードのちがいにより一致はしていない
+  expect_equal(round(mean(get_wcatch(res_future_MSE)["2019",])),32370)
+
+  # sd=0の場合
+  res_sr_HSL2_sd0 <- res_sr_HSL2
+  res_sr_HSL2_sd0$pars$sd <- 0
+  data_future_sd0 <- list_modify(data_future_test10$input,nsim=5,res_SR=res_sr_HSL2_sd0) %>%
+      safe_call(make_future_data,.)
+
+  res_future_noMSE <- future_vpa(tmb_data=data_future_sd0$data,
+                           optim_method="none", 
+                           multi_init = 1,SPRtarget=0.3,
+                           do_MSE=FALSE, MSE_input_data=data_future_sd0)
+
+  res_future_MSE <- future_vpa(tmb_data=data_future_sd0$data,
+                           optim_method="none", 
+                           multi_init = 1,SPRtarget=0.3,
+                           do_MSE=TRUE, MSE_input_data=data_future_sd0)   
+  expect_equal(all(round(res_future_MSE$naa[,,1]/res_future_noMSE$naa[,,1],3)==1),TRUE)
+
+
+
+})

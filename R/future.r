@@ -24,6 +24,8 @@
 #' @param HCR_Bban HCRのBban
 #' @param HCR_year_lag HCRするときにいつのタイミングのssbを参照するか.0の場合、ABC計算年のSSBを参照する。正の値1を入れると1年前のssbを参照する
 #' @param HCR_beta_year betaを年によって変える場合。tibble(year=2020:2024, beta=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える
+#' @param HCR_TAC_reserve_rate TACの取り残し率
+#' @param HCR_TAC_carry_rate TACの何％まで持ち越せるか
 #' @param Pope 漁獲方程式にPopeの近似式を使うかどうか。与えない場合には、VPAのオプションが引き継がれる
 #' @param fix_recruit 将来予測において再生産関係を無視して加入量を一定値で与える場合、その加入の値。list(year=2020, rec=1000)のように与える。
 #' @param fix_wcatch 将来予測において漁獲量をあらかじめ決める場合
@@ -66,6 +68,8 @@ make_future_data <- function(res_vpa,
                              HCR_Bban=-1,
                              HCR_year_lag=0,
                              HCR_beta_year=NULL, # tibble(year=2020:2024, beta=c(1.3,1.2,1.1,1,0.9))
+                             HCR_TAC_reserve_rate=NA, 
+                             HCR_TAC_carry_rate=NA,
                              # Other
                              Pope=res_vpa$input$Pope,
                              fix_recruit=NULL, # list(year=2020, rec=1000)
@@ -126,17 +130,22 @@ make_future_data <- function(res_vpa,
                                       "intercept","sd",#9-10
                                       "bias_factor", #11
                                       "blank2","blank3","blank4","blank5")))  
-  HCR_mat <- array(0, dim=c(total_nyear, nsim, 5),
+  HCR_mat <- array(0, dim=c(total_nyear, nsim, 7),
                    dimnames=list(year=allyear_name, nsim=1:nsim,
                                  par=c("beta","Blimit","Bban","year_lag", #1-4
-                                       "expect_wcatch"))) # 漁獲量。ここにあらかじめ値を入れているとこの漁獲量どおりに漁獲する
+                                       "expect_wcatch",# 5 漁獲量。ここにあらかじめ値を入れているとこの漁獲量どおりに漁獲する
+                                       # 以下、取り残し用の設定
+                                       "TAC_reserve_rate", # 6 TACの何割まで漁獲するか
+                                       "TAC_carry_rate" # 7 TACの何割まで翌年に持ち越すか
+                                       ))) 
 
   class(SR_mat)  <- "myarray"
   class(HCR_mat) <- "myarray"
   
   HCR_mat[,,"Blimit"] <- HCR_mat[,,"Bban"] <- -1
 #  HCR_mat[,,"beta"] <- HCR_mat[,,"beta_gamma"] <- 1
-  HCR_mat[,,"beta"] <- 1  
+  HCR_mat[,,"beta"] <- 1
+  HCR_mat[,,"TAC_reserve_rate"] <- HCR_mat[,,"TAC_carry_rate"] <- NA
   
   # fill vpa data 
   waa_mat[,1:vpa_nyear,] <- as.matrix(res_vpa$input$dat$waa)
@@ -184,6 +193,9 @@ make_future_data <- function(res_vpa,
   HCR_mat[start_ABC_year:total_nyear,,"Blimit"  ] <- HCR_Blimit
   HCR_mat[start_ABC_year:total_nyear,,"Bban"    ] <- HCR_Bban    
   HCR_mat[start_ABC_year:total_nyear,,"year_lag"] <- HCR_year_lag
+  HCR_mat[start_ABC_year:total_nyear,,"TAC_reserve_rate"] <- HCR_TAC_reserve_rate
+  HCR_mat[start_ABC_year:total_nyear,,"TAC_carry_rate"] <- HCR_TAC_carry_rate
+  
   
   if(!is.null(HCR_beta_year)){
     HCR_mat[as.character(HCR_beta_year$year),,"beta"] <- HCR_beta_year$beta
@@ -457,10 +469,11 @@ future_vpa_R <- function(naa_mat,
   tmb_data <- lapply(argname,function(x) eval(parse(text=x)))
   names(tmb_data) <- argname
 
-  HCR_realized <- array(0,dim=c(dim(HCR_mat)[[1]],dim(HCR_mat)[[2]],3),
+  HCR_realized_name <- c("wcatch", "beta_gamma", "Fratio","reserved_catch","original_ABC","original_ABC_plus")
+  HCR_realized <- array(0,dim=c(dim(HCR_mat)[[1]],dim(HCR_mat)[[2]],length(HCR_realized_name)),
                         dimnames=list(dimnames(HCR_mat)[[1]],
                                       dimnames(HCR_mat)[[2]],
-                                      c("wcatch", "beta_gamma", "Fratio")))
+                                      HCR_realized_name))
   class(HCR_realized) <- "myarray"
   
   if(isTRUE(do_MSE)){
@@ -570,20 +583,30 @@ future_vpa_R <- function(naa_mat,
         
         MSE_seed <- MSE_seed+1
       }
-    }        
+    }
+
+    # TAC carry over setting
+    if(sum(!is.na(HCR_mat[t,,"TAC_reserve_rate"]))>0){
+      HCR_realized[t,,"original_ABC"] <-
+        catch_equation(N_mat[,t,],F_mat[,t,],waa_catch_mat[,t,],M_mat[,t,],Pope=Pope) %>% colSums()
+      HCR_realized[t,,"original_ABC_plus"] <- HCR_realized[t,,"original_ABC"] + HCR_realized[t,,"reserved_catch"]
+      HCR_mat[t,,"expect_wcatch"] <- HCR_realized[t,,"original_ABC_plus"] * (1-HCR_mat[t,,"TAC_reserve_rate"])
+      if(t<total_nyear) HCR_realized[t+1,,"reserved_catch"] <- HCR_realized[t,,"original_ABC"] * min(HCR_mat[t,,"TAC_reserve_rate"],HCR_mat[t,,"TAC_carry_rate"])
+    }
     
     if(sum(HCR_mat[t,,"expect_wcatch"])>0){
       F_max_tmp <- apply(F_mat[,t,],2,max)
-      #            saa.tmp <- sweep(F_mat[,t,],2,F_max_tmp,FUN="/")
+      # F_mat[,t,]がものすごく小さい値になっている場合、そのままで入れるとFへの乗数が壁に当たる場合があるので最大１で正規化する
+      saa.tmp <- sweep(F_mat[,t,],2,F_max_tmp,FUN="/")
       fix_catch_multiplier <- purrr::map_dbl(which(F_max_tmp>0),
-                                             function(x) caa.est.mat(N_mat[,t,x],F_mat[,t,x],#saa.tmp[,x],
+                                             function(x) caa.est.mat(N_mat[,t,x],saa.tmp[,x],#F_mat[,t,x],#saa.tmp[,x],
                                                                      waa_catch_mat[,t,x],M_mat[,t,x],
                                                                      HCR_mat[t,x,"expect_wcatch"],
                                                                      set_max1=FALSE,
                                                                      Pope=as.logical(Pope))$x)
-      F_mat[,t,which(F_max_tmp>0)] <- sweep(F_mat[,t,which(F_max_tmp>0)],#saa.tmp[,which(F_max_tmp>0)],
-                                            2, fix_catch_multiplier, FUN="*")
-      HCR_realized[t,which(F_max_tmp>0),"beta_gamma"] <- HCR_realized[t,which(F_max_tmp>0),"beta_gamma"]*fix_catch_multiplier
+      F_mat[,t,which(F_max_tmp>0)] <- sweep(saa.tmp[,which(F_max_tmp>0)],2, fix_catch_multiplier, FUN="*")
+      HCR_realized[t,which(F_max_tmp>0),"beta_gamma"] <- HCR_realized[t,which(F_max_tmp>0),"beta_gamma"] *
+                                            fix_catch_multiplier / F_max_tmp[which(F_max_tmp>0)]
     }
     
     if(t<total_nyear){
@@ -602,7 +625,7 @@ future_vpa_R <- function(naa_mat,
   else{
     wcaa_mat <- N_mat*(1-exp(-F_mat-M_mat))*F_mat/(F_mat+M_mat) * waa_catch_mat
   }
-  HCR_realized[,,"wcatch"] <- apply(wcaa,c(2,3),sum)
+  HCR_realized[,,"wcatch"] <- apply(wcaa_mat,c(2,3),sum)
   
   if(isTRUE(do_MSE)){
     F_pseudo_mat <- MSE_input_data$data$faa

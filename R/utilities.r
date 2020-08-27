@@ -107,6 +107,16 @@ caa.est.mat <- function(naa,saa,waa,M,catch.obs,Pope,set_max1=TRUE,max_exploitat
 #   return(list(x=tmp$minimum,caa=tmp2))
 # }
 
+catch_equation <- function(naa,faa,waa,M,Pope=TRUE){
+  if(isTRUE(Pope)) Pope <- 1
+  if(Pope==1){
+    wcaa_mat <- naa*(1-exp(-faa))*exp(-M/2) * waa
+  }
+  else{
+    wcaa_mat <- naa*(1-exp(-faa-M))*faa/(faa+M) * waa
+  }
+}
+
 #' @export
 #' @encoding UTF-8
 
