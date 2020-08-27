@@ -10,7 +10,8 @@ do_jackknife_vpa(
   method = "index",
   what_plot = NULL,
   ncol = 5,
-  plot_year = NULL
+  plot_year = NULL,
+  scale_value = NULL
 )
 }
 \arguments{

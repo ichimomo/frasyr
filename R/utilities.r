@@ -1392,14 +1392,24 @@ make_kobeII_table <- function(kobeII_data,
 
 #' kobeII matrixの簡易版（Btarget, Blimitは決め打ちでβのみ変える)
 #'
+#' @param year_beta_change betaを変更する年の範囲。NULLの場合には全部の年を変える。
+#' 
 #' @encoding UTF-8
 #' @export
 #'
 #'
 
-beta.simulation <- function(finput,beta_vector,year.lag=0,type="old"){
+beta.simulation <- function(finput,beta_vector,year.lag=0,type="old",year_beta_change=NULL,
+                            output_type="tidy"){
 
   tb <- NULL
+  future_year <- dimnames(finput$tmb_data$HCR_mat)[[1]]
+  if(!is.null(year_beta_change)){
+    year_column_beta_change <- future_year %in% year_beta_change
+  }
+  else{
+    year_column_beta_change <- TRUE
+  }
 
   for(i in 1:length(beta_vector)){
     if(type=="old"){
@@ -1410,7 +1420,7 @@ beta.simulation <- function(finput,beta_vector,year.lag=0,type="old"){
         stop("old function of future.vpa is not supported now")
     }
     else{
-      finput$tmb_data$HCR_mat[,,"beta"] <- beta_vector[i]
+      finput$tmb_data$HCR_mat[year_column_beta_change,,"beta"] <- beta_vector[i]
       if(!is.null(finput$MSE_input_data)) finput$MSE_input_data$input$HCR_beta <- beta_vector[i]
       fres_base <- do.call(future_vpa,finput) # デフォルトルールの結果→図示などに使う
       fres_base <- format_to_old_future(fres_base)
