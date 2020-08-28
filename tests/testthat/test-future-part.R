@@ -593,6 +593,17 @@ test_that("future_vpa function (flexible beta) (level 2)",{
       round(3) %>% unlist() %>% as.numeric() %>%
       expect_equal(c(rep(0.072,3),0.115,rep(0.072,3),0.143))
 
+  #flexible HCR
+  HCR_specific <<- function(ssb, Blimit, Bban, beta, year_name){
+      return(0)
+  }
+  
+  res_future_myHCR <- data_future_test$data %>%
+      list_modify(HCR_function_name="HCR_specific",nsim=10) %>%
+      future_vpa(optim_method="none")
+
+  expect_equal(all(res_future_myHCR$faa[,as.character(2019:2047),]==0),TRUE)
+
 })
 
 test_that("future_vpa function (MSE) (level 2)",{
@@ -742,5 +753,6 @@ test_that("future_vpa function (carry over TAC) (level 2)",{
   boxplot(t(res_future_MSE$HCR_realized[as.character(2018:2027),,"wcatch"]),add=TRUE,col="pink",boxwex=0.3)
   
   plot_futures(res_vpa,list(res_future_MSE,res_future_noMSE,res_future_noreserve))
+  
   
 })

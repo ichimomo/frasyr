@@ -35,6 +35,7 @@ make_future_data(
   HCR_beta_year = NULL,
   HCR_TAC_reserve_rate = NA,
   HCR_TAC_carry_rate = NA,
+  HCR_function_name = "HCR_default",
   Pope = res_vpa$input$Pope,
   fix_recruit = NULL,
   fix_wcatch = NULL,
@@ -95,6 +96,8 @@ make_future_data(
 \item{HCR_TAC_reserve_rate}{TACの取り残し率}
 
 \item{HCR_TAC_carry_rate}{TACの何％まで持ち越せるか}
+
+\item{HCR_function_name}{デフォルトは"HCR_default" ここを変更(関数名を文字列で与える。関数は別に定義しておく)すると自作のHCRが適用される。その場合、データのほうで定義されているbeta, Blimit, Bbanなど、同じ名前のものは有効}
 
 \item{Pope}{漁獲方程式にPopeの近似式を使うかどうか。与えない場合には、VPAのオプションが引き継がれる}
 

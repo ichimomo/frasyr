@@ -27,6 +27,7 @@
 #' @param HCR_TAC_reserve_rate TACの取り残し率
 #' @param HCR_TAC_carry_rate TACの何％まで持ち越せるか
 #' @param Pope 漁獲方程式にPopeの近似式を使うかどうか。与えない場合には、VPAのオプションが引き継がれる
+#' @param HCR_function_name デフォルトは"HCR_default" ここを変更(関数名を文字列で与える。関数は別に定義しておく)すると自作のHCRが適用される。その場合、データのほうで定義されているbeta, Blimit, Bbanなど、同じ名前のものは有効
 #' @param fix_recruit 将来予測において再生産関係を無視して加入量を一定値で与える場合、その加入の値。list(year=2020, rec=1000)のように与える。
 #' @param fix_wcatch 将来予測において漁獲量をあらかじめ決める場合
 #' @param res_SR 再生産関係の推定関数 (fit.SR　of fit.SRregime) の返り値
@@ -70,6 +71,7 @@ make_future_data <- function(res_vpa,
                              HCR_beta_year=NULL, # tibble(year=2020:2024, beta=c(1.3,1.2,1.1,1,0.9))
                              HCR_TAC_reserve_rate=NA, 
                              HCR_TAC_carry_rate=NA,
+                             HCR_function_name="HCR_default",
                              # Other
                              Pope=res_vpa$input$Pope,
                              fix_recruit=NULL, # list(year=2020, rec=1000)
@@ -243,7 +245,8 @@ make_future_data <- function(res_vpa,
                    HCR_mat = HCR_mat,
                    obj_stat = 0, # 0: mean, 1:geomean
                    objective = 0, # 0: MSY, 1: PGY, 2: percentB0 or Bempirical
-                   obj_value = -1
+                   obj_value = -1,
+                   HCR_function_name=HCR_function_name
   )
   
   if(isTRUE(waa_fun)){
@@ -330,6 +333,7 @@ future_vpa <- function(tmb_data,
     #        if(!is.null(rec_new) | !is.null(wcatch_fix)){
     #            stop("rec_new or wcatch_fix option cannot be used in \"tmb\" option\n")
     #        }
+    tmb_data$HCR_function_name <- NULL
     
     # comple & load cpp file
     use_rvpa_tmb(TmbFile = "est_MSY_tmb",
@@ -456,6 +460,7 @@ future_vpa_R <- function(naa_mat,
                          x,
                          what_return="obj",
                          HCR_mat,
+                         HCR_function_name,
                          do_MSE=NULL,
                          MSE_input_data=NULL,
                          MSE_nsim = NULL,
@@ -464,6 +469,9 @@ future_vpa_R <- function(naa_mat,
 ){
   
   options(deparse.max.lines=10)
+
+  HCR_function <- get(HCR_function_name)
+  allyear_name <- as.numeric(dimnames(SR_mat)[[1]])
   
   argname <- ls()
   tmb_data <- lapply(argname,function(x) eval(parse(text=x)))
@@ -521,8 +529,8 @@ future_vpa_R <- function(naa_mat,
     if(t>=start_ABC_year){
       # harvest control rule
       ssb_tmp <- spawner_mat[cbind(t-HCR_mat[t,,"year_lag"],1:nsim)]
-      HCR_realized[t,,"beta_gamma"] <- HCR_default(ssb_tmp, HCR_mat[t,,"Blimit"],
-                                              HCR_mat[t,,"Bban"], HCR_mat[t,,"beta"])
+      HCR_realized[t,,"beta_gamma"] <- HCR_function(ssb_tmp, HCR_mat[t,,"Blimit"],
+                                              HCR_mat[t,,"Bban"], HCR_mat[t,,"beta"],allyear_name[t])
       F_mat[,t,] <- sweep(F_mat[,t,],2,HCR_realized[t,,"beta_gamma"],FUN="*")
     }
     
@@ -639,10 +647,11 @@ future_vpa_R <- function(naa_mat,
   
   if(isTRUE(do_MSE)){
     F_pseudo_mat <- MSE_input_data$data$faa
-    beta_gamma <- HCR_default(spawner_mat,
+    beta_gamma <- HCR_function(spawner_mat,
                               MSE_input_data$data$HCR_mat[,,"Blimit"],
                               MSE_input_data$data$HCR_mat[,,"Bban"],
-                              MSE_input_data$data$HCR_mat[,,"beta"])
+                              MSE_input_data$data$HCR_mat[,,"beta"],
+                              allyear_name[t])
     F_pseudo_mat[] <- sweep(F_pseudo_mat,c(2,3),beta_gamma,FUN="*")
     
     if(Pope==1){
@@ -1161,7 +1170,7 @@ safe_call <- function(func,args,force=FALSE,...){
 #' @export
 #' @encoding UTF-8
 
-HCR_default <- function(ssb, Blimit, Bban, beta){
+HCR_default <- function(ssb, Blimit, Bban, beta, year_name){
   beta_gamma <- beta
   tmp <- ssb < Blimit
   beta_gamma[tmp] <- beta[tmp]*(ssb[tmp]-Bban[tmp])/(Blimit[tmp]-Bban[tmp])
