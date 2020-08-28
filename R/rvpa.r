@@ -467,6 +467,7 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param eta  Fのpenaltyを分けて与えるときにeta.ageで指定した年齢への相対的なpenalty (0~1)
 #' @param eta.age  Fのpenaltyを分けるときにetaを与える年齢(0 = 0歳（加入）,0:1 = 0~1歳)
 #' @param tmb.file  TMB=TRUEのとき使用するcppファイルの名前
+#' @param remove.abund ある値を引いた値に対してチューニングに使用する（トラフグ伊勢・三河湾系群で放流魚を引いて天然魚のみに対してチューニングするため）. 
 #' @encoding UTF-8
 #'
 #' @export
@@ -545,7 +546,8 @@ vpa <- function(
   sigma.constraint = 1:length(abund),
   eta = NULL,
   eta.age = 0,
-  tmb.file = "rvpa_tmb"
+  tmb.file = "rvpa_tmb",
+  remove.abund = NULL
 )
 {
   #sigma.constで引数を指定してしまったときは，sigma.constraintで引数を指定しなおしてもらうようにする
@@ -918,6 +920,13 @@ vpa <- function(
 
        for (i in 1:nindex){
          abundance <- abund.extractor(abund=abund[i], naa, faa, dat, min.age=min.age[i], max.age=max.age[i], link=link[i], base=base[i], af=af[i], catch.prop=catch.prop, sel.def=sel.def, p.m=p.m, omega=omega, scale=scale)
+         if (!is.null(remove.abund)) {
+           if (nrow(remove.abund)!=nindex || ncol(remove.abund)!=ncol(dat$caa)) {
+             stop("The dimension of 'remove.abund' must be the same as that of 'caa'")
+           }
+           abundance <- abundance - as.numeric(remove.abund[i,])
+           abundance[abundance<1e-6] <- 1e-6
+           }
          Abund <- rbind(Abund, abundance)
        }
 
@@ -943,6 +952,10 @@ vpa <- function(
         for (i in 1:nindex)
         {
             abundance <- abund.extractor(abund=abund[i], naa, faa, dat, min.age=min.age[i], max.age=max.age[i], link=link[i], base=base[i], af=af[i], catch.prop=catch.prop, sel.def=sel.def, p.m=p.m, omega=omega, scale=scale)
+            if (!is.null(remove.abund)) {
+              abundance <- abundance - as.numeric(remove.abund[i,])
+              abundance[abundance<1e-6] <- 1e-6
+            }
             Abund <- rbind(Abund, abundance)
             avail <- which(!is.na(as.numeric(index[i,])))
             if (b.est)
@@ -980,6 +993,10 @@ vpa <- function(
         for (i in 1:nindex)
         {
             abundance <- abund.extractor(abund=abund[i], naa, faa, dat, min.age=min.age[i], max.age=max.age[i], link=link[i], base=base[i], af=af[i], catch.prop=catch.prop, sel.def=sel.def, p.m=p.m, omega=omega, scale=scale)
+            if (!is.null(remove.abund)) {
+              abundance <- abundance - as.numeric(remove.abund[i,])
+              abundance[abundance<1e-6] <- 1e-6
+            }
             Abund <- rbind(Abund, abundance)
             avail <- which(!is.na(as.numeric(index[i,])))
             nn[i] <- length(avail)
@@ -1026,6 +1043,10 @@ vpa <- function(
             for(j in index.num)
             {
                 abundance <- abund.extractor(abund=abund[j], naa, faa, dat, min.age=min.age[j], max.age=max.age[j], link=link[j], base=base[j], af=af[j], catch.prop=catch.prop, sel.def=sel.def, p.m=p.m, omega=omega, scale=scale)
+                if (!is.null(remove.abund)) {
+                  abundance <- abundance - as.numeric(remove.abund[i,])
+                  abundance[abundance<1e-6] <- 1e-6
+                }
                 avail <- which(!is.na(as.numeric(index[j,])))
                 sq.error <- sq.error + sum((log(as.numeric(index[j,avail]))-log(q[j])-b[j]*log(as.numeric(abundance[avail])))^2)
             }
@@ -1034,6 +1055,10 @@ vpa <- function(
         for (i in 1:nindex)
         {
             abundance <- abund.extractor(abund=abund[i], naa, faa, dat, min.age=min.age[i], max.age=max.age[i], link=link[i], base=base[i], af=af[i], catch.prop=catch.prop, sel.def=sel.def, p.m=p.m, omega=omega, scale=scale)
+            if (!is.null(remove.abund)) {
+              abundance <- abundance - as.numeric(remove.abund[i,])
+              abundance[abundance<1e-6] <- 1e-6
+            }
             avail <- which(!is.na(as.numeric(index[i,])))
             obj <- c(obj,index.w[i]*(-as.numeric(na.omit(dnorm(log(as.numeric(index[i,avail])),log(q[i])+b[i]*log(as.numeric(abundance[avail])),sigma[i],log=TRUE)))))
         }
@@ -1501,7 +1526,7 @@ boo.vpa <- function(res,B=5,method="p",mean.correction=FALSE){
 
   return(Res1)
 }
-
+c
 
 logit <- function(x) log(x/(1-x))
 
@@ -1538,12 +1563,14 @@ cv.est <- function(res,n=5){
 #' @param b.fix b推定してる場合にbを固定するかどうか
 #' @param remove.maxAgeF Mohn's rhoを計算する際に最高齢のFを除くか（alphaを仮定して計算していることが多いから）
 #' @param ssb.forecast Mohn's rhoを計算する際にSSBは1年後を計算するか(last.catch.zero=TRUEのときのみ有効)
+#' @param grid.add.ini \code{add.p.ini}をgridで変えて初期値を事前に探索する
 #' @encoding UTF-8
 #' @export
 #'
 
 retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE,
-                      remove.maxAgeF=FALSE,ssb.forecast=FALSE,sel.mat=NULL){
+                      remove.maxAgeF=FALSE,ssb.forecast=FALSE,sel.mat=NULL,
+                      grid.add.ini = NULL){
    res.c <- res
    res.c$input$plot <- FALSE
    Res <- list()
@@ -1580,6 +1607,7 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE,
      res.c$input$tf.year <- res.c$input$tf.year-1
      res.c$input$fc.year <- res.c$input$fc.year-1
      if (!is.null(res.c$input$tf.mat)) res.c$input$tf.mat <- res.c$input$tf.mat[,-1]
+     if (!is.null(res.c$input$remove.abund)) res.c$input$remove.abund <- res.c$input$remove.abund[,-nc]
 
      if (!is.null(sel.mat)) {
        if (any(dim(sel.mat) != c(nrow(res$saa),n))) {
@@ -1593,6 +1621,21 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE,
      # last.catch.zero = TRUE用に修正
      if (res.c$input$last.catch.zero) {res.c$input$dat$caa[,nc-1] <- 0; Y <- nc-2} else Y <- nc-1
 
+     # res1 <- do.call(vpa,res.c$input) # do.callからsafe_callに変更(浜辺'20/06/30)
+     
+     if (!is.null(grid.add.ini)) {
+       input_tmp = res.c$input
+       res_list = grid.add.ini %>% map(function(x) {
+         input_tmp$no.est = TRUE
+         input_tmp$add.p.ini <- x
+         RES = do.call(vpa,input_tmp)
+       })
+       nan_v = sapply(1:10, function(i) sum(is.nan(res_list[[i]]$sigma)))
+       loglik_v = sapply(1:10, function(i) res_list[[i]]$logLik)
+       pos = which(loglik_v == max(loglik_v[nan_v==0]))
+       res.c$input$add.p.ini <- grid.add.ini[pos]
+     }
+     
      res1 <- safe_call(vpa,res.c$input, force=TRUE) # do.callからsafe_callに変更(浜辺'20/06/30)
 
      Res[[i]] <- res1

@@ -13,7 +13,8 @@ retro.est(
   b.fix = TRUE,
   remove.maxAgeF = FALSE,
   ssb.forecast = FALSE,
-  sel.mat = NULL
+  sel.mat = NULL,
+  grid.add.ini = NULL
 )
 }
 \arguments{
@@ -26,6 +27,8 @@ retro.est(
 \item{remove.maxAgeF}{Mohn's rhoを計算する際に最高齢のFを除くか（alphaを仮定して計算していることが多いから）}
 
 \item{ssb.forecast}{Mohn's rhoを計算する際にSSBは1年後を計算するか(last.catch.zero=TRUEのときのみ有効)}
+
+\item{grid.add.ini}{\code{add.p.ini}をgridで変えて初期値を事前に探索する}
 }
 \description{
 レトロスペクティブ解析の実施

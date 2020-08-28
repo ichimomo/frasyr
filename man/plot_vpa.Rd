@@ -12,7 +12,8 @@ plot_vpa(
   plot_year = NULL,
   legend.position = "top",
   vpaname = NULL,
-  ncol = 2
+  ncol = 2,
+  scale_value = NULL
 )
 }
 \arguments{

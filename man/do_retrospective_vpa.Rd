@@ -14,7 +14,9 @@ do_retrospective_vpa(
   ncol = 3,
   remove_maxAgeF = FALSE,
   ssb_forecast = FALSE,
-  res_step1 = NULL
+  res_step1 = NULL,
+  scale_value = NULL,
+  grid_add_ini = NULL
 )
 }
 \arguments{
@@ -33,6 +35,8 @@ do_retrospective_vpa(
 \item{ssb_forecast}{Mohn's rhoを計算する際にSSBは1年後を計算するか(last.catch.zero=TRUEのときのみ有効)}
 
 \item{res_step1}{2段階法のレトロ解析をやる場合の1段階目の\code{vpa}オブジェクト}
+
+\item{grid_add_ini}{\code{add.p.ini}をgridで変えて初期値を事前に探索する}
 }
 \value{
 返ってくる値:

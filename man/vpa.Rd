@@ -77,7 +77,8 @@ vpa(
   sigma.constraint = 1:length(abund),
   eta = NULL,
   eta.age = 0,
-  tmb.file = "rvpa_tmb"
+  tmb.file = "rvpa_tmb",
+  remove.abund = NULL
 )
 }
 \arguments{
@@ -190,6 +191,8 @@ vpa(
 \item{eta.age}{Fのpenaltyを分けるときにetaを与える年齢(0 = 0歳（加入）,0:1 = 0~1歳)}
 
 \item{tmb.file}{TMB=TRUEのとき使用するcppファイルの名前}
+
+\item{remove.abund}{ある値を引いた値に対してチューニングに使用する（トラフグ伊勢・三河湾系群で放流魚を引いて天然魚のみに対してチューニングするため）.}
 }
 \description{
 VPAによる資源計算を実施する
