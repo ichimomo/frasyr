@@ -1997,3 +1997,14 @@ make_kobe_ratio <- function(result_vpa, result_msy) {
 
   return_kobe_ratio()
 }
+
+#' Source specific lines in an R file
+#'
+#' @param file character string with the path to the file to source.
+#' @param lines numeric vector of lines to source in \code{file}.
+#'
+#' @exportl
+
+source_lines <- function(file, lines){
+    source(textConnection(readLines(file)[lines]))
+}
