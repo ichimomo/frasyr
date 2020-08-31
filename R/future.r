@@ -40,6 +40,12 @@
 #' @param model_average_option model averagingをする場合のオプション. SR_matのlistとweightをlist形式で入れる(list(SR_list=list(res_SR1,res_SR2),weight=c(0.5,0.5)))
 #' @param regime_shift_option res_SRにfit.SRregimeの返り値を入れた場合に指定する。将来予測で再生産関係のどのフェーズがおこるかを指定する。list(future_regime=将来のregimeの仮定。keyで指定された番号を入れる)
 #' @param special_setting list形式で与えるmake_future_dataの返り値のdataと同じ名前の要素について、最後にデータをここで示されたarrayのシミュレーション1回めの値で上書きする。arrayのデータに対してのみ有効。
+#'
+#' @return
+#'
+#' @md
+#' - input: make_future_data関数に入れた引数がリスト形式で格納されている。
+#' - data: 次にfuture_vpaに入れるためのデータ・セット
 #' 
 #' @export
 #' @encoding UTF-8
@@ -1137,9 +1143,16 @@ format_to_old_future <- function(fout){
   fout_old$caa       <- fout$wcaa/fout_old$waa
   fout_old$multi     <- fout$multi
   fout_old$recruit   <- fout$SR_mat[,,"recruit"]
-  fout_old$beta_gamma     <- fout$HCR_realized[,,"beta_gamma"]
-  fout_old$alpha     <- fout$HCR_realized[,,"beta_gamma"]
-  fout_old$Fratio     <- fout$HCR_realized[,,"Fratio"]        
+  if(!is.null(fout$HCR_realized)){
+      fout_old$beta_gamma     <- fout$HCR_realized[,,"beta_gamma"]
+      fout_old$alpha     <- fout$HCR_realized[,,"beta_gamma"]
+      fout_old$Fratio     <- fout$HCR_realized[,,"Fratio"]
+  }
+  else{
+      fout_old$beta_gamma     <- fout$HCR_mat[,,"beta_gamma"]
+      fout_old$alpha     <- fout$HCR_mat[,,"beta_gamma"]
+      fout_old$Fratio     <- fout$HCR_mat[,,"Fratio"]      
+      }
   return(fout_old)
 }
 

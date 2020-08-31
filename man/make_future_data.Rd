@@ -127,6 +127,9 @@ make_future_data(
 
 \item{HCR_Blimi}{HCRのBlimi}
 }
+\value{
+
+}
 \description{
 future_vpaにインプットとして入れる将来予測の空のarrayを生成する関数
 }
