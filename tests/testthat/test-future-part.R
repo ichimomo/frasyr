@@ -371,6 +371,13 @@ test_that("future_vpa function (with dummy vpa data) for regime shift (level 2-3
                                    SR="HS",method="HS",regime.key=c(0,1),
                                    regime.par=c("a","b"),regime.year=2005)
 
+  # sdが異なるケースもテストしないといけない
+  res_sr_list[[2]] <- fit.SRregime(get.SRdata(vpa_list[[1]]),
+                                   SR="HS",method="HS",regime.key=c(0,1),
+                                   regime.par=c("a","b","sd"),regime.year=2005)
+  res_sr_list[[2]]$pars$sd[2] <- 0.3 # 本当は両方ゼロだがテストのために0.3を入れる
+  res_sr_list[[2]]$regime_pars$sd[2] <- 0.3 # 本当は両方ゼロだがテストのために0.3を入れる  
+
 #  names(res_sr_list) <- names(vpa_list)
   
   # 2つのレジームでパラメータ推定値は同じになる
@@ -420,8 +427,9 @@ test_that("future_vpa function (with dummy vpa data) for regime shift (level 2-3
                      Pope=res_vpa_base0_nontune$input$Pope,
                      fix_recruit=NULL,
                      fix_wcatch=NULL,regime_shift_option=list(future_regime=1)
-    ) 
-  
+                     )
+
+ 
   # simple
   res_future_F0.1 <- future_vpa(tmb_data=data_future_test$data,
                                 optim_method="none", 
@@ -429,6 +437,25 @@ test_that("future_vpa function (with dummy vpa data) for regime shift (level 2-3
   # 平衡状態ではtarget_eq_naaと一致する（そのようなFを使っているので）
   expect_equal(mean(colSums(res_future_F0.1$naa[,"2035",])),
                target_eq_naa, tol=0.0001)
+
+  # simple (different SD)
+  data_future_test2 <- data_future_test
+  data_future_test2 <- safe_call(make_future_data,
+                                 list_modify(data_future_test2$input,res_SR=res_sr_list[[2]]))
+  res_future_F2 <- future_vpa(tmb_data=data_future_test2$data,
+                              optim_method="none", 
+                              multi_init = 1)
+  # 修正前のプログラムだとここで交互にrand_residが0,乱数,0,乱数となるようになってしまっている
+  # boxplot(res_future_F2$SR_mat[as.character(2023:2030),,"rand_resid"],type="b")
+
+  data_future_test3 <- data_future_test2
+  data_future_test3 <- safe_call(make_future_data,
+                                 list_modify(data_future_test2$input,
+                                             regime_shift_option=list(future_regime=0)))
+  res_future_F2 <- future_vpa(tmb_data=data_future_test3$data,
+                              optim_method="none", 
+                              multi_init = 1)  
+  
   
   
   # simple, MSY
