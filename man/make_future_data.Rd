@@ -87,6 +87,8 @@ make_future_data(
 
 \item{HCR_beta}{HCRのbeta}
 
+\item{HCR_Blimit}{HCRのBlimit}
+
 \item{HCR_Bban}{HCRのBban}
 
 \item{HCR_year_lag}{HCRするときにいつのタイミングのssbを参照するか.0の場合、ABC計算年のSSBを参照する。正の値1を入れると1年前のssbを参照する}
@@ -124,11 +126,17 @@ make_future_data(
 \item{regime_shift_option}{res_SRにfit.SRregimeの返り値を入れた場合に指定する。将来予測で再生産関係のどのフェーズがおこるかを指定する。list(future_regime=将来のregimeの仮定。keyで指定された番号を入れる)}
 
 \item{special_setting}{list形式で与えるmake_future_dataの返り値のdataと同じ名前の要素について、最後にデータをここで示されたarrayのシミュレーション1回めの値で上書きする。arrayのデータに対してのみ有効。}
-
-\item{HCR_Blimi}{HCRのBlimi}
 }
 \value{
-
+以下の要素からなるリスト
+\describe{
+\item{\code{input}}{使用した引数のリスト。\code{do.call(make_future_data, input)}で計算を再現できる}
+\item{\code{data}}{future_vpa関数に渡すデータのセット}
+\item{\code{data$naa_mat, data$caa_mat, data$waa_mat, data$waa_catch_mat, data$maa_mat, data$M_mat, data$faa_mat}}{年齢×年数（VPA期間年＋将来予測年）×シミュレーション回数の3次元データ。順に、年齢別年別シミュレーション別の資源尾数、漁獲尾数、体重、漁獲量計算用の体重、成熟率、自然死亡係数、漁獲死亡係数。このうち、資源尾数はVPA期間年までのみデータが入っていて、\code{future_vpa}を実行することによってここに推定値が入る。\code{faa_mat}についても、future_vpa実行時にHCRなどの適用の設定によって適宜書き換えられる。}
+\item{\code{data$SR_mat}}{
+  
+}
+}
 }
 \description{
 future_vpaにインプットとして入れる将来予測の空のarrayを生成する関数
