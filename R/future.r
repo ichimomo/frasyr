@@ -821,8 +821,10 @@ set_SR_mat <- function(res_vpa=NULL,
       #            bias_factor <- 0
       SR_mat[,,"bias_factor"] <- 0
     }
+
     tmp_SR <- t(SR_mat[random_rec_year_period,,"rand_resid"])
-    tmp_SR[] <- rnorm(nsim*length(random_rec_year_period), mean=0, sd=res_SR$pars$sd)
+    tmp_SR[] <- rnorm(nsim*length(random_rec_year_period), mean=0,
+                      sd=t(SR_mat[random_rec_year_period,,"sd"]))
     SR_mat[random_rec_year_period,,"rand_resid"] <- t(tmp_SR)
     
     for(t in random_rec_year_period){
