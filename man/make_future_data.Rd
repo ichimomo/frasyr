@@ -127,6 +127,7 @@ make_future_data(
 
 \item{special_setting}{list形式で与えるmake_future_dataの返り値のdataと同じ名前の要素について、最後にデータをここで示されたarrayのシミュレーション1回めの値で上書きする。arrayのデータに対してのみ有効。}
 }
+<<<<<<< HEAD
 \value{
 以下の要素からなるリスト
 \describe{
@@ -138,6 +139,8 @@ make_future_data(
 }
 }
 }
+=======
+>>>>>>> parent of 028cbb4... revise utilities and help
 \description{
 future_vpaにインプットとして入れる将来予測の空のarrayを生成する関数
 }

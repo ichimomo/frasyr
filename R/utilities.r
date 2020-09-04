@@ -2003,7 +2003,7 @@ make_kobe_ratio <- function(result_vpa, result_msy) {
 #' @param file character string with the path to the file to source.
 #' @param lines numeric vector of lines to source in \code{file}.
 #'
-#' @export
+#' @exportl
 
 source_lines <- function(file, lines){
     source(textConnection(readLines(file)[lines]))
