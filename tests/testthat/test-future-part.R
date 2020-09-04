@@ -371,6 +371,13 @@ test_that("future_vpa function (with dummy vpa data) for regime shift (level 2-3
                                    SR="HS",method="HS",regime.key=c(0,1),
                                    regime.par=c("a","b"),regime.year=2005)
 
+  # sdが異なるケースもテストしないといけない
+  res_sr_list[[2]] <- fit.SRregime(get.SRdata(vpa_list[[1]]),
+                                   SR="HS",method="HS",regime.key=c(0,1),
+                                   regime.par=c("a","b","sd"),regime.year=2005)
+  res_sr_list[[2]]$pars$sd[2] <- 0.3 # 本当は両方ゼロだがテストのために0.3を入れる
+  res_sr_list[[2]]$regime_pars$sd[2] <- 0.3 # 本当は両方ゼロだがテストのために0.3を入れる  
+
 #  names(res_sr_list) <- names(vpa_list)
   
   # 2つのレジームでパラメータ推定値は同じになる
@@ -420,8 +427,9 @@ test_that("future_vpa function (with dummy vpa data) for regime shift (level 2-3
                      Pope=res_vpa_base0_nontune$input$Pope,
                      fix_recruit=NULL,
                      fix_wcatch=NULL,regime_shift_option=list(future_regime=1)
-    ) 
-  
+                     )
+
+ 
   # simple
   res_future_F0.1 <- future_vpa(tmb_data=data_future_test$data,
                                 optim_method="none", 
@@ -429,6 +437,25 @@ test_that("future_vpa function (with dummy vpa data) for regime shift (level 2-3
   # 平衡状態ではtarget_eq_naaと一致する（そのようなFを使っているので）
   expect_equal(mean(colSums(res_future_F0.1$naa[,"2035",])),
                target_eq_naa, tol=0.0001)
+
+  # simple (different SD)
+  data_future_test2 <- data_future_test
+  data_future_test2 <- safe_call(make_future_data,
+                                 list_modify(data_future_test2$input,res_SR=res_sr_list[[2]]))
+  res_future_F2 <- future_vpa(tmb_data=data_future_test2$data,
+                              optim_method="none", 
+                              multi_init = 1)
+  # 修正前のプログラムだとここで交互にrand_residが0,乱数,0,乱数となるようになってしまっている
+  # boxplot(res_future_F2$SR_mat[as.character(2023:2030),,"rand_resid"],type="b")
+
+  data_future_test3 <- data_future_test2
+  data_future_test3 <- safe_call(make_future_data,
+                                 list_modify(data_future_test2$input,
+                                             regime_shift_option=list(future_regime=0)))
+  res_future_F2 <- future_vpa(tmb_data=data_future_test3$data,
+                              optim_method="none", 
+                              multi_init = 1)  
+  
   
   
   # simple, MSY
@@ -593,4 +620,166 @@ test_that("future_vpa function (flexible beta) (level 2)",{
       round(3) %>% unlist() %>% as.numeric() %>%
       expect_equal(c(rep(0.072,3),0.115,rep(0.072,3),0.143))
 
+  #flexible HCR
+  HCR_specific <<- function(ssb, Blimit, Bban, beta, year_name){
+      return(0)
+  }
+  
+  res_future_myHCR <- data_future_test$data %>%
+      list_modify(HCR_function_name="HCR_specific",nsim=10) %>%
+      future_vpa(optim_method="none")
+
+  expect_equal(all(res_future_myHCR$faa[,as.character(2019:2047),]==0),TRUE)
+
+})
+
+test_that("future_vpa function (MSE) (level 2)",{
+  
+  data(res_vpa)
+  data(res_sr_HSL2)
+
+  data_future_test10 <- make_future_data(res_vpa, # VPAの結果
+                                       nsim = 10, # シミュレーション回数
+                                       nyear = 10, # 将来予測の年数
+                                       future_initial_year_name = 2017, 
+                                       start_F_year_name = 2018,
+                                       start_biopar_year_name=2018,
+                                       start_random_rec_year_name = 2018,
+                                       waa_year=2015:2017, waa=NULL,
+                                       waa_catch_year=2015:2017, waa_catch=NULL,
+                                       maa_year=2015:2017, maa=NULL,
+                                       M_year=2015:2017, M=NULL,
+                                       faa_year=2015:2017,
+                                       currentF=NULL,futureF=NULL, 
+                                       # HCR setting (not work when using TMB)
+                                       start_ABC_year_name=2019, # HCRを適用する最初の年
+                                       HCR_beta=1, # HCRのbeta
+                                       HCR_Blimit=-1, # HCRのBlimit
+                                       HCR_Bban=-1, # HCRのBban
+                                       HCR_year_lag=0, # HCRで何年遅れにするか
+                                       # SR setting
+                                       res_SR=res_sr_HSL2, 
+                                       seed_number=1, # シード番号
+                                       resid_type="lognormal", 
+                                       resample_year_range=0, 
+                                       bias_correction=TRUE, 
+                                       recruit_intercept=0, 
+                                       # Other
+                                       Pope=res_vpa$input$Pope,
+                                       fix_recruit=NULL,
+                                       fix_wcatch=NULL)
+  data_future_test1000 <- list_modify(data_future_test10$input,nsim=1000) %>% safe_call(make_future_data,.)
+ 
+  res_future_noMSE <- future_vpa(tmb_data=data_future_test1000$data,
+                           optim_method="none", 
+                           multi_init = 1,SPRtarget=0.3,
+                           do_MSE=FALSE, MSE_input_data=data_future_test1000)
+
+  res_future_MSE <- future_vpa(tmb_data=data_future_test10$data,
+                           optim_method="none", 
+                           multi_init = 1,SPRtarget=0.3,
+                           do_MSE=TRUE, MSE_input_data=data_future_test10,MSE_nsim=1000)
+
+  plot_futures(res_vpa,list(res_future_MSE,res_future_noMSE))
+  
+  expect_equal(round(mean(get_wcatch(res_future_noMSE)["2019",])),32311) # 上と下は十分な計算回数実施すれば一致するはずだが、シードのちがいにより一致はしていない
+  expect_equal(round(mean(get_wcatch(res_future_MSE)["2019",])),32370)
+
+  # sd=0の場合
+  res_sr_HSL2_sd0 <- res_sr_HSL2
+  res_sr_HSL2_sd0$pars$sd <- 0
+  data_future_sd0 <- list_modify(data_future_test10$input,nsim=5,res_SR=res_sr_HSL2_sd0) %>%
+      safe_call(make_future_data,.)
+
+  res_future_noMSE <- future_vpa(tmb_data=data_future_sd0$data,
+                           optim_method="none", 
+                           multi_init = 1,SPRtarget=0.3,
+                           do_MSE=FALSE, MSE_input_data=data_future_sd0)
+
+  res_future_MSE <- future_vpa(tmb_data=data_future_sd0$data,
+                           optim_method="none", 
+                           multi_init = 1,SPRtarget=0.3,
+                           do_MSE=TRUE, MSE_input_data=data_future_sd0)   
+  expect_equal(all(round(res_future_MSE$naa[,,1]/res_future_noMSE$naa[,,1],3)==1),TRUE)
+
+
+
+})
+
+
+test_that("future_vpa function (carry over TAC) (level 2)",{
+  
+  data(res_vpa)
+  data(res_sr_HSL2)
+
+  data_future_test <- make_future_data(res_vpa, # VPAの結果
+                                       nsim = 10, # シミュレーション回数
+                                       nyear = 10, # 将来予測の年数
+                                       future_initial_year_name = 2017, 
+                                       start_F_year_name = 2018,
+                                       start_biopar_year_name=2018,
+                                       start_random_rec_year_name = 2018,
+                                       waa_year=2015:2017, waa=NULL,
+                                       waa_catch_year=2015:2017, waa_catch=NULL,
+                                       maa_year=2015:2017, maa=NULL,
+                                       M_year=2015:2017, M=NULL,
+                                       faa_year=2015:2017,
+                                       currentF=NULL,futureF=res_vpa$faa[,"2017"]*0.5, 
+                                       # HCR setting (not work when using TMB)
+                                       start_ABC_year_name=2019, # HCRを適用する最初の年
+                                       HCR_beta=1, # HCRのbeta
+                                       HCR_Blimit=-1, # HCRのBlimit
+                                       HCR_Bban=-1, # HCRのBban
+                                       HCR_year_lag=0, # HCRで何年遅れにするか
+                                       HCR_TAC_reserve_rate=0.2,
+                                       HCR_TAC_carry_rate=0.2,
+                                       # SR setting
+                                       res_SR=res_sr_HSL2, 
+                                       seed_number=1, # シード番号
+                                       resid_type="lognormal", 
+                                       resample_year_range=0, 
+                                       bias_correction=TRUE, 
+                                       recruit_intercept=0, 
+                                       # Other
+                                       Pope=res_vpa$input$Pope,
+                                       fix_recruit=NULL,
+                                       fix_wcatch=NULL)
+  data_future_no_reserve <- list_modify(data_future_test$input,HCR_TAC_reserve_rate=0) %>%
+      safe_call(make_future_data,.)  
+ 
+  res_future_noMSE <- future_vpa(tmb_data=data_future_test$data,
+                           optim_method="none", 
+                           multi_init = 1,SPRtarget=0.3,
+                           do_MSE=FALSE, MSE_input_data=data_future_test)
+
+  res_future_noreserve <- future_vpa(tmb_data=data_future_no_reserve$data,
+                           optim_method="none", 
+                           multi_init = 1,SPRtarget=0.3,
+                           do_MSE=FALSE, MSE_input_data=data_future_test)  
+
+  # 取り残し分を考慮した想定される漁獲量
+  res_future_noMSE$HCR_mat[as.character(2018:2023),1:3,"expect_wcatch"]
+  # 実際の漁獲量
+  res_future_noMSE$HCR_realized[as.character(2018:2023),1:3,"wcatch"]
+  # 本当のABC
+  res_future_noMSE$HCR_realized[as.character(2018:2023),1:3,"original_ABC"]
+  # 全年の取り残し分を足したときの本当のABC
+  res_future_noMSE$HCR_realized[as.character(2018:2023),1:3,"original_ABC_plus"]  
+  boxplot(t(res_future_noMSE$HCR_realized[as.character(2018:2027),,"original_ABC_plus"]))
+  boxplot(t(res_future_noMSE$HCR_realized[as.character(2018:2027),,"original_ABC"]),add=TRUE,col="gray",boxwex=0.5)
+  boxplot(t(res_future_noMSE$HCR_realized[as.character(2018:2027),,"wcatch"]),add=TRUE,col="pink",boxwex=0.3)
+
+  res_future_MSE <- future_vpa(tmb_data=data_future_test$data,
+                           optim_method="none", 
+                           multi_init = 1,SPRtarget=0.3,
+                           do_MSE=TRUE, MSE_input_data=data_future_test,
+                           MSE_nsim=1000)
+  
+  boxplot(t(res_future_MSE$HCR_realized[as.character(2018:2027),,"original_ABC_plus"]))
+  boxplot(t(res_future_MSE$HCR_realized[as.character(2018:2027),,"original_ABC"]),add=TRUE,col="gray",boxwex=0.5)
+  boxplot(t(res_future_MSE$HCR_realized[as.character(2018:2027),,"wcatch"]),add=TRUE,col="pink",boxwex=0.3)
+  
+  plot_futures(res_vpa,list(res_future_MSE,res_future_noMSE,res_future_noreserve))
+  
+  
 })
