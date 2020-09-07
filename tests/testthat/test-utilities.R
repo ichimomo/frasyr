@@ -64,7 +64,7 @@ test_that("calc_future_perSPR accepts list with different length vectors", {
 })
 
 test_that("test caa.est.mat", {
-  
+
   expect_catch <- 0.5
 
   # set usual F => OK
@@ -79,5 +79,65 @@ test_that("test caa.est.mat", {
   # naa is very small => warning
   expect_warning(caa.est.mat(c(0.01,0.01,0.01,0.01),c(1,1,1,1),c(1,1,1,1),c(0,0,0,0),
                      catch.obs=expect_catch,Pope=TRUE))
-  
+
 })
+
+
+test_that("calc.rel.abund"{
+
+  age.test <- c(1:5)
+  Fc.test <- rep(1,length(age.test))
+  waa.test <- c(1:5)
+  maa.test <- c(0,0.5,1,1,1)
+  M.test <- rep(0.5,length(age.test))
+
+  calc_rel_abund_popeT_check <- calc.rel.abund(sel = Fc.test,Fr=1,na = length(age.test),M = M.test,waa = waa.test, maa = maa.test, Pope = TRUE)
+
+  calc_rel_abund_popeF_check <- calc.rel.abund(sel = Fc.test,Fr=1,na = length(age.test),M = M.test,waa = waa.test, maa = maa.test, Pope = FALSE)
+
+  #上記計算内容をエクセルで計算したものを読み込み
+  calc_rel_abund <- read.csv("./inst/extdata/check_calc_rel_abund.csv",header = T)
+  #データ整形
+  calc_rel_abund_popeT <- list(calc_rel_abund$rel.abundant,calc_rel_abund$ypr1.popeT,calc_rel_abund$spr)
+  names(calc_rel_abund_popeT) <- c("rel.abund","ypr","spr")
+  calc_rel_abund_popeF <- list(calc_rel_abund$rel.abundant,calc_rel_abund$ypr1.popeF,calc_rel_abund$spr)
+  names(calc_rel_abund_popeF) <- c("rel.abund","ypr","spr")
+  # 結果照合
+  expect_equal(calc_rel_abund_popeT,calc_rel_abund_popeT_check)
+  expect_equal(calc_rel_abund_popeF,calc_rel_abund_popeF_check)
+
+})
+
+test_that("catch_equation"{
+
+  expect_equal(catch_equation(1,1,1,1), 1*(1-exp(-1))*exp(-0.5)*1)
+  expect_equal(catch_equation(1,1,1,1,Pope = F), 1*(1-exp(-1-1))*1/(1+1)*1 )
+
+})
+
+test_that("solv.Feq"{
+
+  age.test <- c(1:5)
+  faa.test <- rep(1,length(age.test))
+  waa.test <- c(1:5)
+  naa.test <- rep(3,length(age.test))
+  maa.test <- c(0,0.5,1,1,1)
+  M.test <- rep(0.5,length(age.test))
+  # Baranov eqをもちいてfaa,M,naaをつかってcaaを求める
+  caa.test <- faa.test/(faa.test+M.test) *(1-exp(-faa.test- M.test)) *naa.test
+
+  # tolerance=1e-4　でチェック
+  expect_equal(faa.test, solv.Feq(cvec = caa.test,nvec = naa.test,mvec = M.test),tolerance=1e-4)
+
+})
+
+
+test_that("get.SPR" {
+
+})
+
+
+test_that("convert_faa_perSPR" {
+
+})
+
