@@ -625,7 +625,13 @@ future_vpa_R <- function(naa_mat,
       }
       HCR_realized[t,,"original_ABC_plus"] <- HCR_realized[t,,"original_ABC"] + HCR_realized[t,,"reserved_catch"]
       HCR_mat[t,,"expect_wcatch"] <- HCR_realized[t,,"original_ABC_plus"] * (1-HCR_mat[t,,"TAC_reserve_rate"])
-      if(t<total_nyear) HCR_realized[t+1,,"reserved_catch"] <- HCR_realized[t,,"original_ABC"] * min(HCR_mat[t,,"TAC_reserve_rate"],HCR_mat[t,,"TAC_carry_rate"])
+      if(t<total_nyear){
+          max_carry_amount <- HCR_mat[t,,"TAC_carry_rate"]*HCR_realized[t,,"original_ABC"]
+          ABC_reserve_amount <- HCR_realized[t,,"original_ABC"] - HCR_mat[t,,"expect_wcatch"]
+          ABC_reserve_amount[ABC_reserve_amount<0] <- 0
+          HCR_realized[t+1,,"reserved_catch"] <- cbind(max_carry_amount, ABC_reserve_amount) %>%
+              apply(1,min)
+      }
     }
     
     if(sum(HCR_mat[t,,"expect_wcatch"])>0){
