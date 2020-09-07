@@ -310,6 +310,8 @@ future_vpa <- function(tmb_data,
                        objective ="MSY", # or PGY, percentB0, Bempirical
                        obj_value = 0,                         
                        obj_stat  ="mean",
+                       max_F=exp(10), # いつかはmake_future_dataに以降したい
+                       max_exploitation_rate=0.99, # いつかはmake_future_dataに以降したい                       
                        do_MSE=NULL,
                        MSE_input_data=NULL,
                        MSE_nsim=NULL,
@@ -369,6 +371,8 @@ future_vpa <- function(tmb_data,
     tmb_data$do_MSE <- do_MSE
     tmb_data$MSE_input_data <- MSE_input_data
     tmb_data$MSE_nsim <- MSE_nsim
+    tmb_data$max_F <- max_F
+    tmb_data$max_exploitation_rate <- max_exploitation_rate
     
     R_obj_fun <- function(x, tmb_data, what_return="obj"){
       tmb_data$x <- x
@@ -471,6 +475,8 @@ future_vpa_R <- function(naa_mat,
                          what_return="obj",
                          HCR_mat,
                          HCR_function_name,
+                         max_F=exp(10),
+                         max_exploitation_rate=0.99,
                          do_MSE=NULL,
                          MSE_input_data=NULL,
                          MSE_nsim = NULL,
@@ -630,7 +636,8 @@ future_vpa_R <- function(naa_mat,
                                              function(x) caa.est.mat(N_mat[,t,x],saa.tmp[,x],#F_mat[,t,x],#saa.tmp[,x],
                                                                      waa_catch_mat[,t,x],M_mat[,t,x],
                                                                      HCR_mat[t,x,"expect_wcatch"],
-                                                                     set_max1=FALSE,
+                                                                     set_max1=FALSE,max_exploitation_rate=max_exploitation_rate,
+                                                                     max_F=max_F,
                                                                      Pope=as.logical(Pope))$x)
       F_mat[,t,which(F_max_tmp>0)] <- sweep(saa.tmp[,which(F_max_tmp>0)],2, fix_catch_multiplier, FUN="*")
       HCR_realized[t,which(F_max_tmp>0),"beta_gamma"] <- HCR_realized[t,which(F_max_tmp>0),"beta_gamma"] *

@@ -189,6 +189,22 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
   catch <- apply(res_future_backward$wcaa,c(2,3),sum)
   expect_equal(mean(catch["2020",]), 1000, tol=0.001)
   expect_equal(mean(catch["2021",]), 2000, tol=0.001)
+
+  # future_vpaに追加したオプション（max_F, max_exploitation_rateの確認）
+  small_maxF <- 0.001
+  expect_warning(res_future_test2 <- future_vpa(tmb_data=data_future_test$data,
+                                                optim_method="none", 
+                                                multi_init = 1, max_F=small_maxF))
+  expect_equal(round(max(res_future_test2$faa[,"2020",1])/small_maxF,3),1)
+
+  expect_warning(res_future_test3 <- data_future_test$input %>%
+                     list_modify(fix_wcatch=list(year=c(2020,2021),wcatch=c(100000,200000))) %>%
+                     safe_call(make_future_data,.) %>%
+                     future_vpa(tmb_data=.$data, optim_method="none", multi_init = 1, max_exploitation_rate=0.8)  
+                 )
+  # natural mortality
+  #baa <- apply(res_future_test3$naa * res_future_test3$waa,c(2,3),sum)
+  #mean(res_future_test3$HCR_realized[as.character(2020:2021),,"wcatch"]/baa[as.character(2020:2021),])
   
   # MSY計算の場合(MSY estimation)
   res_future_test_R <- future_vpa(tmb_data=data_future_test$data, 
