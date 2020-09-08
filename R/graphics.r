@@ -1395,6 +1395,7 @@ plot_HCR_by_catch <- function(trace,
                               beta=0.8,col.multi2currf="black",col.SBtarget="#00533E",
                               col.SBlim="#edb918",col.SBban="#C73C2E",col.Ftarget="black",
                               col.betaFtarget="gray",is.text = TRUE,
+                              HCR_function_name="HCR_default",
                               Pope=TRUE,
                               RP.label=c("目標管理基準値","限界管理基準値","禁漁水準")){
   # 本当は途中までplot_HCRと統合させたい
@@ -1415,7 +1416,8 @@ plot_HCR_by_catch <- function(trace,
   }
 
   n <- nrow(trace)
-  gamma <- HCR_default(as.numeric(trace$ssb.mean),
+  HCR_function <- get(HCR_function_name)  
+  gamma <- HCR_function(as.numeric(trace$ssb.mean),
                        Blimit=rep(SBlim,n),Bban=rep(SBban,n),beta=rep(beta,n))
   F_matrix <- outer(gamma, Fmsy_vector)
   trace$catch_HCR <- purrr::map_dbl(1:nrow(trace), function(x)
@@ -1593,12 +1595,12 @@ plot_bias_in_MSE <- function(fout, out="graph", error_scale="log", yrange=NULL){
   tmp <- convert_2d_future(fout$naa[1,,],            name="Recruits", label="true")
   recruit_dat$value_true <- tmp$value
 
-  real_ABC_dat <- convert_2d_future(fout$HCR_mat[,,"wcatch"],    name="realABC", label="estimate") %>%
+  real_ABC_dat <- convert_2d_future(fout$HCR_realized[,,"wcatch"],    name="realABC", label="estimate") %>%
     rename(value_est=value)
   tmp  <- convert_2d_future(fout$SR_MSE[,,"real_true_catch"], name="realABC", label="true")
   real_ABC_dat$value_true <- tmp$value
 
-  pseudo_ABC_dat <- convert_2d_future(fout$HCR_mat[,,"wcatch"],    name="pseudoABC", label="estimate") %>%
+  pseudo_ABC_dat <- convert_2d_future(fout$HCR_realized[,,"wcatch"],    name="pseudoABC", label="estimate") %>%
     rename(value_est=value)
   tmp  <- convert_2d_future(fout$SR_MSE[,,"pseudo_true_catch"], name="pseudoABC", label="true")
   pseudo_ABC_dat$value_true <- tmp$value

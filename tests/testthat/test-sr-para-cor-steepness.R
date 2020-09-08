@@ -15,7 +15,7 @@ test_that("output value check",{
   # fit.SR計算
   for (i in 1:nrow(SRmodel.list)){
     res.SRfit[[i]] <- fit.SR(SRdata = SRdata_pma,SR=SRmodel.list$SR.rel[i],method=SRmodel.list$L.type[i],AR=SRmodel.list$AR.type[i],out.AR=SRmodel.list$out.AR[i])
-  }
+    }
 
   year <- as.character(max(res_vpa_pma$input$rec.year))
 
