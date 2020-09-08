@@ -105,6 +105,9 @@ make_future_data <- function(res_vpa,
   argname <- ls()
   input <- lapply(argname,function(x) eval(parse(text=x)))
   names(input) <- argname
+
+  if(any(HCR_TAC_reserve_rate < 0)) stop("HCR_TAC_reserve_rateに負の値は許されていません\n")
+  if(any(HCR_TAC_carry_rate   < 0)) stop("HCR_TAC_carry_rateに負の値は許されていません\n")  
   
   # define age and year
   nage <- nrow(res_vpa$naa)

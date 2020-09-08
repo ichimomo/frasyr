@@ -747,8 +747,8 @@ test_that("future_vpa function (carry over TAC) (level 2)",{
                                        HCR_Blimit=-1, # HCRのBlimit
                                        HCR_Bban=-1, # HCRのBban
                                        HCR_year_lag=0, # HCRで何年遅れにするか
-                                       HCR_TAC_reserve_rate=0.2,
-                                       HCR_TAC_carry_rate=0.2,
+                                       HCR_TAC_reserve_rate=0.1,
+                                       HCR_TAC_carry_rate=0.1,
                                        # SR setting
                                        res_SR=res_sr_HSL2, 
                                        seed_number=1, # シード番号
@@ -784,6 +784,8 @@ test_that("future_vpa function (carry over TAC) (level 2)",{
   boxplot(t(res_future_noMSE$HCR_realized[as.character(2018:2027),,"original_ABC_plus"]))
   boxplot(t(res_future_noMSE$HCR_realized[as.character(2018:2027),,"original_ABC"]),add=TRUE,col="gray",boxwex=0.5)
   boxplot(t(res_future_noMSE$HCR_realized[as.character(2018:2027),,"wcatch"]),add=TRUE,col="pink",boxwex=0.3)
+
+  expect_equal(all(round(res_future_noMSE$HCR_realized[as.character(2019:2023),1:3,"wcatch"]/res_future_noMSE$HCR_realized[as.character(2019:2023),1:3,"original_ABC_plus"],3)==0.9),TRUE)
 
   res_future_MSE <- future_vpa(tmb_data=data_future_test$data,
                            optim_method="none", 
