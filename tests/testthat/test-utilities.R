@@ -2,6 +2,8 @@ context("Utilities")
 
 result_vpa  <- load_data("../../inst/extdata/res_vpa_pma.rda")
 result_msy  <- load_data("../../inst/extdata/res_MSY_pma_pre.rda")
+data(res_vpa)
+data(res_sr_HSL2)
 
 test_that("make_kobe_ratio", {
   kobe_ratio <- make_kobe_ratio(result_vpa, result_msy)
@@ -83,7 +85,7 @@ test_that("test caa.est.mat", {
 })
 
 
-test_that("calc.rel.abund"{
+test_that("calc.rel.abund",{
 
   age.test <- c(1:5)
   Fc.test <- rep(1,length(age.test))
@@ -95,8 +97,8 @@ test_that("calc.rel.abund"{
 
   calc_rel_abund_popeF_check <- calc.rel.abund(sel = Fc.test,Fr=1,na = length(age.test),M = M.test,waa = waa.test, maa = maa.test, Pope = FALSE)
 
-  #上記計算内容をエクセルで計算したものを読み込み
-  calc_rel_abund <- read.csv("./inst/extdata/check_calc_rel_abund.csv",header = T)
+  #上記計算内容をエクセルで計算したもの(../../tools/generate-testdata/check.calc.rel.abund.xlsxを数値のみのcsvに変換)を読み込み
+  calc_rel_abund <- read.csv("../../inst/extdata/check_calc_rel_abund.csv",header = T)
   #データ整形
   calc_rel_abund_popeT <- list(calc_rel_abund$rel.abundant,calc_rel_abund$ypr1.popeT,calc_rel_abund$spr)
   names(calc_rel_abund_popeT) <- c("rel.abund","ypr","spr")
@@ -108,14 +110,14 @@ test_that("calc.rel.abund"{
 
 })
 
-test_that("catch_equation"{
+test_that("catch_equation",{
 
   expect_equal(catch_equation(1,1,1,1), 1*(1-exp(-1))*exp(-0.5)*1)
   expect_equal(catch_equation(1,1,1,1,Pope = F), 1*(1-exp(-1-1))*1/(1+1)*1 )
 
 })
 
-test_that("solv.Feq"{
+test_that("solv.Feq",{
 
   age.test <- c(1:5)
   faa.test <- rep(1,length(age.test))
@@ -132,12 +134,117 @@ test_that("solv.Feq"{
 })
 
 
-test_that("get.SPR" {
+test_that("get.SPR", {
+
+  target.SPR <- 30
+  Fmax <- 10
+  max.age <- Inf
+
+  byear <- colnames(result_vpa$faa)[1]
+  res_ref_F <- ref.F(result_vpa,waa.year=byear,maa.year=byear,M.year=byear,rps.year=2000:2011,pSPR=round(target.SPR), F.range=c(seq(from=0,to=ceiling(max(result_vpa$Fc.at.age,na.rm=T)*Fmax),length=301),max(result_vpa$Fc.at.age,na.rm=T)),plot=FALSE,max.age=max.age)
+
+  SPR_pma_check <- get.SPR(result_vpa)
+  naa <- result_vpa$naa
+  years <- dimnames(naa)[[2]]
+
+  # 出力ができているかのみ。計算結果の照合はしていない。
+  expect_equal(nrow(SPR_pma_check$ysdata),length(years))
+  expect_equal(colnames(SPR_pma_check$ysdata),c("perSPR","YPR","SPR","SPR0","F/Ftarget"))
 
 })
 
+test_that("convert_faa_perSPR", {
 
-test_that("convert_faa_perSPR" {
+  res_convert_faa_perSPR <- convert_faa_perSPR(result_vpa,sel_year = 2000:2011, faa_year = 2009:2011)
+  # 動いているかだけで、関数の戻り値の型だけチェック
+  expect_is(res_convert_faa_perSPR,"numeric")
+})
 
+test_that("make_summary_table", {
+
+  matrix_test <- matrix(1:9, nrow=3, ncol=3, byrow = T)
+
+  res_mat_sum_table <- make_summary_table(matrix_test)
+
+  means <- c()
+  percent10s <-c()
+  percent50s <-c()
+  percent80s <-c()
+  for(i in 1:nrow(matrix_test)){
+    means <- c(means,mean(matrix_test[i,]))
+    percent10s <- c(percent10s,quantile(matrix_test[i,],0.1))
+    percent50s <- c(percent50s,quantile(matrix_test[i,],0.5))
+    percent80s <- c(percent80s,quantile(matrix_test[i,],0.8))
+      }
+  expect_equal(res_mat_sum_table[,1], means)
+  expect_equal(res_mat_sum_table[,2], as.numeric(percent10s))
+  expect_equal(res_mat_sum_table[,3], as.numeric(percent50s))
+  expect_equal(res_mat_sum_table[,4], as.numeric(percent80s))
+
+})
+
+test_that("outvpa", {
+
+})
+
+test_that("readvpa", {
+
+})
+
+test_that("to_vpa_data", {
+
+})
+
+test_that("get.stat", {
+
+  data_future_test <- make_future_data(res_vpa, # VPAの結果
+                                       nsim = 1000, # シミュレーション回数
+                                       nyear = 50, # 将来予測の年数
+                                       future_initial_year_name = 2017, # 年齢別資源尾数を参照して将来予測をスタートする年
+                                       start_F_year_name = 2018, # この関数で指定したFに置き換える最初の年
+                                       start_biopar_year_name=2018, # この関数で指定した生物パラメータに置き換える最初の年
+                                       start_random_rec_year_name = 2018, # この関数で指定した再生産関係からの加入の予測値に置き換える最初の年
+                                       # biopar setting
+                                       waa_year=2015:2017, waa=NULL, # 将来の年齢別体重の設定。過去の年を指定し、その平均値を使うか、直接ベクトルで指定するか。以下も同じ。
+                                       waa_catch_year=2015:2017, waa_catch=NULL,
+                                       maa_year=2015:2017, maa=NULL,
+                                       M_year=2015:2017, M=NULL,
+                                       # faa setting
+                                       faa_year=2015:2017, # currentF, futureFが指定されない場合だけ有効になる。将来のFを指定の年の平均値とする
+                                       currentF=NULL,futureF=NULL, # 将来のABC.year以前のFとABC.year以降のFのベクトル
+                                       # HCR setting (not work when using TMB)
+                                       start_ABC_year_name=2019, # HCRを適用する最初の年
+                                       HCR_beta=1, # HCRのbeta
+                                       HCR_Blimit=-1, # HCRのBlimit
+                                       HCR_Bban=-1, # HCRのBban
+                                       HCR_year_lag=0, # HCRで何年遅れにするか
+                                       # SR setting
+                                       res_SR=res_sr_HSL2, # 将来予測に使いたい再生産関係の推定結果が入っているfit.SRの返り値
+                                       seed_number=1, # シード番号
+                                       resid_type="lognormal", # 加入の誤差分布（"lognormal": 対数正規分布、"resample": 残差リサンプリング）
+                                       resample_year_range=0, # リサンプリングの場合、残差をリサンプリングする年の範囲
+                                       bias_correction=TRUE, # バイアス補正をするかどうか
+                                       recruit_intercept=0, # 移入や放流などで一定の加入がある場合に足す加入尾数
+                                       # Other
+                                       Pope=res_vpa$input$Pope,
+                                       fix_recruit=list(year=c(2020,2021),rec=c(1000,2000)),
+                                       fix_wcatch=list(year=c(2020,2021),wcatch=c(1000,2000))
+  )
+  res_future_test <- future_vpa(tmb_data=data_future_test$data,
+                                                      optim_method="none",
+                                                      multi_init = 1)
+
+  # 計算結果が入っているかだけ
+  expect_false(is_null(get.stat(res_future_test,use_new_output = TRUE)))
+})
+
+test_that("get.stat4",{
+  # 使われていない。
+  })
+
+　test_that("get.trace",{
+    data("res_MSY_HSL2")
+    #get.trace(res_MSY_HSL2$trace)
+    #expect_false(is_null(get.trace(res_MSY_HSL1)))
 })
 
