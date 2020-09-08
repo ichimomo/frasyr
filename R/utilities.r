@@ -45,8 +45,9 @@ calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=
 
 #'
 #' 年齢別生物パラメータとFと漁獲量を与えると与えた漁獲量と一致するFへの乗数を返す
-#' @param set_max1 廃止
+#' @param set_max1 廃止予定
 #' @param max_exploitation_rate 潜在的に漁獲できる漁獲量＜入力した漁獲量の場合、潜在的に漁獲できる漁獲量の何％まで実際に漁獲するか
+#' @param max_F F at ageの最大値となる値の上限をどこにおくか
 #' 
 #' @export
 #' @encoding UTF-8

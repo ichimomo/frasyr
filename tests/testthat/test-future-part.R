@@ -809,5 +809,8 @@ test_that("future_vpa function (carry over TAC) (level 2)",{
       round() %>% unlist() %>% as.numeric() %>% expect_equal(c(100,rep(100,6)))
   res_future_reserve_CC1$HCR_realized[as.character(2019:2025),1,"original_ABC_plus"]%>%
       round() %>% unlist() %>% as.numeric() %>% expect_equal(c(100,rep(110,6)))
+
+  expect_error(data_future_no_reserve <- list_modify(data_future_test$input,HCR_TAC_reserve_rate=-1) %>%
+                   safe_call(make_future_data,.))
   
 })
