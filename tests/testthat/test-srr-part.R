@@ -95,13 +95,14 @@ test_that("output value check",{
   SRdata1 = list(year=regime1, R=SRdata$R[SRdata$year %in% regime1],SSB=SRdata$SSB[SRdata$year %in% regime1])
   SRdata2 = list(year=regime2, R=SRdata$R[SRdata$year %in% regime2],SSB=SRdata$SSB[SRdata$year %in% regime2])
   
-  for (i in 1:nrow(SRmodel.list)) {
+#  for (i in 1:nrow(SRmodel.list)) {
+  for (i in 1) {  
     resSR1 <- fit.SR(SRdata1, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],AR = 0, hessian = FALSE,length=20)
     resSR2 <- fit.SR(SRdata2, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],AR = 0, hessian = FALSE,length=20)
     resSRregime <- fit.SRregime(SRdata, SR = as.character(SRmodel.list$SR.rel[i]), method = as.character(SRmodel.list$L.type[i]), regime.year = regime_year, regime.key = 0:1, regime.par = c("a","b","sd"), use.fit.SR = TRUE)
     
     # boot strap ----
-    nboot <- 30
+    nboot <- 3
     boot_resSR1_check <- boot.SR(resSR1,n=nboot)
     boot_resSR2_check <- boot.SR(resSR2,n=nboot)
     boot_resSRregime_check <- boot.SR(resSRregime,n=nboot)
