@@ -242,7 +242,7 @@ test_that("get.stat4",{
   # 使われていない。
   })
 
-　test_that("get.trace",{
+test_that("get.trace",{
     data("res_MSY_HSL2")
     #get.trace(res_MSY_HSL2$trace)
     #expect_false(is_null(get.trace(res_MSY_HSL1)))
