@@ -248,3 +248,17 @@ test_that("get.stat4",{
     #expect_false(is_null(get.trace(res_MSY_HSL1)))
 })
 
+
+test_that("load_folder() loads 'rda's in the given directory", {
+  expect_is(load_folder("../../inst/extdata"), "list")
+  test_that("each object exists", {
+    expect_true(exists("res_MSY"))
+    expect_true(exists("res_future_0.8HCR"))
+
+    # これらのオブジェクトはロードされているかのように見えるが、実際はされていない
+      # 原因: これらの名前が関数内にハードコードされているため
+    expect_failure(expect_true(exists("res_SR")))
+    expect_failure(expect_true(exists("kobeII.table")))
+    expect_failure(expect_true(exists("model_selection")))
+  })
+})
