@@ -84,7 +84,6 @@ test_that("test caa.est.mat", {
 
 })
 
-
 test_that("calc.rel.abund",{
 
   age.test <- c(1:5)
@@ -133,6 +132,9 @@ test_that("solv.Feq",{
 
 })
 
+test_that("Generation.Time",{
+  # 使われていない。
+})
 
 test_that("get.SPR", {
 
@@ -286,3 +288,26 @@ test_that("load_folder() loads 'rda's in the given directory", {
     expect_failure(expect_true(exists("model_selection")))
   })
 })
+test_that("apply_year_colum",{
+
+  waa.year <- dimnames(result_vpa$naa)[[2]]
+  trans_waa_dataframe <- as.data.frame(result_vpa$input$dat$waa)
+
+  appl_year_col_check <- apply_year_colum(result_vpa$input$dat$waa,waa.year)
+
+  test_matrix_rows <- c()
+  for(i in 1:nrow(trans_maa_dataframe)){
+    test_matrix_rows <- c(test_matrix_rows, mean(as.matrix(trans_waa_dataframe[i,])) )
+  }
+    expect_equal(as.numeric(appl_year_col_check),test_matrix_rows)
+
+})
+
+test_that("convert_df",{
+  # 一旦スキップ
+})
+
+test_that("convert_2d_future",{
+  # 一旦スキップ
+})
+
