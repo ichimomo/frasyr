@@ -1895,12 +1895,6 @@ calc_Fratio <- function(faa, waa, maa, M, SPRtarget=30, waa.catch=NULL,Pope=TRUE
   }
 }
 
-#'
-#' @export
-#'
-#'
-
-calc_akaike_weight <- function(AIC) exp(-AIC/2)/sum(exp(-AIC/2))
 
 #'
 #' 使うフォルダ名を与えると一連の結果の関数を読み込む関数
