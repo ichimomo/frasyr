@@ -288,6 +288,7 @@ test_that("load_folder() loads 'rda's in the given directory", {
     expect_failure(expect_true(exists("model_selection")))
   })
 })
+
 test_that("apply_year_colum",{
 
   waa.year <- dimnames(result_vpa$naa)[[2]]
@@ -296,7 +297,7 @@ test_that("apply_year_colum",{
   appl_year_col_check <- apply_year_colum(result_vpa$input$dat$waa,waa.year)
 
   test_matrix_rows <- c()
-  for(i in 1:nrow(trans_maa_dataframe)){
+  for(i in 1:nrow(trans_waa_dataframe)){
     test_matrix_rows <- c(test_matrix_rows, mean(as.matrix(trans_waa_dataframe[i,])) )
   }
     expect_equal(as.numeric(appl_year_col_check),test_matrix_rows)
