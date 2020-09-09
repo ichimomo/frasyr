@@ -1,6 +1,6 @@
 context("generate vpa results with various data type (with dummy data)") 
 
-test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
+test_that("vpa function (with dummy data) (level 2-3?)",{
   # read various data ----
   # data with caa=maa=waa=1, M=0
   data_base <- readr::read_csv(system.file("extdata","all_dummy_data_base.csv",package="frasyr")) 

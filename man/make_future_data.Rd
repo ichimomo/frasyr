@@ -33,6 +33,9 @@ make_future_data(
   HCR_Bban = -1,
   HCR_year_lag = 0,
   HCR_beta_year = NULL,
+  HCR_TAC_reserve_rate = NA,
+  HCR_TAC_carry_rate = NA,
+  HCR_function_name = "HCR_default",
   Pope = res_vpa$input$Pope,
   fix_recruit = NULL,
   fix_wcatch = NULL,
@@ -84,11 +87,19 @@ make_future_data(
 
 \item{HCR_beta}{HCRのbeta}
 
+\item{HCR_Blimit}{HCRのBlimit}
+
 \item{HCR_Bban}{HCRのBban}
 
 \item{HCR_year_lag}{HCRするときにいつのタイミングのssbを参照するか.0の場合、ABC計算年のSSBを参照する。正の値1を入れると1年前のssbを参照する}
 
 \item{HCR_beta_year}{betaを年によって変える場合。tibble(year=2020:2024, beta=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える}
+
+\item{HCR_TAC_reserve_rate}{TACの取り残し率}
+
+\item{HCR_TAC_carry_rate}{TACの何％まで持ち越せるか}
+
+\item{HCR_function_name}{デフォルトは"HCR_default" ここを変更(関数名を文字列で与える。関数は別に定義しておく)すると自作のHCRが適用される。その場合、データのほうで定義されているbeta, Blimit, Bbanなど、同じ名前のものは有効}
 
 \item{Pope}{漁獲方程式にPopeの近似式を使うかどうか。与えない場合には、VPAのオプションが引き継がれる}
 
@@ -115,9 +126,21 @@ make_future_data(
 \item{regime_shift_option}{res_SRにfit.SRregimeの返り値を入れた場合に指定する。将来予測で再生産関係のどのフェーズがおこるかを指定する。list(future_regime=将来のregimeの仮定。keyで指定された番号を入れる)}
 
 \item{special_setting}{list形式で与えるmake_future_dataの返り値のdataと同じ名前の要素について、最後にデータをここで示されたarrayのシミュレーション1回めの値で上書きする。arrayのデータに対してのみ有効。}
-
-\item{HCR_Blimi}{HCRのBlimi}
 }
+<<<<<<< HEAD
+\value{
+以下の要素からなるリスト
+\describe{
+\item{\code{input}}{使用した引数のリスト。\code{do.call(make_future_data, input)}で計算を再現できる}
+\item{\code{data}}{future_vpa関数に渡すデータのセット}
+\item{\code{data$naa_mat, data$caa_mat, data$waa_mat, data$waa_catch_mat, data$maa_mat, data$M_mat, data$faa_mat}}{年齢×年数（VPA期間年＋将来予測年）×シミュレーション回数の3次元データ。順に、年齢別年別シミュレーション別の資源尾数、漁獲尾数、体重、漁獲量計算用の体重、成熟率、自然死亡係数、漁獲死亡係数。このうち、資源尾数はVPA期間年までのみデータが入っていて、\code{future_vpa}を実行することによってここに推定値が入る。\code{faa_mat}についても、future_vpa実行時にHCRなどの適用の設定によって適宜書き換えられる。}
+\item{\code{data$SR_mat}}{
+  
+}
+}
+}
+=======
+>>>>>>> parent of 028cbb4... revise utilities and help
 \description{
 future_vpaにインプットとして入れる将来予測の空のarrayを生成する関数
 }
