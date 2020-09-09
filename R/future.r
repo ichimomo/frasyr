@@ -105,6 +105,9 @@ make_future_data <- function(res_vpa,
   argname <- ls()
   input <- lapply(argname,function(x) eval(parse(text=x)))
   names(input) <- argname
+
+  if(!is.na(HCR_TAC_reserve_rate) && any(HCR_TAC_reserve_rate < 0)) stop("HCR_TAC_reserve_rateに負の値は許されていません\n")
+  if(!is.na(HCR_TAC_carry_rate  ) && any(HCR_TAC_carry_rate   < 0)) stop("HCR_TAC_carry_rateに負の値は許されていません\n")  
   
   # define age and year
   nage <- nrow(res_vpa$naa)
@@ -298,6 +301,8 @@ make_future_data <- function(res_vpa,
 #'
 #' @param tmb_data make_future_dataの返り値。将来の生物パラメータや再生産関係のシナリオを年齢×年×シミュレーション回数で指定した様々なarrayが含まれる。
 #' @param SPR_target 目標とする\%SPR。NULL以外の値の場合、過去〜将来のそれぞれの年・シミュレーションが、目標とするF\%SPRに対して何倍にあたるか(F/Ftarget)を計算して、HCR_realizedの"Fratio"に入れる。HCRが生きている年については"beta_gamma"と一致するはず。
+#' @param max_F 漁獲量一定方策を実施する際のF at ageの最大値の上限（将来的にはmake_future_data関数に入れたい)
+#' @param max_exploitation_rate 漁獲量一定方策を実施する際のMを考慮した上での漁獲率の上限（将来的にはmake_future_data関数に入れたい)
 #'
 #' @export
 #' @encoding UTF-8
@@ -310,6 +315,8 @@ future_vpa <- function(tmb_data,
                        objective ="MSY", # or PGY, percentB0, Bempirical
                        obj_value = 0,                         
                        obj_stat  ="mean",
+                       max_F=exp(10), # いつかはmake_future_dataに以降したい
+                       max_exploitation_rate=0.99, # いつかはmake_future_dataに以降したい                       
                        do_MSE=NULL,
                        MSE_input_data=NULL,
                        MSE_nsim=NULL,
@@ -369,6 +376,8 @@ future_vpa <- function(tmb_data,
     tmb_data$do_MSE <- do_MSE
     tmb_data$MSE_input_data <- MSE_input_data
     tmb_data$MSE_nsim <- MSE_nsim
+    tmb_data$max_F <- max_F
+    tmb_data$max_exploitation_rate <- max_exploitation_rate
     
     R_obj_fun <- function(x, tmb_data, what_return="obj"){
       tmb_data$x <- x
@@ -471,6 +480,8 @@ future_vpa_R <- function(naa_mat,
                          what_return="obj",
                          HCR_mat,
                          HCR_function_name,
+                         max_F=exp(10),
+                         max_exploitation_rate=0.99,
                          do_MSE=NULL,
                          MSE_input_data=NULL,
                          MSE_nsim = NULL,
@@ -619,7 +630,13 @@ future_vpa_R <- function(naa_mat,
       }
       HCR_realized[t,,"original_ABC_plus"] <- HCR_realized[t,,"original_ABC"] + HCR_realized[t,,"reserved_catch"]
       HCR_mat[t,,"expect_wcatch"] <- HCR_realized[t,,"original_ABC_plus"] * (1-HCR_mat[t,,"TAC_reserve_rate"])
-      if(t<total_nyear) HCR_realized[t+1,,"reserved_catch"] <- HCR_realized[t,,"original_ABC"] * min(HCR_mat[t,,"TAC_reserve_rate"],HCR_mat[t,,"TAC_carry_rate"])
+      if(t<total_nyear){
+          max_carry_amount <- HCR_mat[t,,"TAC_carry_rate"]*HCR_realized[t,,"original_ABC"]
+          ABC_reserve_amount <- HCR_realized[t,,"original_ABC"] - HCR_mat[t,,"expect_wcatch"]
+          ABC_reserve_amount[ABC_reserve_amount<0] <- 0
+          HCR_realized[t+1,,"reserved_catch"] <- cbind(max_carry_amount, ABC_reserve_amount) %>%
+              apply(1,min)
+      }
     }
     
     if(sum(HCR_mat[t,,"expect_wcatch"])>0){
@@ -630,7 +647,8 @@ future_vpa_R <- function(naa_mat,
                                              function(x) caa.est.mat(N_mat[,t,x],saa.tmp[,x],#F_mat[,t,x],#saa.tmp[,x],
                                                                      waa_catch_mat[,t,x],M_mat[,t,x],
                                                                      HCR_mat[t,x,"expect_wcatch"],
-                                                                     set_max1=FALSE,
+                                                                     set_max1=FALSE,max_exploitation_rate=max_exploitation_rate,
+                                                                     max_F=max_F,
                                                                      Pope=as.logical(Pope))$x)
       F_mat[,t,which(F_max_tmp>0)] <- sweep(saa.tmp[,which(F_max_tmp>0)],2, fix_catch_multiplier, FUN="*")
       HCR_realized[t,which(F_max_tmp>0),"beta_gamma"] <- HCR_realized[t,which(F_max_tmp>0),"beta_gamma"] *

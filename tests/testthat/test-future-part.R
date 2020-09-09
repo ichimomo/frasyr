@@ -189,6 +189,22 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
   catch <- apply(res_future_backward$wcaa,c(2,3),sum)
   expect_equal(mean(catch["2020",]), 1000, tol=0.001)
   expect_equal(mean(catch["2021",]), 2000, tol=0.001)
+
+  # future_vpaに追加したオプション（max_F, max_exploitation_rateの確認）
+  small_maxF <- 0.001
+  expect_warning(res_future_test2 <- future_vpa(tmb_data=data_future_test$data,
+                                                optim_method="none", 
+                                                multi_init = 1, max_F=small_maxF))
+  expect_equal(round(max(res_future_test2$faa[,"2020",1])/small_maxF,3),1)
+
+  expect_warning(res_future_test3 <- data_future_test$input %>%
+                     list_modify(fix_wcatch=list(year=c(2020,2021),wcatch=c(100000,200000))) %>%
+                     safe_call(make_future_data,.) %>%
+                     future_vpa(tmb_data=.$data, optim_method="none", multi_init = 1, max_exploitation_rate=0.8)  
+                 )
+  # natural mortality
+  #baa <- apply(res_future_test3$naa * res_future_test3$waa,c(2,3),sum)
+  #mean(res_future_test3$HCR_realized[as.character(2020:2021),,"wcatch"]/baa[as.character(2020:2021),])
   
   # MSY計算の場合(MSY estimation)
   res_future_test_R <- future_vpa(tmb_data=data_future_test$data, 
@@ -731,8 +747,8 @@ test_that("future_vpa function (carry over TAC) (level 2)",{
                                        HCR_Blimit=-1, # HCRのBlimit
                                        HCR_Bban=-1, # HCRのBban
                                        HCR_year_lag=0, # HCRで何年遅れにするか
-                                       HCR_TAC_reserve_rate=0.2,
-                                       HCR_TAC_carry_rate=0.2,
+                                       HCR_TAC_reserve_rate=0.1,
+                                       HCR_TAC_carry_rate=0.1,
                                        # SR setting
                                        res_SR=res_sr_HSL2, 
                                        seed_number=1, # シード番号
@@ -757,29 +773,44 @@ test_that("future_vpa function (carry over TAC) (level 2)",{
                            multi_init = 1,SPRtarget=0.3,
                            do_MSE=FALSE, MSE_input_data=data_future_test)  
 
-  # 取り残し分を考慮した想定される漁獲量
-  res_future_noMSE$HCR_mat[as.character(2018:2023),1:3,"expect_wcatch"]
-  # 実際の漁獲量
-  res_future_noMSE$HCR_realized[as.character(2018:2023),1:3,"wcatch"]
-  # 本当のABC
-  res_future_noMSE$HCR_realized[as.character(2018:2023),1:3,"original_ABC"]
-  # 全年の取り残し分を足したときの本当のABC
-  res_future_noMSE$HCR_realized[as.character(2018:2023),1:3,"original_ABC_plus"]  
-  boxplot(t(res_future_noMSE$HCR_realized[as.character(2018:2027),,"original_ABC_plus"]))
-  boxplot(t(res_future_noMSE$HCR_realized[as.character(2018:2027),,"original_ABC"]),add=TRUE,col="gray",boxwex=0.5)
-  boxplot(t(res_future_noMSE$HCR_realized[as.character(2018:2027),,"wcatch"]),add=TRUE,col="pink",boxwex=0.3)
-
   res_future_MSE <- future_vpa(tmb_data=data_future_test$data,
                            optim_method="none", 
                            multi_init = 1,SPRtarget=0.3,
                            do_MSE=TRUE, MSE_input_data=data_future_test,
                            MSE_nsim=1000)
   
-  boxplot(t(res_future_MSE$HCR_realized[as.character(2018:2027),,"original_ABC_plus"]))
-  boxplot(t(res_future_MSE$HCR_realized[as.character(2018:2027),,"original_ABC"]),add=TRUE,col="gray",boxwex=0.5)
-  boxplot(t(res_future_MSE$HCR_realized[as.character(2018:2027),,"wcatch"]),add=TRUE,col="pink",boxwex=0.3)
-  
-  plot_futures(res_vpa,list(res_future_MSE,res_future_noMSE,res_future_noreserve))
-  
+  expect_equal(all(round(res_future_MSE$HCR_realized[as.character(2019:2023),,"wcatch"]/
+                         res_future_MSE$HCR_realized[as.character(2019:2023),,"original_ABC_plus"],3)
+                   ==0.9),TRUE)
+
+  data_future_reserve_CC <- list_modify(data_future_test$input,
+                                        fix_wcatch=tibble(year=2019:2025,wcatch=100)) %>%
+      safe_call(make_future_data,.)
+
+
+  res_future_reserve_CC <- future_vpa(tmb_data=data_future_reserve_CC$data,
+                                      optim_method="none", 
+                                      multi_init = 1,SPRtarget=0.3,
+                                      do_MSE=FALSE, MSE_input_data=data_future_test)
+  round(res_future_reserve_CC$HCR_realized[as.character(2019:2025),1,"wcatch"]) %>%
+      as.numeric() %>%  unlist %>% 
+      expect_equal(c(90,99,91,98,92,98,92)) # この数字は、TACを100、持ち越し率を0.1に固定したときのエクセルによる計算結果
+
+  data_future_reserve_CC1 <- list_modify(data_future_reserve_CC$input,
+                                        HCR_TAC_reserve_rate=0.3) %>%
+      safe_call(make_future_data,.)
+  res_future_reserve_CC1 <- future_vpa(tmb_data=data_future_reserve_CC1$data,
+                                      optim_method="none", 
+                                      multi_init = 1,SPRtarget=0.3,
+                                      do_MSE=FALSE, MSE_input_data=data_future_test)  
+  res_future_reserve_CC1$HCR_realized[as.character(2019:2025),1,"wcatch"] %>%
+      round() %>% unlist() %>% as.numeric() %>% expect_equal(c(70,rep(77,6)))
+  res_future_reserve_CC1$HCR_realized[as.character(2019:2025),1,"original_ABC"]%>%
+      round() %>% unlist() %>% as.numeric() %>% expect_equal(c(100,rep(100,6)))
+  res_future_reserve_CC1$HCR_realized[as.character(2019:2025),1,"original_ABC_plus"]%>%
+      round() %>% unlist() %>% as.numeric() %>% expect_equal(c(100,rep(110,6)))
+
+  expect_error(data_future_no_reserve <- list_modify(data_future_test$input,HCR_TAC_reserve_rate=-1) %>%
+                   safe_call(make_future_data,.))
   
 })
