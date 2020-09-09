@@ -817,3 +817,115 @@ test_that("future_vpa function (carry over TAC) (level 2)",{
 
 # Naoto Shinohara
 
+# テストされていない関数たち
+
+# future_vpa_R
+# set_SR_mat
+# SRF_HS
+# SRF_BH
+# SRF_RI
+# make_array
+# arrange_weight
+# average_SR_mat
+# sample_backward
+# print.myarray
+# naming_adreport
+# trace_future
+# get_summary_stat
+# format_to_old_future
+# safe_call
+# HCR_default
+# update_waa_mat
+# get_wcatch
+
+
+# check set_SR_mat ----
+context("check set_SR_mat")
+
+test_that("set_SR_mat with sample data", {
+  # サンプルデータ、パラメータとして以下を与える
+  data(res_vpa)
+  data(res_sr_HSL2)
+
+  nsim = 10
+  nyear = 50 # number of future year
+  future_initial_year_name = 2017
+  future_initial_year <- which(colnames(res_vpa$naa)==future_initial_year_name)
+  total_nyear <- future_initial_year + nyear
+  allyear_name <- min(as.numeric(colnames(res_vpa$naa))) + c(0:(total_nyear - 1))
+  start_random_rec_year_name = 2018
+
+  # 空のSR_matを作成
+  SR_mat <- array(0, dim=c(total_nyear, nsim, 15),
+                  dimnames=list(year=allyear_name, nsim=1:nsim,
+                                par=c("a","b","rho", #1-3
+                                      "SR_type", # 4
+                                      "rand_resid", # 5
+                                      "deviance", #6
+                                      "recruit","ssb",
+                                      "intercept","sd",#9-10
+                                      "bias_factor", #11
+                                      "blank2","blank3","blank4","blank5")))
+  SR_mat[, , "deviance"]
+
+  # set_SR_matを用いて、加入のdeviationを計算しSR_matに格納する。
+  SR_mat <- set_SR_mat(res_vpa = res_vpa,
+                       start_random_rec_year_name = start_random_rec_year_name,
+                       SR_mat = SR_mat, res_SR = res_sr_HSL2, seed_number = 1,
+                       resid_type = "lognormal", bias_correction = TRUE,
+                       resample_year_range = 0, backward_duration = 0,
+                       recruit_intercept = 0, recruit_age = 0,
+                       model_average_option = NULL, regime_shift_option = NULL
+  )
+  SR_mat[, , "deviance"]
+
+  # deviationに値が格納されているか（0以外の値になっているか）
+  expect_equal(SR_mat[, , "deviance"][SR_mat[, , "deviance"] != 0] %>% length(),
+               nrow(SR_mat[, , "deviance"]) * ncol(SR_mat[, , "deviance"]))
+})
+
+
+# check arrange_weight ----
+context("check arrange_weight")
+
+test_that("check arrange_weight", {
+
+  weight <- c(0.21, 0.79) ; sim <- 10
+  Whether_duplicated <- arrange_weight(weight, sim) %>% unlist() %>% duplicated()
+  # 出力リストの長さが足してnsimになるかどうか
+  expect_equal(arrange_weight(weight, sim) %>%
+                 purrr::map(function(x) length(x)) %>%
+                 unlist() %>% sum(),
+               sim)
+  # リストの要素間で数値に重複がないかどうか
+  expect_equal(c(1:length(Whether_duplicated))[Whether_duplicated],
+               numeric(0))
+
+  # 3つ以上の重み付けが与えられ、重み付けの和が1に満たない場合でのテスト。
+  weight <- c(0.11, 0.22, 0.33) ; sim <- 10
+  Whether_duplicated <- arrange_weight(weight, sim) %>% unlist() %>% duplicated()
+  # 出力リストの長さが足してnsimになるかどうか
+  expect_equal(arrange_weight(weight, sim) %>%
+                 purrr::map(function(x) length(x)) %>%
+                 unlist() %>% sum(),
+               sim)
+  # リストの要素間で数値に重複がないかどうか
+  expect_equal(c(1:length(Whether_duplicated))[Whether_duplicated],
+               numeric(0))
+
+})
+
+
+context("HCR_default")
+
+test_that("HCR_default",{
+  HCR <- HCR_default(ssb=100000,Blimit=10000,Bban=1000,beta=0.8)
+  expect_equal(HCR,0.8)
+})
+
+context("get_wcatch")
+
+test_that("get_wcatch",{
+  expect_equal(get_wcatch(res_future_0.8HCR), apply(res_future_0.8HCR$wcaa,c(2,3),sum))
+})
+
