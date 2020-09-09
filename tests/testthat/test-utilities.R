@@ -248,6 +248,30 @@ test_that("get.stat4",{
     #expect_false(is_null(get.trace(res_MSY_HSL1)))
 })
 
+test_that("make kobeII table", {
+  test_that("beta.simulation() works", {
+    kobe_data <- beta.simulation(generate_dummy_future_new_object()$input,
+                                 beta_vector = seq(0, 1, 0.5),
+                                 year.lag = 0,
+                                 type = "new")
+
+    expect_is(kobe_data, "data.frame")
+    expect_setequal(colnames(kobe_data),
+                    c("year", "sim", "value", "stat", "HCR_name", "beta"))
+
+    test_that("make_kobeII_table() works", {
+      kobe_table <- make_kobeII_table(kobe_data,
+                        load_data("../../inst/extdata/res_vpa_pma.rda"))
+
+      expect_is(kobe_table, "list")
+      expect_setequal(names(kobe_table),
+                      c("catch.mean", "ssb.mean", "ssb.lower10percent",
+                        "ssb.upper90percent", "prob.over.ssbtarget",
+                        "prob.over.ssblimit", "prob.over.ssbban",
+                        "prob.over.ssbmin", "prob.over.ssbmax", "catch.aav"))
+    })
+  })
+})
 
 test_that("load_folder() loads 'rda's in the given directory", {
   expect_is(load_folder("../../inst/extdata"), "list")
