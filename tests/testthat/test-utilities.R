@@ -97,7 +97,9 @@ test_that("calc.rel.abund",{
   calc_rel_abund_popeF_check <- calc.rel.abund(sel = Fc.test,Fr=1,na = length(age.test),M = M.test,waa = waa.test, maa = maa.test, Pope = FALSE)
 
   #上記計算内容をエクセルで計算したもの(../../tools/generate-testdata/check.calc.rel.abund.xlsxを数値のみのcsvに変換)を読み込み
-  calc_rel_abund <- read.csv("../../inst/extdata/check_calc_rel_abund.csv",header = T)
+
+  calc_rel_abund <- system.file("extdata", "check_calc_rel_abund.csv", package = "frasyr") %>%
+    read.csv(header = T)
   #データ整形
   calc_rel_abund_popeT <- list(calc_rel_abund$rel.abundant,calc_rel_abund$ypr1.popeT,calc_rel_abund$spr)
   names(calc_rel_abund_popeT) <- c("rel.abund","ypr","spr")
