@@ -98,6 +98,9 @@
       <a href="../articles/Diagnostics-for-VPA.html">VPAモデル診断スクリプト</a>
     </li>
     <li>
+      <a href="../articles/fittingSR.html">fitSR関数を再生産関係の推定</a>
+    </li>
+    <li>
       <a href="../articles/vpa.html">VPA関数を使った資源量推定</a>
     </li>
   </ul>
@@ -155,6 +158,9 @@
   HCR_Bban = <span class='op'>-</span><span class='fl'>1</span>,
   HCR_year_lag = <span class='fl'>0</span>,
   HCR_beta_year = <span class='kw'>NULL</span>,
+  HCR_TAC_reserve_rate = <span class='fl'>NA</span>,
+  HCR_TAC_carry_rate = <span class='fl'>NA</span>,
+  HCR_function_name = <span class='st'>"HCR_default"</span>,
   Pope = <span class='kw'>res_vpa</span><span class='op'>$</span><span class='kw'>input</span><span class='op'>$</span><span class='kw'>Pope</span>,
   fix_recruit = <span class='kw'>NULL</span>,
   fix_wcatch = <span class='kw'>NULL</span>,
@@ -243,6 +249,10 @@
       <td><p>HCRのbeta</p></td>
     </tr>
     <tr>
+      <th>HCR_Blimit</th>
+      <td><p>HCRのBlimit</p></td>
+    </tr>
+    <tr>
       <th>HCR_Bban</th>
       <td><p>HCRのBban</p></td>
     </tr>
@@ -253,6 +263,18 @@
     <tr>
       <th>HCR_beta_year</th>
       <td><p>betaを年によって変える場合。tibble(year=2020:2024, beta=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える</p></td>
+    </tr>
+    <tr>
+      <th>HCR_TAC_reserve_rate</th>
+      <td><p>TACの取り残し率</p></td>
+    </tr>
+    <tr>
+      <th>HCR_TAC_carry_rate</th>
+      <td><p>TACの何％まで持ち越せるか</p></td>
+    </tr>
+    <tr>
+      <th>HCR_function_name</th>
+      <td><p>デフォルトは"HCR_default" ここを変更(関数名を文字列で与える。関数は別に定義しておく)すると自作のHCRが適用される。その場合、データのほうで定義されているbeta, Blimit, Bbanなど、同じ名前のものは有効</p></td>
     </tr>
     <tr>
       <th>Pope</th>
@@ -306,11 +328,17 @@
       <th>special_setting</th>
       <td><p>list形式で与えるmake_future_dataの返り値のdataと同じ名前の要素について、最後にデータをここで示されたarrayのシミュレーション1回めの値で上書きする。arrayのデータに対してのみ有効。</p></td>
     </tr>
-    <tr>
-      <th>HCR_Blimi</th>
-      <td><p>HCRのBlimi</p></td>
-    </tr>
     </table>
+
+    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
+
+    <p>以下の要素からなるリスト</p><dl>
+<dt><code>input</code></dt><dd><p>使用した引数のリスト。<code><a href='https://rdrr.io/r/base/do.call.html'>do.call(make_future_data, input)</a></code>で計算を再現できる</p></dd>
+<dt><code>data</code></dt><dd><p>future_vpa関数に渡すデータのセット</p></dd>
+<dt><code>data$naa_mat, data$caa_mat, data$waa_mat, data$waa_catch_mat, data$maa_mat, data$M_mat, data$faa_mat</code></dt><dd><p>年齢×年数（VPA期間年＋将来予測年）×シミュレーション回数の3次元データ。順に、年齢別年別シミュレーション別の資源尾数、漁獲尾数、体重、漁獲量計算用の体重、成熟率、自然死亡係数、漁獲死亡係数。このうち、資源尾数はVPA期間年までのみデータが入っていて、<code>future_vpa</code>を実行することによってここに推定値が入る。<code>faa_mat</code>についても、future_vpa実行時にHCRなどの適用の設定によって適宜書き換えられる。</p></dd>
+<dt><code>data$SR_mat</code></dt><dd><p></p></dd>
+
+</dl>
 
 
   </div>
@@ -328,7 +356,7 @@
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.0.9000.</p>
 </div>
 
       </footer>
