@@ -1564,13 +1564,14 @@ cv.est <- function(res,n=5){
 #' @param remove.maxAgeF Mohn's rhoを計算する際に最高齢のFを除くか（alphaを仮定して計算していることが多いから）
 #' @param ssb.forecast Mohn's rhoを計算する際にSSBは1年後を計算するか(last.catch.zero=TRUEのときのみ有効)
 #' @param grid.add.ini \code{add.p.ini}をgridで変えて初期値を事前に探索する
+#' @param grid.init \code{p.init}でgridを変えて初期値を事前に探索する
 #' @encoding UTF-8
 #' @export
 #'
 
 retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE,
                       remove.maxAgeF=FALSE,ssb.forecast=FALSE,sel.mat=NULL,
-                      grid.add.ini = NULL){
+                      grid.add.ini = NULL,grid.init = NULL){
    res.c <- res
    res.c$input$plot <- FALSE
    Res <- list()
@@ -1634,6 +1635,19 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE,
        loglik_v = sapply(1:10, function(i) res_list[[i]]$logLik)
        pos = which(loglik_v == max(loglik_v[nan_v==0]))
        res.c$input$add.p.ini <- grid.add.ini[pos]
+     }
+     
+     if (!is.null(grid.init)) {
+       input_tmp = res.c$input
+       res_list = grid.init %>% map(function(x) {
+         input_tmp$no.est = TRUE
+         input_tmp$p.init <- x
+         RES = do.call(vpa,input_tmp)
+       })
+       nan_v = sapply(1:10, function(i) sum(is.nan(res_list[[i]]$sigma)))
+       loglik_v = sapply(1:10, function(i) res_list[[i]]$logLik)
+       pos = which(loglik_v == max(loglik_v[nan_v==0]))
+       res.c$input$p.init <- grid.init[pos]
      }
      
      res1 <- safe_call(vpa,res.c$input, force=TRUE) # do.callからsafe_callに変更(浜辺'20/06/30)
