@@ -897,10 +897,10 @@ vpa <- function(
         baa <- naa*waa
         ssb <- baa*maa*exp(-ssb.coef*(faa+M))
 
-        if (is.null(rec.new)) {
+        if (is.null(rec.new) & !isTRUE(last.catch.zero)) {
           new.naa[1] <- median((naa[1,]/colSums(ssb))[years %in% rps.year])*sum(ssb[,ny+n.add],na.rm=TRUE)
-        }
-        else new.naa[1] <- rec.new
+        }else if(!is.null(rec.new)) {new.naa[1] <- rec.new
+        }else if(is.null(rec.new) & isTRUE(last.catch.zero)){new.naa[1] <-NA}
 
         naa[1,ny+n.add] <- new.naa[1]
         baa[1,ny+n.add] <- naa[1,ny+n.add]*waa[1,ny+n.add]
@@ -1078,19 +1078,19 @@ vpa <- function(
 
         if (n.add==1 & is.na(naa[1,ny+n.add])){
           new.naa <- forward.calc(faa,naa,M,na,ny+n.add)
-
+          if (!is.null(f.new) & !is.null(saa.new)) faa[,ny+n.add] <- f.new*saa.new else faa[,ny+n.add] <- 0
           naa[,ny+n.add] <- new.naa
           baa <- naa*waa
           ssb <- baa*maa*exp(-ssb.coef*(faa+M))
 
-          if (is.null(rec.new)) {
+          if (is.null(rec.new) & !isTRUE(last.catch.zero)) {
             new.naa[1] <- median((naa[1,]/colSums(ssb))[years %in% rps.year])*sum(ssb[,ny+n.add],na.rm=TRUE)
-          } else new.naa[1] <- rec.new
+          }else if(!is.null(rec.new)) {new.naa[1] <- rec.new
+          }else if(is.null(rec.new) & isTRUE(last.catch.zero)){new.naa[1] <-NA}
 
           naa[1,ny+n.add] <- new.naa[1]
           baa[1,ny+n.add] <- naa[1,ny+n.add]*waa[1,ny+n.add]
 
-          if (!is.null(f.new) & !is.null(saa.new)) faa[,ny+n.add] <- f.new*saa.new else faa[,ny+n.add] <- 0
           if (isTRUE(Pope)) caa[,ny+n.add] <- naa[,ny+n.add]*(1-exp(-faa[,ny+n.add]))*exp(-M[,ny+n.add]/2) else caa[,ny+n.add] <- naa[,ny+n.add]*(1-exp(-faa[,ny+n.add]-M[,ny+n.add]))*faa[,ny+n.add]/(faa[,ny+n.add]+M[,ny+n.add])
 
           ssb[1,ny+n.add] <- baa[1,ny+n.add]*maa[1,ny+n.add]*exp(-ssb.coef*(faa[1,ny+n.add]+M[1,ny+n.add]))
