@@ -1398,6 +1398,56 @@ make_kobeII_table <- function(kobeII_data,
     arrange(HCR_name,desc(beta))%>%
     mutate(stat_name="catch.aav")
 
+  # risk
+  calc.aav2 <- function(x) sum(x[-1]/x[-length(x)]<0.5)
+  catch.risk <- kobeII_data %>%
+    dplyr::filter(year%in%year.aav,stat=="catch") %>%
+    group_by(HCR_name,beta,sim) %>%
+    dplyr::summarise(catch.aav=calc.aav2(value)) %>%
+    group_by(HCR_name,beta) %>%
+    summarise(value=mean(catch.aav>0)) %>%
+    arrange(HCR_name,desc(beta))%>%
+    mutate(stat_name="catch.risk")
+  
+  bban.risk <- kobeII_data %>%
+    dplyr::filter(year%in%year.aav & stat=="SSB") %>%
+    group_by(HCR_name,beta,sim) %>%
+    dplyr::summarise(Bban.fail=sum(value<Bban)) %>%
+    group_by(HCR_name,beta) %>%
+    summarise(value=mean(Bban.fail>0)) %>%
+    arrange(HCR_name,desc(beta))%>%
+    mutate(stat_name="bban.risk")
+
+  blimit.risk <- kobeII_data %>%
+    dplyr::filter(year%in%year.aav,stat=="SSB") %>%
+    group_by(HCR_name,beta,sim) %>%
+    dplyr::summarise(Blimit.fail=sum(value<Blimit)) %>%
+    group_by(HCR_name,beta) %>%
+    summarise(value=mean(Blimit.fail>0)) %>%
+    arrange(HCR_name,desc(beta))%>%
+    mutate(stat_name="blimit.risk")        
+
+  # kobe statistics
+  overssbtar <- kobeII_data %>%
+    dplyr::filter(year%in%year.ssbmax,stat=="SSB") %>%
+    mutate(is.over.ssbtar= value > Btarget)
+  overFtar <- kobeII_data %>%
+    dplyr::filter(year%in%year.ssbmax,stat=="Fratio") %>%
+    mutate(is.over.Ftar= round(value,2) > 1)
+  overssbtar$is.over.Ftar <- overFtar$is.over.Ftar
+           
+  kobe.stat <- overssbtar %>%
+      mutate("red"   =(is.over.ssbtar==FALSE) & (is.over.Ftar==TRUE),
+             "green" =(is.over.ssbtar==TRUE ) & (is.over.Ftar==FALSE),
+             "yellow"=(is.over.ssbtar==FALSE) & (is.over.Ftar==FALSE),
+             "orange"=(is.over.ssbtar==TRUE ) & (is.over.Ftar==TRUE)) %>%
+    group_by(HCR_name,beta,year) %>%
+    summarise(red.prob=mean(red,na.rm=T),
+              green.prob=mean(green,na.rm=T),
+              yellow.prob=mean(yellow,na.rm=T),
+              orange.prob=mean(orange,na.rm=T))  %>%
+    mutate(stat_name="kobe.stat")
+  
   res_list <- list(catch.mean   = catch.mean,
                    ssb.mean         = ssb.mean,
                    ssb.lower10percent            = ssb.ci10,
@@ -1407,7 +1457,11 @@ make_kobeII_table <- function(kobeII_data,
                    prob.over.ssbban     = ssbban.table,
                    prob.over.ssbmin     = ssbmin.table,
                    prob.over.ssbmax     = ssbmax.table,
-                   catch.aav       = catch.aav.table)
+                   catch.aav       = catch.aav.table,
+                   kobe.stat       = kobe.stat,
+                   catch.risk = catch.risk,
+                   bban.risk = bban.risk,
+                   blimit.risk = blimit.risk)
   return(res_list)
 
 }
