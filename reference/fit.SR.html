@@ -79,12 +79,6 @@
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
-  <a href="../index.html">
-    <span class="fas fa fas fa-home fa-lg"></span>
-     
-  </a>
-</li>
-<li>
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
@@ -130,18 +124,18 @@
     <p>3種類の再生産関係の推定を、最小二乗法か最小絶対値法で、さらに加入の残差の自己相関を考慮して行うことができる</p>
     </div>
 
-    <pre class="usage"><span class='fu'>fit.SR</span>(
-  <span class='kw'>SRdata</span>,
-  SR = <span class='st'>"HS"</span>,
-  method = <span class='st'>"L2"</span>,
-  AR = <span class='fl'>1</span>,
-  hessian = <span class='fl'>FALSE</span>,
-  w = <span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>1</span>, <span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span>(<span class='kw'>SRdata</span><span class='op'>$</span><span class='kw'>R</span>)),
-  length = <span class='fl'>20</span>,
-  max.ssb.pred = <span class='fl'>1.3</span>,
-  p0 = <span class='kw'>NULL</span>,
-  out.AR = <span class='fl'>TRUE</span>
-)</pre>
+    <pre class="usage"><span class='fu'>fit.SR</span><span class='op'>(</span>
+  <span class='va'>SRdata</span>,
+  SR <span class='op'>=</span> <span class='st'>"HS"</span>,
+  method <span class='op'>=</span> <span class='st'>"L2"</span>,
+  AR <span class='op'>=</span> <span class='fl'>1</span>,
+  hessian <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  w <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span><span class='op'>(</span><span class='fl'>1</span>, <span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span><span class='op'>(</span><span class='va'>SRdata</span><span class='op'>$</span><span class='va'>R</span><span class='op'>)</span><span class='op'>)</span>,
+  length <span class='op'>=</span> <span class='fl'>20</span>,
+  max.ssb.pred <span class='op'>=</span> <span class='fl'>1.3</span>,
+  p0 <span class='op'>=</span> <span class='cn'>NULL</span>,
+  out.AR <span class='op'>=</span> <span class='cn'>TRUE</span>
+<span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -196,14 +190,14 @@
 
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='co'>if</span> (<span class='fl'>FALSE</span>) {
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>res_vpa</span>)
-<span class='kw'>SRdata</span> <span class='op'>&lt;-</span> <span class='fu'><a href='get.SRdata.html'>get.SRdata</a></span>(<span class='kw'>res_vpa</span>)
-<span class='kw'>resSR</span> <span class='op'>&lt;-</span> <span class='fu'>fit.SR</span>(<span class='kw'>SRdata</span>, SR = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"HS"</span>,<span class='st'>"BH"</span>,<span class='st'>"RI"</span>)[<span class='fl'>1</span>],
-                method = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"L1"</span>,<span class='st'>"L2"</span>)[<span class='fl'>2</span>], AR = <span class='fl'>1</span>,
-                out.AR = <span class='fl'>TRUE</span>)
-<span class='kw'>resSR</span><span class='op'>$</span><span class='kw'>pars</span>
-}
+    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='va'>res_vpa</span><span class='op'>)</span>
+<span class='va'>SRdata</span> <span class='op'>&lt;-</span> <span class='fu'><a href='get.SRdata.html'>get.SRdata</a></span><span class='op'>(</span><span class='va'>res_vpa</span><span class='op'>)</span>
+<span class='va'>resSR</span> <span class='op'>&lt;-</span> <span class='fu'>fit.SR</span><span class='op'>(</span><span class='va'>SRdata</span>, SR <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"HS"</span>,<span class='st'>"BH"</span>,<span class='st'>"RI"</span><span class='op'>)</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>]</span>,
+                method <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"L1"</span>,<span class='st'>"L2"</span><span class='op'>)</span><span class='op'>[</span><span class='fl'>2</span><span class='op'>]</span>, AR <span class='op'>=</span> <span class='fl'>1</span>,
+                out.AR <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
+<span class='va'>resSR</span><span class='op'>$</span><span class='va'>pars</span>
+<span class='op'>}</span>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
@@ -220,7 +214,7 @@
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.0.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.9000.</p>
 </div>
 
       </footer>

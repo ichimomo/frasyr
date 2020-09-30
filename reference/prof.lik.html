@@ -79,12 +79,6 @@
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
-  <a href="../index.html">
-    <span class="fas fa fas fa-home fa-lg"></span>
-     
-  </a>
-</li>
-<li>
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
@@ -130,13 +124,13 @@
     <p>profile likelihood</p>
     </div>
 
-    <pre class="usage"><span class='fu'>prof.lik</span>(
-  <span class='kw'>Res</span>,
-  a = <span class='kw'>Res</span><span class='op'>$</span><span class='kw'>pars</span><span class='op'>$</span><span class='kw'>a</span>,
-  b = <span class='kw'>Res</span><span class='op'>$</span><span class='kw'>pars</span><span class='op'>$</span><span class='kw'>b</span>,
-  sd = <span class='kw'>Res</span><span class='op'>$</span><span class='kw'>pars</span><span class='op'>$</span><span class='kw'>sd</span>,
-  rho = <span class='fu'><a href='https://rdrr.io/r/base/ifelse.html'>ifelse</a></span>(<span class='kw'>Res</span><span class='op'>$</span><span class='kw'>input</span><span class='op'>$</span><span class='kw'>out.AR</span>, <span class='fl'>0</span>, <span class='kw'>Res</span><span class='op'>$</span><span class='kw'>pars</span><span class='op'>$</span><span class='kw'>rho</span>)
-)</pre>
+    <pre class="usage"><span class='fu'>prof.lik</span><span class='op'>(</span>
+  <span class='va'>Res</span>,
+  a <span class='op'>=</span> <span class='va'>Res</span><span class='op'>$</span><span class='va'>pars</span><span class='op'>$</span><span class='va'>a</span>,
+  b <span class='op'>=</span> <span class='va'>Res</span><span class='op'>$</span><span class='va'>pars</span><span class='op'>$</span><span class='va'>b</span>,
+  sd <span class='op'>=</span> <span class='va'>Res</span><span class='op'>$</span><span class='va'>pars</span><span class='op'>$</span><span class='va'>sd</span>,
+  rho <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/ifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>Res</span><span class='op'>$</span><span class='va'>input</span><span class='op'>$</span><span class='va'>out.AR</span>, <span class='fl'>0</span>, <span class='va'>Res</span><span class='op'>$</span><span class='va'>pars</span><span class='op'>$</span><span class='va'>rho</span><span class='op'>)</span>
+<span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -163,7 +157,7 @@
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.0.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.9000.</p>
 </div>
 
       </footer>

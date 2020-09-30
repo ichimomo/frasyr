@@ -79,12 +79,6 @@
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
-  <a href="../index.html">
-    <span class="fas fa fas fa-home fa-lg"></span>
-     
-  </a>
-</li>
-<li>
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
@@ -130,7 +124,7 @@
     <p>VPA計算結果を使って毎年のF at ageがどのくらいのSPR, YPRに相当するかを計算する。また、各年のFが、目標としたSPR（target.SPR）を達成するためのF(Ftarget)の何倍(F/Ftarget)に相当するかも計算する。F/Ftargetは数値的に探索するが、そのときのF/Ftargetの上限をFmaxにて指定する。十分大きい値（デフォルトは１０）を与えておけば大丈夫だが、Ftargetが非常に小さい数字になりそうな場合にはこの値をもっと大きくとるなどする。また、SPRの計算は、デフォルトでは等比級数の和の公式を使って、無限大の年齢までSPRを足しているが、max.ageを指定することで、有限の年齢までの和も計算できる。</p>
     </div>
 
-    <pre class="usage"><span class='fu'>get.SPR</span>(<span class='kw'>dres</span>, target.SPR = <span class='fl'>30</span>, Fmax = <span class='fl'>10</span>, max.age = <span class='fl'>Inf</span>)</pre>
+    <pre class="usage"><span class='fu'>get.SPR</span><span class='op'>(</span><span class='va'>dres</span>, target.SPR <span class='op'>=</span> <span class='fl'>30</span>, Fmax <span class='op'>=</span> <span class='fl'>10</span>, max.age <span class='op'>=</span> <span class='cn'>Inf</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -155,9 +149,9 @@
 
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>res_vpa</span>)
-<span class='kw'>Fratio</span> <span class='op'>&lt;-</span> <span class='fu'>get.SPR</span>(<span class='kw'>res_vpa</span>,target.SPR=<span class='fl'>12</span>)<span class='op'>$</span><span class='kw'>ysdata</span><span class='op'>$</span><span class='st'>"F/Ftarget"</span>
-<span class='fu'><a href='https://rdrr.io/r/graphics/plot.default.html'>plot</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='kw'>res_vpa</span><span class='op'>$</span><span class='kw'>naa</span>),<span class='kw'>Fratio</span>,type=<span class='st'>"b"</span>)
+    <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='va'>res_vpa</span><span class='op'>)</span>
+<span class='va'>Fratio</span> <span class='op'>&lt;-</span> <span class='fu'>get.SPR</span><span class='op'>(</span><span class='va'>res_vpa</span>,target.SPR<span class='op'>=</span><span class='fl'>12</span><span class='op'>)</span><span class='op'>$</span><span class='va'>ysdata</span><span class='op'>$</span><span class='st'>"F/Ftarget"</span>
+<span class='fu'><a href='https://rdrr.io/r/graphics/plot.default.html'>plot</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span><span class='op'>(</span><span class='va'>res_vpa</span><span class='op'>$</span><span class='va'>naa</span><span class='op'>)</span>,<span class='va'>Fratio</span>,type<span class='op'>=</span><span class='st'>"b"</span><span class='op'>)</span>
 </div><div class='img'><img src='get.SPR-1.png' alt='' width='700' height='433' /></div><div class='input'>
 
 </div></pre>
@@ -176,7 +170,7 @@
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.0.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.9000.</p>
 </div>
 
       </footer>

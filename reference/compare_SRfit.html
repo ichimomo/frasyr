@@ -79,12 +79,6 @@
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
-  <a href="../index.html">
-    <span class="fas fa fas fa-home fa-lg"></span>
-     
-  </a>
-</li>
-<li>
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
@@ -130,7 +124,7 @@
     <p>複数の再生産関係を比較する関数</p>
     </div>
 
-    <pre class="usage"><span class='fu'>compare_SRfit</span>(<span class='kw'>SRlist</span>, biomass.unit = <span class='fl'>1000</span>, number.unit = <span class='fl'>1000</span>)</pre>
+    <pre class="usage"><span class='fu'>compare_SRfit</span><span class='op'>(</span><span class='va'>SRlist</span>, biomass.unit <span class='op'>=</span> <span class='fl'>1000</span>, number.unit <span class='op'>=</span> <span class='fl'>1000</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -151,14 +145,14 @@
 
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='co'>if</span> (<span class='fl'>FALSE</span>) {
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>res_sr_HSL1</span>)
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>res_sr_HSL2</span>)
+    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='va'>res_sr_HSL1</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='va'>res_sr_HSL2</span><span class='op'>)</span>
 
-(<span class='kw'>g1</span> <span class='op'>&lt;-</span> <span class='fu'>compare_SRfit</span>(<span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(HSL1=<span class='kw'>res_sr_HSL1</span>, HSL2=<span class='kw'>res_sr_HSL2</span>),
-                     biomass.unit=<span class='fl'>1000</span>, number.unit=<span class='fl'>1000</span>))
+<span class='op'>(</span><span class='va'>g1</span> <span class='op'>&lt;-</span> <span class='fu'>compare_SRfit</span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>HSL1<span class='op'>=</span><span class='va'>res_sr_HSL1</span>, HSL2<span class='op'>=</span><span class='va'>res_sr_HSL2</span><span class='op'>)</span>,
+                     biomass.unit<span class='op'>=</span><span class='fl'>1000</span>, number.unit<span class='op'>=</span><span class='fl'>1000</span><span class='op'>)</span><span class='op'>)</span>
 
-}
+<span class='op'>}</span>
 
 </div></pre>
   </div>
@@ -176,7 +170,7 @@
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.0.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.9000.</p>
 </div>
 
       </footer>
