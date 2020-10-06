@@ -646,7 +646,7 @@ future_vpa_R <- function(naa_mat,
       }
       HCR_realized[t,,"original_ABC_plus"] <- HCR_realized[t,,"original_ABC"] + HCR_realized[t,,"reserved_catch"]
       if(!is.na(HCR_mat[t,,"TAC_reserve_rate"])){HCR_mat[t,,"expect_wcatch"] <- HCR_realized[t,,"original_ABC_plus"] * (1-HCR_mat[t,,"TAC_reserve_rate"])} #OS改変
-      if(!is.na(HCR_mat[t,,"TAC_reserve_amount"])){HCR_mat[t,,"expect_wcatch"] <- max(0, (as.numeric(HCR_realized[t,,"original_ABC_plus"]) - as.numeric(HCR_mat[t,,"TAC_reserve_amount"])))} #OS修正 なおマイナスにならないようにする
+      if(!is.na(HCR_mat[t,,"TAC_reserve_amount"])){HCR_mat[t,,"expect_wcatch"] <- max(10, (as.numeric(HCR_realized[t,,"original_ABC_plus"]) - as.numeric(HCR_mat[t,,"TAC_reserve_amount"])))} #OS修正 なおマイナスにならないようにする
       if(t<total_nyear){
           if(!is.na(HCR_mat[t,,"TAC_carry_rate"])){max_carry_amount <- HCR_mat[t,,"TAC_carry_rate"]*HCR_realized[t,,"original_ABC"]} #OS改変
           if(!is.na(HCR_mat[t,,"TAC_carry_amount"])){max_carry_amount <- HCR_mat[t,,"TAC_carry_amount"]}                             #OS修正
