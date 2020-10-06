@@ -24,8 +24,10 @@
 #' @param HCR_Bban HCRのBban
 #' @param HCR_year_lag HCRするときにいつのタイミングのssbを参照するか.0の場合、ABC計算年のSSBを参照する。正の値1を入れると1年前のssbを参照する
 #' @param HCR_beta_year betaを年によって変える場合。tibble(year=2020:2024, beta=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える
-#' @param HCR_TAC_reserve_rate TACの取り残し率
-#' @param HCR_TAC_carry_rate TACの何％まで持ち越せるか
+#' @param HCR_TAC_reserve_rate その年の総漁獲可能量に対する獲り残し率
+#' @param HCR_TAC_carry_rate 当初TACの何％まで持ち越せるか
+#' @param HCR_TAC_reserve_amount その年の総漁獲可能量に対する獲り残し量
+#' @param HCR_TAC_carry_amount 当初TACのうち何トンまで持ち越せるか
 #' @param Pope 漁獲方程式にPopeの近似式を使うかどうか。与えない場合には、VPAのオプションが引き継がれる
 #' @param HCR_function_name デフォルトは"HCR_default" ここを変更(関数名を文字列で与える。関数は別に定義しておく)すると自作のHCRが適用される。その場合、データのほうで定義されているbeta, Blimit, Bbanなど、同じ名前のものは有効
 #' @param fix_recruit 将来予測において再生産関係を無視して加入量を一定値で与える場合、その加入の値。list(year=2020, rec=1000)のように与える。
