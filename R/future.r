@@ -648,7 +648,7 @@ future_vpa_R <- function(naa_mat,
       if(!is.na(HCR_mat[t,,"TAC_reserve_rate"])){HCR_mat[t,,"expect_wcatch"] <- HCR_realized[t,,"original_ABC_plus"] * (1-HCR_mat[t,,"TAC_reserve_rate"])} #OS改変
       if(!is.na(HCR_mat[t,,"TAC_reserve_amount"])){
         tmpcatch <- HCR_realized[t,,"original_ABC_plus"] - HCR_mat[t,,"TAC_reserve_amount"]
-        HCR_mat[t,,"expect_wcatch"] <- ifelse(tmpcatch<0, 0, tmpcatch)
+        HCR_mat[t,,"expect_wcatch"] <- ifelse(tmpcatch<0, 0.01, tmpcatch)
         } #OS修正
 
       if(t<total_nyear){
