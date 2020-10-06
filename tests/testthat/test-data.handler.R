@@ -1,6 +1,6 @@
 context("generate vpa results with various data type (with dummy data)") 
 
-test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
+test_that("vpa function (with dummy data) (level 2-3?)",{
   # read various data ----
   # data with caa=maa=waa=1, M=0
   data_base <- readr::read_csv(system.file("extdata","all_dummy_data_base.csv",package="frasyr")) 
@@ -538,10 +538,10 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
   # 　全F推定法．最尤法．b推定あり，alpha=0.8(最高齢と最高齢―1のFの比：Fa=alpha*Fa-1)
   res_vpa_pgc0_estb_tune4m_b_alpha <- vpa(vpadat_pgc0_estb, last.catch.zero = FALSE, min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
                                      Pope = TRUE,  tune=TRUE, term.F="all",est.method="ml" ,b.est=TRUE, p.init=c(0.2,0.3,0.6,0.6),abund=c("N","N","N","N","N","N"),alpha=0.8,fc.year=1998:2000)
-  expect_equal(as.numeric(round(rowMeans(res_vpa_pgc0_estb_tune4m_b_alpha$naa),2)),c(632.24,297.58,161.80,NA))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_pgc0_estb_tune4m_b_alpha$naa),2)),c(633.25,298.36,162.34,NA))
   expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune4m_b_alpha$b,2)),c(0.56,0.27,0.46,0.31,0.35,0.61))
   expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune4m_b_alpha$sigma,2)),c(0.19,0.18,0.11,0.14,0.18,0.31))
-  expect_equal(as.numeric(round(rowMeans(res_vpa_pgc0_estb_tune4m_b_alpha$saa),2)),c(0.54,0.89,0.87,NA))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_pgc0_estb_tune4m_b_alpha$saa),2)),c(0.55,0.89,0.88,NA))
   
   #2-4: Ridge VPA ----
   # set lambda + 全F推定法．最尤法．b推定あり
