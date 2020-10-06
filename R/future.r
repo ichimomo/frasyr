@@ -82,9 +82,9 @@ make_future_data <- function(res_vpa,
                              HCR_year_lag=0,
                              HCR_beta_year=NULL, # tibble(year=2020:2024, beta=c(1.3,1.2,1.1,1,0.9))
                              HCR_TAC_reserve_rate=NA, 
-                             HCR_TAC_reserve_amount=NA,  #OS add
+                             HCR_TAC_reserve_amount=NA,  #
                              HCR_TAC_carry_rate=NA,
-                             HCR_TAC_carry_amount=NA,    #OS add
+                             HCR_TAC_carry_amount=NA,    #
                              HCR_function_name="HCR_default",
                              # Other
                              Pope=res_vpa$input$Pope,
@@ -112,8 +112,8 @@ make_future_data <- function(res_vpa,
 
   if(!is.na(HCR_TAC_reserve_rate) && any(HCR_TAC_reserve_rate < 0)) stop("HCR_TAC_reserve_rateに負の値は許されていません\n")
   if(!is.na(HCR_TAC_carry_rate  ) && any(HCR_TAC_carry_rate   < 0)) stop("HCR_TAC_carry_rateに負の値は許されていません\n")  
-  if(!is.na(HCR_TAC_reserve_amount) && any(HCR_TAC_reserve_amount < 0)) stop("HCR_TAC_reserve_amountに負の値は許されていません\n")  #OS 追記
-  if(!is.na(HCR_TAC_carry_amount  ) && any(HCR_TAC_carry_amount   < 0)) stop("HCR_TAC_carry_amountに負の値は許されていません\n")    #OS 追記
+  if(!is.na(HCR_TAC_reserve_amount) && any(HCR_TAC_reserve_amount < 0)) stop("HCR_TAC_reserve_amountに負の値は許されていません\n")  #
+  if(!is.na(HCR_TAC_carry_amount  ) && any(HCR_TAC_carry_amount   < 0)) stop("HCR_TAC_carry_amountに負の値は許されていません\n")    #
   
   # define age and year
   nage <- nrow(res_vpa$naa)
@@ -157,10 +157,10 @@ make_future_data <- function(res_vpa,
                                  par=c("beta","Blimit","Bban","year_lag", #1-4
                                        "expect_wcatch",# 5 漁獲量。ここにあらかじめ値を入れているとこの漁獲量どおりに漁獲する
                                        # 以下、取り残し用の設定
-                                       "TAC_reserve_rate", # 6 全漁獲可能量の何割まで獲り残すか      #OS説明修正
-                                       "TAC_carry_rate", # 7 TACの何割まで翌年に持ち越しを許容するか  #OS説明修正
-                                       "TAC_reserve_amount", # 8 全漁獲可能量のうち何トンまで獲り残すか  #OS追記
-                                       "TAC_carry_amount" # 9 何トンまで持ち越しを許容するか             #OS追記
+                                       "TAC_reserve_rate", # 6 全漁獲可能量の何割まで獲り残すか      #
+                                       "TAC_carry_rate", # 7 TACの何割まで翌年に持ち越しを許容するか  #
+                                       "TAC_reserve_amount", # 8 全漁獲可能量のうち何トンまで獲り残すか  #
+                                       "TAC_carry_amount" # 9 何トンまで持ち越しを許容するか             #
                                        ))) 
 
   class(SR_mat)  <- "myarray"
@@ -220,8 +220,8 @@ make_future_data <- function(res_vpa,
   HCR_mat[start_ABC_year:total_nyear,,"year_lag"] <- HCR_year_lag
   HCR_mat[start_ABC_year:total_nyear,,"TAC_reserve_rate"] <- HCR_TAC_reserve_rate
   HCR_mat[start_ABC_year:total_nyear,,"TAC_carry_rate"] <- HCR_TAC_carry_rate
-  HCR_mat[start_ABC_year:total_nyear,,"TAC_reserve_amount"] <- HCR_TAC_reserve_amount #OS 追記
-  HCR_mat[start_ABC_year:total_nyear,,"TAC_carry_amount"] <- HCR_TAC_carry_amount     #OS 追記
+  HCR_mat[start_ABC_year:total_nyear,,"TAC_reserve_amount"] <- HCR_TAC_reserve_amount #
+  HCR_mat[start_ABC_year:total_nyear,,"TAC_carry_amount"] <- HCR_TAC_carry_amount     #
   
   
   if(!is.null(HCR_beta_year)){
@@ -590,8 +590,8 @@ future_vpa_R <- function(naa_mat,
         # MSEのシミュレーション内では繰越設定はオフにする
         MSE_dummy_data$HCR_mat[,,"TAC_reserve_rate"] <- NA
         MSE_dummy_data$HCR_mat[,,"TAC_carry_rate"] <- NA        
-        MSE_dummy_data$HCR_mat[,,"TAC_reserve_amount"] <- NA #OS 追記
-        MSE_dummy_data$HCR_mat[,,"TAC_carry_amount"] <- NA   #OS 追記
+        MSE_dummy_data$HCR_mat[,,"TAC_reserve_amount"] <- NA #
+        MSE_dummy_data$HCR_mat[,,"TAC_carry_amount"] <- NA   #
         for(k in 1:MSE_nsim){
           MSE_dummy_data$SR_mat[,k,]  <- SR_mat[,i,]
           MSE_dummy_data$SR_mat[,k,"ssb"]  <- spawner_mat[,i] # true ssb
@@ -633,8 +633,6 @@ future_vpa_R <- function(naa_mat,
 
     # TAC carry over setting
     if((sum(!is.na(HCR_mat[t,,"TAC_reserve_rate"]))>0)||(sum(!is.na(HCR_mat[t,,"TAC_reserve_amount"]))>0)){
-    #OS 上行に変更
-    #if(sum(!is.na(HCR_mat[t,,"TAC_reserve_rate"]))>0){
       if(sum(HCR_mat[t,,"expect_wcatch"])==0){
         # non-MSE
         HCR_realized[t,,"original_ABC"] <-
@@ -645,15 +643,15 @@ future_vpa_R <- function(naa_mat,
         HCR_realized[t,,"original_ABC"] <- HCR_mat[t,,"expect_wcatch"]
       }
       HCR_realized[t,,"original_ABC_plus"] <- HCR_realized[t,,"original_ABC"] + HCR_realized[t,,"reserved_catch"]
-      if(!is.na(HCR_mat[t,,"TAC_reserve_rate"])){HCR_mat[t,,"expect_wcatch"] <- HCR_realized[t,,"original_ABC_plus"] * (1-HCR_mat[t,,"TAC_reserve_rate"])} #OS改変
+      if(!is.na(HCR_mat[t,,"TAC_reserve_rate"])){HCR_mat[t,,"expect_wcatch"] <- HCR_realized[t,,"original_ABC_plus"] * (1-HCR_mat[t,,"TAC_reserve_rate"])} #
       if(!is.na(HCR_mat[t,,"TAC_reserve_amount"])){
         tmpcatch <- HCR_realized[t,,"original_ABC_plus"] - HCR_mat[t,,"TAC_reserve_amount"]
         HCR_mat[t,,"expect_wcatch"] <- ifelse(tmpcatch<0, 0.01, tmpcatch)
-        } #OS修正
+        } #expect_wcatchをゼロにすると不具合がありそうなので、微小値（0.01）を与える
 
       if(t<total_nyear){
-          if(!is.na(HCR_mat[t,,"TAC_carry_rate"])){max_carry_amount <- HCR_mat[t,,"TAC_carry_rate"]*HCR_realized[t,,"original_ABC"]} #OS改変
-          if(!is.na(HCR_mat[t,,"TAC_carry_amount"])){max_carry_amount <- HCR_mat[t,,"TAC_carry_amount"]}                             #OS修正
+          if(!is.na(HCR_mat[t,,"TAC_carry_rate"])){max_carry_amount <- HCR_mat[t,,"TAC_carry_rate"]*HCR_realized[t,,"original_ABC"]} #
+          if(!is.na(HCR_mat[t,,"TAC_carry_amount"])){max_carry_amount <- HCR_mat[t,,"TAC_carry_amount"]}                             #
           ABC_reserve_amount <- HCR_realized[t,,"original_ABC"] - HCR_mat[t,,"expect_wcatch"]
           ABC_reserve_amount[ABC_reserve_amount<0] <- 0
           HCR_realized[t+1,,"reserved_catch"] <- cbind(max_carry_amount, ABC_reserve_amount) %>%
