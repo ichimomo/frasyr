@@ -158,8 +158,14 @@ backward.calc <- function(caa,naa,M,na,k,min.caa=0.001,p=0.5,plus.group=TRUE,sel
       out[i] <- naa[i+1,k+1]*exp(M[i,k])+caa[i,k]*exp(p*M[i,k])
     }
     if (isTRUE(plus.group)){
-      pp <- c(1, 1/alpha)
-      out[(na[k+1]-1):na[k]] <- pp*pmax(caa[(na[k+1]-1):na[k],k],min.caa)/sum(pp*pmax(caa[(na[k+1]-1):na[k],k],min.caa))*naa[na[k+1],k+1]*exp(M[(na[k+1]-1):na[k],k])+caa[(na[k+1]-1):na[k],k]*exp(p*M[(na[k+1]-1):na[k],k])
+      if(na[k]-na[k+1]<=0){
+        pp <- c(1, 1/alpha)
+        out[(na[k+1]-1):na[k]] <- pp*pmax(caa[(na[k+1]-1):na[k],k],min.caa)/sum(pp*pmax(caa[(na[k+1]-1):na[k],k],min.caa))*naa[na[k+1],k+1]*exp(M[(na[k+1]-1):na[k],k])+caa[(na[k+1]-1):na[k],k]*exp(p*M[(na[k+1]-1):na[k],k])
+      }
+      else{
+        pp <- c(1, 1, 1/alpha)
+        out[(na[k+1]-1):na[k]] <- pp*pmax(caa[(na[k+1]-1):na[k],k],min.caa)/sum(pp*pmax(caa[(na[k+1]-1):na[k],k],min.caa))*naa[na[k+1],k+1]*exp(M[(na[k+1]-1):na[k],k])+caa[(na[k+1]-1):na[k],k]*exp(p*M[(na[k+1]-1):na[k],k])
+      }
     }
     else{
       out[na[k+1]-1] <- naa[na[k+1],k+1]*exp(M[na[k+1]-1,k])+caa[na[k+1]-1,k]*exp(p*M[na[k+1]-1,k])

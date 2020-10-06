@@ -45,12 +45,15 @@ calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=
 
 #'
 #' 年齢別生物パラメータとFと漁獲量を与えると与えた漁獲量と一致するFへの乗数を返す
-#'
+#' @param set_max1 廃止予定
+#' @param max_exploitation_rate 潜在的に漁獲できる漁獲量＜入力した漁獲量の場合、潜在的に漁獲できる漁獲量の何％まで実際に漁獲するか
+#' @param max_F F at ageの最大値となる値の上限をどこにおくか
+#' 
 #' @export
 #' @encoding UTF-8
 
-caa.est.mat <- function(naa,saa,waa,M,catch.obs,Pope,set_max1=TRUE){
-  if(set_max1==TRUE) saa <- saa/max(saa)
+caa.est.mat <- function(naa,saa,waa,M,catch.obs,Pope,set_max1=TRUE,max_exploitation_rate=0.99,max_F=exp(10)){
+
   tmpfunc <- function(logx,catch.obs=catch.obs,naa=naa,saa=saa,waa=waa,M=M,out=FALSE,Pope=Pope){
     x <- exp(logx)
     if(isTRUE(Pope)){
@@ -61,15 +64,25 @@ caa.est.mat <- function(naa,saa,waa,M,catch.obs,Pope,set_max1=TRUE){
     }
     wcaa <- caa*waa
     if(out==FALSE){
-      return(log((sum(wcaa,na.rm=T)-catch.obs)^2))
+        return(log((sum(wcaa,na.rm=T)-catch.obs)^2))
     }
     else{
       return(caa)
     }
   }
-  tmp <- optimize(tmpfunc,log(c(0.000001,10)),catch.obs=catch.obs,naa=naa,saa=saa,waa=waa,M=M,Pope=Pope,out=FALSE)#,tol=.Machine$double.eps)
+
+  C0 <- sum(tmpfunc(logx=100,catch.obs=catch.obs,naa=naa,saa=rep(1,length(saa)),waa=waa,M=M,Pope=Pope,out=TRUE) * waa)
+  if(C0 < catch.obs){
+    warning("The expected catch (", catch.obs, ") is over potential maximum catch (",round(C0,5),"). The expected catch is replaced by",round(C0,3),"x", max_exploitation_rate)
+    catch.obs <- C0 * max_exploitation_rate
+
+  }
+    
+  tmp <- optimize(tmpfunc,c(-10,log(max_F)),catch.obs=catch.obs,naa=naa,saa=saa,waa=waa,M=M,Pope=Pope,out=FALSE)#,tol=.Machine$double.eps)
   tmp2 <- tmpfunc(logx=tmp$minimum,catch.obs=catch.obs,naa=naa,saa=saa,waa=waa,M=M,Pope=Pope,out=TRUE)
-  return(list(x=exp(tmp$minimum),caa=tmp2))
+  realized.catch <- sum(tmp2*waa)
+  if(abs(realized.catch/catch.obs-1)>0.1) warning("expected catch:",catch.obs,", realized catch:",realized.catch)
+  return(list(x=exp(tmp$minimum),caa=tmp2,realized.catch=realized.catch, expected.catch=catch.obs))
 }
 
 # #　上の関数とどっちが使われているか不明,,,多分使われていないのでコメントアウトする
@@ -94,6 +107,16 @@ caa.est.mat <- function(naa,saa,waa,M,catch.obs,Pope,set_max1=TRUE){
 #   tmp2 <- tmpfunc(x=tmp$minimum,catch.obs=catch.obs,naa=naa,saa=saa,waa=waa,M=M,Pope=Pope,out=TRUE)
 #   return(list(x=tmp$minimum,caa=tmp2))
 # }
+
+catch_equation <- function(naa,faa,waa,M,Pope=TRUE){
+  if(isTRUE(Pope)) Pope <- 1
+  if(Pope==1){
+    wcaa_mat <- naa*(1-exp(-faa))*exp(-M/2) * waa
+  }
+  else{
+    wcaa_mat <- naa*(1-exp(-faa-M))*faa/(faa+M) * waa
+  }
+}
 
 #' @export
 #' @encoding UTF-8
@@ -1392,14 +1415,24 @@ make_kobeII_table <- function(kobeII_data,
 
 #' kobeII matrixの簡易版（Btarget, Blimitは決め打ちでβのみ変える)
 #'
+#' @param year_beta_change betaを変更する年の範囲。NULLの場合には全部の年を変える。
+#' 
 #' @encoding UTF-8
 #' @export
 #'
 #'
 
-beta.simulation <- function(finput,beta_vector,year.lag=0,type="old"){
+beta.simulation <- function(finput,beta_vector,year.lag=0,type="old",year_beta_change=NULL,
+                            output_type="tidy"){
 
   tb <- NULL
+  future_year <- dimnames(finput$tmb_data$HCR_mat)[[1]]
+  if(!is.null(year_beta_change)){
+    year_column_beta_change <- future_year %in% year_beta_change
+  }
+  else{
+    year_column_beta_change <- TRUE
+  }
 
   for(i in 1:length(beta_vector)){
     if(type=="old"){
@@ -1410,7 +1443,7 @@ beta.simulation <- function(finput,beta_vector,year.lag=0,type="old"){
         stop("old function of future.vpa is not supported now")
     }
     else{
-      finput$tmb_data$HCR_mat[,,"beta"] <- beta_vector[i]
+      finput$tmb_data$HCR_mat[year_column_beta_change,,"beta"] <- beta_vector[i]
       if(!is.null(finput$MSE_input_data)) finput$MSE_input_data$input$HCR_beta <- beta_vector[i]
       fres_base <- do.call(future_vpa,finput) # デフォルトルールの結果→図示などに使う
       fres_base <- format_to_old_future(fres_base)
@@ -1441,7 +1474,7 @@ calc_perspr <- function(...){
 #' @param max.age SPR計算のときに考慮する最大年齢。デフォルトは無限大。
 #' @param target.col 将来予測の何列目の年を取り出すか（NULLの場合、最後の年）
 #' @param target.year 将来予測の何年目を取り出すか（年の名前）（NULLの場合、最後の年）
-#' @param SPRtarget これを与えると、Fvectorを何倍すればここで指定した%SPRと一致するかを返すようになる
+#' @param SPRtarget これを与えると、Fvectorを何倍すればここで指定した\%SPRと一致するかを返すようになる
 #' 
 #' @encoding UTF-8
 #' @export
@@ -1845,7 +1878,7 @@ calc_Fratio <- function(faa, waa, maa, M, SPRtarget=30, waa.catch=NULL,Pope=TRUE
                                   M=M, waa=waa, waa.catch=waa.catch,maa=maa,
                                   min.age=0,max.age=Inf,Pope=Pope,ssb.coef=0)$spr %>% sum()
         SPR_est <- SPR_est/SPR0 * 100
-        if(abs(SPR_est-SPRtarget)>0.01) {browser(); return(NA)}
+        if(abs(SPR_est-SPRtarget)>0.01) {return(NA)}
         Fratio <- 1/exp(opt_res$minimum)
     }
     else{
@@ -1964,4 +1997,15 @@ make_kobe_ratio <- function(result_vpa, result_msy) {
   }
 
   return_kobe_ratio()
+}
+
+#' Source specific lines in an R file
+#'
+#' @param file character string with the path to the file to source.
+#' @param lines numeric vector of lines to source in \code{file}.
+#'
+#' @export
+
+source_lines <- function(file, lines){
+    source(textConnection(readLines(file)[lines]))
 }

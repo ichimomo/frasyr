@@ -56,7 +56,15 @@
 
 # author: Kohei Hamabe
 
-do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol = 5, plot_year = NULL){
+do_sensitivity_vpa <- function(res,
+                               what_replace,
+                               value,
+                               what_plot = NULL,
+                               ncol = 5,
+                               plot_year = NULL,
+                               scale_value = NULL
+                               ){
+
   res_vpa.s <- list() ; lab.tmp <- numeric()
   res$input$plot <- FALSE # 背後で沢山plotするのを防ぐ
 
@@ -65,7 +73,7 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
     for(i in 1:length(value)){
       input0 <- res$input
       input0$dat$M <- input0$dat$M *value[i]
-      res_vpa.s[[i]] <- safe_call(vpa, input0, force=TRUERUE)
+      res_vpa.s[[i]] <- safe_call(vpa, input0, force=TRUE)
       lab.tmp[i] <- paste("Sensitivity M= x", value[i], sep = "")
     } # for
 
@@ -291,8 +299,8 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
   names(res_vpa.s) <- lab.tmp
   # 結果のラベルに名前を付ける
   if(!(is.null(what_plot)))what.plot <- factor(what_plot, levels = as.character(what_plot))
-  g1 <- plot_vpa(c(list(Base=res), res_vpa.s),
-                 what.plot = what_plot, ncol = ncol, plot_year = plot_year)
+  g1 <- plot_vpa(c(list(Base=res), res_vpa.s), what.plot = what_plot,
+                 ncol = ncol, plot_year = plot_year, scale_value = scale_value)
 
   return(list(result = res_vpa.s, graph = g1))
 } # function(do_sensitivity_vpa)
@@ -330,12 +338,18 @@ do_sensitivity_vpa <- function(res, what_replace, value, what_plot = NULL, ncol 
 
 # author: Kohei Hamabe
 
-do_retrospective_vpa <- function(res, n_retro = 5, b_reest = FALSE,
+do_retrospective_vpa <- function(res,
+                                 n_retro = 5,
+                                 b_reest = FALSE,
                                  what_plot = c("SSB", "biomass", "Recruitment",
                                                "fish_number", "fishing_mortality"),
                                  plot_year = NULL,
-                                 ncol = 3, 
-                                 remove_maxAgeF=FALSE,ssb_forecast=FALSE,res_step1=NULL){
+                                 ncol = 3,
+                                 remove_maxAgeF = FALSE,
+                                 ssb_forecast = FALSE,
+                                 res_step1 = NULL,
+                                 scale_value = NULL
+                                 ){
 
   if(b_reest == TRUE && res$input$b.est == FALSE)message(paste('b was not estimated in your vpa model'))
   # vpa内でbの推定をしていないにもかかわらず、b_reestがtrueで入力された場合
@@ -366,10 +380,13 @@ do_retrospective_vpa <- function(res, n_retro = 5, b_reest = FALSE,
     #mutate(y=0, x=as.numeric(min(colnames(res_retro[[1]][[1]]$naa))))
     mutate(y = 0,
            x = if(is.null(plot_year))as.numeric(min(colnames(res_retro[[1]][[1]]$naa))) else plot_year[1])
+  if(!length(what_plot) == 5) rho_data <- rho_data[match(what_plot, rho_data$stat),]
+  # ここもしかすると長さが5でもwhat_plotのデフォルトと一致しないとエラー出るかも
+  # そういった変数についてはレトロして見る需要は少ないのだろうけど
 
   g1 <- plot_vpa(dat_graph,
                  what.plot = factor(what_plot, levels = as.character(what_plot)),
-                 ncol = ncol, plot_year = plot_year) +
+                 ncol = ncol, plot_year = plot_year, scale_value = scale_value) +
     geom_label(data = rho_data,
                mapping = aes(x = x, y = y, label = str_c("rho=", round(value,2))),
                vjust="inward", hjust="inward")
@@ -779,7 +796,14 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
 
 # author: Kohei Hamabe
 
-do_jackknife_vpa <- function(res, method = "index", what_plot = NULL, ncol = 5, plot_year = NULL){
+do_jackknife_vpa <- function(res,
+                             method = "index",
+                             what_plot = NULL,
+                             ncol = 5,
+                             plot_year = NULL,
+                             scale_value = NULL
+                             ){
+
   if(res$input$use.index == "all"){
     used_index <- res$input$dat$index
   } else {
@@ -949,8 +973,8 @@ do_jackknife_vpa <- function(res, method = "index", what_plot = NULL, ncol = 5, 
 
   # plot_vpaですっきり作図！
   names(res_list) <- name_tmp
-  gg <- plot_vpa(c(list(Base=res), res_list),
-                 what.plot = what_plot, ncol = ncol, plot_year = plot_year)
+  gg <- plot_vpa(c(list(Base=res), res_list), what.plot = what_plot,
+                 ncol = ncol, plot_year = plot_year, scale_value = scale_value)
 
   ## ----------------------------------------------------------------- ##
   ## 問題なさそうなら、この区間は消して問題ない
@@ -1006,11 +1030,13 @@ do_jackknife_vpa <- function(res, method = "index", what_plot = NULL, ncol = 5, 
     g4 <- ggplot(data = d_tidy_par) +
       geom_point(aes(x = age, y = tf, col = JK, shape = JK)) +
       facet_wrap(~ Removed_index) +
-      theme_SH(legend.position = "top", base_size = 14)
+      theme_SH(legend.position = "top", base_size = 14) +
+      scale_shape_manual(values = scale_value[-1])
   } else {
     g4 <- ggplot(data = d_tidy_par) +
       geom_point(aes(x = age, y = tf, col = JK, shape = JK)) +
-      theme_SH(legend.position = "top", base_size = 14)
+      theme_SH(legend.position = "top", base_size = 14) +
+      scale_shape_manual(values = scale_value[-1])
   }
   ## ----------------------------------------------------------------- ##
 

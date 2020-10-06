@@ -72,11 +72,14 @@ ggsave_SH_large <- function(...){
 #'
 
 plot_vpa <- function(vpalist,
-                     vpatibble=NULL,
-                     what.plot=NULL,
-                     plot_year=NULL,  # 浜辺加筆(2020/06/30)
-                     legend.position="top",
-                     vpaname=NULL, ncol=2){
+                     vpatibble = NULL,
+                     what.plot = NULL,
+                     plot_year = NULL,  # 浜辺加筆(2020/06/30)
+                     legend.position = "top",
+                     vpaname = NULL,
+                     ncol = 2,
+                     scale_value = NULL # 浜辺加筆(2020/07/29)
+                     ){
 
   if(!is.null(vpaname)){
     if(length(vpaname)!=length(vpalist)) stop("Length of vpalist and vpaname is different")
@@ -109,15 +112,23 @@ plot_vpa <- function(vpalist,
       mutate(stat=factor(stat,levels=c(biomass_factor, age_factor)))
   }
 
+  # scale_shape_manual関数のvalueを設定(浜辺'20/07/29)
+  if(is.null(scale_value))scale_value <- 1:(length(unique(vpadata$id)))
+  if(!(length(scale_value)==length(unique(vpadata$id)))){
+    scale_value <- 1:(length(unique(vpadata$id)))
+    print("Note! Length of scale value was different although plot was done...")
+  }
   # シナリオの違いを線種+shapeにした(浜辺'20/06/30)
   g1 <- vpadata %>% ggplot()
   if(all(is.na(vpadata$age))){
     g1 <- g1+ geom_line(aes(x=year, y=value,lty=id))
-    g1 <- try(g1 + geom_point(aes(x=year, y=value, shape=id)))
+    g1 <- try(g1 + geom_point(aes(x=year, y=value, shape=id)) +
+                scale_shape_manual(values = scale_value))
   }
   else{
     g1 <- g1+ geom_line(aes(x=year, y=value, color=age, lty=id))
-    g1 <- try(g1 + geom_point(aes(x=year, y=value, color=age, shape=id)))
+    g1 <- try(g1 + geom_point(aes(x=year, y=value, color=age, shape=id)) +
+                scale_shape_manual(values = scale_value))
   }
   # 上のがダメな場合にオリジナルで対応
   if(class(g1[1])=="try-error"){ # g1の長さは2あって警告が頻発するので[1]を加えた
@@ -1384,6 +1395,7 @@ plot_HCR_by_catch <- function(trace,
                               beta=0.8,col.multi2currf="black",col.SBtarget="#00533E",
                               col.SBlim="#edb918",col.SBban="#C73C2E",col.Ftarget="black",
                               col.betaFtarget="gray",is.text = TRUE,
+                              HCR_function_name="HCR_default",
                               Pope=TRUE,
                               RP.label=c("目標管理基準値","限界管理基準値","禁漁水準")){
   # 本当は途中までplot_HCRと統合させたい
@@ -1404,7 +1416,8 @@ plot_HCR_by_catch <- function(trace,
   }
 
   n <- nrow(trace)
-  gamma <- HCR_default(as.numeric(trace$ssb.mean),
+  HCR_function <- get(HCR_function_name)  
+  gamma <- HCR_function(as.numeric(trace$ssb.mean),
                        Blimit=rep(SBlim,n),Bban=rep(SBban,n),beta=rep(beta,n))
   F_matrix <- outer(gamma, Fmsy_vector)
   trace$catch_HCR <- purrr::map_dbl(1:nrow(trace), function(x)
@@ -1582,12 +1595,12 @@ plot_bias_in_MSE <- function(fout, out="graph", error_scale="log", yrange=NULL){
   tmp <- convert_2d_future(fout$naa[1,,],            name="Recruits", label="true")
   recruit_dat$value_true <- tmp$value
 
-  real_ABC_dat <- convert_2d_future(fout$HCR_mat[,,"wcatch"],    name="realABC", label="estimate") %>%
+  real_ABC_dat <- convert_2d_future(fout$HCR_realized[,,"wcatch"],    name="realABC", label="estimate") %>%
     rename(value_est=value)
   tmp  <- convert_2d_future(fout$SR_MSE[,,"real_true_catch"], name="realABC", label="true")
   real_ABC_dat$value_true <- tmp$value
 
-  pseudo_ABC_dat <- convert_2d_future(fout$HCR_mat[,,"wcatch"],    name="pseudoABC", label="estimate") %>%
+  pseudo_ABC_dat <- convert_2d_future(fout$HCR_realized[,,"wcatch"],    name="pseudoABC", label="estimate") %>%
     rename(value_est=value)
   tmp  <- convert_2d_future(fout$SR_MSE[,,"pseudo_true_catch"], name="pseudoABC", label="true")
   pseudo_ABC_dat$value_true <- tmp$value
