@@ -1477,7 +1477,7 @@ make_kobeII_table <- function(kobeII_data,
 #'
 
 beta.simulation <- function(finput,beta_vector,year.lag=0,type="old",year_beta_change=NULL,
-                            output_type="tidy"){
+                            output_type="tidy", ncore = 1){
 
   tb <- NULL
   future_year <- dimnames(finput$tmb_data$HCR_mat)[[1]]
@@ -1488,23 +1488,37 @@ beta.simulation <- function(finput,beta_vector,year.lag=0,type="old",year_beta_c
     year_column_beta_change <- TRUE
   }
 
-  for(i in 1:length(beta_vector)){
-    if(type=="old"){
-        #      finput$HCR$beta <- beta_vector[i]
-        #      finput$is.plot <- FALSE
-        #      finput$silent <- TRUE
-        #      fres_base <- do.call(future.vpa,finput) # デフォルトルールの結果→図示などに使う
+  if(ncore==1){
+    for(i in 1:length(beta_vector)){
+      if(type=="old"){
         stop("old function of future.vpa is not supported now")
+      }
+      else{
+        finput$tmb_data$HCR_mat[year_column_beta_change,,"beta"] <- beta_vector[i]
+        if(!is.null(finput$MSE_input_data)) finput$MSE_input_data$input$HCR_beta <- beta_vector[i]
+        fres_base <- do.call(future_vpa,finput) 
+        fres_base <- format_to_old_future(fres_base)
+      }
+      tmp <- convert_future_table(fres_base,label=beta_vector[i]) %>%
+        rename(HCR_name=label)  %>% mutate(beta=beta_vector[i])
+      tb <- bind_rows(tb,tmp)
     }
-    else{
+  }
+  else{
+    library(foreach)
+    cl <- parallel::makeCluster(ncore, type="FORK")
+    doParallel::registerDoParallel(cl)
+
+    tb <- foreach::foreach(i=1:length(beta_vector),.combine="rbind")%dopar%{
       finput$tmb_data$HCR_mat[year_column_beta_change,,"beta"] <- beta_vector[i]
       if(!is.null(finput$MSE_input_data)) finput$MSE_input_data$input$HCR_beta <- beta_vector[i]
-      fres_base <- do.call(future_vpa,finput) # デフォルトルールの結果→図示などに使う
-      fres_base <- format_to_old_future(fres_base)
+      fres_base <- do.call(future_vpa,finput) 
+      fres_base <- format_to_old_future(fres_base)    
+      tmp <- convert_future_table(fres_base,label=beta_vector[i]) %>%
+        rename(HCR_name=label)  %>% mutate(beta=beta_vector[i])
+      tmp
     }
-    tmp <- convert_future_table(fres_base,label=beta_vector[i]) %>%
-      rename(HCR_name=label)  %>% mutate(beta=beta_vector[i])
-    tb <- bind_rows(tb,tmp)
+    parallel::stopCluster(cl)
   }
   return(tb)
 }
