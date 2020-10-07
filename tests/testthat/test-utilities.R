@@ -272,7 +272,8 @@ test_that("make kobeII table", {
                       c("catch.mean", "ssb.mean", "ssb.lower10percent",
                         "ssb.upper90percent", "prob.over.ssbtarget",
                         "prob.over.ssblimit", "prob.over.ssbban",
-                        "prob.over.ssbmin", "prob.over.ssbmax", "catch.aav"))
+                        "prob.over.ssbmin", "prob.over.ssbmax", "catch.aav",
+                        "kobe.stat", "catch.risk", "bban.risk", "blimit.risk"))
     })
   })
 })
