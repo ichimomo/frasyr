@@ -77,7 +77,8 @@ vpa(
   sigma.constraint = 1:length(abund),
   eta = NULL,
   eta.age = 0,
-  tmb.file = "rvpa_tmb"
+  tmb.file = "rvpa_tmb",
+  sdreport = FALSE
 )
 }
 \arguments{
@@ -190,6 +191,8 @@ vpa(
 \item{eta.age}{Fのpenaltyを分けるときにetaを与える年齢(0 = 0歳（加入）,0:1 = 0~1歳)}
 
 \item{tmb.file}{TMB=TRUEのとき使用するcppファイルの名前}
+
+\item{sdreport}{\code{TMB=TRUE}のときに\code{sdreport()}を実行するかどうか（naa, faa, 資源量, 親魚量, Fの平均, 漁獲割合のSDを計算する）}
 }
 \description{
 VPAによる資源計算を実施する

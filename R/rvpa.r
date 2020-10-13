@@ -473,6 +473,7 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param eta  Fのpenaltyを分けて与えるときにeta.ageで指定した年齢への相対的なpenalty (0~1)
 #' @param eta.age  Fのpenaltyを分けるときにetaを与える年齢(0 = 0歳（加入）,0:1 = 0~1歳)
 #' @param tmb.file  TMB=TRUEのとき使用するcppファイルの名前
+#' @param sdreport \code{TMB=TRUE}のときに\code{sdreport()}を実行するかどうか（naa, faa, 資源量, 親魚量, Fの平均, 漁獲割合のSDを計算する）
 #' @encoding UTF-8
 #'
 #' @export
@@ -551,7 +552,8 @@ vpa <- function(
   sigma.constraint = 1:length(abund),
   eta = NULL,
   eta.age = 0,
-  tmb.file = "rvpa_tmb"
+  tmb.file = "rvpa_tmb",
+  sdreport = FALSE
 )
 {
   #sigma.constで引数を指定してしまったときは，sigma.constraintで引数を指定しなおしてもらうようにする
@@ -1211,6 +1213,7 @@ vpa <- function(
       stop("Please run use_rvpa_tmb() first!")
     }
     opt <- nlm(obj$fn, obj$par, gradient=obj$gr, hessian=hessian)
+    if (sdreport) rep <- TMB::sdreport(obj)
 
     summary.p.est <- list()
     summary.p.est$estimate <- exp(opt$estimate)
@@ -1293,6 +1296,11 @@ Ft <- mean(faa[,ny],na.rm=TRUE)
       res <- c(res, list(plot = graph))
     } # 加筆（浜辺）
   }
+  
+  if (isTRUE(TMB) & isTRUE(sdreport)) {
+    res$obj <- obj
+    res$rep <- rep
+    } 
 
   return(invisible(res))
 
