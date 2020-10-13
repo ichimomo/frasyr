@@ -2071,3 +2071,15 @@ make_kobe_ratio <- function(result_vpa, result_msy) {
 source_lines <- function(file, lines){
     source(textConnection(readLines(file)[lines]))
 }
+
+#' re-calculate projection with different arguments
+#'
+#' 
+
+redo_future <- function(data_future, input_data_list, ...){
+  input_data <- data_future$input
+  if(! all(names(input_data_list) %in% names(input_data))) stop("names of input_data_list is invalid!")
+
+  input_data[names(input_data_list)] <- input_data_list
+  future_vpa(safe_call(make_future_data,input_data)$data,...)
+}

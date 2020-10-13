@@ -532,20 +532,43 @@ future_vpa_R <- function(naa_mat,
     if(!is.null(waa_par_mat)) waa_mat[,t,] <- waa_catch_mat[,t,] <- update_waa_mat(waa=waa_mat[,t,],rand=waa_rand_mat[,t,],naa=N_mat[,t,],pars_b0=waa_par_mat[,,"b0"],pars_b1=waa_par_mat[,,"b1"])
     spawner_mat[t,] <- colSums(N_mat[,t,] * waa_mat[,t,] * maa_mat[,t,])
 
-    if(t>=start_random_rec_year & all(N_mat[1,t,]==0)){
-      spawn_t <- t-recruit_age
-      N_mat[1,t,] <- purrr::pmap_dbl(tibble(x=SR_mat[t,,"SR_type"],
-                                            ssb=spawner_mat[spawn_t,],
-                                            a=SR_mat[t,,"a"],b=SR_mat[t,,"b"]),
-                                     function(x,ssb,a,b){
-                                       fun <- list(SRF_HS,SRF_BH,SRF_RI)[[x]];
-                                       fun(ssb,a,b)
-                                     })
-      N_mat[1,t,] <- N_mat[1,t,]*exp(SR_mat[t,,"deviance"]) +
-        SR_mat[t,,"intercept"]
-      if(is.na(N_mat[1,t,1])) stop("Error: Recruitment cannot be estimated correctly...")
-      if(!is.null(waa_par_mat)) waa_mat[1,t,] <- waa_catch_mat[1,t,] <- update_waa_mat(waa=waa_mat[1,t,],rand=waa_rand_mat[1,t,],naa=N_mat[1,t,],pars_b0=waa_par_mat[1,,"b0"],pars_b1=waa_par_mat[1,,"b1"])
+    if(t>=start_random_rec_year){
+      spawn_t <- t-recruit_age      
+      # 加入を再生産関係からの予測値とする場合
+      if(all(N_mat[1,t,]==0)){          
+        N_mat[1,t,] <- purrr::pmap_dbl(tibble(x=SR_mat[t,,"SR_type"],
+                                              ssb=spawner_mat[spawn_t,],
+                                              a=SR_mat[t,,"a"],b=SR_mat[t,,"b"]),
+                                       function(x,ssb,a,b){
+                                         fun <- list(SRF_HS,SRF_BH,SRF_RI)[[x]];
+                                         fun(ssb,a,b)
+                                       })
+        N_mat[1,t,] <- N_mat[1,t,]*exp(SR_mat[t,,"deviance"]) +
+          SR_mat[t,,"intercept"]
+        if(is.na(N_mat[1,t,1])) stop("Error: Recruitment cannot be estimated correctly...")
+        if(!is.null(waa_par_mat)) waa_mat[1,t,] <- waa_catch_mat[1,t,] <- update_waa_mat(waa=waa_mat[1,t,],rand=waa_rand_mat[1,t,],naa=N_mat[1,t,],pars_b0=waa_par_mat[1,,"b0"],pars_b1=waa_par_mat[1,,"b1"])
+      }else{
+        # fix_recruitですでに加入尾数が入っていて、自己相関ありの場合
+        if(!all(N_mat[1,t,]==0) && all(SR_mat[,t-1,"rho"]>0)){
+          rec_predict <- purrr::pmap_dbl(tibble(x=SR_mat[t,,"SR_type"],
+                                              ssb=spawner_mat[spawn_t,],
+                                              a=SR_mat[t,,"a"],b=SR_mat[t,,"b"]),
+                                         function(x,ssb,a,b){
+                                           fun <- list(SRF_HS,SRF_BH,SRF_RI)[[x]];
+                                           fun(ssb,a,b)
+                                         })        
+          new_deviance <- log(N_mat[1,t,]) - log(rec_predict)
+          SR_mat[t,,"deviance"] <- new_deviance
+          if(t<total_nyear){ # replace recruit deviance
+            for(t_tmp in t:(total_nyear-1)){
+              SR_mat[t_tmp+1, ,"deviance"] <- SR_mat[t_tmp, ,"deviance"]*SR_mat[t_tmp,,"rho"] + SR_mat[t_tmp, ,"rand_resid"]
+            }
+            SR_mat[(t+1):total_nyear,,"deviance"] <- SR_mat[(t+1):total_nyear,,"deviance"] - SR_mat[(t+1):total_nyear,,"bias_factor"]
+          }
+        }
+      }
     }
+
 
     if(t>=start_ABC_year){
       # harvest control rule

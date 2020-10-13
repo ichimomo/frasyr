@@ -419,7 +419,7 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
   expect_equal(mean(res_future_sd01ar10$naa[1,43,]), 4, tol=0.01)
   expect_equal(sd(log(res_future_sd01ar10$naa[1,43,])), sqrt(1/(1-(0.5^2)) * 0.1 ^2), tol=0.01)
 
-  # fix_recruitオプション
+  # fix_recruitオプション+ARあり(ichimomo/frasyr_tool#256を再現)
   res_future <- redo_future(data_future_test,
             list(nsim=1000, res_SR=res_sr_sd01ar10, res_vpa=res_vpa_base0_nontune2,
                  fix_recruit=list(year=2018,rec=6)),
