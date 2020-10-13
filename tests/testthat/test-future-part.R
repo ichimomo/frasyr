@@ -365,6 +365,73 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
   # 残差がゼロのVPA結果なので、バックワードでも対数正規でも結果は同じ
   expect_equal(res_future_backward$naa[,as.character(2025:2030),],
                res_future_F0.1$naa[,as.character(2025:2030),])
+
+  res_future_backward2 <- redo_future(data_future_test,
+                  list(resid_type="backward", 
+                  resample_year_range=0, 
+                  backward_duration=5),
+                  optim_method="none", multi_init=1)
+  
+  # test for redo_future
+  expect_equal(res_future_backward$naa, res_future_backward2$naa)  
+
+  # sd>0, ARありの場合のテスト
+  res_sr_sd02ar00 <- res_sr_list$res_vpa_base0_nontune
+  res_sr_sd02ar00$pars$sd <- 0.1
+
+  res_future_sd02ar00 <- redo_future(data_future_test,
+             list(nsim=5000, res_SR=res_sr_sd02ar00),
+             optim_method="none", multi_init=0)
+
+  expect_equal(sd(log(res_future_sd02ar00$naa[1,43,])), 0.1, tol=0.01)
+  expect_equal(mean(  res_future_sd02ar00$naa[1,43,]) ,   4, tol=0.001)
+
+  # sd=0, AR=0.5
+  res_sr_sd00ar10 <- res_sr_list$res_vpa_base0_nontune
+  res_sr_sd00ar10$pars$sd <- 0
+  res_sr_sd00ar10$pars$rho <- 0.5
+  res_vpa_base0_nontune2 <- res_vpa_base0_nontune
+  res_vpa_base0_nontune2$naa$"2017"[1] <- 6
+
+  # 通常の将来予測
+  res_future_sd00ar10 <- redo_future(data_future_test,
+             list(nsim=3, res_SR=res_sr_sd00ar10, res_vpa=res_vpa_base0_nontune2),
+             optim_method="none", multi_init=0)
+  # 2018年の値
+  expect_equal(res_future_sd00ar10$naa[1,"2018",1],
+               exp(log(res_future_sd00ar10$naa[1,"2017",1]/4) * 0.5) * 4, tol=0.001)
+  # 最終年の値
+  expect_equal(mean(res_future_sd00ar10$naa[1,43,]), 4, tol=0.01)
+
+ 
+  # sd>0
+  res_sr_sd01ar10 <- res_sr_list$res_vpa_base0_nontune
+  res_sr_sd01ar10$pars$sd <- 0.1
+  res_sr_sd01ar10$pars$rho <- 0.5  
+
+  res_future_sd01ar10 <- redo_future(data_future_test,
+             list(nsim=1000, res_SR=res_sr_sd01ar10, res_vpa=res_vpa_base0_nontune2),
+             optim_method="none", multi_init=0)
+  # 2018年の平均
+  expect_equal(mean(res_future_sd01ar10$naa[1,"2018",]),
+               exp(log(res_future_sd01ar10$naa[1,"2017",1]/4) * 0.5) * 4, tol=0.01)
+  # 最終年のSDと平均
+  expect_equal(mean(res_future_sd01ar10$naa[1,43,]), 4, tol=0.01)
+  expect_equal(sd(log(res_future_sd01ar10$naa[1,43,])), sqrt(1/(1-(0.5^2)) * 0.1 ^2), tol=0.01)
+
+  # fix_recruitオプション
+  res_future <- redo_future(data_future_test,
+            list(nsim=1000, res_SR=res_sr_sd01ar10, res_vpa=res_vpa_base0_nontune2,
+                 fix_recruit=list(year=2018,rec=6)),
+             optim_method="none", multi_init=0)
+  # 2019年の平均
+  expect_equal(mean(res_future$naa[1,"2019",]),
+               exp(log(res_future$naa[1,"2018",1]/4) * 0.5) * 4, tol=0.01)
+  # 最終年のSDと平均
+  expect_equal(mean(res_future$naa[1,43,]), 4, tol=0.01)
+  expect_equal(sd(log(res_future$naa[1,43,])), sqrt(1/(1-(0.5^2)) * 0.1 ^2), tol=0.01)  
+
+  
 })
 
 # check future_vpa with dummy data ----
