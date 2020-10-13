@@ -549,6 +549,8 @@ future_vpa_R <- function(naa_mat,
         if(!is.null(waa_par_mat)) waa_mat[1,t,] <- waa_catch_mat[1,t,] <- update_waa_mat(waa=waa_mat[1,t,],rand=waa_rand_mat[1,t,],naa=N_mat[1,t,],pars_b0=waa_par_mat[1,,"b0"],pars_b1=waa_par_mat[1,,"b1"])
       }else{
         # fix_recruitですでに加入尾数が入っていて、自己相関ありの場合
+        # make_future_dataの段階では対応するSSBがいくつかわからないので、SSBが計算された段階で
+        # 残差を計算しなおす必要がある -> new_deviance
         if(!all(N_mat[1,t,]==0) && all(SR_mat[,t-1,"rho"]>0)){
           rec_predict <- purrr::pmap_dbl(tibble(x=SR_mat[t,,"SR_type"],
                                               ssb=spawner_mat[spawn_t,],
@@ -559,10 +561,13 @@ future_vpa_R <- function(naa_mat,
                                          })        
           new_deviance <- log(N_mat[1,t,]) - log(rec_predict)
           SR_mat[t,,"deviance"] <- new_deviance
+
+          # t年の残差をもとに、将来予測年のdevianceを置き換える
           if(t<total_nyear){ # replace recruit deviance
             for(t_tmp in t:(total_nyear-1)){
               SR_mat[t_tmp+1, ,"deviance"] <- SR_mat[t_tmp, ,"deviance"]*SR_mat[t_tmp,,"rho"] + SR_mat[t_tmp, ,"rand_resid"]
             }
+            # そんで、バイアス補正もする
             SR_mat[(t+1):total_nyear,,"deviance"] <- SR_mat[(t+1):total_nyear,,"deviance"] - SR_mat[(t+1):total_nyear,,"bias_factor"]
           }
         }
