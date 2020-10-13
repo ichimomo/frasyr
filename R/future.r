@@ -196,7 +196,19 @@ make_future_data <- function(res_vpa,
                        regime_shift_option=regime_shift_option)
 
   # when fix recruitment
-  if(!is.null(fix_recruit)) naa_mat[1,as.character(fix_recruit$year),] <- fix_recruit$rec
+  if(!is.null(fix_recruit)){
+    if(!is.list(fix_recruit)){
+      # scalar
+      naa_mat[1,as.character(fix_recruit$year),] <- fix_recruit$rec
+    }
+    else{
+      # vector
+      for(i in 1:length(fix_recruit$year)){
+        if(length(fix_recruit$rec[[i]])!=dim(naa_mat)[[3]]) stop("invalid length of recruit")
+        naa_mat[1,as.character(fix_recruit$year[i]),] <- as.numeric(unlist(fix_recruit$rec[i]))
+      }
+    }
+  }
 
   # set F & HCR parameter
   start_F_year <- which(allyear_name==start_F_year_name)
@@ -551,7 +563,7 @@ future_vpa_R <- function(naa_mat,
         # fix_recruitですでに加入尾数が入っていて、自己相関ありの場合
         # make_future_dataの段階では対応するSSBがいくつかわからないので、SSBが計算された段階で
         # 残差を計算しなおす必要がある -> new_deviance
-        if(!all(N_mat[1,t,]==0) && all(SR_mat[,t-1,"rho"]>0)){
+        if(!all(N_mat[1,t,]==0) && all(SR_mat[t-1,,"rho"]>0)){
           rec_predict <- purrr::pmap_dbl(tibble(x=SR_mat[t,,"SR_type"],
                                               ssb=spawner_mat[spawn_t,],
                                               a=SR_mat[t,,"a"],b=SR_mat[t,,"b"]),

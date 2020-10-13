@@ -429,8 +429,20 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
                exp(log(res_future$naa[1,"2018",1]/4) * 0.5) * 4, tol=0.01)
   # 最終年のSDと平均
   expect_equal(mean(res_future$naa[1,43,]), 4, tol=0.01)
-  expect_equal(sd(log(res_future$naa[1,43,])), sqrt(1/(1-(0.5^2)) * 0.1 ^2), tol=0.01)  
+  expect_equal(sd(log(res_future$naa[1,43,])), sqrt(1/(1-(0.5^2)) * 0.1 ^2), tol=0.01)
 
+  # fix_recruitオプション（加入複数）
+  res_future <- redo_future(data_future_test,
+            list(nsim=10, res_SR=res_sr_sd01ar10, res_vpa=res_vpa_base0_nontune2,
+                 fix_recruit=list(year=c(2018,2019),rec=list(rep(6,10),rep(5,10)))),
+            optim_method="none", multi_init=0)
+  expect_equal(as.numeric(rowMeans(res_future$naa[1,c("2018","2019"),])),c(6,5))
+
+  res_future <- redo_future(data_future_test,
+            list(nsim=10, res_SR=res_sr_sd01ar10, res_vpa=res_vpa_base0_nontune2,
+                 fix_recruit=list(year=c(2018),rec=list(rep(5,10)))),
+            optim_method="none", multi_init=0)
+  expect_equal(as.numeric(mean(res_future$naa[1,c("2018"),])),c(5))  
   
 })
 
