@@ -485,6 +485,32 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
   abund_vpadat_rec2_N0sj<- abund.extractor(dat=vpadat_rec2,abund="N0sj", naa=naa_base2, faa=faa_base2, min.age=2, max.age=4)
   expect_equal(as.numeric(abund_vpadat_rec2_N0sj),true_abun_N0sj)
   
+  
+  #1-6: madara法によるtuning ----
+  
+  #  madara法．最小二乗法．
+  res_vpa_base0_madara1 <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
+                              Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.def="max",sel.update=FALSE, est.method="ls", b.est=FALSE,abund=c("B","B"),madara=TRUE)
+							  
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_madara1$naa),2)),true_number,tol=0.0001)
+  expect_equal(as.numeric(round(res_vpa_base0_madara1$sigma,2)),true_sd,tol=0.01)
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_madara1$saa),2)),c(0.42,0.58,1.00,1.00))
+  
+  #  madara法．最尤法．
+  res_vpa_base0_madara2 <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
+                               Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.def="max",sel.update=FALSE, est.method="ml", b.est=FALSE,abund=c("B","B"),madara=TRUE)
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_madara2$naa),2)),true_number,tol=0.0001)
+  expect_equal(as.numeric(round(res_vpa_base0_madara2$sigma,2)),rep(true_sd,2), tol=0.01)
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_madara2$saa),2)),c(0.42,0.58,1.00,1.00))
+  
+  #  madara法．最小二乗法実数．
+  res_vpa_base0_madara3 <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
+                               Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.def="max",sel.update=FALSE, est.method="ls_nolog", b.est=FALSE,abund=c("B","B"),madara=TRUE)
+  
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_madara3$naa),2)),true_number,tol=0.0001)
+  expect_equal(as.numeric(round(res_vpa_base0_madara3$sigma,2)),0.5,tol=0.01)
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_madara3$saa),2)),c(0.42,0.58,1.00,1.00))
+  
   # Part2: dataset is "vpadat_pgc0" for b.est=F, and "vpadat_pgc0_estb" for b.est=T (plus group changes in some years)----
   #現状では，Pope=FALSE（Baranovの方程式）の場合には対応していないのでPope=FALSEのテストは省略
   
