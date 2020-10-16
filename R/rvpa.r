@@ -448,7 +448,7 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param tf.mat terminal Fの平均をとる年の設定．NA行列に平均をとる箇所に1を入れる．
 #' @param eq.tf.mean terminal Fの平均値を過去のFの平均値と等しくする
 #' @param no.est  パラメータ推定しない．
-#' @param est.method 推定方法 （ls = 最小二乗法，ml = 最尤法）
+#' @param est.method 推定方法 （ls = 最小二乗法，ml = 最尤法,  ls_nolog =最小二乗法で実数)
 #' @param b.est bを推定するかどうか
 #' @param est.constraint  制約付き推定をするかどうか
 #' @param q.const  qパラメータの制約（0は推定しないで1にfix）
@@ -473,6 +473,7 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param eta  Fのpenaltyを分けて与えるときにeta.ageで指定した年齢への相対的なpenalty (0~1)
 #' @param eta.age  Fのpenaltyを分けるときにetaを与える年齢(0 = 0歳（加入）,0:1 = 0~1歳)
 #' @param tmb.file  TMB=TRUEのとき使用するcppファイルの名前
+#' @param madara  マダラ太平洋系群で用いているチューニングのやり方
 #' @encoding UTF-8
 #'
 #' @export
