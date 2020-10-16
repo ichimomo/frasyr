@@ -197,7 +197,7 @@ make_future_data <- function(res_vpa,
 
   # when fix recruitment
   if(!is.null(fix_recruit)){
-    if(!is.list(fix_recruit)){
+    if(!is.list(fix_recruit$rec)){
       # scalar
       naa_mat[1,as.character(fix_recruit$year),] <- fix_recruit$rec
     }
