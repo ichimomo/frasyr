@@ -91,7 +91,7 @@ res_refF1 <- ref.F(res=res_vpa,Fcurrent=frasyr::apply_year_colum(res_vpa$faa,201
 res_refF2 <- ref.F(res=NULL,Fcurrent=rep(0.1,5),
                    waa=rep(100,5),maa=c(0,0,1,1,1),M=rep(0.3,5),waa.catch=rep(100,5),
                    rps.vector=NULL, # Fmedを計算したりする場合のRPSのベクトル.NULLでもOK
-                   Pope=TRUE,min.age=0)
+                   Pope=TRUE,min.age=0,pSPR=c(30,40))
 
 
 }
