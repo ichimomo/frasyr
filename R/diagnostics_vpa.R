@@ -366,10 +366,10 @@ do_retrospective_vpa <- function(res,
   dat_graph <- list()
   for(i in 1:n_retro) dat_graph[[i]] <- res_retro$Res[[i]]
 
+  dat_graph <- c(list(res), dat_graph) # Base case(全データで解析)の追加（浜辺07/08）
   if(res$input$last.catch.zero){ # last.catch.zero=Tの場合、最終年のプロットはしない（Mohn's rhoとずれるから）（浜辺07/08）
-    names(dat_graph) <- rev(colnames(res$ssb))[2:(n_retro+1)]
+    names(dat_graph) <- rev(colnames(res$ssb))[2:(n_retro+2)]
   } else {
-    dat_graph <- c(list(res), dat_graph) # Base case(全データで解析)の追加（浜辺07/08）
     names(dat_graph) <- rev(colnames(res$ssb))[1:(n_retro+1)]  # 図にinputされる結果に名前をつける
   }
 
