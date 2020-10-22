@@ -833,13 +833,13 @@ if (isTRUE(madara)){
             if (i-k > 0){
               naa[j,ny-k] <- naa[j+1,ny-k+1]*exp(M[j,ny-k])+caa[j,ny-k]*exp(M[j,ny-k]/2)
               faa[j,ny-k] <- -log(1-caa[j,ny-k]*exp(M[j,ny-k]/2)/naa[j,ny-k])
-            }  
+            }
           }
-       
+
      }
    }
-   
-   
+
+
     if (is.na(naa[na[ny]-1,ny])){
       if(isTRUE(Pope)){
         for (i in (na[ny]-1):1){
@@ -971,7 +971,7 @@ if (isTRUE(madara)){
             abundance <- abund.extractor(abund=abund[i], naa, faa, dat, min.age=min.age[i], max.age=max.age[i], link=link[i], base=base[i], af=af[i], catch.prop=catch.prop, sel.def=sel.def, p.m=p.m, omega=omega, scale=scale)
             Abund <- rbind(Abund, abundance)
             avail <- which(!is.na(as.numeric(index[i,])))
-			
+
             if (b.est)
             {
                 if (is.null(b.fix))
@@ -1018,7 +1018,7 @@ if (isTRUE(madara)){
                 if (is.null(b.fix)) b[i] <- 1 else b[i] <- b.fix[i]
             }
             if (is.null(q.fix))
-            {    
+            {
                 #q[i] <- exp(mean(log(as.numeric(index[i,avail]))-b[i]*log(as.numeric(abundance[avail]))))
 				 q[i] <- sum(as.numeric(index[i,avail])*as.numeric(abundance[avail])^b[i])/sum(as.numeric(abundance[avail])^(2*b[i])) #changed
             }else
@@ -1026,7 +1026,7 @@ if (isTRUE(madara)){
                 q[i] <- q.fix[i]
             }
             #obj <- c(obj,index.w[i]*sum((log(as.numeric(index[i,avail]))-log(q[i])-b[i]*log(as.numeric(abundance[avail])))^2))
-			obj <- c(obj,index.w[i]*sum((as.numeric(index[i,avail])-q[i]*as.numeric(abundance[avail ])^b[i])^2)) 
+			obj <- c(obj,index.w[i]*sum((as.numeric(index[i,avail])-q[i]*as.numeric(abundance[avail ])^b[i])^2))
         }
     }
     if (est.method=="ml")
@@ -1632,7 +1632,7 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE,
    if (ssb.forecast && !(res.c$input$last.catch.zero)) {
      warning("'ssb.forecast' is usable only when 'last.catch.zero=TRUE' and so ignored")
    }
-     
+
 
    for (i in 1:n){
      nc <- ncol(res.c$input$dat$caa)
@@ -1645,10 +1645,12 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE,
      res.c$input$dat$M <- res.c$input$dat$M[,-nc]
      res.c$input$dat$catch.prop <- res.c$input$dat$catch.prop[,-nc]
 
-     # 毎年等しく取り除くのではなく、データごとに1年分取り除くように修正（浜辺07/07）
-     label_tmp <- which(is.na(res.c$input$dat$index[,nc]))
-     res.c$input$dat$index <- res.c$input$dat$index[,-nc,drop=FALSE]
-     res.c$input$dat$index[label_tmp,length(res.c$input$dat$index[1,])] <- NA
+     if(!is.null(res$input$dat$index)){ # チューニングなしVPAにも対応
+       # 毎年等しく取り除くのではなく、データごとに1年分取り除くように修正（浜辺07/07）
+       label_tmp <- which(is.na(res.c$input$dat$index[,nc]))
+       res.c$input$dat$index <- res.c$input$dat$index[,-nc,drop=FALSE]
+       res.c$input$dat$index[label_tmp,length(res.c$input$dat$index[1,])] <- NA
+     }
 
      res.c$input$tf.year <- res.c$input$tf.year-1
      res.c$input$fc.year <- res.c$input$fc.year-1
