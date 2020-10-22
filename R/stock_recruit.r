@@ -5,6 +5,10 @@
 #' @import tibble
 #' @importFrom magrittr %>%
 #' @importFrom dplyr filter
+#' @importFrom dplyr mutate
+#' @importFrom dplyr group_by
+#' @importFrom dplyr select
+
 #'
 NULL
 
@@ -316,6 +320,138 @@ fit.SR <- function(SRdata,
   Res$BIC <- -2*loglik+k*log(NN)
 
   class(Res) <- "fit.SR"
+  return(Res)
+}
+
+
+
+#' L1とL2のmixtureによる再生産関係の推定（beta版なのでexportしない）
+#'
+#' 3種類の再生産関係の推定を、最小二乗法か最小絶対値法で、さらに加入の残差の自己相関を考慮して行うことができる
+#' @param SRdata \code{get.SRdata}で作成した再生産関係データ
+#' @param SR 再生産関係 (\code{"HS"}: Hockey-stick, \code{"BH"}: Beverton-Holt, \code{"RI"}: Ricker)
+#' @param alpha alpha:(1-alpha)の比でL1:L2を混ぜる
+#' @param length 初期値を決める際のgridの長さ
+#' @param rep.opt \code{TRUE}で\code{optim}による最適化を収束するまで繰り返す
+#' @param p0 \code{optim}で設定する初期値
+#' @encoding UTF-8
+# #' @export
+#' @noRd  
+#' 
+fit.SRalpha <- function(SRdata,
+                   SR="HS",
+                   alpha=0,
+                   hessian=FALSE,
+                   w=rep(1,length(SRdata$R)),
+                   length=20,
+                   max.ssb.pred=1.3, # 予測値を計算するSSBの最大値（観測された最大値への乗数）
+                   p0=NULL,
+                   rep.opt = TRUE
+){
+
+  argname <- ls()
+  arglist <- lapply(argname,function(xx) eval(parse(text=xx)))
+  names(arglist) <- argname
+
+  # if (AR==0) out.AR <- FALSE
+  rec <- SRdata$R
+  ssb <- SRdata$SSB
+
+  N <- length(rec)
+  NN <- sum(w) #likelihoodを計算するサンプル数
+
+  #  if (SR=="HS") SRF <- function(x,a,b) a*(x+sqrt(b^2+gamma^2/4)-sqrt((x-b)^2+gamma^2/4))
+  if (SR=="HS") SRF <- function(x,a,b) ifelse(x>b,b*a,x*a)
+  if (SR=="BH") SRF <- function(x,a,b) a*x/(1+b*x)
+  if (SR=="RI") SRF <- function(x,a,b) a*x*exp(-b*x)
+
+  obj.f <- function(a,b,out="nll"){ #rhoは無し
+    resid <- sapply(1:N,function(i) log(rec[i]) - log(SRF(ssb[i],a,b)))
+
+    # L2 part
+    rss_L2 = sum(w*resid^2)
+    sd = sqrt(rss_L2/NN)
+    obj_L2 = -sum(w*dnorm(resid,0,sd,log=TRUE))
+
+    # L1 part
+    rsa_L1 = sum(w*abs(resid))
+    phi = rsa_L1/NN
+    obj_L1 = -sum(w*(-log(2*phi)-abs(resid/phi)))
+
+    obj = alpha*obj_L2 + (1-alpha)*obj_L1
+    SD = sqrt(alpha*sd^2 + (1-alpha)*2*phi^2)
+    if (out=="nll") return(obj)
+    if (out=="sd") return(SD)
+    if (out=="resid") return(resid)
+  }
+
+  if (is.null(p0)) {
+    a.range <- range(rec/ssb)
+    b.range <- range(1/ssb)
+    if (SR == "HS") b.range <- range(ssb)
+    grids <- as.matrix(expand.grid(
+      seq(a.range[1],a.range[2],len=length),
+      seq(b.range[1],b.range[2],len=length)
+    ))
+    init <- as.numeric(grids[which.min(sapply(1:nrow(grids),function(i) obj.f(grids[i,1],grids[i,2]))),])
+    init[1] <- log(init[1])
+    init[2] <- ifelse (SR == "HS",-log(max(0.000001,(max(ssb)-min(ssb))/max(init[2]-min(ssb),0.000001)-1)),log(init[2]))
+    # if (AR != 0 && !isTRUE(out.AR)) init[3] <- 0
+  } else {
+    init = p0
+  }
+
+  if (SR == "HS") {
+    obj.f2 <- function(x) obj.f(exp(x[1]),min(ssb)+(max(ssb)-min(ssb))/(1+exp(-x[2])))
+  } else {
+    obj.f2 <- function(x) obj.f(exp(x[1]),exp(x[2]))
+  }
+
+  opt <- optim(init,obj.f2)
+  if (rep.opt) {
+    for (i in 1:100) {
+      opt2 <- optim(opt$par,obj.f2)
+      if (abs(opt$value-opt2$value)<1e-6) break
+      opt <- opt2
+    }
+  }
+  opt <- optim(opt$par,obj.f2,method="BFGS",hessian=hessian)
+
+  Res <- list()
+  Res$input <- arglist
+  Res$obj.f <- obj.f
+  Res$obj.f2 <- obj.f2
+  Res$opt <- opt
+
+  a <- exp(opt$par[1])
+  b <- ifelse(SR=="HS",min(ssb)+(max(ssb)-min(ssb))/(1+exp(-opt$par[2])),exp(opt$par[2]))
+  # rho <- ifelse(AR==0,0,ifelse(out.AR,0,1/(1+exp(-opt$par[3]))))
+  rho <- 0
+
+  sd = obj.f(a=a,b=b,out="sd")
+  resid = obj.f(a=a,b=b,out="resid")
+
+  Res$resid <- resid
+  Res$resid2 <- resid
+  Res$pars <- c(a,b,sd,rho)
+
+  Res$loglik <- loglik <- -opt$value
+
+  names(Res$pars) <- c("a","b","sd","rho")
+  Res$pars <- data.frame(t(Res$pars))
+  #  Res$gamma <- gamma
+
+  ssb.tmp <- seq(from=0,to=max(ssb)*max.ssb.pred,length=100)
+  R.tmp <- sapply(1:length(ssb.tmp), function(i) SRF(ssb.tmp[i],a,b))
+  pred.data <- data.frame(SSB=ssb.tmp,R=R.tmp)
+  Res$pred <- pred.data
+
+  Res$k <- k <- length(opt$par)+1
+  Res$AIC <- -2*loglik+2*k
+  Res$AICc <- Res$AIC+2*k*(k+1)/(NN-k-1)
+  Res$BIC <- -2*loglik+k*log(NN)
+
+  class(Res) <- "fit.SRalpha"
   return(Res)
 }
 
@@ -709,13 +845,13 @@ fit.SRregime <- function(
       tbl = tibble(resid=resid,sd_key=sd_key,w=w) %>%
         mutate(resid2 = resid^2) %>%
         group_by(sd_key) %>%
-        summarise(rss = sum(w*resid2), n = sum(w)) %>%
+        summarise(rss = sum(w*resid2), n = sum(w),.groups="drop") %>%
         mutate(sd = sqrt(rss/n))
     } else {
       tbl = tibble(resid=resid,sd_key=sd_key,w=w) %>%
         # mutate(resid2 = resid^2) %>%
         group_by(sd_key) %>%
-        summarise(rss = sum(w*abs(resid)), n = sum(w)) %>%
+        summarise(rss = sum(w*abs(resid)), n = sum(w),.groups="drop") %>%
         mutate(sd = rss/n)
     }
     SD = tbl$sd %>% as.numeric()
@@ -1326,26 +1462,31 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
 #'
 #' 結果のプロットもこの関数で行う
 #' @param resSR \code{fit.SR}か\code{fit.SRregime}のオブジェクト
+#' @param use.p0 初期値に\code{resSR}の結果を使うか否か
 #' @param is.plot プロットするかどうか
 #' @param output pngファイルに出力するか否か
 #' @param filename ファイル名
 #' @encoding UTF-8
 #' @export
-jackknife.SR = function(resSR,is.plot=TRUE,output=FALSE,filename = "jackknife",ylim.range = c(0.5,1.5),pch=19,cex=1.1,...) {
+jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename = "jackknife",ylim.range = c(0.5,1.5),pch=19,cex=1.1,...) {
   RES = lapply(1:length(resSR$input$SRdata$SSB), function(i){
     jack <- resSR
     jack$input$w[i] <- 0
-    jack$input$p0 <- resSR$opt$par
+    if (use.p0) jack$input$p0 <- resSR$opt$par
     if (class(resSR)=="fit.SR") {
       do.call(fit.SR,jack$input)
     } else {
-      do.call(fit.SRregime,jack$input)
+      if (class(resSR)=="fit.SRregime") {
+        do.call(fit.SRregime,jack$input)
+      } else {
+        do.call(fit.SRalpha,jack$input)
+      }
     }
   })
   if (is.plot) {
     jack.res <- RES
     data_SR = resSR$input$SRdata
-    if (class(resSR)=="fit.SR") {
+    if (class(resSR)=="fit.SR" || class(resSR)=="fit.SRalpha") {
       if (output) png(file = paste0(filename,"_pars.png"), width=10, height=10, res=432, units='in')
       par(mfrow=c(2,2),mar=c(3,3,2,2),oma=c(3,3,2,2),pch=pch,cex=cex)
       plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$pars$a),type="b",
@@ -1360,13 +1501,14 @@ jackknife.SR = function(resSR,is.plot=TRUE,output=FALSE,filename = "jackknife",y
            xlab="Year removed",ylab="",main="sd in jackknife",ylim=resSR$pars$sd*ylim.range)
       abline(resSR$pars$sd,0,lwd=2,col=2,lty=2)
 
-      if (resSR$input$AR==1) {
-        plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$pars$rho),type="b",
-             xlab="Year removed",ylab="",main="rho in jackknife",ylim=resSR$pars$rho*ylim.range)
-        abline(resSR$pars$rho,0,lwd=2,col=2,lty=2)
+      if (class(resSR)=="fit.SR") {
+        if (resSR$input$AR==1) {
+          plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$pars$rho),type="b",
+               xlab="Year removed",ylab="",main="rho in jackknife",ylim=resSR$pars$rho*ylim.range)
+          abline(resSR$pars$rho,0,lwd=2,col=2,lty=2)
+        }
       }
       if (output) dev.off()
-
       if (output) png(file = paste0(filename,"_SRcurve.png"), width=8, height=5, res=432, units='in')
       par(mar=c(3,3,2,2),oma=c(3,3,2,2),mfrow=c(1,1))
       plot(data_SR$R ~ data_SR$SSB, cex=2, type = "p",xlab="SSB",ylab="R",pch=1,
@@ -1378,7 +1520,6 @@ jackknife.SR = function(resSR,is.plot=TRUE,output=FALSE,filename = "jackknife",y
       points(resSR$pred$SSB,resSR$pred$R,col=2,type="l",lwd=3,lty=2)
       legend("topright", legend=c("Estimated SR function","A jackkine SR function"),col=c("red",rgb(0,0,1,alpha=0.1)),lty=c(2,1), cex=0.8)
       if (output) dev.off()
-
     } else { #fit.SRregime
       regime_unique = resSR$regime_resid$regime %>% unique()
       if (output) png(file = paste0(filename,"_pars.png"), width=15, height=7.5, res=432, units='in')
@@ -1607,7 +1748,12 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
       #input$rep.opt = TRUE
       resSR2 = do.call(fit.SR, input)
     } else {
-      resSR2 = do.call(fit.SRregime, input)
+      if (class(resSR) == "fit.SRregime") {
+        resSR2 = do.call(fit.SRregime, input)
+      } else {
+        input$rep.opt = TRUE
+        resSR2 = do.call(fit.SRalpha, input)
+      }
     }
   }
   if (all(diag(resSR2$opt$hessian) > 0)) {
@@ -1618,7 +1764,7 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
 
   # check boundary
   RES$boundary <- NULL
-  if (class(resSR) == "fit.SR") {
+  if (class(resSR) == "fit.SR" || class(resSR) == "fit.SRalpha") {
     if (resSR$input$SR == "HS") {
       if (resSR$pars$b > max(SRdata$SSB)*0.99) message(RES$boundary <- "Parameter b reaching the maximum SSB")
       if (resSR$pars$b < min(SRdata$SSB)*1.01) message(RES$boundary <- "Parameter b reaching the minimum SSB")
@@ -1662,7 +1808,12 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
         #input$rep.opt = TRUE
         resSR2 = try(do.call(fit.SR, input),silent=TRUE)
       } else {
-        resSR2 = try(do.call(fit.SRregime, input),silent=TRUE)
+        if (class(resSR) == "fit.SRregime") {
+          resSR2 = try(do.call(fit.SRregime, input),silent=TRUE)
+        } else {
+          input$rep.opt = TRUE
+          resSR2 = try(do.call(fit.SRalpha, input),silent=TRUE)
+        }
       }
       if (class(resSR2) != "try-error") break
     }
@@ -1771,3 +1922,116 @@ bootSR.ggplot = function(boot.res, CI=0.80) {
     theme_SH()
   g1
 }
+
+#' 再生産関係の推定パラメータの相関を出力する関数
+#' 
+#' @inheritParams fit.SR
+#' @inheritParams fit.SRregime
+#' @param resSR \code{fit.SR}または\code{fit.SRregime}のオブジェクト
+#' @return 以下の要素からなるリスト
+#' \describe{
+#' \item{\code{hessian}}{ヘッセ行列}
+#' \item{\code{cov}}{推定されたパラメータの分散共分散行列}
+#' \item{\code{cor}}{推定されたパラメータの相関行列}
+#' }
+#' @examples
+#' \dontrun{
+#' data(res_vpa)
+#' SRdata <- get.SRdata(res_vpa)
+#' resSR <- fit.SR(SRdata, SR = c("HS","BH","RI")[1],
+#'                 method = c("L1","L2")[2], AR = 1,
+#'                 out.AR = TRUE)
+#' corRes = corSR(resSR)
+#' corRes$cor
+#' }
+#' @encoding UTF-8
+#' @export
+corSR = function(resSR) {
+  if (!resSR$input$hessian) {
+    resSR$input$hessian <- TRUE
+    resSR$input$p0 = resSR$opt$par
+    if (class(resSR) == "fit.SR") resSR = do.call(fit.SR, resSR$input)
+    if (class(resSR) == "fit.SRregime") resSR = do.call(fit.SRregime, resSR$input)
+  }
+  hessian = resSR$opt$hessian
+  cov = solve(hessian)
+  cor = stats::cov2cor(cov)
+  return (list(hessian=hessian,cov=cov,cor=cor))
+}
+
+#' Steepness (h) と関連するパラメータ (SB0,R0,B0)を計算する関数
+#' 
+#' @param SR "HS", "BH", "RI"のいずれか 
+#' @param rec_pars 再生産関係のパラメータで\code{rec_pars$a},\code{rec_pars$b}で使用する 
+#' @param M 年齢別自然死亡係数 (ベクトルで与えるか、年齢共通の場合\code{M=0.4}のようにしてもよい)
+#' @param waa （親魚量の）年齢別体重
+#' @param maa 年齢別親魚量
+#' @param plus_group 最高齢がプラスグループかどうか
+#' @return 以下の要素からなるデータフレーム
+#' \describe{
+#' \item{\code{SPR0}}{F=0のときのSPR(この逆数がreplacement lineの傾き)}
+#' \item{\code{SB0}}{F=0のときの親魚量}
+#' \item{\code{R0}}{F=0のときの加入量}
+#' \item{\code{B0}}{F=0のときの資源量}
+#' \item{\code{h}}{steepness: BHかRIのときは0.2×SB0のときの加入量がh×R0, HSのときはh=1-b/SB0}}
+#' }
+#' @examples
+#' \dontrun{
+#' data(res_vpa)
+#' SRdata <- get.SRdata(res_vpa)
+#' resSR <- fit.SR(SRdata, SR = c("HS","BH","RI")[1],
+#'                 method = c("L1","L2")[2], AR = 1,
+#'                out.AR = TRUE)
+#' rec_pars = resSR$pars
+#' year <- "2017"
+#' M = res_vpa$input$dat$M[,year]
+#' waa = res_vpa$input$dat$waa[,year]
+#' maa = res_vpa$input$dat$maa[,year]
+#' Res_h = calc_steepness(SR=SR,rec_pars=rec_pars,M=M,waa=waa,maa=maa,plus_group=TRUE)
+#' Res_h
+#' }
+#' @encoding UTF-8
+#' @export
+calc_steepness = function(SR="HS",rec_pars,M,waa,maa,plus_group=TRUE) {
+  if (length(M)==1) {
+    M = rep(M,length(waa))
+  }
+  if (length(waa) != length(maa) || length(M) != length(maa)) {
+    stop("The lengths of 'waa' and 'maa' must be equal")
+  }
+  NAA0 = 1
+  for (i in 1:(length(waa)-1)) {
+    NAA0 = c(NAA0,rev(NAA0)[1]*exp(-M[i])) 
+  }
+  if (plus_group) NAA0[length(NAA0)] = rev(NAA0)[1]/(1-exp(-1*rev(M)[1]))
+  BAA0 = NAA0*waa
+  SSB0 = BAA0*maa
+  SPR0 = sum(SSB0) #get.SRRと一致 (testに使える)
+  
+  # 再生産関係とy=(1/SPR0)*xの交点を求める
+  rec_a = rec_pars$a
+  rec_b = rec_pars$b
+  if (SR == "HS") {
+    R0 = rec_pars$a * rec_pars$b
+    SB0 = R0*SPR0
+    if (SB0<rec_b) {
+      warning("Virgin equilibrium does not exist!")
+    }
+    h = (SB0-rec_b)/SB0
+  }
+  if (SR == "BH") {
+    SB0 = (rec_a*SPR0-1)/rec_b
+    R0 = SB0/SPR0
+    h = (rec_a*0.2*SB0/(1+rec_b*0.2*SB0))/R0
+  }
+  if (SR == "RI") {
+    SB0 = (1/rec_b)*log(rec_a*SPR0)
+    R0 = SB0/SPR0
+    h = (rec_a*0.2*SB0*exp(-rec_b*0.2*SB0))/R0
+  }
+  
+  B0 = sum(R0*BAA0)
+  Res = data.frame(SPR0 = SPR0, SB0 = SB0, R0 = R0, B0 = B0, h = h)
+  return(Res)
+}
+

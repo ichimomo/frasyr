@@ -1,11 +1,11 @@
 ---
-title: "新しい将来予測関数：future_vpaを使った将来予測"
+title: "future_vpaを使った将来予測"
 author: "市野川桃子"
 date: "`r Sys.Date()`"
 output:
   md_document:
 vignette: >
-  %\VignetteIndexEntry{4. new function of future_vpa}
+  %\VignetteIndexEntry{function of future projection}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -29,12 +29,13 @@ knitr::opts_chunk$set(
 
 ```{r make_future_data}
 
+libray(frasyr)
 data(res_vpa)
 data(res_sr_HSL2)
 
 data_future_test <- make_future_data(res_vpa, # VPAの結果
-	         nsim = 1000, # シミュレーション回数
-                 nyear = 50, # 将来予測の年数
+	         nsim = 10, # シミュレーション回数
+                 nyear = 30, # 将来予測の年数
                  future_initial_year_name = 2017, # 年齢別資源尾数を参照して将来予測をスタートする年
                  start_F_year_name = 2018, # この関数で指定したFに置き換える最初の年
                  start_biopar_year_name=2018, # この関数で指定した生物パラメータに置き換える最初の年

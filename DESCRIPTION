@@ -13,7 +13,7 @@ Depends: R (>= 3.5.0)
 License: Apache Licence 2.0
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.1.0
+RoxygenNote: 7.1.1
 Imports:
     ggplot2,
     purrr,
@@ -30,12 +30,13 @@ Imports:
     rmutil,
     gridExtra,
     EnvStats,
+    assertthat,
+    foreach,
+    doParallel,    
     GGally
 Suggests:
     knitr,
     rmarkdown,
     testthat,
-    foreach,
-    doParallel,
     covr
 VignetteBuilder: knitr

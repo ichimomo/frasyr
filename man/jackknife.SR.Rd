@@ -8,6 +8,7 @@
 jackknife.SR(
   resSR,
   is.plot = TRUE,
+  use.p0 = TRUE,
   output = FALSE,
   filename = "jackknife",
   ylim.range = c(0.5, 1.5),
@@ -20,6 +21,8 @@ jackknife.SR(
 \item{resSR}{\code{fit.SR}か\code{fit.SRregime}のオブジェクト}
 
 \item{is.plot}{プロットするかどうか}
+
+\item{use.p0}{初期値に\code{resSR}の結果を使うか否か}
 
 \item{output}{pngファイルに出力するか否か}
 

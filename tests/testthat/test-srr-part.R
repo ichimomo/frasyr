@@ -82,3 +82,53 @@ test_that("oututput value check",{
                scale=0.01)
 })
 
+context("SRregime bootstrap")
+
+test_that("output value check",{
+  load(system.file("extdata","SRdata_pma.rda",package = "frasyr"))
+  SRdata = SRdata_pma
+  SRmodel.list <- expand.grid(SR.rel = c("HS","BH","RI"), L.type = c("L1", "L2"))
+  
+  # regime_year = ceiling(mean(SRdata$year))
+  regime_year = 1999
+  regime1 = min(SRdata$year):(regime_year-1); regime2 = regime_year:max(SRdata$year);
+  SRdata1 = list(year=regime1, R=SRdata$R[SRdata$year %in% regime1],SSB=SRdata$SSB[SRdata$year %in% regime1])
+  SRdata2 = list(year=regime2, R=SRdata$R[SRdata$year %in% regime2],SSB=SRdata$SSB[SRdata$year %in% regime2])
+  
+#  for (i in 1:nrow(SRmodel.list)) {
+  for (i in 1) {  
+    resSR1 <- fit.SR(SRdata1, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],AR = 0, hessian = FALSE,length=20)
+    resSR2 <- fit.SR(SRdata2, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],AR = 0, hessian = FALSE,length=20)
+    resSRregime <- fit.SRregime(SRdata, SR = as.character(SRmodel.list$SR.rel[i]), method = as.character(SRmodel.list$L.type[i]), regime.year = regime_year, regime.key = 0:1, regime.par = c("a","b","sd"), use.fit.SR = TRUE)
+    
+    # boot strap ----
+    nboot <- 3
+    boot_resSR1_check <- boot.SR(resSR1,n=nboot)
+    boot_resSR2_check <- boot.SR(resSR2,n=nboot)
+    boot_resSRregime_check <- boot.SR(resSRregime,n=nboot)
+    
+    boot_resSR1_median_pars_a <-median(sapply(1:boot_resSR1_check$input$n, function(i) boot_resSR1_check[[i]]$pars$a))
+    boot_resSR1_median_pars_b <-median(sapply(1:boot_resSR1_check$input$n, function(i) boot_resSR1_check[[i]]$pars$b))
+    boot_resSR1_median_pars_sd <-median(sapply(1:boot_resSR1_check$input$n, function(i) boot_resSR1_check[[i]]$pars$sd))
+    boot_resSR1_median_pars_check <- c(boot_resSR1_median_pars_a,boot_resSR1_median_pars_b,boot_resSR1_median_pars_sd)
+    
+    boot_resSR2_median_pars_a <-median(sapply(1:boot_resSR2_check$input$n, function(i) boot_resSR2_check[[i]]$pars$a))
+    boot_resSR2_median_pars_b <-median(sapply(1:boot_resSR2_check$input$n, function(i) boot_resSR2_check[[i]]$pars$b))
+    boot_resSR2_median_pars_sd <-median(sapply(1:boot_resSR2_check$input$n, function(i) boot_resSR2_check[[i]]$pars$sd))
+    boot_resSR2_median_pars_check <- c(boot_resSR2_median_pars_a,boot_resSR2_median_pars_b,boot_resSR2_median_pars_sd)
+    
+    boot_resSRregimeSR1_median_pars_a <-median(sapply(1:boot_resSRregime_check$input$n, function(i) boot_resSRregime_check[[i]]$pars$a[1]))
+    boot_resSRregimeSR1_median_pars_b <-median(sapply(1:boot_resSRregime_check$input$n, function(i) boot_resSRregime_check[[i]]$pars$b[1]))
+    boot_resSRregimeSR1_median_pars_sd <-median(sapply(1:boot_resSRregime_check$input$n, function(i) boot_resSRregime_check[[i]]$pars$sd[1]))
+    boot_resSRregimeSR1_median_pars_check <- c(boot_resSRregimeSR1_median_pars_a,boot_resSRregimeSR1_median_pars_b,boot_resSRregimeSR1_median_pars_sd)
+    
+    boot_resSRregimeSR2_median_pars_a <-median(sapply(1:boot_resSRregime_check$input$n, function(i) boot_resSRregime_check[[i]]$pars$a[2]))
+    boot_resSRregimeSR2_median_pars_b <-median(sapply(1:boot_resSRregime_check$input$n, function(i) boot_resSRregime_check[[i]]$pars$b[2]))
+    boot_resSRregimeSR2_median_pars_sd <-median(sapply(1:boot_resSRregime_check$input$n, function(i) boot_resSRregime_check[[i]]$pars$sd[2]))
+    boot_resSRregimeSR2_median_pars_check <- c(boot_resSRregimeSR2_median_pars_a,boot_resSRregimeSR2_median_pars_b,boot_resSRregimeSR2_median_pars_sd)
+    
+    # レジームを完全に分けたときのfit.SRregimeの結果とfit.SRの結果が一致するかのテスト
+    expect_equal(boot_resSR1_median_pars_check/boot_resSRregimeSR1_median_pars_check,rep(1,3),tolerance=0.5,scale=0.01)
+    expect_equal(boot_resSR2_median_pars_check/boot_resSRregimeSR2_median_pars_check,rep(1,3),tolerance=0.5,scale=0.01)
+  }
+})

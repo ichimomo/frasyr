@@ -23,6 +23,7 @@ plot_HCR_by_catch(
   col.Ftarget = "black",
   col.betaFtarget = "gray",
   is.text = TRUE,
+  HCR_function_name = "HCR_default",
   Pope = TRUE,
   RP.label = c("目標管理基準値", "限界管理基準値", "禁漁水準")
 )

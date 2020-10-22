@@ -5,7 +5,18 @@
 \alias{beta.simulation}
 \title{kobeII matrixの簡易版（Btarget, Blimitは決め打ちでβのみ変える)}
 \usage{
-beta.simulation(finput, beta_vector, year.lag = 0, type = "old")
+beta.simulation(
+  finput,
+  beta_vector,
+  year.lag = 0,
+  type = "old",
+  year_beta_change = NULL,
+  output_type = "tidy",
+  ncore = 1
+)
+}
+\arguments{
+\item{year_beta_change}{betaを変更する年の範囲。NULLの場合には全部の年を変える。}
 }
 \description{
 kobeII matrixの簡易版（Btarget, Blimitは決め打ちでβのみ変える)

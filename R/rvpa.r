@@ -158,8 +158,14 @@ backward.calc <- function(caa,naa,M,na,k,min.caa=0.001,p=0.5,plus.group=TRUE,sel
       out[i] <- naa[i+1,k+1]*exp(M[i,k])+caa[i,k]*exp(p*M[i,k])
     }
     if (isTRUE(plus.group)){
-      pp <- c(1, 1/alpha)
-      out[(na[k+1]-1):na[k]] <- pp*pmax(caa[(na[k+1]-1):na[k],k],min.caa)/sum(pp*pmax(caa[(na[k+1]-1):na[k],k],min.caa))*naa[na[k+1],k+1]*exp(M[(na[k+1]-1):na[k],k])+caa[(na[k+1]-1):na[k],k]*exp(p*M[(na[k+1]-1):na[k],k])
+      if(na[k]-na[k+1]<=0){
+        pp <- c(1, 1/alpha)
+        out[(na[k+1]-1):na[k]] <- pp*pmax(caa[(na[k+1]-1):na[k],k],min.caa)/sum(pp*pmax(caa[(na[k+1]-1):na[k],k],min.caa))*naa[na[k+1],k+1]*exp(M[(na[k+1]-1):na[k],k])+caa[(na[k+1]-1):na[k],k]*exp(p*M[(na[k+1]-1):na[k],k])
+      }
+      else{
+        pp <- c(1, 1, 1/alpha)
+        out[(na[k+1]-1):na[k]] <- pp*pmax(caa[(na[k+1]-1):na[k],k],min.caa)/sum(pp*pmax(caa[(na[k+1]-1):na[k],k],min.caa))*naa[na[k+1],k+1]*exp(M[(na[k+1]-1):na[k],k])+caa[(na[k+1]-1):na[k],k]*exp(p*M[(na[k+1]-1):na[k],k])
+      }
     }
     else{
       out[na[k+1]-1] <- naa[na[k+1],k+1]*exp(M[na[k+1]-1,k])+caa[na[k+1]-1,k]*exp(p*M[na[k+1]-1,k])
@@ -442,7 +448,7 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param tf.mat terminal Fの平均をとる年の設定．NA行列に平均をとる箇所に1を入れる．
 #' @param eq.tf.mean terminal Fの平均値を過去のFの平均値と等しくする
 #' @param no.est  パラメータ推定しない．
-#' @param est.method 推定方法 （ls = 最小二乗法，ml = 最尤法）
+#' @param est.method 推定方法 （ls = 最小二乗法，ml = 最尤法,  ls_nolog =最小二乗法で実数)
 #' @param b.est bを推定するかどうか
 #' @param est.constraint  制約付き推定をするかどうか
 #' @param q.const  qパラメータの制約（0は推定しないで1にfix）
@@ -467,6 +473,7 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param eta  Fのpenaltyを分けて与えるときにeta.ageで指定した年齢への相対的なpenalty (0~1)
 #' @param eta.age  Fのpenaltyを分けるときにetaを与える年齢(0 = 0歳（加入）,0:1 = 0~1歳)
 #' @param tmb.file  TMB=TRUEのとき使用するcppファイルの名前
+#' @param madara  マダラ太平洋系群で用いているチューニングのやり方
 #' @encoding UTF-8
 #'
 #' @export
@@ -519,7 +526,7 @@ vpa <- function(
   tf.mat = NULL,   # terminal Fの平均をとる年の設定．0-1行列．
   eq.tf.mean = FALSE, # terminal Fの平均値を過去のFの平均値と等しくする
   no.est = FALSE,   # パラメータ推定しない．
-  est.method = "ls",  # 推定方法 （ls = 最小二乗法，ml = 最尤法）
+  est.method = "ls",  # 推定方法 （ls = 最小二乗法，ml = 最尤法, ls_nolog =最小二乗法で実数） #option追加_by miyagawa(2020/10)
   b.est = FALSE,  #  bを推定するかどうか
   est.constraint = FALSE,   # 制約付き推定をするかどうか
   q.const = 1:length(abund),   # qパラメータの制約（0は推定しないで1にfix）
@@ -545,7 +552,8 @@ vpa <- function(
   sigma.constraint = 1:length(abund),
   eta = NULL,
   eta.age = 0,
-  tmb.file = "rvpa_tmb"
+  tmb.file = "rvpa_tmb",
+  madara=FALSE #マダラ太平洋系群で用いているチューニングのやり方
 )
 {
   #sigma.constで引数を指定してしまったときは，sigma.constraintで引数を指定しなおしてもらうようにする
@@ -663,7 +671,7 @@ vpa <- function(
   # warnings
 
   if (!tune & sel.update) print("sel.update = TRUE but tune=FALSE. So, the results are unreliable.")
-  if (tune & is.null(sel.f) & (!sel.update & term.F=="max")) print("sel.f=NULL although tune=TRUE & sel.update=FALSE & term.F=max. The results are unreliable.")
+  if (tune & is.null(sel.f) & (!madara) & (!sel.update & term.F=="max")) print("sel.f=NULL although tune=TRUE & sel.update=FALSE & term.F=max. The results are unreliable.")
   if (tune) if(length(abund)!=nrow(index)) print("Check!: The number of abundance definition is different from the number of indices.")
   if (Pope & alpha!=1) print("Warning! The estimated F for the older ages may not be accurate if C<<N is not satisfied for the older ages.")
 #  ssb.def
@@ -814,6 +822,24 @@ vpa <- function(
      }
    }
 
+if (isTRUE(madara)){
+     denom <- get(stat.tf[na[ny]-1])(faa[na[ny], years %in% tf.year])
+     for (i in (na[ny]-1):1){
+          faa[i,ny] <- get(stat.tf[i])(faa[i, years %in% tf.year])/denom*faa[na[ny],ny]
+          naa[i, ny] <- caa[i, ny]*exp(M[i, ny]/2)/(1-exp(-faa[i, ny]))
+          k <- 0
+          for (j in (i-1):1){
+            k <- k + 1
+            if (i-k > 0){
+              naa[j,ny-k] <- naa[j+1,ny-k+1]*exp(M[j,ny-k])+caa[j,ny-k]*exp(M[j,ny-k]/2)
+              faa[j,ny-k] <- -log(1-caa[j,ny-k]*exp(M[j,ny-k]/2)/naa[j,ny-k])
+            }  
+          }
+       
+     }
+   }
+   
+   
     if (is.na(naa[na[ny]-1,ny])){
       if(isTRUE(Pope)){
         for (i in (na[ny]-1):1){
@@ -891,10 +917,10 @@ vpa <- function(
         baa <- naa*waa
         ssb <- baa*maa*exp(-ssb.coef*(faa+M))
 
-        if (is.null(rec.new)) {
+        if (is.null(rec.new) & !isTRUE(last.catch.zero)) {
           new.naa[1] <- median((naa[1,]/colSums(ssb))[years %in% rps.year])*sum(ssb[,ny+n.add],na.rm=TRUE)
-        }
-        else new.naa[1] <- rec.new
+        }else if(!is.null(rec.new)) {new.naa[1] <- rec.new
+        }else if(is.null(rec.new) & isTRUE(last.catch.zero)){new.naa[1] <-NA}
 
         naa[1,ny+n.add] <- new.naa[1]
         baa[1,ny+n.add] <- naa[1,ny+n.add]*waa[1,ny+n.add]
@@ -945,6 +971,7 @@ vpa <- function(
             abundance <- abund.extractor(abund=abund[i], naa, faa, dat, min.age=min.age[i], max.age=max.age[i], link=link[i], base=base[i], af=af[i], catch.prop=catch.prop, sel.def=sel.def, p.m=p.m, omega=omega, scale=scale)
             Abund <- rbind(Abund, abundance)
             avail <- which(!is.na(as.numeric(index[i,])))
+			
             if (b.est)
             {
                 if (is.null(b.fix))
@@ -966,6 +993,40 @@ vpa <- function(
                 q[i] <- q.fix[i]
             }
             obj <- c(obj,index.w[i]*sum((log(as.numeric(index[i,avail]))-log(q[i])-b[i]*log(as.numeric(abundance[avail])))^2))
+        }
+    }
+	if (est.method=="ls_nolog") #option added for the use of madara (2020/10)
+    {
+        Abund <- nn <- sigma <- b <- NULL
+        for (i in 1:nindex)
+        {
+            abundance <- abund.extractor(abund=abund[i], naa, faa, dat, min.age=min.age[i], max.age=max.age[i], link=link[i], base=base[i], af=af[i], catch.prop=catch.prop, sel.def=sel.def, p.m=p.m, omega=omega, scale=scale)
+            Abund <- rbind(Abund, abundance)
+            avail <- which(!is.na(as.numeric(index[i,])))
+            #avail <- as.numeric(index[i,])
+            if (b.est)
+            {stop("no option to estimate b when using real number instead of log !!!!")#実数平方和を用いる場合はｂ推定のオプションはなし。
+                if (is.null(b.fix))
+                {
+                    b[i] <- cov(log(as.numeric(index[i,avail])),log(as.numeric(abundance[avail])))/var(log(as.numeric(abundance[avail])))
+                }else
+                {
+                    if (is.na(b.fix[i])) b[i] <- cov(log(as.numeric(index[i,avail])),log(as.numeric(abundance[avail])))/var(log(as.numeric(abundance[avail]))) else b[i] <- b.fix[i]
+                }
+            }else
+            {
+                if (is.null(b.fix)) b[i] <- 1 else b[i] <- b.fix[i]
+            }
+            if (is.null(q.fix))
+            {    
+                #q[i] <- exp(mean(log(as.numeric(index[i,avail]))-b[i]*log(as.numeric(abundance[avail]))))
+				 q[i] <- sum(as.numeric(index[i,avail])*as.numeric(abundance[avail])^b[i])/sum(as.numeric(abundance[avail])^(2*b[i])) #changed
+            }else
+            {
+                q[i] <- q.fix[i]
+            }
+            #obj <- c(obj,index.w[i]*sum((log(as.numeric(index[i,avail]))-log(q[i])-b[i]*log(as.numeric(abundance[avail])))^2))
+			obj <- c(obj,index.w[i]*sum((as.numeric(index[i,avail])-q[i]*as.numeric(abundance[avail ])^b[i])^2)) 
         }
     }
     if (est.method=="ml")
@@ -1072,19 +1133,19 @@ vpa <- function(
 
         if (n.add==1 & is.na(naa[1,ny+n.add])){
           new.naa <- forward.calc(faa,naa,M,na,ny+n.add)
-
+          if (!is.null(f.new) & !is.null(saa.new)) faa[,ny+n.add] <- f.new*saa.new else faa[,ny+n.add] <- 0
           naa[,ny+n.add] <- new.naa
           baa <- naa*waa
           ssb <- baa*maa*exp(-ssb.coef*(faa+M))
 
-          if (is.null(rec.new)) {
+          if (is.null(rec.new) & !isTRUE(last.catch.zero)) {
             new.naa[1] <- median((naa[1,]/colSums(ssb))[years %in% rps.year])*sum(ssb[,ny+n.add],na.rm=TRUE)
-          } else new.naa[1] <- rec.new
+          }else if(!is.null(rec.new)) {new.naa[1] <- rec.new
+          }else if(is.null(rec.new) & isTRUE(last.catch.zero)){new.naa[1] <-NA}
 
           naa[1,ny+n.add] <- new.naa[1]
           baa[1,ny+n.add] <- naa[1,ny+n.add]*waa[1,ny+n.add]
 
-          if (!is.null(f.new) & !is.null(saa.new)) faa[,ny+n.add] <- f.new*saa.new else faa[,ny+n.add] <- 0
           if (isTRUE(Pope)) caa[,ny+n.add] <- naa[,ny+n.add]*(1-exp(-faa[,ny+n.add]))*exp(-M[,ny+n.add]/2) else caa[,ny+n.add] <- naa[,ny+n.add]*(1-exp(-faa[,ny+n.add]-M[,ny+n.add]))*faa[,ny+n.add]/(faa[,ny+n.add]+M[,ny+n.add])
 
           ssb[1,ny+n.add] <- baa[1,ny+n.add]*maa[1,ny+n.add]*exp(-ssb.coef*(faa[1,ny+n.add]+M[1,ny+n.add]))
@@ -1102,10 +1163,22 @@ vpa <- function(
         if (isTRUE(eq.tf.mean)) obj$p <- max(faa[,ny],na.rm=TRUE)
 
         if (isTRUE(tune)) {
-          if (est.method=="ls"){
+          if (est.method=="ls" ){
             if (use.index[1]=="all") Nindex <- sum(!is.na(index[index.w > 0,])) else Nindex <- sum(!is.na(index[index.w[use.index > 0] > 0,]))
             Sigma2 <- obj$minimum/Nindex
             neg.logLik <- Nindex/2*log(2*pi*Sigma2)+Nindex/2
+            obj$q <- q
+            obj$b <- b
+            obj$sigma <- sqrt(Sigma2)
+            obj$convergence <- convergence
+            obj$Abund <- Abund
+            obj$logLik <- -neg.logLik
+          }
+		   if (est.method=="ls_nolog" ){
+            if (use.index[1]=="all") Nindex <- sum(!is.na(index[index.w > 0,])) else Nindex <- sum(!is.na(index[index.w[use.index > 0] > 0,]))
+            Sigma2 <- obj$minimum/Nindex
+            #neg.logLik <- Nindex/2*log(2*pi*Sigma2)+Nindex/2
+			neg.logLik <-log(obj$minimum)
             obj$q <- q
             obj$b <- b
             obj$sigma <- sqrt(Sigma2)
