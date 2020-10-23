@@ -392,13 +392,54 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
   
   #1-4: Ridge VPA ----
   
-  # set lambda + 全F推定法．最尤法．b推定あり
+  # set lambda + 全F推定法．最尤法．b推定あり,penalty="p", eta=NULL
   res_vpa_estb_tune5m_b <- vpa(vpadat_estb, last.catch.zero = FALSE,  min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
-                                Pope = TRUE,  tune=TRUE, term.F="all", est.method="ml" ,b.est=TRUE, p.init=c(0.2,0.3,0.6,0.6),abund=c("N","N","N","N","N","N"), lambda=0.02, fc.year=1998:2000)
+                                Pope = TRUE,  tune=TRUE, term.F="all", est.method="ml" ,b.est=TRUE, p.init=c(0.2,0.3,0.6,0.6),abund=c("N","N","N","N","N","N"), lambda=0.02, fc.year=1998:2000,penalty="p")
   expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune5m_b$naa),2)),c(695.60,336.02,142.58,62.01))
   expect_equal(as.numeric(round(res_vpa_estb_tune5m_b$b,2)),c(0.88,0.46,0.65,0.45,0.57,0.99))
   expect_equal(as.numeric(round(res_vpa_estb_tune5m_b$sigma,2)),c(0.18,0.16,0.10,0.13,0.17,0.28))
   expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune5m_b$saa),2)),c(0.46,0.66,1.00,1.00))
+  expect_equal(as.numeric(round(res_vpa_estb_tune5m_b$logLik,3)),c(23.116))
+  
+  # set lambda + 全F推定法．最尤法．b推定あり,penalty="p", eta=0.3, eta.age=0
+  res_vpa_estb_tune5m_b_e <- vpa(vpadat_estb, last.catch.zero = FALSE,  min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
+                               Pope = TRUE,  tune=TRUE, term.F="all", est.method="ml" ,b.est=TRUE, p.init=c(0.2,0.3,0.6,0.6),abund=c("N","N","N","N","N","N"), lambda=0.02, fc.year=1998:2000,penalty="p", eta=0.3, eta.age=0)
+  expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune5m_b_e$naa),2)),c(695.37,335.90,142.52,61.98))
+  expect_equal(as.numeric(round(res_vpa_estb_tune5m_b_e$b,2)),c(0.88,0.45,0.65,0.45,0.57,0.99))
+  expect_equal(as.numeric(round(res_vpa_estb_tune5m_b_e$sigma,2)),c(0.18,0.16,0.10,0.13,0.17,0.28))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune5m_b_e$saa),2)),c(0.46,0.66,1.00,1.00))
+  expect_equal(as.numeric(round(res_vpa_estb_tune5m_b_e$logLik,3)),c(23.12))
+  
+  #set lambda + 選択率更新法：選択率の計算方法は，最高齢を１とする．最尤法．b推定する (eta=NULL) だけど　p_by_age=FALSEのまま（つまりターミナルＦのものだけペナルテイーがかかる）
+  res_vpa_estb_tune2m_b_r <- vpa(vpadat_estb, tf.year=1997:1999, last.catch.zero = FALSE, 
+                               Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.def="max",sel.update=TRUE, est.method="ml", b.est=TRUE,abund=c("N","N","N","N","N","N"),fc.year=1998:2000,min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),lambda=0.02)
+  expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune2m_b_r$naa),2)),c(711.10,345.44,145.83,63.58))
+  expect_equal(as.numeric(round(res_vpa_estb_tune2m_b_r$b,2)),c(1.02,0.54,0.73,0.52,0.67,1.16))
+  expect_equal(as.numeric(round(res_vpa_estb_tune2m_b_r$sigma,2)),c(0.18,0.16,0.11,0.13,0.17,0.28))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune2m_b_r$saa),2)),c(0.46,0.65,1.00,1.00))
+  expect_equal(as.numeric(round( res_vpa_estb_tune2m_b_r$logLik,3)),c(22.698))
+  
+  #set lambda + 選択率更新法：選択率の計算方法は，最高齢を１とする．最尤法．b推定する (eta=NULL) p_by_age=TRUE, penalty_age=3なら一個前の方法と結果は同じになることの確かめ
+  res_vpa_estb_tune2m_b_r_p <- vpa(vpadat_estb, tf.year=1997:1999, last.catch.zero = FALSE, 
+                                 Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.def="max",sel.update=TRUE, est.method="ml", b.est=TRUE,abund=c("N","N","N","N","N","N"),fc.year=1998:2000,min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),lambda=0.02, p_by_age=TRUE, penalty_age=3)
+  expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune2m_b_r$naa),2)),c(711.10,345.44,145.83,63.58))
+  expect_equal(as.numeric(round(res_vpa_estb_tune2m_b_r$b,2)),c(1.02,0.54,0.73,0.52,0.67,1.16))
+  expect_equal(as.numeric(round(res_vpa_estb_tune2m_b_r$sigma,2)),c(0.18,0.16,0.11,0.13,0.17,0.28))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune2m_b_r$saa),2)),c(0.46,0.65,1.00,1.00))
+  expect_equal(as.numeric(round(res_vpa_estb_tune2m_b_r_p $logLik,3)),c(22.698))
+  
+  #set lambda + 選択率更新法：選択率の計算方法は，最高齢を１とする．最尤法．b推定する (eta=NULL) p_by_age=TRUE, penalty_age=0:2なら尤度は変化することの確かめ
+  res_vpa_estb_tune2m_b_r_p2 <- vpa(vpadat_estb, tf.year=1997:1999, last.catch.zero = FALSE, 
+                                   Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.def="max",sel.update=TRUE, est.method="ml", b.est=TRUE,abund=c("N","N","N","N","N","N"),fc.year=1998:2000,min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),lambda=0.02, p_by_age=TRUE, penalty_age=0:2)
+  expect_equal(as.numeric(round( res_vpa_estb_tune2m_b_r_p2$logLik,3)),c(22.695))
+  
+  
+  #set lambda + 選択率更新法：選択率の計算方法は，最高齢を１とする．最尤法．b推定する (eta=0) p_by_age=TRUE, eta.age=0, no_eta_age=3
+  res_vpa_estb_tune2m_b_r_p_e <- vpa(vpadat_estb, tf.year=1997:1999, last.catch.zero = FALSE, 
+                                   Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.def="max",sel.update=TRUE, est.method="ml", b.est=TRUE,abund=c("N","N","N","N","N","N"),fc.year=1998:2000,min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),lambda=0.02, p_by_age=TRUE, eta=0.1, eta.age=0, no_eta_age=1:3)
+
+  expect_equal(as.numeric(round(  res_vpa_estb_tune2m_b_r_p_e$logLik,3)),c(22.693))
+  
   
   # set lambda + 全F推定法．最尤法．b推定あり+指標2と３のシグマは同じ
   res_vpa_estb_tune5m_b_sigma <- vpa(vpadat_estb, last.catch.zero = FALSE,  min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
@@ -415,6 +456,15 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
   expect_equal(as.numeric(round(res_vpa_estb_tune6m_b$sigma,2)),c(0.18,0.16,0.10,0.13,0.17,0.28))
   expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune6m_b$saa),2)),c(0.46,0.66,1.00,1.00))
 
+  # set lambda + 全F推定法．最尤法．b推定あり,penalty="p", eta=0.3, eta.age=0, TMB=TRUE
+  res_vpa_estb_tune6m_b_e <- vpa(vpadat_estb, last.catch.zero = FALSE,  min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
+                                 Pope = TRUE,  tune=TRUE, term.F="all", est.method="ml" ,b.est=TRUE, p.init=c(0.2,0.3,0.6,0.6),abund=c("N","N","N","N","N","N"), lambda=0.02, fc.year=1998:2000,penalty="p", eta=0.3, eta.age=0, TMB=TRUE)
+  expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune6m_b_e$naa),2)),c(695.37,335.90,142.52,61.98))
+  expect_equal(as.numeric(round(res_vpa_estb_tune6m_b_e$b,2)),c(0.88,0.45,0.65,0.45,0.57,0.99))
+  expect_equal(as.numeric(round(res_vpa_estb_tune6m_b_e$sigma,2)),c(0.18,0.16,0.10,0.13,0.17,0.28))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune6m_b_e$saa),2)),c(0.46,0.66,1.00,1.00))
+  expect_equal(as.numeric(round(res_vpa_estb_tune6m_b_e$logLik,3)),c(23.12))
+  
   # TMB true + set lambda + 全F推定法．最尤法．b推定あり,指標２と３のシグマは同じ
   res_vpa_estb_tune6m_b_sigma <- vpa(vpadat_estb, last.catch.zero = FALSE, min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
                                Pope = TRUE,  tune=TRUE, term.F="all",est.method="ml" ,b.est=TRUE,p.init=c(0.2,0.3,0.6,0.6),abund=c("N","N","N","N","N","N"), lambda=0.02, TMB=TRUE,fc.year=1998:2000,sigma.constraint=c(1,2,2,3,4,5))
