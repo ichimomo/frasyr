@@ -1111,7 +1111,7 @@ if (isTRUE(madara)){
       convergence <- 1
       saa <- sel.func(faa, def=sel.def)
 
-      if (penalty=="p" &　isFALSE(p_by_age)) {
+      if (penalty=="p" && isFALSE(p_by_age)) {
 	 
         if (is.null(eta)) {
           obj <- (1-lambda)*obj + lambda*sum(p^beta)
@@ -1121,7 +1121,7 @@ if (isTRUE(madara)){
         }
         }
 		
-	  if (penalty=="p"&　isTRUE(p_by_age)) {
+	  if (penalty=="p" && isTRUE(p_by_age)) {
 	   
         if (is.null(eta)) {
           if (is.null(penalty_age)) {stop("please specify penalty_age")}#etaがNULLでpenalty="p"で選択率更新法を採用していて,penaltyを年齢別に与えたいのにpenalty_ageを未指定の場合にはエラーを出して停止。
