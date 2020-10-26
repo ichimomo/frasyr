@@ -1,5 +1,5 @@
 ---
-title: "fitSR関数を再生産関係の推定"
+title: "fitSR関数を使った再生産関係の推定"
 author: "Shota Nisijima & Shin Fukui"
 date: "`r Sys.Date()`"
 output:
