@@ -55,7 +55,7 @@ vignette("vpa",package="frasyr") # VPAの実施のしかた
 vignette("Diagnostics-for-VPA",package="frasyr") # VPAのモデル診断
 ```
 
-- 再生産関係のモデル診断スクリプト [wiki](https://ichimomo.github.io/frasyr/doc/SRR-guidline.html)
+- 再生産関係のモデル診断 [wiki](https://github.com/ichimomo/frasyr/wiki/Diagnostics-for-Stock-Recruitment-Relationships)
 - 将来予測関数の使い方：[wiki](https://github.com/ichimomo/frasyr/wiki/future_new)
 
 
