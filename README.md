@@ -45,6 +45,7 @@ library(frasyr)
 # マニュアル
 - VPAによる資源量推定　[vignette](https://ichimomo.github.io/frasyr/articles/vpa.html)
 - VPAモデル診断スクリプト　[vignette](https://ichimomo.github.io/frasyr/articles/Diagnostics-for-VPA.html)
+- fitSR関数による再生産関係推定　[vignette](https://ichimomo.github.io/frasyr/articles/fittingSR.html)
 
 これらはRコマンドで以下のようにしても見れます。
 ```
