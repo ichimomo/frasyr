@@ -83,8 +83,7 @@ test_that("ref.F (level 2)",{
 
 })
 
-# check SR data ----
-context("check get.SRdata")
+context("check get.SRdata") # check SR data ----
 
 test_that("get.SRdata (level 2)",{
   load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
@@ -108,7 +107,7 @@ test_that("get.SRdata (level 2)",{
 
 })
 
-# check future_vpa with sample data ----
+# check future_vpa with sample maaji data ----
 context("check future_vpa with sample data")
 
 test_that("future_vpa function (with sample vpa data) (level 2)",{
@@ -116,6 +115,7 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
   data(res_vpa)
   data(res_sr_HSL2)
 
+  # normal lognormal ----
   data_future_test <- make_future_data(res_vpa, # VPAの結果
                                        nsim = 1000, # シミュレーション回数
                                        nyear = 50, # 将来予測の年数
@@ -148,9 +148,10 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
                                        Pope=res_vpa$input$Pope,
                                        fix_recruit=list(year=c(2020,2021),rec=c(1000,2000)),
                                        fix_wcatch=list(year=c(2020,2021),wcatch=c(1000,2000))
-  )
+                                       )
+  test_sd0_future(data_future_test)  
 
-  # backward-resamplingの場合
+  # backward-resamplingの場合 ----
   data_future_backward <- make_future_data(res_vpa, # VPAの結果
                                            nsim = 1000, # シミュレーション回数
                                            nyear = 50, # 将来予測の年数
@@ -186,7 +187,7 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
                                            fix_wcatch=list(year=c(2020,2021),wcatch=c(1000,2000))
   )
 
-  # 単なる将来予測の場合(simple)
+  # normal lognormal
   res_future_test <- future_vpa(tmb_data=data_future_test$data,
                                 optim_method="none",
                                 multi_init = 1)
@@ -196,7 +197,7 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
   expect_equal(mean(catch["2020",]), 1000, tol=0.001)
   expect_equal(mean(catch["2021",]), 2000, tol=0.001)
 
-  # 単なる将来予測の場合(backward)
+  # backward resampling 
   res_future_backward <- future_vpa(tmb_data=data_future_backward$data,
                                     optim_method="none",
                                     multi_init = 1)
@@ -222,7 +223,7 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
   #baa <- apply(res_future_test3$naa * res_future_test3$waa,c(2,3),sum)
   #mean(res_future_test3$HCR_realized[as.character(2020:2021),,"wcatch"]/baa[as.character(2020:2021),])
 
-  # MSY計算の場合(MSY estimation)
+  # MSY計算の場合(MSY estimation) ----
   res_future_test_R <- future_vpa(tmb_data=data_future_test$data,
                                   optim_method="R",
                                   multi_init  = 1,
@@ -248,7 +249,6 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
       #                                  objective="MSY")
       # expect_equal(round(res_future_test_tmb$multi,3),0.527)
   }
-
 
 })
 
@@ -346,50 +346,37 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
   # expect_equal(round(res_future_MSY$multi,4),2.8273)
 
   # F=0
-  res_future_F0 <- data_future_test$input %>%
-    list_modify(currentF=rep(0,4),
-                futureF =rep(0,4)) %>%
-    safe_call(make_future_data,.) %>%
-    future_vpa(tmb_data=.$data, optim_method="none", multi_init = 1)
+  res_future_F0 <- redo_future(data_future_test,
+                               list(currentF=rep(0,4),futureF =rep(0,4)),
+                               optim_method="none", multi_init = 1)  
   # 平衡状態ではすべて４匹づつになる
   expect_equal(mean(res_future_F0$naa[,as.character(2025:2030),]),4, tol=0.0001)
 
   # specific weight at age, F=0.1
-  res_future_F0.1_wcatch <- data_future_test$input %>%
-    list_modify(res_vpa = res_vpa_base1_nontune) %>%
-    safe_call(make_future_data,.) %>%
-    future_vpa(tmb_data=.$data, optim_method="none", multi_init=1)
+  res_future_F0.1_wcatch <- redo_future(data_future_test,
+                                        list(res_vpa=res_vpa_base1_nontune),
+                                        optim_method="none", multi_init = 1)
 
   # waa.catchを別に与えた場合の総漁獲量は倍になっているはず
   expect_equal(sum(res_future_F0.1$wcaa[,,1])*2,
                sum(res_future_F0.1_wcatch$wcaa[,,1]))
 
   # change plus group (途中でプラスグループが変わるVPA結果でもエラーなく計算できることだけ確認（レベル１）
-  res_future_pgc <- data_future_test$input %>%
-    list_modify(res_vpa = res_vpa_pgc0_nontune) %>%
-    safe_call(make_future_data,.) %>%
-    future_vpa(tmb_data=.$data, optim_method="none", multi_init=1)
+  res_future_pgc <- redo_future(data_future_test,
+                                list(res_vpa=res_vpa_pgc0_nontune),
+                                optim_method="none", multi_init = 1)  
 
   # backward resampling
-  res_future_backward <- data_future_test$input %>%
-    list_modify(resid_type="backward", # 加入の誤差分布（"lognormal": 対数正規分布、"resample": 残差リサンプリング）
-                resample_year_range=0, # リサンプリングの場合、残差をリサンプリングする年の範囲
-                backward_duration=5) %>%
-    safe_call(make_future_data,.) %>%
-      future_vpa(tmb_data=.$data, optim_method="none", multi_init=1)
+  res_future_backward <- redo_future(data_future_test,
+                                     list(resid_type="backward", # 加入の誤差分布（"lognormal": 対数正規分布、"resample": 残差リサンプリング）
+                                          resample_year_range=0, # リサンプリングの場合、残差をリサンプリングする年の範囲
+                                          backward_duration=5),
+                                optim_method="none", multi_init = 1)     
 
   # 残差がゼロのVPA結果なので、バックワードでも対数正規でも結果は同じ
   expect_equal(res_future_backward$naa[,as.character(2025:2030),],
                res_future_F0.1$naa[,as.character(2025:2030),])
 
-  res_future_backward2 <- redo_future(data_future_test,
-                  list(resid_type="backward", 
-                  resample_year_range=0, 
-                  backward_duration=5),
-                  optim_method="none", multi_init=1)
-  
-  # test for redo_future
-  expect_equal(res_future_backward$naa, res_future_backward2$naa)  
 
   # sd>0, ARありの場合のテスト
   res_sr_sd02ar00 <- res_sr_list$res_vpa_base0_nontune
@@ -440,7 +427,7 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
             list(nsim=1000, res_SR=res_sr_sd01ar10, res_vpa=res_vpa_base0_nontune2,
                  fix_recruit=list(year=2018,rec=6)),
              optim_method="none", multi_init=0)
-  # 2019年の平均
+  # 2019年の平均  
   expect_equal(mean(res_future$naa[1,"2019",]),
                exp(log(res_future$naa[1,"2018",1]/4) * 0.5) * 4, tol=0.01)
   # 最終年のSDと平均
@@ -750,8 +737,8 @@ test_that("future_vpa function (MSE) (level 2)",{
   data(res_sr_HSL2)
 
   data_future_test10 <- make_future_data(res_vpa, # VPAの結果
-                                       nsim = 10, # シミュレーション回数
-                                       nyear = 10, # 将来予測の年数
+                                       nsim = 5, # シミュレーション回数
+                                       nyear = 5, # 将来予測の年数
                                        future_initial_year_name = 2017,
                                        start_F_year_name = 2018,
                                        start_biopar_year_name=2018,
@@ -781,25 +768,32 @@ test_that("future_vpa function (MSE) (level 2)",{
                                        fix_wcatch=NULL)
   data_future_test1000 <- list_modify(data_future_test10$input,nsim=1000) %>% safe_call(make_future_data,.)
 
+  # 1000回のノーマル将来予測
   res_future_noMSE <- future_vpa(tmb_data=data_future_test1000$data,
                            optim_method="none",
                            multi_init = 1,SPRtarget=0.3,
                            do_MSE=FALSE, MSE_input_data=data_future_test1000)
 
+  # 10回のシミュレーションでそれぞれ1000回の将来予測をやってTACを計算する
   res_future_MSE <- future_vpa(tmb_data=data_future_test10$data,
                            optim_method="none",
                            multi_init = 1,SPRtarget=0.3,
                            do_MSE=TRUE, MSE_input_data=data_future_test10,MSE_nsim=1000)
+  # 1000回でも10回でもMSE初年度の漁獲量はほぼ一致するはず
+  expect_equal(mean(get_wcatch(res_future_MSE)["2019",])/
+               mean(get_wcatch(res_future_noMSE)["2019",]),
+               1,tol=0.01) 
 
   res_future_MSE_n1 <- future_vpa(tmb_data=data_future_test10$data,
                            optim_method="none",
                            multi_init = 1,SPRtarget=0.3,
                            do_MSE=TRUE, MSE_input_data=data_future_test10,
                            MSE_nsim=2,MSE_sd=0)
-  plot_futures(res_vpa,list(res_future_MSE,res_future_noMSE,res_future_MSE_n1))
+#  plot_futures(res_vpa,list(res_future_MSE,res_future_noMSE,res_future_MSE_n1))
 
-  expect_equal(round(mean(get_wcatch(res_future_noMSE)["2019",])),32311) # 上と下は十分な計算回数実施すれば一致するはずだが、シードのちがいにより一致はしていない
-  expect_equal(round(mean(get_wcatch(res_future_MSE)["2019",])),32370)
+  expect_equal(mean(get_wcatch(res_future_MSE_n1)["2019",])/
+               mean(get_wcatch(res_future_noMSE)["2019",]),
+               1,tol=0.001)   
 
   # sd=0の場合
   res_sr_HSL2_sd0 <- res_sr_HSL2
@@ -807,17 +801,22 @@ test_that("future_vpa function (MSE) (level 2)",{
   data_future_sd0 <- list_modify(data_future_test10$input,nsim=5,res_SR=res_sr_HSL2_sd0) %>%
       safe_call(make_future_data,.)
 
-  res_future_noMSE <- future_vpa(tmb_data=data_future_sd0$data,
+  res_future_noMSE_sd0 <- future_vpa(tmb_data=data_future_sd0$data,
                            optim_method="none",
                            multi_init = 1,SPRtarget=0.3,
                            do_MSE=FALSE, MSE_input_data=data_future_sd0)
 
-  res_future_MSE <- future_vpa(tmb_data=data_future_sd0$data,
+  res_future_MSE_sd0 <- future_vpa(tmb_data=data_future_sd0$data,
                            optim_method="none",
                            multi_init = 1,SPRtarget=0.3,
                            do_MSE=TRUE, MSE_input_data=data_future_sd0)
-  expect_equal(all(round(res_future_MSE$naa[,,1]/res_future_noMSE$naa[,,1],3)==1),TRUE)
+  expect_equal(all(round(res_future_MSE_sd0$naa[,,1]/
+                         res_future_noMSE_sd0$naa[,,1],3)==1),TRUE)
 
+  # sd=0の結果とノーマル将来予測の1000回の結果は一致するはず
+  x1 <- apply(res_future_noMSE$naa,c(1,2),mean) 
+  x2 <- res_future_noMSE_sd0$naa[,,1] 
+  x1/x2
 
 
 })
