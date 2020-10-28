@@ -315,6 +315,10 @@ make_future_data <- function(res_vpa,
 #' @param SPR_target 目標とする\%SPR。NULL以外の値の場合、過去〜将来のそれぞれの年・シミュレーションが、目標とするF\%SPRに対して何倍にあたるか(F/Ftarget)を計算して、HCR_realizedの"Fratio"に入れる。HCRが生きている年については"beta_gamma"と一致するはず。
 #' @param max_F 漁獲量一定方策を実施する際のF at ageの最大値の上限（将来的にはmake_future_data関数に入れたい)
 #' @param max_exploitation_rate 漁獲量一定方策を実施する際のMを考慮した上での漁獲率の上限（将来的にはmake_future_data関数に入れたい)
+#' @param do_MSE 簡易MSEを実施するか
+#' @param MSE_input_data 簡易MSEを実施する場合、ABC計算するための将来予測を実施するための設定ファイル
+#' @param MSE_nsim 簡易MSEを実施する場合、ABC計算するための将来予測の繰り返し回数。ここを1にすると、決定論的な将来予測の漁獲量が用いられる。
+#' @param MSE_sd 簡易MSEをする場合の加入変動の大きさ。ここをゼロにすると決定論的な将来予測の値を将来の漁獲量として用いる。その場合MSE_nsimは自動的に２に設定される。単純なモデルの場合、ここがゼロでも多分問題ない。モデル平均を使っている場合にはちゃんとした簡易MSEをすること。
 #'
 #' @export
 #' @encoding UTF-8
@@ -332,6 +336,7 @@ future_vpa <- function(tmb_data,
                        do_MSE=NULL,
                        MSE_input_data=NULL,
                        MSE_nsim=NULL,
+                       MSE_sd=NULL,
                        compile=FALSE,
                        output_format="new",
                        attach_input=TRUE,
@@ -385,9 +390,11 @@ future_vpa <- function(tmb_data,
   #--- R
   if(optim_method=="R" | optim_method=="none"){
 
+    if(!is.null(MSE_sd) && MSE_sd == 0) MSE_nsim <- 2
     tmb_data$do_MSE <- do_MSE
     tmb_data$MSE_input_data <- MSE_input_data
     tmb_data$MSE_nsim <- MSE_nsim
+    tmb_data$MSE_sd <- MSE_sd      
     tmb_data$max_F <- max_F
     tmb_data$max_exploitation_rate <- max_exploitation_rate
 
@@ -497,6 +504,7 @@ future_vpa_R <- function(naa_mat,
                          do_MSE=NULL,
                          MSE_input_data=NULL,
                          MSE_nsim = NULL,
+                         MSE_sd = NULL,
                          waa_par_mat  = NULL, # option for waa_fun
                          waa_rand_mat = NULL
 ){
@@ -542,7 +550,7 @@ future_vpa_R <- function(naa_mat,
   for(t in future_initial_year:total_nyear){
 
     if(!is.null(waa_par_mat)) waa_mat[,t,] <- waa_catch_mat[,t,] <- update_waa_mat(waa=waa_mat[,t,],rand=waa_rand_mat[,t,],naa=N_mat[,t,],pars_b0=waa_par_mat[,,"b0"],pars_b1=waa_par_mat[,,"b1"])
-    spawner_mat[t,] <- colSums(N_mat[,t,] * waa_mat[,t,] * maa_mat[,t,])
+    spawner_mat[t,] <- colSums(N_mat[,t,,drop=F] * waa_mat[,t,,drop=F] * maa_mat[,t,,drop=F])
 
     if(t>=start_random_rec_year){
       spawn_t <- t-recruit_age      
@@ -624,6 +632,7 @@ future_vpa_R <- function(naa_mat,
           MSE_dummy_data$SR_mat[,k,"recruit"]  <- N_mat[1,,i] # true recruit
         }
         # re-calculate past deviance and produce random residual in future
+        if(!is.null(MSE_sd) && MSE_sd==0) MSE_input_data$input$res_SR$pars$sd[] <- 0
         MSE_dummy_data$SR_mat <-
           set_SR_mat(res_vpa   = NULL, # past deviande is calculated by true ssb
                      res_SR    = MSE_input_data$input$res_SR,
@@ -638,9 +647,8 @@ future_vpa_R <- function(naa_mat,
                      recruit_intercept          = MSE_input_data$input$recruit_intercept,
                      model_average_option       = MSE_input_data$input$model_average_option,
                      regime_shift_option        = MSE_input_data$input$regime_shift_option)
-
         res_tmp <- safe_call(future_vpa_R,MSE_dummy_data) # do future projection
-        #                if(t>55) browser()
+          #                if(t>55) browser()
         HCR_mat[t,i,"expect_wcatch"] <- mean(apply(res_tmp$wcaa[,t,],2,sum)) # determine ABC in year t here
         SR_MSE[t,i,"recruit"] <- mean(res_tmp$naa[1,t,])
         SR_MSE[t,i,"ssb"]     <- mean(res_tmp$SR_mat[t,,"ssb"])

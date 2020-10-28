@@ -2131,10 +2131,70 @@ source_lines <- function(file, lines){
 #'
 #' 
 
-redo_future <- function(data_future, input_data_list, ...){
+redo_future <- function(data_future, input_data_list, SR_sd=NULL, SR_b=NULL,...){
   input_data <- data_future$input
   if(! all(names(input_data_list) %in% names(input_data))) stop("names of input_data_list is invalid!")
 
   input_data[names(input_data_list)] <- input_data_list
+
+  if(!is.null(SR_sd)){
+    if(class(input_data_list$res_SR)=="fit.SRregime"){
+      input_data$res_SR$regime_pars$sd <- SR_sd
+    }
+    else{
+      input_data$res_SR$pars$sd <- SR_sd
+    }
+  }
+
+  if(!is.null(SR_b)){
+    if(class(input_data_list$res_SR)=="fit.SRregime"){
+      input_data$res_SR$regime_pars$b <- SR_b
+    }
+    else{
+      input_data$res_SR$pars$b <- SR_b
+    }
+  }  
+  
   future_vpa(safe_call(make_future_data,input_data)$data,...)
 }
+
+#'
+#' test SD0 assumption
+#' 
+
+test_sd0_future <- function(data_future){
+
+  is_regime <- !is.null(data_future$input$regime_shift_option)
+  {if(is_regime){
+    sd_org <- data_future$input$res_SR$regime_pars %>%
+      dplyr::filter(regime==data_future$input$regime_shift_option$future_regime) %>%
+      select(sd)
+  }
+  else{
+    sd_org <- data_future$input$res_SR$pars$sd
+  }}
+
+  # determine sample size
+  tol <- 0.007
+  nsim <- round((0.5/tol)^2) # 1%以下（0.7%）の誤差が期待されるnsim
+  cat("nsim for checking sd=0:",nsim,"\n")
+  
+  # run 2 funture projections
+  res1 <- redo_future(data_future, list(nsim=nsim, nyear=10), multi_init=0.01)
+  res2 <- redo_future(data_future, list(nsim=2   , nyear=10), multi_init=0.01, SR_sd=0)
+
+  nyear <- dim(res1$naa)[[2]]
+  future_range <- data_future_test$data$start_random_rec_year:nyear
+  mean_difference_in_naa <- mean(apply(res1$naa[,future_range,],c(1,2),mean)/
+                          apply(res2$naa[,future_range,],c(1,2),mean))
+  cat("mean_difference in naa=", mean_difference_in_naa,"\n")
+  expect_equal(mean_difference_in_naa,1,tol=0.01)
+
+  mean_difference_in_wcaa <- mean(apply(res1$wcaa[,future_range,],c(1,2),mean)/
+                                    apply(res2$wcaa[,future_range,],c(1,2),mean))
+  cat("mean_difference in wcaa=", mean_difference_in_wcaa,"\n")
+  expect_equal(mean_difference_in_wcaa,1,tol=0.01)  
+}
+
+
+
