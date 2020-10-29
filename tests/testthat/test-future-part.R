@@ -753,6 +753,10 @@ test_that("future_vpa function (MSE) (level 2)",{ # ----
                            optim_method="none",
                            multi_init = 1,SPRtarget=0.3,
                            do_MSE=TRUE, MSE_input_data=data_future_test10,MSE_nsim=1000)
+
+  # 以前の計算と同じ結果が出るかのテスト
+  expect_equal(round(mean(get_wcatch(res_future_noMSE)["2019",])),32311) 
+  expect_equal(round(mean(get_wcatch(res_future_MSE)["2019",])),32370)  
   
   # 2回のシミュレーションでそれぞれ１回ずつ決定論的な予測をする
   res_future_MSE_n1 <- future_vpa(tmb_data=data_future_test10$data,
