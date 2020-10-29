@@ -7,13 +7,15 @@ test_that("ref.F (level 2)",{
   load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
 
   res_ref_f_pma_check <- ref.F(res_vpa_pma,Fcurrent=NULL,waa=NULL,maa=NULL,M=NULL,waa.catch=NULL,M.year=NULL,
-                               waa.year=NULL,maa.year=NULL,rps.year = NULL,max.age = Inf,min.age = 0,
+                               waa.year=NULL,maa.year=NULL,rps.year = as.numeric(colnames(res_vpa_pma$naa)),
+                               max.age = Inf,min.age = 0,
                                d = 0.001,Fem.init = 0.5,Fmax.init = 1.5,F0.1.init = 0.7,pSPR = seq(10,90,by=10),
                                iterlim=1000,plot=TRUE,Pope=FALSE,F.range = seq(from=0,to=2,length=101) )
 
   res.ref.f_2times <- ref.F(res_vpa_pma,Fcurrent=res_vpa_pma$Fc.at.age*2,
                             waa=NULL,maa=NULL,M=NULL,waa.catch=NULL,M.year=NULL,
-                            waa.year=NULL,maa.year=NULL,rps.year = NULL,max.age = Inf,min.age = 0,
+                            waa.year=NULL,maa.year=NULL,rps.year = as.numeric(colnames(res_vpa_pma$naa)),
+                            max.age = Inf,min.age = 0,
                             d = 0.001,Fem.init = 0.5,Fmax.init = 1.5,F0.1.init = 0.7,
                             pSPR = c(seq(10,90,by=10),res_ref_f_pma_check$currentSPR$perSPR*100),
                             iterlim=1000,plot=TRUE,Pope=FALSE,F.range = seq(from=0,to=2,length=101) )
@@ -39,6 +41,20 @@ test_that("ref.F (level 2)",{
       # %SPRを計算するところで、初期値が変わると1e-4以下の誤差で値がずれるので1e-4をtoleranceに入れる
       # toleranceのつづりが間違っていても誰も教えてくれない（無言でtoleranceを無視する）ため注意
   }
+
+  # vpa結果を与えない場合
+  res_ref_independent <- ref.F(res=NULL,
+                               Fcurrent=res_vpa_pma$Fc.at.age,
+                               waa=res_vpa_pma$input$dat$waa$"2011",
+                               maa=res_vpa_pma$input$dat$maa$"2011",
+                               M  =res_vpa_pma$input$dat$M$"2011",
+                               waa.catch=res_vpa_pma$input$dat$waa$"2011",
+                               rps.vector=res_vpa_pma$naa[1,]/colSums(res_vpa_pma$ssb),
+                               max.age = Inf,
+                               min.age = 0,
+                               d = 0.001,Fem.init = 0.5,Fmax.init = 1.5,F0.1.init = 0.7,pSPR = seq(10,90,by=10),
+                               iterlim=1000,plot=TRUE,Pope=FALSE,F.range = seq(from=0,to=2,length=101) )
+  testthat::expect_equal(res_ref_independent$summary,res_ref_f_pma_check$summary, tol=0.001)
 
   # 同じ機能を持つcalc_Fratioとの整合性をチェック=> ref.Fとcalc_Fratioは同じ機能を提供
   Fratio_test <- purrr::map_dfr((1:4) * 10, function(x)
@@ -365,6 +381,85 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
   # 残差がゼロのVPA結果なので、バックワードでも対数正規でも結果は同じ
   expect_equal(res_future_backward$naa[,as.character(2025:2030),],
                res_future_F0.1$naa[,as.character(2025:2030),])
+
+  res_future_backward2 <- redo_future(data_future_test,
+                  list(resid_type="backward", 
+                  resample_year_range=0, 
+                  backward_duration=5),
+                  optim_method="none", multi_init=1)
+  
+  # test for redo_future
+  expect_equal(res_future_backward$naa, res_future_backward2$naa)  
+
+  # sd>0, ARありの場合のテスト
+  res_sr_sd02ar00 <- res_sr_list$res_vpa_base0_nontune
+  res_sr_sd02ar00$pars$sd <- 0.1
+
+  res_future_sd02ar00 <- redo_future(data_future_test,
+             list(nsim=5000, res_SR=res_sr_sd02ar00),
+             optim_method="none", multi_init=0)
+
+  expect_equal(sd(log(res_future_sd02ar00$naa[1,43,])), 0.1, tol=0.01)
+  expect_equal(mean(  res_future_sd02ar00$naa[1,43,]) ,   4, tol=0.001)
+
+  # sd=0, AR=0.5
+  res_sr_sd00ar10 <- res_sr_list$res_vpa_base0_nontune
+  res_sr_sd00ar10$pars$sd <- 0
+  res_sr_sd00ar10$pars$rho <- 0.5
+  res_vpa_base0_nontune2 <- res_vpa_base0_nontune
+  res_vpa_base0_nontune2$naa$"2017"[1] <- 6
+
+  # 通常の将来予測
+  res_future_sd00ar10 <- redo_future(data_future_test,
+             list(nsim=3, res_SR=res_sr_sd00ar10, res_vpa=res_vpa_base0_nontune2),
+             optim_method="none", multi_init=0)
+  # 2018年の値
+  expect_equal(res_future_sd00ar10$naa[1,"2018",1],
+               exp(log(res_future_sd00ar10$naa[1,"2017",1]/4) * 0.5) * 4, tol=0.001)
+  # 最終年の値
+  expect_equal(mean(res_future_sd00ar10$naa[1,43,]), 4, tol=0.01)
+
+ 
+  # sd>0
+  res_sr_sd01ar10 <- res_sr_list$res_vpa_base0_nontune
+  res_sr_sd01ar10$pars$sd <- 0.1
+  res_sr_sd01ar10$pars$rho <- 0.5  
+
+  res_future_sd01ar10 <- redo_future(data_future_test,
+             list(nsim=1000, res_SR=res_sr_sd01ar10, res_vpa=res_vpa_base0_nontune2),
+             optim_method="none", multi_init=0)
+  # 2018年の平均
+  expect_equal(mean(res_future_sd01ar10$naa[1,"2018",]),
+               exp(log(res_future_sd01ar10$naa[1,"2017",1]/4) * 0.5) * 4, tol=0.01)
+  # 最終年のSDと平均
+  expect_equal(mean(res_future_sd01ar10$naa[1,43,]), 4, tol=0.01)
+  expect_equal(sd(log(res_future_sd01ar10$naa[1,43,])), sqrt(1/(1-(0.5^2)) * 0.1 ^2), tol=0.01)
+
+  # fix_recruitオプション+ARあり(ichimomo/frasyr_tool#256を再現)
+  res_future <- redo_future(data_future_test,
+            list(nsim=1000, res_SR=res_sr_sd01ar10, res_vpa=res_vpa_base0_nontune2,
+                 fix_recruit=list(year=2018,rec=6)),
+             optim_method="none", multi_init=0)
+  # 2019年の平均
+  expect_equal(mean(res_future$naa[1,"2019",]),
+               exp(log(res_future$naa[1,"2018",1]/4) * 0.5) * 4, tol=0.01)
+  # 最終年のSDと平均
+  expect_equal(mean(res_future$naa[1,43,]), 4, tol=0.01)
+  expect_equal(sd(log(res_future$naa[1,43,])), sqrt(1/(1-(0.5^2)) * 0.1 ^2), tol=0.01)
+
+  # fix_recruitオプション（加入複数）
+  res_future <- redo_future(data_future_test,
+            list(nsim=10, res_SR=res_sr_sd01ar10, res_vpa=res_vpa_base0_nontune2,
+                 fix_recruit=list(year=c(2018,2019),rec=list(rep(6,10),rep(5,10)))),
+            optim_method="none", multi_init=0)
+  expect_equal(as.numeric(rowMeans(res_future$naa[1,c("2018","2019"),])),c(6,5))
+
+  res_future <- redo_future(data_future_test,
+            list(nsim=10, res_SR=res_sr_sd01ar10, res_vpa=res_vpa_base0_nontune2,
+                 fix_recruit=list(year=c(2018),rec=list(rep(5,10)))),
+            optim_method="none", multi_init=0)
+  expect_equal(as.numeric(mean(res_future$naa[1,c("2018"),])),c(5))  
+  
 })
 
 # check future_vpa with dummy data ----
