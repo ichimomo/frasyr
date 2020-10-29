@@ -30,6 +30,8 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(obj_stat); // 0: mean, 1: geomean
   DATA_INTEGER(objective); // 0: MSY, 1: PGY, 2: percentB0 or Bempirical
   DATA_SCALAR(obj_value); // Used for objective 1-2
+  DATA_SCALAR(max_F); // not used 
+  DATA_SCALAR(max_exploitation_rate); //   
 
   PARAMETER(x); //x = log(multiplier)
   

@@ -86,6 +86,8 @@ make_future_data <- function(res_vpa,
                              Pope=res_vpa$input$Pope,
                              fix_recruit=NULL, # list(year=2020, rec=1000)
                              fix_wcatch=NULL, # list(year=2020, wcatch=2000)
+                             max_F=exp(10),
+                             max_exploitation_rate=0.99,
                              # SR setting
                              res_SR=NULL,
                              seed_number=1,
@@ -125,7 +127,8 @@ make_future_data <- function(res_vpa,
 
   tmpdata <- tibble(allyear_name, allyear_label) %>%
     group_by(allyear_label) %>%
-    summarize(start=min(allyear_name),end=max(allyear_name))
+    summarize(start=min(allyear_name),end=max(allyear_name)) %>%
+    arrange(start)
   if(silent==FALSE) print(tmpdata)
 
   if(is.null(plus_age)) plus_age <- max(which(!is.na(res_vpa$naa[,future_initial_year])))
@@ -193,22 +196,10 @@ make_future_data <- function(res_vpa,
                        recruit_age=recruit_age,
                        backward_duration=backward_duration,
                        model_average_option=model_average_option,
-                       regime_shift_option=regime_shift_option)
+                       regime_shift_option=regime_shift_option,
+                       fix_recruit=fix_recruit)
 
-  # when fix recruitment
-  if(!is.null(fix_recruit)){
-    if(!is.list(fix_recruit$rec)){
-      # scalar
-      naa_mat[1,as.character(fix_recruit$year),] <- fix_recruit$rec
-    }
-    else{
-      # vector
-      for(i in 1:length(fix_recruit$year)){
-        if(length(fix_recruit$rec[[i]])!=dim(naa_mat)[[3]]) stop("invalid length of recruit")
-        naa_mat[1,as.character(fix_recruit$year[i]),] <- as.numeric(unlist(fix_recruit$rec[i]))
-      }
-    }
-  }
+  naa_mat[1,,] <- SR_mat[,,"recruit"]
 
   # set F & HCR parameter
   start_F_year <- which(allyear_name==start_F_year_name)
@@ -267,6 +258,8 @@ make_future_data <- function(res_vpa,
                    nage = nage,
                    plus_age = plus_age,
                    recruit_age = recruit_age,
+                   max_exploitation_rate=max_exploitation_rate,
+                   max_F=max_F,
                    HCR_mat = HCR_mat,
                    obj_stat = 0, # 0: mean, 1:geomean
                    objective = 0, # 0: MSY, 1: PGY, 2: percentB0 or Bempirical
@@ -331,8 +324,8 @@ future_vpa <- function(tmb_data,
                        objective ="MSY", # or PGY, percentB0, Bempirical
                        obj_value = 0,
                        obj_stat  ="mean",
-                       max_F=exp(10), # いつかはmake_future_dataに以降したい
-                       max_exploitation_rate=0.99, # いつかはmake_future_dataに以降したい
+#                       max_F=exp(10), # いつかはmake_future_dataに以降したい
+#                       max_exploitation_rate=0.99, # いつかはmake_future_dataに以降したい
                        do_MSE=NULL,
                        MSE_input_data=NULL,
                        MSE_nsim=NULL,
@@ -395,8 +388,8 @@ future_vpa <- function(tmb_data,
     tmb_data$MSE_input_data <- MSE_input_data
     tmb_data$MSE_nsim <- MSE_nsim
     tmb_data$MSE_sd <- MSE_sd      
-    tmb_data$max_F <- max_F
-    tmb_data$max_exploitation_rate <- max_exploitation_rate
+#    tmb_data$max_F <- max_F
+#    tmb_data$max_exploitation_rate <- max_exploitation_rate
 
     R_obj_fun <- function(x, tmb_data, what_return="obj"){
       tmb_data$x <- x
@@ -527,6 +520,9 @@ future_vpa_R <- function(naa_mat,
 
   if(isTRUE(do_MSE)){
     MSE_seed <- MSE_input_data$input$seed_number + 1
+    if(!is.null(MSE_sd) && MSE_sd==0){
+      MSE_nsim <- 2
+    }
     if(!is.null(MSE_nsim)) MSE_input_data$input$nsim <- MSE_nsim
     if( is.null(MSE_nsim)) MSE_nsim <- MSE_input_data$input$nsim
     SR_MSE <- SR_mat
@@ -632,7 +628,9 @@ future_vpa_R <- function(naa_mat,
           MSE_dummy_data$SR_mat[,k,"recruit"]  <- N_mat[1,,i] # true recruit
         }
         # re-calculate past deviance and produce random residual in future
-        if(!is.null(MSE_sd) && MSE_sd==0) MSE_input_data$input$res_SR$pars$sd[] <- 0
+        if(!is.null(MSE_sd) && MSE_sd==0){
+          MSE_input_data$input$res_SR$pars$sd[] <- 0
+        }
         MSE_dummy_data$SR_mat <-
           set_SR_mat(res_vpa   = NULL, # past deviande is calculated by true ssb
                      res_SR    = MSE_input_data$input$res_SR,
@@ -646,13 +644,14 @@ future_vpa_R <- function(naa_mat,
                      bias_correction            = MSE_input_data$input$bias_correction,
                      recruit_intercept          = MSE_input_data$input$recruit_intercept,
                      model_average_option       = MSE_input_data$input$model_average_option,
-                     regime_shift_option        = MSE_input_data$input$regime_shift_option)
+                     regime_shift_option        = MSE_input_data$input$regime_shift_option,
+                     fix_recruit                = MSE_input_data$input$fix_recruit)
+        MSE_dummy_data$naa_mat[1,,] <- MSE_dummy_data$SR_mat[,,"recruit"] ##!!!!ここで加入がfixされてしまう
         res_tmp <- safe_call(future_vpa_R,MSE_dummy_data) # do future projection
           #                if(t>55) browser()
         HCR_mat[t,i,"expect_wcatch"] <- mean(apply(res_tmp$wcaa[,t,],2,sum)) # determine ABC in year t here
         SR_MSE[t,i,"recruit"] <- mean(res_tmp$naa[1,t,])
         SR_MSE[t,i,"ssb"]     <- mean(res_tmp$SR_mat[t,,"ssb"])
-
         # MSEでなく本来のFで漁獲していたらどうなっていたかの計算
         if(Pope==1){
           SR_MSE[t,i,"real_true_catch"] <- sum(N_mat[,t,i]*(1-exp(-F_mat[,t,i]))*exp(-M_mat[,t,i]/2) * waa_catch_mat[,t,i])
@@ -802,12 +801,16 @@ set_SR_mat <- function(res_vpa=NULL,
                        recruit_intercept=0,
                        recruit_age=0,
                        model_average_option=NULL,
-                       regime_shift_option=NULL
+                       regime_shift_option=NULL,
+                       fix_recruit=NULL
 ){
 
   allyear_name <- dimnames(SR_mat)[[1]]
   start_random_rec_year  <- which(allyear_name==start_random_rec_year_name)
   random_rec_year_period <- (start_random_rec_year):length(allyear_name)
+
+  # check arguments in fix_recruit
+  assertthat::assert_that(sum(!fix_recruit$year %in% allyear_name)==0)
 
   if(!resid_type%in%c("lognormal","resample","backward")) stop("resid_type is invalid.")
 
@@ -946,6 +949,22 @@ set_SR_mat <- function(res_vpa=NULL,
                              bias_correction = bias_correction
     )
   }
+
+  # when fix recruitment
+  if(!is.null(fix_recruit)){
+    if(!is.list(fix_recruit$rec)){
+      # scalar
+      SR_mat[as.character(fix_recruit$year),,"recruit"] <- fix_recruit$rec
+    }
+    else{
+      # vector
+      for(i in 1:length(fix_recruit$year)){
+        if(length(fix_recruit$rec[[i]])!=dim(SR_mat)[[2]]) stop("invalid length of recruit")
+        SR_mat[as.character(fix_recruit$year[i]),,"recruit"] <- as.numeric(unlist(fix_recruit$rec[i]))
+      }
+    }
+  }
+  
   return(SR_mat)
 }
 

@@ -1,7 +1,6 @@
 library(frasyr)
 
-# ref.F test ----
-context("check ref.F")
+context("check ref.F") # ----
 
 test_that("ref.F (level 2)",{
   load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
@@ -83,7 +82,7 @@ test_that("ref.F (level 2)",{
 
 })
 
-context("check get.SRdata") # check SR data ----
+context("check get.SRdata") # ----
 
 test_that("get.SRdata (level 2)",{
   load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
@@ -107,8 +106,7 @@ test_that("get.SRdata (level 2)",{
 
 })
 
-# check future_vpa with sample maaji data ----
-context("check future_vpa with sample data")
+context("check future_vpa with sample data") # マアジデータでの将来予測 ----
 
 test_that("future_vpa function (with sample vpa data) (level 2)",{
 
@@ -119,28 +117,29 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
   data_future_test <- make_future_data(res_vpa, # VPAの結果
                                        nsim = 1000, # シミュレーション回数
                                        nyear = 50, # 将来予測の年数
-                                       future_initial_year_name = 2017, # 年齢別資源尾数を参照して将来予測をスタートする年
-                                       start_F_year_name = 2018, # この関数で指定したFに置き換える最初の年
-                                       start_biopar_year_name=2018, # この関数で指定した生物パラメータに置き換える最初の年
-                                       start_random_rec_year_name = 2018, # この関数で指定した再生産関係からの加入の予測値に置き換える最初の年
+                                       future_initial_year_name = 2017, 
+                                       start_F_year_name = 2018, 
+                                       start_biopar_year_name=2018, 
+                                       start_random_rec_year_name = 2018,
                                        # biopar setting
-                                       waa_year=2015:2017, waa=NULL, # 将来の年齢別体重の設定。過去の年を指定し、その平均値を使うか、直接ベクトルで指定するか。以下も同じ。
+                                       waa_year=2015:2017, waa=NULL, 
                                        waa_catch_year=2015:2017, waa_catch=NULL,
                                        maa_year=2015:2017, maa=NULL,
                                        M_year=2015:2017, M=NULL,
                                        # faa setting
-                                       faa_year=2015:2017, # currentF, futureFが指定されない場合だけ有効になる。将来のFを指定の年の平均値とする
-                                       currentF=NULL,futureF=NULL, # 将来のABC.year以前のFとABC.year以降のFのベクトル
+                                       faa_year=2015:2017, 
+                                       currentF=NULL,futureF=NULL, 
                                        # HCR setting (not work when using TMB)
                                        start_ABC_year_name=2019, # HCRを適用する最初の年
                                        HCR_beta=1, # HCRのbeta
                                        HCR_Blimit=-1, # HCRのBlimit
                                        HCR_Bban=-1, # HCRのBban
                                        HCR_year_lag=0, # HCRで何年遅れにするか
+                                       HCR_function_name = "HCR_default",
                                        # SR setting
-                                       res_SR=res_sr_HSL2, # 将来予測に使いたい再生産関係の推定結果が入っているfit.SRの返り値
-                                       seed_number=1, # シード番号
-                                       resid_type="lognormal", # 加入の誤差分布（"lognormal": 対数正規分布、"resample": 残差リサンプリング）
+                                       res_SR=res_sr_HSL2, 
+                                       seed_number=1, 
+                                       resid_type="lognormal", 
                                        resample_year_range=0, # リサンプリングの場合、残差をリサンプリングする年の範囲
                                        bias_correction=TRUE, # バイアス補正をするかどうか
                                        recruit_intercept=0, # 移入や放流などで一定の加入がある場合に足す加入尾数
@@ -149,53 +148,30 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
                                        fix_recruit=list(year=c(2020,2021),rec=c(1000,2000)),
                                        fix_wcatch=list(year=c(2020,2021),wcatch=c(1000,2000))
                                        )
-  test_sd0_future(data_future_test)  
 
-  # backward-resamplingの場合 ----
-  data_future_backward <- make_future_data(res_vpa, # VPAの結果
-                                           nsim = 1000, # シミュレーション回数
-                                           nyear = 50, # 将来予測の年数
-                                           future_initial_year_name = 2017, # 年齢別資源尾数を参照して将来予測をスタートする年
-                                           start_F_year_name = 2018, # この関数で指定したFに置き換える最初の年
-                                           start_biopar_year_name=2018, # この関数で指定した生物パラメータに置き換える最初の年
-                                           start_random_rec_year_name = 2018, # この関数で指定した再生産関係からの加入の予測値に置き換える最初の年
-                                           # biopar setting
-                                           waa_year=2015:2017, waa=NULL, # 将来の年齢別体重の設定。過去の年を指定し、その平均値を使うか、直接ベクトルで指定するか。以下も同じ。
-                                           waa_catch_year=2015:2017, waa_catch=NULL,
-                                           maa_year=2015:2017, maa=NULL,
-                                           M_year=2015:2017, M=NULL,
-                                           # faa setting
-                                           faa_year=2015:2017, # currentF, futureFが指定されない場合だけ有効になる。将来のFを指定の年の平均値とする
-                                           currentF=NULL,futureF=NULL, # 将来のABC.year以前のFとABC.year以降のFのベクトル
-                                           # HCR setting (not work when using TMB)
-                                           start_ABC_year_name=2019, # HCRを適用する最初の年
-                                           HCR_beta=1, # HCRのbeta
-                                           HCR_Blimit=-1, # HCRのBlimit
-                                           HCR_Bban=-1, # HCRのBban
-                                           HCR_year_lag=0, # HCRで何年遅れにするか
-                                           # SR setting
-                                           res_SR=res_sr_HSL2, # 将来予測に使いたい再生産関係の推定結果が入っているfit.SRの返り値
-                                           seed_number=1, # シード番号
-                                           resid_type="backward", # 加入の誤差分布（"lognormal": 対数正規分布、"resample": 残差リサンプリング）
-                                           resample_year_range=0, # リサンプリングの場合、残差をリサンプリングする年の範囲
-                                           backward_duration=5,
-                                           bias_correction=TRUE, # バイアス補正をするかどうか
-                                           recruit_intercept=0, # 移入や放流などで一定の加入がある場合に足す加入尾数
-                                           # Other
-                                           Pope=res_vpa$input$Pope,
-                                           fix_recruit=list(year=c(2020,2021),rec=c(1000,2000)),
-                                           fix_wcatch=list(year=c(2020,2021),wcatch=c(1000,2000))
-  )
-
+  # check SD0
+  res_future_test <- test_sd0_future(data_future_test)
+  # check MSE option
+  check_MSE_sd0(data_future_test, nsim_for_check = 3)
+  
   # normal lognormal
-  res_future_test <- future_vpa(tmb_data=data_future_test$data,
-                                optim_method="none",
-                                multi_init = 1)
+  #res_future_test <- future_vpa(tmb_data=data_future_test$data,
+  #                                optim_method="none",
+  #                              multi_init = 1)
+  
   # option fix_recruit、fix_wcatchのチェック
   catch <- apply(res_future_test$wcaa,c(2,3),sum)
   expect_equal(mean(res_future_test$naa[1,"2020",]), 1000)
   expect_equal(mean(catch["2020",]), 1000, tol=0.001)
-  expect_equal(mean(catch["2021",]), 2000, tol=0.001)
+  expect_equal(mean(catch["2021",]), 2000, tol=0.001)  
+
+  # backward-resamplingの場合 ----
+  data_future_backward <- redo_future(data_future_test,
+                                      list(resid_type="backward", # 加入の誤差分布（"lognormal": 対数正規分布、"resample": 残差リサンプリング）
+                                          resample_year_range=0, # リサンプリングの場合、残差をリサンプリングする年の範囲
+                                          backward_duration=5,
+                                          bias_correction=TRUE),
+                                      only_data=TRUE)
 
   # backward resampling 
   res_future_backward <- future_vpa(tmb_data=data_future_backward$data,
@@ -252,8 +228,7 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
 
 })
 
-# check future_vpa with dummy data ----
-context("check future_vpa_function2 with dummy data")
+context("check future_vpa_function2 with dummy data") # ダミーデータでの将来予測 ----
 
 test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
 
@@ -449,8 +424,7 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
   
 })
 
-# check future_vpa with dummy data ----
-context("check future_vpa_function for regime shift")
+context("check future_vpa_function for regime shift") # ダミーデータ・レジームシフト将来予測 ----
 
 test_that("future_vpa function (with dummy vpa data) for regime shift (level 2-3?)",{
 
@@ -660,7 +634,7 @@ test_that("future_vpa function (with dummy vpa data) for regime shift (level 2-3
 })
 
 
-test_that("future_vpa function (flexible beta) (level 2)",{
+test_that("future_vpa function (flexible beta) (level 2)",{ # ----
 
   data(res_vpa)
   data(res_sr_HSL2)
@@ -731,7 +705,7 @@ test_that("future_vpa function (flexible beta) (level 2)",{
 
 })
 
-test_that("future_vpa function (MSE) (level 2)",{
+test_that("future_vpa function (MSE) (level 2)",{ # ----
 
   data(res_vpa)
   data(res_sr_HSL2)
@@ -779,23 +753,24 @@ test_that("future_vpa function (MSE) (level 2)",{
                            optim_method="none",
                            multi_init = 1,SPRtarget=0.3,
                            do_MSE=TRUE, MSE_input_data=data_future_test10,MSE_nsim=1000)
-  # 1000回でも10回でもMSE初年度の漁獲量はほぼ一致するはず
-  expect_equal(mean(get_wcatch(res_future_MSE)["2019",])/
-               mean(get_wcatch(res_future_noMSE)["2019",]),
-               1,tol=0.01) 
-
+  
+  # 2回のシミュレーションでそれぞれ１回ずつ決定論的な予測をする
   res_future_MSE_n1 <- future_vpa(tmb_data=data_future_test10$data,
                            optim_method="none",
                            multi_init = 1,SPRtarget=0.3,
                            do_MSE=TRUE, MSE_input_data=data_future_test10,
                            MSE_nsim=2,MSE_sd=0)
-#  plot_futures(res_vpa,list(res_future_MSE,res_future_noMSE,res_future_MSE_n1))
+  
+  # 上の３つのパターンでMSE初年度の漁獲量はほぼ一致するはず
+  expect_equal(mean(get_wcatch(res_future_MSE)["2019",])/
+               mean(get_wcatch(res_future_noMSE)["2019",]),
+               1,tol=0.01)
 
   expect_equal(mean(get_wcatch(res_future_MSE_n1)["2019",])/
-               mean(get_wcatch(res_future_noMSE)["2019",]),
-               1,tol=0.001)   
+               mean(get_wcatch(res_future_MSE)["2019",]),
+               1,tol=0.01)   
 
-  # sd=0の場合
+  # 真の個体群動態のsdを0にする場合
   res_sr_HSL2_sd0 <- res_sr_HSL2
   res_sr_HSL2_sd0$pars$sd <- 0
   data_future_sd0 <- list_modify(data_future_test10$input,nsim=5,res_SR=res_sr_HSL2_sd0) %>%
@@ -812,11 +787,6 @@ test_that("future_vpa function (MSE) (level 2)",{
                            do_MSE=TRUE, MSE_input_data=data_future_sd0)
   expect_equal(all(round(res_future_MSE_sd0$naa[,,1]/
                          res_future_noMSE_sd0$naa[,,1],3)==1),TRUE)
-
-  # sd=0の結果とノーマル将来予測の1000回の結果は一致するはず
-  x1 <- apply(res_future_noMSE$naa,c(1,2),mean) 
-  x2 <- res_future_noMSE_sd0$naa[,,1] 
-  x1/x2
 
 
 })
@@ -938,8 +908,7 @@ test_that("future_vpa function (carry over TAC) (level 2)",{
 # get_wcatch
 
 
-# check set_SR_mat ----
-context("check set_SR_mat")
+context("check set_SR_mat") # ----
 
 test_that("set_SR_mat with sample data", {
   # サンプルデータ、パラメータとして以下を与える
@@ -984,8 +953,7 @@ test_that("set_SR_mat with sample data", {
 })
 
 
-# check arrange_weight ----
-context("check arrange_weight")
+context("check arrange_weight") # check arrange_weight ----
 
 test_that("check arrange_weight", {
 
@@ -1015,14 +983,14 @@ test_that("check arrange_weight", {
 })
 
 
-context("HCR_default")
+context("HCR_default") # ----
 
 test_that("HCR_default",{
   HCR <- HCR_default(ssb=100000,Blimit=10000,Bban=1000,beta=0.8)
   expect_equal(HCR,0.8)
 })
 
-context("get_wcatch")
+context("get_wcatch") # ----
 
 test_that("get_wcatch",{
   expect_equal(get_wcatch(res_future_0.8HCR), apply(res_future_0.8HCR$wcaa,c(2,3),sum))

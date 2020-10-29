@@ -2131,7 +2131,7 @@ source_lines <- function(file, lines){
 #'
 #' 
 
-redo_future <- function(data_future, input_data_list, SR_sd=NULL, SR_b=NULL,...){
+redo_future <- function(data_future, input_data_list, SR_sd=NULL, SR_b=NULL, only_data=FALSE, ...){
   input_data <- data_future$input
   if(! all(names(input_data_list) %in% names(input_data))) stop("names of input_data_list is invalid!")
 
@@ -2154,15 +2154,18 @@ redo_future <- function(data_future, input_data_list, SR_sd=NULL, SR_b=NULL,...)
       input_data$res_SR$pars$b <- SR_b
     }
   }  
-  
-  future_vpa(safe_call(make_future_data,input_data)$data,...)
+
+  future_data <- safe_call(make_future_data,input_data)
+  if(only_data==TRUE) return(future_data) else future_vpa(future_data$data,...)
 }
 
 #'
-#' test SD0 assumption
+#' 将来予測においてFが非常に小さい場合には決定論的予測と確率論的予測の平均がほぼ一致するかを確認するための関数
+#'
+#' @export
 #' 
 
-test_sd0_future <- function(data_future){
+test_sd0_future <- function(data_future,...){
 
   is_regime <- !is.null(data_future$input$regime_shift_option)
   {if(is_regime){
@@ -2180,21 +2183,81 @@ test_sd0_future <- function(data_future){
   cat("nsim for checking sd=0:",nsim,"\n")
   
   # run 2 funture projections
-  res1 <- redo_future(data_future, list(nsim=nsim, nyear=10), multi_init=0.01)
-  res2 <- redo_future(data_future, list(nsim=2   , nyear=10), multi_init=0.01, SR_sd=0)
+  res1 <- redo_future(data_future, list(nsim=nsim, nyear=10), multi_init=0.01, ...)
+  res2 <- redo_future(data_future, list(nsim=2   , nyear=10), multi_init=0.01, SR_sd=0, ...)
 
+  compare_future_res12(res1,res2)
+ 
+  return(res1)
+}
+
+compare_future_res12 <- function(res1,res2,tol=0.01){
   nyear <- dim(res1$naa)[[2]]
-  future_range <- data_future_test$data$start_random_rec_year:nyear
+  future_range <- res1$input$tmb_data$start_random_rec_year:nyear
   mean_difference_in_naa <- mean(apply(res1$naa[,future_range,],c(1,2),mean)/
-                          apply(res2$naa[,future_range,],c(1,2),mean))
+                                   apply(res2$naa[,future_range,],c(1,2),mean))
   cat("mean_difference in naa=", mean_difference_in_naa,"\n")
-  expect_equal(mean_difference_in_naa,1,tol=0.01)
+  expect_equal(mean_difference_in_naa,1,tol=tol)
 
   mean_difference_in_wcaa <- mean(apply(res1$wcaa[,future_range,],c(1,2),mean)/
                                     apply(res2$wcaa[,future_range,],c(1,2),mean))
   cat("mean_difference in wcaa=", mean_difference_in_wcaa,"\n")
-  expect_equal(mean_difference_in_wcaa,1,tol=0.01)  
+  expect_equal(mean_difference_in_wcaa,1,tol=tol)  
 }
 
+#'
+#' MSEの計算が正しいかを確認するための関数
+#'
+#' 1. sd=0の場合の結果の比較
+#' 2. MSE_nsim=2にしてMSE_sd=0にしても良いかどうか
+#'
+#' @export
+#' 
 
+check_MSE_sd0 <- function(data_future, data_MSE=NULL, nsim_for_check=10000){
 
+  data_future_sd0 <- redo_future(data_future,list(nyear=5,nsim=5),only_data=TRUE,SR_sd=0)
+  data_future     <- redo_future(data_future,list(nyear=5,nsim=5),only_data=TRUE)
+  data_future_10000 <- redo_future(data_future,list(nyear=5,nsim=nsim_for_check),only_data=TRUE)  
+
+  if(!is.null(data_MSE)) data_MSE <- redo_future(data_MSE,list(nyear=5,nsim=5),only_data=TRUE)
+  else data_MSE <- data_future
+
+  # check MSE program is correct?
+  res1 <- future_vpa(tmb_data=data_future_sd0$data,
+                     optim_method="none",multi_init = 1,SPRtarget=0.3,
+                     do_MSE=TRUE, MSE_input_data=data_future_sd0,MSE_nsim=2)
+  res2 <- future_vpa(tmb_data=data_future_sd0$data,
+                     optim_method="none",multi_init = 1,SPRtarget=0.3,
+                     do_MSE=FALSE, MSE_input_data=data_future_sd0,MSE_nsim=2)
+  compare_future_res12(res1,res2)
+  cat("MSE program in SD=0 is OK\n")
+
+  # check sd in MSE=0 is OK?
+  res1 <- future_vpa(tmb_data=data_future$data,
+                     optim_method="none",
+                     multi_init = 1,SPRtarget=0.3,
+                     do_MSE=TRUE, MSE_input_data=data_MSE,MSE_nsim=nsim_for_check)
+  
+  res2 <- future_vpa(tmb_data=data_future$data,
+                     optim_method="none",
+                     multi_init = 1,SPRtarget=0.3,
+                     do_MSE=TRUE, MSE_input_data=data_MSE,MSE_nsim=2,MSE_sd=0)
+  compare_future_res12(res1,res2)
+  cat("Assumption in sd0 in MSE is OK\n")
+
+  # first year catch
+  res1 <- future_vpa(tmb_data=data_future_10000$data,
+                     optim_method="none",multi_init = 1,SPRtarget=0.3,
+                     do_MSE=FALSE,MSE_input_data=data_future_10000)
+
+  res2 <- future_vpa(tmb_data=data_future_10000$data,
+                     optim_method="none",multi_init = 1,SPRtarget=0.3,
+                     do_MSE=TRUE, MSE_nsim=2, MSE_sd=0, MSE_input_data=data_future_10000)  
+  # ここのtorelanceはそんなに高くない
+  expect_equal(mean(get_wcatch(res1)["2019",])/
+               mean(get_wcatch(res2)["2019",]),
+               1,tol=0.01)
+  cat("First year's catch in MSE = catch in future simulation: OK\n")  
+
+}
