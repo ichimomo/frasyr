@@ -1108,7 +1108,7 @@ if (isTRUE(madara)){
       saa <- sel.func(faa, def=sel.def)
 
       if (penalty=="p") {
-        if (is.null(eta)) {
+        if (is.null(eta) || eta==-1) {
           obj <- (1-lambda)*obj + lambda*sum(p^beta)
         } else {
           eta.age <- eta.age + 1
@@ -1275,12 +1275,12 @@ if (isTRUE(madara)){
       log_F=log(p.init)
     )
 
-    obj <- try(TMB::MakeADFun(data2, parameters, DLL=tmb.file))
-    if (class(obj) == "try-error") {
+    obj2 <- try(TMB::MakeADFun(data2, parameters, DLL=tmb.file))
+    if (class(obj2) == "try-error") {
       stop("Please run use_rvpa_tmb() first!")
     }
-    opt <- nlm(obj$fn, obj$par, gradient=obj$gr, hessian=hessian)
-    if (sdreport) rep <- TMB::sdreport(obj)
+    opt <- nlm(obj2$fn, obj2$par, gradient=obj2$gr, hessian=hessian)
+    if (sdreport) rep <- TMB::sdreport(obj2)
     
     summary.p.est <- opt
     # summary.p.est <- list()
@@ -1367,7 +1367,7 @@ Ft <- mean(faa[,ny],na.rm=TRUE)
   }
 
   if (isTRUE(TMB) & isTRUE(sdreport)) {
-    res$obj <- obj
+    res$obj <- obj2
     res$rep <- rep
     res$opt <- opt
     }
