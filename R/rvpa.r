@@ -461,7 +461,7 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param Lower
 #' @param Upper
 #' @param p.fix
-#' @param lambda  ridge回帰係数
+#' @param lambda  ridge penaltyの大きさ
 #' @param beta  penaltyのexponent  (beta = 1: lasso, 2: ridge)
 #' @param penalty
 #' @param ssb.def  i: 年はじめ，m: 年中央, l: 年最後
@@ -1281,14 +1281,15 @@ if (isTRUE(madara)){
     }
     opt <- nlm(obj$fn, obj$par, gradient=obj$gr, hessian=hessian)
     if (sdreport) rep <- TMB::sdreport(obj)
-
-    summary.p.est <- list()
-    summary.p.est$estimate <- exp(opt$estimate)
-    # summary.p.est$estimate <- opt$estimate
-    summary.p.est$minimum <- -opt$minimum
-    summary.p.est$gradient <- opt$gradient
-    summary.p.est$code <- opt$code
-    log.p.hat <- opt$estimate
+    
+    summary.p.est <- opt
+    # summary.p.est <- list()
+    # summary.p.est$estimate <- exp(opt$estimate)
+    # summary.p.est$minimum <- -opt$minimum
+    # summary.p.est$gradient <- opt$gradient
+    # summary.p.est$code <- opt$code
+    # log.p.hat <- opt$estimate
+    log.p.hat <- summary.p.est$estimate
   } else {
     if (isTRUE(no.est)){
       if (isTRUE(eq.tf.mean)) {
