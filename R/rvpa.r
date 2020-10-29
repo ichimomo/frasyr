@@ -1283,8 +1283,8 @@ if (isTRUE(madara)){
     if (sdreport) rep <- TMB::sdreport(obj)
 
     summary.p.est <- list()
-    # summary.p.est$estimate <- exp(opt$estimate)
-    summary.p.est$estimate <- opt$estimate
+    summary.p.est$estimate <- exp(opt$estimate)
+    # summary.p.est$estimate <- opt$estimate
     summary.p.est$minimum <- -opt$minimum
     summary.p.est$gradient <- opt$gradient
     summary.p.est$code <- opt$code
