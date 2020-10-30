@@ -383,7 +383,6 @@ future_vpa <- function(tmb_data,
   #--- R
   if(optim_method=="R" | optim_method=="none"){
 
-    if(!is.null(MSE_sd) && MSE_sd == 0) MSE_nsim <- 2
     tmb_data$do_MSE <- do_MSE
     tmb_data$MSE_input_data <- MSE_input_data
     tmb_data$MSE_nsim <- MSE_nsim
@@ -522,6 +521,8 @@ future_vpa_R <- function(naa_mat,
     MSE_seed <- MSE_input_data$input$seed_number + 1
     if(!is.null(MSE_sd) && MSE_sd==0){
       MSE_nsim <- 2
+      if(MSE_input_data$input$resid_type=="resampling"|MSE_input_data$input$resid_type=="backward")
+        warning("MSE_sd=0 option cannot be used in resampling option")
     }
     if(!is.null(MSE_nsim)) MSE_input_data$input$nsim <- MSE_nsim
     if( is.null(MSE_nsim)) MSE_nsim <- MSE_input_data$input$nsim
@@ -646,7 +647,11 @@ future_vpa_R <- function(naa_mat,
                      model_average_option       = MSE_input_data$input$model_average_option,
                      regime_shift_option        = MSE_input_data$input$regime_shift_option,
                      fix_recruit                = MSE_input_data$input$fix_recruit)
-        MSE_dummy_data$naa_mat[1,,] <- MSE_dummy_data$SR_mat[,,"recruit"] ##!!!!ここで加入がfixされてしまう
+        # fix_recruitの年だけ加入を固定する（めんどくさいけど、今後要改善）
+        if(!is.null(MSE_input_data$input$fix_recruit)){
+          fix_year <- which(allyear_name%in%MSE_input_data$input$fix_recruit$year)
+          MSE_dummy_data$naa_mat[1,fix_year,] <- MSE_dummy_data$SR_mat[fix_year,,"recruit"]
+        }
         res_tmp <- safe_call(future_vpa_R,MSE_dummy_data) # do future projection
           #                if(t>55) browser()
         HCR_mat[t,i,"expect_wcatch"] <- mean(apply(res_tmp$wcaa[,t,],2,sum)) # determine ABC in year t here

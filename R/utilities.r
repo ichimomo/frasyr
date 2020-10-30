@@ -2144,6 +2144,7 @@ redo_future <- function(data_future, input_data_list, SR_sd=NULL, SR_b=NULL, onl
     else{
       input_data$res_SR$pars$sd <- SR_sd
     }
+    if(input_data$resid_type!="lognormal") warning("SR_sd=0 cannot be used in nonparametric recruitment")
   }
 
   if(!is.null(SR_b)){
@@ -2194,15 +2195,22 @@ test_sd0_future <- function(data_future,...){
 compare_future_res12 <- function(res1,res2,tol=0.01){
   nyear <- dim(res1$naa)[[2]]
   future_range <- res1$input$tmb_data$start_random_rec_year:nyear
-  mean_difference_in_naa <- mean(apply(res1$naa[,future_range,],c(1,2),mean)/
-                                   apply(res2$naa[,future_range,],c(1,2),mean))
-  cat("mean_difference in naa=", mean_difference_in_naa,"\n")
-  expect_equal(mean_difference_in_naa,1,tol=tol)
+  if(dim(res1$naa)[[3]]==dim(res2$naa)[[3]]){
+      mean_difference_in_naa <- mean(abs(1-res1$naa[,future_range,]/res2$naa[,future_range,]))
+      mean_difference_in_wcaa <- mean(abs(1-res1$wcaa[,future_range,]/res2$wcaa[,future_range,]))
+  }
+  else{
+      mean_difference_in_naa <- 1-mean(apply(res1$naa[,future_range,],c(1,2),mean)/
+                                     apply(res2$naa[,future_range,],c(1,2),mean))
+      mean_difference_in_wcaa <- 1-mean(apply(res1$wcaa[,future_range,],c(1,2),mean)/
+                                      apply(res2$wcaa[,future_range,],c(1,2),mean))      
+  }
 
-  mean_difference_in_wcaa <- mean(apply(res1$wcaa[,future_range,],c(1,2),mean)/
-                                    apply(res2$wcaa[,future_range,],c(1,2),mean))
+  cat("mean_difference in naa=", mean_difference_in_naa,"\n")
+  expect_equal(mean_difference_in_naa,0,tol=tol)
+
   cat("mean_difference in wcaa=", mean_difference_in_wcaa,"\n")
-  expect_equal(mean_difference_in_wcaa,1,tol=tol)  
+  expect_equal(mean_difference_in_wcaa,0,tol=tol)  
 }
 
 #'
@@ -2214,7 +2222,7 @@ compare_future_res12 <- function(res1,res2,tol=0.01){
 #' @export
 #' 
 
-check_MSE_sd0 <- function(data_future, data_MSE=NULL, nsim_for_check=10000){
+check_MSE_sd0 <- function(data_future, data_MSE=NULL, nsim_for_check=10000, tol=c(0.01,0.01,0.01)){
 
   data_future_sd0 <- redo_future(data_future,list(nyear=5,nsim=5),only_data=TRUE,SR_sd=0)
   data_future     <- redo_future(data_future,list(nyear=5,nsim=5),only_data=TRUE)
@@ -2223,28 +2231,28 @@ check_MSE_sd0 <- function(data_future, data_MSE=NULL, nsim_for_check=10000){
   if(!is.null(data_MSE)) data_MSE <- redo_future(data_MSE,list(nyear=5,nsim=5),only_data=TRUE)
   else data_MSE <- data_future
 
-  # check MSE program is correct?
+    # check MSE program is correct?
   res1 <- future_vpa(tmb_data=data_future_sd0$data,
-                     optim_method="none",multi_init = 1,SPRtarget=0.3,
-                     do_MSE=TRUE, MSE_input_data=data_future_sd0,MSE_nsim=2)
+                         optim_method="none",multi_init = 1,SPRtarget=0.3,
+                         do_MSE=TRUE, MSE_input_data=data_future_sd0,MSE_nsim=2)
   res2 <- future_vpa(tmb_data=data_future_sd0$data,
                      optim_method="none",multi_init = 1,SPRtarget=0.3,
                      do_MSE=FALSE, MSE_input_data=data_future_sd0,MSE_nsim=2)
-  compare_future_res12(res1,res2)
-  cat("MSE program in SD=0 is OK\n")
+  a1 <- try(compare_future_res12(res1,res2,tol=tol[1]))
+  cat("MSE program in SD=0 is ",ifelse(class(a1)=="try-error", "not ",""),"OK\n")  
 
   # check sd in MSE=0 is OK?
   res1 <- future_vpa(tmb_data=data_future$data,
                      optim_method="none",
                      multi_init = 1,SPRtarget=0.3,
                      do_MSE=TRUE, MSE_input_data=data_MSE,MSE_nsim=nsim_for_check)
-  
+
   res2 <- future_vpa(tmb_data=data_future$data,
                      optim_method="none",
                      multi_init = 1,SPRtarget=0.3,
                      do_MSE=TRUE, MSE_input_data=data_MSE,MSE_nsim=2,MSE_sd=0)
-  compare_future_res12(res1,res2)
-  cat("Assumption in sd0 in MSE is OK\n")
+  a2 <- try(compare_future_res12(res1,res2,tol=tol[2]))
+  cat("Assumption in sd0 in MSE is ",ifelse(class(a2)=="try-error", "not ",""),"OK\n")
 
   # first year catch
   res1 <- future_vpa(tmb_data=data_future_10000$data,
@@ -2255,9 +2263,9 @@ check_MSE_sd0 <- function(data_future, data_MSE=NULL, nsim_for_check=10000){
                      optim_method="none",multi_init = 1,SPRtarget=0.3,
                      do_MSE=TRUE, MSE_nsim=2, MSE_sd=0, MSE_input_data=data_future_10000)  
   # ここのtorelanceはそんなに高くない
-  expect_equal(mean(get_wcatch(res1)["2019",])/
+  a3 <- try(expect_equal(mean(get_wcatch(res1)["2019",])/
                mean(get_wcatch(res2)["2019",]),
-               1,tol=0.01)
-  cat("First year's catch in MSE = catch in future simulation: OK\n")  
-
+               1,tol=tol[3]))
+  cat("First year's catch in MSE = catch in future simulation: ",ifelse(class(a3)=="try-error", "not ",""),"OK\n")  
+  return(list(a1,a2,a3))
 }
