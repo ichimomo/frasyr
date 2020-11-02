@@ -77,7 +77,8 @@ vpa(
   sigma.constraint = 1:length(abund),
   eta = NULL,
   eta.age = 0,
-  tmb.file = "rvpa_tmb"
+  tmb.file = "rvpa_tmb",
+  madara = FALSE
 )
 }
 \arguments{
@@ -161,7 +162,7 @@ vpa(
 
 \item{no.est}{パラメータ推定しない．}
 
-\item{est.method}{推定方法 （ls = 最小二乗法，ml = 最尤法）}
+\item{est.method}{推定方法 （ls = 最小二乗法，ml = 最尤法,  ls_nolog =最小二乗法で実数)}
 
 \item{b.est}{bを推定するかどうか}
 
@@ -190,6 +191,8 @@ vpa(
 \item{eta.age}{Fのpenaltyを分けるときにetaを与える年齢(0 = 0歳（加入）,0:1 = 0~1歳)}
 
 \item{tmb.file}{TMB=TRUEのとき使用するcppファイルの名前}
+
+\item{madara}{マダラ太平洋系群で用いているチューニングのやり方}
 }
 \description{
 VPAによる資源計算を実施する

@@ -2131,24 +2131,27 @@ source_lines <- function(file, lines){
 #'
 #' 
 
-redo_future <- function(data_future, input_data_list, SR_sd=NULL, SR_b=NULL, only_data=FALSE, ...){
+redo_future <- function(data_future, input_data_list, SR_sd=NULL, SR_b=NULL, only_data=FALSE,is_regime=(class(data_future$input$res_SR)=="fit.SRregime"), ...){
   input_data <- data_future$input
   if(! all(names(input_data_list) %in% names(input_data))) stop("names of input_data_list is invalid!")
 
   input_data[names(input_data_list)] <- input_data_list
 
   if(!is.null(SR_sd)){
-    if(class(input_data_list$res_SR)=="fit.SRregime"){
-      input_data$res_SR$regime_pars$sd <- SR_sd
+    if(is_regime){
+      cat("This is regime future\n")            
+      input_data$res_SR$regime_pars$sd[] <- SR_sd
+      input_data$res_SR$pars$sd[] <- SR_sd        
     }
     else{
-      input_data$res_SR$pars$sd <- SR_sd
+      input_data$res_SR$pars$sd[] <- SR_sd
     }
     if(input_data$resid_type!="lognormal") warning("SR_sd=0 cannot be used in nonparametric recruitment")
   }
 
   if(!is.null(SR_b)){
-    if(class(input_data_list$res_SR)=="fit.SRregime"){
+    if(is_regime){
+      cat("This is regime future\n")      
       input_data$res_SR$regime_pars$b <- SR_b
     }
     else{

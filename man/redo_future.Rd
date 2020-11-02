@@ -4,7 +4,14 @@
 \alias{redo_future}
 \title{re-calculate projection with different arguments}
 \usage{
-redo_future(data_future, input_data_list, ...)
+redo_future(
+  data_future,
+  input_data_list,
+  SR_sd = NULL,
+  SR_b = NULL,
+  only_data = FALSE,
+  ...
+)
 }
 \description{
 re-calculate projection with different arguments

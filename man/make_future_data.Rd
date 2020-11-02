@@ -39,6 +39,8 @@ make_future_data(
   Pope = res_vpa$input$Pope,
   fix_recruit = NULL,
   fix_wcatch = NULL,
+  max_F = exp(10),
+  max_exploitation_rate = 0.99,
   res_SR = NULL,
   seed_number = 1,
   resid_type = "lognormal",
