@@ -2187,9 +2187,11 @@ test_sd0_future <- function(data_future,...){
   res1 <- redo_future(data_future, list(nsim=nsim, nyear=10), multi_init=0.01, ...)
   res2 <- redo_future(data_future, list(nsim=2   , nyear=10), multi_init=0.01, SR_sd=0, ...)
 
-  compare_future_res12(res1,res2)
+  a <- try(compare_future_res12(res1,res2))
+
+  cat("* Fをなるべく小さくした場合の将来予測において、決定論的予測と確率的予測の平均値がほぼ同じになるか？（ここでnoが出る場合にはバグの可能性があるので管理者に連絡してください）（モデル平均・バックワードリサンプリングの場合にはnoになっちゃいます（今後改善））: ",ifelse(class(a)=="try-error", "not ","OK\n"))
  
-  return(res1)
+  return(lst(res1,res2,a))
 }
 
 compare_future_res12 <- function(res1,res2,tol=0.01){
@@ -2239,7 +2241,7 @@ check_MSE_sd0 <- function(data_future, data_MSE=NULL, nsim_for_check=10000, tol=
                      optim_method="none",multi_init = 1,SPRtarget=0.3,
                      do_MSE=FALSE, MSE_input_data=data_future_sd0,MSE_nsim=2)
   a1 <- try(compare_future_res12(res1,res2,tol=tol[1]))
-  cat("MSE program in SD=0 is ",ifelse(class(a1)=="try-error", "not ",""),"OK\n")  
+  cat("* 真の個体群動態のSD=0のとき, MSEした結果と単純シミュレーションの結果が一致するか？（加入の残差にリサンプリングを使っている場合にはSD=0でも決定論的予測にならないので一致しなくても大丈夫。対数正規分布残差でここがOKにならない場合にはバグの可能性があるので管理者に連絡してください） ",ifelse(class(a1)=="try-error", "not ",""),"OK\n")  
 
   # check sd in MSE=0 is OK?
   res1 <- future_vpa(tmb_data=data_future$data,
@@ -2252,7 +2254,7 @@ check_MSE_sd0 <- function(data_future, data_MSE=NULL, nsim_for_check=10000, tol=
                      multi_init = 1,SPRtarget=0.3,
                      do_MSE=TRUE, MSE_input_data=data_MSE,MSE_nsim=2,MSE_sd=0)
   a2 <- try(compare_future_res12(res1,res2,tol=tol[2]))
-  cat("Assumption in sd0 in MSE is ",ifelse(class(a2)=="try-error", "not ",""),"OK\n")
+  cat("* MSEしたとき、ABC算定年までの加入のSDを0として、決定論的な漁獲量をABCとしても、nsim_for_check回分の確率計算の平均漁獲量をABCした場合と同じになるか？（OKであればMSE_sd=0にして計算時間を短縮できる、加入の残差にリサンプリングを使っている場合には同じにならない：MSE_sd=0は使えない） ",ifelse(class(a2)=="try-error", "not ",""),"OK\n")
 
   # first year catch
   res1 <- future_vpa(tmb_data=data_future_10000$data,
@@ -2266,6 +2268,6 @@ check_MSE_sd0 <- function(data_future, data_MSE=NULL, nsim_for_check=10000, tol=
   a3 <- try(expect_equal(mean(get_wcatch(res1)["2019",])/
                mean(get_wcatch(res2)["2019",]),
                1,tol=tol[3]))
-  cat("First year's catch in MSE = catch in future simulation: ",ifelse(class(a3)=="try-error", "not ",""),"OK\n")  
-  return(list(a1,a2,a3))
+  cat("* HCRを導入する最初の年のABCは通常の将来予測の平均漁獲量と、MSEを十分回数実施したときの平均漁獲量と一致するはず。それぞれnsim_for_check回数分計算した場合、一致するか？（上の２つが通っている場合、ここもOKになるはず。OKにならなかったらバグの可能性があるので管理者に連絡してください）: ",ifelse(class(a3)=="try-error", "not ",""),"OK\n")  
+  return(lst(a1,a2,a3,res1,res2))
 }

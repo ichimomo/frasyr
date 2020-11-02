@@ -150,14 +150,13 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
                                        )
 
   # check SD0
-  res_future_test <- test_sd0_future(data_future_test)
-  # check MSE option
-  check_MSE_sd0(data_future_test, nsim_for_check = 3)
+  x <- test_sd0_future(data_future_test)
+  res_future_test <- x[[1]]
+  expect_equal(x[[3]],0,tol=0.005)
   
-  # normal lognormal
-  #res_future_test <- future_vpa(tmb_data=data_future_test$data,
-  #                                optim_method="none",
-  #                              multi_init = 1)
+  # check MSE option
+  x <- check_MSE_sd0(data_future_test, nsim_for_check = 1000) %>% as.numeric()
+  expect_equal(x,c(0,0,1),tol=0.005)
   
   # option fix_recruit、fix_wcatchのチェック
   catch <- apply(res_future_test$wcaa,c(2,3),sum)
@@ -185,21 +184,20 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
 
   # future_vpaに追加したオプション（max_F, max_exploitation_rateの確認）
   small_maxF <- 0.001
-  expect_warning(res_future_test2 <- future_vpa(tmb_data=data_future_test$data,
-                                                optim_method="none",
-                                                multi_init = 1, max_F=small_maxF))
+  expect_warning(res_future_test2 <- redo_future(data_future_test,
+                                                 list(max_F=small_maxF),
+                                                 optim_method="none",
+                                                 multi_init = 1))
   expect_equal(round(max(res_future_test2$faa[,"2020",1])/small_maxF,3),1)
 
-  expect_warning(res_future_test3 <- data_future_test$input %>%
-                     list_modify(fix_wcatch=list(year=c(2020,2021),wcatch=c(100000,200000))) %>%
-                     safe_call(make_future_data,.) %>%
-                     future_vpa(tmb_data=.$data, optim_method="none", multi_init = 1, max_exploitation_rate=0.8)
+  expect_warning(res_future_test3 <-
+                     redo_future(data_future_test,
+                                 list(fix_wcatch=list(year=c(2020,2021),wcatch=c(100000,200000)),
+                                      max_exploitation_rate=0.8),
+                                 optim_method="none", multi_init = 1, )
                  )
-  # natural mortality
-  #baa <- apply(res_future_test3$naa * res_future_test3$waa,c(2,3),sum)
-  #mean(res_future_test3$HCR_realized[as.character(2020:2021),,"wcatch"]/baa[as.character(2020:2021),])
 
-  # MSY計算の場合(MSY estimation) ----
+  # MSY計算の場合 (対数正規分布) ----
   res_future_test_R <- future_vpa(tmb_data=data_future_test$data,
                                   optim_method="R",
                                   multi_init  = 1,
@@ -208,7 +206,7 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
   # [1] 0.5269326
   expect_equal(round(res_future_test_R$multi,3),0.527)
 
-  # MSY計算の場合(MSY estimation)
+  # MSY計算の場合 (バックワード)
   res_future_test_backward <- future_vpa(tmb_data=data_future_backward$data,
                                   optim_method="R",
                                   multi_init  = 1,
@@ -318,7 +316,7 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
   res_future_MSY <- future_vpa(tmb_data=data_future_test$data,
                                optim_method="R", objective ="MSY",
                                multi_init = 2, multi_lower=0.01)
-  # expect_equal(round(res_future_MSY$multi,4),2.8273)
+  expect_equal(res_future_MSY$multi,1.345,tol=0.001)
 
   # F=0
   res_future_F0 <- redo_future(data_future_test,
@@ -357,9 +355,11 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
   res_sr_sd02ar00 <- res_sr_list$res_vpa_base0_nontune
   res_sr_sd02ar00$pars$sd <- 0.1
 
-  res_future_sd02ar00 <- redo_future(data_future_test,
-             list(nsim=5000, res_SR=res_sr_sd02ar00),
-             optim_method="none", multi_init=0)
+  data_future_sd02ar00 <- redo_future(data_future_test,
+                                      list(nsim=5000, res_SR=res_sr_sd02ar00),
+                                      only_data=TRUE)
+  res_future_sd02ar00 <- future_vpa(data_future_sd02ar00$data,
+                                    optim_method="none", multi_init=0)
 
   expect_equal(sd(log(res_future_sd02ar00$naa[1,43,])), 0.1, tol=0.01)
   expect_equal(mean(  res_future_sd02ar00$naa[1,43,]) ,   4, tol=0.001)
@@ -534,7 +534,7 @@ test_that("future_vpa function (with dummy vpa data) for regime shift (level 2-3
   res_future_MSY <- future_vpa(tmb_data=data_future_test$data,
                                optim_method="R", objective ="MSY",
                                multi_init = 2, multi_lower=0.01)
-  # expect_equal(round(res_future_MSY$multi,4),2.8273)
+  expect_equal(mean(res_future_F0$naa[,as.character(2025:2030),]),4, tol=0.0001)
 
   # F=0
   res_future_F0 <- data_future_test$input %>%
@@ -711,8 +711,8 @@ test_that("future_vpa function (MSE) (level 2)",{ # ----
   data(res_sr_HSL2)
 
   data_future_test10 <- make_future_data(res_vpa, # VPAの結果
-                                       nsim = 5, # シミュレーション回数
-                                       nyear = 5, # 将来予測の年数
+                                       nsim = 10, # シミュレーション回数
+                                       nyear = 10, # 将来予測の年数
                                        future_initial_year_name = 2017,
                                        start_F_year_name = 2018,
                                        start_biopar_year_name=2018,
@@ -756,42 +756,9 @@ test_that("future_vpa function (MSE) (level 2)",{ # ----
 
   # 以前の計算と同じ結果が出るかのテスト
   expect_equal(round(mean(get_wcatch(res_future_noMSE)["2019",])),32311) 
-  expect_equal(round(mean(get_wcatch(res_future_MSE)["2019",])),32370)  
-  
-  # 2回のシミュレーションでそれぞれ１回ずつ決定論的な予測をする
-  res_future_MSE_n1 <- future_vpa(tmb_data=data_future_test10$data,
-                           optim_method="none",
-                           multi_init = 1,SPRtarget=0.3,
-                           do_MSE=TRUE, MSE_input_data=data_future_test10,
-                           MSE_nsim=2,MSE_sd=0)
-  
-  # 上の３つのパターンでMSE初年度の漁獲量はほぼ一致するはず
-  expect_equal(mean(get_wcatch(res_future_MSE)["2019",])/
-               mean(get_wcatch(res_future_noMSE)["2019",]),
-               1,tol=0.01)
+  expect_equal(round(mean(get_wcatch(res_future_MSE)["2019",])),32370)
 
-  expect_equal(mean(get_wcatch(res_future_MSE_n1)["2019",])/
-               mean(get_wcatch(res_future_MSE)["2019",]),
-               1,tol=0.01)   
-
-  # 真の個体群動態のsdを0にする場合
-  res_sr_HSL2_sd0 <- res_sr_HSL2
-  res_sr_HSL2_sd0$pars$sd <- 0
-  data_future_sd0 <- list_modify(data_future_test10$input,nsim=5,res_SR=res_sr_HSL2_sd0) %>%
-      safe_call(make_future_data,.)
-
-  res_future_noMSE_sd0 <- future_vpa(tmb_data=data_future_sd0$data,
-                           optim_method="none",
-                           multi_init = 1,SPRtarget=0.3,
-                           do_MSE=FALSE, MSE_input_data=data_future_sd0)
-
-  res_future_MSE_sd0 <- future_vpa(tmb_data=data_future_sd0$data,
-                           optim_method="none",
-                           multi_init = 1,SPRtarget=0.3,
-                           do_MSE=TRUE, MSE_input_data=data_future_sd0)
-  expect_equal(all(round(res_future_MSE_sd0$naa[,,1]/
-                         res_future_noMSE_sd0$naa[,,1],3)==1),TRUE)
-
+  check_MSE_sd0(data_future_test10, nsim_for_check = 1000)
 
 })
 
@@ -833,19 +800,22 @@ test_that("future_vpa function (carry over TAC) (level 2)",{
                                        Pope=res_vpa$input$Pope,
                                        fix_recruit=NULL,
                                        fix_wcatch=NULL)
+  # 0.1まで繰越
   data_future_no_reserve <- list_modify(data_future_test$input,HCR_TAC_reserve_rate=0) %>%
       safe_call(make_future_data,.)
 
-  res_future_noMSE <- future_vpa(tmb_data=data_future_test$data,
-                           optim_method="none",
-                           multi_init = 1,SPRtarget=0.3,
-                           do_MSE=FALSE, MSE_input_data=data_future_test)
+  res_future_noMSE <- test_sd0_future(data_future_test)$res1
+  expect_equal(all(round(res_future_noMSE$HCR_realized[as.character(2019:2023),,"wcatch"]/
+                         res_future_noMSE$HCR_realized[as.character(2019:2023),,"original_ABC_plus"],3)
+                   ==0.9),TRUE)
 
-  res_future_noreserve <- future_vpa(tmb_data=data_future_no_reserve$data,
-                           optim_method="none",
-                           multi_init = 1,SPRtarget=0.3,
-                           do_MSE=FALSE, MSE_input_data=data_future_test)
+  # 余るけど繰越をしない場合
+  res_future_noreserve <- test_sd0_future(data_future_no_reserve)$res1  
+  expect_equal(all(round(res_future_noreserve$HCR_realized[as.character(2019:2023),,"wcatch"]/
+                         res_future_noreserve$HCR_realized[as.character(2019:2023),,"original_ABC_plus"],3)
+                   ==1),TRUE)
 
+  # MSEの場合
   res_future_MSE <- future_vpa(tmb_data=data_future_test$data,
                            optim_method="none",
                            multi_init = 1,SPRtarget=0.3,
@@ -855,7 +825,9 @@ test_that("future_vpa function (carry over TAC) (level 2)",{
   expect_equal(all(round(res_future_MSE$HCR_realized[as.character(2019:2023),,"wcatch"]/
                          res_future_MSE$HCR_realized[as.character(2019:2023),,"original_ABC_plus"],3)
                    ==0.9),TRUE)
+#   check_MSE_sd0(data_future_test) # (通ることは確認。時間かかるので割愛)
 
+  # 漁獲量一定方策＋繰越設定
   data_future_reserve_CC <- list_modify(data_future_test$input,
                                         fix_wcatch=tibble(year=2019:2025,wcatch=100)) %>%
       safe_call(make_future_data,.)
@@ -910,7 +882,6 @@ test_that("future_vpa function (carry over TAC) (level 2)",{
 # HCR_default
 # update_waa_mat
 # get_wcatch
-
 
 context("check set_SR_mat") # ----
 

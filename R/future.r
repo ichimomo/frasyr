@@ -600,7 +600,8 @@ future_vpa_R <- function(naa_mat,
       F_mat[,t,] <- sweep(F_mat[,t,],2,HCR_realized[t,,"beta_gamma"],FUN="*")
     }
 
-    if(isTRUE(do_MSE) && t>=start_ABC_year){
+   if(isTRUE(do_MSE) && t>=start_ABC_year){
+      MSE_input_data$input$silent <- TRUE
       MSE_dummy_data <- safe_call(make_future_data,MSE_input_data$input)$data
       MSE_dummy_data <- MSE_dummy_data %>%
         purrr::list_modify(future_initial_year   = t-2,
@@ -1247,7 +1248,7 @@ format_to_old_future <- function(fout){
       fout_old$Fratio     <- fout$HCR_realized[,,"Fratio"]
   }
   else{
-      fout_old$beta_gamma     <- fout$HCR_mat[,,"beta_gamma"]
+    fout_old$beta_gamma     <- fout$HCR_mat[,,"beta_gamma"]
       fout_old$alpha     <- fout$HCR_mat[,,"beta_gamma"]
       fout_old$Fratio     <- fout$HCR_mat[,,"Fratio"]
       }
