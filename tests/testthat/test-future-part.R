@@ -155,7 +155,7 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
   expect_equal(x[[3]],0,tol=0.005)
   
   # check MSE option
-  x <- check_MSE_sd0(data_future_test, nsim_for_check = 1000) %>% as.numeric()
+  x <- check_MSE_sd0(data_future_test, nsim_for_check = 1000)[1:3] %>% as.numeric()
   expect_equal(x,c(0,0,1),tol=0.005)
   
   # option fix_recruit、fix_wcatchのチェック

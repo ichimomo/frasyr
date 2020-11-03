@@ -2247,17 +2247,20 @@ check_MSE_sd0 <- function(data_future, data_MSE=NULL, nsim_for_check=10000, tol=
   cat("* 真の個体群動態のSD=0のとき, MSEした結果と単純シミュレーションの結果が一致するか？（加入の残差にリサンプリングを使っている場合にはSD=0でも決定論的予測にならないので一致しなくても大丈夫。対数正規分布残差でここがOKにならない場合にはバグの可能性があるので管理者に連絡してください） ",ifelse(class(a1)=="try-error", "not ",""),"OK\n")  
 
   # check sd in MSE=0 is OK?
-  res1 <- future_vpa(tmb_data=data_future$data,
+  res1.time <- system.time(
+    res1 <- future_vpa(tmb_data=data_future$data,
                      optim_method="none",
                      multi_init = 1,SPRtarget=0.3,
-                     do_MSE=TRUE, MSE_input_data=data_MSE,MSE_nsim=nsim_for_check)
+                     do_MSE=TRUE, MSE_input_data=data_MSE,MSE_nsim=nsim_for_check))
 
-  res2 <- future_vpa(tmb_data=data_future$data,
+  res2.time <- system.time(
+    res2 <- future_vpa(tmb_data=data_future$data,
                      optim_method="none",
                      multi_init = 1,SPRtarget=0.3,
-                     do_MSE=TRUE, MSE_input_data=data_MSE,MSE_nsim=2,MSE_sd=0)
+                     do_MSE=TRUE, MSE_input_data=data_MSE,MSE_nsim=2,MSE_sd=0))
   a2 <- try(compare_future_res12(res1,res2,tol=tol[2]))
   cat("* MSEしたとき、ABC算定年までの加入のSDを0として、決定論的な漁獲量をABCとしても、nsim_for_check回分の確率計算の平均漁獲量をABCした場合と同じになるか？（OKであればMSE_sd=0にして計算時間を短縮できる、加入の残差にリサンプリングを使っている場合には同じにならない：MSE_sd=0は使えない） ",ifelse(class(a2)=="try-error", "not ",""),"OK\n")
+  cat("res1.time=",res1.time,"res2.time=",res2.time,"\n")
 
   # first year catch
   res1 <- future_vpa(tmb_data=data_future_10000$data,

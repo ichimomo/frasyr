@@ -632,6 +632,7 @@ future_vpa_R <- function(naa_mat,
         # re-calculate past deviance and produce random residual in future
         if(!is.null(MSE_sd) && MSE_sd==0){
           MSE_input_data$input$res_SR$pars$sd[] <- 0
+          if(!is.null(MSE_input_data$input$res_SR$regime_pars)) MSE_input_data$input$res_SR$regime_pars$sd[] <- 0
         }
         MSE_dummy_data$SR_mat <-
           set_SR_mat(res_vpa   = NULL, # past deviande is calculated by true ssb
