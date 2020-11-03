@@ -461,7 +461,7 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param Lower
 #' @param Upper
 #' @param p.fix
-#' @param lambda  ridge回帰係数
+#' @param lambda  ridge penaltyの大きさ
 #' @param beta  penaltyのexponent  (beta = 1: lasso, 2: ridge)
 #' @param penalty  ridgeVPAの際に与えるpenaltyの種類．"p"=指定した年齢範囲の最終年の年齢別Fのbeta乗の和，"f"=｛最終年の年齢aのF－（tf.yearで指定した年のa歳の平均のF)｝のbeta乗の和，"s"=｛最終年の年齢aのs－（tf.yearで指定した年のa歳の平均のs)｝のbeta乗の和
 #' @param ssb.def  i: 年はじめ，m: 年中央, l: 年最後
@@ -1115,7 +1115,7 @@ if (isTRUE(madara)){
 
       if (penalty=="p" && isFALSE(p_by_age)) {
 
-        if (is.null(eta)) {
+        if (is.null(eta) || eta==-1) {
           obj <- (1-lambda)*obj + lambda*sum(p^beta)
         } else {
           eta.age <- eta.age + 1
@@ -1301,19 +1301,21 @@ if (isTRUE(madara)){
       log_F=log(p.init)
     )
 
-    obj <- try(TMB::MakeADFun(data2, parameters, DLL=tmb.file))
-    if (class(obj) == "try-error") {
+    obj2 <- try(TMB::MakeADFun(data2, parameters, DLL=tmb.file))
+    if (class(obj2) == "try-error") {
       stop("Please run use_rvpa_tmb() first!")
     }
-    opt <- nlm(obj$fn, obj$par, gradient=obj$gr, hessian=hessian)
-    if (sdreport) rep <- TMB::sdreport(obj)
+    opt <- nlm(obj2$fn, obj2$par, gradient=obj2$gr, hessian=hessian)
+    if (sdreport) rep <- TMB::sdreport(obj2)
 
-    summary.p.est <- list()
-    summary.p.est$estimate <- exp(opt$estimate)
-    summary.p.est$minimum <- -opt$minimum
-    summary.p.est$gradient <- opt$gradient
-    summary.p.est$code <- opt$code
-    log.p.hat <- opt$estimate
+    summary.p.est <- opt
+    # summary.p.est <- list()
+    # summary.p.est$estimate <- exp(opt$estimate)
+    # summary.p.est$minimum <- -opt$minimum
+    # summary.p.est$gradient <- opt$gradient
+    # summary.p.est$code <- opt$code
+    # log.p.hat <- opt$estimate
+    log.p.hat <- summary.p.est$estimate
   } else {
     if (isTRUE(no.est)){
       if (isTRUE(eq.tf.mean)) {
@@ -1391,7 +1393,7 @@ Ft <- mean(faa[,ny],na.rm=TRUE)
   }
 
   if (isTRUE(TMB) & isTRUE(sdreport)) {
-    res$obj <- obj
+    res$obj <- obj2
     res$rep <- rep
     }
 
