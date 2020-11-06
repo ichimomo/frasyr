@@ -1182,24 +1182,24 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
     arrange(year)
   if(ylab.type=="F") UBdata <- UBdata %>% mutate(Uratio=Fratio)
 
+  if(plot.year[1]!="all") {
+    # diff.year <- plot.year[which(diff(plot.year)>1)+1]
+    UBdata <- UBdata %>% filter(year %in% plot.year)
+
+    # for(i in 1:length(diff.year)){
+    #   UBdata <- UBdata %>%
+    #     mutate(year_group = ifelse(year >= diff.year[i], year_group+1, year_group))
+    # }
+  }
+  
   if(is.null(labeling.year)){
     years <- unique(UBdata$year)
     labeling.year <- c(years[years%%5==0],max(years))
   }
-
+  
   UBdata <- UBdata %>%
     mutate(year.label=ifelse(year%in%labeling.year,year,""),
            year_group=1)
-
-  if(plot.year[1]!="all") {
-    diff.year <- plot.year[which(diff(plot.year)>1)+1]
-    UBdata <- UBdata %>% filter(year %in% plot.year)
-
-    for(i in 1:length(diff.year)){
-      UBdata <- UBdata %>%
-        mutate(year_group = ifelse(year >= diff.year[i], year_group+1, year_group))
-    }
-  }
 
   max.B <- max(c(UBdata$Bratio,xscale),na.rm=T)
   max.U <- max(c(UBdata$Uratio,yscale),na.rm=T)
@@ -1681,11 +1681,13 @@ compare_kobeII <- function(kobeII_list,
 #' Plot SPR figure
 #'
 #' @inheritParams make_stock_table
+#' @param years 全ての年をプロットしない場合、\code{years=1985:2011}のようにプロットする年を指定する
 #' @export
-plot_sprypr <- function(result_vpa, type) {
+plot_sprypr <- function(result_vpa, type, years=NULL) {
   df <- get.SPR(result_vpa, target.SPR = 30, Fmax = 10, max.age=Inf)$ysdata
   if (type == "perspr") {
     df$Year <- as.numeric(rownames(df))
+    if (!is.null(years)) df = df %>% dplyr::filter(Year %in% years)
     plot <- df %>%
       ggplot(aes(Year, perSPR)) +
       geom_line() +

@@ -4,10 +4,12 @@
 \alias{plot_sprypr}
 \title{Plot SPR figure}
 \usage{
-plot_sprypr(result_vpa, type)
+plot_sprypr(result_vpa, type, years = NULL)
 }
 \arguments{
 \item{result_vpa}{Obejct returned from \code{vpa()}}
+
+\item{years}{全ての年をプロットしない場合、\code{years=1985:2011}のようにプロットする年を指定する}
 }
 \description{
 Plot SPR figure
