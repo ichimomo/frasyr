@@ -12,7 +12,7 @@ Type objective_function<Type>::operator() ()
   DATA_VECTOR(b_fix);  //
   DATA_SCALAR(alpha);
   DATA_SCALAR(lambda);
-  DATA_SCALAR(beta);  
+  DATA_SCALAR(beta);
   DATA_IVECTOR(Ab_type);  // Ab_type = 1: SSB, Ab_type = 2: number at age, Ab_type = 3: biomass at age
   DATA_IVECTOR(Ab_type_age);
   DATA_IVECTOR(Ab_type_max_age);
@@ -46,7 +46,7 @@ Type objective_function<Type>::operator() ()
   vector<Type> sd_log_abund(K);
   vector<Type> sigma(K);
   vector<Type> nI2(K);
-  
+
   q.fill(0.0);
   b.fill(0.0);
   nI.fill(0.0);
@@ -56,25 +56,25 @@ Type objective_function<Type>::operator() ()
   sd_log_abund.fill(0.0);
   sigma.fill(0.0);
   nI2.fill(0.0);
-    
+
   Type sum_log_ssb, sum_log_N, sum_log_B;
-  
+
   matrix<Type> F(Y,A);
   matrix<Type> N(Y,A);
   matrix<Type> B(Y,A);
   matrix<Type> Z(Y,A);
   F.fill(0.0);
   N.fill(0.0);
-      
+
   matrix<Type> NM(Y,K);
   NM.fill(1.0);
 
   vector<Type> SSB(Y);
   vector<Type> logSSB(Y);
   SSB.fill(0.0);
-            
+
   //
-  
+
   NM = NM-MISS;
 
   for (int i=0;i<A;i++){
@@ -91,8 +91,8 @@ Type objective_function<Type>::operator() ()
     N(Y-2-t,A-1) = CATCH(Y-2-t,A-1)*exp(M(Y-2-t,A-1)/2)+N(Y-1-t,A-1)*exp(M(Y-2-t,A-1))*CATCH(Y-2-t,A-1)/(CATCH(Y-2-t,A-2)+CATCH(Y-2-t,A-1));
     F(Y-2-t,A-2) = -log(1-CATCH(Y-2-t,A-2)*exp(M(Y-2-t,A-2)/2)/N(Y-2-t,A-2));
     F(Y-2-t,A-1) = alpha*F(Y-2-t,A-2);
-  }  
-  
+  }
+
   if (Last_Catch_Zero==1){
     N(Y-1,0)=0.001;
     for (int i=0;i<A-2;i++){
@@ -100,20 +100,46 @@ Type objective_function<Type>::operator() ()
     }
     N(Y-1,A-1)=N(Y-2,A-2)*exp(-F(Y-2,A-2)-M(Y-2,A-2))+N(Y-2,A-1)*exp(-F(Y-2,A-1)-M(Y-2,A-1));
   }
-  
+
   B = N.array()*WEI.array();
-  
+
   for (int y=0;y<Y;y++){
     for (int i=0;i<A;i++){
       SSB(y) += B(y,i)*MAT(y,i);
     }
     logSSB(y) = log(SSB(y));
   }
-  
-  //
-  
+
+  vector<Type> B_total(Y);
+  B_total.fill(0.0);
+  for (int y=0;y<Y;y++){
+    for (int i=0;i<A;i++){
+      B_total(y) += B(y,i);
+    }
+  }
+
+  vector<Type> F_mean(Y);
+  F_mean.fill(0.0);
+  for (int y=0;y<Y;y++){
+    for (int i=0;i<A;i++){
+      F_mean(y) += F(y,i);
+    }
+    F_mean(y) /= A;
+  }
+
+  vector<Type> Catch_weight(Y);
+  Catch_weight.fill(0.0);
+  vector<Type> U(Y);
+  U.fill(0.0);
+  for (int y=0;y<Y;y++){
+    for (int i=0;i<A;i++){
+      Catch_weight(y) += CATCH(y,i)*WEI(y,i);
+    }
+    U(y) += Catch_weight(y)/B_total(y);
+  }
+
   Type denom;
-  
+
   for (int k=0;k<K;k++){
     denom=0.0;
     nI(k) = NM.col(k).sum();
@@ -130,7 +156,7 @@ Type objective_function<Type>::operator() ()
            b(k) += NM(h,k)*((log(CPUE(h,k)+MISS(h,k))-sum_log_cpue(k)/nI(k))*(NM(h,k)*logSSB(h)-sum_log_ssb/nI(k)));
            denom += NM(h,k)*((NM(h,k)*logSSB(h)-sum_log_ssb/nI(k))*(NM(h,k)*logSSB(h)-sum_log_ssb/nI(k)));
          }
-         b(k) /= denom;          
+         b(k) /= denom;
        } else b(k)=b_fix(k);
        for (int h=0;h<Y;h++){
          q(k) += log(CPUE(h,k)+MISS(h,k))-b(k)*NM(h,k)*logSSB(h);
@@ -202,7 +228,7 @@ Type objective_function<Type>::operator() ()
            b(k) += NM(h,k)*((log(CPUE(h,k)+MISS(h,k))-sum_log_cpue(k)/nI(k))*(NM(h,k)*log(sum_B(h))-sum_log_B/nI(k)));
            denom += NM(h,k)*((NM(h,k)*log(sum_B(h))-sum_log_B/nI(k))*(NM(h,k)*log(sum_B(h))-sum_log_B/nI(k)));
          }
-         b(k) /= denom;  
+         b(k) /= denom;
        } else b(k)=b_fix(k);
        for (int h=0;h<Y;h++){
          q(k) += log(CPUE(h,k)+MISS(h,k))-b(k)*NM(h,k)*log(sum_B(h));
@@ -220,10 +246,10 @@ Type objective_function<Type>::operator() ()
          sigma2(k) += pow(log(CPUE(j,k)+MISS(j,k))-NM(j,k)*(log(q(k))+b(k)*log(sum_B(j))),2);
        }
     }
-  }  
-  
+  }
+
   Type f=0;
-  
+
   // for (int k=0;k<K;k++){
   //   if(Ab_type(k)==1){
   //     for (int j=0;j<Y;j++){
@@ -242,7 +268,7 @@ Type objective_function<Type>::operator() ()
   //   }
   // }
   // sigma2 = Residual of sum of square
-  
+
   if (Est==0){
     for (int k=0;k<K;k++){
       f += w(k)*sigma2(k);
@@ -279,6 +305,12 @@ Type objective_function<Type>::operator() ()
     }
   }
 
-  // 
+  ADREPORT(N);
+  ADREPORT(F);
+  ADREPORT(SSB);
+  ADREPORT(B_total);
+  ADREPORT(F_mean);
+  ADREPORT(U);
+
   return f;
 }

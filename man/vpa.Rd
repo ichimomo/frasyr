@@ -77,7 +77,12 @@ vpa(
   sigma.constraint = 1:length(abund),
   eta = NULL,
   eta.age = 0,
-  tmb.file = "rvpa_tmb"
+  tmb.file = "rvpa_tmb",
+  madara = FALSE,
+  p_by_age = FALSE,
+  penalty_age = NULL,
+  no_eta_age = NULL,
+  sdreport = FALSE
 )
 }
 \arguments{
@@ -161,7 +166,7 @@ vpa(
 
 \item{no.est}{パラメータ推定しない．}
 
-\item{est.method}{推定方法 （ls = 最小二乗法，ml = 最尤法）}
+\item{est.method}{推定方法 （ls = 最小二乗法，ml = 最尤法,  ls_nolog =最小二乗法で実数)}
 
 \item{b.est}{bを推定するかどうか}
 
@@ -177,11 +182,13 @@ vpa(
 
 \item{beta}{penaltyのexponent  (beta = 1: lasso, 2: ridge)}
 
+\item{penalty}{ridgeVPAの際に与えるpenaltyの種類．"p"=指定した年齢範囲の最終年の年齢別Fのbeta乗の和，"f"=｛最終年の年齢aのF－（tf.yearで指定した年のa歳の平均のF)｝のbeta乗の和，"s"=｛最終年の年齢aのs－（tf.yearで指定した年のa歳の平均のs)｝のbeta乗の和}
+
 \item{ssb.def}{i: 年はじめ，m: 年中央, l: 年最後}
 
 \item{ssb.lag}{0: no lag, 1: lag 1}
 
-\item{TMB}{TMBで高速計算する場合TMB=TRUE (事前にuse_rvpa_tmb()を実行)}
+\item{TMB}{TMBで高速計算する場合TMB=TRUE (事前にuse_rvpa_tmb()を実行)　全Ｆ推定法，POPE=TRUE, alpha=1, 途中でプラスグループが変化しない場合のみのときに使用可能}
 
 \item{sigma.constraint}{sigmaパラメータの制約.使い方としては，指標が５つあり，2番目と3番目の指標のsigmaは同じとしたい場合はc(1,2,2,3,4)と指定する}
 
@@ -190,6 +197,16 @@ vpa(
 \item{eta.age}{Fのpenaltyを分けるときにetaを与える年齢(0 = 0歳（加入）,0:1 = 0~1歳)}
 
 \item{tmb.file}{TMB=TRUEのとき使用するcppファイルの名前}
+
+\item{madara}{マダラ太平洋系群で用いているチューニングのやり方}
+
+\item{p_by_age}{選択率更新法でridgeVPAの際にpenalty="p"のときに年齢別にペナルテイーを与えるか与えないか．与えたい場合はTRUEとして,penalty_age（eta=NULLのとき）もしくはno_eta_age(etaがNULLでないとき）に年齢範囲を指定する．}
+
+\item{penalty_age}{選択率更新法でridgeVPAをする際のpenalty="p"のときで，etaがNULLで，p_by_age=TRUE (年齢別にペナルテイーを与えたい）ときにペナルテイーを与える年齢範囲．0歳から2歳までなら0：２とする．}
+
+\item{no_eta_age}{選択率更新法でridgeVPAの際にpenalty="p"のときで，etaがNULLでなく，p_by_age=TRUE (年齢別にペナルテイーを与えたい）ときに，etaがかからないほうの年齢範囲}
+
+\item{sdreport}{\code{TMB=TRUE}のときに\code{sdreport()}を実行するかどうか（naa, faa, 資源量, 親魚量, Fの平均, 漁獲割合のSDを計算する）}
 }
 \description{
 VPAによる資源計算を実施する
