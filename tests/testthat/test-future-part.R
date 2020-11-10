@@ -232,6 +232,7 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
 
   # test-data.handler.Rで作成したVPAオブジェクトを読み込んでそれを使う
   load("res_vpa_files.rda")
+  res_vpa_base0_nontune$input$dat$waa[] <- c(5, 10, 150, 200)
 
   # estimate SR function ----
   # VPA結果がほとんど同じになるres_vpa_base0_nontune, res_vpa_base1_nontune, res_vpa_rec0$nontueの
@@ -316,7 +317,9 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
   res_future_MSY <- future_vpa(tmb_data=data_future_test$data,
                                optim_method="R", objective ="MSY",
                                multi_init = 2, multi_lower=0.01)
-  expect_equal(res_future_MSY$multi,1.345,tol=0.001)
+
+  fmax <- ref.F(data_future_test$input$res_vpa, Fcurrent = rep(Fvalue,4))$summary['Fmax'][3,]
+  expect_equal(res_future_MSY$multi, fmax)
 
   # F=0
   res_future_F0 <- redo_future(data_future_test,
