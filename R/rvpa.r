@@ -461,12 +461,12 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param Lower
 #' @param Upper
 #' @param p.fix
-#' @param lambda  ridge回帰係数
+#' @param lambda  ridge penaltyの大きさ
 #' @param beta  penaltyのexponent  (beta = 1: lasso, 2: ridge)
-#' @param penalty
+#' @param penalty  ridgeVPAの際に与えるpenaltyの種類．"p"=指定した年齢範囲の最終年の年齢別Fのbeta乗の和，"f"=｛最終年の年齢aのF－（tf.yearで指定した年のa歳の平均のF)｝のbeta乗の和，"s"=｛最終年の年齢aのs－（tf.yearで指定した年のa歳の平均のs)｝のbeta乗の和
 #' @param ssb.def  i: 年はじめ，m: 年中央, l: 年最後
 #' @param ssb.lag  0: no lag, 1: lag 1
-#' @param TMB  TMBで高速計算する場合TMB=TRUE (事前にuse_rvpa_tmb()を実行)
+#' @param TMB  TMBで高速計算する場合TMB=TRUE (事前にuse_rvpa_tmb()を実行)　全Ｆ推定法，POPE=TRUE, alpha=1, 途中でプラスグループが変化しない場合のみのときに使用可能
 #' @param sel.rank
 #' @param p.init
 #' @param sigma.constraint  sigmaパラメータの制約.使い方としては，指標が５つあり，2番目と3番目の指標のsigmaは同じとしたい場合はc(1,2,2,3,4)と指定する
@@ -474,6 +474,10 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param eta.age  Fのpenaltyを分けるときにetaを与える年齢(0 = 0歳（加入）,0:1 = 0~1歳)
 #' @param tmb.file  TMB=TRUEのとき使用するcppファイルの名前
 #' @param madara  マダラ太平洋系群で用いているチューニングのやり方
+#' @param penalty_age  選択率更新法でridgeVPAをする際のpenalty="p"のときで，etaがNULLで，p_by_age=TRUE (年齢別にペナルテイーを与えたい）ときにペナルテイーを与える年齢範囲．0歳から2歳までなら0：２とする．
+#' @param no_eta_age 選択率更新法でridgeVPAの際にpenalty="p"のときで，etaがNULLでなく，p_by_age=TRUE (年齢別にペナルテイーを与えたい）ときに，etaがかからないほうの年齢範囲
+#' @param p_by_age 選択率更新法でridgeVPAの際にpenalty="p"のときに年齢別にペナルテイーを与えるか与えないか．与えたい場合はTRUEとして,penalty_age（eta=NULLのとき）もしくはno_eta_age(etaがNULLでないとき）に年齢範囲を指定する．
+#' @param sdreport \code{TMB=TRUE}のときに\code{sdreport()}を実行するかどうか（naa, faa, 資源量, 親魚量, Fの平均, 漁獲割合のSDを計算する）
 #' @encoding UTF-8
 #'
 #' @export
@@ -553,7 +557,11 @@ vpa <- function(
   eta = NULL,
   eta.age = 0,
   tmb.file = "rvpa_tmb",
-  madara=FALSE #マダラ太平洋系群で用いているチューニングのやり方
+  madara=FALSE, #マダラ太平洋系群で用いているチューニングのやり方
+  p_by_age = FALSE, #penalty="p"で選択率更新法のときに年齢別にペナルテイーを与えるか与えないか．
+  penalty_age=NULL, #penalty="p"でp_by_age = ＴＲＵＥで選択率更新法を採用しているときの年齢参照範囲．0歳から2歳までなら0：２とする．
+  no_eta_age = NULL, #etaがNULLでなく，penalty="p"で，選択率更新法を採用していて，年齢別にペナルテイーを与えたいときに，etaがかからないほうの年齢範囲
+  sdreport = FALSE
 )
 {
   #sigma.constで引数を指定してしまったときは，sigma.constraintで引数を指定しなおしてもらうようにする
@@ -833,13 +841,13 @@ if (isTRUE(madara)){
             if (i-k > 0){
               naa[j,ny-k] <- naa[j+1,ny-k+1]*exp(M[j,ny-k])+caa[j,ny-k]*exp(M[j,ny-k]/2)
               faa[j,ny-k] <- -log(1-caa[j,ny-k]*exp(M[j,ny-k]/2)/naa[j,ny-k])
-            }  
+            }
           }
-       
+
      }
    }
-   
-   
+
+
     if (is.na(naa[na[ny]-1,ny])){
       if(isTRUE(Pope)){
         for (i in (na[ny]-1):1){
@@ -971,7 +979,7 @@ if (isTRUE(madara)){
             abundance <- abund.extractor(abund=abund[i], naa, faa, dat, min.age=min.age[i], max.age=max.age[i], link=link[i], base=base[i], af=af[i], catch.prop=catch.prop, sel.def=sel.def, p.m=p.m, omega=omega, scale=scale)
             Abund <- rbind(Abund, abundance)
             avail <- which(!is.na(as.numeric(index[i,])))
-			
+
             if (b.est)
             {
                 if (is.null(b.fix))
@@ -1018,7 +1026,7 @@ if (isTRUE(madara)){
                 if (is.null(b.fix)) b[i] <- 1 else b[i] <- b.fix[i]
             }
             if (is.null(q.fix))
-            {    
+            {
                 #q[i] <- exp(mean(log(as.numeric(index[i,avail]))-b[i]*log(as.numeric(abundance[avail]))))
 				 q[i] <- sum(as.numeric(index[i,avail])*as.numeric(abundance[avail])^b[i])/sum(as.numeric(abundance[avail])^(2*b[i])) #changed
             }else
@@ -1026,7 +1034,7 @@ if (isTRUE(madara)){
                 q[i] <- q.fix[i]
             }
             #obj <- c(obj,index.w[i]*sum((log(as.numeric(index[i,avail]))-log(q[i])-b[i]*log(as.numeric(abundance[avail])))^2))
-			obj <- c(obj,index.w[i]*sum((as.numeric(index[i,avail])-q[i]*as.numeric(abundance[avail ])^b[i])^2)) 
+			obj <- c(obj,index.w[i]*sum((as.numeric(index[i,avail])-q[i]*as.numeric(abundance[avail ])^b[i])^2))
         }
     }
     if (est.method=="ml")
@@ -1105,14 +1113,29 @@ if (isTRUE(madara)){
       convergence <- 1
       saa <- sel.func(faa, def=sel.def)
 
-      if (penalty=="p") {
-        if (is.null(eta)) {
+      if (penalty=="p" && isFALSE(p_by_age)) {
+
+        if (is.null(eta) || eta==-1) {
           obj <- (1-lambda)*obj + lambda*sum(p^beta)
         } else {
           eta.age <- eta.age + 1
           obj <- (1-lambda)*obj + lambda*(eta*sum(p[eta.age]^beta) + (1-eta)*sum(p[-eta.age]^beta))
         }
-      }
+        }
+
+	  if (penalty=="p" && isTRUE(p_by_age)) {
+
+        if (is.null(eta)) {
+          if (is.null(penalty_age)) {stop("please specify penalty_age")}#etaがNULLでpenalty="p"で選択率更新法を採用していて,penaltyを年齢別に与えたいのにpenalty_ageを未指定の場合にはエラーを出して停止。
+           penalty_age <- penalty_age + 1
+		  obj <- (1-lambda)*obj + lambda*sum(faa[penalty_age,ny]^beta)
+        } else {
+          if (is.null(no_eta_age)) {stop("please specify no_eta_age")}#etaがNULLでpenalty="p"で選択率更新法を採用していて,penaltyを年齢別に与えたいのにpenalty_ageを未指定の場合にはエラーを出して停止。
+           eta.age <- eta.age + 1
+		  no_eta_age <- no_eta_age +1
+		  obj <- (1-lambda)*obj + lambda*(eta*sum(faa[eta.age,ny]^beta) + (1-eta)*sum(faa[no_eta_age,ny]^beta))
+        }
+        }
 
       if (penalty=="f") obj <- (1-lambda)*obj + lambda*sum((abs(faa[1:(na[ny]-1),ny]-apply(faa[1:(na[ny]-1), years %in% tf.year],1,get(stat.tf))))^beta)
 
@@ -1237,6 +1260,11 @@ if (isTRUE(madara)){
 #    log.p.hat <- log(summary.p.est$estimate)
 #  } else {
   if (isTRUE(TMB)){
+
+  if(isTRUE(TMB) & isTRUE(sel.update)){print("TMB is not supported for sel.update method");stop()}
+  if(isTRUE(TMB) & alpha!=1){print("TMB is not supported for alpha!=1");stop()}
+  if(isTRUE(TMB) & isFALSE(Pope)){print("TMB is not supported for baranov equation option. only for Pope");stop()}
+
     index2 <- as.matrix(t(apply(index,1,function(x) ifelse(is.na(x),0,x))))
 
     Ab_type <- ifelse(abund=="SSB", 1, ifelse(abund=="N", 2, 3))
@@ -1273,18 +1301,21 @@ if (isTRUE(madara)){
       log_F=log(p.init)
     )
 
-    obj <- try(TMB::MakeADFun(data2, parameters, DLL=tmb.file))
-    if (class(obj) == "try-error") {
+    obj2 <- try(TMB::MakeADFun(data2, parameters, DLL=tmb.file))
+    if (class(obj2) == "try-error") {
       stop("Please run use_rvpa_tmb() first!")
     }
-    opt <- nlm(obj$fn, obj$par, gradient=obj$gr, hessian=hessian)
+    opt <- nlm(obj2$fn, obj2$par, gradient=obj2$gr, hessian=hessian)
+    if (sdreport) rep <- TMB::sdreport(obj2)
 
-    summary.p.est <- list()
-    summary.p.est$estimate <- exp(opt$estimate)
-    summary.p.est$minimum <- -opt$minimum
-    summary.p.est$gradient <- opt$gradient
-    summary.p.est$code <- opt$code
-    log.p.hat <- opt$estimate
+    summary.p.est <- opt
+    # summary.p.est <- list()
+    # summary.p.est$estimate <- exp(opt$estimate)
+    # summary.p.est$minimum <- -opt$minimum
+    # summary.p.est$gradient <- opt$gradient
+    # summary.p.est$code <- opt$code
+    # log.p.hat <- opt$estimate
+    log.p.hat <- summary.p.est$estimate
   } else {
     if (isTRUE(no.est)){
       if (isTRUE(eq.tf.mean)) {
@@ -1360,6 +1391,11 @@ Ft <- mean(faa[,ny],na.rm=TRUE)
       res <- c(res, list(plot = graph))
     } # 加筆（浜辺）
   }
+
+  if (isTRUE(TMB) & isTRUE(sdreport)) {
+    res$obj <- obj2
+    res$rep <- rep
+    }
 
   return(invisible(res))
 
@@ -1632,7 +1668,7 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE,
    if (ssb.forecast && !(res.c$input$last.catch.zero)) {
      warning("'ssb.forecast' is usable only when 'last.catch.zero=TRUE' and so ignored")
    }
-     
+
 
    for (i in 1:n){
      nc <- ncol(res.c$input$dat$caa)
@@ -1645,10 +1681,12 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE,
      res.c$input$dat$M <- res.c$input$dat$M[,-nc]
      res.c$input$dat$catch.prop <- res.c$input$dat$catch.prop[,-nc]
 
-     # 毎年等しく取り除くのではなく、データごとに1年分取り除くように修正（浜辺07/07）
-     label_tmp <- which(is.na(res.c$input$dat$index[,nc]))
-     res.c$input$dat$index <- res.c$input$dat$index[,-nc,drop=FALSE]
-     res.c$input$dat$index[label_tmp,length(res.c$input$dat$index[1,])] <- NA
+     if(!is.null(res$input$dat$index)){ # チューニングなしVPAにも対応
+       # 毎年等しく取り除くのではなく、データごとに1年分取り除くように修正（浜辺07/07）
+       label_tmp <- which(is.na(res.c$input$dat$index[,nc]))
+       res.c$input$dat$index <- res.c$input$dat$index[,-nc,drop=FALSE]
+       res.c$input$dat$index[label_tmp,length(res.c$input$dat$index[1,])] <- NA
+     }
 
      res.c$input$tf.year <- res.c$input$tf.year-1
      res.c$input$fc.year <- res.c$input$fc.year-1
