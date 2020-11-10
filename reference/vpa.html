@@ -196,7 +196,12 @@
   sigma.constraint <span class='op'>=</span> <span class='fl'>1</span><span class='op'>:</span><span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span><span class='op'>(</span><span class='va'>abund</span><span class='op'>)</span>,
   eta <span class='op'>=</span> <span class='cn'>NULL</span>,
   eta.age <span class='op'>=</span> <span class='fl'>0</span>,
-  tmb.file <span class='op'>=</span> <span class='st'>"rvpa_tmb"</span>
+  tmb.file <span class='op'>=</span> <span class='st'>"rvpa_tmb"</span>,
+  madara <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  p_by_age <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  penalty_age <span class='op'>=</span> <span class='cn'>NULL</span>,
+  no_eta_age <span class='op'>=</span> <span class='cn'>NULL</span>,
+  sdreport <span class='op'>=</span> <span class='cn'>FALSE</span>
 <span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -364,7 +369,7 @@
     </tr>
     <tr>
       <th>est.method</th>
-      <td><p>推定方法 （ls = 最小二乗法，ml = 最尤法）</p></td>
+      <td><p>推定方法 （ls = 最小二乗法，ml = 最尤法,  ls_nolog =最小二乗法で実数)</p></td>
     </tr>
     <tr>
       <th>b.est</th>
@@ -395,6 +400,10 @@
       <td><p>penaltyのexponent  (beta = 1: lasso, 2: ridge)</p></td>
     </tr>
     <tr>
+      <th>penalty</th>
+      <td><p>ridgeVPAの際に与えるpenaltyの種類．"p"=指定した年齢範囲の最終年の年齢別Fのbeta乗の和，"f"=｛最終年の年齢aのF－（tf.yearで指定した年のa歳の平均のF)｝のbeta乗の和，"s"=｛最終年の年齢aのs－（tf.yearで指定した年のa歳の平均のs)｝のbeta乗の和</p></td>
+    </tr>
+    <tr>
       <th>ssb.def</th>
       <td><p>i: 年はじめ，m: 年中央, l: 年最後</p></td>
     </tr>
@@ -404,7 +413,7 @@
     </tr>
     <tr>
       <th>TMB</th>
-      <td><p>TMBで高速計算する場合TMB=TRUE (事前にuse_rvpa_tmb()を実行)</p></td>
+      <td><p>TMBで高速計算する場合TMB=TRUE (事前にuse_rvpa_tmb()を実行)　全Ｆ推定法，POPE=TRUE, alpha=1, 途中でプラスグループが変化しない場合のみのときに使用可能</p></td>
     </tr>
     <tr>
       <th>sigma.constraint</th>
@@ -421,6 +430,26 @@
     <tr>
       <th>tmb.file</th>
       <td><p>TMB=TRUEのとき使用するcppファイルの名前</p></td>
+    </tr>
+    <tr>
+      <th>madara</th>
+      <td><p>マダラ太平洋系群で用いているチューニングのやり方</p></td>
+    </tr>
+    <tr>
+      <th>p_by_age</th>
+      <td><p>選択率更新法でridgeVPAの際にpenalty="p"のときに年齢別にペナルテイーを与えるか与えないか．与えたい場合はTRUEとして,penalty_age（eta=NULLのとき）もしくはno_eta_age(etaがNULLでないとき）に年齢範囲を指定する．</p></td>
+    </tr>
+    <tr>
+      <th>penalty_age</th>
+      <td><p>選択率更新法でridgeVPAをする際のpenalty="p"のときで，etaがNULLで，p_by_age=TRUE (年齢別にペナルテイーを与えたい）ときにペナルテイーを与える年齢範囲．0歳から2歳までなら0：２とする．</p></td>
+    </tr>
+    <tr>
+      <th>no_eta_age</th>
+      <td><p>選択率更新法でridgeVPAの際にpenalty="p"のときで，etaがNULLでなく，p_by_age=TRUE (年齢別にペナルテイーを与えたい）ときに，etaがかからないほうの年齢範囲</p></td>
+    </tr>
+    <tr>
+      <th>sdreport</th>
+      <td><p><code>TMB=TRUE</code>のときに<code>sdreport()</code>を実行するかどうか（naa, faa, 資源量, 親魚量, Fの平均, 漁獲割合のSDを計算する）</p></td>
     </tr>
     </table>
 

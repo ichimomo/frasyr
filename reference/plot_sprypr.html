@@ -124,7 +124,7 @@
     <p>Plot SPR figure</p>
     </div>
 
-    <pre class="usage"><span class='fu'>plot_sprypr</span><span class='op'>(</span><span class='va'>result_vpa</span>, <span class='va'>type</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>plot_sprypr</span><span class='op'>(</span><span class='va'>result_vpa</span>, <span class='va'>type</span>, years <span class='op'>=</span> <span class='cn'>NULL</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -132,6 +132,10 @@
     <tr>
       <th>result_vpa</th>
       <td><p>Obejct returned from <code><a href='vpa.html'>vpa()</a></code></p></td>
+    </tr>
+    <tr>
+      <th>years</th>
+      <td><p>全ての年をプロットしない場合、<code>years=1985:2011</code>のようにプロットする年を指定する</p></td>
     </tr>
     </table>
 

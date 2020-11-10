@@ -69,14 +69,13 @@
 
       
 
-      </header><script src="vpa_files/accessible-code-block-0.0.1/empty-anchor.js"></script><link href="vpa_files/anchor-sections-1.0/anchor-sections.css" rel="stylesheet">
-<script src="vpa_files/anchor-sections-1.0/anchor-sections.js"></script><div class="row">
+      </header><script src="vpa_files/accessible-code-block-0.0.1/empty-anchor.js"></script><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>VPA関数を使った資源量推定</h1>
                         <h4 class="author">市野川桃子</h4>
             
-            <h4 class="date">2020-11-03</h4>
+            <h4 class="date">2020-11-09</h4>
       
       
       <div class="hidden name"><code>vpa.Rmd</code></div>
@@ -92,8 +91,8 @@
 <div id="データの読み込み" class="section level2">
 <h2 class="hasAnchor">
 <a href="#%E3%83%87%E3%83%BC%E3%82%BF%E3%81%AE%E8%AA%AD%E3%81%BF%E8%BE%BC%E3%81%BF" class="anchor"></a>データの読み込み</h2>
-<div class="sourceCode" id="cb1"><pre class="downlit">
-<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va">frasyr</span><span class="op">)</span>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va">frasyr</span><span class="op">)</span>
 <span class="co">#&gt; Warning: replacing previous import 'magrittr::set_names' by 'purrr::set_names'</span>
 <span class="co">#&gt; when loading 'frasyr'</span>
 <span class="co">#&gt; Warning: replacing previous import 'EnvStats::qpareto' by 'rmutil::qpareto' when</span>
@@ -121,7 +120,7 @@
 <span class="va">res_vpa</span><span class="op">$</span><span class="va">Fc.at.age</span> <span class="co"># 将来予測やMSY計算で使うcurrent F (fc.yearのオプションでいつのFの平均かが指定される)</span>
 <span class="co">#&gt;         0         1         2         3 </span>
 <span class="co">#&gt; 0.4901521 1.1503151 1.3131002 1.3131001</span>
-<span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html">plot</a></span><span class="op">(</span><span class="va">res_vpa</span><span class="op">$</span><span class="va">Fc.at.age</span>,type<span class="op">=</span><span class="st">"b"</span>,xlab<span class="op">=</span><span class="st">"Age"</span>,ylab<span class="op">=</span><span class="st">"F"</span>,ylim<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fu"><a href="https://rdrr.io/r/base/Extremes.html">max</a></span><span class="op">(</span><span class="va">res_vpa</span><span class="op">$</span><span class="va">Fc.at.age</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></pre></div>
+<span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html">plot</a></span><span class="op">(</span><span class="va">res_vpa</span><span class="op">$</span><span class="va">Fc.at.age</span>,type<span class="op">=</span><span class="st">"b"</span>,xlab<span class="op">=</span><span class="st">"Age"</span>,ylab<span class="op">=</span><span class="st">"F"</span>,ylim<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fu"><a href="https://rdrr.io/r/base/Extremes.html">max</a></span><span class="op">(</span><span class="va">res_vpa</span><span class="op">$</span><span class="va">Fc.at.age</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></code></pre></div>
 <p><img src="vpa_files/figure-html/unnamed-chunk-1-1.png" width="700"></p>
 </div>
 <div id="vpa結果を外部から読み込む場合" class="section level2">
@@ -131,10 +130,10 @@
 <li>read.vpa関数を使って読み込めます</li>
 <li>out.vpa関数による出力と同じ書式になりますので、out.vpa関数でひな形ファイルを作成してから、エクセルでそれを編集し、read.vpa関数で読むと良いと思います</li>
 </ul>
-<div class="sourceCode" id="cb2"><pre class="downlit">
-<span class="co">#out.vpa(res_vpa) # vpa.csvというファイルが作成されます。VPAの結果のグラフ出力となるvpa.pdfも出力されます。</span>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co">#out.vpa(res_vpa) # vpa.csvというファイルが作成されます。VPAの結果のグラフ出力となるvpa.pdfも出力されます。</span>
 <span class="va">res_vpa2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read.vpa.html">read.vpa</a></span><span class="op">(</span><span class="st">"https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex2_vpa.csv"</span><span class="op">)</span> <span class="co"># vpa.csvを編集後、read.vpa関数で読み込みます</span>
-<span class="co">#&gt; Pope is TRUE... OK? (mean difference= 0 )</span></pre></div>
+<span class="co">#&gt; Pope is TRUE... OK? (mean difference= 0 )</span></code></pre></div>
 </div>
 </div>
 <div id="さまざまなvpaのデモ" class="section level1">
@@ -143,8 +142,8 @@
 <div id="データの読み込みと整形" class="section level2">
 <h2 class="hasAnchor">
 <a href="#%E3%83%87%E3%83%BC%E3%82%BF%E3%81%AE%E8%AA%AD%E3%81%BF%E8%BE%BC%E3%81%BF%E3%81%A8%E6%95%B4%E5%BD%A2" class="anchor"></a>データの読み込みと整形</h2>
-<div class="sourceCode" id="cb3"><pre class="downlit">
-<span class="co"># 読み込み</span>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># 読み込み</span>
 <span class="va">caa</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html">read.csv</a></span><span class="op">(</span><span class="st">"https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex1_caa.csv"</span>,  row.names<span class="op">=</span><span class="fl">1</span><span class="op">)</span>
 <span class="va">waa</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html">read.csv</a></span><span class="op">(</span><span class="st">"https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex1_waa.csv"</span>,  row.names<span class="op">=</span><span class="fl">1</span><span class="op">)</span>
 <span class="va">maa</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html">read.csv</a></span><span class="op">(</span><span class="st">"https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex1_maa.csv"</span>,  row.names<span class="op">=</span><span class="fl">1</span><span class="op">)</span>
@@ -152,25 +151,25 @@
 <span class="va">index</span>     <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html">read.csv</a></span><span class="op">(</span><span class="st">"https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex1_index.csv"</span>,  row.names<span class="op">=</span><span class="fl">1</span><span class="op">)</span>
 
 <span class="co"># 整形</span>
-<span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/data.handler.html">data.handler</a></span><span class="op">(</span>caa<span class="op">=</span><span class="va">caa</span>, waa<span class="op">=</span><span class="va">waa</span>, maa<span class="op">=</span><span class="va">maa</span>, index<span class="op">=</span><span class="va">index</span>, M<span class="op">=</span><span class="fl">0.4</span><span class="op">)</span></pre></div>
+<span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/data.handler.html">data.handler</a></span><span class="op">(</span>caa<span class="op">=</span><span class="va">caa</span>, waa<span class="op">=</span><span class="va">waa</span>, maa<span class="op">=</span><span class="va">maa</span>, index<span class="op">=</span><span class="va">index</span>, M<span class="op">=</span><span class="fl">0.4</span><span class="op">)</span></code></pre></div>
 </div>
 <div id="チューニングなしvpaのバリエーション" class="section level2">
 <h2 class="hasAnchor">
 <a href="#%E3%83%81%E3%83%A5%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0%E3%81%AA%E3%81%97vpa%E3%81%AE%E3%83%90%E3%83%AA%E3%82%A8%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3" class="anchor"></a>チューニングなしVPAのバリエーション</h2>
-<div class="sourceCode" id="cb4"><pre class="downlit">
-  <span class="co"># p.initは初期値。収束しない場合（Fがゼロになる場合など）は、初期値を変えてみる</span>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R">  <span class="co"># p.initは初期値。収束しない場合（Fがゼロになる場合など）は、初期値を変えてみる</span>
   <span class="co"># fc.yearは、Fcurrentを計算する範囲。管理基準値と将来予測で使われる。</span>
 <span class="va">vout1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">dat</span>,tf.year<span class="op">=</span><span class="fl">1997</span><span class="op">:</span><span class="fl">1999</span>,Pope<span class="op">=</span><span class="cn">TRUE</span>,fc.year<span class="op">=</span><span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span>,alpha<span class="op">=</span><span class="fl">1</span>,p.init<span class="op">=</span><span class="fl">0.5</span><span class="op">)</span> 
 <span class="va">vout1a</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">dat</span>,tf.year<span class="op">=</span><span class="fl">1997</span><span class="op">:</span><span class="fl">1999</span>,Pope<span class="op">=</span><span class="cn">FALSE</span>,fc.year<span class="op">=</span><span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span>,alpha<span class="op">=</span><span class="fl">1</span>,p.init<span class="op">=</span><span class="fl">0.5</span><span class="op">)</span>
 <span class="va">vout1b</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">dat</span>,tf.year<span class="op">=</span><span class="fl">1997</span><span class="op">:</span><span class="fl">1999</span>,Pope<span class="op">=</span><span class="cn">TRUE</span>,fc.year<span class="op">=</span><span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span>,alpha<span class="op">=</span><span class="fl">0.5</span>,p.init<span class="op">=</span><span class="fl">0.5</span><span class="op">)</span>
 <span class="co">#&gt; [1] "Warning! The estimated F for the older ages may not be accurate if C&lt;&lt;N is not satisfied for the older ages."</span>
-<span class="va">vout1c</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">dat</span>,tf.year<span class="op">=</span><span class="fl">1999</span><span class="op">:</span><span class="fl">1999</span>,Pope<span class="op">=</span><span class="cn">TRUE</span>,fc.year<span class="op">=</span><span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span>,alpha<span class="op">=</span><span class="fl">1</span>,p.init<span class="op">=</span><span class="fl">0.5</span><span class="op">)</span> </pre></div>
+<span class="va">vout1c</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">dat</span>,tf.year<span class="op">=</span><span class="fl">1999</span><span class="op">:</span><span class="fl">1999</span>,Pope<span class="op">=</span><span class="cn">TRUE</span>,fc.year<span class="op">=</span><span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span>,alpha<span class="op">=</span><span class="fl">1</span>,p.init<span class="op">=</span><span class="fl">0.5</span><span class="op">)</span> </code></pre></div>
 </div>
 <div id="チューニングvpaのバリエーション" class="section level2">
 <h2 class="hasAnchor">
 <a href="#%E3%83%81%E3%83%A5%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0vpa%E3%81%AE%E3%83%90%E3%83%AA%E3%82%A8%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3" class="anchor"></a>チューニングVPAのバリエーション</h2>
-<div class="sourceCode" id="cb5"><pre class="downlit">
-<span class="co">## vout2; チューニング，選択率updateなし</span>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co">## vout2; チューニング，選択率updateなし</span>
 <span class="va">vout2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">dat</span>,tune<span class="op">=</span><span class="cn">TRUE</span>,sel.update<span class="op">=</span><span class="cn">FALSE</span>,Pope<span class="op">=</span><span class="cn">FALSE</span>,
              tf.year<span class="op">=</span><span class="cn">NULL</span>,sel.f<span class="op">=</span><span class="va">vout1</span><span class="op">$</span><span class="va">saa</span><span class="op">$</span><span class="st">"2000"</span>, <span class="co"># 選択率の仮定</span>
              abund<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"N"</span><span class="op">)</span>,min.age<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span>,max.age<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">6</span><span class="op">)</span>, <span class="co"># 資源量指数の設定</span>
@@ -188,7 +187,7 @@
 <span class="va">vout4</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">dat</span>,tune<span class="op">=</span><span class="cn">TRUE</span>,sel.update<span class="op">=</span><span class="cn">FALSE</span>,term.F<span class="op">=</span><span class="st">"all"</span>,
              tf.year<span class="op">=</span><span class="cn">NULL</span>,sel.f<span class="op">=</span><span class="cn">NULL</span>,
              abund<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"N"</span><span class="op">)</span>,min.age<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span>,max.age<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">6</span><span class="op">)</span>, <span class="co"># 資源量指数の設定</span>
-             alpha<span class="op">=</span><span class="fl">1</span>,p.init<span class="op">=</span><span class="fl">0.5</span>,max.dd <span class="op">=</span> <span class="fl">0.00001</span>,fc.year<span class="op">=</span><span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span><span class="op">)</span></pre></div>
+             alpha<span class="op">=</span><span class="fl">1</span>,p.init<span class="op">=</span><span class="fl">0.5</span>,max.dd <span class="op">=</span> <span class="fl">0.00001</span>,fc.year<span class="op">=</span><span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span><span class="op">)</span></code></pre></div>
 </div>
 </div>
 <div id="モデル診断推定パラメータの不確実性の評価" class="section level1">
@@ -197,14 +196,14 @@
 <div id="尤度プロファイル" class="section level2">
 <h2 class="hasAnchor">
 <a href="#%E5%B0%A4%E5%BA%A6%E3%83%97%E3%83%AD%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB" class="anchor"></a>尤度プロファイル</h2>
-<div class="sourceCode" id="cb6"><pre class="downlit">
-<span class="va">ci0</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/profile_likelihood.vpa.html">profile_likelihood.vpa</a></span><span class="op">(</span><span class="va">vout3</span>, method<span class="op">=</span><span class="st">"ci"</span>,Alpha<span class="op">=</span><span class="fl">0.80</span><span class="op">)</span><span class="op">$</span><span class="va">ci</span></pre></div>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">ci0</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/profile_likelihood.vpa.html">profile_likelihood.vpa</a></span><span class="op">(</span><span class="va">vout3</span>, method<span class="op">=</span><span class="st">"ci"</span>,Alpha<span class="op">=</span><span class="fl">0.80</span><span class="op">)</span><span class="op">$</span><span class="va">ci</span></code></pre></div>
 </div>
 <div id="ブートストラップ" class="section level2">
 <h2 class="hasAnchor">
 <a href="#%E3%83%96%E3%83%BC%E3%83%88%E3%82%B9%E3%83%88%E3%83%A9%E3%83%83%E3%83%97" class="anchor"></a>ブートストラップ</h2>
-<div class="sourceCode" id="cb7"><pre class="downlit">
-<span class="co">## ノンパラメトリックブートストラップ(method="n")</span>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co">## ノンパラメトリックブートストラップ(method="n")</span>
 <span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span>
 <span class="va">boot.sim1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/boo.vpa.html">boo.vpa</a></span><span class="op">(</span><span class="va">vout3</span>,B<span class="op">=</span><span class="fl">10</span>,method<span class="op">=</span><span class="st">"n"</span><span class="op">)</span>
 <span class="co">#&gt; [1] 1</span>
@@ -285,21 +284,21 @@
 <span class="va">ssb.boot</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html">sapply</a></span><span class="op">(</span><span class="va">boot.sim1</span>,<span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html">colSums</a></span><span class="op">(</span><span class="va">x</span><span class="op">$</span><span class="va">ssb</span><span class="op">)</span><span class="op">)</span>
 <span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/t.html">t</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/apply.html">apply</a></span><span class="op">(</span><span class="va">ssb.boot</span>,<span class="fl">1</span>,<span class="va">quantile</span>,probs<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">0.1</span>,<span class="fl">0.5</span>,<span class="fl">0.9</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/graphics/matplot.html">matplot</a></span><span class="op">(</span><span class="va">Years</span>,<span class="va">x</span>,ylim<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fu"><a href="https://rdrr.io/r/base/Extremes.html">max</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span>,col<span class="op">=</span><span class="fl">1</span>,type<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"l"</span>,<span class="st">"b"</span>,<span class="st">"l"</span><span class="op">)</span>,
-        pch<span class="op">=</span><span class="fl">1</span>,lty<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span>,ylab<span class="op">=</span><span class="st">"Spawning biomass"</span><span class="op">)</span></pre></div>
+        pch<span class="op">=</span><span class="fl">1</span>,lty<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span>,ylab<span class="op">=</span><span class="st">"Spawning biomass"</span><span class="op">)</span></code></pre></div>
 <p><img src="vpa_files/figure-html/unnamed-chunk-7-1.png" width="700"></p>
 </div>
 <div id="残差の自己相関のチェック" class="section level2">
 <h2 class="hasAnchor">
 <a href="#%E6%AE%8B%E5%B7%AE%E3%81%AE%E8%87%AA%E5%B7%B1%E7%9B%B8%E9%96%A2%E3%81%AE%E3%83%81%E3%82%A7%E3%83%83%E3%82%AF" class="anchor"></a>残差の自己相関のチェック</h2>
-<div class="sourceCode" id="cb8"><pre class="downlit">
-<span class="va">resid</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html">log</a></span><span class="op">(</span><span class="va">vout3</span><span class="op">$</span><span class="va">pred.index</span><span class="op">)</span> <span class="op">-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">index</span><span class="op">)</span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html">plot</a></span><span class="op">(</span><span class="va">resid</span>,type<span class="op">=</span><span class="st">"b"</span><span class="op">)</span></pre></div>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">resid</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html">log</a></span><span class="op">(</span><span class="va">vout3</span><span class="op">$</span><span class="va">pred.index</span><span class="op">)</span> <span class="op">-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">index</span><span class="op">)</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html">plot</a></span><span class="op">(</span><span class="va">resid</span>,type<span class="op">=</span><span class="st">"b"</span><span class="op">)</span></code></pre></div>
 <p><img src="vpa_files/figure-html/unnamed-chunk-8-1.png" width="700"></p>
-<div class="sourceCode" id="cb9"><pre class="downlit">
-<span class="fu"><a href="https://rdrr.io/r/stats/acf.html">acf</a></span><span class="op">(</span><span class="va">resid</span><span class="op">)</span> <span class="co"># 自己相関は特にない</span></pre></div>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/stats/acf.html">acf</a></span><span class="op">(</span><span class="va">resid</span><span class="op">)</span> <span class="co"># 自己相関は特にない</span></code></pre></div>
 <p><img src="vpa_files/figure-html/unnamed-chunk-8-2.png" width="700"></p>
-<div class="sourceCode" id="cb10"><pre class="downlit">
-<span class="co"># 正規性の検定</span>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># 正規性の検定</span>
 <span class="fu"><a href="https://rdrr.io/r/stats/ks.test.html">ks.test</a></span><span class="op">(</span><span class="va">resid</span>,<span class="st">"pnorm"</span>,mean<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html">mean</a></span><span class="op">(</span><span class="va">resid</span><span class="op">)</span>,sd<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/sd.html">sd</a></span><span class="op">(</span><span class="va">resid</span><span class="op">)</span><span class="op">)</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt;  One-sample Kolmogorov-Smirnov test</span>
@@ -315,7 +314,7 @@
 <span class="co">#&gt; data:  c(resid, 10)</span>
 <span class="co">#&gt; D = 0.48991, p-value = 0.005872</span>
 <span class="co">#&gt; alternative hypothesis: two-sided</span>
-<span class="co"># 大きな外れ値があると、p値が小さくなって、正規分布でない、となる。</span></pre></div>
+<span class="co"># 大きな外れ値があると、p値が小さくなって、正規分布でない、となる。</span></code></pre></div>
 </div>
 </div>
   </div>
