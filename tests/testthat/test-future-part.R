@@ -1,4 +1,5 @@
 library(frasyr)
+tolerance = 10 ^ -6
 
 context("check ref.F") # ----
 
@@ -228,32 +229,40 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
 
 context("check future_vpa_function2 with dummy data") # ダミーデータでの将来予測 ----
 
+load("res_vpa_files.rda")
+# estimate SR function ----
+# VPA結果がほとんど同じになるres_vpa_base0_nontune, res_vpa_base1_nontune, res_vpa_rec0$nontueの
+# パラメータ推定値は同じになる。
+vpa_list <- tibble::lst(res_vpa_base0_nontune,
+                        res_vpa_base1_nontune,
+                        res_vpa_pgc0_nontune,
+                        res_vpa_rec0_nontune)
+res_sr_list <- list()
+for(i in 1:length(vpa_list)){
+    x <- vpa_list[[i]]
+    res_sr <- res_sr_list[[i]] <- get.SRdata(x) %>% fit.SR(AR=0, SR="HS")
+    # SB、Rが同じにならない（SD>0）ケースは単純テストから除く
+    if(res_sr$pars$sd < 0.001){
+      const_ssr <- mean(colSums(x$ssb))
+      const_R   <- mean(unlist(x$naa[1,]))
+      expect_equal(res_sr$pars$sd, 0, tol=0.000001)
+      expect_equal(res_sr$pars$b, const_ssr, tol=0.000001)
+      expect_equal(const_R/const_ssr, res_sr$pars$a)
+}}
+
+names(res_sr_list) <- names(vpa_list)
+
+max_vpa_year <- max(as.numeric(colnames(res_vpa_base0_nontune$naa)))
+bio_year <- rev(as.numeric(colnames(res_vpa_base0_nontune$naa)))[1:3]
+
+target_eq_naa <- 12
+f <- function (x) 4+4*x+4*x^2+4*x^3 - target_eq_naa
+x <- uniroot(f, c(0, 1))$root
+Fvalue <- -log(x)
+
 test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
 
   # test-data.handler.Rで作成したVPAオブジェクトを読み込んでそれを使う
-  load("res_vpa_files.rda")
-
-  # estimate SR function ----
-  # VPA結果がほとんど同じになるres_vpa_base0_nontune, res_vpa_base1_nontune, res_vpa_rec0$nontueの
-  # パラメータ推定値は同じになる。
-  vpa_list <- tibble::lst(res_vpa_base0_nontune,
-                          res_vpa_base1_nontune,
-                          res_vpa_pgc0_nontune,
-                          res_vpa_rec0_nontune)
-  res_sr_list <- list()
-  for(i in 1:length(vpa_list)){
-      x <- vpa_list[[i]]
-      res_sr <- res_sr_list[[i]] <- get.SRdata(x) %>% fit.SR(AR=0, SR="HS")
-      # SB、Rが同じにならない（SD>0）ケースは単純テストから除く
-      if(res_sr$pars$sd < 0.001){
-        const_ssr <- mean(colSums(x$ssb))
-        const_R   <- mean(unlist(x$naa[1,]))
-        expect_equal(res_sr$pars$sd, 0, tol=0.000001)
-        expect_equal(res_sr$pars$b, const_ssr, tol=0.000001)
-        expect_equal(const_R/const_ssr, res_sr$pars$a)
-  }}
-
-  names(res_sr_list) <- names(vpa_list)
 
   # res_sr_listの２つのパラメータ推定値はほとんど同じだが、res_vpa_rec0のほうは加入年齢が１歳からなので、再生産関係に使うデータ（SRdata）は一点少ない
   expect_equal(length(res_sr_list$res_vpa_base0_nontune$input$SRdata$SSB),
@@ -261,13 +270,6 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
 
   # future projection with dummy data ----
 
-  max_vpa_year <- max(as.numeric(colnames(res_vpa_base0_nontune$naa)))
-  bio_year <- rev(as.numeric(colnames(res_vpa_base0_nontune$naa)))[1:3]
-
-  target_eq_naa <- 12
-  f <- function (x) 4+4*x+4*x^2+4*x^3 - target_eq_naa
-  x <- uniroot(f, c(0, 1))$root
-  Fvalue <- -log(x)
   data_future_test <-
     make_future_data(res_vpa_base0_nontune,
                      nsim = 10,
@@ -316,7 +318,8 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
   res_future_MSY <- future_vpa(tmb_data=data_future_test$data,
                                optim_method="R", objective ="MSY",
                                multi_init = 2, multi_lower=0.01)
-  expect_equal(res_future_MSY$multi,1.345,tol=0.001)
+
+  fmax <- ref.F(data_future_test$input$res_vpa, Fcurrent = rep(Fvalue,4))$summary['Fmax'][3,]
 
   # F=0
   res_future_F0 <- redo_future(data_future_test,
@@ -882,6 +885,76 @@ test_that("future_vpa function (carry over TAC) (level 2)",{
 # HCR_default
 # update_waa_mat
 # get_wcatch
+test_that("future_vpa()の'multi'とref.F()の'Fmax'が一致", {
+  waa_for_test <- c(10, 50, 200, 300)
+  res_vpa_base0_nontune$input$dat$waa[] <- waa_for_test
+  res_vpa <- do.call(vpa, res_vpa_base0_nontune$input)
+  res_sr <- get.SRdata(res_vpa) %>%
+    fit.SR(AR=0, SR="HS")
+  res_sr$pars$b <- 1
+  res_sr$pars$a <- 4
+
+  assertthat::assert_that(
+    assertthat::are_equal(res_vpa$input$dat$M[,1], c(0, 0, 0, 0)),
+    assertthat::are_equal(res_vpa$input$dat$maa[,1], c(0, 1, 1, 1)),
+    assertthat::are_equal(res_vpa$input$dat$waa[,1], waa_for_test),
+    assertthat::are_equal(res_sr$pars$sd, 0)
+  )
+
+  result_future_vpa <- function() {
+    future_data <-
+      make_future_data(res_vpa,
+                       nsim = 10,
+                       nyear = 100,
+                       future_initial_year_name = max_vpa_year, # 年齢別資源尾数を参照して将来予測をスタートする年
+                       start_F_year_name = max_vpa_year+1, # この関数で指定したFに置き換える最初の年
+                       start_biopar_year_name=max_vpa_year+1, # この関数で指定した生物パラメータに置き換える最初の年
+                       start_random_rec_year_name = max_vpa_year+1, # この関数で指定した再生産関係からの加入の予測値に置き換える最初の年
+                       # biopar setting
+                       waa_year=bio_year, waa=NULL, # 将来の年齢別体重の設定。過去の年を指定し、その平均値を使うか、直接ベクトルで指定するか。以下も同じ。
+                       waa_catch_year=bio_year, waa_catch=NULL,
+                       maa_year=bio_year, maa=NULL,
+                       M_year=bio_year,
+                       M=rep(0.3,4),
+                       # faa setting
+                       faa_year=2015:2017, # currentF, futureFが指定されない場合だけ有効になる。将来のFを指定の年の平均値とする
+                       currentF=rep(Fvalue,4),futureF=rep(Fvalue,4), # 将来のABC.year以前のFとABC.year以降のFのベクトル
+                       # HCR setting (not work when using TMB)
+                       start_ABC_year_name=max_vpa_year+2, # HCRを適用する最初の年
+                       HCR_beta=1, # HCRのbeta
+                       HCR_Blimit=-1, # HCRのBlimit
+                       HCR_Bban=-1, # HCRのBban
+                       HCR_year_lag=0, # HCRで何年遅れにするか
+                       # SR setting
+                       res_SR=res_sr, # 将来予測に使いたい再生産関係の推定結果が入っているfit.SRの返り値
+                       seed_number=1,
+                       resid_type="lognormal", # 加入の誤差分布（"lognormal": 対数正規分布、"resample": 残差リサンプリング）
+                       resample_year_range=0, # リサンプリングの場合、残差をリサンプリングする年の範囲
+                       bias_correction=TRUE, # バイアス補正をするかどうか
+                       recruit_intercept=0, # 移入や放流などで一定の加入がある場合に足す加入尾数
+                       # Other
+                       Pope=res_vpa_base0_nontune$input$Pope,
+                       fix_recruit=NULL,
+                       fix_wcatch=NULL)
+    future_vpa(tmb_data=future_data$data,
+               optim_method="R", objective ="MSY",
+               multi_init = 2, multi_lower=0.01)
+  }
+  fmax_from_ref_F <- function() {
+   ref.F(result_future_vpa()$input$res_vpa,
+         rep(Fvalue,4),
+         M=rep(0.3,4),
+         waa=waa_for_test,
+         maa=c(0,1,1,1),
+         waa.catch=waa_for_test,
+         pSPR = NULL,
+         Pope=TRUE)$summary['Fmax'][3,]
+  }
+
+  expect_equal(result_future_vpa()$multi,
+               fmax_from_ref_F(),
+               tolerance = tolerance)
+})
 
 context("check set_SR_mat") # ----
 
