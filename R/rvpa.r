@@ -3,6 +3,8 @@
 #' @param caa catch at age
 #' @param waa weight at age
 #' @param maa maturity at age
+#' @param maa.tune チューニングに使うmaturity at ageが異なる場合
+#' @param waa.catch abundanceとcatchでwaaが異なる場合
 #' @encoding UTF-8
 #'
 #' @export
@@ -29,11 +31,15 @@ data.handler <- function(
   if (!is.null(waa.catch)) {
     if (is.null(dim(waa.catch)) | dim(waa.catch)[2]==1) waa.catch <- as.data.frame(matrix(unlist(waa.catch), nrow=nrow(caa), ncol=ncol(caa)))
     colnames(waa.catch) <- years
+    expect_equal(rownames(caa),rownames(waa.catch))
+    expect_equal(colnames(caa),colnames(waa.catch))
   }
 
   if (!is.null(maa.tune)) {
     if (is.null(dim(maa.tune)) | dim(maa.tune)[2]==1) maa.tune <- as.data.frame(matrix(unlist(maa.tune), nrow=nrow(caa), ncol=ncol(caa)))
     colnames(maa.tune) <- years
+    expect_equal(rownames(caa),rownames(maa.tune))
+    expect_equal(colnames(caa),colnames(maa.tune))
   }
 
   if (!is.null(catch.prop)) colnames(catch.prop) <- years
@@ -44,7 +50,15 @@ data.handler <- function(
 
   colnames(M) <- years
   rownames(M) <- rownames(caa)
-
+  
+  expect_equal(rownames(caa),rownames(maa))
+  expect_equal(rownames(caa),rownames(waa))
+  expect_equal(rownames(caa),rownames(M))
+  
+  expect_equal(colnames(caa),colnames(maa))
+  expect_equal(colnames(caa),colnames(waa))
+  expect_equal(colnames(caa),colnames(M))
+  
   res <- list(caa=caa, maa=maa, waa=waa, index=index, M=M, maa.tune=maa.tune, waa.catch=waa.catch, catch.prop=catch.prop)
 
   invisible(res)
