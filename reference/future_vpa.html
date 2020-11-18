@@ -133,11 +133,10 @@
   objective <span class='op'>=</span> <span class='st'>"MSY"</span>,
   obj_value <span class='op'>=</span> <span class='fl'>0</span>,
   obj_stat <span class='op'>=</span> <span class='st'>"mean"</span>,
-  max_F <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>exp</a></span><span class='op'>(</span><span class='fl'>10</span><span class='op'>)</span>,
-  max_exploitation_rate <span class='op'>=</span> <span class='fl'>0.99</span>,
   do_MSE <span class='op'>=</span> <span class='cn'>NULL</span>,
   MSE_input_data <span class='op'>=</span> <span class='cn'>NULL</span>,
   MSE_nsim <span class='op'>=</span> <span class='cn'>NULL</span>,
+  MSE_sd <span class='op'>=</span> <span class='cn'>NULL</span>,
   compile <span class='op'>=</span> <span class='cn'>FALSE</span>,
   output_format <span class='op'>=</span> <span class='st'>"new"</span>,
   attach_input <span class='op'>=</span> <span class='cn'>TRUE</span>,
@@ -153,16 +152,32 @@
       <td><p>make_future_dataの返り値。将来の生物パラメータや再生産関係のシナリオを年齢×年×シミュレーション回数で指定した様々なarrayが含まれる。</p></td>
     </tr>
     <tr>
+      <th>do_MSE</th>
+      <td><p>簡易MSEを実施するか</p></td>
+    </tr>
+    <tr>
+      <th>MSE_input_data</th>
+      <td><p>簡易MSEを実施する場合、ABC計算するための将来予測を実施するための設定ファイル</p></td>
+    </tr>
+    <tr>
+      <th>MSE_nsim</th>
+      <td><p>簡易MSEを実施する場合、ABC計算するための将来予測の繰り返し回数。ここを1にすると、決定論的な将来予測の漁獲量が用いられる。</p></td>
+    </tr>
+    <tr>
+      <th>MSE_sd</th>
+      <td><p>簡易MSEをする場合の加入変動の大きさ。ここをゼロにすると決定論的な将来予測の値を将来の漁獲量として用いる。その場合MSE_nsimは自動的に２に設定される。単純なモデルの場合、ここがゼロでも多分問題ない。モデル平均を使っている場合にはちゃんとした簡易MSEをすること。</p></td>
+    </tr>
+    <tr>
+      <th>SPR_target</th>
+      <td><p>目標とする%SPR。NULL以外の値の場合、過去〜将来のそれぞれの年・シミュレーションが、目標とするF%SPRに対して何倍にあたるか(F/Ftarget)を計算して、HCR_realizedの"Fratio"に入れる。HCRが生きている年については"beta_gamma"と一致するはず。</p></td>
+    </tr>
+    <tr>
       <th>max_F</th>
       <td><p>漁獲量一定方策を実施する際のF at ageの最大値の上限（将来的にはmake_future_data関数に入れたい)</p></td>
     </tr>
     <tr>
       <th>max_exploitation_rate</th>
       <td><p>漁獲量一定方策を実施する際のMを考慮した上での漁獲率の上限（将来的にはmake_future_data関数に入れたい)</p></td>
-    </tr>
-    <tr>
-      <th>SPR_target</th>
-      <td><p>目標とする%SPR。NULL以外の値の場合、過去〜将来のそれぞれの年・シミュレーションが、目標とするF%SPRに対して何倍にあたるか(F/Ftarget)を計算して、HCR_realizedの"Fratio"に入れる。HCRが生きている年については"beta_gamma"と一致するはず。</p></td>
     </tr>
     </table>
 
