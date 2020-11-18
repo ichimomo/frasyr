@@ -196,6 +196,13 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
   expect_equal(mean(catch["2020",]), 1000, tol=0.001)
   expect_equal(mean(catch["2021",]), 2000, tol=0.001)
 
+  # beta=0の場合でもwcatchを優先させる
+  res_future_test <- redo_future(data_future_test, list(HCR_beta=0, fix_recruit=NULL,start_ABC_year_name=2020, nyear=5))
+  catch <- apply(res_future_test$wcaa,c(2,3),sum)
+  expect_equal(mean(catch["2020",]), 1000, tol=0.001)
+  expect_equal(mean(catch["2021",]), 2000, tol=0.001)
+  expect_equal(mean(catch["2022",]), 0, tol=0.001)
+  
   # 単なる将来予測の場合(backward)
   res_future_backward <- future_vpa(tmb_data=data_future_backward$data,
                                     optim_method="none",
