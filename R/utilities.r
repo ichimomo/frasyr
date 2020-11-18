@@ -2277,3 +2277,14 @@ check_MSE_sd0 <- function(data_future, data_MSE=NULL, nsim_for_check=10000, tol=
   cat("* HCRを導入する最初の年のABCは通常の将来予測の平均漁獲量と、MSEを十分回数実施したときの平均漁獲量と一致するはず。それぞれnsim_for_check回数分計算した場合、一致するか？（上の２つが通っている場合、ここもOKになるはず。OKにならなかったらバグの可能性があるので管理者に連絡してください）: ",ifelse(class(a3)=="try-error", "not ",""),"OK\n")  
   return(lst(a1,a2,a3,res1,res2))
 }
+
+
+#'
+#'
+#'  @export
+#'
+
+take_interval <- function(prob,target){
+    x <- which(abs(diff(sign(prob-target)))>0)
+    c(x,x+1)
+}

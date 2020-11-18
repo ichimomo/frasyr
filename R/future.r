@@ -312,6 +312,9 @@ make_future_data <- function(res_vpa,
 #' @param MSE_input_data 簡易MSEを実施する場合、ABC計算するための将来予測を実施するための設定ファイル
 #' @param MSE_nsim 簡易MSEを実施する場合、ABC計算するための将来予測の繰り返し回数。ここを1にすると、決定論的な将来予測の漁獲量が用いられる。
 #' @param MSE_sd 簡易MSEをする場合の加入変動の大きさ。ここをゼロにすると決定論的な将来予測の値を将来の漁獲量として用いる。その場合MSE_nsimは自動的に２に設定される。単純なモデルの場合、ここがゼロでも多分問題ない。モデル平均を使っている場合にはちゃんとした簡易MSEをすること。
+#' @param objective MSY:MSYの推定、PGY:PGYの値をobj_valueに入れる、percentB0:B0パーセント、何％にするかはobj_valueで指定, SSB:obj_valueで指定した特定の親魚資源量に一致するようにする
+#' @param obj_stat 目的関数を計算するときに利用する計算方法（"mean"だと平均、"median"だと中央値、"geomean"だと幾何平均）
+#' @param obj_value 目的とする値
 #'
 #' @export
 #' @encoding UTF-8
@@ -346,8 +349,9 @@ future_vpa <- function(tmb_data,
                      objective=="PGY"   ~ 1,
                      objective=="SSB"   ~ 2)
   tmb_data$obj_stat <-
-    dplyr::case_when(obj_stat=="mean"   ~ 0,
-                     obj_stat=="median" ~ 1)
+    dplyr::case_when(obj_stat=="mean"    ~ 0,
+                     obj_stat=="geomean" ~ 1,
+                     obj_stat=="median"  ~ 2)
   tmb_data$obj_value <- obj_value
 
   if(optim_method=="tmb" && !is.null(tmb_data$waa_par_mat)){
@@ -596,7 +600,8 @@ future_vpa_R <- function(naa_mat,
       # harvest control rule
       ssb_tmp <- spawner_mat[cbind(t-HCR_mat[t,,"year_lag"],1:nsim)]
       HCR_realized[t,,"beta_gamma"] <- HCR_function(ssb_tmp, HCR_mat[t,,"Blimit"],
-                                              HCR_mat[t,,"Bban"], HCR_mat[t,,"beta"],allyear_name[t])
+                                                    HCR_mat[t,,"Bban"], HCR_mat[t,,"beta"],allyear_name[t])
+      F_mat_original_t <- F_mat[,t,]
       F_mat[,t,] <- sweep(F_mat[,t,],2,HCR_realized[t,,"beta_gamma"],FUN="*")
     }
 
@@ -694,9 +699,9 @@ future_vpa_R <- function(naa_mat,
     }
 
     if(sum(HCR_mat[t,,"expect_wcatch"])>0){
-      F_max_tmp <- apply(F_mat[,t,],2,max)
+      F_max_tmp <- apply(F_mat_original_t,2,max)
       # F_mat[,t,]がものすごく小さい値になっている場合、そのままで入れるとFへの乗数が壁に当たる場合があるので最大１で正規化する
-      saa.tmp <- sweep(F_mat[,t,],2,F_max_tmp,FUN="/")
+      saa.tmp <- sweep(F_mat_original_t,2,F_max_tmp,FUN="/")
       fix_catch_multiplier <- purrr::map_dbl(which(F_max_tmp>0),
                                              function(x) caa.est.mat(N_mat[,t,x],saa.tmp[,x],#F_mat[,t,x],#saa.tmp[,x],
                                                                      waa_catch_mat[,t,x],M_mat[,t,x],
@@ -754,12 +759,13 @@ future_vpa_R <- function(naa_mat,
   else{
     if(obj_stat==0) obj <- mean(spawner_mat[total_nyear,])
     if(obj_stat==1) obj <- geomean(spawner_mat[total_nyear,])
+    if(obj_stat==2) obj <- median(spawner_mat[total_nyear,])
   }
 
 
-  {if(objective==0) obj <- -log(obj)
+  {if(objective==0) obj <- -log(obj) # MSY case
     else{
-      obj <- (log(obj/obj_value))^2
+      obj <- (log(obj/obj_value))^2 # PGY, B0% case
     }
   }
 
