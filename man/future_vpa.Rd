@@ -14,11 +14,10 @@ future_vpa(
   objective = "MSY",
   obj_value = 0,
   obj_stat = "mean",
-  max_F = exp(10),
-  max_exploitation_rate = 0.99,
   do_MSE = NULL,
   MSE_input_data = NULL,
   MSE_nsim = NULL,
+  MSE_sd = NULL,
   compile = FALSE,
   output_format = "new",
   attach_input = TRUE,
@@ -29,11 +28,19 @@ future_vpa(
 \arguments{
 \item{tmb_data}{make_future_dataの返り値。将来の生物パラメータや再生産関係のシナリオを年齢×年×シミュレーション回数で指定した様々なarrayが含まれる。}
 
+\item{do_MSE}{簡易MSEを実施するか}
+
+\item{MSE_input_data}{簡易MSEを実施する場合、ABC計算するための将来予測を実施するための設定ファイル}
+
+\item{MSE_nsim}{簡易MSEを実施する場合、ABC計算するための将来予測の繰り返し回数。ここを1にすると、決定論的な将来予測の漁獲量が用いられる。}
+
+\item{MSE_sd}{簡易MSEをする場合の加入変動の大きさ。ここをゼロにすると決定論的な将来予測の値を将来の漁獲量として用いる。その場合MSE_nsimは自動的に２に設定される。単純なモデルの場合、ここがゼロでも多分問題ない。モデル平均を使っている場合にはちゃんとした簡易MSEをすること。}
+
+\item{SPR_target}{目標とする\%SPR。NULL以外の値の場合、過去〜将来のそれぞれの年・シミュレーションが、目標とするF\%SPRに対して何倍にあたるか(F/Ftarget)を計算して、HCR_realizedの"Fratio"に入れる。HCRが生きている年については"beta_gamma"と一致するはず。}
+
 \item{max_F}{漁獲量一定方策を実施する際のF at ageの最大値の上限（将来的にはmake_future_data関数に入れたい)}
 
 \item{max_exploitation_rate}{漁獲量一定方策を実施する際のMを考慮した上での漁獲率の上限（将来的にはmake_future_data関数に入れたい)}
-
-\item{SPR_target}{目標とする\%SPR。NULL以外の値の場合、過去〜将来のそれぞれの年・シミュレーションが、目標とするF\%SPRに対して何倍にあたるか(F/Ftarget)を計算して、HCR_realizedの"Fratio"に入れる。HCRが生きている年については"beta_gamma"と一致するはず。}
 }
 \description{
 将来予測の実施関数

@@ -2131,12 +2131,151 @@ source_lines <- function(file, lines){
 #'
 #' 
 
-redo_future <- function(data_future, input_data_list, ...){
+redo_future <- function(data_future, input_data_list, SR_sd=NULL, SR_b=NULL, only_data=FALSE,is_regime=(class(data_future$input$res_SR)=="fit.SRregime"), ...){
   input_data <- data_future$input
   if(! all(names(input_data_list) %in% names(input_data))) stop("names of input_data_list is invalid!")
 
   input_data[names(input_data_list)] <- input_data_list
-  future_vpa(safe_call(make_future_data,input_data)$data,...)
+
+  if(!is.null(SR_sd)){
+    if(is_regime){
+      cat("This is regime future\n")            
+      input_data$res_SR$regime_pars$sd[] <- SR_sd
+      input_data$res_SR$pars$sd[] <- SR_sd        
+    }
+    else{
+      input_data$res_SR$pars$sd[] <- SR_sd
+    }
+    if(input_data$resid_type!="lognormal") warning("SR_sd=0 cannot be used in nonparametric recruitment")
+  }
+
+  if(!is.null(SR_b)){
+    if(is_regime){
+      cat("This is regime future\n")      
+      input_data$res_SR$regime_pars$b <- SR_b
+    }
+    else{
+      input_data$res_SR$pars$b <- SR_b
+    }
+  }  
+
+  future_data <- safe_call(make_future_data,input_data)
+  if(only_data==TRUE) return(future_data) else future_vpa(future_data$data,...)
+}
+
+#'
+#' 将来予測においてFが非常に小さい場合には決定論的予測と確率論的予測の平均がほぼ一致するかを確認するための関数
+#'
+#' @export
+#' 
+
+test_sd0_future <- function(data_future,...){
+
+  is_regime <- !is.null(data_future$input$regime_shift_option)
+  {if(is_regime){
+    sd_org <- data_future$input$res_SR$regime_pars %>%
+      dplyr::filter(regime==data_future$input$regime_shift_option$future_regime) %>%
+      select(sd)
+  }
+  else{
+    sd_org <- data_future$input$res_SR$pars$sd
+  }}
+
+  # determine sample size
+  tol <- 0.007
+  nsim <- round((0.5/tol)^2) # 1%以下（0.7%）の誤差が期待されるnsim
+  cat("nsim for checking sd=0:",nsim,"\n")
+  
+  # run 2 funture projections
+  res1 <- redo_future(data_future, list(nsim=nsim, nyear=10), multi_init=0.01, ...)
+  res2 <- redo_future(data_future, list(nsim=2   , nyear=10), multi_init=0.01, SR_sd=0, ...)
+
+  a <- try(compare_future_res12(res1,res2))
+
+  cat("* Fをなるべく小さくした場合の将来予測において、決定論的予測と確率的予測の平均値がほぼ同じになるか？（ここでnoが出る場合にはバグの可能性があるので管理者に連絡してください）（モデル平均・バックワードリサンプリングの場合にはnoになっちゃいます（今後改善））: ",ifelse(class(a)=="try-error", "not ","OK\n"))
+ 
+  return(lst(res1,res2,a))
+}
+
+compare_future_res12 <- function(res1,res2,tol=0.01){
+  nyear <- dim(res1$naa)[[2]]
+  future_range <- res1$input$tmb_data$start_random_rec_year:nyear
+  if(dim(res1$naa)[[3]]==dim(res2$naa)[[3]]){
+      mean_difference_in_naa <- mean(abs(1-res1$naa[,future_range,]/res2$naa[,future_range,]))
+      mean_difference_in_wcaa <- mean(abs(1-res1$wcaa[,future_range,]/res2$wcaa[,future_range,]))
+  }
+  else{
+      mean_difference_in_naa <- 1-mean(apply(res1$naa[,future_range,],c(1,2),mean)/
+                                     apply(res2$naa[,future_range,],c(1,2),mean))
+      mean_difference_in_wcaa <- 1-mean(apply(res1$wcaa[,future_range,],c(1,2),mean)/
+                                      apply(res2$wcaa[,future_range,],c(1,2),mean))      
+  }
+
+  cat("mean_difference in naa=", mean_difference_in_naa,"\n")
+  expect_equal(mean_difference_in_naa,0,tol=tol)
+
+  cat("mean_difference in wcaa=", mean_difference_in_wcaa,"\n")
+  expect_equal(mean_difference_in_wcaa,0,tol=tol)  
+}
+
+#'
+#' MSEの計算が正しいかを確認するための関数
+#'
+#' 1. sd=0の場合の結果の比較
+#' 2. MSE_nsim=2にしてMSE_sd=0にしても良いかどうか
+#'
+#' @export
+#' 
+
+check_MSE_sd0 <- function(data_future, data_MSE=NULL, nsim_for_check=10000, tol=c(0.01,0.01,0.01)){
+
+  data_future_sd0 <- redo_future(data_future,list(nyear=5,nsim=5),only_data=TRUE,SR_sd=0)
+  data_future     <- redo_future(data_future,list(nyear=5,nsim=5),only_data=TRUE)
+  data_future_10000 <- redo_future(data_future,list(nyear=5,nsim=nsim_for_check),only_data=TRUE)  
+
+  if(!is.null(data_MSE)) data_MSE <- redo_future(data_MSE,list(nyear=5,nsim=5),only_data=TRUE)
+  else data_MSE <- data_future
+
+    # check MSE program is correct?
+  res1 <- future_vpa(tmb_data=data_future_sd0$data,
+                         optim_method="none",multi_init = 1,SPRtarget=0.3,
+                         do_MSE=TRUE, MSE_input_data=data_future_sd0,MSE_nsim=2)
+  res2 <- future_vpa(tmb_data=data_future_sd0$data,
+                     optim_method="none",multi_init = 1,SPRtarget=0.3,
+                     do_MSE=FALSE, MSE_input_data=data_future_sd0,MSE_nsim=2)
+  a1 <- try(compare_future_res12(res1,res2,tol=tol[1]))
+  cat("* 真の個体群動態のSD=0のとき, MSEした結果と単純シミュレーションの結果が一致するか？（加入の残差にリサンプリングを使っている場合にはSD=0でも決定論的予測にならないので一致しなくても大丈夫。対数正規分布残差でここがOKにならない場合にはバグの可能性があるので管理者に連絡してください） ",ifelse(class(a1)=="try-error", "not ",""),"OK\n")  
+
+  # check sd in MSE=0 is OK?
+  res1.time <- system.time(
+    res1 <- future_vpa(tmb_data=data_future$data,
+                     optim_method="none",
+                     multi_init = 1,SPRtarget=0.3,
+                     do_MSE=TRUE, MSE_input_data=data_MSE,MSE_nsim=nsim_for_check))
+
+  res2.time <- system.time(
+    res2 <- future_vpa(tmb_data=data_future$data,
+                     optim_method="none",
+                     multi_init = 1,SPRtarget=0.3,
+                     do_MSE=TRUE, MSE_input_data=data_MSE,MSE_nsim=2,MSE_sd=0))
+  a2 <- try(compare_future_res12(res1,res2,tol=tol[2]))
+  cat("* MSEしたとき、ABC算定年までの加入のSDを0として、決定論的な漁獲量をABCとしても、nsim_for_check回分の確率計算の平均漁獲量をABCした場合と同じになるか？（OKであればMSE_sd=0にして計算時間を短縮できる、加入の残差にリサンプリングを使っている場合には同じにならない：MSE_sd=0は使えない） ",ifelse(class(a2)=="try-error", "not ",""),"OK\n")
+  cat("res1.time=",res1.time,"res2.time=",res2.time,"\n")
+
+  # first year catch
+  res1 <- future_vpa(tmb_data=data_future_10000$data,
+                     optim_method="none",multi_init = 1,SPRtarget=0.3,
+                     do_MSE=FALSE,MSE_input_data=data_future_10000)
+
+  res2 <- future_vpa(tmb_data=data_future_10000$data,
+                     optim_method="none",multi_init = 1,SPRtarget=0.3,
+                     do_MSE=TRUE, MSE_nsim=2, MSE_sd=0, MSE_input_data=data_future_10000)  
+  # ここのtorelanceはそんなに高くない
+  a3 <- try(expect_equal(mean(get_wcatch(res1)["2019",])/
+               mean(get_wcatch(res2)["2019",]),
+               1,tol=tol[3]))
+  cat("* HCRを導入する最初の年のABCは通常の将来予測の平均漁獲量と、MSEを十分回数実施したときの平均漁獲量と一致するはず。それぞれnsim_for_check回数分計算した場合、一致するか？（上の２つが通っている場合、ここもOKになるはず。OKにならなかったらバグの可能性があるので管理者に連絡してください）: ",ifelse(class(a3)=="try-error", "not ",""),"OK\n")  
+  return(lst(a1,a2,a3,res1,res2))
 }
 
 

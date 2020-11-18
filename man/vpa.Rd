@@ -207,6 +207,7 @@ vpa(
 \item{no_eta_age}{選択率更新法でridgeVPAの際にpenalty="p"のときで，etaがNULLでなく，p_by_age=TRUE (年齢別にペナルテイーを与えたい）ときに，etaがかからないほうの年齢範囲}
 
 \item{sdreport}{\code{TMB=TRUE}のときに\code{sdreport()}を実行するかどうか（naa, faa, 資源量, 親魚量, Fの平均, 漁獲割合のSDを計算する）}
+
 }
 \description{
 VPAによる資源計算を実施する
