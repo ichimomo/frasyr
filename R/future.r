@@ -601,7 +601,6 @@ future_vpa_R <- function(naa_mat,
       ssb_tmp <- spawner_mat[cbind(t-HCR_mat[t,,"year_lag"],1:nsim)]
       HCR_realized[t,,"beta_gamma"] <- HCR_function(ssb_tmp, HCR_mat[t,,"Blimit"],
                                                     HCR_mat[t,,"Bban"], HCR_mat[t,,"beta"],allyear_name[t])
-      F_mat_original_t <- F_mat[,t,]
       F_mat[,t,] <- sweep(F_mat[,t,],2,HCR_realized[t,,"beta_gamma"],FUN="*")
     }
 
@@ -699,9 +698,9 @@ future_vpa_R <- function(naa_mat,
     }
 
     if(sum(HCR_mat[t,,"expect_wcatch"])>0){
-      F_max_tmp <- apply(F_mat_original_t,2,max)
+      F_max_tmp <- apply(faa_mat[,t,],2,max) # betaを乗じる前のもとのfaaを用いる
       # F_mat[,t,]がものすごく小さい値になっている場合、そのままで入れるとFへの乗数が壁に当たる場合があるので最大１で正規化する
-      saa.tmp <- sweep(F_mat_original_t,2,F_max_tmp,FUN="/")
+      saa.tmp <- sweep(faa_mat[,t,],2,F_max_tmp,FUN="/")
       fix_catch_multiplier <- purrr::map_dbl(which(F_max_tmp>0),
                                              function(x) caa.est.mat(N_mat[,t,x],saa.tmp[,x],#F_mat[,t,x],#saa.tmp[,x],
                                                                      waa_catch_mat[,t,x],M_mat[,t,x],
