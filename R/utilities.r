@@ -2138,3 +2138,14 @@ redo_future <- function(data_future, input_data_list, ...){
   input_data[names(input_data_list)] <- input_data_list
   future_vpa(safe_call(make_future_data,input_data)$data,...)
 }
+
+
+#'
+#'
+#'  @export
+#'
+
+take_interval <- function(prob,target){
+    x <- which(abs(diff(sign(prob-target)))>0)
+    c(x,x+1)
+}
