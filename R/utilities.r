@@ -1156,6 +1156,32 @@ convert_2d_future <- function(df, name, label="tmp"){
     mutate(year=as.numeric(year), stat=name, label=label)
 }
 
+#' future_vpaの結果オブジェクトのリストをtibble形式に変換する関数
+#'
+#' make_kobeII_tableに入れるオブジェクトを作る
+#'
+#' @param fout_list future_vpaの結果のオブジェクトのリスト
+#'
+#' @encoding UTF-8
+#' @export
+#'
+
+convert_future_list_table <- function(fout_list,name_vector=NULL,label="tmp"){
+  
+  if(is.null(name_vector)){
+    if(!is.null(names(fout_list))) name_vector <- names(fout_list)
+    else name_vector <- 1:length(fout_list)
+  }
+  
+  res <- purrr::map_dfr(1:length(fout_list),
+                 function(i){
+                   convert_future_table(fout_list[[i]],label=name_vector[i]) %>%
+                     rename(HCR_name=label) %>%
+                     mutate(beta=name_vector[i])
+                 })
+  return(res)
+}
+
 #' future_vpaの結果オブジェクトをtibble形式に変換する関数
 #'
 #' @param fout future_vpaの結果のオブジェクト
@@ -1165,6 +1191,8 @@ convert_2d_future <- function(df, name, label="tmp"){
 #'
 
 convert_future_table <- function(fout,label="tmp"){
+
+  if(class(fout)=="future_new") fout <- format_to_old_future(fout)
 
   U_table <- fout$vwcaa/fout$vbiom
   if(is.null(fout$Fsakugen)) fout$Fsakugen <- -(1-fout$faa[1,,]/fout$currentF[1])
@@ -1325,6 +1353,10 @@ derive_RP_value <- function(refs_base,RP_name){
 # kobe II matrix など、パフォーマンスを計算する関数 ----
 
 #'
+#' beta.simluationの結果などを読んで、kobeII talbeに整形する関数
+#'
+#' @param kobeII_data beta.simulationの返り値　
+#' 
 #' @export
 #'
 #' @encoding UTF-8
