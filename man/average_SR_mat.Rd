@@ -25,8 +25,6 @@ average_SR_mat(
 
 \item{res_SR_list}{再生産関係の推定結果のリスト}
 
-\item{range_list}{}
-
 \item{SR_mat}{将来予測用の再生産関係パラメータを格納する３次元行列}
 
 \item{seed_number}{シード番号}

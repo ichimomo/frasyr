@@ -39,6 +39,8 @@ make_future_data(
   Pope = res_vpa$input$Pope,
   fix_recruit = NULL,
   fix_wcatch = NULL,
+  max_F = exp(10),
+  max_exploitation_rate = 0.99,
   res_SR = NULL,
   seed_number = 1,
   resid_type = "lognormal",
@@ -134,7 +136,7 @@ make_future_data(
 \item{\code{data}}{future_vpa関数に渡すデータのセット}
 \item{\code{data$naa_mat, data$caa_mat, data$waa_mat, data$waa_catch_mat, data$maa_mat, data$M_mat, data$faa_mat}}{年齢×年数（VPA期間年＋将来予測年）×シミュレーション回数の3次元データ。順に、年齢別年別シミュレーション別の資源尾数、漁獲尾数、体重、漁獲量計算用の体重、成熟率、自然死亡係数、漁獲死亡係数。このうち、資源尾数はVPA期間年までのみデータが入っていて、\code{future_vpa}を実行することによってここに推定値が入る。\code{faa_mat}についても、future_vpa実行時にHCRなどの適用の設定によって適宜書き換えられる。}
 \item{\code{data$SR_mat}}{
-  
+
 }
 }
 }

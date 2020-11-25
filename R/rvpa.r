@@ -3,6 +3,8 @@
 #' @param caa catch at age
 #' @param waa weight at age
 #' @param maa maturity at age
+#' @param maa.tune チューニングに使うmaturity at ageが異なる場合
+#' @param waa.catch abundanceとcatchでwaaが異なる場合
 #' @encoding UTF-8
 #'
 #' @export
@@ -29,11 +31,15 @@ data.handler <- function(
   if (!is.null(waa.catch)) {
     if (is.null(dim(waa.catch)) | dim(waa.catch)[2]==1) waa.catch <- as.data.frame(matrix(unlist(waa.catch), nrow=nrow(caa), ncol=ncol(caa)))
     colnames(waa.catch) <- years
+    expect_equal(rownames(caa),rownames(waa.catch))
+    expect_equal(colnames(caa),colnames(waa.catch))
   }
 
   if (!is.null(maa.tune)) {
     if (is.null(dim(maa.tune)) | dim(maa.tune)[2]==1) maa.tune <- as.data.frame(matrix(unlist(maa.tune), nrow=nrow(caa), ncol=ncol(caa)))
     colnames(maa.tune) <- years
+    expect_equal(rownames(caa),rownames(maa.tune))
+    expect_equal(colnames(caa),colnames(maa.tune))
   }
 
   if (!is.null(catch.prop)) colnames(catch.prop) <- years
@@ -44,7 +50,15 @@ data.handler <- function(
 
   colnames(M) <- years
   rownames(M) <- rownames(caa)
-
+  
+  expect_equal(rownames(caa),rownames(maa))
+  expect_equal(rownames(caa),rownames(waa))
+  expect_equal(rownames(caa),rownames(M))
+  
+  expect_equal(colnames(caa),colnames(maa))
+  expect_equal(colnames(caa),colnames(waa))
+  expect_equal(colnames(caa),colnames(M))
+  
   res <- list(caa=caa, maa=maa, waa=waa, index=index, M=M, maa.tune=maa.tune, waa.catch=waa.catch, catch.prop=catch.prop)
 
   invisible(res)
@@ -137,16 +151,21 @@ fp.forward.est <- function(caa,naa,M,i,k,alpha=1,maxit=5,d=0.0001){
 
 #' @export
 
-backward.calc <- function(caa,naa,M,na,k,min.caa=0.001,p=0.5,plus.group=TRUE,sel.update,alpha){
+backward.calc <- function(caa,naa,M,na,k,min.caa=0.001,p=0.5,plus.group=TRUE,sel.update,alpha,use.equ){
   out <- rep(NA, na[k])
   if(na[k+1] > na[k]){
     if(isTRUE(sel.update)){stop("Selectivity update method is currently not supported for the plus group change scenario")}
     for (i in 1:(na[k]-2)){
       out[i] <- naa[i+1,k+1]*exp(M[i,k])+caa[i,k]*exp(p*M[i,k])
     }
-    if (isTRUE(plus.group)){
+    if (isTRUE(plus.group) & use.equ=="new"){
       out[na[k]-1]<- (caa[na[k]-1,k]*alpha  * (naa[na[k],k+1]+naa[na[k+1],k+1]) * exp(M[na[k]-1,k]))/(caa[na[k]-1,k]*alpha +caa[na[k],k]) + caa[na[k]-1,k] * exp(p * M[na[k]-1,k])
       out[na[k]]  <- (caa[na[k],k] * (naa[na[k],k+1]+naa[na[k+1],k+1]) * exp(M[na[k],k]))/(caa[na[k]-1,k]*alpha +caa[na[k],k]) + caa[na[k],k] * exp(p * M[na[k],k])
+    }
+    else if (isTRUE(plus.group) & use.equ=="old"){
+      out[na[k]-1]<- pmax(caa[na[k]-1,k],min.caa)*alpha/(pmax(caa[na[k]-1,k],min.caa)*alpha +pmax(caa[na[k],k],min.caa))* naa[na[k],k+1] * exp(M[na[k]-1,k])+ caa[na[k]-1,k] * exp(p * M[na[k]-1,k])
+      
+      out[na[k]]<- pmax(caa[na[k],k], min.caa)/(pmax(caa[na[k]-1,k], min.caa)*alpha + pmax(caa[na[k],k], min.caa)) * naa[na[k], k+1] * exp(M[na[k],k]) + caa[na[k], k] * exp(p * M[na[k],k])
     }
     else{
       out[na[k]-1] <- naa[na[k],k+1]*exp(M[na[k]-1,k])+caa[na[k]-1,k]*exp(p*M[na[k]-1,k])
@@ -448,7 +467,7 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param tf.mat terminal Fの平均をとる年の設定．NA行列に平均をとる箇所に1を入れる．
 #' @param eq.tf.mean terminal Fの平均値を過去のFの平均値と等しくする
 #' @param no.est  パラメータ推定しない．
-#' @param est.method 推定方法 （ls = 最小二乗法，ml = 最尤法）
+#' @param est.method 推定方法 （ls = 最小二乗法，ml = 最尤法,  ls_nolog =最小二乗法で実数)
 #' @param b.est bを推定するかどうか
 #' @param est.constraint  制約付き推定をするかどうか
 #' @param q.const  qパラメータの制約（0は推定しないで1にfix）
@@ -461,18 +480,24 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param Lower
 #' @param Upper
 #' @param p.fix
-#' @param lambda  ridge回帰係数
+#' @param lambda  ridge penaltyの大きさ
 #' @param beta  penaltyのexponent  (beta = 1: lasso, 2: ridge)
-#' @param penalty
+#' @param penalty  ridgeVPAの際に与えるpenaltyの種類．"p"=指定した年齢範囲の最終年の年齢別Fのbeta乗の和，"f"=｛最終年の年齢aのF－（tf.yearで指定した年のa歳の平均のF)｝のbeta乗の和，"s"=｛最終年の年齢aのs－（tf.yearで指定した年のa歳の平均のs)｝のbeta乗の和
 #' @param ssb.def  i: 年はじめ，m: 年中央, l: 年最後
 #' @param ssb.lag  0: no lag, 1: lag 1
-#' @param TMB  TMBで高速計算する場合TMB=TRUE (事前にuse_rvpa_tmb()を実行)
+#' @param TMB  TMBで高速計算する場合TMB=TRUE (事前にuse_rvpa_tmb()を実行)　全Ｆ推定法，POPE=TRUE, alpha=1, 途中でプラスグループが変化しない場合のみのときに使用可能
 #' @param sel.rank
 #' @param p.init
 #' @param sigma.constraint  sigmaパラメータの制約.使い方としては，指標が５つあり，2番目と3番目の指標のsigmaは同じとしたい場合はc(1,2,2,3,4)と指定する
 #' @param eta  Fのpenaltyを分けて与えるときにeta.ageで指定した年齢への相対的なpenalty (0~1)
 #' @param eta.age  Fのpenaltyを分けるときにetaを与える年齢(0 = 0歳（加入）,0:1 = 0~1歳)
 #' @param tmb.file  TMB=TRUEのとき使用するcppファイルの名前
+#' @param madara  マダラ太平洋系群で用いているチューニングのやり方
+#' @param penalty_age  選択率更新法でridgeVPAをする際のpenalty="p"のときで，etaがNULLで，p_by_age=TRUE (年齢別にペナルテイーを与えたい）ときにペナルテイーを与える年齢範囲．0歳から2歳までなら0：２とする．
+#' @param no_eta_age 選択率更新法でridgeVPAの際にpenalty="p"のときで，etaがNULLでなく，p_by_age=TRUE (年齢別にペナルテイーを与えたい）ときに，etaがかからないほうの年齢範囲
+#' @param p_by_age 選択率更新法でridgeVPAの際にpenalty="p"のときに年齢別にペナルテイーを与えるか与えないか．与えたい場合はTRUEとして,penalty_age（eta=NULLのとき）もしくはno_eta_age(etaがNULLでないとき）に年齢範囲を指定する．
+#' @param sdreport \code{TMB=TRUE}のときに\code{sdreport()}を実行するかどうか（naa, faa, 資源量, 親魚量, Fの平均, 漁獲割合のSDを計算する）
+#' @param use.equ plus groupが途中で変わる場合の計算式の選択 （old = 従来の方法（プラスグループが延長している年はプラスグループのＦが一歳若い年齢のＦと等しいという仮定は置かない），new= 新しい方法（プラスグループが延長している年はプラスグループのＦが一歳若い年齢のＦと等しいという仮定を置く)
 #' @encoding UTF-8
 #'
 #' @export
@@ -525,7 +550,7 @@ vpa <- function(
   tf.mat = NULL,   # terminal Fの平均をとる年の設定．0-1行列．
   eq.tf.mean = FALSE, # terminal Fの平均値を過去のFの平均値と等しくする
   no.est = FALSE,   # パラメータ推定しない．
-  est.method = "ls",  # 推定方法 （ls = 最小二乗法，ml = 最尤法）
+  est.method = "ls",  # 推定方法 （ls = 最小二乗法，ml = 最尤法, ls_nolog =最小二乗法で実数） #option追加_by miyagawa(2020/10)
   b.est = FALSE,  #  bを推定するかどうか
   est.constraint = FALSE,   # 制約付き推定をするかどうか
   q.const = 1:length(abund),   # qパラメータの制約（0は推定しないで1にfix）
@@ -551,7 +576,13 @@ vpa <- function(
   sigma.constraint = 1:length(abund),
   eta = NULL,
   eta.age = 0,
-  tmb.file = "rvpa_tmb"
+  tmb.file = "rvpa_tmb",
+  madara=FALSE, #マダラ太平洋系群で用いているチューニングのやり方
+  p_by_age = FALSE, #penalty="p"で選択率更新法のときに年齢別にペナルテイーを与えるか与えないか．
+  penalty_age=NULL, #penalty="p"でp_by_age = ＴＲＵＥで選択率更新法を採用しているときの年齢参照範囲．0歳から2歳までなら0：２とする．
+  no_eta_age = NULL, #etaがNULLでなく，penalty="p"で，選択率更新法を採用していて，年齢別にペナルテイーを与えたいときに，etaがかからないほうの年齢範囲
+  sdreport = FALSE,
+  use.equ = "new" #plus-groupが途中で変わる場合の計算方法の指定．従来の方法でないものを用いる場合は"new"を指定する
 )
 {
   #sigma.constで引数を指定してしまったときは，sigma.constraintで引数を指定しなおしてもらうようにする
@@ -669,7 +700,7 @@ vpa <- function(
   # warnings
 
   if (!tune & sel.update) print("sel.update = TRUE but tune=FALSE. So, the results are unreliable.")
-  if (tune & is.null(sel.f) & (!sel.update & term.F=="max")) print("sel.f=NULL although tune=TRUE & sel.update=FALSE & term.F=max. The results are unreliable.")
+  if (tune & is.null(sel.f) & (!madara) & (!sel.update & term.F=="max")) print("sel.f=NULL although tune=TRUE & sel.update=FALSE & term.F=max. The results are unreliable.")
   if (tune) if(length(abund)!=nrow(index)) print("Check!: The number of abundance definition is different from the number of indices.")
   if (Pope & alpha!=1) print("Warning! The estimated F for the older ages may not be accurate if C<<N is not satisfied for the older ages.")
 #  ssb.def
@@ -739,7 +770,7 @@ vpa <- function(
 
       if (isTRUE(Pope)){
         for (i in (ny-1):1){
-         naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update,alpha=alpha)
+         naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update,alpha=alpha, use.equ=use.equ)
          faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha)
        }
      }
@@ -783,7 +814,7 @@ vpa <- function(
        }
        naa[, ny] <- vpa.core.Pope(caa,faa,M,ny,p=p.pope)
        for (i in (ny-1):(ny-na[ny]+1)){
-         naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update,alpha=alpha)
+         naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update,alpha=alpha,use.equ=use.equ)
        }
      }
 
@@ -795,7 +826,7 @@ vpa <- function(
       }
       naa[, ny] <- vpa.core.Pope(caa,faa,M,ny,p=p.pope)
       for (i in (ny-1):(ny-na[ny]+1)){
-        naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update,alpha=alpha)
+        naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update,alpha=alpha,use.equ=use.equ)
         faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha)
       }
     }
@@ -804,7 +835,7 @@ vpa <- function(
    if (!isTRUE(sel.update)){
    if (isTRUE(Pope)){
      for (i in (ny-1):1){
-       naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update,alpha=alpha)
+       naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update,alpha=alpha, use.equ=use.equ)
        faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha)
       }
    }
@@ -819,6 +850,24 @@ vpa <- function(
        naa[1:na[i], i] <- vpa.core(caa,faa,M,i)
      }
    }
+
+if (isTRUE(madara)){
+     denom <- get(stat.tf[na[ny]-1])(faa[na[ny], years %in% tf.year])
+     for (i in (na[ny]-1):1){
+          faa[i,ny] <- get(stat.tf[i])(faa[i, years %in% tf.year])/denom*faa[na[ny],ny]
+          naa[i, ny] <- caa[i, ny]*exp(M[i, ny]/2)/(1-exp(-faa[i, ny]))
+          k <- 0
+          for (j in (i-1):1){
+            k <- k + 1
+            if (i-k > 0){
+              naa[j,ny-k] <- naa[j+1,ny-k+1]*exp(M[j,ny-k])+caa[j,ny-k]*exp(M[j,ny-k]/2)
+              faa[j,ny-k] <- -log(1-caa[j,ny-k]*exp(M[j,ny-k]/2)/naa[j,ny-k])
+            }
+          }
+
+     }
+   }
+
 
     if (is.na(naa[na[ny]-1,ny])){
       if(isTRUE(Pope)){
@@ -897,10 +946,10 @@ vpa <- function(
         baa <- naa*waa
         ssb <- baa*maa*exp(-ssb.coef*(faa+M))
 
-        if (is.null(rec.new)) {
+        if (is.null(rec.new) & !isTRUE(last.catch.zero)) {
           new.naa[1] <- median((naa[1,]/colSums(ssb))[years %in% rps.year])*sum(ssb[,ny+n.add],na.rm=TRUE)
-        }
-        else new.naa[1] <- rec.new
+        }else if(!is.null(rec.new)) {new.naa[1] <- rec.new
+        }else if(is.null(rec.new) & isTRUE(last.catch.zero)){new.naa[1] <-NA}
 
         naa[1,ny+n.add] <- new.naa[1]
         baa[1,ny+n.add] <- naa[1,ny+n.add]*waa[1,ny+n.add]
@@ -951,6 +1000,7 @@ vpa <- function(
             abundance <- abund.extractor(abund=abund[i], naa, faa, dat, min.age=min.age[i], max.age=max.age[i], link=link[i], base=base[i], af=af[i], catch.prop=catch.prop, sel.def=sel.def, p.m=p.m, omega=omega, scale=scale)
             Abund <- rbind(Abund, abundance)
             avail <- which(!is.na(as.numeric(index[i,])))
+
             if (b.est)
             {
                 if (is.null(b.fix))
@@ -972,6 +1022,40 @@ vpa <- function(
                 q[i] <- q.fix[i]
             }
             obj <- c(obj,index.w[i]*sum((log(as.numeric(index[i,avail]))-log(q[i])-b[i]*log(as.numeric(abundance[avail])))^2))
+        }
+    }
+	if (est.method=="ls_nolog") #option added for the use of madara (2020/10)
+    {
+        Abund <- nn <- sigma <- b <- NULL
+        for (i in 1:nindex)
+        {
+            abundance <- abund.extractor(abund=abund[i], naa, faa, dat, min.age=min.age[i], max.age=max.age[i], link=link[i], base=base[i], af=af[i], catch.prop=catch.prop, sel.def=sel.def, p.m=p.m, omega=omega, scale=scale)
+            Abund <- rbind(Abund, abundance)
+            avail <- which(!is.na(as.numeric(index[i,])))
+            #avail <- as.numeric(index[i,])
+            if (b.est)
+            {stop("no option to estimate b when using real number instead of log !!!!")#実数平方和を用いる場合はｂ推定のオプションはなし。
+                if (is.null(b.fix))
+                {
+                    b[i] <- cov(log(as.numeric(index[i,avail])),log(as.numeric(abundance[avail])))/var(log(as.numeric(abundance[avail])))
+                }else
+                {
+                    if (is.na(b.fix[i])) b[i] <- cov(log(as.numeric(index[i,avail])),log(as.numeric(abundance[avail])))/var(log(as.numeric(abundance[avail]))) else b[i] <- b.fix[i]
+                }
+            }else
+            {
+                if (is.null(b.fix)) b[i] <- 1 else b[i] <- b.fix[i]
+            }
+            if (is.null(q.fix))
+            {
+                #q[i] <- exp(mean(log(as.numeric(index[i,avail]))-b[i]*log(as.numeric(abundance[avail]))))
+				 q[i] <- sum(as.numeric(index[i,avail])*as.numeric(abundance[avail])^b[i])/sum(as.numeric(abundance[avail])^(2*b[i])) #changed
+            }else
+            {
+                q[i] <- q.fix[i]
+            }
+            #obj <- c(obj,index.w[i]*sum((log(as.numeric(index[i,avail]))-log(q[i])-b[i]*log(as.numeric(abundance[avail])))^2))
+			obj <- c(obj,index.w[i]*sum((as.numeric(index[i,avail])-q[i]*as.numeric(abundance[avail ])^b[i])^2))
         }
     }
     if (est.method=="ml")
@@ -1050,14 +1134,29 @@ vpa <- function(
       convergence <- 1
       saa <- sel.func(faa, def=sel.def)
 
-      if (penalty=="p") {
-        if (is.null(eta)) {
+      if (penalty=="p" && isFALSE(p_by_age)) {
+
+        if (is.null(eta) || eta==-1) {
           obj <- (1-lambda)*obj + lambda*sum(p^beta)
         } else {
           eta.age <- eta.age + 1
           obj <- (1-lambda)*obj + lambda*(eta*sum(p[eta.age]^beta) + (1-eta)*sum(p[-eta.age]^beta))
         }
-      }
+        }
+
+	  if (penalty=="p" && isTRUE(p_by_age)) {
+
+        if (is.null(eta)) {
+          if (is.null(penalty_age)) {stop("please specify penalty_age")}#etaがNULLでpenalty="p"で選択率更新法を採用していて,penaltyを年齢別に与えたいのにpenalty_ageを未指定の場合にはエラーを出して停止。
+           penalty_age <- penalty_age + 1
+		  obj <- (1-lambda)*obj + lambda*sum(faa[penalty_age,ny]^beta)
+        } else {
+          if (is.null(no_eta_age)) {stop("please specify no_eta_age")}#etaがNULLでpenalty="p"で選択率更新法を採用していて,penaltyを年齢別に与えたいのにpenalty_ageを未指定の場合にはエラーを出して停止。
+           eta.age <- eta.age + 1
+		  no_eta_age <- no_eta_age +1
+		  obj <- (1-lambda)*obj + lambda*(eta*sum(faa[eta.age,ny]^beta) + (1-eta)*sum(faa[no_eta_age,ny]^beta))
+        }
+        }
 
       if (penalty=="f") obj <- (1-lambda)*obj + lambda*sum((abs(faa[1:(na[ny]-1),ny]-apply(faa[1:(na[ny]-1), years %in% tf.year],1,get(stat.tf))))^beta)
 
@@ -1078,19 +1177,19 @@ vpa <- function(
 
         if (n.add==1 & is.na(naa[1,ny+n.add])){
           new.naa <- forward.calc(faa,naa,M,na,ny+n.add)
-
+          if (!is.null(f.new) & !is.null(saa.new)) faa[,ny+n.add] <- f.new*saa.new else faa[,ny+n.add] <- 0
           naa[,ny+n.add] <- new.naa
           baa <- naa*waa
           ssb <- baa*maa*exp(-ssb.coef*(faa+M))
 
-          if (is.null(rec.new)) {
+          if (is.null(rec.new) & !isTRUE(last.catch.zero)) {
             new.naa[1] <- median((naa[1,]/colSums(ssb))[years %in% rps.year])*sum(ssb[,ny+n.add],na.rm=TRUE)
-          } else new.naa[1] <- rec.new
+          }else if(!is.null(rec.new)) {new.naa[1] <- rec.new
+          }else if(is.null(rec.new) & isTRUE(last.catch.zero)){new.naa[1] <-NA}
 
           naa[1,ny+n.add] <- new.naa[1]
           baa[1,ny+n.add] <- naa[1,ny+n.add]*waa[1,ny+n.add]
 
-          if (!is.null(f.new) & !is.null(saa.new)) faa[,ny+n.add] <- f.new*saa.new else faa[,ny+n.add] <- 0
           if (isTRUE(Pope)) caa[,ny+n.add] <- naa[,ny+n.add]*(1-exp(-faa[,ny+n.add]))*exp(-M[,ny+n.add]/2) else caa[,ny+n.add] <- naa[,ny+n.add]*(1-exp(-faa[,ny+n.add]-M[,ny+n.add]))*faa[,ny+n.add]/(faa[,ny+n.add]+M[,ny+n.add])
 
           ssb[1,ny+n.add] <- baa[1,ny+n.add]*maa[1,ny+n.add]*exp(-ssb.coef*(faa[1,ny+n.add]+M[1,ny+n.add]))
@@ -1108,10 +1207,22 @@ vpa <- function(
         if (isTRUE(eq.tf.mean)) obj$p <- max(faa[,ny],na.rm=TRUE)
 
         if (isTRUE(tune)) {
-          if (est.method=="ls"){
+          if (est.method=="ls" ){
             if (use.index[1]=="all") Nindex <- sum(!is.na(index[index.w > 0,])) else Nindex <- sum(!is.na(index[index.w[use.index > 0] > 0,]))
             Sigma2 <- obj$minimum/Nindex
             neg.logLik <- Nindex/2*log(2*pi*Sigma2)+Nindex/2
+            obj$q <- q
+            obj$b <- b
+            obj$sigma <- sqrt(Sigma2)
+            obj$convergence <- convergence
+            obj$Abund <- Abund
+            obj$logLik <- -neg.logLik
+          }
+		   if (est.method=="ls_nolog" ){
+            if (use.index[1]=="all") Nindex <- sum(!is.na(index[index.w > 0,])) else Nindex <- sum(!is.na(index[index.w[use.index > 0] > 0,]))
+            Sigma2 <- obj$minimum/Nindex
+            #neg.logLik <- Nindex/2*log(2*pi*Sigma2)+Nindex/2
+			neg.logLik <-log(obj$minimum)
             obj$q <- q
             obj$b <- b
             obj$sigma <- sqrt(Sigma2)
@@ -1170,6 +1281,11 @@ vpa <- function(
 #    log.p.hat <- log(summary.p.est$estimate)
 #  } else {
   if (isTRUE(TMB)){
+
+  if(isTRUE(TMB) & isTRUE(sel.update)){print("TMB is not supported for sel.update method");stop()}
+  if(isTRUE(TMB) & alpha!=1){print("TMB is not supported for alpha!=1");stop()}
+  if(isTRUE(TMB) & isFALSE(Pope)){print("TMB is not supported for baranov equation option. only for Pope");stop()}
+
     index2 <- as.matrix(t(apply(index,1,function(x) ifelse(is.na(x),0,x))))
 
     Ab_type <- ifelse(abund=="SSB", 1, ifelse(abund=="N", 2, 3))
@@ -1206,18 +1322,21 @@ vpa <- function(
       log_F=log(p.init)
     )
 
-    obj <- try(TMB::MakeADFun(data2, parameters, DLL=tmb.file))
-    if (class(obj) == "try-error") {
+    obj2 <- try(TMB::MakeADFun(data2, parameters, DLL=tmb.file))
+    if (class(obj2) == "try-error") {
       stop("Please run use_rvpa_tmb() first!")
     }
-    opt <- nlm(obj$fn, obj$par, gradient=obj$gr, hessian=hessian)
+    opt <- nlm(obj2$fn, obj2$par, gradient=obj2$gr, hessian=hessian)
+    if (sdreport) rep <- TMB::sdreport(obj2)
 
-    summary.p.est <- list()
-    summary.p.est$estimate <- exp(opt$estimate)
-    summary.p.est$minimum <- -opt$minimum
-    summary.p.est$gradient <- opt$gradient
-    summary.p.est$code <- opt$code
-    log.p.hat <- opt$estimate
+    summary.p.est <- opt
+    # summary.p.est <- list()
+    # summary.p.est$estimate <- exp(opt$estimate)
+    # summary.p.est$minimum <- -opt$minimum
+    # summary.p.est$gradient <- opt$gradient
+    # summary.p.est$code <- opt$code
+    # log.p.hat <- opt$estimate
+    log.p.hat <- summary.p.est$estimate
   } else {
     if (isTRUE(no.est)){
       if (isTRUE(eq.tf.mean)) {
@@ -1293,6 +1412,11 @@ Ft <- mean(faa[,ny],na.rm=TRUE)
       res <- c(res, list(plot = graph))
     } # 加筆（浜辺）
   }
+
+  if (isTRUE(TMB) & isTRUE(sdreport)) {
+    res$obj <- obj2
+    res$rep <- rep
+    }
 
   return(invisible(res))
 
@@ -1565,7 +1689,7 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE,
    if (ssb.forecast && !(res.c$input$last.catch.zero)) {
      warning("'ssb.forecast' is usable only when 'last.catch.zero=TRUE' and so ignored")
    }
-     
+
 
    for (i in 1:n){
      nc <- ncol(res.c$input$dat$caa)
@@ -1578,10 +1702,12 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE,
      res.c$input$dat$M <- res.c$input$dat$M[,-nc]
      res.c$input$dat$catch.prop <- res.c$input$dat$catch.prop[,-nc]
 
-     # 毎年等しく取り除くのではなく、データごとに1年分取り除くように修正（浜辺07/07）
-     label_tmp <- which(is.na(res.c$input$dat$index[,nc]))
-     res.c$input$dat$index <- res.c$input$dat$index[,-nc,drop=FALSE]
-     res.c$input$dat$index[label_tmp,length(res.c$input$dat$index[1,])] <- NA
+     if(!is.null(res$input$dat$index)){ # チューニングなしVPAにも対応
+       # 毎年等しく取り除くのではなく、データごとに1年分取り除くように修正（浜辺07/07）
+       label_tmp <- which(is.na(res.c$input$dat$index[,nc]))
+       res.c$input$dat$index <- res.c$input$dat$index[,-nc,drop=FALSE]
+       res.c$input$dat$index[label_tmp,length(res.c$input$dat$index[1,])] <- NA
+     }
 
      res.c$input$tf.year <- res.c$input$tf.year-1
      res.c$input$fc.year <- res.c$input$fc.year-1

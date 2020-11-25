@@ -18,7 +18,8 @@ set_SR_mat(
   recruit_intercept = 0,
   recruit_age = 0,
   model_average_option = NULL,
-  regime_shift_option = NULL
+  regime_shift_option = NULL,
+  fix_recruit = NULL
 )
 }
 \arguments{

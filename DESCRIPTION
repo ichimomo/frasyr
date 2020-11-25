@@ -30,12 +30,13 @@ Imports:
     rmutil,
     gridExtra,
     EnvStats,
+    assertthat,
+    foreach,
+    doParallel,    
     GGally
 Suggests:
     knitr,
     rmarkdown,
     testthat,
-    foreach,
-    doParallel,
     covr
 VignetteBuilder: knitr

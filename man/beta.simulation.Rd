@@ -11,7 +11,8 @@ beta.simulation(
   year.lag = 0,
   type = "old",
   year_beta_change = NULL,
-  output_type = "tidy"
+  output_type = "tidy",
+  ncore = 1
 )
 }
 \arguments{
