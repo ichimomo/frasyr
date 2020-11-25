@@ -112,12 +112,13 @@ make_future_data <- function(res_vpa,
   input <- lapply(argname,function(x) eval(parse(text=x)))
   names(input) <- argname
 
-  if(!is.na(HCR_TAC_reserve_rate) && any(HCR_TAC_reserve_rate < 0)) stop("HCR_TAC_reserve_rateに負の値は許されていません\n")
-  if(!is.na(HCR_TAC_carry_rate  ) && any(HCR_TAC_carry_rate   < 0)) stop("HCR_TAC_carry_rateに負の値は許されていません\n")  
-  if(!is.na(HCR_TAC_reserve_amount) && any(HCR_TAC_reserve_amount < 0)) stop("HCR_TAC_reserve_amountに負の値は許されていません\n")  #
-  if(!is.na(HCR_TAC_carry_amount  ) && any(HCR_TAC_carry_amount   < 0)) stop("HCR_TAC_carry_amountに負の値は許されていません\n")    #
-  # HCR_TAC_carry_rateとHCR_TAC_carry_amountが同時に指定された場合はどうする？
-  # HCR_TAC_reserve_rateとHCR_TAC_reserve_amountが同時に指定された場合はどうする？  
+  if(!is.na(HCR_TAC_reserve_rate  )) assertthat::assert_that(min(HCR_TAC_reserve_rate  ) >= 0)
+  if(!is.na(HCR_TAC_carry_rate    )) assertthat::assert_that(min(HCR_TAC_carry_rate    ) >= 0)
+  if(!is.na(HCR_TAC_reserve_amount)) assertthat::assert_that(min(HCR_TAC_reserve_amount) >= 0)
+  if(!is.na(HCR_TAC_carry_amount  )) assertthat::assert_that(min(HCR_TAC_carry_amount  ) >= 0)
+
+  if(!is.na(HCR_TAC_reserve_rate) && !is.na(HCR_TAC_reserve_amount)) stop("HCR_TAC_reserve_rateとHCR_TAC_reserve_amountが同時に指定されています（同時には指定できません）")
+  if(!is.na(HCR_TAC_carry_rate) && !is.na(HCR_TAC_carry_amount))     stop("HCR_TAC_carry_rateとHCR_TAC_carry_amountが同時に指定されています（同時には指定できません）")  
   
   # define age and year
   nage <- nrow(res_vpa$naa)
@@ -223,9 +224,9 @@ make_future_data <- function(res_vpa,
   HCR_mat[start_ABC_year:total_nyear,,"Bban"    ] <- HCR_Bban
   HCR_mat[start_ABC_year:total_nyear,,"year_lag"] <- HCR_year_lag
   HCR_mat[start_ABC_year:total_nyear,,"TAC_reserve_rate"] <- HCR_TAC_reserve_rate
-  HCR_mat[start_ABC_year:total_nyear,,"TAC_carry_rate"] <- HCR_TAC_carry_rate
+  HCR_mat[start_ABC_year:total_nyear,,"TAC_carry_rate"]   <- HCR_TAC_carry_rate
   HCR_mat[start_ABC_year:total_nyear,,"TAC_reserve_amount"] <- HCR_TAC_reserve_amount #
-  HCR_mat[start_ABC_year:total_nyear,,"TAC_carry_amount"] <- HCR_TAC_carry_amount     #
+  HCR_mat[start_ABC_year:total_nyear,,"TAC_carry_amount"]   <- HCR_TAC_carry_amount     #
 
   if(!is.null(HCR_beta_year)){
     HCR_mat[as.character(HCR_beta_year$year),,"beta"] <- HCR_beta_year$beta
@@ -712,12 +713,16 @@ future_vpa_R <- function(naa_mat,
       } #expect_wcatchをゼロにすると不具合がありそうなので、微小値（0.01）を与える
 
       if(t<total_nyear){
-          if(all(!is.na(HCR_mat[t,,"TAC_carry_rate"]))){max_carry_amount <- HCR_mat[t,,"TAC_carry_rate"]*HCR_realized[t,,"original_ABC"]} #
-          if(all(!is.na(HCR_mat[t,,"TAC_carry_amount"]))){max_carry_amount <- HCR_mat[t,,"TAC_carry_amount"]}                             #
-          ABC_reserve_amount <- HCR_realized[t,,"original_ABC"] - HCR_mat[t,,"expect_wcatch"]
-          ABC_reserve_amount[ABC_reserve_amount<0] <- 0
-          HCR_realized[t+1,,"reserved_catch"] <- cbind(max_carry_amount, ABC_reserve_amount) %>%
-            apply(1,min)
+        if(all(!is.na(HCR_mat[t,,"TAC_carry_rate"]))){
+          max_carry_amount <- HCR_mat[t,,"TAC_carry_rate"]*HCR_realized[t,,"original_ABC"]
+        } #
+        if(all(!is.na(HCR_mat[t,,"TAC_carry_amount"]))){
+          max_carry_amount <- HCR_mat[t,,"TAC_carry_amount"]
+        }                             #
+        ABC_reserve_amount <- HCR_realized[t,,"original_ABC"] - HCR_mat[t,,"expect_wcatch"]
+        ABC_reserve_amount[ABC_reserve_amount<0] <- 0
+        HCR_realized[t+1,,"reserved_catch"] <- cbind(max_carry_amount, ABC_reserve_amount) %>%
+          apply(1,min)
       }
     }
 
