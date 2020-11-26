@@ -57,13 +57,14 @@ get.SRdata <- function(vpares,R.dat = NULL,
 #' @param res_sr fit.SR の結果
 validate_sr <- function(SR = NULL, method = NULL, AR = NULL, res_sr = NULL) {
   if (!is.null(SR)) {
+    sr = as.character(SR)
     assertthat::assert_that(
-      is.character(SR),
       length(SR) == 1,
       SR %in% c("HS", "BH", "RI")
     )
   }
   if (!is.null(method)) {
+    method = as.character(method)
     assertthat::assert_that(method %in% c("L1", "L2"))
   }
   if (!is.null(AR)) {

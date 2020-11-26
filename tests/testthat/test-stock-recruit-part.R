@@ -42,8 +42,7 @@ test_that("output value check",{
   SRmodel.list <- expand.grid(SR.rel = c("HS", "BH", "RI"),
                               AR.type = c(0, 1),
                               out.AR = c(TRUE, FALSE),
-                              L.type = c("L1", "L2"),
-                              stringsAsFactors = FALSE)
+                              L.type = c("L1", "L2"))
   SR.list <- list()
   for (i in 1:nrow(SRmodel.list)){
     SR.list[[i]] <- fit.SR(SRdata_pma, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],
@@ -338,8 +337,7 @@ test_that("check matching of fit.SRregime and fit.SR",{
   load(system.file("extdata","SRdata_pma.rda",package = "frasyr"))
   SRdata = SRdata_pma
   SRmodel.list <- expand.grid(SR.rel = c("HS", "BH", "RI"),
-                              L.type = c("L1", "L2"),
-                              stringsAsFactors = FALSE)
+                              L.type = c("L1", "L2"))
   # regime_year = ceiling(mean(SRdata$year))
   regime_year = 1999
   regime1 = min(SRdata$year):(regime_year-1); regime2 = regime_year:max(SRdata$year);
