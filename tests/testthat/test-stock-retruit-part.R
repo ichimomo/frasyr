@@ -1,5 +1,24 @@
 library(frasyr)
 
+context("SR argument validation")
+test_that("detect unexpected SR model", {
+  method <- "L1"
+  ar     <- 0
+  good_usages <- c(
+    validate_sr(SR = "HS", method, ar),
+    validate_sr(SR = "BH", method, ar),
+    validate_sr(SR = "RI", method, ar)
+  )
+  assertthat::assert_that(isTRUE(all(good_usages)))
+
+  expect_error(validate_sr(SR = "bad_argument", method, ar))
+  expect_error(validate_sr(SR = c("HS", "BH", "RI"), method, ar))
+  expect_error(validate_sr(SR = c("HS", "BH", "RI"), method, ar))
+  expect_error(validate_sr(SR = 1, method, ar))
+  expect_error(validate_sr(SR = 2, method, ar))
+  expect_error(validate_sr(SR = 3, method, ar))
+})
+
 context("stock-recruitment SRdata")
 
 test_that("output value check",{
@@ -20,7 +39,11 @@ context("stock-recruitment fitSR")
 test_that("output value check",{
   load(system.file("extdata","SRdata_pma.rda",package = "frasyr"))
 
-  SRmodel.list <- expand.grid(SR.rel = c("HS","BH","RI"), AR.type = c(0, 1), out.AR=c(TRUE,FALSE), L.type = c("L1", "L2"))
+  SRmodel.list <- expand.grid(SR.rel = c("HS", "BH", "RI"),
+                              AR.type = c(0, 1),
+                              out.AR = c(TRUE, FALSE),
+                              L.type = c("L1", "L2"),
+                              stringsAsFactors = FALSE)
   SR.list <- list()
   for (i in 1:nrow(SRmodel.list)){
     SR.list[[i]] <- fit.SR(SRdata_pma, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],
@@ -314,7 +337,9 @@ context("stock-recruitment fit.SRregime")
 test_that("check matching of fit.SRregime and fit.SR",{
   load(system.file("extdata","SRdata_pma.rda",package = "frasyr"))
   SRdata = SRdata_pma
-  SRmodel.list <- expand.grid(SR.rel = c("HS","BH","RI"), L.type = c("L1", "L2"))
+  SRmodel.list <- expand.grid(SR.rel = c("HS", "BH", "RI"),
+                              L.type = c("L1", "L2"),
+                              stringsAsFactors = FALSE)
   # regime_year = ceiling(mean(SRdata$year))
   regime_year = 1999
   regime1 = min(SRdata$year):(regime_year-1); regime2 = regime_year:max(SRdata$year);
