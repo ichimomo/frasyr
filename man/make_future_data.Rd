@@ -34,7 +34,9 @@ make_future_data(
   HCR_year_lag = 0,
   HCR_beta_year = NULL,
   HCR_TAC_reserve_rate = NA,
+  HCR_TAC_reserve_amount = NA,
   HCR_TAC_carry_rate = NA,
+  HCR_TAC_carry_amount = NA,
   HCR_function_name = "HCR_default",
   Pope = res_vpa$input$Pope,
   fix_recruit = NULL,
@@ -97,9 +99,13 @@ make_future_data(
 
 \item{HCR_beta_year}{betaを年によって変える場合。tibble(year=2020:2024, beta=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える}
 
-\item{HCR_TAC_reserve_rate}{TACの取り残し率}
+\item{HCR_TAC_reserve_rate}{その年の総漁獲可能量に対する獲り残し率}
 
-\item{HCR_TAC_carry_rate}{TACの何％まで持ち越せるか}
+\item{HCR_TAC_reserve_amount}{その年の総漁獲可能量に対する獲り残し量}
+
+\item{HCR_TAC_carry_rate}{当初TACの何％まで持ち越せるか}
+
+\item{HCR_TAC_carry_amount}{当初TACのうち何トンまで持ち越せるか}
 
 \item{HCR_function_name}{デフォルトは"HCR_default" ここを変更(関数名を文字列で与える。関数は別に定義しておく)すると自作のHCRが適用される。その場合、データのほうで定義されているbeta, Blimit, Bbanなど、同じ名前のものは有効}
 
