@@ -4,36 +4,36 @@ context("Detect unexpected arguments for stock-recruit functions")
 
 test_that("model type", {
   method <- "L1"
-  ar     <- 0
+  AR     <- 0
   good_usages <- c(
-    validate_sr(SR = "HS", method, ar),
-    validate_sr(SR = "BH", method, ar),
-    validate_sr(SR = "RI", method, ar)
+    validate_sr(SR = "HS", method, AR),
+    validate_sr(SR = "BH", method, AR),
+    validate_sr(SR = "RI", method, AR)
   )
   assertthat::assert_that(isTRUE(all(good_usages)))
 
-  expect_error(validate_sr(SR = "bad_argument", method, ar))
-  expect_error(validate_sr(SR = c("HS", "BH", "RI"), method, ar))
-  expect_error(validate_sr(SR = c("HS", "BH", "RI"), method, ar))
-  expect_error(validate_sr(SR = 1, method, ar))
-  expect_error(validate_sr(SR = 2, method, ar))
-  expect_error(validate_sr(SR = 3, method, ar))
+  expect_error(validate_sr(SR = "bad_argument", method, AR))
+  expect_error(validate_sr(SR = c("HS", "BH", "RI"), method, AR))
+  expect_error(validate_sr(SR = c("HS", "BH", "RI"), method, AR))
+  expect_error(validate_sr(SR = 1, method, AR))
+  expect_error(validate_sr(SR = 2, method, AR))
+  expect_error(validate_sr(SR = 3, method, AR))
 })
 
 test_that("method", {
   SR <- "HS"
-  ar <- 0
+  AR <- 0
   good_usages <- c(
-    validate_sr(SR, method = "L1", ar),
-    validate_sr(SR, method = "L2", ar)
+    validate_sr(SR, method = "L1", AR),
+    validate_sr(SR, method = "L2", AR)
   )
   assertthat::assert_that(isTRUE(all(good_usages)))
 
-  expect_error(validate_sr(SR, method = "L3", ar))
-  expect_error(validate_sr(SR, method = 1, ar))
-  expect_error(validate_sr(SR, method = 2, ar))
-  expect_error(validate_sr(SR, method = TRUE, ar))
-  expect_error(validate_sr(SR, method = NA, ar))
+  expect_error(validate_sr(SR, method = "L3", AR))
+  expect_error(validate_sr(SR, method = 1, AR))
+  expect_error(validate_sr(SR, method = 2, AR))
+  expect_error(validate_sr(SR, method = TRUE, AR))
+  expect_error(validate_sr(SR, method = NA, AR))
 })
 
 test_that("AR", {
@@ -45,11 +45,11 @@ test_that("AR", {
   )
   assertthat::assert_that(isTRUE(all(good_usages)))
 
-  expect_error(validate_sr(SR, method, ar = TRUE))
-  expect_error(validate_sr(SR, method, ar = FALSE))
-  expect_error(validate_sr(SR, method, ar = 2))
-  expect_error(validate_sr(SR, method, ar = 3))
-  expect_error(validate_sr(SR, method, ar = NA))
+  expect_error(validate_sr(SR, method, AR = TRUE))
+  expect_error(validate_sr(SR, method, AR = FALSE))
+  expect_error(validate_sr(SR, method, AR = 2))
+  expect_error(validate_sr(SR, method, AR = 3))
+  expect_error(validate_sr(SR, method, AR = NA))
 })
 
 test_that("out.AR", {
