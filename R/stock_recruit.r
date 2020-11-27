@@ -57,7 +57,6 @@ get.SRdata <- function(vpares,R.dat = NULL,
 #' @param res_sr fit.SR の結果
 validate_sr <- function(SR = NULL, method = NULL, AR = NULL, out.AR = NULL, res_sr = NULL) {
   if (!is.null(SR)) {
-    sr = as.character(SR)
     assertthat::assert_that(
       length(SR) == 1,
       SR %in% c("HS", "BH", "RI")
