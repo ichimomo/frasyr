@@ -1,7 +1,8 @@
 library(frasyr)
 
-context("SR argument validation")
-test_that("detect unexpected SR model", {
+context("Detect unexpected arguments for stock-recruit functions")
+
+test_that("model type", {
   method <- "L1"
   ar     <- 0
   good_usages <- c(
@@ -17,6 +18,55 @@ test_that("detect unexpected SR model", {
   expect_error(validate_sr(SR = 1, method, ar))
   expect_error(validate_sr(SR = 2, method, ar))
   expect_error(validate_sr(SR = 3, method, ar))
+})
+
+test_that("method", {
+  SR <- "HS"
+  ar <- 0
+  good_usages <- c(
+    validate_sr(SR, method = "L1", ar),
+    validate_sr(SR, method = "L2", ar)
+  )
+  assertthat::assert_that(isTRUE(all(good_usages)))
+
+  expect_error(validate_sr(SR, method = "L3", ar))
+  expect_error(validate_sr(SR, method = 1, ar))
+  expect_error(validate_sr(SR, method = 2, ar))
+  expect_error(validate_sr(SR, method = TRUE, ar))
+  expect_error(validate_sr(SR, method = NA, ar))
+})
+
+test_that("AR", {
+  SR     <- "HS"
+  method <- "L1"
+  good_usages <- c(
+    validate_sr(SR, method, AR = 0),
+    validate_sr(SR, method, AR = 1)
+  )
+  assertthat::assert_that(isTRUE(all(good_usages)))
+
+  expect_error(validate_sr(SR, method, ar = TRUE))
+  expect_error(validate_sr(SR, method, ar = FALSE))
+  expect_error(validate_sr(SR, method, ar = 2))
+  expect_error(validate_sr(SR, method, ar = 3))
+  expect_error(validate_sr(SR, method, ar = NA))
+})
+
+test_that("out.AR", {
+  SR     <- "HS"
+  method <- "L1"
+  AR     <- 1
+  good_usages <- c(
+    validate_sr(SR, method, AR, out.AR = TRUE),
+    validate_sr(SR, method, AR, out.AR = FALSE),
+    validate_sr(SR, method, AR, out.AR = NA)
+  )
+  assertthat::assert_that(isTRUE(all(good_usages)))
+
+  # expect_error(validate_sr(SR, method, AR = 0, out.AR = TRUE))
+  # expect_error(validate_sr(SR, method, AR = 0, out.AR = FALSE))
+  expect_error(validate_sr(SR, method, AR, out.AR = 1))
+  expect_error(validate_sr(SR, method, AR, out.AR = 0))
 })
 
 context("stock-recruitment SRdata")
