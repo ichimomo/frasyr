@@ -4,7 +4,7 @@
 \alias{validate_sr}
 \title{再生産関係のパラメタが想定した形になっているかを確認}
 \usage{
-validate_sr(SR = NULL, method = NULL, AR = NULL, res_sr = NULL)
+validate_sr(SR = NULL, method = NULL, AR = NULL, out.AR = NULL, res_sr = NULL)
 }
 \arguments{
 \item{SR}{再生産関係 (\code{"HS"}: Hockey-stick, \code{"BH"}: Beverton-Holt, \code{"RI"}: Ricker)}
@@ -12,6 +12,8 @@ validate_sr(SR = NULL, method = NULL, AR = NULL, res_sr = NULL)
 \item{method}{最適化法（\code{"L2"}: 最小二乗法, \code{"L1"}: 最小絶対値法）}
 
 \item{AR}{自己相関を推定するか(1), しないか(0)}
+
+\item{out.AR}{自己相関係数を一度再生産関係を推定したのちに、外部から推定するか（1), 内部で推定するか(0)}
 
 \item{res_sr}{fit.SR の結果}
 }

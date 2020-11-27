@@ -55,7 +55,7 @@ get.SRdata <- function(vpares,R.dat = NULL,
 #'
 #' @inheritParams fit.SR
 #' @param res_sr fit.SR の結果
-validate_sr <- function(SR = NULL, method = NULL, AR = NULL, res_sr = NULL) {
+validate_sr <- function(SR = NULL, method = NULL, AR = NULL, out.AR = NULL, res_sr = NULL) {
   if (!is.null(SR)) {
     sr = as.character(SR)
     assertthat::assert_that(
@@ -70,10 +70,14 @@ validate_sr <- function(SR = NULL, method = NULL, AR = NULL, res_sr = NULL) {
   if (!is.null(AR)) {
     assertthat::assert_that(AR %in% c(0, 1))
   }
+  if (!is.null(out.AR)) {
+    assertthat::assert_that(is.logical(out.AR))
+  }
   if (!is.null(res_sr)) {
     validate_sr(SR     = res_sr$input$SR,
                 method = res_sr$input$method,
-                AR     = res_sr$input$AR)
+                AR     = res_sr$input$AR,
+                out.AR = res_sr$input$out.AR)
   }
 }
 
@@ -127,7 +131,7 @@ fit.SR <- function(SRdata,
                    p0=NULL,
                    out.AR = TRUE #自己相関係数rhoを外で推定するか
 ){
-  validate_sr(SR = SR, method = method, AR = AR)
+  validate_sr(SR = SR, method = method, AR = AR, out.AR = out.AR)
 
   argname <- ls()
   arglist <- lapply(argname,function(xx) eval(parse(text=xx)))
