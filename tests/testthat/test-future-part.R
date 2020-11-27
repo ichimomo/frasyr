@@ -446,12 +446,12 @@ test_that("future_vpa function (with dummy vpa data) for regime shift (level 2-3
                           res_vpa_rec0_nontune)
   res_sr_list <- list()
   res_sr_list[[1]] <- fit.SRregime(get.SRdata(vpa_list[[1]]),
-                                   SR="HS",method="HS",regime.key=c(0,1),
+                                   SR="HS",method="L2",regime.key=c(0,1),
                                    regime.par=c("a","b"),regime.year=2005)
 
   # sdが異なるケースもテストしないといけない
   res_sr_list[[2]] <- fit.SRregime(get.SRdata(vpa_list[[1]]),
-                                   SR="HS",method="HS",regime.key=c(0,1),
+                                   SR="HS",method="L2",regime.key=c(0,1),
                                    regime.par=c("a","b","sd"),regime.year=2005)
   res_sr_list[[2]]$pars$sd[2] <- 0.3 # 本当は両方ゼロだがテストのために0.3を入れる
   res_sr_list[[2]]$regime_pars$sd[2] <- 0.3 # 本当は両方ゼロだがテストのために0.3を入れる

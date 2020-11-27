@@ -51,6 +51,37 @@ get.SRdata <- function(vpares,R.dat = NULL,
     return(dat[c("year","SSB","R")])
 }
 
+#' 再生産関係のパラメタが想定した形になっているかを確認
+#'
+#' @inheritParams fit.SR
+#' @param res_sr fit.SR の結果
+validate_sr <- function(SR = NULL, method = NULL, AR = NULL, out.AR = NULL, res_sr = NULL) {
+  if (!is.null(SR)) {
+    assertthat::assert_that(
+      length(SR) == 1,
+      SR %in% c("HS", "BH", "RI")
+    )
+  }
+  if (!is.null(method)) {
+    method = as.character(method)
+    assertthat::assert_that(method %in% c("L1", "L2"))
+  }
+  if (!is.null(AR)) {
+    assertthat::assert_that(
+      is.numeric(AR),
+      AR %in% c(0, 1)
+    )
+  }
+  if (!is.null(out.AR)) {
+    assertthat::assert_that(is.logical(out.AR))
+  }
+  if (!is.null(res_sr)) {
+    validate_sr(SR     = res_sr$input$SR,
+                method = res_sr$input$method,
+                AR     = res_sr$input$AR,
+                out.AR = res_sr$input$out.AR)
+  }
+}
 
 #' 再生産関係の推定
 #'
@@ -102,6 +133,7 @@ fit.SR <- function(SRdata,
                    p0=NULL,
                    out.AR = TRUE #自己相関係数rhoを外で推定するか
 ){
+  validate_sr(SR = SR, method = method, AR = AR, out.AR = out.AR)
 
   argname <- ls()
   arglist <- lapply(argname,function(xx) eval(parse(text=xx)))
@@ -360,6 +392,7 @@ fit.SRalpha <- function(SRdata,
   N <- length(rec)
   NN <- sum(w) #likelihoodを計算するサンプル数
 
+  validate_sr(SR = SR)
   #  if (SR=="HS") SRF <- function(x,a,b) a*(x+sqrt(b^2+gamma^2/4)-sqrt((x-b)^2+gamma^2/4))
   if (SR=="HS") SRF <- function(x,a,b) ifelse(x>b,b*a,x*a)
   if (SR=="BH") SRF <- function(x,a,b) a*x/(1+b*x)
@@ -479,6 +512,7 @@ fit.SR2 <- function(SRdata,
   N <- length(rec)
   NN <- sum(w) #sample size for likelihood calculation
 
+  validate_sr(SR = SR, method = method, AR = AR)
   if (SR=="HS") SRF <- function(x,a,b,c) ifelse(x>b,b*a,a*b*(x/b)^c)
   if (SR=="BH") SRF <- function(x,a,b,c) (a/b)/(1+1/(b*x)^c)
   if (SR=="RI") SRF <- function(x,a,b,c) a/(b*exp(1))*(b*x)^c*exp(c*(1-b*x))
@@ -609,6 +643,7 @@ boot.SR <- function(Res,method="p",n=100,seed=1){
   names(arglist) <- argname
   N <- length(Res$input$SRdata$SSB)
 
+  validate_sr(res_sr = Res)
   if (Res$input$SR=="HS") SRF <- function(x,a,b) ifelse(x>b,b*a,x*a)
   if (Res$input$SR=="BH") SRF <- function(x,a,b) a*x/(1+b*x)
   if (Res$input$SR=="RI") SRF <- function(x,a,b) a*x*exp(-b*x)
@@ -720,6 +755,7 @@ prof.lik <- function(Res,a=Res$pars$a,b=Res$pars$b,sd=Res$pars$sd,rho=ifelse(Res
   w <- Res$input$w
 
 #  if (SR=="HS") SRF <- function(x,a,b) a*(x+sqrt(b^2+gamma^2/4)-sqrt((x-b)^2+gamma^2/4))
+  validate_sr(SR = SR)
   if (SR=="HS") SRF <- function(x,a,b) ifelse(x>b,b*a,x*a)
   if (SR=="BH") SRF <- function(x,a,b) a*x/(1+b*x)
   if (SR=="RI") SRF <- function(x,a,b) a*x*exp(-b*x)
@@ -831,6 +867,7 @@ fit.SRregime <- function(
   if ("b" %in% regime.par) b_key <- regime
   if ("sd" %in% regime.par) sd_key <- regime
 
+  validate_sr(SR = SR, method = method)
   if (SR=="HS") SRF <- function(x,a,b) ifelse(x>b,b*a,x*a)
   if (SR=="BH") SRF <- function(x,a,b) a*x/(1+b*x)
   if (SR=="RI") SRF <- function(x,a,b) a*x*exp(-b*x)
@@ -999,6 +1036,7 @@ fit.SRregime <- function(
 #' @encoding UTF-8
 #' @export
 calc.StdResid = function(resSR) {
+  validate_sr(res_sr = resSR)
   if(class(resSR) == "fit.SR") { #fit.SR
     if (resSR$input$method == "L2") {
       sigma = rep(sqrt(sum(resSR$resid^2)/length(resSR$resid)),length(resSR$resid))
@@ -1055,6 +1093,7 @@ check.SRdist = function(resSR,test.ks=TRUE,output=FALSE,filename = "SR_error_dis
   main_name=paste0(resSR$input$SR," ",resSR$input$method," ")
 
   if (class(resSR)=="fit.SR" && resSR$input$AR && isTRUE(resSR$input$out.AR)) {
+    validate_sr(res_sr = resSR)
     for(i in 1:2) {
       if (i==1) {
         std.resid = std.resid.res$std.resid
@@ -1174,6 +1213,7 @@ check.SRdist = function(resSR,test.ks=TRUE,output=FALSE,filename = "SR_error_dis
 calc.residAR = function(resSR, per_regime=TRUE, output=TRUE, filename="residARouter") {
   RES = list()
   if (class(resSR) == "fit.SR") { #fit.SR
+    validate_sr(res_sr = resSR)
     if (resSR$input$AR && !isTRUE(resSR$input$out.AR)) {
       warning("This function is meaningless when AR=TRUE & out.AR=FALSE")
     }
@@ -1300,6 +1340,7 @@ autocor.plot = function(resSR,use.resid=1,lag.max=NULL,output = FALSE,filename =
   if (output) png(file = paste0(filename,".png"), width=15, height=5, res=432, units='in')
   par(pch=pch,lwd = lwd, mfrow=c(1,3),cex=cex)
   if (class(resSR) == "fit.SR") { #fit.SR
+    validate_sr(res_sr = resSR)
     if (use.resid==1) {
       Resid = resSR$resid
       plot(Year,Resid,pch=pch,main="",xlab="Year",ylab="Deviance",cex.lab=cex.lab,...)
@@ -1351,6 +1392,7 @@ autocor.plot = function(resSR,use.resid=1,lag.max=NULL,output = FALSE,filename =
 bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1.2,pch=1,...) {
   res_base = boot.res$input$Res
   if (class(boot.res$input$Res)=="fit.SR") {
+    validate_sr(res_sr = boot.res$input$Res)
     # for fit.SR
     if (output) png(file = paste0(filename,"_pars.png"), width=10, height=10, res=432, units='in')
     par(pch=pch,lwd = lwd, mfrow=c(2,2))
@@ -1474,6 +1516,7 @@ jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename 
     jack$input$w[i] <- 0
     if (use.p0) jack$input$p0 <- resSR$opt$par
     if (class(resSR)=="fit.SR") {
+      validate_sr(res_sr = resSR)
       do.call(fit.SR,jack$input)
     } else {
       if (class(resSR)=="fit.SRregime") {
@@ -1581,6 +1624,7 @@ prof.likSR = function(resSR,output=FALSE,filename="Profile_Likelihood",a_range =
   if (is.null(a_range)) a_range = c(0.5,2)
   if (is.null(b_range)) b_range = c(0.5,2)
   if (class(resSR) == "fit.SR") {
+    validate_sr(res_sr = resSR)
     a.grid <- seq(resSR$pars$a*a_range[1],resSR$pars$a*a_range[2],length=length)
     if (resSR$input$SR!="HS" || !isTRUE(HS_b_restrict)) {
       b.grid <- seq(resSR$pars$b*b_range[1],resSR$pars$b*b_range[2],length=length)
@@ -1686,6 +1730,7 @@ out.SR = function(resSR,filename = "resSR") {
   RES$SR = resSR$input$SR
   RES$method = resSR$input$method
   if (class(resSR) == "fit.SR") {
+    validate_sr(res_sr = resSR)
     RES$AR = resSR$input$AR
     RES$out.AR = resSR$input$out.AR
     RES$pars = resSR$pars
@@ -1745,6 +1790,7 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
     input$p0 = resSR$opt$par
     input$hessian = TRUE
     if (class(resSR) == "fit.SR") {
+      validate_sr(res_sr = resSR)
       #input$rep.opt = TRUE
       resSR2 = do.call(fit.SR, input)
     } else {
@@ -2011,6 +2057,7 @@ calc_steepness = function(SR="HS",rec_pars,M,waa,maa,plus_group=TRUE) {
   # 再生産関係とy=(1/SPR0)*xの交点を求める
   rec_a = rec_pars$a
   rec_b = rec_pars$b
+  validate_sr(SR = SR)
   if (SR == "HS") {
     R0 = rec_pars$a * rec_pars$b
     SB0 = R0*SPR0
