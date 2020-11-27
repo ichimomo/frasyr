@@ -68,7 +68,10 @@ validate_sr <- function(SR = NULL, method = NULL, AR = NULL, out.AR = NULL, res_
     assertthat::assert_that(method %in% c("L1", "L2"))
   }
   if (!is.null(AR)) {
-    assertthat::assert_that(AR %in% c(0, 1))
+    assertthat::assert_that(
+      is.numeric(AR),
+      AR %in% c(0, 1)
+    )
   }
   if (!is.null(out.AR)) {
     assertthat::assert_that(is.logical(out.AR))
