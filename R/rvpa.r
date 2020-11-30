@@ -606,6 +606,7 @@ vpa <- function(
   caa <- dat$caa    # catch-at-age
   waa <- dat$waa    # weight-at-age
   maa <- dat$maa    # maturity-at-age
+
   if (!is.null(dat$maa.tune)) maa.tune <- dat$maa.tune
   if (!is.null(dat$catch.prop)) catch.prop <- dat$catch.prop
   index <- dat$index   # abundance indices
@@ -673,6 +674,7 @@ vpa <- function(
   if (isTRUE(tune)){
 
     nindex <- nrow(index)
+    assertthat::assert_that(length(abund) == nrow(index))
 
     if (nindex > length(abund) & length(abund)==1) abund <- rep(abund, nindex)
     if (nindex > length(min.age) & length(min.age)==1) min.age <- rep(min.age, nindex)

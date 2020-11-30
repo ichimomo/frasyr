@@ -12,6 +12,18 @@ test_that("caa, waa and maa data input error check",{
 
 context("vpa")
 
+test_that("usage", {
+
+  caa <- read.csv(system.file("extdata","caa_pma.csv",package="frasyr"),row.names=1)
+  waa <- read.csv(system.file("extdata","waa_pma.csv",package="frasyr"),row.names=1)
+  maa <- read.csv(system.file("extdata","maa_pma.csv",package="frasyr"),row.names=1)
+  index <- read.csv(system.file("extdata","index_pma.csv",package="frasyr"),row.names=1)
+  dat <- data.handler(caa = caa, waa = waa, maa = maa, M = 0.5, index = index)
+  expect_error(vpa(dat, abund = "N", tune = TRUE),
+               "length(abund) not equal to nrow(index)",
+               fix = TRUE)
+})
+
 test_that("output value check",{
   caa <- read.csv(system.file("extdata","caa_pma.csv",package="frasyr"),row.names=1)
   waa <- read.csv(system.file("extdata","waa_pma.csv",package="frasyr"),row.names=1)

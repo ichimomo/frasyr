@@ -262,6 +262,7 @@ tmp <-   do_sensitivity_vpa(res_tmp,what_replace = "tuning", value = list(1995:1
 
 ```{r}
 res_tmp <- vpa(vpadat_estb, tf.year=1998:2000, last.catch.zero = FALSE, 
+               abund = c("B", "B", "B", "B", "B", "B"),
                Pope = TRUE, p.init = 0.5, tune=TRUE, sel.update=TRUE)
 res_vpa_sensitivity <- do_sensitivity_vpa(res_tmp, 
                                           what_replace = "tuning",
@@ -297,6 +298,7 @@ tmp <- do_sensitivity_vpa(res_tmp, what_replace = "tuning", value = list(1995:20
 
 # リッジVPAの場合
 res_tmp <- vpa(vpadat_estb, tf.year=1997:1999, last.catch.zero = FALSE, 
+               abund = c("B", "B", "B", "B", "B", "B"),
                Pope = TRUE, p.init = 0.5, tune=TRUE, term.F = "all", lambda = 0.2)
 tmp <- do_sensitivity_vpa(res_tmp, what_replace = "lambda", value = c(0,0.1,0.5,0.7),
                           what_plot=c("SSB","biomass","U","Recruitment",
@@ -381,6 +383,7 @@ res_vpa_retrospective$graph
 ```{r}
 
 res_tmp <- vpa(vpadat_estb, tf.year=1997:1999, last.catch.zero = FALSE, Pope = TRUE, 
+               abund = c("B", "B", "B", "B", "B", "B"),
                p.init = 0.5, tune=TRUE, sel.update=FALSE, term.F = "all", b.est = TRUE) 
                                                               # まずbを推定するvpaを実行しています
 
@@ -404,6 +407,7 @@ VPAを2段階法で行っている場合は、`res_step1`引数に1段階目のV
 res_tmp1 <- vpa(vpadat_estb, tf.year=1997:1999, last.catch.zero = FALSE, Pope = TRUE, 
                 p.init = 0.5, tune=FALSE, term.F = "max", b.est = FALSE,fc.year=1998:2000) 
 res_tmp2 <- vpa(vpadat_estb, tf.year=1997:1999, last.catch.zero = FALSE, Pope = TRUE, 
+                abund = c("B", "B", "B", "B", "B", "B"),
                 p.init = 0.5, tune=TRUE, term.F = "max", b.est = TRUE, fc.year=1998:2000, 
                 sel.f = res_tmp1$saa$`2000`)   # sel.fで2段階目の選択率の初期値を与えます
 
