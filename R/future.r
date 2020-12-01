@@ -238,6 +238,7 @@ make_future_data <- function(res_vpa,
       HCR_mat[as.character(HCR_year$year),,target] <- HCR_year[target][1] %>%
         unlist() %>% as.numeric()
     }
+  }
  
   HCR_mat <- assign_HCR_(HCR_mat, HCR_beta_year,   target="beta")
   HCR_mat <- assign_HCR_(HCR_mat, HCR_Blimit_year, target="Blimit")
