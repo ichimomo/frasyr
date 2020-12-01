@@ -23,7 +23,9 @@
 #' @param HCR_Blimit HCRのBlimit
 #' @param HCR_Bban HCRのBban
 #' @param HCR_year_lag HCRするときにいつのタイミングのssbを参照するか.0の場合、ABC計算年のSSBを参照する。正の値1を入れると1年前のssbを参照する
-#' @param HCR_beta_year betaを年によって変える場合。tibble(year=2020:2024, beta=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える
+#' @param HCR_beta_year betaを年によって変える場合。tibble(year=2020:2024, beta=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える。HCR_betaで設定されたbetaは上書きされる。
+#' @param HCR_Blimit_year Blimitを年によって変える場合。tibble(year=2020:2024, Blimit=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える。HCR_Blimitで設定されたBlimitは上書きされる。
+#' @param HCR_Bban_year Bbanを年によって変える場合。tibble(year=2020:2024, Bban=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える。HCR_Bbanで設定されたBbanは上書きされる。
 #' @param HCR_TAC_reserve_rate TACの取り残し率
 #' @param HCR_TAC_carry_rate TACの何％まで持ち越せるか
 #' @param Pope 漁獲方程式にPopeの近似式を使うかどうか。与えない場合には、VPAのオプションが引き継がれる
@@ -78,7 +80,9 @@ make_future_data <- function(res_vpa,
                              HCR_Blimit=-1,
                              HCR_Bban=-1,
                              HCR_year_lag=0,
-                             HCR_beta_year=NULL, # tibble(year=2020:2024, beta=c(1.3,1.2,1.1,1,0.9))
+                             HCR_beta_year=NULL, 
+                             HCR_Blimit_year=NULL, 
+                             HCR_Bban_year=NULL, 
                              HCR_TAC_reserve_rate=NA,
                              HCR_TAC_carry_rate=NA,
                              HCR_function_name="HCR_default",
@@ -214,12 +218,19 @@ make_future_data <- function(res_vpa,
   HCR_mat[start_ABC_year:total_nyear,,"TAC_reserve_rate"] <- HCR_TAC_reserve_rate
   HCR_mat[start_ABC_year:total_nyear,,"TAC_carry_rate"] <- HCR_TAC_carry_rate
 
-
-  if(!is.null(HCR_beta_year)){
-    HCR_mat[as.character(HCR_beta_year$year),,"beta"] <- HCR_beta_year$beta
+  assign_HCR_ <- function(HCR_mat, HCR_year, target){
+    if(!is.null(HCR_year)){
+      assert_that(all(c("year",target)%in%names(HCR_year)))
+      HCR_mat[as.character(HCR_year$year),,target] <- HCR_year[target][1] %>%
+        unlist() %>% as.numeric()
+    }
+    return(HCR_mat)
   }
 
-
+  HCR_mat <- assign_HCR_(HCR_mat, HCR_beta_year,   target="beta")
+  HCR_mat <- assign_HCR_(HCR_mat, HCR_Blimit_year, target="Blimit")
+  HCR_mat <- assign_HCR_(HCR_mat, HCR_Bban_year,   target="Bban")
+  
   # when fix wcatch
   # VPA期間中のwcatchをfixするかどうか？？
   #    if(isTRUE(Pope)){

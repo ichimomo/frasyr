@@ -640,7 +640,7 @@ test_that("future_vpa function (with dummy vpa data) for regime shift (level 2-3
 })
 
 
-test_that("future_vpa function (flexible beta) (level 2)",{ # ----
+test_that("future_vpa function (yerly change of beta, Blimit and Bban) (level 2)",{ # ----
 
   data(res_vpa)
   data(res_sr_HSL2)
@@ -708,6 +708,26 @@ test_that("future_vpa function (flexible beta) (level 2)",{ # ----
       future_vpa(optim_method="none")
 
   expect_equal(all(res_future_myHCR$faa[,as.character(2019:2047),]==0),TRUE)
+
+  ## yearly Blimit
+  Blimit_setting <- tibble(year=2021:2023,Blimit=0)
+  res_future <- redo_future(data_future_test,
+                            list(nsim=10,
+                                 HCR_Blimit=1000,HCR_Blimit_year=Blimit_setting))
+
+  x <- apply(res_future$HCR_mat[as.character(Blimit_setting$year),,"Blimit"],1,mean) %>%
+      unlist()  %>% as.numeric()
+  expect_equal(x, as.numeric(unlist(Blimit_setting$Blimit)))
+
+  ## yearly Bban
+  Bban_setting <- tibble(year=2021:2023,Bban=0)
+  res_future <- redo_future(data_future_test,
+                            list(nsim=10,
+                                 HCR_Bban=1000,HCR_Bban_year=Bban_setting))
+
+  x <- apply(res_future$HCR_mat[as.character(Bban_setting$year),,"Bban"],1,mean) %>%
+      unlist()  %>% as.numeric()
+  expect_equal(x, as.numeric(unlist(Bban_setting$Bban)))  
 
 })
 
