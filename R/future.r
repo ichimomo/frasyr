@@ -30,6 +30,8 @@
 #' @param HCR_TAC_carry_rate TACの何％まで持ち越せるか
 #' @param HCR_TAC_reserve_amount その年の総漁獲可能量に対する獲り残し量
 #' @param HCR_TAC_carry_amount 当初TACのうち何トンまで持ち越せるか
+#' @param HCR_TAC_upper_CV 漁獲量が前年の漁獲量のHCR_TAC_upper_CV倍と比較し、それよりも変化が大きい場合には前年の漁獲量xHCR_TAC_upper_CVを上限とする
+#' @param HCR_TAC_lower_CV 漁獲量が前年の漁獲量のHCR_TAC_lower_CV倍と比較し、それよりも変化が大きい場合には前年の漁獲量xHCR_TAC_lower_CVを下限とする
 #' @param Pope 漁獲方程式にPopeの近似式を使うかどうか。与えない場合には、VPAのオプションが引き継がれる
 #' @param HCR_function_name デフォルトは"HCR_default" ここを変更(関数名を文字列で与える。関数は別に定義しておく)すると自作のHCRが適用される。その場合、データのほうで定義されているbeta, Blimit, Bbanなど、同じ名前のものは有効
 #' @param fix_recruit 将来予測において再生産関係を無視して加入量を一定値で与える場合、その加入の値。list(year=2020, rec=1000)のように与える。
@@ -89,6 +91,8 @@ make_future_data <- function(res_vpa,
                              HCR_TAC_reserve_amount=NA,  #
                              HCR_TAC_carry_rate=NA,
                              HCR_TAC_carry_amount=NA,    #
+                             HCR_TAC_upper_CV=NA,
+                             HCR_TAC_lower_CV=NA,                             
                              HCR_function_name="HCR_default",
                              # Other
                              Pope=res_vpa$input$Pope,
@@ -162,7 +166,7 @@ make_future_data <- function(res_vpa,
                                       "bias_factor", #11
                                       "blank2","blank3","blank4","blank5")))  
   #HCR_mat <- array(0, dim=c(total_nyear, nsim, 7),
-  HCR_mat <- array(0, dim=c(total_nyear, nsim, 9),
+  HCR_mat <- array(0, dim=c(total_nyear, nsim, 11),
                    dimnames=list(year=allyear_name, nsim=1:nsim,
                                  par=c("beta","Blimit","Bban","year_lag", #1-4
                                        "expect_wcatch",# 5 漁獲量。ここにあらかじめ値を入れているとこの漁獲量どおりに漁獲する
@@ -170,7 +174,9 @@ make_future_data <- function(res_vpa,
                                        "TAC_reserve_rate", # 6 全漁獲可能量の何割まで獲り残すか      #
                                        "TAC_carry_rate", # 7 TACの何割まで翌年に持ち越しを許容するか  #
                                        "TAC_reserve_amount", # 8 全漁獲可能量のうち何トンまで獲り残すか  #
-                                       "TAC_carry_amount" # 9 何トンまで持ち越しを許容するか             #
+                                       "TAC_carry_amount", # 9 何トンまで持ち越しを許容するか             #
+                                       "TAC_upper_CV", # 10 漁獲量の変動の上側の上限
+                                       "TAC_lower_CV" # 11 漁獲量の変動の下側の下限
                                        ))) 
   class(SR_mat)  <- "myarray"
   class(HCR_mat) <- "myarray"
@@ -180,6 +186,8 @@ make_future_data <- function(res_vpa,
   HCR_mat[,,"beta"] <- 1
   HCR_mat[,,"TAC_reserve_rate"] <- HCR_mat[,,"TAC_carry_rate"] <- NA
   HCR_mat[,,"TAC_reserve_amount"] <- HCR_mat[,,"TAC_carry_amount"] <- NA
+  HCR_mat[,,"TAC_upper_CV"] <- NA
+  HCR_mat[,,"TAC_lower_CV"] <- NA    
   
   # fill vpa data 
   waa_mat[,1:vpa_nyear,] <- as.matrix(res_vpa$input$dat$waa)
@@ -231,13 +239,20 @@ make_future_data <- function(res_vpa,
   HCR_mat[start_ABC_year:total_nyear,,"TAC_carry_rate"  ]   <- HCR_TAC_carry_rate
   HCR_mat[start_ABC_year:total_nyear,,"TAC_reserve_amount"] <- HCR_TAC_reserve_amount #
   HCR_mat[start_ABC_year:total_nyear,,"TAC_carry_amount"]   <- HCR_TAC_carry_amount     #
+  HCR_mat[start_ABC_year:total_nyear,,"TAC_upper_CV"]     <- HCR_TAC_upper_CV
+  HCR_mat[start_ABC_year:total_nyear,,"TAC_lower_CV"]     <- HCR_TAC_lower_CV  
 
   assign_HCR_ <- function(HCR_mat, HCR_year, target){
     if(!is.null(HCR_year)){
       assert_that(all(c("year",target)%in%names(HCR_year)))
-      HCR_mat[as.character(HCR_year$year),,target] <- HCR_year[target][1] %>%
-        unlist() %>% as.numeric()
+      tmp <- which(dimnames(HCR_mat)[[1]] %in% as.character(HCR_year$year) )
+      tmp2 <- which(as.character(HCR_year$year)%in% dimnames(HCR_mat)[[1]] )      
+      if(length(tmp)>0){
+          tmp3 <- HCR_year[target][1] %>% unlist() %>% as.numeric()
+          HCR_mat[tmp,,target] <- tmp3[tmp2]
+        }
     }
+    return(HCR_mat)
   }
  
   HCR_mat <- assign_HCR_(HCR_mat, HCR_beta_year,   target="beta")
@@ -737,6 +752,29 @@ future_vpa_R <- function(naa_mat,
       }
     }
 
+    # 漁獲量の変動の上限・下限設定をする場合
+    if(t>=start_ABC_year && sum(!is.na(HCR_mat[t,,"TAC_upper_CV"]))){
+      # expect_wcatchが空のところはexpect_wcatchを全部計算する　
+      if(sum(HCR_mat[t,,"expect_wcatch"]==0)>0){
+        HCR_mat[t,,"expect_wcatch"] <- catch_equation(N_mat[,t,],F_mat[,t,],waa_catch_mat[,t,],M_mat[,t,],Pope=Pope) %>% colSums()
+      }
+      # CVよりも小さい・大きかったら上限値にexpect_wcatchを置き換える
+      upper_catch <- HCR_realized[t-1,,"wcatch"] * HCR_mat[t,,"TAC_upper_CV"]
+      is_over_upper_catch  <- HCR_mat[t,,"expect_wcatch"]>upper_catch
+      HCR_mat[t,is_over_upper_catch, "expect_wcatch"] <- upper_catch[is_over_upper_catch ]
+    }
+
+    if(t>=start_ABC_year && sum(!is.na(HCR_mat[t,,"TAC_lower_CV"]))){
+      # expect_wcatchが空のところはexpect_wcatchを全部計算する　
+      if(sum(HCR_mat[t,,"expect_wcatch"]==0)>0){
+        HCR_mat[t,,"expect_wcatch"] <- catch_equation(N_mat[,t,],F_mat[,t,],waa_catch_mat[,t,],M_mat[,t,],Pope=Pope) %>% colSums()
+      }
+      # CVよりも小さい・大きかったら上限値にexpect_wcatchを置き換える
+      lower_catch <- HCR_realized[t-1,,"wcatch"] * HCR_mat[t,,"TAC_lower_CV"]
+      is_under_lower_catch <- HCR_mat[t,,"expect_wcatch"]<lower_catch
+      HCR_mat[t,is_under_lower_catch,"expect_wcatch"] <- lower_catch[is_under_lower_catch]
+    }    
+
     if(sum(HCR_mat[t,,"expect_wcatch"])>0){
       F_max_tmp <- apply(faa_mat[,t,],2,max) # betaを乗じる前のもとのfaaを用いる
       # F_mat[,t,]がものすごく小さい値になっている場合、そのままで入れるとFへの乗数が壁に当たる場合があるので最大１で正規化する
@@ -750,7 +788,7 @@ future_vpa_R <- function(naa_mat,
                                                                      Pope=as.logical(Pope))$x)
       F_mat[,t,which(F_max_tmp>0)] <- sweep(saa.tmp[,which(F_max_tmp>0)],2, fix_catch_multiplier, FUN="*")
       HCR_realized[t,which(F_max_tmp>0),"beta_gamma"] <- HCR_realized[t,which(F_max_tmp>0),"beta_gamma"] *
-                                            fix_catch_multiplier / F_max_tmp[which(F_max_tmp>0)]
+        fix_catch_multiplier / F_max_tmp[which(F_max_tmp>0)]
     }
 
     if(t<total_nyear){
@@ -761,6 +799,8 @@ future_vpa_R <- function(naa_mat,
       N_mat[plus_age,t+1,] <- N_mat[plus_age,t+1,] + N_mat[plus_age,t,]*exp(-M_mat[plus_age,t,]-F_mat[plus_age,t,])
       if(!is.null(waa_par_mat)) waa_mat[,t,] <- waa_catch_mat[,t,] <- update_waa_mat(waa=waa_mat[,t,],rand=waa_rand_mat[,t,],naa=N_mat[,t,],pars_b0=waa_par_mat[,,"b0"],pars_b1=waa_par_mat[,,"b1"])
     }
+
+    HCR_realized[t,,"wcatch"] <- catch_equation(N_mat[,t,],F_mat[,t,],waa_catch_mat[,t,],M_mat[,t,],Pope=Pope) %>% colSums()    
   }
 
   if(Pope==1){

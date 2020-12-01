@@ -665,7 +665,7 @@ test_that("future_vpa function (yerly change of beta, Blimit and Bban) (level 2)
                                        HCR_Blimit=-1, # HCRのBlimit
                                        HCR_Bban=-1, # HCRのBban
                                        HCR_year_lag=0, # HCRで何年遅れにするか
-                                       HCR_beta_year = tibble(year=2021:2023,beta=specific_beta),
+                                       HCR_beta_year = tibble(year=2021:2023,beta=rep(specific_beta,3)),
                                        # SR setting
                                        res_SR=res_sr_HSL2,
                                        seed_number=1, # シード番号
@@ -727,7 +727,18 @@ test_that("future_vpa function (yerly change of beta, Blimit and Bban) (level 2)
 
   x <- apply(res_future$HCR_mat[as.character(Bban_setting$year),,"Bban"],1,mean) %>%
       unlist()  %>% as.numeric()
-  expect_equal(x, as.numeric(unlist(Bban_setting$Bban)))  
+  expect_equal(x, as.numeric(unlist(Bban_setting$Bban)))
+
+  ## upper limit of catch CV
+  CV_range <- c(0.8,1.1)
+  res_future <- redo_future(data_future_test,
+                            list(nsim=10,nyear=7,
+                                 HCR_TAC_upper_CV=CV_range[2],
+                                 HCR_TAC_lower_CV=CV_range[1]),
+                            do_MSE=FALSE)
+  plot.future(res_future)
+  x <- round(res_future$HCR_realized[-1,,"wcatch"]/res_future$HCR_realized[-nrow(res_future$HCR_realized[-1,,"wcatch"]),,"wcatch"],2)
+  expect_equal(range(x[as.character(2019:2023),]),CV_range)
 
 })
 
@@ -766,6 +777,7 @@ test_that("future_vpa function (MSE) (level 2)",{ # ----
                                        Pope=res_vpa$input$Pope,
                                        fix_recruit=NULL,
                                        fix_wcatch=NULL)
+  
   data_future_test1000 <- list_modify(data_future_test10$input,nsim=1000) %>% safe_call(make_future_data,.)
 
   # 1000回のノーマル将来予測
