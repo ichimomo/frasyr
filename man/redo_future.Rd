@@ -10,6 +10,7 @@ redo_future(
   SR_sd = NULL,
   SR_b = NULL,
   only_data = FALSE,
+  is_regime = (class(data_future$input$res_SR) == "fit.SRregime"),
   ...
 )
 }

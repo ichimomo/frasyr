@@ -33,6 +33,8 @@ make_future_data(
   HCR_Bban = -1,
   HCR_year_lag = 0,
   HCR_beta_year = NULL,
+  HCR_Blimit_year = NULL,
+  HCR_Bban_year = NULL,
   HCR_TAC_reserve_rate = NA,
   HCR_TAC_carry_rate = NA,
   HCR_function_name = "HCR_default",
@@ -95,7 +97,11 @@ make_future_data(
 
 \item{HCR_year_lag}{HCRするときにいつのタイミングのssbを参照するか.0の場合、ABC計算年のSSBを参照する。正の値1を入れると1年前のssbを参照する}
 
-\item{HCR_beta_year}{betaを年によって変える場合。tibble(year=2020:2024, beta=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える}
+\item{HCR_beta_year}{betaを年によって変える場合。tibble(year=2020:2024, beta=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える。HCR_betaで設定されたbetaは上書きされる。}
+
+\item{HCR_Blimit_year}{Blimitを年によって変える場合。tibble(year=2020:2024, Blimit=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える。HCR_Blimitで設定されたBlimitは上書きされる。}
+
+\item{HCR_Bban_year}{Bbanを年によって変える場合。tibble(year=2020:2024, Bban=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える。HCR_Bbanで設定されたBbanは上書きされる。}
 
 \item{HCR_TAC_reserve_rate}{TACの取り残し率}
 

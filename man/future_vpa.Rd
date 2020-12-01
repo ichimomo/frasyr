@@ -28,6 +28,12 @@ future_vpa(
 \arguments{
 \item{tmb_data}{make_future_dataの返り値。将来の生物パラメータや再生産関係のシナリオを年齢×年×シミュレーション回数で指定した様々なarrayが含まれる。}
 
+\item{objective}{MSY:MSYの推定、PGY:PGYの値をobj_valueに入れる、percentB0:B0パーセント、何％にするかはobj_valueで指定, SSB:obj_valueで指定した特定の親魚資源量に一致するようにする}
+
+\item{obj_value}{目的とする値}
+
+\item{obj_stat}{目的関数を計算するときに利用する計算方法（"mean"だと平均、"median"だと中央値、"geomean"だと幾何平均）}
+
 \item{do_MSE}{簡易MSEを実施するか}
 
 \item{MSE_input_data}{簡易MSEを実施する場合、ABC計算するための将来予測を実施するための設定ファイル}
