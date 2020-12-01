@@ -1,5 +1,74 @@
 library(frasyr)
 
+context("Detect unexpected arguments for stock-recruit functions")
+
+test_that("model type", {
+  method <- "L1"
+  AR     <- 0
+  good_usages <- c(
+    validate_sr(SR = "HS", method, AR),
+    validate_sr(SR = "BH", method, AR),
+    validate_sr(SR = "RI", method, AR)
+  )
+  assertthat::assert_that(isTRUE(all(good_usages)))
+
+  expect_error(validate_sr(SR = "bad_argument", method, AR))
+  expect_error(validate_sr(SR = c("HS", "BH", "RI"), method, AR))
+  expect_error(validate_sr(SR = c("HS", "BH", "RI"), method, AR))
+  expect_error(validate_sr(SR = 1, method, AR))
+  expect_error(validate_sr(SR = 2, method, AR))
+  expect_error(validate_sr(SR = 3, method, AR))
+})
+
+test_that("method", {
+  SR <- "HS"
+  AR <- 0
+  good_usages <- c(
+    validate_sr(SR, method = "L1", AR),
+    validate_sr(SR, method = "L2", AR)
+  )
+  assertthat::assert_that(isTRUE(all(good_usages)))
+
+  expect_error(validate_sr(SR, method = "L3", AR))
+  expect_error(validate_sr(SR, method = 1, AR))
+  expect_error(validate_sr(SR, method = 2, AR))
+  expect_error(validate_sr(SR, method = TRUE, AR))
+  expect_error(validate_sr(SR, method = NA, AR))
+})
+
+test_that("AR", {
+  SR     <- "HS"
+  method <- "L1"
+  good_usages <- c(
+    validate_sr(SR, method, AR = 0),
+    validate_sr(SR, method, AR = 1)
+  )
+  assertthat::assert_that(isTRUE(all(good_usages)))
+
+  expect_error(validate_sr(SR, method, AR = TRUE))
+  expect_error(validate_sr(SR, method, AR = FALSE))
+  expect_error(validate_sr(SR, method, AR = 2))
+  expect_error(validate_sr(SR, method, AR = 3))
+  expect_error(validate_sr(SR, method, AR = NA))
+})
+
+test_that("out.AR", {
+  SR     <- "HS"
+  method <- "L1"
+  AR     <- 1
+  good_usages <- c(
+    validate_sr(SR, method, AR, out.AR = TRUE),
+    validate_sr(SR, method, AR, out.AR = FALSE),
+    validate_sr(SR, method, AR, out.AR = NA)
+  )
+  assertthat::assert_that(isTRUE(all(good_usages)))
+
+  # expect_error(validate_sr(SR, method, AR = 0, out.AR = TRUE))
+  # expect_error(validate_sr(SR, method, AR = 0, out.AR = FALSE))
+  expect_error(validate_sr(SR, method, AR, out.AR = 1))
+  expect_error(validate_sr(SR, method, AR, out.AR = 0))
+})
+
 context("stock-recruitment SRdata")
 
 test_that("output value check",{
@@ -20,7 +89,10 @@ context("stock-recruitment fitSR")
 test_that("output value check",{
   load(system.file("extdata","SRdata_pma.rda",package = "frasyr"))
 
-  SRmodel.list <- expand.grid(SR.rel = c("HS","BH","RI"), AR.type = c(0, 1), out.AR=c(TRUE,FALSE), L.type = c("L1", "L2"))
+  SRmodel.list <- expand.grid(SR.rel = c("HS", "BH", "RI"),
+                              AR.type = c(0, 1),
+                              out.AR = c(TRUE, FALSE),
+                              L.type = c("L1", "L2"))
   SR.list <- list()
   for (i in 1:nrow(SRmodel.list)){
     SR.list[[i]] <- fit.SR(SRdata_pma, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],
@@ -314,7 +386,8 @@ context("stock-recruitment fit.SRregime")
 test_that("check matching of fit.SRregime and fit.SR",{
   load(system.file("extdata","SRdata_pma.rda",package = "frasyr"))
   SRdata = SRdata_pma
-  SRmodel.list <- expand.grid(SR.rel = c("HS","BH","RI"), L.type = c("L1", "L2"))
+  SRmodel.list <- expand.grid(SR.rel = c("HS", "BH", "RI"),
+                              L.type = c("L1", "L2"))
   # regime_year = ceiling(mean(SRdata$year))
   regime_year = 1999
   regime1 = min(SRdata$year):(regime_year-1); regime2 = regime_year:max(SRdata$year);

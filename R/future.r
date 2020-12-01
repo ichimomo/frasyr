@@ -28,6 +28,8 @@
 #' @param HCR_Bban_year Bbanを年によって変える場合。tibble(year=2020:2024, Bban=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える。HCR_Bbanで設定されたBbanは上書きされる。
 #' @param HCR_TAC_reserve_rate TACの取り残し率
 #' @param HCR_TAC_carry_rate TACの何％まで持ち越せるか
+#' @param HCR_TAC_reserve_amount その年の総漁獲可能量に対する獲り残し量
+#' @param HCR_TAC_carry_amount 当初TACのうち何トンまで持ち越せるか
 #' @param Pope 漁獲方程式にPopeの近似式を使うかどうか。与えない場合には、VPAのオプションが引き継がれる
 #' @param HCR_function_name デフォルトは"HCR_default" ここを変更(関数名を文字列で与える。関数は別に定義しておく)すると自作のHCRが適用される。その場合、データのほうで定義されているbeta, Blimit, Bbanなど、同じ名前のものは有効
 #' @param fix_recruit 将来予測において再生産関係を無視して加入量を一定値で与える場合、その加入の値。list(year=2020, rec=1000)のように与える。
@@ -84,7 +86,9 @@ make_future_data <- function(res_vpa,
                              HCR_Blimit_year=NULL, 
                              HCR_Bban_year=NULL, 
                              HCR_TAC_reserve_rate=NA,
+                             HCR_TAC_reserve_amount=NA,  #
                              HCR_TAC_carry_rate=NA,
+                             HCR_TAC_carry_amount=NA,    #
                              HCR_function_name="HCR_default",
                              # Other
                              Pope=res_vpa$input$Pope,
@@ -112,9 +116,14 @@ make_future_data <- function(res_vpa,
   input <- lapply(argname,function(x) eval(parse(text=x)))
   names(input) <- argname
 
-  if(!is.na(HCR_TAC_reserve_rate) && any(HCR_TAC_reserve_rate < 0)) stop("HCR_TAC_reserve_rateに負の値は許されていません\n")
-  if(!is.na(HCR_TAC_carry_rate  ) && any(HCR_TAC_carry_rate   < 0)) stop("HCR_TAC_carry_rateに負の値は許されていません\n")
+  if(!is.na(HCR_TAC_reserve_rate  )) assertthat::assert_that(min(HCR_TAC_reserve_rate  ) >= 0)
+  if(!is.na(HCR_TAC_carry_rate    )) assertthat::assert_that(min(HCR_TAC_carry_rate    ) >= 0)
+  if(!is.na(HCR_TAC_reserve_amount)) assertthat::assert_that(min(HCR_TAC_reserve_amount) >= 0)
+  if(!is.na(HCR_TAC_carry_amount  )) assertthat::assert_that(min(HCR_TAC_carry_amount  ) >= 0)
 
+  if(!is.na(HCR_TAC_reserve_rate) && !is.na(HCR_TAC_reserve_amount)) stop("HCR_TAC_reserve_rateとHCR_TAC_reserve_amountが同時に指定されています（同時には指定できません）")
+  if(!is.na(HCR_TAC_carry_rate) && !is.na(HCR_TAC_carry_amount))     stop("HCR_TAC_carry_rateとHCR_TAC_carry_amountが同時に指定されています（同時には指定できません）")  
+  
   # define age and year
   nage <- nrow(res_vpa$naa)
   age_name    <- as.numeric(rownames(res_vpa$naa))
@@ -151,16 +160,18 @@ make_future_data <- function(res_vpa,
                                       "recruit","ssb",
                                       "intercept","sd",#9-10
                                       "bias_factor", #11
-                                      "blank2","blank3","blank4","blank5")))
-  HCR_mat <- array(0, dim=c(total_nyear, nsim, 7),
+                                      "blank2","blank3","blank4","blank5")))  
+  #HCR_mat <- array(0, dim=c(total_nyear, nsim, 7),
+  HCR_mat <- array(0, dim=c(total_nyear, nsim, 9),
                    dimnames=list(year=allyear_name, nsim=1:nsim,
                                  par=c("beta","Blimit","Bban","year_lag", #1-4
                                        "expect_wcatch",# 5 漁獲量。ここにあらかじめ値を入れているとこの漁獲量どおりに漁獲する
                                        # 以下、取り残し用の設定
-                                       "TAC_reserve_rate", # 6 TACの何割まで漁獲するか
-                                       "TAC_carry_rate" # 7 TACの何割まで翌年に持ち越すか
-                                       )))
-
+                                       "TAC_reserve_rate", # 6 全漁獲可能量の何割まで獲り残すか      #
+                                       "TAC_carry_rate", # 7 TACの何割まで翌年に持ち越しを許容するか  #
+                                       "TAC_reserve_amount", # 8 全漁獲可能量のうち何トンまで獲り残すか  #
+                                       "TAC_carry_amount" # 9 何トンまで持ち越しを許容するか             #
+                                       ))) 
   class(SR_mat)  <- "myarray"
   class(HCR_mat) <- "myarray"
 
@@ -168,8 +179,9 @@ make_future_data <- function(res_vpa,
 #  HCR_mat[,,"beta"] <- HCR_mat[,,"beta_gamma"] <- 1
   HCR_mat[,,"beta"] <- 1
   HCR_mat[,,"TAC_reserve_rate"] <- HCR_mat[,,"TAC_carry_rate"] <- NA
-
-  # fill vpa data
+  HCR_mat[,,"TAC_reserve_amount"] <- HCR_mat[,,"TAC_carry_amount"] <- NA
+  
+  # fill vpa data 
   waa_mat[,1:vpa_nyear,] <- as.matrix(res_vpa$input$dat$waa)
   maa_mat[,1:vpa_nyear,] <- as.matrix(res_vpa$input$dat$maa)
   M_mat  [,1:vpa_nyear,] <- as.matrix(res_vpa$input$dat$M)
@@ -216,7 +228,9 @@ make_future_data <- function(res_vpa,
   HCR_mat[start_ABC_year:total_nyear,,"Bban"    ] <- HCR_Bban
   HCR_mat[start_ABC_year:total_nyear,,"year_lag"] <- HCR_year_lag
   HCR_mat[start_ABC_year:total_nyear,,"TAC_reserve_rate"] <- HCR_TAC_reserve_rate
-  HCR_mat[start_ABC_year:total_nyear,,"TAC_carry_rate"] <- HCR_TAC_carry_rate
+  HCR_mat[start_ABC_year:total_nyear,,"TAC_carry_rate"  ]   <- HCR_TAC_carry_rate
+  HCR_mat[start_ABC_year:total_nyear,,"TAC_reserve_amount"] <- HCR_TAC_reserve_amount #
+  HCR_mat[start_ABC_year:total_nyear,,"TAC_carry_amount"]   <- HCR_TAC_carry_amount     #
 
   assign_HCR_ <- function(HCR_mat, HCR_year, target){
     if(!is.null(HCR_year)){
@@ -224,9 +238,7 @@ make_future_data <- function(res_vpa,
       HCR_mat[as.character(HCR_year$year),,target] <- HCR_year[target][1] %>%
         unlist() %>% as.numeric()
     }
-    return(HCR_mat)
-  }
-
+ 
   HCR_mat <- assign_HCR_(HCR_mat, HCR_beta_year,   target="beta")
   HCR_mat <- assign_HCR_(HCR_mat, HCR_Blimit_year, target="Blimit")
   HCR_mat <- assign_HCR_(HCR_mat, HCR_Bban_year,   target="Bban")
@@ -638,7 +650,10 @@ future_vpa_R <- function(naa_mat,
         MSE_dummy_data$M_mat[]   <-  M_mat[,,i] # in case
         # MSEのシミュレーション内では繰越設定はオフにする
         MSE_dummy_data$HCR_mat[,,"TAC_reserve_rate"] <- NA
-        MSE_dummy_data$HCR_mat[,,"TAC_carry_rate"] <- NA
+        MSE_dummy_data$HCR_mat[,,"TAC_carry_rate"] <- NA        
+        MSE_dummy_data$HCR_mat[,,"TAC_reserve_amount"] <- NA #
+        MSE_dummy_data$HCR_mat[,,"TAC_carry_amount"] <- NA   #
+
         for(k in 1:MSE_nsim){
           MSE_dummy_data$SR_mat[,k,]  <- SR_mat[,i,]
           MSE_dummy_data$SR_mat[,k,"ssb"]  <- spawner_mat[,i] # true ssb
@@ -687,7 +702,8 @@ future_vpa_R <- function(naa_mat,
     }
 
     # TAC carry over setting
-    if(sum(!is.na(HCR_mat[t,,"TAC_reserve_rate"]))>0){
+    if((sum(!is.na(HCR_mat[t,,"TAC_reserve_rate"]  ))>0) ||
+       (sum(!is.na(HCR_mat[t,,"TAC_reserve_amount"]))>0)  ){
       if(sum(HCR_mat[t,,"expect_wcatch"])==0){
         # non-MSE
         HCR_realized[t,,"original_ABC"] <-
@@ -698,13 +714,25 @@ future_vpa_R <- function(naa_mat,
         HCR_realized[t,,"original_ABC"] <- HCR_mat[t,,"expect_wcatch"]
       }
       HCR_realized[t,,"original_ABC_plus"] <- HCR_realized[t,,"original_ABC"] + HCR_realized[t,,"reserved_catch"]
-      HCR_mat[t,,"expect_wcatch"] <- HCR_realized[t,,"original_ABC_plus"] * (1-HCR_mat[t,,"TAC_reserve_rate"])
+      if(all(!is.na(HCR_mat[t,,"TAC_reserve_rate"]))){
+        HCR_mat[t,,"expect_wcatch"] <- HCR_realized[t,,"original_ABC_plus"] * (1-HCR_mat[t,,"TAC_reserve_rate"])
+      } #
+      if(all(!is.na(HCR_mat[t,,"TAC_reserve_amount"]))){
+        tmpcatch <- HCR_realized[t,,"original_ABC_plus"] - HCR_mat[t,,"TAC_reserve_amount"]
+        HCR_mat[t,,"expect_wcatch"] <- ifelse(tmpcatch<0, 0.01, tmpcatch)
+      } #expect_wcatchをゼロにすると不具合がありそうなので、微小値（0.01）を与える
+
       if(t<total_nyear){
+        if(all(!is.na(HCR_mat[t,,"TAC_carry_rate"]))){
           max_carry_amount <- HCR_mat[t,,"TAC_carry_rate"]*HCR_realized[t,,"original_ABC"]
-          ABC_reserve_amount <- HCR_realized[t,,"original_ABC"] - HCR_mat[t,,"expect_wcatch"]
-          ABC_reserve_amount[ABC_reserve_amount<0] <- 0
-          HCR_realized[t+1,,"reserved_catch"] <- cbind(max_carry_amount, ABC_reserve_amount) %>%
-              apply(1,min)
+        } #
+        if(all(!is.na(HCR_mat[t,,"TAC_carry_amount"]))){
+          max_carry_amount <- HCR_mat[t,,"TAC_carry_amount"]
+        }                             #
+        ABC_reserve_amount <- HCR_realized[t,,"original_ABC"] - HCR_mat[t,,"expect_wcatch"]
+        ABC_reserve_amount[ABC_reserve_amount<0] <- 0
+        HCR_realized[t+1,,"reserved_catch"] <- cbind(max_carry_amount, ABC_reserve_amount) %>%
+          apply(1,min)
       }
     }
 

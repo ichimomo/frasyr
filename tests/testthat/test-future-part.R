@@ -446,12 +446,12 @@ test_that("future_vpa function (with dummy vpa data) for regime shift (level 2-3
                           res_vpa_rec0_nontune)
   res_sr_list <- list()
   res_sr_list[[1]] <- fit.SRregime(get.SRdata(vpa_list[[1]]),
-                                   SR="HS",method="HS",regime.key=c(0,1),
+                                   SR="HS",method="L2",regime.key=c(0,1),
                                    regime.par=c("a","b"),regime.year=2005)
 
   # sdが異なるケースもテストしないといけない
   res_sr_list[[2]] <- fit.SRregime(get.SRdata(vpa_list[[1]]),
-                                   SR="HS",method="HS",regime.key=c(0,1),
+                                   SR="HS",method="L2",regime.key=c(0,1),
                                    regime.par=c("a","b","sd"),regime.year=2005)
   res_sr_list[[2]]$pars$sd[2] <- 0.3 # 本当は両方ゼロだがテストのために0.3を入れる
   res_sr_list[[2]]$regime_pars$sd[2] <- 0.3 # 本当は両方ゼロだがテストのために0.3を入れる
@@ -841,13 +841,27 @@ test_that("future_vpa function (carry over TAC) (level 2)",{
                          res_future_noreserve$HCR_realized[as.character(2019:2023),,"original_ABC_plus"],3)
                    ==1),TRUE)
 
+  # 繰越しを量で決める場合
+  expect_error(redo_future(data_future_test,list(HCR_TAC_reserve_amount=1000,
+                                                 HCR_TAC_reserve_rate=0.1)))
+  
+  res_future <- redo_future(data_future_test,list(HCR_TAC_reserve_amount=3000,
+                                                  HCR_TAC_carry_amount  =1000,
+                                                  HCR_TAC_carry_rate    =NA,
+                                                  HCR_TAC_reserve_rate  =NA))
+
+  tmp <- mean(res_future$HCR_realized[as.character(2019:2027),,"original_ABC_plus"]-
+              res_future$HCR_realized[as.character(2019:2027),,"wcatch"])
+  expect_equal(mean(tmp),3000,tol=0.1)
+  tmp <- mean(res_future$HCR_realized[as.character(2020:2027),,"reserved_catch"])
+  expect_equal(mean(tmp),1000,tol=0.1)
+  
   # MSEの場合
   res_future_MSE <- future_vpa(tmb_data=data_future_test$data,
                            optim_method="none",
                            multi_init = 1,SPRtarget=0.3,
                            do_MSE=TRUE, MSE_input_data=data_future_test,
                            MSE_nsim=1000)
-
   expect_equal(all(round(res_future_MSE$HCR_realized[as.character(2019:2023),,"wcatch"]/
                          res_future_MSE$HCR_realized[as.character(2019:2023),,"original_ABC_plus"],3)
                    ==0.9),TRUE)
