@@ -50,15 +50,15 @@ data.handler <- function(
 
   colnames(M) <- years
   rownames(M) <- rownames(caa)
-  
+
   expect_equal(rownames(caa),rownames(maa))
   expect_equal(rownames(caa),rownames(waa))
   expect_equal(rownames(caa),rownames(M))
-  
+
   expect_equal(colnames(caa),colnames(maa))
   expect_equal(colnames(caa),colnames(waa))
   expect_equal(colnames(caa),colnames(M))
-  
+
   res <- list(caa=caa, maa=maa, waa=waa, index=index, M=M, maa.tune=maa.tune, waa.catch=waa.catch, catch.prop=catch.prop)
 
   invisible(res)
@@ -164,7 +164,7 @@ backward.calc <- function(caa,naa,M,na,k,min.caa=0.001,p=0.5,plus.group=TRUE,sel
     }
     else if (isTRUE(plus.group) & use.equ=="old"){
       out[na[k]-1]<- pmax(caa[na[k]-1,k],min.caa)*alpha/(pmax(caa[na[k]-1,k],min.caa)*alpha +pmax(caa[na[k],k],min.caa))* naa[na[k],k+1] * exp(M[na[k]-1,k])+ caa[na[k]-1,k] * exp(p * M[na[k]-1,k])
-      
+
       out[na[k]]<- pmax(caa[na[k],k], min.caa)/(pmax(caa[na[k]-1,k], min.caa)*alpha + pmax(caa[na[k],k], min.caa)) * naa[na[k], k+1] * exp(M[na[k],k]) + caa[na[k], k] * exp(p * M[na[k],k])
     }
     else{
@@ -1571,7 +1571,12 @@ profile.likelihood.vpa.B <- function(res,Alpha=0.95,min.p=1.0E-6,max.p=1,L=20,me
 #' bootstrapを実施する
 #'
 #' @param res vpaの出力値
+#' @param method "p": パラメトリックブートストラップ。"n": ノンパラメトリックブートストラップ。"r": 残差をスムージングした後ブートストラップt法
+#'
 #' @encoding UTF-8
+#'
+#' @seealso
+#' https://ichimomo.github.io/frasyr/articles/Diagnostics-for-VPA.html
 #'
 #' @export
 
@@ -1580,24 +1585,35 @@ boo.vpa <- function(res,B=5,method="p",mean.correction=FALSE){
   ## method == "n": non-parametric bootstrap
   ## method == "r": smoothed residual bootstrap-t
 
-  index <- res$input$dat$index
-  p.index <- res$pred.index
-  resid <- log(as.matrix(index))-log(as.matrix(p.index))
+  assertthat::assert_that(method == "p" | method == "n" | method == "r")
 
-  R <- nrow(resid)
+  if(is.numeric(res$input$use.index)){
+    index <- res$input$dat$index[res$input$use.index,]
+    p.index <- res$pred.index
+    assertthat::assert_that(nrow(index) == nrow(p.index)) # obsとpredのデータの種類数が違ったら止める
+    resid <- log(as.matrix(index))-log(as.matrix(p.index))
+  } else { # use.index = "all" (default)
+    index <- res$input$dat$index
+    p.index <- res$pred.index
+    resid <- log(as.matrix(index))-log(as.matrix(p.index))
+  }
 
-  n <- apply(resid,1,function(x) sum(!is.na(x)))
-
-  np <- res$np
-
+  R <- nrow(resid)                               # 残差の行数(=用いたデータの数)
+  n <- apply(resid,1,function(x) sum(!is.na(x))) # 残差の数
+  np <- res$np                                   # パラメータ数
   rs2 <- rowSums(resid^2, na.rm=TRUE)/(n-np)
 
   res.c <- res
 
-  res.c$input$p.init <- res$term.f[1]
+  if(np == 1){
+    res.c$input$p.init <- res$term.f[1] # original code
+  } else {
+    res.c$input$p.init <- c(res$term.f,
+                            rev(res$term.f)[1]*res$input$alpha
+                            )    # 初期値とターミナルF合わせてる
+  }
 
-  b.index <- res$input$dat$index
-
+  b.index <- res$input$dat$index # ブートストラップCPUEの箱を先に作っておく
   Res1 <- list()
 
   for (b in 1:B){
