@@ -82,7 +82,8 @@ vpa(
   p_by_age = FALSE,
   penalty_age = NULL,
   no_eta_age = NULL,
-  sdreport = FALSE
+  sdreport = FALSE,
+  use.equ = "new"
 )
 }
 \arguments{
@@ -178,7 +179,7 @@ vpa(
 
 \item{max.iter}{q,b,sigma計算の際の最大繰り返し数}
 
-\item{lambda}{ridge回帰係数}
+\item{lambda}{ridge penaltyの大きさ}
 
 \item{beta}{penaltyのexponent  (beta = 1: lasso, 2: ridge)}
 
@@ -208,6 +209,7 @@ vpa(
 
 \item{sdreport}{\code{TMB=TRUE}のときに\code{sdreport()}を実行するかどうか（naa, faa, 資源量, 親魚量, Fの平均, 漁獲割合のSDを計算する）}
 
+\item{use.equ}{plus groupが途中で変わる場合の計算式の選択 （old = 従来の方法（プラスグループが延長している年はプラスグループのＦが一歳若い年齢のＦと等しいという仮定は置かない），new= 新しい方法（プラスグループが延長している年はプラスグループのＦが一歳若い年齢のＦと等しいという仮定を置く)}
 }
 \description{
 VPAによる資源計算を実施する
