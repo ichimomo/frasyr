@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>将来予測の実施関数 — future_vpa • frasyr</title>
+<title>future_vpaの結果オブジェクトのリストをtibble形式に変換する関数 — convert_future_list_table • frasyr</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,8 @@
 
 
 
-<meta property="og:title" content="将来予測の実施関数 — future_vpa" />
-<meta property="og:description" content="将来予測の実施関数" />
+<meta property="og:title" content="future_vpaの結果オブジェクトのリストをtibble形式に変換する関数 — convert_future_list_table" />
+<meta property="og:description" content="make_kobeII_tableに入れるオブジェクトを作る" />
 
 
 
@@ -115,81 +115,23 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>将来予測の実施関数</h1>
+    <h1>future_vpaの結果オブジェクトのリストをtibble形式に変換する関数</h1>
     
-    <div class="hidden name"><code>future_vpa.Rd</code></div>
+    <div class="hidden name"><code>convert_future_list_table.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>将来予測の実施関数</p>
+    <p>make_kobeII_tableに入れるオブジェクトを作る</p>
     </div>
 
-    <pre class="usage"><span class='fu'>future_vpa</span><span class='op'>(</span>
-  <span class='va'>tmb_data</span>,
-  optim_method <span class='op'>=</span> <span class='st'>"none"</span>,
-  multi_init <span class='op'>=</span> <span class='fl'>1</span>,
-  multi_lower <span class='op'>=</span> <span class='fl'>1e-04</span>,
-  multi_upper <span class='op'>=</span> <span class='fl'>10</span>,
-  objective <span class='op'>=</span> <span class='st'>"MSY"</span>,
-  obj_value <span class='op'>=</span> <span class='fl'>0</span>,
-  obj_stat <span class='op'>=</span> <span class='st'>"mean"</span>,
-  do_MSE <span class='op'>=</span> <span class='cn'>NULL</span>,
-  MSE_input_data <span class='op'>=</span> <span class='cn'>NULL</span>,
-  MSE_nsim <span class='op'>=</span> <span class='cn'>NULL</span>,
-  MSE_sd <span class='op'>=</span> <span class='cn'>NULL</span>,
-  compile <span class='op'>=</span> <span class='cn'>FALSE</span>,
-  output_format <span class='op'>=</span> <span class='st'>"new"</span>,
-  attach_input <span class='op'>=</span> <span class='cn'>TRUE</span>,
-  SPRtarget <span class='op'>=</span> <span class='cn'>NULL</span>,
-  calc_SPR_year_name <span class='op'>=</span> <span class='cn'>NULL</span>
-<span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>convert_future_list_table</span><span class='op'>(</span><span class='va'>fout_list</span>, name_vector <span class='op'>=</span> <span class='cn'>NULL</span>, label <span class='op'>=</span> <span class='st'>"tmp"</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>tmb_data</th>
-      <td><p>make_future_dataの返り値。将来の生物パラメータや再生産関係のシナリオを年齢×年×シミュレーション回数で指定した様々なarrayが含まれる。</p></td>
-    </tr>
-    <tr>
-      <th>objective</th>
-      <td><p>MSY:MSYの推定、PGY:PGYの値をobj_valueに入れる、percentB0:B0パーセント、何％にするかはobj_valueで指定, SSB:obj_valueで指定した特定の親魚資源量に一致するようにする</p></td>
-    </tr>
-    <tr>
-      <th>obj_value</th>
-      <td><p>目的とする値</p></td>
-    </tr>
-    <tr>
-      <th>obj_stat</th>
-      <td><p>目的関数を計算するときに利用する計算方法（"mean"だと平均、"median"だと中央値、"geomean"だと幾何平均）</p></td>
-    </tr>
-    <tr>
-      <th>do_MSE</th>
-      <td><p>簡易MSEを実施するか</p></td>
-    </tr>
-    <tr>
-      <th>MSE_input_data</th>
-      <td><p>簡易MSEを実施する場合、ABC計算するための将来予測を実施するための設定ファイル</p></td>
-    </tr>
-    <tr>
-      <th>MSE_nsim</th>
-      <td><p>簡易MSEを実施する場合、ABC計算するための将来予測の繰り返し回数。ここを1にすると、決定論的な将来予測の漁獲量が用いられる。</p></td>
-    </tr>
-    <tr>
-      <th>MSE_sd</th>
-      <td><p>簡易MSEをする場合の加入変動の大きさ。ここをゼロにすると決定論的な将来予測の値を将来の漁獲量として用いる。その場合MSE_nsimは自動的に２に設定される。単純なモデルの場合、ここがゼロでも多分問題ない。モデル平均を使っている場合にはちゃんとした簡易MSEをすること。</p></td>
-    </tr>
-    <tr>
-      <th>SPR_target</th>
-      <td><p>目標とする%SPR。NULL以外の値の場合、過去〜将来のそれぞれの年・シミュレーションが、目標とするF%SPRに対して何倍にあたるか(F/Ftarget)を計算して、HCR_realizedの"Fratio"に入れる。HCRが生きている年については"beta_gamma"と一致するはず。</p></td>
-    </tr>
-    <tr>
-      <th>max_F</th>
-      <td><p>漁獲量一定方策を実施する際のF at ageの最大値の上限（将来的にはmake_future_data関数に入れたい)</p></td>
-    </tr>
-    <tr>
-      <th>max_exploitation_rate</th>
-      <td><p>漁獲量一定方策を実施する際のMを考慮した上での漁獲率の上限（将来的にはmake_future_data関数に入れたい)</p></td>
+      <th>fout_list</th>
+      <td><p>future_vpaの結果のオブジェクトのリスト</p></td>
     </tr>
     </table>
 

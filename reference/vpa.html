@@ -201,7 +201,8 @@
   p_by_age <span class='op'>=</span> <span class='cn'>FALSE</span>,
   penalty_age <span class='op'>=</span> <span class='cn'>NULL</span>,
   no_eta_age <span class='op'>=</span> <span class='cn'>NULL</span>,
-  sdreport <span class='op'>=</span> <span class='cn'>FALSE</span>
+  sdreport <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  use.equ <span class='op'>=</span> <span class='st'>"new"</span>
 <span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -393,7 +394,7 @@
     </tr>
     <tr>
       <th>lambda</th>
-      <td><p>ridge回帰係数</p></td>
+      <td><p>ridge penaltyの大きさ</p></td>
     </tr>
     <tr>
       <th>beta</th>
@@ -450,6 +451,10 @@
     <tr>
       <th>sdreport</th>
       <td><p><code>TMB=TRUE</code>のときに<code>sdreport()</code>を実行するかどうか（naa, faa, 資源量, 親魚量, Fの平均, 漁獲割合のSDを計算する）</p></td>
+    </tr>
+    <tr>
+      <th>use.equ</th>
+      <td><p>plus groupが途中で変わる場合の計算式の選択 （old = 従来の方法（プラスグループが延長している年はプラスグループのＦが一歳若い年齢のＦと等しいという仮定は置かない），new= 新しい方法（プラスグループが延長している年はプラスグループのＦが一歳若い年齢のＦと等しいという仮定を置く)</p></td>
     </tr>
     </table>
 

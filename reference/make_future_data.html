@@ -152,6 +152,8 @@
   HCR_Bban <span class='op'>=</span> <span class='op'>-</span><span class='fl'>1</span>,
   HCR_year_lag <span class='op'>=</span> <span class='fl'>0</span>,
   HCR_beta_year <span class='op'>=</span> <span class='cn'>NULL</span>,
+  HCR_Blimit_year <span class='op'>=</span> <span class='cn'>NULL</span>,
+  HCR_Bban_year <span class='op'>=</span> <span class='cn'>NULL</span>,
   HCR_TAC_reserve_rate <span class='op'>=</span> <span class='cn'>NA</span>,
   HCR_TAC_carry_rate <span class='op'>=</span> <span class='cn'>NA</span>,
   HCR_function_name <span class='op'>=</span> <span class='st'>"HCR_default"</span>,
@@ -258,7 +260,15 @@
     </tr>
     <tr>
       <th>HCR_beta_year</th>
-      <td><p>betaを年によって変える場合。tibble(year=2020:2024, beta=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える</p></td>
+      <td><p>betaを年によって変える場合。tibble(year=2020:2024, beta=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える。HCR_betaで設定されたbetaは上書きされる。</p></td>
+    </tr>
+    <tr>
+      <th>HCR_Blimit_year</th>
+      <td><p>Blimitを年によって変える場合。tibble(year=2020:2024, Blimit=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える。HCR_Blimitで設定されたBlimitは上書きされる。</p></td>
+    </tr>
+    <tr>
+      <th>HCR_Bban_year</th>
+      <td><p>Bbanを年によって変える場合。tibble(year=2020:2024, Bban=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える。HCR_Bbanで設定されたBbanは上書きされる。</p></td>
     </tr>
     <tr>
       <th>HCR_TAC_reserve_rate</th>
