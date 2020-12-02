@@ -647,8 +647,8 @@ test_that("future_vpa function (yerly change of beta, Blimit and Bban) (level 2)
 
   specific_beta <- 0.5
   data_future_test <- make_future_data(res_vpa, # VPAの結果
-                                       nsim = 100, # シミュレーション回数
-                                       nyear = 30, # 将来予測の年数
+                                       nsim = 10, # シミュレーション回数
+                                       nyear = 10, # 将来予測の年数
                                        future_initial_year_name = 2017,
                                        start_F_year_name = 2018,
                                        start_biopar_year_name=2018,
@@ -707,7 +707,7 @@ test_that("future_vpa function (yerly change of beta, Blimit and Bban) (level 2)
       list_modify(HCR_function_name="HCR_specific",nsim=10) %>%
       future_vpa(optim_method="none")
 
-  expect_equal(all(res_future_myHCR$faa[,as.character(2019:2047),]==0),TRUE)
+  expect_equal(all(res_future_myHCR$faa[,as.character(2019:2027),]==0),TRUE)
 
   ## yearly Blimit
   Blimit_setting <- tibble(year=2021:2023,Blimit=0)
@@ -730,15 +730,31 @@ test_that("future_vpa function (yerly change of beta, Blimit and Bban) (level 2)
   expect_equal(x, as.numeric(unlist(Bban_setting$Bban)))
 
   ## upper limit of catch CV
-  CV_range <- c(0.8,1.1)
+  CV_range <- c(0.85,1.1)
   res_future <- redo_future(data_future_test,
                             list(nsim=10,nyear=7,
                                  HCR_TAC_upper_CV=CV_range[2],
                                  HCR_TAC_lower_CV=CV_range[1]),
                             do_MSE=FALSE)
-  plot.future(res_future)
   x <- round(res_future$HCR_realized[-1,,"wcatch"]/res_future$HCR_realized[-nrow(res_future$HCR_realized[-1,,"wcatch"]),,"wcatch"],2)
   expect_equal(range(x[as.character(2019:2023),]),CV_range)
+
+  res_future <- redo_future(data_future_test,
+                            list(nsim=10,nyear=7,
+                                 HCR_TAC_upper_CV=tibble(year=2019:2021,TAC_upper_CV=CV_range[2]),
+                                 HCR_TAC_lower_CV=tibble(year=2019:2021,TAC_lower_CV=CV_range[1])),
+                            do_MSE=FALSE)
+  x <- round(res_future$HCR_realized[-1,,"wcatch"]/res_future$HCR_realized[-nrow(res_future$HCR_realized[-1,,"wcatch"]),,"wcatch"],2)
+  expect_equal(range(x[as.character(2019:2020),]),CV_range)
+  expect_equal(range(x[as.character(2021:2023),]),c(0.58,1.87))
+
+  data_future <- redo_future(data_future_test,
+                             list(nsim=10,nyear=7,
+                                  HCR_TAC_upper_CV=tibble(year=2019:2021,TAC_upper_CV=CV_range[2]),
+                                  HCR_TAC_lower_CV=tibble(year=2019:2021,TAC_lower_CV=CV_range[1])),
+                             only_data=TRUE)
+  #  check_MSE_sd0(data_future, nsim_for_check = 5000)[1:3] %>% as.numeric()
+  # 1,2 はOK。3も大丈夫そうなのに、2％くらいずれる、、。
 
 })
 

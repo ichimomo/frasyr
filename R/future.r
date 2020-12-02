@@ -30,8 +30,8 @@
 #' @param HCR_TAC_carry_rate TACの何％まで持ち越せるか
 #' @param HCR_TAC_reserve_amount その年の総漁獲可能量に対する獲り残し量
 #' @param HCR_TAC_carry_amount 当初TACのうち何トンまで持ち越せるか
-#' @param HCR_TAC_upper_CV 漁獲量が前年の漁獲量のHCR_TAC_upper_CV倍と比較し、それよりも変化が大きい場合には前年の漁獲量xHCR_TAC_upper_CVを上限とする
-#' @param HCR_TAC_lower_CV 漁獲量が前年の漁獲量のHCR_TAC_lower_CV倍と比較し、それよりも変化が大きい場合には前年の漁獲量xHCR_TAC_lower_CVを下限とする
+#' @param HCR_TAC_upper_CV 漁獲量が前年の漁獲量のHCR_TAC_upper_CV倍と比較し、それよりも変化が大きい場合には前年の漁獲量xHCR_TAC_upper_CVを上限とする。単一の値か、tibble形式 tibble(year=2020:2024, TAC_upper_CV=rep(0.1,5)) で与える
+#' @param HCR_TAC_lower_CV 漁獲量が前年の漁獲量のHCR_TAC_lower_CV倍と比較し、それよりも変化が大きい場合には前年の漁獲量xHCR_TAC_lower_CVを下限とする。単一の値か、tibble形式 tibble(year=2020:2024, TAC_lower_CV=rep(0.1,5)) で与える
 #' @param Pope 漁獲方程式にPopeの近似式を使うかどうか。与えない場合には、VPAのオプションが引き継がれる
 #' @param HCR_function_name デフォルトは"HCR_default" ここを変更(関数名を文字列で与える。関数は別に定義しておく)すると自作のHCRが適用される。その場合、データのほうで定義されているbeta, Blimit, Bbanなど、同じ名前のものは有効
 #' @param fix_recruit 将来予測において再生産関係を無視して加入量を一定値で与える場合、その加入の値。list(year=2020, rec=1000)のように与える。
@@ -239,8 +239,6 @@ make_future_data <- function(res_vpa,
   HCR_mat[start_ABC_year:total_nyear,,"TAC_carry_rate"  ]   <- HCR_TAC_carry_rate
   HCR_mat[start_ABC_year:total_nyear,,"TAC_reserve_amount"] <- HCR_TAC_reserve_amount #
   HCR_mat[start_ABC_year:total_nyear,,"TAC_carry_amount"]   <- HCR_TAC_carry_amount     #
-  HCR_mat[start_ABC_year:total_nyear,,"TAC_upper_CV"]     <- HCR_TAC_upper_CV
-  HCR_mat[start_ABC_year:total_nyear,,"TAC_lower_CV"]     <- HCR_TAC_lower_CV  
 
   assign_HCR_ <- function(HCR_mat, HCR_year, target){
     if(!is.null(HCR_year)){
@@ -258,6 +256,18 @@ make_future_data <- function(res_vpa,
   HCR_mat <- assign_HCR_(HCR_mat, HCR_beta_year,   target="beta")
   HCR_mat <- assign_HCR_(HCR_mat, HCR_Blimit_year, target="Blimit")
   HCR_mat <- assign_HCR_(HCR_mat, HCR_Bban_year,   target="Bban")
+
+  # set upper and lower limit of TAC
+  if(!is.list(HCR_TAC_upper_CV)){
+    HCR_mat[start_ABC_year:total_nyear,,"TAC_upper_CV"] <- HCR_TAC_upper_CV
+  }else{
+    HCR_mat <- assign_HCR_(HCR_mat, HCR_TAC_upper_CV,   target="TAC_upper_CV")    
+  }
+  if(!is.list(HCR_TAC_lower_CV)){
+    HCR_mat[start_ABC_year:total_nyear,,"TAC_lower_CV"] <- HCR_TAC_lower_CV
+  }else{
+    HCR_mat <- assign_HCR_(HCR_mat, HCR_TAC_lower_CV,   target="TAC_lower_CV")    
+  }
   
   # when fix wcatch
   # VPA期間中のwcatchをfixするかどうか？？
@@ -664,12 +674,15 @@ future_vpa_R <- function(naa_mat,
         MSE_dummy_data$waa_catch_mat[] <-  waa_catch_mat[,,i] # in case
         MSE_dummy_data$maa_mat[] <-  maa_mat[,,i] # in case
         MSE_dummy_data$M_mat[]   <-  M_mat[,,i] # in case
-        # MSEのシミュレーション内では繰越設定はオフにする
+        # MSEのシミュレーション内では繰越設定はオフにする（自然な条件下でABCがいくつになるか知りたいので。繰越がある場合はこのあとで漁獲量が調整されるので大丈夫）
         MSE_dummy_data$HCR_mat[,,"TAC_reserve_rate"] <- NA
         MSE_dummy_data$HCR_mat[,,"TAC_carry_rate"] <- NA        
         MSE_dummy_data$HCR_mat[,,"TAC_reserve_amount"] <- NA #
         MSE_dummy_data$HCR_mat[,,"TAC_carry_amount"] <- NA   #
-
+        # 同様にTACの変動の上限設定もオフにする
+        MSE_dummy_data$HCR_mat[,,"TAC_upper_CV"] <- NA
+        MSE_dummy_data$HCR_mat[,,"TAC_lower_CV"] <- NA        
+        
         for(k in 1:MSE_nsim){
           MSE_dummy_data$SR_mat[,k,]  <- SR_mat[,i,]
           MSE_dummy_data$SR_mat[,k,"ssb"]  <- spawner_mat[,i] # true ssb
@@ -701,7 +714,6 @@ future_vpa_R <- function(naa_mat,
           MSE_dummy_data$naa_mat[1,fix_year,] <- MSE_dummy_data$SR_mat[fix_year,,"recruit"]
         }
         res_tmp <- safe_call(future_vpa_R,MSE_dummy_data) # do future projection
-          #                if(t>55) browser()
         HCR_mat[t,i,"expect_wcatch"] <- mean(apply(res_tmp$wcaa[,t,],2,sum)) # determine ABC in year t here
         SR_MSE[t,i,"recruit"] <- mean(res_tmp$naa[1,t,])
         SR_MSE[t,i,"ssb"]     <- mean(res_tmp$SR_mat[t,,"ssb"])
