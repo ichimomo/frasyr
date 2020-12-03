@@ -2235,10 +2235,12 @@ redo_future <- function(data_future, input_data_list, SR_sd=NULL, SR_b=NULL, onl
 #'
 #' 将来予測においてFが非常に小さい場合には決定論的予測と確率論的予測の平均がほぼ一致するかを確認するための関数
 #'
+#' HSを仮定していて、折れ点の下側から将来予測するような場合には、将来予測の最初のほうは一致しない。マッチングする年代などを工夫する必要がある
+#'
 #' @export
 #' 
 
-test_sd0_future <- function(data_future,...){
+test_sd0_future <- function(data_future,nsim=NULL,nyear=10,future_range=NULL,...){
 
   is_regime <- !is.null(data_future$input$regime_shift_option)
   {if(is_regime){
@@ -2252,32 +2254,32 @@ test_sd0_future <- function(data_future,...){
 
   # determine sample size
   tol <- 0.007
-  nsim <- round((0.5/tol)^2) # 1%以下（0.7%）の誤差が期待されるnsim
+  if(is.null(nsim)) nsim <- round((0.5/tol)^2) # 1%以下（0.7%）の誤差が期待されるnsim
   cat("nsim for checking sd=0:",nsim,"\n")
   
   # run 2 funture projections
-  res1 <- redo_future(data_future, list(nsim=nsim, nyear=10), multi_init=0.01, ...)
-  res2 <- redo_future(data_future, list(nsim=2   , nyear=10), multi_init=0.01, SR_sd=0, ...)
+  res1 <- redo_future(data_future, list(nsim=nsim, nyear=nyear), multi_init=0.01, ...)
+  res2 <- redo_future(data_future, list(nsim=2   , nyear=nyear), multi_init=0.01, SR_sd=0, ...)
 
-  a <- try(compare_future_res12(res1,res2))
+  a <- try(compare_future_res12(res1,res2,future_range=future_range))
 
   cat("* Fをなるべく小さくした場合の将来予測において、決定論的予測と確率的予測の平均値がほぼ同じになるか？（ここでnoが出る場合にはバグの可能性があるので管理者に連絡してください）（モデル平均・バックワードリサンプリングの場合にはnoになっちゃいます（今後改善））: ",ifelse(class(a)=="try-error", "not ","OK\n"))
  
   return(lst(res1,res2,a))
 }
 
-compare_future_res12 <- function(res1,res2,tol=0.01){
+compare_future_res12 <- function(res1,res2,tol=0.01, future_range=NULL){
   nyear <- dim(res1$naa)[[2]]
-  future_range <- res1$input$tmb_data$start_random_rec_year:nyear
+  if(is.null(future_range)) future_range <- res1$input$tmb_data$start_random_rec_year:nyear
   if(dim(res1$naa)[[3]]==dim(res2$naa)[[3]]){
-      mean_difference_in_naa <- mean(abs(1-res1$naa[,future_range,]/res2$naa[,future_range,]))
-      mean_difference_in_wcaa <- mean(abs(1-res1$wcaa[,future_range,]/res2$wcaa[,future_range,]))
+      mean_difference_in_naa <- mean(abs(1-res1$naa[,future_range,]/res2$naa[,future_range,]),na.rm=T)
+      mean_difference_in_wcaa <- mean(abs(1-res1$wcaa[,future_range,]/res2$wcaa[,future_range,]),na.rm=T)
   }
   else{
-      mean_difference_in_naa <- 1-mean(apply(res1$naa[,future_range,],c(1,2),mean)/
-                                     apply(res2$naa[,future_range,],c(1,2),mean))
-      mean_difference_in_wcaa <- 1-mean(apply(res1$wcaa[,future_range,],c(1,2),mean)/
-                                      apply(res2$wcaa[,future_range,],c(1,2),mean))      
+      mean_difference_in_naa <- 1-mean(apply(res1$naa[,future_range,],c(1,2),mean,na.rm=TRUE)/
+                                     apply(res2$naa[,future_range,],c(1,2),mean,na.rm=TRUE),na.rm=T)
+      mean_difference_in_wcaa <- 1-mean(apply(res1$wcaa[,future_range,],c(1,2),mean,na.rm=TRUE)/
+                                      apply(res2$wcaa[,future_range,],c(1,2),mean,na.rm=TRUE),na.rm=T)      
   }
 
   cat("mean_difference in naa=", mean_difference_in_naa,"\n")
