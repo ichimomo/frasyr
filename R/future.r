@@ -586,6 +586,10 @@ future_vpa_R <- function(naa_mat,
     SR_MSE[,,"recruit"] <- SR_MSE[,,"ssb"] <- 0
     dimnames(SR_MSE)$par[12] <- "real_true_catch"
     dimnames(SR_MSE)$par[13] <- "pseudo_true_catch"
+
+    max_F_MSE <- max_F ; max_exploitation_rate_MSE <- max_exploitation_rate
+    # do_MSEで本番のFを決める場合にはMSE内で上限つきで計算された漁獲量そのままで漁獲するのでmax_Fもmax_exploitation rateもinfにする
+    max_F <- exp(10); max_exploiration_rate <- 0.99    
   }
 
   F_mat <- N_mat <-  naa_mat
@@ -657,9 +661,11 @@ future_vpa_R <- function(naa_mat,
     }
 
    if(isTRUE(do_MSE) && t>=start_ABC_year){
-      MSE_input_data$input$silent <- TRUE
-      MSE_dummy_data <- safe_call(make_future_data,MSE_input_data$input)$data
-      MSE_dummy_data <- MSE_dummy_data %>%
+     MSE_input_data$input$silent <- TRUE
+     MSE_input_data$input$max_F <- max_F_MSE 
+     MSE_input_data$input$max_exploitation_rate <- max_exploitation_rate_MSE
+     MSE_dummy_data <- safe_call(make_future_data,MSE_input_data$input)$data
+     MSE_dummy_data <- MSE_dummy_data %>%
         purrr::list_modify(future_initial_year   = t-2,
                            start_random_rec_year = t-1,
                            start_ABC_year        = t,
@@ -688,6 +694,9 @@ future_vpa_R <- function(naa_mat,
 
         # TACどおりに漁獲すると将来予測でも仮定して将来予測する!!
         if(MSE_catch_exact_TAC==TRUE) MSE_dummy_data$HCR_mat[t-1,,"expect_wcatch"] <- HCR_mat[t-1,i,"expect_wcatch"]
+
+        # 漁獲量に上限設定があってそれが厳しい場合に上限を予測値から決定しないといけない
+        if(sum(HCR_mat[t,i,"expect_wcatch"]>0)>0) MSE_dummy_data$HCR_mat[t,,"expect_wcatch"] <- HCR_mat[t,i,"expect_wcatch"]
         
         for(k in 1:MSE_nsim){
           MSE_dummy_data$SR_mat[,k,]  <- SR_mat[,i,]
@@ -794,6 +803,8 @@ future_vpa_R <- function(naa_mat,
     }    
 
     if(sum(HCR_mat[t,,"expect_wcatch"])>0){
+
+     
       F_max_tmp <- apply(faa_mat[,t,],2,max) # betaを乗じる前のもとのfaaを用いる
       # F_mat[,t,]がものすごく小さい値になっている場合、そのままで入れるとFへの乗数が壁に当たる場合があるので最大１で正規化する
       saa.tmp <- sweep(faa_mat[,t,],2,F_max_tmp,FUN="/")

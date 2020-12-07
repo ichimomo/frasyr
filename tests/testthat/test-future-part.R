@@ -250,6 +250,71 @@ test_that("check MSE feature",{ # ----
                            do_MSE=TRUE, MSE_input_data=data_future_test10,MSE_nsim=1000,
                            MSE_catch_exact_TAC=TRUE)
 
+  # 漁獲量が一定の場合
+  CC <- 30000  
+  if(0){
+    res_future1 <- redo_future(data_future_test10,
+                            list(nsim=10,nyear=10,
+                                 fix_recruit=NULL,fix_wcatch=tibble(year=2020:2025, wcatch=CC)),
+                            do_MSE=FALSE, MSE_input_data=data_future_test10,
+                            SPRtarget=0.3,
+                            MSE_nsim=100)
+  
+    res_future2 <- redo_future(data_future_test10,
+                            list(nsim=10,nyear=10,
+                                 fix_recruit=NULL,fix_wcatch=tibble(year=2020:2025, wcatch=CC)),
+                            do_MSE=TRUE, MSE_input_data=data_future_test10,
+                            SPRtarget=0.3,
+                            MSE_nsim=100)
+  }
+  
+  # 上限あり（MSEでない）
+  res_future3 <- redo_future(data_future_test10,
+                            list(nsim=10,nyear=10,
+                                 fix_recruit=NULL,
+                                 fix_wcatch=tibble(year=2020:2025, wcatch=CC),
+                                 max_F=max(res_future$faa[,"2018",1])),
+                            do_MSE=FALSE, MSE_input_data=data_future_test10,
+                            SPRtarget=0.3,
+                            MSE_nsim=100)
+  }
+  
+  # 上限あり（MSE）  
+  res_future4 <- redo_future(data_future_test10,
+                            list(nsim=10,nyear=10,
+                                 fix_recruit=NULL,
+                                 fix_wcatch=tibble(year=2020:2025, wcatch=CC),
+                                 max_F=max(res_future$faa[,"2018",1])),
+                            do_MSE=TRUE, MSE_input_data=data_future_test10,
+                            SPRtarget=0.3,
+                            MSE_nsim=100)
+
+  # この図が見たかった！
+  #plot(res_future3$HCR_realized[as.character(2020:2025),,"Fratio"],
+  #     res_future4$HCR_realized[as.character(2020:2025),,"Fratio"])
+  max(res_future4$HCR_realized[as.character(2020:2025),,"Fratio"]) %>%
+    round(2) %>% 
+    expect_equal(0.18)
+
+ max(res_future3$HCR_realized[as.character(2020:2025),,"Fratio"]) %>%
+    round(2) %>% 
+  expect_equal(0.14)  
+
+  tmpfunc <- function(res_future){
+      x <- t(get_wcatch(res_future)[as.character(2021:2025),])
+       y <- t(res_future$HCR_realized[as.character(2021:2025),,"Fratio"])
+       tibble(catch=as.numeric(x),Fratio=as.numeric(y))
+  }
+
+  if(0){
+    aa <- purrr::map_dfr(list(res_future1,res_future2,res_future3,res_future4),
+                  tmpfunc,.id="id")
+
+    aa %>% ggplot() +
+      geom_point(aes(x=catch,y=Fratio,col=id)) +
+      ylim(0,2)
+  }
+  
   # TAC通りに漁獲する仮定をMSEにも入れる(MSE_sd=0) => SD>1000の場合とは一致しない（SD=0だとクラッシュするときにはかならずクラッシュしてしまうので）
 #  res_future_MSE_TAC_sd0 <- future_vpa(tmb_data=data_future_test10$data,
 #                           optim_method="none",
