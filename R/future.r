@@ -382,6 +382,7 @@ future_vpa <- function(tmb_data,
                        MSE_input_data=NULL,
                        MSE_nsim=NULL,
                        MSE_sd=NULL,
+                       MSE_catch_exact_TAC=FALSE,
                        compile=FALSE,
                        output_format="new",
                        attach_input=TRUE,
@@ -439,7 +440,8 @@ future_vpa <- function(tmb_data,
     tmb_data$do_MSE <- do_MSE
     tmb_data$MSE_input_data <- MSE_input_data
     tmb_data$MSE_nsim <- MSE_nsim
-    tmb_data$MSE_sd <- MSE_sd      
+    tmb_data$MSE_sd <- MSE_sd
+    tmb_data$MSE_catch_exact_TAC <- MSE_catch_exact_TAC
 #    tmb_data$max_F <- max_F
 #    tmb_data$max_exploitation_rate <- max_exploitation_rate
 
@@ -550,6 +552,7 @@ future_vpa_R <- function(naa_mat,
                          MSE_input_data=NULL,
                          MSE_nsim = NULL,
                          MSE_sd = NULL,
+                         MSE_catch_exact_TAC=FALSE,
                          waa_par_mat  = NULL, # option for waa_fun
                          waa_rand_mat = NULL
 ){
@@ -681,7 +684,10 @@ future_vpa_R <- function(naa_mat,
         MSE_dummy_data$HCR_mat[,,"TAC_carry_amount"] <- NA   #
         # 同様にTACの変動の上限設定もオフにする
         MSE_dummy_data$HCR_mat[,,"TAC_upper_CV"] <- NA
-        MSE_dummy_data$HCR_mat[,,"TAC_lower_CV"] <- NA        
+        MSE_dummy_data$HCR_mat[,,"TAC_lower_CV"] <- NA
+
+        # TACどおりに漁獲すると将来予測でも仮定して将来予測する!!
+        if(MSE_catch_exact_TAC==TRUE) MSE_dummy_data$HCR_mat[t-1,,"expect_wcatch"] <- HCR_mat[t-1,i,"expect_wcatch"]
         
         for(k in 1:MSE_nsim){
           MSE_dummy_data$SR_mat[,k,]  <- SR_mat[,i,]
@@ -1182,7 +1188,7 @@ average_SR_mat <- function(res_vpa,
 #' @param n 将来にわたって何年分のリサンプリング残差を作るか
 #' @param duration 1ブロックの年の長さ
 #'
-#' @examples
+#' @exmaples
 #'
 #' set.seed(1)
 #' res <- sample_backward(rep(1:5,each=5), 30, 5)

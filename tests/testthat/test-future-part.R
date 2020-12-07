@@ -217,7 +217,7 @@ test_that("future_vpa function (yerly change of beta, Blimit and Bban) (level 2)
 
 })
 
-test_that("future_vpa function (MSE) (level 2)",{ # ----
+test_that("check MSE feature",{ # ----
 
   data_future_test10 <- redo_future(data_future_test,
                                     list(nsim=10,nyear=10,
@@ -240,13 +240,35 @@ test_that("future_vpa function (MSE) (level 2)",{ # ----
   res_future_MSE <- future_vpa(tmb_data=data_future_test10$data,
                            optim_method="none",
                            multi_init = 1,SPRtarget=0.3,
-                           do_MSE=TRUE, MSE_input_data=data_future_test10,MSE_nsim=1000)
+                           do_MSE=TRUE, MSE_input_data=data_future_test10,MSE_nsim=1000,
+                           MSE_catch_exact_TAC=FALSE)
+
+  # TAC通りに漁獲する仮定をMSEにも入れる
+  res_future_MSE_TAC <- future_vpa(tmb_data=data_future_test10$data,
+                           optim_method="none",
+                           multi_init = 1,SPRtarget=0.3,
+                           do_MSE=TRUE, MSE_input_data=data_future_test10,MSE_nsim=1000,
+                           MSE_catch_exact_TAC=TRUE)
+
+  # TAC通りに漁獲する仮定をMSEにも入れる(MSE_sd=0) => SD>1000の場合とは一致しない（SD=0だとクラッシュするときにはかならずクラッシュしてしまうので）
+#  res_future_MSE_TAC_sd0 <- future_vpa(tmb_data=data_future_test10$data,
+#                           optim_method="none",
+#                           multi_init = 1,SPRtarget=0.3,
+#                           do_MSE=TRUE, MSE_input_data=data_future_test10,MSE_nsim=2,
+#                           MSE_sd=0,MSE_catch_exact_TAC=TRUE)  
+  
+#  plot_futures(vpares=NULL,
+#               future.list=list(res_future_MSE_TAC,
+#                                res_future_MSE_TAC_sd0))
 
   # 以前の計算と同じ結果が出るかのテスト
   expect_equal(round(mean(get_wcatch(res_future_noMSE)["2019",])),32311) 
   expect_equal(round(mean(get_wcatch(res_future_MSE)["2019",])),32370)
 
   check_MSE_sd0(data_future_test10, nsim_for_check = 1000)
+
+  # 漁獲量をTACとして将来予測する
+  
 
 })
 
