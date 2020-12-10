@@ -2517,5 +2517,5 @@ plot_summary_performance <- function(folder_names, scenario_names,
 
   g123 <- gridExtra::grid.arrange(g3,g2,g1,ncol=3)
 
-  return(g123)
+  return(list(graph=g123,data=base.stat.data2))
 }
