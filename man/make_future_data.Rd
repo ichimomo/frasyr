@@ -36,7 +36,11 @@ make_future_data(
   HCR_Blimit_year = NULL,
   HCR_Bban_year = NULL,
   HCR_TAC_reserve_rate = NA,
+  HCR_TAC_reserve_amount = NA,
   HCR_TAC_carry_rate = NA,
+  HCR_TAC_carry_amount = NA,
+  HCR_TAC_upper_CV = NA,
+  HCR_TAC_lower_CV = NA,
   HCR_function_name = "HCR_default",
   Pope = res_vpa$input$Pope,
   fix_recruit = NULL,
@@ -105,7 +109,15 @@ make_future_data(
 
 \item{HCR_TAC_reserve_rate}{TACの取り残し率}
 
+\item{HCR_TAC_reserve_amount}{その年の総漁獲可能量に対する獲り残し量}
+
 \item{HCR_TAC_carry_rate}{TACの何％まで持ち越せるか}
+
+\item{HCR_TAC_carry_amount}{当初TACのうち何トンまで持ち越せるか}
+
+\item{HCR_TAC_upper_CV}{漁獲量が前年の漁獲量のHCR_TAC_upper_CV倍と比較し、それよりも変化が大きい場合には前年の漁獲量xHCR_TAC_upper_CVを上限とする。単一の値か、tibble形式 tibble(year=2020:2024, TAC_upper_CV=rep(0.1,5)) で与える}
+
+\item{HCR_TAC_lower_CV}{漁獲量が前年の漁獲量のHCR_TAC_lower_CV倍と比較し、それよりも変化が大きい場合には前年の漁獲量xHCR_TAC_lower_CVを下限とする。単一の値か、tibble形式 tibble(year=2020:2024, TAC_lower_CV=rep(0.1,5)) で与える}
 
 \item{HCR_function_name}{デフォルトは"HCR_default" ここを変更(関数名を文字列で与える。関数は別に定義しておく)すると自作のHCRが適用される。その場合、データのほうで定義されているbeta, Blimit, Bbanなど、同じ名前のものは有効}
 

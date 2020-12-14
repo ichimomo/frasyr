@@ -250,6 +250,12 @@ test_that("check MSE feature",{ # ----
                            do_MSE=TRUE, MSE_input_data=data_future_test10,MSE_nsim=1000,
                            MSE_catch_exact_TAC=TRUE)
 
+  # 以前の計算と同じ結果が出るかのテスト
+  expect_equal(round(mean(get_wcatch(res_future_noMSE)["2019",])),32311) 
+  expect_equal(round(mean(get_wcatch(res_future_MSE)["2019",])),32370)
+
+  check_MSE_sd0(data_future_test10, nsim_for_check = 1000)  
+
   # 漁獲量が一定の場合
   CC <- 30000  
   if(0){
@@ -277,7 +283,6 @@ test_that("check MSE feature",{ # ----
                             do_MSE=FALSE, MSE_input_data=data_future_test10,
                             SPRtarget=0.3,
                             MSE_nsim=100)
-  }
   
   # 上限あり（MSE）  
   res_future4 <- redo_future(data_future_test10,
@@ -296,9 +301,9 @@ test_that("check MSE feature",{ # ----
     round(2) %>% 
     expect_equal(0.18)
 
- max(res_future3$HCR_realized[as.character(2020:2025),,"Fratio"]) %>%
-    round(2) %>% 
-  expect_equal(0.14)  
+# max(res_future3$HCR_realized[as.character(2020:2025),,"Fratio"]) %>%
+#    round(2) %>% 
+#  expect_equal(0.14)  
 
   tmpfunc <- function(res_future){
       x <- t(get_wcatch(res_future)[as.character(2021:2025),])
@@ -326,11 +331,6 @@ test_that("check MSE feature",{ # ----
 #               future.list=list(res_future_MSE_TAC,
 #                                res_future_MSE_TAC_sd0))
 
-  # 以前の計算と同じ結果が出るかのテスト
-  expect_equal(round(mean(get_wcatch(res_future_noMSE)["2019",])),32311) 
-  expect_equal(round(mean(get_wcatch(res_future_MSE)["2019",])),32370)
-
-  check_MSE_sd0(data_future_test10, nsim_for_check = 1000)
 
   # 漁獲量をTACとして将来予測する
   
