@@ -37,3 +37,15 @@ test_that("output value check",{
 })
 
 
+context("bootstrap") # 浜辺初テスト事故ってたらすみません
+
+test_that("bootstrap using use.index options", {
+  data("res_vpa_estb")
+  testinput_use.index <- res_vpa_estb$input
+  testinput_use.index$use.index <- 1:5
+  testvpa <- do.call(vpa, testinput_use.index) # ここは必ず動きそうなのでdo.call使ってます
+  expect_equal("list", boo.vpa(testvpa, B = 2) %>% class)
+                                               # 時間削減でB=2（目的はエラーが出ないことのテスト）
+})
+
+

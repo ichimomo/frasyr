@@ -1372,6 +1372,7 @@ make_kobeII_table <- function(kobeII_data,
                               year.ssbmin=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
                               year.ssbmax=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
                               year.aav=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              year.risk=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
                               year.catchdiff=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
                               Btarget=0,
                               Blimit=0,
@@ -1486,9 +1487,14 @@ make_kobeII_table <- function(kobeII_data,
     mutate(stat_name="catch.aav")
 
   # risk
-  calc.aav2 <- function(x) sum(x[-1]/x[-length(x)]<0.5)
+  calc.aav2 <- function(x){
+      xx <- sum(x[-1]/x[-length(x)]<0.5,na.rm=T) # 0が2つ続く場合にNAが発生するがそこは計算から除く
+      return(xx)
+  }
+    
+    #  calc.aav2 <- function(x){ xx <- sum(x[-1]/x[-length(x)]<0.5); if(is.na(xx)) browser() else return(xx)}
   catch.risk <- kobeII_data %>%
-    dplyr::filter(year%in%year.aav,stat=="catch") %>%
+    dplyr::filter(year%in%year.risk,stat=="catch") %>%
     group_by(HCR_name,beta,sim) %>%
     dplyr::summarise(catch.aav=calc.aav2(value)) %>%
     group_by(HCR_name,beta) %>%
@@ -1497,7 +1503,7 @@ make_kobeII_table <- function(kobeII_data,
     mutate(stat_name="catch.risk")
   
   bban.risk <- kobeII_data %>%
-    dplyr::filter(year%in%year.aav & stat=="SSB") %>%
+    dplyr::filter(year%in%year.risk & stat=="SSB") %>%
     group_by(HCR_name,beta,sim) %>%
     dplyr::summarise(Bban.fail=sum(value<Bban)) %>%
     group_by(HCR_name,beta) %>%
@@ -1506,20 +1512,48 @@ make_kobeII_table <- function(kobeII_data,
     mutate(stat_name="bban.risk")
 
   blimit.risk <- kobeII_data %>%
-    dplyr::filter(year%in%year.aav,stat=="SSB") %>%
+    dplyr::filter(year%in%year.risk,stat=="SSB") %>%
     group_by(HCR_name,beta,sim) %>%
     dplyr::summarise(Blimit.fail=sum(value<Blimit)) %>%
     group_by(HCR_name,beta) %>%
     summarise(value=mean(Blimit.fail>0)) %>%
     arrange(HCR_name,desc(beta))%>%
-    mutate(stat_name="blimit.risk")        
+    mutate(stat_name="blimit.risk")
+
+  overfishing.risk <- kobeII_data %>%
+    dplyr::filter(year%in%year.risk,stat=="Fratio") %>%
+    group_by(HCR_name,beta,sim) %>%
+    dplyr::summarise(overfishing=sum(value>1)) %>%
+    group_by(HCR_name,beta) %>%
+    summarise(value=mean(overfishing>0)) %>%
+    arrange(HCR_name,desc(beta))%>%
+    mutate(stat_name="overfishing.risk")
+
+  redzone.risk1 <- kobeII_data %>%
+    dplyr::filter(year%in%year.risk,stat=="Fratio")  %>%
+    arrange(HCR_name,beta,sim)
+
+  redzone.risk2 <- kobeII_data %>%
+    dplyr::filter(year%in%year.risk,stat=="SSB") %>%
+    mutate(Bratio=value/Btarget) %>%
+    mutate(Fratio=redzone.risk1$value) %>%
+    mutate(is.redzone=(Bratio < 1 & round(Fratio,2) > 1)) %>%
+    arrange(HCR_name,beta,sim)
+
+  redzone.risk <- redzone.risk2 %>%
+    group_by(HCR_name,beta,sim) %>%        
+     dplyr::summarise(sum.redzone=sum(is.redzone==TRUE)) %>%
+    group_by(HCR_name,beta) %>%
+    dplyr::summarise(value=mean(sum.redzone>0)) %>%    
+    arrange(HCR_name,desc(beta)) %>%
+    mutate(stat_name="redzone.risk")
 
   # kobe statistics
   overssbtar <- kobeII_data %>%
-    dplyr::filter(year%in%year.ssbmax,stat=="SSB") %>%
+    dplyr::filter(year%in%year.risk,stat=="SSB") %>%
     mutate(is.over.ssbtar= value > Btarget)
   overFtar <- kobeII_data %>%
-    dplyr::filter(year%in%year.ssbmax,stat=="Fratio") %>%
+    dplyr::filter(year%in%year.risk,stat=="Fratio") %>%
     mutate(is.over.Ftar= round(value,2) > 1)
   overssbtar$is.over.Ftar <- overFtar$is.over.Ftar
            
@@ -1533,7 +1567,8 @@ make_kobeII_table <- function(kobeII_data,
               green.prob=mean(green,na.rm=T),
               yellow.prob=mean(yellow,na.rm=T),
               orange.prob=mean(orange,na.rm=T))  %>%
-    mutate(stat_name="kobe.stat")
+      mutate(stat_name="kobe.stat")
+
   
   res_list <- list(catch.mean   = catch.mean,
                    ssb.mean         = ssb.mean,
@@ -1547,6 +1582,8 @@ make_kobeII_table <- function(kobeII_data,
                    catch.aav       = catch.aav.table,
                    kobe.stat       = kobe.stat,
                    catch.risk = catch.risk,
+                   overfishing.risk = overfishing.risk,
+                   redzone.risk = redzone.risk,
                    bban.risk = bban.risk,
                    blimit.risk = blimit.risk)
   return(res_list)
@@ -2019,7 +2056,7 @@ calc_Fratio <- function(faa, waa, maa, M, SPRtarget=30, waa.catch=NULL,Pope=TRUE
                               min.age=0,max.age=Inf,Pope=Pope,ssb.coef=0,maa=maa)$spr %>% sum()
     sum(((SPR_tmp/SPR0*100)-SPRtarget)^2)
   }
-  if(sum(faa)==0){ return(NA) }
+  if(sum(faa)==0){ return(0) }
   else{
     tmp <- !is.na(faa)
     SPR0 <- calc.rel.abund(sel=faa,Fr=0,na=length(faa),M=M, waa=waa, waa.catch=waa.catch,maa=maa,
