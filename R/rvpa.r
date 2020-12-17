@@ -56,12 +56,18 @@ data.handler <- function(
   rownames(M) <- rownames(caa)
   
   assertthat::assert_that(
-    all(rownames(caa) == c(rownames(maa),
-                           rownames(waa),
-                           rownames(M))),
-    all(colnames(caa) == c(colnames(maa),
-                           colnames(waa),
-                           colnames(M)))
+    all(
+      rownames(caa) == purrr::flatten_chr(purrr::map(list(maa,
+                                                          waa,
+                                                          M),
+                                                     rownames))
+    ),
+    all(
+      colnames(caa) == purrr::flatten_chr(purrr::map(list(maa,
+                                                          waa,
+                                                          M),
+                                                     colnames))
+    )
   )
   
   res <- list(caa=caa, maa=maa, waa=waa, index=index, M=M, maa.tune=maa.tune, waa.catch=waa.catch, catch.prop=catch.prop)
