@@ -32,8 +32,8 @@ data.handler <- function(
     if (is.null(dim(waa.catch)) | dim(waa.catch)[2]==1) waa.catch <- as.data.frame(matrix(unlist(waa.catch), nrow=nrow(caa), ncol=ncol(caa)))
     colnames(waa.catch) <- years
     assertthat::assert_that(
-      rownames(caa) == rownames(waa.catch),
-      colnames(caa) == colnames(waa.catch)
+      all(rownames(caa) == rownames(waa.catch)),
+      all(colnames(caa) == colnames(waa.catch))
     )
   }
 
@@ -41,8 +41,8 @@ data.handler <- function(
     if (is.null(dim(maa.tune)) | dim(maa.tune)[2]==1) maa.tune <- as.data.frame(matrix(unlist(maa.tune), nrow=nrow(caa), ncol=ncol(caa)))
     colnames(maa.tune) <- years
     assertthat::assert_that(
-      rownames(caa) == rownames(maa.tune),
-      colnames(caa) == colnames(maa.tune)
+      all(rownames(caa) == rownames(maa.tune)),
+      all(colnames(caa) == colnames(maa.tune))
     )
   }
 
