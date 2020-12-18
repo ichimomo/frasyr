@@ -45,7 +45,8 @@ calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=
 }
 
 #'
-#' 年齢別生物パラメータとFと漁獲量を与えると与えた漁獲量と一致するFへの乗数を返す
+#' 年齢別生物パラメータとFと漁獲量を与えると与えた漁獲量と一致するFへの乗数を返す (optimを使った遅いversion）
+#' 
 #' @param set_max1 廃止予定
 #' @param max_exploitation_rate 潜在的に漁獲できる漁獲量＜入力した漁獲量の場合、潜在的に漁獲できる漁獲量の何％まで実際に漁獲するか
 #' @param max_F F at ageの最大値となる値の上限をどこにおくか
@@ -53,7 +54,7 @@ calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=
 #' @export
 #' @encoding UTF-8
 
-caa.est.mat <- function(naa,saa,waa,M,catch.obs,Pope,set_max1=TRUE,max_exploitation_rate=0.99,max_F=exp(10)){
+caa.est.mat_old <- function(naa,saa,waa,M,catch.obs,Pope,set_max1=TRUE,max_exploitation_rate=0.99,max_F=exp(10)){
 
   tmpfunc <- function(logx,catch.obs=catch.obs,naa=naa,saa=saa,waa=waa,M=M,out=FALSE,Pope=Pope){
     x <- exp(logx)
@@ -84,6 +85,45 @@ caa.est.mat <- function(naa,saa,waa,M,catch.obs,Pope,set_max1=TRUE,max_exploitat
   realized.catch <- sum(tmp2*waa)
   if(abs(realized.catch/catch.obs-1)>0.1) warning("expected catch:",catch.obs,", realized catch:",realized.catch)
   return(list(x=exp(tmp$minimum),caa=tmp2,realized.catch=realized.catch, expected.catch=catch.obs))
+}
+
+#'
+#' 年齢別生物パラメータとFと漁獲量を与えると与えた漁獲量と一致するFへの乗数を返す
+#' 
+#' @param naa numbers at age
+#' @param saa selectivity at age
+#' @param waa weight at age
+#' @param M natural mortality at age
+#' @param max_exploitation_rate 潜在的に漁獲できる漁獲量＜入力した漁獲量の場合、潜在的に漁獲できる漁獲量の何％まで実際に漁獲するか
+#' @param max_F F at ageの最大値となる値の上限をどこにおくか
+#' 
+#' @export
+#' @encoding UTF-8
+
+caa.est.mat <- function(naa,saa,waa,M,catch.obs,Pope,max_exploitation_rate=0.99,max_F=exp(10)){
+
+  C0 <- catch_equation(naa,exp(100),waa,M,Pope) %>% sum()
+  if(C0 < catch.obs){
+    warning("The expected catch (", catch.obs, ") is over potential maximum catch (",round(C0,5),"). The expected catch is replaced by",round(C0,3),"x", max_exploitation_rate)
+    catch.obs <- C0 * max_exploitation_rate
+  }
+
+  caa_original <- catch_equation(naa,saa,1,M,Pope)
+  catch_ratio <- catch.obs / sum(caa_original * waa)
+  caa_expected <- caa_original * catch_ratio
+  if(Pope==FALSE){
+    Fvector <- solv.Feq(caa_expected, naa, M)
+  }
+  else{
+    Fvector <- solv.Feq.Pope(caa_expected, naa, M)    
+  }
+
+  if( max_F < max(Fvector)) Fvector <- max_F * Fvector/max(Fvector) 
+    
+  realized.catch <- catch_equation(naa,Fvector,waa,M,Pope)
+  if(abs(sum(realized.catch)/catch.obs-1)>0.1) warning("expected catch:",catch.obs,", realized catch:",realized.catch)
+  multi <- mean(Fvector/saa)
+  return(list(x=multi,caa=realized.catch,realized.catch=sum(realized.catch), expected.catch=catch.obs))
 }
 
 # #　上の関数とどっちが使われているか不明,,,多分使われていないのでコメントアウトする
@@ -117,6 +157,7 @@ catch_equation <- function(naa,faa,waa,M,Pope=TRUE){
   else{
     wcaa_mat <- naa*(1-exp(-faa-M))*faa/(faa+M) * waa
   }
+  return(wcaa_mat)
 }
 
 #' @export
@@ -143,6 +184,11 @@ solv.Feq <- function(cvec,nvec,mvec){
     }
   }
   Fres
+}
+
+#' @export
+solv.Feq.Pope <- function(cvec,nvec,mvec){
+  -log(1-cvec/naa/exp(-mvec/2))
 }
 
 #' VPAの結果に格納されている生物パラメータから世代時間を計算
@@ -2393,6 +2439,7 @@ plot_summary_performance <- function(folder_names, scenario_names,
                                      catch_3terms=list(2022:2024,2025:2027,2028:2030),
                                      ssb_3terms  =list(2023:2025,2026:2028,2029:2031),
                                      risk.pickup = NULL,
+                                     circle_size=60,
                                      font_size = 25,sort_category=NULL
                                      ){
   
@@ -2497,13 +2544,13 @@ plot_summary_performance <- function(folder_names, scenario_names,
   g1 <- base.stat.data2 %>%
     dplyr::filter(category=="リスク") %>%
     ggplot() +
-    geom_point(aes(x=jperformance,y=jscenario,size=value*60,shape=is.zero,
+    geom_point(aes(x=jperformance,y=jscenario,size=value,shape=is.zero,
                    color=is.zero))  +
     geom_text(aes(x=jperformance,y=jscenario,label=round(value*100),shape=is.zero),size=font_size/2) +
-    scale_size(range = c(.1, 24)) +  
+    scale_size(range = c(.1, circle_size)) +  
     theme_SH(legend.position="none")+
     theme(axis.text.x = element_text(angle = 90, size=font_size, vjust=0.5),
-          axis.text.y = element_text(angle = 0, size=font_size)) +
+          axis.text.y = element_blank()) + #element_text(angle = 0, size=font_size)) +
     geom_hline(yintercept=c(4.5,8.5),lty=2) +
     labs(title="リスク") + xlab("") + ylab("")
   
@@ -2512,10 +2559,11 @@ plot_summary_performance <- function(folder_names, scenario_names,
     labs(title="親魚量")
 
   g3 <- g1 %+% dplyr::filter(base.stat.data2,category=="漁獲量") +
-    scale_color_manual(values = c(yellow.color)) +
-    labs(title="漁獲量")
+      scale_color_manual(values = c(yellow.color)) +
+      theme(axis.text.y = element_text(angle = 0, size=font_size)) +      
+      labs(title="漁獲量")
 
   g123 <- gridExtra::grid.arrange(g3,g2,g1,ncol=3)
 
-  return(list(graph=g123,data=base.stat.data2))
+  return(lst(graph=g123,g1,g2,g3,data=base.stat.data2))
 }

@@ -70,18 +70,61 @@ test_that("test caa.est.mat", {
   expect_catch <- 0.5
 
   # set usual F => OK
-  res <- caa.est.mat(c(1,1,1,1),c(1,1,1,1),c(1,1,1,1),c(0,0,0,0),catch.obs=expect_catch,Pope=TRUE,set_max1=FALSE)
+  res <- caa.est.mat(c(1,1,1,1),c(1,1,1,1),c(1,1,1,1),c(0,0,0,0),catch.obs=expect_catch,Pope=TRUE)
   expect_equal(round(sum(res$caa),3),round(expect_catch,3))
+
+  res <- caa.est.mat(c(1,1,1,1),c(1,1,1,1),c(1,1,1,1),c(0,0,0,0),catch.obs=expect_catch,Pope=FALSE)
+  expect_equal(round(sum(res$caa),3),round(expect_catch,3))  
+
+  # old functionとの比較
+  expect_equal(caa.est.mat_old(c(1,1,1,1),c(1,1,1,1),c(1,1,1,1),c(0.1,0.1,0.1,0.1),catch.obs=expect_catch,Pope=TRUE,set_max1=FALSE),
+               caa.est.mat(c(1,1,1,1),c(1,1,1,1),c(1,1,1,1),c(0.1,0.1,0.1,0.1),catch.obs=expect_catch,Pope=TRUE), tol=0.001)
+
+  expect_equal(caa.est.mat_old(c(1,1,1,1),c(1,1,1,1),c(1,1,1,1),c(0.1,0.1,0.1,0.1),catch.obs=expect_catch,Pope=FALSE,set_max1=FALSE),
+               caa.est.mat(c(1,1,1,1),c(1,1,1,1),c(1,1,1,1),c(0.1,0.1,0.1,0.1),catch.obs=expect_catch,Pope=FALSE), tol=0.001)
+  expect_equal(caa.est.mat_old(c(3,3,3,3),c(1,1,1,1),c(1,1,1,1),c(0.1,0.1,0.1,0.1),catch.obs=expect_catch,Pope=FALSE,set_max1=FALSE),
+               caa.est.mat(c(3,3,3,3),c(1,1,1,1),c(1,1,1,1),c(0.1,0.1,0.1,0.1),catch.obs=expect_catch,Pope=FALSE), tol=0.001)    
+
+
+  if(0){
+  # 計算時間の比較
+  tmpfunc1 <- function(Pope){
+    for(i in 1:10000) caa.est.mat(c(1,1,1,1),c(1,1,1,1),c(1,1,1,1),c(0.1,0.1,0.1,0.1),catch.obs=expect_catch,Pope=Pope)
+  }
+  tmpfunc2 <- function(Pope){
+    for(i in 1:10000) caa.est.mat_old(c(1,1,1,1),c(1,1,1,1),c(1,1,1,1),c(0.1,0.1,0.1,0.1),catch.obs=expect_catch,Pope=Pope)
+  }
+
+  # popeの場合
+  system.time(tmpfunc1(TRUE)) # new function
+  system.time(tmpfunc2(TRUE)) # old function
+  # baranovの場合
+  system.time(tmpfunc1(FALSE)) # new function
+  system.time(tmpfunc2(FALSE)) # old function
+#>    user  system elapsed 
+#  0.369   0.000   0.369 
+#>    user  system elapsed 
+#  1.325   0.000   1.325 
+#> >    user  system elapsed 
+#  1.096   0.000   1.096 
+#>    user  system elapsed 
+#  1.521   0.000   1.521     
+  }
 
   # set very small F => OK
   res <- caa.est.mat(c(1,1,1,1),c(0.00001,0.00001,0.00001,0.00001),c(1,1,1,1),c(0,0,0,0),
                      catch.obs=expect_catch,Pope=TRUE)
   expect_equal(round(sum(res$caa),3),round(expect_catch,3))
 
+  res <- caa.est.mat(c(1,1,1,1),c(0.00001,0.00001,0.00001,0.00001),c(1,1,1,1),c(0,0,0,0),
+                     catch.obs=expect_catch,Pope=FALSE)
+  expect_equal(round(sum(res$caa),3),round(expect_catch,3))  
+
   # naa is very small => warning
   expect_warning(caa.est.mat(c(0.01,0.01,0.01,0.01),c(1,1,1,1),c(1,1,1,1),c(0,0,0,0),
-                     catch.obs=expect_catch,Pope=TRUE))
-
+                             catch.obs=expect_catch,Pope=TRUE))
+  expect_warning(caa.est.mat(c(0.01,0.01,0.01,0.01),c(1,1,1,1),c(1,1,1,1),c(0,0,0,0),
+                             catch.obs=expect_catch,Pope=FALSE))  
 })
 
 test_that("calc.rel.abund",{
