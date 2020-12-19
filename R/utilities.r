@@ -45,20 +45,20 @@ calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=
 }
 
 #'
-#' 年齢別生物パラメータとFと漁獲量を与えると与えた漁獲量と一致するFへの乗数を返す (optimを使った遅いversion）
+#' 年齢別生物パラメータとFと漁獲量を与えると与えた漁獲量と一致するFへの乗数を返す
 #' 
-#' @param set_max1 廃止予定
 #' @param max_exploitation_rate 潜在的に漁獲できる漁獲量＜入力した漁獲量の場合、潜在的に漁獲できる漁獲量の何％まで実際に漁獲するか
 #' @param max_F F at ageの最大値となる値の上限をどこにおくか
 #' 
 #' @export
 #' @encoding UTF-8
 
-caa.est.mat_old <- function(naa,saa,waa,M,catch.obs,Pope,set_max1=TRUE,max_exploitation_rate=0.99,max_F=exp(10)){
+caa.est.mat <- function(naa,saa,waa,M,catch.obs,Pope,set_max1=TRUE,max_exploitation_rate=0.99,max_F=exp(10)){
 
   tmpfunc <- function(logx,catch.obs=catch.obs,naa=naa,saa=saa,waa=waa,M=M,out=FALSE,Pope=Pope){
+    if(Pope==1 | Pope==TRUE) is.pope <- TRUE else is.pope <- FALSE
     x <- exp(logx)
-    if(isTRUE(Pope)){
+    if(is.pope){
       caa <- naa*(1-exp(-saa*x))*exp(-M/2)
     }
     else{
@@ -88,7 +88,9 @@ caa.est.mat_old <- function(naa,saa,waa,M,catch.obs,Pope,set_max1=TRUE,max_explo
 }
 
 #'
-#' 年齢別生物パラメータとFと漁獲量を与えると与えた漁獲量と一致するFへの乗数を返す
+#' 年齢別生物パラメータとFと漁獲量を与えると与えた漁獲量と一致するFへの乗数を返す (optimを使わないでやろうとしたけどだめだったやつ）
+#'
+#' これだと漁獲量をぴったりに返すFのvectorは得られるが、もとの選択率に一致しない
 #' 
 #' @param naa numbers at age
 #' @param saa selectivity at age
@@ -100,7 +102,7 @@ caa.est.mat_old <- function(naa,saa,waa,M,catch.obs,Pope,set_max1=TRUE,max_explo
 #' @export
 #' @encoding UTF-8
 
-caa.est.mat <- function(naa,saa,waa,M,catch.obs,Pope,max_exploitation_rate=0.99,max_F=exp(10)){
+caa.est.mat_wrong <- function(naa,saa,waa,M,catch.obs,Pope,max_exploitation_rate=0.99,max_F=exp(10)){
 
   C0 <- catch_equation(naa,exp(100),waa,M,Pope) %>% sum()
   if(C0 < catch.obs){
@@ -111,7 +113,7 @@ caa.est.mat <- function(naa,saa,waa,M,catch.obs,Pope,max_exploitation_rate=0.99,
   caa_original <- catch_equation(naa,saa,1,M,Pope)
   catch_ratio <- catch.obs / sum(caa_original * waa)
   caa_expected <- caa_original * catch_ratio
-  if(Pope==FALSE){
+  if(Pope==0){
     Fvector <- solv.Feq(caa_expected, naa, M)
   }
   else{
@@ -123,7 +125,7 @@ caa.est.mat <- function(naa,saa,waa,M,catch.obs,Pope,max_exploitation_rate=0.99,
   realized.catch <- catch_equation(naa,Fvector,waa,M,Pope)
   if(abs(sum(realized.catch)/catch.obs-1)>0.1) warning("expected catch:",catch.obs,", realized catch:",realized.catch)
   multi <- mean(Fvector/saa)
-  return(list(x=multi,caa=realized.catch,realized.catch=sum(realized.catch), expected.catch=catch.obs))
+  return(list(x=multi,caa=realized.catch,realized.catch=sum(realized.catch), expected.catch=catch.obs, Fvector=Fvector))
 }
 
 # #　上の関数とどっちが使われているか不明,,,多分使われていないのでコメントアウトする
@@ -149,9 +151,9 @@ caa.est.mat <- function(naa,saa,waa,M,catch.obs,Pope,max_exploitation_rate=0.99,
 #   return(list(x=tmp$minimum,caa=tmp2))
 # }
 
-catch_equation <- function(naa,faa,waa,M,Pope=TRUE){
-  if(isTRUE(Pope)) Pope <- 1
-  if(Pope==1){
+catch_equation <- function(naa,faa,waa,M,Pope=1){
+  if(Pope==1 | Pope==TRUE) is.pope <- TRUE else is.pope <- FALSE
+  if(is.pope){
     wcaa_mat <- naa*(1-exp(-faa))*exp(-M/2) * waa
   }
   else{
@@ -188,7 +190,7 @@ solv.Feq <- function(cvec,nvec,mvec){
 
 #' @export
 solv.Feq.Pope <- function(cvec,nvec,mvec){
-  -log(1-cvec/naa/exp(-mvec/2))
+  -log(1-cvec/nvec/exp(-mvec/2))
 }
 
 #' VPAの結果に格納されている生物パラメータから世代時間を計算

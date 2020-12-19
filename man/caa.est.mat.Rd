@@ -18,8 +18,6 @@ caa.est.mat(
 )
 }
 \arguments{
-\item{set_max1}{廃止予定}
-
 \item{max_exploitation_rate}{潜在的に漁獲できる漁獲量＜入力した漁獲量の場合、潜在的に漁獲できる漁獲量の何％まで実際に漁獲するか}
 
 \item{max_F}{F at ageの最大値となる値の上限をどこにおくか}

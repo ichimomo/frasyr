@@ -803,8 +803,6 @@ future_vpa_R <- function(naa_mat,
     }    
 
     if(sum(HCR_mat[t,,"expect_wcatch"])>0){
-
-     
       F_max_tmp <- apply(faa_mat[,t,],2,max) # betaを乗じる前のもとのfaaを用いる
       # F_mat[,t,]がものすごく小さい値になっている場合、そのままで入れるとFへの乗数が壁に当たる場合があるので最大１で正規化する
       saa.tmp <- sweep(faa_mat[,t,],2,F_max_tmp,FUN="/")
@@ -812,9 +810,9 @@ future_vpa_R <- function(naa_mat,
                                              function(x) caa.est.mat(N_mat[,t,x],saa.tmp[,x],#F_mat[,t,x],#saa.tmp[,x],
                                                                      waa_catch_mat[,t,x],M_mat[,t,x],
                                                                      HCR_mat[t,x,"expect_wcatch"],
-                                                                     set_max1=FALSE,max_exploitation_rate=max_exploitation_rate,
+                                                                     max_exploitation_rate=max_exploitation_rate,
                                                                      max_F=max_F,
-                                                                     Pope=as.logical(Pope))$x)
+                                                                     Pope=Pope)$x)
       F_mat[,t,which(F_max_tmp>0)] <- sweep(saa.tmp[,which(F_max_tmp>0)],2, fix_catch_multiplier, FUN="*")
       HCR_realized[t,which(F_max_tmp>0),"beta_gamma"] <- HCR_realized[t,which(F_max_tmp>0),"beta_gamma"] *
         fix_catch_multiplier / F_max_tmp[which(F_max_tmp>0)]
@@ -829,7 +827,7 @@ future_vpa_R <- function(naa_mat,
       if(!is.null(waa_par_mat)) waa_mat[,t,] <- waa_catch_mat[,t,] <- update_waa_mat(waa=waa_mat[,t,],rand=waa_rand_mat[,t,],naa=N_mat[,t,],pars_b0=waa_par_mat[,,"b0"],pars_b1=waa_par_mat[,,"b1"])
     }
 
-    HCR_realized[t,,"wcatch"] <- catch_equation(N_mat[,t,],F_mat[,t,],waa_catch_mat[,t,],M_mat[,t,],Pope=Pope) %>% colSums()    
+      HCR_realized[t,,"wcatch"] <- catch_equation(N_mat[,t,],F_mat[,t,],waa_catch_mat[,t,],M_mat[,t,],Pope=Pope) %>% colSums()
   }
 
   if(Pope==1){

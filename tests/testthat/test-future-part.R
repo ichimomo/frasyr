@@ -247,7 +247,7 @@ test_that("check MSE feature",{ # ----
   res_future_MSE_TAC <- future_vpa(tmb_data=data_future_test10$data,
                            optim_method="none",
                            multi_init = 1,SPRtarget=0.3,
-                           do_MSE=TRUE, MSE_input_data=data_future_test10,MSE_nsim=1000,
+                           do_MSE=TRUE, MSE_input_data=data_future_test10,MSE_nsim=10,
                            MSE_catch_exact_TAC=TRUE)
 
   # 以前の計算と同じ結果が出るかのテスト
@@ -279,7 +279,7 @@ test_that("check MSE feature",{ # ----
                             list(nsim=10,nyear=10,
                                  fix_recruit=NULL,
                                  fix_wcatch=tibble(year=2020:2025, wcatch=CC),
-                                 max_F=max(res_future$faa[,"2018",1])),
+                                 max_F=max(res_future_noMSE$faa[,"2018",1])),
                             do_MSE=FALSE, MSE_input_data=data_future_test10,
                             SPRtarget=0.3,
                             MSE_nsim=100)
@@ -289,7 +289,7 @@ test_that("check MSE feature",{ # ----
                             list(nsim=10,nyear=10,
                                  fix_recruit=NULL,
                                  fix_wcatch=tibble(year=2020:2025, wcatch=CC),
-                                 max_F=max(res_future$faa[,"2018",1])),
+                                 max_F=max(res_future_noMSE$faa[,"2018",1])),
                             do_MSE=TRUE, MSE_input_data=data_future_test10,
                             SPRtarget=0.3,
                             MSE_nsim=100)
@@ -300,10 +300,6 @@ test_that("check MSE feature",{ # ----
   max(res_future4$HCR_realized[as.character(2020:2025),,"Fratio"]) %>%
     round(2) %>% 
     expect_equal(0.18)
-
-# max(res_future3$HCR_realized[as.character(2020:2025),,"Fratio"]) %>%
-#    round(2) %>% 
-#  expect_equal(0.14)  
 
   tmpfunc <- function(res_future){
       x <- t(get_wcatch(res_future)[as.character(2021:2025),])

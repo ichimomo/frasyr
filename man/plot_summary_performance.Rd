@@ -14,6 +14,7 @@ plot_summary_performance(
   catch_3terms = list(2022:2024, 2025:2027, 2028:2030),
   ssb_3terms = list(2023:2025, 2026:2028, 2029:2031),
   risk.pickup = NULL,
+  circle_size = 60,
   font_size = 25,
   sort_category = NULL
 )
