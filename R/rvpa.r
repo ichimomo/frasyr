@@ -509,6 +509,37 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param p_by_age 選択率更新法でridgeVPAの際にpenalty="p"のときに年齢別にペナルテイーを与えるか与えないか．与えたい場合はTRUEとして,penalty_age（eta=NULLのとき）もしくはno_eta_age(etaがNULLでないとき）に年齢範囲を指定する．
 #' @param sdreport \code{TMB=TRUE}のときに\code{sdreport()}を実行するかどうか（naa, faa, 資源量, 親魚量, Fの平均, 漁獲割合のSDを計算する）
 #' @param use.equ plus groupが途中で変わる場合の計算式の選択 （old = 従来の方法（プラスグループが延長している年はプラスグループのＦが一歳若い年齢のＦと等しいという仮定は置かない），new= 新しい方法（プラスグループが延長している年はプラスグループのＦが一歳若い年齢のＦと等しいという仮定を置く)
+#' @return list object:
+#' \describe{
+#' \item{\code{input}}{解析に用いたデータや仮定}
+#' \item{\code{term.f}}{推定されたターミナルF}
+#' \item{\code{np}}{推定されたターミナルFの数}
+#' \item{\code{minimum}}{最適解における目的関数の値（合計）}
+#' \item{\code{minimum.c}}{最適解における目的関数の値（個々）}
+#' \item{\code{logLik}}{負の対数尤度}
+#' \item{\code{gradient}}{最適解での傾き}
+#' \item{\code{code}}{最適化法から返されるコード（どのような理由で最適化が停止したのかがわかる）}
+#' \item{\code{q}}{推定されたq（資源量指標値の比例定数））}
+#' \item{\code{b}}{推定されたb（資源量指標値の非線形性））}
+#' \item{\code{sigma}}{資源量指標値の分散の平方根}
+#' \item{\code{convergence}}{解が収束していれば1，そうでないと0}
+#' \item{\code{message}}{最適化に関する注意（あれば）}
+#' \item{\code{hessian}}{ヘッセ行列の値}
+#' \item{\code{Ft}}{最終年のFの平均値}
+#' \item{\code{Fc.at.age}}{Fcurrentで指定した年における平均のF}
+#' \item{\code{Fc.mean}}{Fc.at.ageを平均したもの}
+#' \item{\code{Fc.max}}{Fc.at.ageの最大値}
+#' \item{\code{last.year}}{vpaを計算する最終年を別に指定した場合}
+#' \item{\code{Pope}}{popeの近似式を用いたか否か}
+#' \item{\code{ssb.coef}}{産卵親魚量の計算時期（年始めなら0,年中央なら0.5,年最後なら1)}
+#' \item{\code{pred.index}}{推定された資源量指標値}
+#' \item{\code{wcaa}}{caa*waa.catch}
+#' \item{\code{naa}}{推定された年別年齢別資源尾数}
+#' \item{\code{faa}}{推定された年別年齢別漁獲係数}
+#' \item{\code{baa}}{推定された年別年齢別資源重量}
+#' \item{\code{sbb}}{推定された年別年齢別産卵親魚量}
+#' \item{\code{saa}}{推定された年別年齢別選択率}
+#' }
 #' @encoding UTF-8
 #'
 #' @export
