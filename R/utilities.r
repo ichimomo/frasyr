@@ -712,6 +712,7 @@ out.vpa <- function(res=NULL,    # VPA result
                     fres_current=NULL,   # future projection result
                     fres_HCR=NULL,   # future projection result
                     kobeII=NULL, # kobeII result
+                    kobe.ratio=NULL # kobe.ratio
                     filename="vpa", # filename without extension
                     csvname=NULL,
                     pdfname=NULL,
@@ -866,6 +867,11 @@ out.vpa <- function(res=NULL,    # VPA result
     }
   }
 
+  if(!is.null(kobe.ratio)){
+    write("\n# Kobe ratio",file=csvname,append=T)
+    kobe.ratio %>%
+        write_csv(path=csvname,append=T, col_names=TRUE)      
+  }
 
 }
 
