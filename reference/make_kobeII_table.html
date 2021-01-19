@@ -45,6 +45,8 @@
 
 
 
+
+
 <!-- mathjax -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script>
@@ -140,7 +142,8 @@
   year.catchdiff <span class='op'>=</span> <span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/Extremes.html'>max</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/numeric.html'>as.numeric</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span><span class='op'>(</span><span class='va'>res_vpa</span><span class='op'>$</span><span class='va'>naa</span><span class='op'>)</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span> <span class='fl'>1</span><span class='op'>:</span><span class='fl'>10</span><span class='op'>)</span>,
   Btarget <span class='op'>=</span> <span class='fl'>0</span>,
   Blimit <span class='op'>=</span> <span class='fl'>0</span>,
-  Bban <span class='op'>=</span> <span class='fl'>0</span>
+  Bban <span class='op'>=</span> <span class='fl'>0</span>,
+  Bspecific <span class='op'>=</span> <span class='cn'>NULL</span>
 <span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -148,7 +151,15 @@
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>kobeII_data</th>
-      <td><p>beta.simulationの返り値</p></td>
+      <td><p>beta.simulationまたはconvert_future_list_tableの返り値</p></td>
+    </tr>
+    <tr>
+      <th>res_vpa</th>
+      <td><p>VPAの結果</p></td>
+    </tr>
+    <tr>
+      <th>Bspecific</th>
+      <td><p>特定の資源量を一回でも下回るリスクを計算する。下回るリスクを判断する年はyear.riskに従う</p></td>
     </tr>
     </table>
 

@@ -40,7 +40,9 @@
 
 
 <meta property="og:title" content="将来予測においてFが非常に小さい場合には決定論的予測と確率論的予測の平均がほぼ一致するかを確認するための関数 — test_sd0_future" />
-<meta property="og:description" content="将来予測においてFが非常に小さい場合には決定論的予測と確率論的予測の平均がほぼ一致するかを確認するための関数" />
+<meta property="og:description" content="HSを仮定していて、折れ点の下側から将来予測するような場合には、将来予測の最初のほうは一致しない。マッチングする年代などを工夫する必要がある" />
+
+
 
 
 
@@ -121,10 +123,10 @@
     </div>
 
     <div class="ref-description">
-    <p>将来予測においてFが非常に小さい場合には決定論的予測と確率論的予測の平均がほぼ一致するかを確認するための関数</p>
+    <p>HSを仮定していて、折れ点の下側から将来予測するような場合には、将来予測の最初のほうは一致しない。マッチングする年代などを工夫する必要がある</p>
     </div>
 
-    <pre class="usage"><span class='fu'>test_sd0_future</span><span class='op'>(</span><span class='va'>data_future</span>, <span class='va'>...</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>test_sd0_future</span><span class='op'>(</span><span class='va'>data_future</span>, nsim <span class='op'>=</span> <span class='cn'>NULL</span>, nyear <span class='op'>=</span> <span class='fl'>10</span>, future_range <span class='op'>=</span> <span class='cn'>NULL</span>, <span class='va'>...</span><span class='op'>)</span></pre>
 
 
 
