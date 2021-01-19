@@ -32,11 +32,11 @@ Imports:
     EnvStats,
     assertthat,
     foreach,
-    doParallel,    
+    doParallel,
+    testthat,
+    covr,    
     GGally
 Suggests:
     knitr,
     rmarkdown,
-    testthat,
-    covr
 VignetteBuilder: knitr
