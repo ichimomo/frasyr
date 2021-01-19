@@ -21,11 +21,16 @@ make_kobeII_table(
   year.catchdiff = (max(as.numeric(colnames(res_vpa$naa))) + 1:10),
   Btarget = 0,
   Blimit = 0,
-  Bban = 0
+  Bban = 0,
+  Bspecific = NULL
 )
 }
 \arguments{
-\item{kobeII_data}{beta.simulationの返り値}
+\item{kobeII_data}{beta.simulationまたはconvert_future_list_tableの返り値}
+
+\item{res_vpa}{VPAの結果}
+
+\item{Bspecific}{特定の資源量を一回でも下回るリスクを計算する。下回るリスクを判断する年はyear.riskに従う}
 }
 \description{
 beta.simluationの結果などを読んで、kobeII talbeに整形する関数

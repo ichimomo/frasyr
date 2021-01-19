@@ -4,8 +4,8 @@
 \alias{test_sd0_future}
 \title{将来予測においてFが非常に小さい場合には決定論的予測と確率論的予測の平均がほぼ一致するかを確認するための関数}
 \usage{
-test_sd0_future(data_future, ...)
+test_sd0_future(data_future, nsim = NULL, nyear = 10, future_range = NULL, ...)
 }
 \description{
-将来予測においてFが非常に小さい場合には決定論的予測と確率論的予測の平均がほぼ一致するかを確認するための関数
+HSを仮定していて、折れ点の下側から将来予測するような場合には、将来予測の最初のほうは一致しない。マッチングする年代などを工夫する必要がある
 }

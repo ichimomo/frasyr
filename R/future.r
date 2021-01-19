@@ -382,6 +382,7 @@ future_vpa <- function(tmb_data,
                        MSE_input_data=NULL,
                        MSE_nsim=NULL,
                        MSE_sd=NULL,
+                       MSE_catch_exact_TAC=FALSE,
                        compile=FALSE,
                        output_format="new",
                        attach_input=TRUE,
@@ -439,7 +440,8 @@ future_vpa <- function(tmb_data,
     tmb_data$do_MSE <- do_MSE
     tmb_data$MSE_input_data <- MSE_input_data
     tmb_data$MSE_nsim <- MSE_nsim
-    tmb_data$MSE_sd <- MSE_sd      
+    tmb_data$MSE_sd <- MSE_sd
+    tmb_data$MSE_catch_exact_TAC <- MSE_catch_exact_TAC
 #    tmb_data$max_F <- max_F
 #    tmb_data$max_exploitation_rate <- max_exploitation_rate
 
@@ -550,6 +552,7 @@ future_vpa_R <- function(naa_mat,
                          MSE_input_data=NULL,
                          MSE_nsim = NULL,
                          MSE_sd = NULL,
+                         MSE_catch_exact_TAC=FALSE,
                          waa_par_mat  = NULL, # option for waa_fun
                          waa_rand_mat = NULL
 ){
@@ -583,6 +586,10 @@ future_vpa_R <- function(naa_mat,
     SR_MSE[,,"recruit"] <- SR_MSE[,,"ssb"] <- 0
     dimnames(SR_MSE)$par[12] <- "real_true_catch"
     dimnames(SR_MSE)$par[13] <- "pseudo_true_catch"
+
+    max_F_MSE <- max_F ; max_exploitation_rate_MSE <- max_exploitation_rate
+    # do_MSEで本番のFを決める場合にはMSE内で上限つきで計算された漁獲量そのままで漁獲するのでmax_Fもmax_exploitation rateもinfにする
+    max_F <- exp(10); max_exploiration_rate <- 0.99    
   }
 
   F_mat <- N_mat <-  naa_mat
@@ -654,9 +661,11 @@ future_vpa_R <- function(naa_mat,
     }
 
    if(isTRUE(do_MSE) && t>=start_ABC_year){
-      MSE_input_data$input$silent <- TRUE
-      MSE_dummy_data <- safe_call(make_future_data,MSE_input_data$input)$data
-      MSE_dummy_data <- MSE_dummy_data %>%
+     MSE_input_data$input$silent <- TRUE
+     MSE_input_data$input$max_F <- max_F_MSE 
+     MSE_input_data$input$max_exploitation_rate <- max_exploitation_rate_MSE
+     MSE_dummy_data <- safe_call(make_future_data,MSE_input_data$input)$data
+     MSE_dummy_data <- MSE_dummy_data %>%
         purrr::list_modify(future_initial_year   = t-2,
                            start_random_rec_year = t-1,
                            start_ABC_year        = t,
@@ -681,7 +690,13 @@ future_vpa_R <- function(naa_mat,
         MSE_dummy_data$HCR_mat[,,"TAC_carry_amount"] <- NA   #
         # 同様にTACの変動の上限設定もオフにする
         MSE_dummy_data$HCR_mat[,,"TAC_upper_CV"] <- NA
-        MSE_dummy_data$HCR_mat[,,"TAC_lower_CV"] <- NA        
+        MSE_dummy_data$HCR_mat[,,"TAC_lower_CV"] <- NA
+
+        # TACどおりに漁獲すると将来予測でも仮定して将来予測する!!
+        if(MSE_catch_exact_TAC==TRUE) MSE_dummy_data$HCR_mat[t-1,,"expect_wcatch"] <- HCR_mat[t-1,i,"expect_wcatch"]
+
+        # 漁獲量に上限設定があってそれが厳しい場合に上限を予測値から決定しないといけない
+        if(sum(HCR_mat[t,i,"expect_wcatch"]>0)>0) MSE_dummy_data$HCR_mat[t,,"expect_wcatch"] <- HCR_mat[t,i,"expect_wcatch"]
         
         for(k in 1:MSE_nsim){
           MSE_dummy_data$SR_mat[,k,]  <- SR_mat[,i,]
@@ -795,9 +810,9 @@ future_vpa_R <- function(naa_mat,
                                              function(x) caa.est.mat(N_mat[,t,x],saa.tmp[,x],#F_mat[,t,x],#saa.tmp[,x],
                                                                      waa_catch_mat[,t,x],M_mat[,t,x],
                                                                      HCR_mat[t,x,"expect_wcatch"],
-                                                                     set_max1=FALSE,max_exploitation_rate=max_exploitation_rate,
+                                                                     max_exploitation_rate=max_exploitation_rate,
                                                                      max_F=max_F,
-                                                                     Pope=as.logical(Pope))$x)
+                                                                     Pope=Pope)$x)
       F_mat[,t,which(F_max_tmp>0)] <- sweep(saa.tmp[,which(F_max_tmp>0)],2, fix_catch_multiplier, FUN="*")
       HCR_realized[t,which(F_max_tmp>0),"beta_gamma"] <- HCR_realized[t,which(F_max_tmp>0),"beta_gamma"] *
         fix_catch_multiplier / F_max_tmp[which(F_max_tmp>0)]
@@ -812,7 +827,7 @@ future_vpa_R <- function(naa_mat,
       if(!is.null(waa_par_mat)) waa_mat[,t,] <- waa_catch_mat[,t,] <- update_waa_mat(waa=waa_mat[,t,],rand=waa_rand_mat[,t,],naa=N_mat[,t,],pars_b0=waa_par_mat[,,"b0"],pars_b1=waa_par_mat[,,"b1"])
     }
 
-    HCR_realized[t,,"wcatch"] <- catch_equation(N_mat[,t,],F_mat[,t,],waa_catch_mat[,t,],M_mat[,t,],Pope=Pope) %>% colSums()    
+      HCR_realized[t,,"wcatch"] <- catch_equation(N_mat[,t,],F_mat[,t,],waa_catch_mat[,t,],M_mat[,t,],Pope=Pope) %>% colSums()
   }
 
   if(Pope==1){
@@ -1182,7 +1197,7 @@ average_SR_mat <- function(res_vpa,
 #' @param n 将来にわたって何年分のリサンプリング残差を作るか
 #' @param duration 1ブロックの年の長さ
 #'
-#' @examples
+#' @exmaples
 #'
 #' set.seed(1)
 #' res <- sample_backward(rep(1:5,each=5), 30, 5)

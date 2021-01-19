@@ -46,7 +46,7 @@ calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=
 
 #'
 #' 年齢別生物パラメータとFと漁獲量を与えると与えた漁獲量と一致するFへの乗数を返す
-#' @param set_max1 廃止予定
+#' 
 #' @param max_exploitation_rate 潜在的に漁獲できる漁獲量＜入力した漁獲量の場合、潜在的に漁獲できる漁獲量の何％まで実際に漁獲するか
 #' @param max_F F at ageの最大値となる値の上限をどこにおくか
 #' 
@@ -56,8 +56,9 @@ calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=
 caa.est.mat <- function(naa,saa,waa,M,catch.obs,Pope,set_max1=TRUE,max_exploitation_rate=0.99,max_F=exp(10)){
 
   tmpfunc <- function(logx,catch.obs=catch.obs,naa=naa,saa=saa,waa=waa,M=M,out=FALSE,Pope=Pope){
+    if(Pope==1 | Pope==TRUE) is.pope <- TRUE else is.pope <- FALSE
     x <- exp(logx)
-    if(isTRUE(Pope)){
+    if(is.pope){
       caa <- naa*(1-exp(-saa*x))*exp(-M/2)
     }
     else{
@@ -78,12 +79,54 @@ caa.est.mat <- function(naa,saa,waa,M,catch.obs,Pope,set_max1=TRUE,max_exploitat
     catch.obs <- C0 * max_exploitation_rate
 
   }
-    
+
+  # caa.est.mat_wrongで初期値を設定するとはやそう
   tmp <- optimize(tmpfunc,c(-10,log(max_F)),catch.obs=catch.obs,naa=naa,saa=saa,waa=waa,M=M,Pope=Pope,out=FALSE)#,tol=.Machine$double.eps)
   tmp2 <- tmpfunc(logx=tmp$minimum,catch.obs=catch.obs,naa=naa,saa=saa,waa=waa,M=M,Pope=Pope,out=TRUE)
   realized.catch <- sum(tmp2*waa)
   if(abs(realized.catch/catch.obs-1)>0.1) warning("expected catch:",catch.obs,", realized catch:",realized.catch)
   return(list(x=exp(tmp$minimum),caa=tmp2,realized.catch=realized.catch, expected.catch=catch.obs))
+}
+
+#'
+#' 年齢別生物パラメータとFと漁獲量を与えると与えた漁獲量と一致するFへの乗数を返す (optimを使わないでやろうとしたけどだめだったやつ）
+#'
+#' これだと漁獲量をぴったりに返すFのvectorは得られるが、もとの選択率に一致しない
+#' 
+#' @param naa numbers at age
+#' @param saa selectivity at age
+#' @param waa weight at age
+#' @param M natural mortality at age
+#' @param max_exploitation_rate 潜在的に漁獲できる漁獲量＜入力した漁獲量の場合、潜在的に漁獲できる漁獲量の何％まで実際に漁獲するか
+#' @param max_F F at ageの最大値となる値の上限をどこにおくか
+#' 
+#' @export
+#' @encoding UTF-8
+
+caa.est.mat_wrong <- function(naa,saa,waa,M,catch.obs,Pope,max_exploitation_rate=0.99,max_F=exp(10)){
+
+  C0 <- catch_equation(naa,exp(100),waa,M,Pope) %>% sum()
+  if(C0 < catch.obs){
+    warning("The expected catch (", catch.obs, ") is over potential maximum catch (",round(C0,5),"). The expected catch is replaced by",round(C0,3),"x", max_exploitation_rate)
+    catch.obs <- C0 * max_exploitation_rate
+  }
+
+  caa_original <- catch_equation(naa,saa,1,M,Pope)
+  catch_ratio <- catch.obs / sum(caa_original * waa)
+  caa_expected <- caa_original * catch_ratio
+  if(Pope==0){
+    Fvector <- solv.Feq(caa_expected, naa, M)
+  }
+  else{
+    Fvector <- solv.Feq.Pope(caa_expected, naa, M)    
+  }
+
+  if( max_F < max(Fvector)) Fvector <- max_F * Fvector/max(Fvector) 
+    
+  realized.catch <- catch_equation(naa,Fvector,waa,M,Pope)
+  if(abs(sum(realized.catch)/catch.obs-1)>0.1) warning("expected catch:",catch.obs,", realized catch:",realized.catch)
+  multi <- mean(Fvector/saa)
+  return(list(x=multi,caa=realized.catch,realized.catch=sum(realized.catch), expected.catch=catch.obs, Fvector=Fvector))
 }
 
 # #　上の関数とどっちが使われているか不明,,,多分使われていないのでコメントアウトする
@@ -109,14 +152,15 @@ caa.est.mat <- function(naa,saa,waa,M,catch.obs,Pope,set_max1=TRUE,max_exploitat
 #   return(list(x=tmp$minimum,caa=tmp2))
 # }
 
-catch_equation <- function(naa,faa,waa,M,Pope=TRUE){
-  if(isTRUE(Pope)) Pope <- 1
-  if(Pope==1){
+catch_equation <- function(naa,faa,waa,M,Pope=1){
+  if(Pope==1 | Pope==TRUE) is.pope <- TRUE else is.pope <- FALSE
+  if(is.pope){
     wcaa_mat <- naa*(1-exp(-faa))*exp(-M/2) * waa
   }
   else{
     wcaa_mat <- naa*(1-exp(-faa-M))*faa/(faa+M) * waa
   }
+  return(wcaa_mat)
 }
 
 #' @export
@@ -143,6 +187,11 @@ solv.Feq <- function(cvec,nvec,mvec){
     }
   }
   Fres
+}
+
+#' @export
+solv.Feq.Pope <- function(cvec,nvec,mvec){
+  -log(1-cvec/nvec/exp(-mvec/2))
 }
 
 #' VPAの結果に格納されている生物パラメータから世代時間を計算
@@ -1355,7 +1404,9 @@ derive_RP_value <- function(refs_base,RP_name){
 #'
 #' beta.simluationの結果などを読んで、kobeII talbeに整形する関数
 #'
-#' @param kobeII_data beta.simulationの返り値　
+#' @param kobeII_data beta.simulationまたはconvert_future_list_tableの返り値
+#' @param res_vpa VPAの結果
+#' @param Bspecific 特定の資源量を一回でも下回るリスクを計算する。下回るリスクを判断する年はyear.riskに従う
 #' 
 #' @export
 #'
@@ -1376,7 +1427,8 @@ make_kobeII_table <- function(kobeII_data,
                               year.catchdiff=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
                               Btarget=0,
                               Blimit=0,
-                              Bban=0){
+                              Bban=0,
+                              Bspecific=NULL){
   # 平均漁獲量
   (catch.mean <- kobeII_data %>%
      dplyr::filter(year%in%year.catch,stat=="catch") %>% # 取り出す年とラベル("catch")を選ぶ
@@ -1530,15 +1582,16 @@ make_kobeII_table <- function(kobeII_data,
     mutate(stat_name="overfishing.risk")
 
   redzone.risk1 <- kobeII_data %>%
-    dplyr::filter(year%in%year.risk,stat=="Fratio")  %>%
-    arrange(HCR_name,beta,sim)
+    dplyr::filter(year%in%year.risk,stat=="Fratio")  
 
   redzone.risk2 <- kobeII_data %>%
     dplyr::filter(year%in%year.risk,stat=="SSB") %>%
     mutate(Bratio=value/Btarget) %>%
     mutate(Fratio=redzone.risk1$value) %>%
-    mutate(is.redzone=(Bratio < 1 & round(Fratio,2) > 1)) %>%
+    mutate(is.redzone=(Bratio < 1 & round(Fratio,3) > 1)) %>%
     arrange(HCR_name,beta,sim)
+
+#  browser()
 
   redzone.risk <- redzone.risk2 %>%
     group_by(HCR_name,beta,sim) %>%        
@@ -1547,6 +1600,19 @@ make_kobeII_table <- function(kobeII_data,
     dplyr::summarise(value=mean(sum.redzone>0)) %>%    
     arrange(HCR_name,desc(beta)) %>%
     mutate(stat_name="redzone.risk")
+
+  if(!is.null(Bspecific)){
+    bspecific.risk <- kobeII_data %>%
+      dplyr::filter(year%in%year.risk,stat=="SSB") %>%
+      group_by(HCR_name,beta,sim) %>%
+      dplyr::summarise(Bspecific.fail=sum(value<Bspecific)) %>%
+      group_by(HCR_name,beta) %>%
+      summarise(value=mean(Bspecific.fail>0)) %>%
+      arrange(HCR_name,desc(beta))%>%
+      mutate(stat_name="bspecific.risk")
+  }else{
+    bspecific.risk <- NA
+  }
 
   # kobe statistics
   overssbtar <- kobeII_data %>%
@@ -1585,7 +1651,8 @@ make_kobeII_table <- function(kobeII_data,
                    overfishing.risk = overfishing.risk,
                    redzone.risk = redzone.risk,
                    bban.risk = bban.risk,
-                   blimit.risk = blimit.risk)
+                   blimit.risk = blimit.risk,
+                   bspecific.risk = bspecific.risk)
   return(res_list)
 
 }
@@ -2235,10 +2302,12 @@ redo_future <- function(data_future, input_data_list, SR_sd=NULL, SR_b=NULL, onl
 #'
 #' 将来予測においてFが非常に小さい場合には決定論的予測と確率論的予測の平均がほぼ一致するかを確認するための関数
 #'
+#' HSを仮定していて、折れ点の下側から将来予測するような場合には、将来予測の最初のほうは一致しない。マッチングする年代などを工夫する必要がある
+#'
 #' @export
 #' 
 
-test_sd0_future <- function(data_future,...){
+test_sd0_future <- function(data_future,nsim=NULL,nyear=10,future_range=NULL,...){
 
   is_regime <- !is.null(data_future$input$regime_shift_option)
   {if(is_regime){
@@ -2252,32 +2321,32 @@ test_sd0_future <- function(data_future,...){
 
   # determine sample size
   tol <- 0.007
-  nsim <- round((0.5/tol)^2) # 1%以下（0.7%）の誤差が期待されるnsim
+  if(is.null(nsim)) nsim <- round((0.5/tol)^2) # 1%以下（0.7%）の誤差が期待されるnsim
   cat("nsim for checking sd=0:",nsim,"\n")
   
   # run 2 funture projections
-  res1 <- redo_future(data_future, list(nsim=nsim, nyear=10), multi_init=0.01, ...)
-  res2 <- redo_future(data_future, list(nsim=2   , nyear=10), multi_init=0.01, SR_sd=0, ...)
+  res1 <- redo_future(data_future, list(nsim=nsim, nyear=nyear), multi_init=0.01, ...)
+  res2 <- redo_future(data_future, list(nsim=2   , nyear=nyear), multi_init=0.01, SR_sd=0, ...)
 
-  a <- try(compare_future_res12(res1,res2))
+  a <- try(compare_future_res12(res1,res2,future_range=future_range))
 
   cat("* Fをなるべく小さくした場合の将来予測において、決定論的予測と確率的予測の平均値がほぼ同じになるか？（ここでnoが出る場合にはバグの可能性があるので管理者に連絡してください）（モデル平均・バックワードリサンプリングの場合にはnoになっちゃいます（今後改善））: ",ifelse(class(a)=="try-error", "not ","OK\n"))
  
   return(lst(res1,res2,a))
 }
 
-compare_future_res12 <- function(res1,res2,tol=0.01){
+compare_future_res12 <- function(res1,res2,tol=0.01, future_range=NULL){
   nyear <- dim(res1$naa)[[2]]
-  future_range <- res1$input$tmb_data$start_random_rec_year:nyear
+  if(is.null(future_range)) future_range <- res1$input$tmb_data$start_random_rec_year:nyear
   if(dim(res1$naa)[[3]]==dim(res2$naa)[[3]]){
-      mean_difference_in_naa <- mean(abs(1-res1$naa[,future_range,]/res2$naa[,future_range,]))
-      mean_difference_in_wcaa <- mean(abs(1-res1$wcaa[,future_range,]/res2$wcaa[,future_range,]))
+      mean_difference_in_naa <- mean(abs(1-res1$naa[,future_range,]/res2$naa[,future_range,]),na.rm=T)
+      mean_difference_in_wcaa <- mean(abs(1-res1$wcaa[,future_range,]/res2$wcaa[,future_range,]),na.rm=T)
   }
   else{
-      mean_difference_in_naa <- 1-mean(apply(res1$naa[,future_range,],c(1,2),mean)/
-                                     apply(res2$naa[,future_range,],c(1,2),mean))
-      mean_difference_in_wcaa <- 1-mean(apply(res1$wcaa[,future_range,],c(1,2),mean)/
-                                      apply(res2$wcaa[,future_range,],c(1,2),mean))      
+      mean_difference_in_naa <- 1-mean(apply(res1$naa[,future_range,],c(1,2),mean,na.rm=TRUE)/
+                                     apply(res2$naa[,future_range,],c(1,2),mean,na.rm=TRUE),na.rm=T)
+      mean_difference_in_wcaa <- 1-mean(apply(res1$wcaa[,future_range,],c(1,2),mean,na.rm=TRUE)/
+                                      apply(res2$wcaa[,future_range,],c(1,2),mean,na.rm=TRUE),na.rm=T)      
   }
 
   cat("mean_difference in naa=", mean_difference_in_naa,"\n")
@@ -2356,4 +2425,148 @@ check_MSE_sd0 <- function(data_future, data_MSE=NULL, nsim_for_check=10000, tol=
 take_interval <- function(prob,target){
     x <- which(abs(diff(sign(prob-target)))>0)
     c(x,x+1)
+}
+
+#'
+#' kobeII tableの結果をさらに要約してグラフ化する
+#'
+#' 漁獲量・親魚量・リスクの３つに分類する
+#'
+#' @export
+#' 
+
+plot_summary_performance <- function(folder_names, scenario_names,
+                                     kobe_object=NULL,
+                                     plot_year_range, beta_select,
+                                     res_MSY,
+                                     catch_3terms=list(2022:2024,2025:2027,2028:2030),
+                                     ssb_3terms  =list(2023:2025,2026:2028,2029:2031),
+                                     risk.pickup = NULL,
+                                     circle_size=60,
+                                     font_size = 25,sort_category=NULL
+                                     ){
+  
+  if(length(scenario_names)!=length(folder_names)) stop("scenario_names and folder_names の長さが違います")
+  #    if(length(catch_3terms)!=3) stop("catch_3termsの引数がおかしいです")
+  #    if(length(ssb_3terms  )!=3) stop("catch_3termsの引数がおかしいです")        
+  
+
+  jperformance <- c(str_c("親魚量",names(ssb_3terms),  sep="\n"),
+                    str_c("漁獲量",names(catch_3terms),sep="\n"))
+  jstat <- c(str_c("ssb",names(ssb_3terms),  sep=""),
+             str_c("catch",names(catch_3terms),  sep=""))
+  category <- c(rep("親魚量",length(ssb_3terms)),
+                rep("漁獲量",length(catch_3terms)))
+
+  category_name <- tibble(jstat=jstat,
+                          jperformance=jperformance,
+                          category=category)
+
+  if(is.null(risk.pickup)){
+    risk.pickup <- tibble(jperformance=c("禁漁水準\n以下",
+                                         "限界基準値\n以下",
+                                         "TAC半減",
+                                         "赤ゾーン",
+                                         "今よりも減る"),
+                          jstat=c("bban.risk","blimit.risk","catch.risk",
+                                         "redzone.risk","bspecific.risk"))
+  }
+
+  risk.pickup <- risk.pickup %>% mutate(category="リスク")
+  
+  category_name <- bind_rows(category_name, risk.pickup) %>%
+    mutate(jperformance=factor(jperformance, levels=jperformance))
+  
+  # base.stat.dataを作る
+  base.stat.data <- NULL
+  for(i in 1:length(folder_names)){
+    # kobe dataの読み込み  
+    if(is.null(kobe_object)){
+      load(str_c(folder_names[i],"kobeII.table.rda"))
+    }
+    else{
+      kobeII.table <- kobe_object[[i]]
+    }
+
+    # ssb stat
+    ssb_data <- kobeII.table$ssb.mean %>% pivot_longer(cols=c(-HCR_name,-beta,-stat_name))
+    base.ssb <- purrr::map_dfr(ssb_3terms,
+                               function(x){ ssb_data %>%
+                                              dplyr::filter(name %in% x) %>%
+                                              group_by(beta) %>%
+                                              summarise(value=mean(value)/derive_RP_value(res_MSY$summary,"Btarget0")$SSB) %>%
+                                              mutate(stat_name="ssb")},
+                               .id="term")
+
+    # catch stat
+    catch_data <- kobeII.table$catch.mean %>% pivot_longer(cols=c(-HCR_name,-beta,-stat_name))
+    base.catch <- purrr::map_dfr(catch_3terms,
+                                 function(x){ catch_data %>%
+                                                dplyr::filter(name %in% x) %>%
+                                                group_by(beta) %>%
+                                                summarise(value=mean(value)/derive_RP_value(res_MSY$summary,"Btarget0")$Catch) %>%
+                                                mutate(stat_name="catch")},
+                                 .id="term")        
+    
+    tmp <- bind_rows(base.ssb,
+                     base.catch,
+                     bind_rows(kobeII.table[as.character(risk.pickup$jstat)])) %>%
+#                     kobeII.table$catch.risk,
+#                     kobeII.table$blimit.risk,
+#                     kobeII.table$bban.risk,
+#                     kobeII.table$redzone.risk,
+#                     kobeII.table$bspecific.risk) %>%
+      mutate(HCR_name=scenario_names[i])
+    
+    base.stat.data <- bind_rows(base.stat.data,tmp)
+  }
+
+
+  # selection of scenario
+  base.stat.data2 <- base.stat.data %>%
+    mutate(term=ifelse(is.na(term),"",term)) %>%
+    dplyr::filter(beta %in% beta_select) %>%
+    mutate(jstat=str_c(stat_name,"",term),
+           jscenario=str_c(HCR_name,"",beta)) %>%
+    mutate(is.zero = (value==0) ) %>%
+    left_join(category_name)
+
+  if(!is.null(sort_category)){
+    tmp <- dplyr::filter(base.stat.data2,jperformance==sort_category)
+    levels.tmp <- tmp$jscenario[order(tmp$value,decreasing=FALSE)]
+    base.stat.data2 <- base.stat.data2 %>%
+      mutate(jscenario=factor(jscenario,levels=levels.tmp))
+  }
+
+  green.color  <- "green"
+  yellow.color <- "yellow"
+  red.color    <- "red"
+  orange.color <- "orange"
+
+  
+  g1 <- base.stat.data2 %>%
+    dplyr::filter(category=="リスク") %>%
+    ggplot() +
+    geom_point(aes(x=jperformance,y=jscenario,size=value,shape=is.zero,
+                   color=is.zero))  +
+    geom_text(aes(x=jperformance,y=jscenario,label=round(value*100),shape=is.zero),size=font_size/2) +
+    scale_size(range = c(.1, circle_size)) +  
+    theme_SH(legend.position="none")+
+    theme(axis.text.x = element_text(angle = 90, size=font_size, vjust=0.5),
+          axis.text.y = element_blank()) + #element_text(angle = 0, size=font_size)) +
+    geom_hline(yintercept=c(4.5,8.5),lty=2) +
+    labs(title="リスク") + xlab("") + ylab("")
+  
+  g2 <- g1 %+% dplyr::filter(base.stat.data2,category=="親魚量") +
+    scale_color_manual(values = c(green.color)) +
+    labs(title="親魚量")
+
+  g3 <- g1 %+% dplyr::filter(base.stat.data2,category=="漁獲量") +
+      scale_color_manual(values = c(yellow.color)) +
+      theme(axis.text.y = element_text(angle = 0, size=font_size)) +      
+      labs(title="漁獲量")
+
+  g123 <- gridExtra::grid.arrange(g3,g2,g1,ncol=3)
+
+  return(lst(graph=g123,g1,g2,g3,data=base.stat.data2))
 }

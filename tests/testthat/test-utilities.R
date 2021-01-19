@@ -70,18 +70,26 @@ test_that("test caa.est.mat", {
   expect_catch <- 0.5
 
   # set usual F => OK
-  res <- caa.est.mat(c(1,1,1,1),c(1,1,1,1),c(1,1,1,1),c(0,0,0,0),catch.obs=expect_catch,Pope=TRUE,set_max1=FALSE)
+  res <- caa.est.mat(c(1,1,1,1),c(1,1,1,1),c(1,1,1,1),c(0,0,0,0),catch.obs=expect_catch,Pope=TRUE)
   expect_equal(round(sum(res$caa),3),round(expect_catch,3))
+
+  res <- caa.est.mat(c(1,1,1,1),c(1,1,1,1),c(1,1,1,1),c(0,0,0,0),catch.obs=expect_catch,Pope=FALSE)
+  expect_equal(round(sum(res$caa),3),round(expect_catch,3))  
 
   # set very small F => OK
   res <- caa.est.mat(c(1,1,1,1),c(0.00001,0.00001,0.00001,0.00001),c(1,1,1,1),c(0,0,0,0),
                      catch.obs=expect_catch,Pope=TRUE)
   expect_equal(round(sum(res$caa),3),round(expect_catch,3))
 
+  res <- caa.est.mat(c(1,1,1,1),c(0.00001,0.00001,0.00001,0.00001),c(1,1,1,1),c(0,0,0,0),
+                     catch.obs=expect_catch,Pope=FALSE)
+  expect_equal(round(sum(res$caa),3),round(expect_catch,3))  
+
   # naa is very small => warning
   expect_warning(caa.est.mat(c(0.01,0.01,0.01,0.01),c(1,1,1,1),c(1,1,1,1),c(0,0,0,0),
-                     catch.obs=expect_catch,Pope=TRUE))
-
+                             catch.obs=expect_catch,Pope=TRUE))
+  expect_warning(caa.est.mat(c(0.01,0.01,0.01,0.01),c(1,1,1,1),c(1,1,1,1),c(0,0,0,0),
+                             catch.obs=expect_catch,Pope=FALSE))  
 })
 
 test_that("calc.rel.abund",{

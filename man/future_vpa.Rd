@@ -18,6 +18,7 @@ future_vpa(
   MSE_input_data = NULL,
   MSE_nsim = NULL,
   MSE_sd = NULL,
+  MSE_catch_exact_TAC = FALSE,
   compile = FALSE,
   output_format = "new",
   attach_input = TRUE,
