@@ -734,7 +734,7 @@ plot_futures <- function(vpares=NULL,
     geom_blank(data=dummy2,mapping=aes(y=value,x=year))+
     #theme_bw(base_size=font.size) +
     #        coord_cartesian(expand=0)+
-    scale_y_continuous(expand=expand_scale(mult=c(0,0.05)))+
+    scale_y_continuous(expand=expansion(mult=c(0,0.05)))+
     facet_wrap(~factor(jstat,levels=rename_list$jstat),scales="free_y",ncol=ncol)+
     xlab("年")+ylab("")+ labs(fill = "",linetype="",color="")+
     xlim(min(future_tibble$year),maxyear)
@@ -758,10 +758,11 @@ plot_futures <- function(vpares=NULL,
   }
 
   if(n_example>0){
-    if(n_example>1){
-      g1 <- g1 + geom_line(data=dplyr::filter(future.example,year <= maxyear),
+      if(n_example>1){
+        tmpdata <- dplyr::filter(future.example,year <= maxyear) 
+        g1 <- g1 + geom_line(data=tmpdata,
                            mapping=aes(x=year,y=value,
-                                       alpha=factor(sim),
+                                       alpha=sim,
                                        color=scenario),
                            lwd=example_width)
     }
