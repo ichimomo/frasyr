@@ -344,7 +344,7 @@ make_future_data <- function(res_vpa,
 
   if(!is.null(special_setting)){
     set_name <- names(special_setting)
-    for(i in 1:length(set_name)){
+    for(i in seq_len(length(set_name))){
       tmb_data[[which(set_name[[i]]==tmb_data)[[1]]]][] <- special_setting[[i]][]
     }}
 
@@ -1077,7 +1077,7 @@ set_SR_mat <- function(res_vpa=NULL,
     }
     else{
       # vector
-      for(i in 1:length(fix_recruit$year)){
+      for(i in seq_len(length(fix_recruit$year))){
         if(length(fix_recruit$rec[[i]])!=dim(SR_mat)[[2]]) stop("invalid length of recruit")
         SR_mat[as.character(fix_recruit$year[i]),,"recruit"] <- as.numeric(unlist(fix_recruit$rec[i]))
       }
@@ -1137,7 +1137,7 @@ arrange_weight <- function(weight, nsim){
   weight <- weight / sum(weight)
   weight <- round(cumsum(weight) * nsim)
   weight2 <- c(1,weight[-length(weight)]+1)
-  purrr::map(1:length(weight),function(x) weight2[x]:weight[x])
+  purrr::map(seq_len(length(weight)),function(x) weight2[x]:weight[x])
 }
 
 #'
@@ -1172,7 +1172,7 @@ average_SR_mat <- function(res_vpa,
   start_random_rec_year  <- which(allyear_name==start_random_rec_year_name)
   random_rec_year_period <- (start_random_rec_year):length(allyear_name)
 
-  for(i in 1:length(res_SR_list)){
+  for(i in seq_len(length(res_SR_list))){
     SR_mat_tmp <- set_SR_mat(res_vpa=res_vpa,
                              start_random_rec_year_name,
                              SR_mat=SR_mat,
@@ -1213,7 +1213,7 @@ sample_backward <- function(residual, n, duration){
   block <- (1:(nblock))*(duration)
   block2 <- block-(duration)+1
   block[length(block)] <- length(residual_rev)
-  block.list <- purrr::map(1:length(block),function(x) residual_rev[block2[x]:block[x]])
+  block.list <- purrr::map(seq_len(length(block)),function(x) residual_rev[block2[x]:block[x]])
   # calculate sampling probability in the case of tail block (different length)
   block.probability <- sapply(block.list,length)
   block.probability <- block.probability/sum(block.probability)
