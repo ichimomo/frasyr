@@ -2105,7 +2105,7 @@ boot_steepness <- function(res_SR, M, waa, maa, n=100, plus_group=TRUE){
       res_boot <- boot.SR(res_SR, n=n)
       if(class(res_boot[[1]])=="fit.SRregime"){ # regime shift
           res_steepness <- purrr::map_dfr(res_boot, function(x){
-              par.matrix <- resSRregime$regime_pars[c("a","b")]
+              par.matrix <- res_SR$regime_pars[c("a","b")]
               tmplist <- purrr::map_dfr(seq_len(nrow(par.matrix)),
                                     function(i){
                                         calc_steepness(SR=res_SR$input$SR,rec_pars=par.matrix[i,],M=M,waa=waa,maa=maa,
