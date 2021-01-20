@@ -762,7 +762,7 @@ plot_futures <- function(vpares=NULL,
         tmpdata <- dplyr::filter(future.example,year <= maxyear) 
         g1 <- g1 + geom_line(data=tmpdata,
                            mapping=aes(x=year,y=value,
-                                       alpha=sim,
+                                       alpha=as.factor(sim),
                                        color=scenario),
                            lwd=example_width)
     }
