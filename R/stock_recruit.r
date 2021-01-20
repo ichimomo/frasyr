@@ -2082,3 +2082,42 @@ calc_steepness = function(SR="HS",rec_pars,M,waa,maa,plus_group=TRUE) {
   return(Res)
 }
 
+
+#' 再生産関係の推定結果からbootstrapを実行し、hの分布を計算する関数
+#' 
+#' @param res_SR fit.SRまたはfit.SRregime、モデル平均の結果
+#' @param M 年齢別自然死亡係数 (ベクトルで与えるか、年齢共通の場合\code{M=0.4}のようにしてもよい)
+#' @param waa （親魚量の）年齢別体重
+#' @param maa 年齢別親魚量
+#' @param plus_group 最高齢がプラスグループかどうか
+#' 
+#' @export
+#' 
+
+
+boot_steepness <- function(res_SR, M, waa, maa, n=100, plus_group=TRUE){
+
+    is.model.average <- class(res_SR)!="fit.SRregime" && class(res_SR)!="fit.SR"
+    
+    if(is.model.average){ # model average case (calculate recursively)
+      res_steepness <- purrr::map_dfr(res_SR, boot_steepness, n=n, M=M, waa=waa, maa=maa, plus_group=plus_group, .id="average_id")
+    }else{
+      res_boot <- boot.SR(res_SR, n=n)
+      if(class(res_boot[[1]])=="fit.SRregime"){ # regime shift
+          res_steepness <- purrr::map_dfr(res_boot, function(x){
+              par.matrix <- resSRregime$regime_pars[c("a","b")]
+              tmplist <- purrr::map_dfr(seq_len(nrow(par.matrix)),
+                                    function(i){
+                                        calc_steepness(SR=res_SR$input$SR,rec_pars=par.matrix[i,],M=M,waa=waa,maa=maa,
+                                                       plus_group=plus_group)
+                                    },.id="regime_id")
+          })
+      }
+      if(class(res_boot[[1]])=="fit.SR"){ # normal
+          res_steepness <- purrr::map_dfr(res_boot[1:n], function(x){
+              calc_steepness(SR=res_SR$input$SR,rec_pars=x$pars,M=M,waa=waa,maa=maa,plus_group=plus_group)
+          })
+      }}    
+
+    res_steepness
+}
