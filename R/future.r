@@ -1382,7 +1382,11 @@ format_to_old_future <- function(fout){
   fout_old <- fout[c("naa","faa","multi","input","waa")]
   #    fout_old$waa       <- fout$input$tmb_data$waa_mat
   fout_old$waa.catch <- fout$waa_catch_mat
-  fout_old$maa       <- fout$maa #input$tmb_data$maa_mat
+  if(!is.null(fout$maa)){
+      fout_old$maa       <- fout$maa #input$tmb_data$maa_mat
+  }else{
+      fout_old$maa       <- fout$input$tmb_data$maa_mat
+  }
   fout_old$M         <- fout$input$tmb_data$M_mat
   fout_old$vssb      <- apply(fout$naa * fout_old$waa * fout_old$maa, c(2,3), sum, na.rm=T)
   fout_old$vbiom     <- apply(fout$naa * fout_old$waa, c(2,3),sum, na.rm=T)
