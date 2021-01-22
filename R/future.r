@@ -536,7 +536,7 @@ future_vpa <- function(tmb_data,
           res_future$HCR_realized[i,j,"Fratio"] <-
             calc_Fratio(faa=res_future$faa[tmp,i,j],
                         waa=res_future$waa[tmp,i,j],
-                        maa=res_future$input$tmb_data$maa_mat[tmp,i,j],
+                        maa=res_future$maa[tmp,i,j],
                         M  =res_future$input$tmb_data$M_mat[tmp,i,j],
                         waa.catch=res_future$waa_catch_mat[tmp,i,j],
                         SPRtarget=SPRtarget)
@@ -1476,6 +1476,7 @@ update_maa_mat <- function(maa,rand,naa,pars_b0,pars_b1){
   maa_tmp[maa_tmp>1] <- 1
   is_maa_zero <- apply(maa,2,sum)==0
   maa[,is_maa_zero] <- maa_tmp[,is_maa_zero]
+  maa[naa==0] <- 0
   maa
 }
 
