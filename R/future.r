@@ -14,6 +14,7 @@
 #' @param waa_year 将来の年齢別体重を過去の平均値とする場合、過去のパラメータを平均する期間, maa_year, M_yearも同様
 #' @param waa 将来の年齢別体重を直接与える場合, maa, M_yearも同様
 #' @param waa_fun log(weight)~log(number)の回帰式から将来のweightを予測する
+#' @param maa_fun maturity ~ number の回帰式から将来のmaturityを予測する(暫定的、太平洋マダラでのみ利用)
 #' @param start_waafun_year_name 上記の設定がスタートする最初の年。それ以外の年は上で設定されたパラメータが使われる
 #' @param faa_year 将来のFを過去の平均値とする場合、平均をとる年を指定する。下のcurrentF, futureFが指定されている場合にはこの設定は無視される
 #' @param currentF start_ABC_yar_name以前に使うFのベクトル（いわゆるcurrent F）
@@ -74,6 +75,8 @@ make_future_data <- function(res_vpa,
                              waa_fun = FALSE,
                              start_waafun_year_name = start_biopar_year_name,
                              maa_year, maa=NULL,
+                             maa_fun = FALSE,
+                             start_maafun_year_name = start_biopar_year_name,
                              M_year, M=NULL,
                              # faa setting
                              faa_year=NULL,
@@ -125,6 +128,10 @@ make_future_data <- function(res_vpa,
   if(!is.na(HCR_TAC_reserve_amount)) assertthat::assert_that(min(HCR_TAC_reserve_amount) >= 0)
   if(!is.na(HCR_TAC_carry_amount  )) assertthat::assert_that(min(HCR_TAC_carry_amount  ) >= 0)
 
+  assertthat::assert_that(is.logical(waa_fun),
+                          is.logical(maa_fun),
+                          is.logical(bias_correction))
+                          
   if(!is.na(HCR_TAC_reserve_rate) && !is.na(HCR_TAC_reserve_amount)) stop("HCR_TAC_reserve_rateとHCR_TAC_reserve_amountが同時に指定されています（同時には指定できません）")
   if(!is.na(HCR_TAC_carry_rate) && !is.na(HCR_TAC_carry_amount))     stop("HCR_TAC_carry_rateとHCR_TAC_carry_amountが同時に指定されています（同時には指定できません）")  
   
@@ -342,9 +349,30 @@ make_future_data <- function(res_vpa,
     tmb_data$waa_mat[,waa_fun_year,] <- 0
   }
 
+  if(isTRUE(maa_fun)){
+    maa_rand_mat <- array(0,dim=c(nage,total_nyear,nsim),
+                          dimnames=list(age=age_name, year=allyear_name, nsim=1:nsim))
+    maa_par_mat <- array(0,dim=c(nage,nsim,3),
+                         dimnames=list(age=age_name, nsim=1:nsim, pars=c("sd", "b0", "b1")))
+    class(maa_rand_mat) <- class(maa_par_mat) <- "myarray"
+    maa_fun_year <- which(allyear_name %in% start_maafun_year_name:max(allyear_name))
+
+    for(a in 1:nage){
+      for(i in 1:nsim){
+        tmp <- lm(maa_mat[a,,i]~naa_mat[a,,i])
+        maa_par_mat[a,i,c("b0","b1")] <- as.numeric(tmp$coef[1:2])
+        maa_par_mat[a,i,c("sd")] <- sqrt(mean(tmp$residual^2))
+        maa_rand_mat[a,,i] <- tmp$residual
+        maa_rand_mat[a,maa_fun_year,i] <- rnorm(length(maa_fun_year),-0.5*maa_par_mat[a,i,c("sd")]^2,maa_par_mat[a,i,c("sd")])
+      }}
+    tmb_data$maa_rand_mat <- maa_rand_mat
+    tmb_data$maa_par_mat <- maa_par_mat
+    tmb_data$maa_mat[,maa_fun_year,] <- 0
+  }  
+
   if(!is.null(special_setting)){
     set_name <- names(special_setting)
-    for(i in 1:length(set_name)){
+    for(i in seq_len(length(set_name))){
       tmb_data[[which(set_name[[i]]==tmb_data)[[1]]]][] <- special_setting[[i]][]
     }}
 
@@ -404,10 +432,11 @@ future_vpa <- function(tmb_data,
                      obj_stat=="median"  ~ 2)
   tmb_data$obj_value <- obj_value
 
-  if(optim_method=="tmb" && !is.null(tmb_data$waa_par_mat)){
-    cat("Warning: waa_fun option cannot be used in TMB. The optimization is conducted by R..\n")
-    optim_method <- "R"
-  }
+  if(optim_method=="tmb"){
+    if(!is.null(tmb_data$waa_par_mat) || !is.null(tmb_data$maa_par_mat)){
+      cat("Warning: waa_fun and maa_fun option cannot be used in TMB. The optimization is conducted by R..\n")
+      optim_method <- "R"
+  }}
 
   if(optim_method=="tmb"){
 
@@ -554,10 +583,17 @@ future_vpa_R <- function(naa_mat,
                          MSE_sd = NULL,
                          MSE_catch_exact_TAC=FALSE,
                          waa_par_mat  = NULL, # option for waa_fun
-                         waa_rand_mat = NULL
+                         waa_rand_mat = NULL,
+                         maa_par_mat  = NULL, # option for maa_fun
+                         maa_rand_mat = NULL                         
 ){
 
   options(deparse.max.lines=10)
+
+  is_waa_fun <- !is.null(waa_par_mat)
+  if(is_waa_fun) when_waa_fun <- apply(waa_mat[,,1],2,sum)==0
+  is_maa_fun <- !is.null(maa_par_mat)
+  if(is_maa_fun) when_maa_fun <- apply(maa_mat[,,1],2,sum)==0
 
   HCR_function <- get(HCR_function_name)
   allyear_name <- as.numeric(dimnames(SR_mat)[[1]])
@@ -606,9 +642,10 @@ future_vpa_R <- function(naa_mat,
 
   for(t in future_initial_year:total_nyear){
 
-    if(!is.null(waa_par_mat)) waa_mat[,t,] <- waa_catch_mat[,t,] <- update_waa_mat(waa=waa_mat[,t,],rand=waa_rand_mat[,t,],naa=N_mat[,t,],pars_b0=waa_par_mat[,,"b0"],pars_b1=waa_par_mat[,,"b1"])
+    if(is_waa_fun) waa_mat[,t,] <- waa_catch_mat[,t,] <- update_waa_mat(waa=waa_mat[,t,],rand=waa_rand_mat[,t,],naa=N_mat[,t,],pars_b0=waa_par_mat[,,"b0"],pars_b1=waa_par_mat[,,"b1"]) 
+    if(is_maa_fun) maa_mat[,t,] <-                       update_maa_mat(maa=maa_mat[,t,],rand=maa_rand_mat[,t,],naa=N_mat[,t,],pars_b0=maa_par_mat[,,"b0"],pars_b1=maa_par_mat[,,"b1"])
     spawner_mat[t,] <- colSums(N_mat[,t,,drop=F] * waa_mat[,t,,drop=F] * maa_mat[,t,,drop=F])
-
+    
     if(t>=start_random_rec_year){
       spawn_t <- t-recruit_age      
       # 加入を再生産関係からの予測値とする場合
@@ -623,7 +660,7 @@ future_vpa_R <- function(naa_mat,
         N_mat[1,t,] <- N_mat[1,t,]*exp(SR_mat[t,,"deviance"]) +
           SR_mat[t,,"intercept"]
         if(is.na(N_mat[1,t,1])) stop("Error: Recruitment cannot be estimated correctly...")
-        if(!is.null(waa_par_mat)) waa_mat[1,t,] <- waa_catch_mat[1,t,] <- update_waa_mat(waa=waa_mat[1,t,],rand=waa_rand_mat[1,t,],naa=N_mat[1,t,],pars_b0=waa_par_mat[1,,"b0"],pars_b1=waa_par_mat[1,,"b1"])
+        if(is_waa_fun) waa_mat[1,t,] <- waa_catch_mat[1,t,] <- update_waa_mat(waa=waa_mat[1,t,],rand=waa_rand_mat[1,t,],naa=N_mat[1,t,],pars_b0=waa_par_mat[1,,"b0"],pars_b1=waa_par_mat[1,,"b1"]) # calculate 0 age weight
       }else{
         # fix_recruitですでに加入尾数が入っていて、自己相関ありの場合
         # make_future_dataの段階では対応するSSBがいくつかわからないので、SSBが計算された段階で
@@ -824,7 +861,8 @@ future_vpa_R <- function(naa_mat,
         N_mat[iage+1,t+1,] <- N_mat[iage,t,]*exp(-M_mat[iage,t,]-F_mat[iage,t,])
       }
       N_mat[plus_age,t+1,] <- N_mat[plus_age,t+1,] + N_mat[plus_age,t,]*exp(-M_mat[plus_age,t,]-F_mat[plus_age,t,])
-      if(!is.null(waa_par_mat)) waa_mat[,t,] <- waa_catch_mat[,t,] <- update_waa_mat(waa=waa_mat[,t,],rand=waa_rand_mat[,t,],naa=N_mat[,t,],pars_b0=waa_par_mat[,,"b0"],pars_b1=waa_par_mat[,,"b1"])
+      if(is_waa_fun) waa_mat[,t,] <- waa_catch_mat[,t,] <- update_waa_mat(waa=waa_mat[,t,],rand=waa_rand_mat[,t,],naa=N_mat[,t,],pars_b0=waa_par_mat[,,"b0"],pars_b1=waa_par_mat[,,"b1"])
+      if(is_maa_fun) maa_mat[,t,] <-                       update_maa_mat(maa=maa_mat[,t,],rand=maa_rand_mat[,t,],naa=N_mat[,t,],pars_b0=maa_par_mat[,,"b0"],pars_b1=maa_par_mat[,,"b1"])
     }
 
       HCR_realized[t,,"wcatch"] <- catch_equation(N_mat[,t,],F_mat[,t,],waa_catch_mat[,t,],M_mat[,t,],Pope=Pope) %>% colSums()
@@ -879,7 +917,7 @@ future_vpa_R <- function(naa_mat,
   if(what_return=="stat"){
     tmb_data$SR_mat[,,"ssb"]  <- spawner_mat
     tmb_data$SR_mat[,,"recruit"]  <- N_mat[1,,]
-    res <- list(naa=N_mat, wcaa=wcaa_mat, faa=F_mat, SR_mat=tmb_data$SR_mat,
+    res <- list(naa=N_mat, wcaa=wcaa_mat, faa=F_mat, SR_mat=tmb_data$SR_mat,maa=maa_mat,
                 HCR_mat=HCR_mat,HCR_realized=HCR_realized,multi=exp(x),waa=waa_mat, waa_catch_mat=waa_catch_mat)
     if(isTRUE(do_MSE)) res$SR_MSE <- SR_MSE
     return(res)
@@ -1077,7 +1115,7 @@ set_SR_mat <- function(res_vpa=NULL,
     }
     else{
       # vector
-      for(i in 1:length(fix_recruit$year)){
+      for(i in seq_len(length(fix_recruit$year))){
         if(length(fix_recruit$rec[[i]])!=dim(SR_mat)[[2]]) stop("invalid length of recruit")
         SR_mat[as.character(fix_recruit$year[i]),,"recruit"] <- as.numeric(unlist(fix_recruit$rec[i]))
       }
@@ -1137,7 +1175,7 @@ arrange_weight <- function(weight, nsim){
   weight <- weight / sum(weight)
   weight <- round(cumsum(weight) * nsim)
   weight2 <- c(1,weight[-length(weight)]+1)
-  purrr::map(1:length(weight),function(x) weight2[x]:weight[x])
+  purrr::map(seq_len(length(weight)),function(x) weight2[x]:weight[x])
 }
 
 #'
@@ -1172,7 +1210,7 @@ average_SR_mat <- function(res_vpa,
   start_random_rec_year  <- which(allyear_name==start_random_rec_year_name)
   random_rec_year_period <- (start_random_rec_year):length(allyear_name)
 
-  for(i in 1:length(res_SR_list)){
+  for(i in seq_len(length(res_SR_list))){
     SR_mat_tmp <- set_SR_mat(res_vpa=res_vpa,
                              start_random_rec_year_name,
                              SR_mat=SR_mat,
@@ -1213,7 +1251,7 @@ sample_backward <- function(residual, n, duration){
   block <- (1:(nblock))*(duration)
   block2 <- block-(duration)+1
   block[length(block)] <- length(residual_rev)
-  block.list <- purrr::map(1:length(block),function(x) residual_rev[block2[x]:block[x]])
+  block.list <- purrr::map(seq_len(length(block)),function(x) residual_rev[block2[x]:block[x]])
   # calculate sampling probability in the case of tail block (different length)
   block.probability <- sapply(block.list,length)
   block.probability <- block.probability/sum(block.probability)
@@ -1344,7 +1382,7 @@ format_to_old_future <- function(fout){
   fout_old <- fout[c("naa","faa","multi","input","waa")]
   #    fout_old$waa       <- fout$input$tmb_data$waa_mat
   fout_old$waa.catch <- fout$waa_catch_mat
-  fout_old$maa       <- fout$input$tmb_data$maa_mat
+  fout_old$maa       <- fout$maa #input$tmb_data$maa_mat
   fout_old$M         <- fout$input$tmb_data$M_mat
   fout_old$vssb      <- apply(fout$naa * fout_old$waa * fout_old$maa, c(2,3), sum, na.rm=T)
   fout_old$vbiom     <- apply(fout$naa * fout_old$waa, c(2,3),sum, na.rm=T)
@@ -1372,7 +1410,7 @@ format_to_old_future <- function(fout){
 #'
 #' do.callのsafe版
 #'
-#' do.callで与えたリストの中にfuncで定義されていないものが混じっていた場合に、実際にdo.callを呼び出す前にerorrを吐いて関数をストップさせる。非常に大きいオブジェクトを与えていながらdo.callで上記の場面でエラーが出ると、長時間Rがフリーズするのを避けるため。force=TRUEにすると、func内で定義されていない引数はリストから除外してdo.callを実行する.
+#' do.callで与えたリストの中にfuncで定義されていないものが混じっていた場合に、実際にdo.callを呼び出す前にerorrを吐いて関数をストップさせる。非常に大きいオブジェクトを与えていながらdo.callで上記の場面でエラーが出ると、デバッグモードで長時間Rがフリーズするのを避けるため。force=TRUEにすると、func内で定義されていない引数はリストから除外してdo.callを実行する.
 #'
 #' @export
 #' @encoding UTF-8
@@ -1380,6 +1418,13 @@ format_to_old_future <- function(fout){
 safe_call <- function(func,args,force=FALSE,...){
   argname <- names(formals(func))
   check_argument <- names(args) %in% argname
+
+  # make_future_dataでの引数追加への対応
+  is_make_future_data <- sum("start_random_rec_year_name"==names(args))
+  if(is_make_future_data){ # あとから追加された引数maa_funがなくても動くようにする
+    if(sum("maa_fun"==names(args))==0) args$maa_fun <- FALSE
+  }
+
   if(sum(check_argument==FALSE)>0){
     if(force==FALSE){
       stop(paste(names(args)[check_argument==FALSE]), " is not used in func\n")
@@ -1421,10 +1466,18 @@ if(0){
 
 update_waa_mat <- function(waa,rand,naa,pars_b0,pars_b1){
   waa_tmp <- exp(pars_b0+pars_b1*log(naa)+rand)
-  waa[waa==0 & naa>0] <- waa_tmp[waa==0 & naa>0]
+  waa[waa==0 & naa>0] <- waa_tmp[waa==0 & naa>0] # ここでwaa=0のところにだけ数値を入れるので、もともと数値が入っていたら置き換わらない
   waa
 }
 
+update_maa_mat <- function(maa,rand,naa,pars_b0,pars_b1){
+  maa_tmp <- pars_b0+pars_b1*naa+rand
+  maa_tmp[maa_tmp<0] <- 0
+  maa_tmp[maa_tmp>1] <- 1
+  is_maa_zero <- apply(maa,2,sum)==0
+  maa[,is_maa_zero] <- maa_tmp[,is_maa_zero]
+  maa
+}
 
 #' @export
 #' @encoding UTF-8
@@ -1432,3 +1485,5 @@ update_waa_mat <- function(waa,rand,naa,pars_b0,pars_b1){
 get_wcatch <- function(res_future){
     apply(res_future$wcaa,c(2,3),sum)
 }
+
+
