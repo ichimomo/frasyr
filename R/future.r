@@ -404,8 +404,6 @@ future_vpa <- function(tmb_data,
                        objective ="MSY", # or PGY, percentB0, Bempirical
                        obj_value = 0,
                        obj_stat  ="mean",
-#                       max_F=exp(10), # いつかはmake_future_dataに以降したい
-#                       max_exploitation_rate=0.99, # いつかはmake_future_dataに以降したい
                        do_MSE=NULL,
                        MSE_input_data=NULL,
                        MSE_nsim=NULL,
@@ -471,8 +469,6 @@ future_vpa <- function(tmb_data,
     tmb_data$MSE_nsim <- MSE_nsim
     tmb_data$MSE_sd <- MSE_sd
     tmb_data$MSE_catch_exact_TAC <- MSE_catch_exact_TAC
-#    tmb_data$max_F <- max_F
-#    tmb_data$max_exploitation_rate <- max_exploitation_rate
 
     R_obj_fun <- function(x, tmb_data, what_return="obj"){
       tmb_data$x <- x
@@ -622,10 +618,9 @@ future_vpa_R <- function(naa_mat,
     SR_MSE[,,"recruit"] <- SR_MSE[,,"ssb"] <- 0
     dimnames(SR_MSE)$par[12] <- "real_true_catch"
     dimnames(SR_MSE)$par[13] <- "pseudo_true_catch"
-
-    max_F_MSE <- max_F ; max_exploitation_rate_MSE <- max_exploitation_rate
-    # do_MSEで本番のFを決める場合にはMSE内で上限つきで計算された漁獲量そのままで漁獲するのでmax_Fもmax_exploitation rateもinfにする
-    max_F <- exp(10); max_exploiration_rate <- 0.99    
+    
+    # max_F, max_exploitation_rateはそのままMSEに引き継ぐ
+    max_F_MSE <- max_F; max_exploiration_rate_MSE <- max_exploiration_rate
   }
 
   F_mat <- N_mat <-  naa_mat
