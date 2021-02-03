@@ -620,7 +620,7 @@ future_vpa_R <- function(naa_mat,
     dimnames(SR_MSE)$par[13] <- "pseudo_true_catch"
     
     # max_F, max_exploitation_rateはそのままMSEに引き継ぐ
-    max_F_MSE <- max_F; max_exploiration_rate_MSE <- max_exploiration_rate
+    max_F_MSE <- max_F; max_exploitation_rate_MSE <- max_exploitation_rate
   }
 
   F_mat <- N_mat <-  naa_mat
