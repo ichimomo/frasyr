@@ -297,7 +297,7 @@ make_msytable <- function(result_msy) {
 #' @param yr_preabc Vector of future years preceding ABC year
 #' @export
 make_abctable <- function(kobe_table, result_future, beta, year, faa_pre, faa_after, yr_preabc) {
-  return_ <- function() {
+    return_ <- function() {
     df <- data.frame(abc_(),
                      ssb_mean_(),
                      f_over_recentf_(),
@@ -318,6 +318,7 @@ make_abctable <- function(kobe_table, result_future, beta, year, faa_pre, faa_af
   }
   ssb_mean_  <- function(){
     extract_from_kobe_table(kobe_table,
+                            beta = beta,                              
                             what = "ssb.mean",
                             year = year,
                             unit = "千トン")

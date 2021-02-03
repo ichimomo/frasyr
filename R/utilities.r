@@ -2579,3 +2579,76 @@ plot_summary_performance <- function(folder_names, scenario_names,
 
   return(lst(graph=g123,g1,g2,g3,data=base.stat.data2))
 }
+
+
+#'
+#' @param Fvector
+#' @param res_vpa
+#' @param target_year
+#' @param target_year_separate list(Fimpact_year=2015:2018, select_year=2013:2018) # 漁獲圧を引用する年と選択率を引用する年が異なる場合
+#' @param specify_selectivity target_yearの漁獲圧で漁獲するが選択率はspecify_selectivityで与えたものに置き換える
+#' @param target_year_biopar specify_selectivityを使う場合、target_yearをSPR換算するときの生物パラメータの年の範囲
+#' @param future_year_biopar  specify_selectivityを使う場合、選択率→Fvectorにするときに使う生物パラメータの範囲（将来年も可）。NULLの場合、将来予測の最後の年が使われる
+#' @param data_future specify_selectivityを使う場合、将来予測するためのデータ
+#' 
+#' @export
+#'
+#' 
+
+set_Fvector <- function(Fvector = NULL, res_vpa=NULL, target_year=NULL,
+                            target_year_separate = NULL, 
+                            specify_selectivity = NULL, 
+                            target_year_biopar = NULL, 
+                            future_year_biopar = NULL, 
+                            data_future = NULL){
+  #  assertthat::assert_that(type %in% c(1,3,4,6,7))
+  if(is.null(Fvector)){
+    
+    if(!is.null(year_range)) Fvector <- apply_year_colum(res_vpa$faa,target_year=target_year)
+    
+    if(!is.null(target_year_separate)){
+      assertthat::assert_that(all(names(target_year_separate)%in%c("select_year","Fimpact_year")))
+      Fvector <- convert_faa_perSPR(res_vpa,
+                                    sel_year=target_year_separate$select_year,
+                                    faa_year=target_year_separate$Fimpact_year)
+    }
+    
+    if(!is.null(specify_selectivity)){
+      
+      assertthat::assert_that(!is.null(target_year),
+                              !is.null(target_year_biopar),
+                              !is.null(future_year_biopar),
+                              !is.null(data_future))
+      
+      fout_dummy <- list(waa=data_future$data$waa_mat,
+                         maa=data_future$data$maa_mat,
+                         M  =data_future$data$M_mat,
+                         waa.catch=data_future$data$waa_catch_mat)
+
+      # waa_fun|maa_funの場合、Fmsyで一回回したもので上書き    
+      if(data_future$input$waa_fun==TRUE | data_future$input$maa_fun==TRUE){
+        data_dummy <- data_future$data
+        data_dummy$HCR_mat[,,"beta"] <- 1
+        fout_dummy <- future_vpa(tmb_data = data_dummy,
+                                 optim_method="none",
+                                 multi_init=1,
+                                 multi_lower=1,
+                                 multi_upper=1,
+                                 SPRtarget=derive_RP_value(res_MSY$summary,"Btarget0")$perSPR*100,
+                                 compile=FALSE) %>%
+          format_to_old_future()
+      }
+      # Fcurrentが何％のSPRにあたるか
+      Fcurrent_perSPR <- calc_future_perSPR(fout_dummy,
+                                            Fvector=Fvector,
+                                            target.year=target_year_biopar)
+      # 与えられた選択率のもとでFcurrentに相当する%SPRになるためには何倍にしないといけないか
+      Fcurrent_evaluation <- calc_future_perSPR(fout_dummy,
+                                                Fvector=specify_selectivity,
+                                                target.year=future_year_biopar, # MSY year
+                                                SPRtarget=Fcurrent_perSPR)
+      Fvector <- Fmsy0/Fcurrent_evaluation$Fratio      
+    }
+  }
+  return(Fvector)
+}
