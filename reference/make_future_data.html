@@ -143,6 +143,8 @@
   start_waafun_year_name <span class='op'>=</span> <span class='va'>start_biopar_year_name</span>,
   <span class='va'>maa_year</span>,
   maa <span class='op'>=</span> <span class='cn'>NULL</span>,
+  maa_fun <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  start_maafun_year_name <span class='op'>=</span> <span class='va'>start_biopar_year_name</span>,
   <span class='va'>M_year</span>,
   M <span class='op'>=</span> <span class='cn'>NULL</span>,
   faa_year <span class='op'>=</span> <span class='cn'>NULL</span>,
@@ -231,6 +233,10 @@
     <tr>
       <th>start_waafun_year_name</th>
       <td><p>上記の設定がスタートする最初の年。それ以外の年は上で設定されたパラメータが使われる</p></td>
+    </tr>
+    <tr>
+      <th>maa_fun</th>
+      <td><p>maturity ~ number の回帰式から将来のmaturityを予測する(暫定的、太平洋マダラでのみ利用)</p></td>
     </tr>
     <tr>
       <th>faa_year</th>
