@@ -2199,7 +2199,14 @@ prof.likSR = function(resSR,output=FALSE,filename="Profile_Likelihood",a_range =
         prof.lik.res <- cbind(prof.lik.res,exp(-sapply(1:nrow(ba.grid), function(i) {
           # opt = optim(x,obj.f,par_a=ba.grid[i,2],par_b=ba.grid[i,1],lower=x*0.001,
           #             upper=x*1000,method="L-BFGS-B")
-          opt = optim(x,obj.f,par_a=ba.grid[i,2],par_b=ba.grid[i,1],method="BFGS")
+          # opt = optim(x,obj.f,par_a=ba.grid[i,2],par_b=ba.grid[i,1],method="BFGS")
+          opt = ucminf::ucminf(par = x, fn = obj.f, par_a=ba.grid[i,2],par_b=ba.grid[i,1])
+#           opt = optimx::optimr(par = x, fn = obj.f, par_a=ba.grid[i,2],par_b=ba.grid[i,1],method="nmkb")
+#           opt = optimParallel::optimParallel(par = x, fn = obj.f, 
+#                                              par_a = ba.grid[i,2], par_b = ba.grid[i,1],
+#                                              lower = -Inf, upper = Inf,
+#                                              control = list(ndeps = 1e-5, trace = 1),
+#                                              parallel = list(cl = parallel::makeCluster(3, type = "PSOCK")))
           opt$value
         })))
       }
