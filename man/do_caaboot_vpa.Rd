@@ -25,7 +25,7 @@ do_caaboot_vpa(res, B_ite = 1000, B_cv = 0.2, ci_range = 0.95)
 年齢別漁獲尾数を乱数で再生成した後、VPA計算を行う関数
 }
 \seealso{
-https://ichimomo.github.io/frasyr/doc/Diagnostics-for-VPA.html
+https://ichimomo.github.io/frasyr/articles/Diagnostics-for-VPA.html
 }
 \author{
 濵邉昂平, 市野川桃子

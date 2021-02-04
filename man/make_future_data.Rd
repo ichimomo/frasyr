@@ -22,6 +22,8 @@ make_future_data(
   start_waafun_year_name = start_biopar_year_name,
   maa_year,
   maa = NULL,
+  maa_fun = FALSE,
+  start_maafun_year_name = start_biopar_year_name,
   M_year,
   M = NULL,
   faa_year = NULL,
@@ -84,6 +86,8 @@ make_future_data(
 \item{waa_fun}{log(weight)~log(number)の回帰式から将来のweightを予測する}
 
 \item{start_waafun_year_name}{上記の設定がスタートする最初の年。それ以外の年は上で設定されたパラメータが使われる}
+
+\item{maa_fun}{maturity ~ number の回帰式から将来のmaturityを予測する(暫定的、太平洋マダラでのみ利用)}
 
 \item{faa_year}{将来のFを過去の平均値とする場合、平均をとる年を指定する。下のcurrentF, futureFが指定されている場合にはこの設定は無視される}
 

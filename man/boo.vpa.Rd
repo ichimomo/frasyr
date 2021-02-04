@@ -9,7 +9,12 @@ boo.vpa(res, B = 5, method = "p", mean.correction = FALSE)
 }
 \arguments{
 \item{res}{vpaの出力値}
+
+\item{method}{"p": パラメトリックブートストラップ。"n": ノンパラメトリックブートストラップ。"r": 残差をスムージングした後ブートストラップt法}
 }
 \description{
 bootstrapを実施する
+}
+\seealso{
+https://ichimomo.github.io/frasyr/articles/Diagnostics-for-VPA.html
 }

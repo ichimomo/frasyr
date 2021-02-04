@@ -619,8 +619,9 @@ future_vpa_R <- function(naa_mat,
     dimnames(SR_MSE)$par[12] <- "real_true_catch"
     dimnames(SR_MSE)$par[13] <- "pseudo_true_catch"
     
-    # max_F, max_exploitation_rateはそのままMSEに引き継ぐ
-    max_F_MSE <- max_F; max_exploitation_rate_MSE <- max_exploitation_rate
+    # max_F, max_exploitation_rateはそのままMSEに引き継ぐとしたけどやめる
+    # 
+    # max_F_MSE <- max_F; max_exploitation_rate_MSE <- max_exploitation_rate
   }
 
   F_mat <- N_mat <-  naa_mat
@@ -694,8 +695,10 @@ future_vpa_R <- function(naa_mat,
 
    if(isTRUE(do_MSE) && t>=start_ABC_year){
      MSE_input_data$input$silent <- TRUE
-     MSE_input_data$input$max_F <- max_F_MSE 
-     MSE_input_data$input$max_exploitation_rate <- max_exploitation_rate_MSE
+     # ここでmax_Fの設定を上書きするようにしていたけど、それを廃止
+     # MSE_input_dataそのままの設定を使うようにする
+#     MSE_input_data$input$max_F <- max_F_MSE 
+#     MSE_input_data$input$max_exploitation_rate <- max_exploitation_rate_MSE
      MSE_dummy_data <- safe_call(make_future_data,MSE_input_data$input)$data
      MSE_dummy_data <- MSE_dummy_data %>%
         purrr::list_modify(future_initial_year   = t-2,
