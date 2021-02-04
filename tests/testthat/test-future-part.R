@@ -283,23 +283,34 @@ test_that("check MSE feature",{ # ----
                             do_MSE=FALSE, MSE_input_data=data_future_test10,
                             SPRtarget=0.3,
                             MSE_nsim=100)
+
+  expect_equal(max(res_future3$faa[,as.character(2020:2025),]),
+               max(res_future_noMSE$faa[,"2018",1]),tol=0.0001)
   
-  # 上限あり（MSE）  
+  # 上限あり（MSE）
+  # Fの上限を決める、という管理方策を用いる場合には
+  # MSEの設定でmax_Fをつけ、真のほうにはmax_Fはつけない
+  data_future_test10_for_MSE <- data_future_test10
+  data_future_test10_for_MSE$input$max_F <- max(res_future_noMSE$faa[,"2018",1])
+  data_future_test10_for_MSE$input$fix_wcatch <- tibble(year=2020:2025, wcatch=CC)
+  
   res_future4 <- redo_future(data_future_test10,
                             list(nsim=10,nyear=10,
                                  fix_recruit=NULL,
-                                 fix_wcatch=tibble(year=2020:2025, wcatch=CC),
-                                 max_F=max(res_future_noMSE$faa[,"2018",1])),
-                            do_MSE=TRUE, MSE_input_data=data_future_test10,
+                                 max_F=5,
+                                 fix_wcatch=tibble(year=2020:2025, wcatch=CC)),
+                            do_MSE=TRUE, MSE_input_data=data_future_test10_for_MSE,
                             SPRtarget=0.3,
                             MSE_nsim=100)
 
   # この図が見たかった！
   #plot(res_future3$HCR_realized[as.character(2020:2025),,"Fratio"],
   #     res_future4$HCR_realized[as.character(2020:2025),,"Fratio"])
+  # boxplot(t(res_future4$HCR_realized[as.character(2020:2025),,"wcatch"]))
   max(res_future4$HCR_realized[as.character(2020:2025),,"Fratio"]) %>%
     round(2) %>% 
-    expect_equal(0.18)
+      #    expect_equal(0.18)
+    expect_equal(0.55)      
 
   tmpfunc <- function(res_future){
       x <- t(get_wcatch(res_future)[as.character(2021:2025),])
