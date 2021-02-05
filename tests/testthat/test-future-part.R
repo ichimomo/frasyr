@@ -1,4 +1,6 @@
-library(frasyr)
+# library(frasyr) # devtools::load_all()
+# library(tidyverse)
+
 context("check future_vpa with sample data") # マアジデータでの将来予測 ----
 
 data(res_vpa)
@@ -556,7 +558,7 @@ test_that("density dependent maturity option",{
 
     # maa&waaを置き換えてwaa_fun, maa_funをやる
     res_vpa2 <- res_vpa
-    res_vpa2$input$dat$maa[2,] <- 1-res_vpa$naa[2,]/max(res_vpa$naa[2,])
+    res_vpa2$input$dat$maa[2,] <- 1-res_vpa$naa[2,]/max(res_vpa$naa[2,]) + 0.1
     res_vpa2$input$dat$waa[] <- res_vpa2$input$dat$waa[] * exp(rnorm(length(unlist(res_vpa$input$dat$waa)), 0, 0.1))
 
     data_future_maa <- redo_future(data_future_test,list(maa_fun=TRUE, waa_fun=TRUE,
@@ -564,15 +566,22 @@ test_that("density dependent maturity option",{
     mean(data_future_maa$data$maa_rand_mat[,,1]) %>% round(3) %>% 
         expect_equal(0.003)
     data_future_maa$data$maa_par_mat[,1,"b0"] %>% round(2) %>% as.numeric %>%
-        expect_equal(c(0,0.78,1,1))
+        expect_equal(c(0,0.88,1,1))
     data_future_maa$data$maa_par_mat[,1,"sd"] %>% round(3) %>% as.numeric %>%
         expect_equal(c(0.000,0.073,0.000,0.000))
     data_future_maa$data$maa_par_mat[,1,"b1"] %>% round(5) %>% as.numeric %>%
         expect_equal(c(0.00000,-0.00082,0.00000,0.00000))
+    data_future_maa$data$maa_par_mat[2,1,c("min","max")] %>% as.numeric %>%
+        expect_equal(range(res_vpa2$input$dat$maa[2,]))
 
     # 十分なテストではないがとりあえず
-    res_future_maa <- future_vpa(data_future_maa$data)
+    res_future_maa <- future_vpa(data_future_maa$data,multi_init=1.5)
     expect_equal(sum(apply(res_future_maa$waa[1,,],1,sd)==0),30)
     expect_equal(sum(apply(res_future_maa$maa[2,,],1,sd)==0),30)
+
+    # 最小・最大値で足切りできているかを確認
+    expect_equal(range(res_future_maa$maa[2,as.character(2017:2030),]),
+                 range(res_vpa2$input$dat$maa[2,]))
+    
 })
 

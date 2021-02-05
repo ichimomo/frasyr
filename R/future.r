@@ -352,8 +352,8 @@ make_future_data <- function(res_vpa,
   if(isTRUE(maa_fun)){
     maa_rand_mat <- array(0,dim=c(nage,total_nyear,nsim),
                           dimnames=list(age=age_name, year=allyear_name, nsim=1:nsim))
-    maa_par_mat <- array(0,dim=c(nage,nsim,3),
-                         dimnames=list(age=age_name, nsim=1:nsim, pars=c("sd", "b0", "b1")))
+    maa_par_mat <- array(0,dim=c(nage,nsim,5),
+                         dimnames=list(age=age_name, nsim=1:nsim, pars=c("sd", "b0", "b1","min","max")))
     class(maa_rand_mat) <- class(maa_par_mat) <- "myarray"
     maa_fun_year <- which(allyear_name %in% start_maafun_year_name:max(allyear_name))
 
@@ -362,6 +362,8 @@ make_future_data <- function(res_vpa,
         tmp <- lm(maa_mat[a,,i]~naa_mat[a,,i])
         maa_par_mat[a,i,c("b0","b1")] <- as.numeric(tmp$coef[1:2])
         maa_par_mat[a,i,c("sd")] <- sqrt(mean(tmp$residual^2))
+        maa_par_mat[a,i,c("min")] <- min(maa_mat[a,,i])
+        maa_par_mat[a,i,c("max")] <- max(maa_mat[a,,i])        
         maa_rand_mat[a,,i] <- tmp$residual
         maa_rand_mat[a,maa_fun_year,i] <- rnorm(length(maa_fun_year),-0.5*maa_par_mat[a,i,c("sd")]^2,maa_par_mat[a,i,c("sd")])
       }}
@@ -639,7 +641,7 @@ future_vpa_R <- function(naa_mat,
   for(t in future_initial_year:total_nyear){
 
     if(is_waa_fun) waa_mat[,t,] <- waa_catch_mat[,t,] <- update_waa_mat(waa=waa_mat[,t,],rand=waa_rand_mat[,t,],naa=N_mat[,t,],pars_b0=waa_par_mat[,,"b0"],pars_b1=waa_par_mat[,,"b1"]) 
-    if(is_maa_fun) maa_mat[,t,] <-                       update_maa_mat(maa=maa_mat[,t,],rand=maa_rand_mat[,t,],naa=N_mat[,t,],pars_b0=maa_par_mat[,,"b0"],pars_b1=maa_par_mat[,,"b1"])
+    if(is_maa_fun) maa_mat[,t,] <-                       update_maa_mat(maa=maa_mat[,t,],rand=maa_rand_mat[,t,],naa=N_mat[,t,],pars_b0=maa_par_mat[,,"b0"],pars_b1=maa_par_mat[,,"b1"],min_value=maa_par_mat[,,"min"],max_value=maa_par_mat[,,"max"])
     spawner_mat[t,] <- colSums(N_mat[,t,,drop=F] * waa_mat[,t,,drop=F] * maa_mat[,t,,drop=F])
     
     if(t>=start_random_rec_year){
@@ -860,7 +862,7 @@ future_vpa_R <- function(naa_mat,
       }
       N_mat[plus_age,t+1,] <- N_mat[plus_age,t+1,] + N_mat[plus_age,t,]*exp(-M_mat[plus_age,t,]-F_mat[plus_age,t,])
       if(is_waa_fun) waa_mat[,t,] <- waa_catch_mat[,t,] <- update_waa_mat(waa=waa_mat[,t,],rand=waa_rand_mat[,t,],naa=N_mat[,t,],pars_b0=waa_par_mat[,,"b0"],pars_b1=waa_par_mat[,,"b1"])
-      if(is_maa_fun) maa_mat[,t,] <-                       update_maa_mat(maa=maa_mat[,t,],rand=maa_rand_mat[,t,],naa=N_mat[,t,],pars_b0=maa_par_mat[,,"b0"],pars_b1=maa_par_mat[,,"b1"])
+      if(is_maa_fun) maa_mat[,t,] <-                       update_maa_mat(maa=maa_mat[,t,],rand=maa_rand_mat[,t,],naa=N_mat[,t,],pars_b0=maa_par_mat[,,"b0"],pars_b1=maa_par_mat[,,"b1"],min_value=maa_par_mat[,,"min"],max_value=maa_par_mat[,,"max"])
     }
 
       HCR_realized[t,,"wcatch"] <- catch_equation(N_mat[,t,],F_mat[,t,],waa_catch_mat[,t,],M_mat[,t,],Pope=Pope) %>% colSums()
@@ -1472,10 +1474,10 @@ update_waa_mat <- function(waa,rand,naa,pars_b0,pars_b1){
   waa
 }
 
-update_maa_mat <- function(maa,rand,naa,pars_b0,pars_b1){
+update_maa_mat <- function(maa,rand,naa,pars_b0,pars_b1,min_value,max_value){
   maa_tmp <- pars_b0+pars_b1*naa+rand
-  maa_tmp[maa_tmp<0] <- 0
-  maa_tmp[maa_tmp>1] <- 1
+  maa_tmp[maa_tmp <= min_value] <- min_value[maa_tmp <= min_value]
+  maa_tmp[maa_tmp >= max_value] <- max_value[maa_tmp >= max_value]
   is_maa_zero <- apply(maa,2,sum)==0
   maa[,is_maa_zero] <- maa_tmp[,is_maa_zero]
   maa[naa==0] <- 0
