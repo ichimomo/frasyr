@@ -2579,3 +2579,38 @@ plot_summary_performance <- function(folder_names, scenario_names,
 
   return(lst(graph=g123,g1,g2,g3,data=base.stat.data2))
 }
+
+
+#'
+#' 将来予測やVPAの結果から生物パラメータをとりだす
+#'
+#' @param res_obj VPAか将来予測の結果のオブジェクト。どちらでも良い。
+#' @param derive_year 生物パラメータとF at ageを取り出す期間（年の名前で指定）
+#' @param stat 取り出した期間のパラメータをここで指定する関数で処理する。基本は平均する（mean）
+#'
+#' 将来予測結果を入れる場合には複数のシミュレーション、年の間の結果をすべてstatする
+#'
+#' @export
+#' 
+
+derive_biopar <- function(res_obj=NULL, derive_year=NULL, stat=mean){
+
+  derive_year <- as.character(derive_year)
+  
+  if(!is.null(res_obj$input$tune)){
+    res_obj$input$dat$faa <- res_obj$faa
+    bio_par <- purrr::map_dfc(res_obj$input$dat[c("M","waa","maa","faa")],
+                   function(x) apply(x[,derive_year,drop=F],1,stat))
+  }
+
+  if(class(res_obj)=="future"|class(res_obj)=="future_new"){
+    bio_list <- res_obj[c("waa","faa")]
+    if(is.null(res_obj$maa)) bio_list$maa <- res_obj$input$tmb_data$maa else bio_list$maa <- res_obj$maa
+    bio_list$M <- res_obj$input$tmb_data$M
+    bio_par <- purrr::map_dfc(bio_list,
+                   function(x) apply(x[,derive_year,,drop=F],1,stat))
+  }
+
+  bio_par <- bio_par[apply(bio_par,1,sum)!=0,]
+  return(bio_par)
+}

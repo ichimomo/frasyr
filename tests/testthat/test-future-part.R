@@ -3,6 +3,7 @@
 
 context("check future_vpa with sample data") # マアジデータでの将来予測 ----
 
+options(warn=-1)
 data(res_vpa)
 data(res_sr_HSL2)
 
