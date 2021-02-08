@@ -2132,7 +2132,7 @@ calc_Fratio <- function(faa, waa, maa, M, SPRtarget=30, waa.catch=NULL,Pope=TRUE
                               min.age=0,max.age=Inf,Pope=Pope,ssb.coef=0,maa=maa)$spr %>% sum()
     sum(((SPR_tmp/SPR0*100)-SPRtarget)^2)
   }
-  if(sum(faa)==0){ return(0) }
+  if(mean(faa)<1e-4){ return(0) }
   else{
     tmp <- !is.na(faa)
     SPR0 <- calc.rel.abund(sel=faa,Fr=0,na=length(faa),M=M, waa=waa, waa.catch=waa.catch,maa=maa,
@@ -2141,7 +2141,7 @@ calc_Fratio <- function(faa, waa, maa, M, SPRtarget=30, waa.catch=NULL,Pope=TRUE
                                    min.age=0,max.age=Inf,Pope=Pope,ssb.coef=0)$spr %>% sum()
     SPR_original <- SPR_original/SPR0*100
     if(!is.null(SPRtarget)){
-        opt_res <- optimize(tmpfunc,interval=c(-10,10),SPR0=SPR0)
+        opt_res <- optimize(tmpfunc,interval=c(-20,30),SPR0=SPR0)
         SPR_est <- calc.rel.abund(sel=faa,Fr=exp(opt_res$minimum),na=length(faa),
                                   M=M, waa=waa, waa.catch=waa.catch,maa=maa,
                                   min.age=0,max.age=Inf,Pope=Pope,ssb.coef=0)$spr %>% sum()
