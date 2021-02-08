@@ -2100,23 +2100,27 @@ boot_steepness <- function(res_SR, M, waa, maa, n=100, plus_group=TRUE){
     is.model.average <- class(res_SR)!="fit.SRregime" && class(res_SR)!="fit.SR"
     
     if(is.model.average){ # model average case (calculate recursively)
-      res_steepness <- purrr::map_dfr(res_SR, boot_steepness, n=n, M=M, waa=waa, maa=maa, plus_group=plus_group, .id="average_id")
+      res_steepness <- purrr::map_dfr(res_SR, boot_steepness, n=n, M=M, waa=waa, maa=maa, plus_group=plus_group, .id="id")
     }else{
       res_boot <- boot.SR(res_SR, n=n)
       if(class(res_boot[[1]])=="fit.SRregime"){ # regime shift
-          res_steepness <- purrr::map_dfr(res_boot, function(x){
-              par.matrix <- res_SR$regime_pars[c("a","b")]
+          res_steepness <- purrr::map_dfr(res_boot[1:n], function(x){
+              par.matrix <- x$regime_pars[c("a","b")]
               tmplist <- purrr::map_dfr(seq_len(nrow(par.matrix)),
                                     function(i){
                                         calc_steepness(SR=res_SR$input$SR,rec_pars=par.matrix[i,],M=M,waa=waa,maa=maa,
                                                        plus_group=plus_group)
-                                    },.id="regime_id")
+                                    },.id="id")
+              tmplist <- bind_cols(tmplist,par.matrix)
           })
       }
       if(class(res_boot[[1]])=="fit.SR"){ # normal
           res_steepness <- purrr::map_dfr(res_boot[1:n], function(x){
               calc_steepness(SR=res_SR$input$SR,rec_pars=x$pars,M=M,waa=waa,maa=maa,plus_group=plus_group)
           })
+          res_steepness$id <- 1
+          res_steepness <- res_steepness %>%
+              bind_cols(purrr::map_dfr(res_boot[1:n], function(x) x$pars))
       }}    
 
     res_steepness
