@@ -2121,6 +2121,8 @@ compare_future_performance <- function(future_list,res_vpa,res_MSY,
 #' @param SPRtarget target SPR (NULLの場合には最適化しない)
 #' @param return_SPR return SPR as well as Fratio
 #'
+#' faa をx倍したときに、SPRtargetどおりに漁獲できるxが見つからない場合（選択率が非常にいびつであるような場合、もとのFがものすごく小さい場合など）にはNAを返す。F at ageの平均が非常に小さい値1e-4以下の場合にはFratioは計算せず、単純に0を返すようにする。
+#'
 #' @export
 #' @encoding UTF-8
 #'
@@ -2607,6 +2609,7 @@ derive_biopar <- function(res_obj=NULL, derive_year=NULL, stat=mean){
     bio_list <- res_obj[c("waa","faa")]
     if(is.null(res_obj$maa)) bio_list$maa <- res_obj$input$tmb_data$maa else bio_list$maa <- res_obj$maa
     bio_list$M <- res_obj$input$tmb_data$M
+    if(is.null(bio_list$M)) bio_list$M <- res_obj$M
     bio_par <- purrr::map_dfc(bio_list,
                    function(x) apply(x[,derive_year,,drop=F],1,stat))
   }

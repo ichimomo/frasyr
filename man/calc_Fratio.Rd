@@ -27,7 +27,9 @@ calc_Fratio(
 
 \item{SPRtarget}{target SPR (NULLの場合には最適化しない)}
 
-\item{return_SPR}{return SPR as well as Fratio}
+\item{return_SPR}{return SPR as well as Fratio
+
+faa をx倍したときに、SPRtargetどおりに漁獲できるxが見つからない場合（選択率が非常にいびつであるような場合、もとのFがものすごく小さい場合など）にはNAを返す。F at ageの平均が非常に小さい値1e-4以下の場合にはFratioは計算せず、単純に0を返すようにする。}
 }
 \description{
 calculate F/Ftarget based on F_\%SPR multiplier
