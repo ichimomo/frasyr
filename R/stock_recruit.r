@@ -93,6 +93,9 @@ validate_sr <- function(SR = NULL, method = NULL, AR = NULL, out.AR = NULL, res_
 #' @param out.AR 自己相関係数を一度再生産関係を推定したのちに、外部から推定するか（1), 内部で推定するか(0)
 #' @param length 初期値を決める際のgridの長さ
 #' @param p0 \code{optim}で設定する初期値
+#' @param bio_par data.frame(waa=c(100,200,300),maa=c(0,1,1),M=c(0.3,0.3,0.3)) のような生物パラメータをあらわすデータフレーム。waaは資源量を計算するときのweight at age, maaはmaturity at age, Mは自然死亡係数。これを与えると、steepnessやR0も計算して返す
+#' @param plus_group hなどを計算するときに、プラスグループを考慮するか
+#' 
 #' @encoding UTF-8
 #' @examples
 #' \dontrun{
@@ -117,6 +120,7 @@ validate_sr <- function(SR = NULL, method = NULL, AR = NULL, out.AR = NULL, res_
 #' \item{\code{BIC}}{BIC (\code{out.AR=TRUE}のときは自己相関推定前の結果)}
 #' \item{\code{AIC.ar}}{\code{out.AR=TRUE}のときに\code{acf}関数で得られた自己相関を推定しない場合(0)とする場合(1)のAICの差}
 #' \item{\code{pred}}{予測された再生産関係}
+#' \item{\code{steepness}}{bio_parを与えたときに、steepness (h) やR0(漁獲がない場合の平均加入尾数), SB0(漁獲がない場合の平均親魚量)なども追加的に返す}
 #' }
 #'
 #' @export
@@ -131,7 +135,9 @@ fit.SR <- function(SRdata,
                    length=20,
                    max.ssb.pred=1.3, # 予測値を計算するSSBの最大値（観測された最大値への乗数）
                    p0=NULL,
-                   out.AR = TRUE #自己相関係数rhoを外で推定するか
+                   out.AR = TRUE, #自己相関係数rhoを外で推定するか
+                   bio_par = NULL,
+                   plus_group = TRUE
 ){
   validate_sr(SR = SR, method = method, AR = AR, out.AR = out.AR)
 
@@ -350,6 +356,10 @@ fit.SR <- function(SRdata,
   Res$AIC <- -2*loglik+2*k
   Res$AICc <- Res$AIC+2*k*(k+1)/(NN-k-1)
   Res$BIC <- -2*loglik+k*log(NN)
+
+  if(!is.null(bio_par)){
+    Res$steepness <- calc_steepness(SR=SR,Res$pars,bio_par$M,bio_par$waa,bio_par$maa,plus_group=TRUE)
+  }
 
   class(Res) <- "fit.SR"
   return(Res)
@@ -799,6 +809,8 @@ prof.lik <- function(Res,a=Res$pars$a,b=Res$pars$b,sd=Res$pars$sd,rho=ifelse(Res
 #' @param regime.par レジームによって変化するパラメータ(\code{c("a","b","sd")}の中から選ぶ)
 #' @param length 初期値を決める際のgridの長さ
 #' @param p0 \code{optim}で設定する初期値
+#' @param bio_par data.frame(waa=c(100,200,300),maa=c(0,1,1),M=c(0.3,0.3,0.3)) のような生物パラメータをあらわすデータフレーム。waaは資源量を計算するときのweight at age, maaはmaturity at age, Mは自然死亡係数。これを与えると、steepnessやR0も計算して返す
+#' @param plus_group hなどを計算するときに、プラスグループを考慮するか
 #' @inheritParams fit.SR
 #' @encoding UTF-8
 #' @examples
@@ -826,6 +838,7 @@ prof.lik <- function(Res,a=Res$pars$a,b=Res$pars$b,sd=Res$pars$sd,rho=ifelse(Res
 #' \item{\code{pred}}{レジームごとの各親魚量に対する加入量の予測値}
 #' \item{\code{pred_to_obs}}{観測値に対する予測値}
 #' \item{\code{summary_tbl}}{観測値と予測値を合わせた表}
+#' \item{\code{steepness}}{bio_parを与えたときに、steepness (h) やR0(漁獲がない場合の平均加入尾数), SB0(漁獲がない場合の平均親魚量)なども追加的に返す}
 #' }
 #'
 #' @export
@@ -842,7 +855,9 @@ fit.SRregime <- function(
   p0 = NULL,  # 初期値
   w = rep(1,length(SRdata$R)),
   max.ssb.pred = 1.3,
-  hessian = FALSE
+  hessian = FALSE,
+  bio_par = NULL,
+  plus_group = TRUE
 ) {
   argname <- ls()
   arglist <- lapply(argname,function(xx) eval(parse(text=xx)))
@@ -1026,6 +1041,15 @@ fit.SRregime <- function(
   Res$pred_to_obs <- pred_to_obs
   Res$summary_tbl
   class(Res) <- "fit.SRregime"
+
+  if(!is.null(bio_par)){
+      par.matrix <- Res$regime_pars[c("a","b")]
+      Res$steepness <- purrr::map_dfr(seq_len(nrow(par.matrix)),
+                                function(i){
+                                    calc_steepness(SR=SR,rec_pars=par.matrix[i,],M=bio_par$M,waa=bio_par$waa,maa=bio_par$maa,
+                                                   plus_group=plus_group)
+                                },.id="id")      
+  }  
 
   return(Res)
 }
