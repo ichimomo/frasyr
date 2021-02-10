@@ -577,7 +577,7 @@ plot_futures <- function(vpares=NULL,
     junit <- c("","十","百","千","万")[log10(biomass.unit)+1]
 
     rename_list <- tibble(stat=c("Recruitment","SSB","biomass","catch","beta_gamma","U","Fratio"),
-                          jstat=c(str_c("加入尾数(",number.name,"尾)"),
+                          jstat=c(str_c("加入尾数(",number.name,")"),
                                   str_c("親魚量 (",junit,"トン)"),
                                   str_c("資源量 (",junit,"トン)"),
                                   str_c("漁獲量 (",junit,"トン)"),
