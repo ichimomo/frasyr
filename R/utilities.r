@@ -1458,6 +1458,15 @@ make_kobeII_table <- function(kobeII_data,
       arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
       mutate(stat_name="ssb.mean"))
 
+  # 平均親魚
+  (biomass.mean <- kobeII_data %>%
+      dplyr::filter(year%in%year.ssb,stat=="biomass") %>%
+      group_by(HCR_name,beta,year) %>%
+      summarise(biomass.mean=mean(value)) %>%
+      spread(key=year,value=biomass.mean) %>% ungroup() %>%
+      arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
+      mutate(stat_name="biomass.mean"))    
+
   # 親魚, 下10%
   (ssb.ci10 <- kobeII_data %>%
       dplyr::filter(year%in%year.ssb,stat=="SSB") %>%
@@ -1648,6 +1657,7 @@ make_kobeII_table <- function(kobeII_data,
   
   res_list <- list(catch.mean   = catch.mean,
                    ssb.mean         = ssb.mean,
+                   biomass.mean         = biomass.mean,                   
                    ssb.lower10percent            = ssb.ci10,
                    ssb.upper90percent            = ssb.ci90,
                    prob.over.ssbtarget  = ssbtarget.table,
