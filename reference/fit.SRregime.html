@@ -138,7 +138,9 @@
   p0 <span class='op'>=</span> <span class='cn'>NULL</span>,
   w <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span><span class='op'>(</span><span class='fl'>1</span>, <span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span><span class='op'>(</span><span class='va'>SRdata</span><span class='op'>$</span><span class='va'>R</span><span class='op'>)</span><span class='op'>)</span>,
   max.ssb.pred <span class='op'>=</span> <span class='fl'>1.3</span>,
-  hessian <span class='op'>=</span> <span class='cn'>FALSE</span>
+  hessian <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  bio_par <span class='op'>=</span> <span class='cn'>NULL</span>,
+  plus_group <span class='op'>=</span> <span class='cn'>TRUE</span>
 <span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -176,6 +178,14 @@
       <th>p0</th>
       <td><p><code>optim</code>で設定する初期値</p></td>
     </tr>
+    <tr>
+      <th>bio_par</th>
+      <td><p>data.frame(waa=c(100,200,300),maa=c(0,1,1),M=c(0.3,0.3,0.3)) のような生物パラメータをあらわすデータフレーム。waaは資源量を計算するときのweight at age, maaはmaturity at age, Mは自然死亡係数。これを与えると、steepnessやR0も計算して返す</p></td>
+    </tr>
+    <tr>
+      <th>plus_group</th>
+      <td><p>hなどを計算するときに、プラスグループを考慮するか</p></td>
+    </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
@@ -195,6 +205,7 @@
 <dt><code>pred</code></dt><dd><p>レジームごとの各親魚量に対する加入量の予測値</p></dd>
 <dt><code>pred_to_obs</code></dt><dd><p>観測値に対する予測値</p></dd>
 <dt><code>summary_tbl</code></dt><dd><p>観測値と予測値を合わせた表</p></dd>
+<dt><code>steepness</code></dt><dd><p>bio_parを与えたときに、steepness (h) やR0(漁獲がない場合の平均加入尾数), SB0(漁獲がない場合の平均親魚量)なども追加的に返す</p></dd>
 
 </dl>
 

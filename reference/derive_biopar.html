@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>calculate F/Ftarget based on F_%SPR multiplier — calc_Fratio • frasyr</title>
+<title>将来予測やVPAの結果から生物パラメータをとりだす — derive_biopar • frasyr</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,8 @@
 
 
 
-<meta property="og:title" content="calculate F/Ftarget based on F_%SPR multiplier — calc_Fratio" />
-<meta property="og:description" content="calculate F/Ftarget based on F_%SPR multiplier" />
+<meta property="og:title" content="将来予測やVPAの結果から生物パラメータをとりだす — derive_biopar" />
+<meta property="og:description" content="将来予測やVPAの結果から生物パラメータをとりだす" />
 
 
 
@@ -117,53 +117,32 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>calculate F/Ftarget based on F_%SPR multiplier</h1>
+    <h1>将来予測やVPAの結果から生物パラメータをとりだす</h1>
     
-    <div class="hidden name"><code>calc_Fratio.Rd</code></div>
+    <div class="hidden name"><code>derive_biopar.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>calculate F/Ftarget based on F_%SPR multiplier</p>
+    <p>将来予測やVPAの結果から生物パラメータをとりだす</p>
     </div>
 
-    <pre class="usage"><span class='fu'>calc_Fratio</span><span class='op'>(</span>
-  <span class='va'>faa</span>,
-  <span class='va'>waa</span>,
-  <span class='va'>maa</span>,
-  <span class='va'>M</span>,
-  SPRtarget <span class='op'>=</span> <span class='fl'>30</span>,
-  waa.catch <span class='op'>=</span> <span class='cn'>NULL</span>,
-  Pope <span class='op'>=</span> <span class='cn'>TRUE</span>,
-  return_SPR <span class='op'>=</span> <span class='cn'>FALSE</span>
-<span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>derive_biopar</span><span class='op'>(</span>res_obj <span class='op'>=</span> <span class='cn'>NULL</span>, derive_year <span class='op'>=</span> <span class='cn'>NULL</span>, stat <span class='op'>=</span> <span class='va'>mean</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>faa</th>
-      <td><p>F at age</p></td>
+      <th>res_obj</th>
+      <td><p>VPAか将来予測の結果のオブジェクト。どちらでも良い。</p></td>
     </tr>
     <tr>
-      <th>waa</th>
-      <td><p>weight at age</p></td>
+      <th>derive_year</th>
+      <td><p>生物パラメータとF at ageを取り出す期間（年の名前で指定）</p></td>
     </tr>
     <tr>
-      <th>maa</th>
-      <td><p>maturity at age</p></td>
-    </tr>
-    <tr>
-      <th>M</th>
-      <td><p>natural morality at age</p></td>
-    </tr>
-    <tr>
-      <th>SPRtarget</th>
-      <td><p>target SPR (NULLの場合には最適化しない)</p></td>
-    </tr>
-    <tr>
-      <th>return_SPR</th>
-      <td><p>return SPR as well as Fratio</p>
-<p>もともとのF at ageの最大がexp(-9)よりも小さい場合にはFratio=0となる。一方で、F at ageをすごく大きくしても指定されたSPRを実現できないような場合のFratioの上限値を50とする。</p></td>
+      <th>stat</th>
+      <td><p>取り出した期間のパラメータをここで指定する関数で処理する。基本は平均する（mean）</p>
+<p>将来予測結果を入れる場合には複数のシミュレーション、年の間の結果をすべてstatする</p></td>
     </tr>
     </table>
 
