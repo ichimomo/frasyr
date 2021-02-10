@@ -1418,6 +1418,7 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
   if (class(boot.res$input$Res)=="fit.SR") {
     validate_sr(res_sr = boot.res$input$Res)
     # for fit.SR
+    # parameter histogram
     if (output) png(file = paste0(filename,"_pars.png"), width=10, height=10, res=432, units='in')
     par(pch=pch,lwd = lwd, mfrow=c(2,2))
     jmax = ifelse(boot.res$input$Res$pars$rho==0,3,4)
@@ -1444,6 +1445,35 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
     }
     if (output) dev.off()
 
+    # steepness histogram (if avairable)
+  if(!is.null(boot.res[[1]]$steepness)){
+    if (output) png(file = paste0(filename,"_pars_steepness.png"), width=10, height=10, res=432, units='in')
+    par(pch=pch,lwd = lwd, mfrow=c(2,2))
+    for (j in 1:4) {
+      par0 = c("SB0","R0","B0","h")[j]
+
+      hist(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$steepness[,par0]),xlab=par0,ylab="Frequency",main="",col="gray")
+      abline(v=boot.res$input$Res$steepness[,par0],col=2,lwd=3)
+      abline(v=median(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$steepness[,par0])),col=3,lwd=3,lty=2)
+      arrows(quantile(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$steepness[,par0]),0.5*(1-CI)),0,
+             quantile(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$steepness[,par0]),0.5*(1-CI)+CI),0,
+             col=4,lwd=3,code=3)
+      legend("topright",
+             legend=c("Estimate","Median","CI(0.8)"),lty=1:2,col=2:4,lwd=2,ncol=1,cex=1)
+      if (boot.res$input$method=="d") {
+        title(paste0(par0," in Data Bootstrap"))
+      } else {
+        if (boot.res$input$method=="p") {
+          title(paste0(par0," in Parametric Bootstrap"))
+        } else {
+          title(paste0(par0," in Non-Parametric Bootstrap"))
+        }
+      }
+    }
+    if (output) dev.off()        
+  }
+
+    # SR curve
     par(mfrow=c(1,1),pch=pch,lwd = lwd)
     if (output) png(file = paste0(filename,"_SRcurve.png"), width=10, height=7.5, res=432, units='in')
     data_SR = boot.res$input$Res$input$SRdata
@@ -1468,6 +1498,8 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
     # fit.SRregime
     regime_unique = boot.res$input$Res$regime_pars$regime
     obs_data = boot.res$input$Res$pred_to_obs
+
+    # histogram
     if (output) png(file = paste0(filename,"_pars.png"), width=15, height=5*nrow(boot.res$input$Res$regime_pars), res=432, units='in')
     par(lwd = lwd, mfrow=c(nrow(boot.res$input$Res$regime_pars),3))
     for (ii in 1:nrow(boot.res$input$Res$regime_pars)) {
@@ -1497,6 +1529,39 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
       }
     }
     if (output) dev.off()
+
+    # histogram (steepness)
+    if(!is.null(boot.res[[1]]$steepness)){
+      if (output) png(file = paste0(filename,"_pars_steepness.png"), width=15, height=5*nrow(boot.res$input$Res$regime_pars), res=432, units='in')
+      par(lwd = lwd, mfrow=c(nrow(boot.res$input$Res$regime_pars),3))
+      for (ii in 1:nrow(boot.res$input$Res$regime_pars)) {
+        regime = boot.res$input$Res$regime_pars$regime[ii]
+        jmax = 4
+        for (j in 1:jmax) {
+          par0 = c("SB0","R0","B0","h")[j]
+          boot_pars = sapply(1:boot.res$input$n, function(i) as.numeric(boot.res[[i]]$steepness[ii,par0]))
+          hist(boot_pars,xlab=par0,ylab="Frequency",main="",col="gray")
+          abline(v=as.numeric(boot.res$input$Res$steepness[ii,par0]),col=2,lwd=3)
+          abline(v=median(boot_pars),col=3,lwd=3,lty=2)
+          arrows(quantile(boot_pars,0.5*(1-CI)),0,
+                 quantile(boot_pars,0.5*(1-CI)+CI),0,
+                 col=4,lwd=3,code=3)
+          legend("topright",
+                 legend=c("Estimate","Median","CI(0.8)"),lty=1:2,col=2:4,lwd=2,ncol=1,cex=1)
+          if (boot.res$input$method=="d") {
+            title(paste0(par0," of Regime",regime," in Data Bootstrap"))
+          } else {
+            if (boot.res$input$method=="p") {
+              title(paste0(par0," of Regime",regime," in Para Bootstrap"))
+            } else {
+              title(paste0(par0," of Regime",regime," in Non-Para Bootstrap"))
+            }
+          }
+
+        }
+      }
+      if (output) dev.off()
+    }
 
     if (output) png(file = paste0(filename,"_SRcurve.png"), width=7.5*length(regime_unique), height=7.5, res=432, units='in')
     par(mfrow=c(1,length(regime_unique)))
