@@ -2121,7 +2121,7 @@ compare_future_performance <- function(future_list,res_vpa,res_MSY,
 #' @param SPRtarget target SPR (NULLの場合には最適化しない)
 #' @param return_SPR return SPR as well as Fratio
 #'
-#' faa をx倍したときに、SPRtargetどおりに漁獲できるxが見つからない場合（選択率が非常にいびつであるような場合、もとのFがものすごく小さい場合など）にはNAを返す。F at ageの平均が非常に小さい値1e-4以下の場合にはFratioは計算せず、単純に0を返すようにする。
+#' もともとのF at ageの最大がexp(-9)よりも小さい場合にはFratio=0となる。一方で、F at ageをすごく大きくしても指定されたSPRを実現できないような場合のFratioの上限値を50とする。
 #'
 #' @export
 #' @encoding UTF-8
@@ -2129,12 +2129,15 @@ compare_future_performance <- function(future_list,res_vpa,res_MSY,
 
 
 calc_Fratio <- function(faa, waa, maa, M, SPRtarget=30, waa.catch=NULL,Pope=TRUE, return_SPR=FALSE){
+
   tmpfunc <- function(x,SPR0=0,...){
     SPR_tmp <- calc.rel.abund(sel=faa,Fr=exp(x),na=length(faa),M=M, waa=waa, waa.catch=waa.catch,
                               min.age=0,max.age=Inf,Pope=Pope,ssb.coef=0,maa=maa)$spr %>% sum()
     sum(((SPR_tmp/SPR0*100)-SPRtarget)^2)
   }
-  if(mean(faa)<1e-4){ return(0) }
+    
+  if(max(faa)<exp(-7)){ return(0) }
+    
   else{
     tmp <- !is.na(faa)
     SPR0 <- calc.rel.abund(sel=faa,Fr=0,na=length(faa),M=M, waa=waa, waa.catch=waa.catch,maa=maa,
@@ -2143,12 +2146,12 @@ calc_Fratio <- function(faa, waa, maa, M, SPRtarget=30, waa.catch=NULL,Pope=TRUE
                                    min.age=0,max.age=Inf,Pope=Pope,ssb.coef=0)$spr %>% sum()
     SPR_original <- SPR_original/SPR0*100
     if(!is.null(SPRtarget)){
-        opt_res <- optimize(tmpfunc,interval=c(-20,30),SPR0=SPR0)
+        opt_res <- optimize(tmpfunc,interval=c(-7,log(50)),SPR0=SPR0)
         SPR_est <- calc.rel.abund(sel=faa,Fr=exp(opt_res$minimum),na=length(faa),
                                   M=M, waa=waa, waa.catch=waa.catch,maa=maa,
                                   min.age=0,max.age=Inf,Pope=Pope,ssb.coef=0)$spr %>% sum()
         SPR_est <- SPR_est/SPR0 * 100
-        if(abs(SPR_est-SPRtarget)>0.01) {return(NA)}
+#        if(abs(SPR_est-SPRtarget)>0.01) {return(NA)}
         Fratio <- 1/exp(opt_res$minimum)
     }
     else{
