@@ -5,6 +5,7 @@
 #' @import tidyr
 #' @import tibble
 #' @import readr
+#' @import forcats
 #' @import stringr
 #' @import assertthat
 #' @importFrom magrittr %>%
