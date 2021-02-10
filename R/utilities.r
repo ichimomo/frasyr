@@ -5,6 +5,7 @@
 #' @import tidyr
 #' @import tibble
 #' @import readr
+#' @import forcats
 #' @import stringr
 #' @import assertthat
 #' @importFrom magrittr %>%
@@ -1457,6 +1458,15 @@ make_kobeII_table <- function(kobeII_data,
       arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
       mutate(stat_name="ssb.mean"))
 
+  # 平均親魚
+  (biomass.mean <- kobeII_data %>%
+      dplyr::filter(year%in%year.ssb,stat=="biomass") %>%
+      group_by(HCR_name,beta,year) %>%
+      summarise(biomass.mean=mean(value)) %>%
+      spread(key=year,value=biomass.mean) %>% ungroup() %>%
+      arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
+      mutate(stat_name="biomass.mean"))    
+
   # 親魚, 下10%
   (ssb.ci10 <- kobeII_data %>%
       dplyr::filter(year%in%year.ssb,stat=="SSB") %>%
@@ -1647,6 +1657,7 @@ make_kobeII_table <- function(kobeII_data,
   
   res_list <- list(catch.mean   = catch.mean,
                    ssb.mean         = ssb.mean,
+                   biomass.mean         = biomass.mean,                   
                    ssb.lower10percent            = ssb.ci10,
                    ssb.upper90percent            = ssb.ci90,
                    prob.over.ssbtarget  = ssbtarget.table,
@@ -2121,18 +2132,23 @@ compare_future_performance <- function(future_list,res_vpa,res_MSY,
 #' @param SPRtarget target SPR (NULLの場合には最適化しない)
 #' @param return_SPR return SPR as well as Fratio
 #'
+#' もともとのF at ageの最大がexp(-9)よりも小さい場合にはFratio=0となる。一方で、F at ageをすごく大きくしても指定されたSPRを実現できないような場合のFratioの上限値を50とする。
+#'
 #' @export
 #' @encoding UTF-8
 #'
 
 
 calc_Fratio <- function(faa, waa, maa, M, SPRtarget=30, waa.catch=NULL,Pope=TRUE, return_SPR=FALSE){
+
   tmpfunc <- function(x,SPR0=0,...){
     SPR_tmp <- calc.rel.abund(sel=faa,Fr=exp(x),na=length(faa),M=M, waa=waa, waa.catch=waa.catch,
                               min.age=0,max.age=Inf,Pope=Pope,ssb.coef=0,maa=maa)$spr %>% sum()
     sum(((SPR_tmp/SPR0*100)-SPRtarget)^2)
   }
-  if(sum(faa)==0){ return(0) }
+    
+  if(max(faa)<exp(-7)){ return(0) }
+    
   else{
     tmp <- !is.na(faa)
     SPR0 <- calc.rel.abund(sel=faa,Fr=0,na=length(faa),M=M, waa=waa, waa.catch=waa.catch,maa=maa,
@@ -2141,12 +2157,12 @@ calc_Fratio <- function(faa, waa, maa, M, SPRtarget=30, waa.catch=NULL,Pope=TRUE
                                    min.age=0,max.age=Inf,Pope=Pope,ssb.coef=0)$spr %>% sum()
     SPR_original <- SPR_original/SPR0*100
     if(!is.null(SPRtarget)){
-        opt_res <- optimize(tmpfunc,interval=c(-10,10),SPR0=SPR0)
+        opt_res <- optimize(tmpfunc,interval=c(-7,log(50)),SPR0=SPR0)
         SPR_est <- calc.rel.abund(sel=faa,Fr=exp(opt_res$minimum),na=length(faa),
                                   M=M, waa=waa, waa.catch=waa.catch,maa=maa,
                                   min.age=0,max.age=Inf,Pope=Pope,ssb.coef=0)$spr %>% sum()
         SPR_est <- SPR_est/SPR0 * 100
-        if(abs(SPR_est-SPRtarget)>0.01) {return(NA)}
+#        if(abs(SPR_est-SPRtarget)>0.01) {return(NA)}
         Fratio <- 1/exp(opt_res$minimum)
     }
     else{
@@ -2578,4 +2594,40 @@ plot_summary_performance <- function(folder_names, scenario_names,
   g123 <- gridExtra::grid.arrange(g3,g2,g1,ncol=3)
 
   return(lst(graph=g123,g1,g2,g3,data=base.stat.data2))
+}
+
+
+#'
+#' 将来予測やVPAの結果から生物パラメータをとりだす
+#'
+#' @param res_obj VPAか将来予測の結果のオブジェクト。どちらでも良い。
+#' @param derive_year 生物パラメータとF at ageを取り出す期間（年の名前で指定）
+#' @param stat 取り出した期間のパラメータをここで指定する関数で処理する。基本は平均する（mean）
+#'
+#' 将来予測結果を入れる場合には複数のシミュレーション、年の間の結果をすべてstatする
+#'
+#' @export
+#' 
+
+derive_biopar <- function(res_obj=NULL, derive_year=NULL, stat=mean){
+
+  derive_year <- as.character(derive_year)
+  
+  if(!is.null(res_obj$input$tune)){
+    res_obj$input$dat$faa <- res_obj$faa
+    bio_par <- purrr::map_dfc(res_obj$input$dat[c("M","waa","maa","faa")],
+                   function(x) apply(x[,derive_year,drop=F],1,stat))
+  }
+
+  if(class(res_obj)=="future"|class(res_obj)=="future_new"){
+    bio_list <- res_obj[c("waa","faa")]
+    if(is.null(res_obj$maa)) bio_list$maa <- res_obj$input$tmb_data$maa else bio_list$maa <- res_obj$maa
+    bio_list$M <- res_obj$input$tmb_data$M
+    if(is.null(bio_list$M)) bio_list$M <- res_obj$M
+    bio_par <- purrr::map_dfc(bio_list,
+                   function(x) apply(x[,derive_year,,drop=F],1,stat))
+  }
+
+  bio_par <- bio_par[apply(bio_par,1,sum)!=0,]
+  return(bio_par)
 }

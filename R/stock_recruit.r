@@ -93,6 +93,9 @@ validate_sr <- function(SR = NULL, method = NULL, AR = NULL, out.AR = NULL, res_
 #' @param out.AR 自己相関係数を一度再生産関係を推定したのちに、外部から推定するか（1), 内部で推定するか(0)
 #' @param length 初期値を決める際のgridの長さ
 #' @param p0 \code{optim}で設定する初期値
+#' @param bio_par data.frame(waa=c(100,200,300),maa=c(0,1,1),M=c(0.3,0.3,0.3)) のような生物パラメータをあらわすデータフレーム。waaは資源量を計算するときのweight at age, maaはmaturity at age, Mは自然死亡係数。これを与えると、steepnessやR0も計算して返す
+#' @param plus_group hなどを計算するときに、プラスグループを考慮するか
+#' 
 #' @encoding UTF-8
 #' @examples
 #' \dontrun{
@@ -117,6 +120,7 @@ validate_sr <- function(SR = NULL, method = NULL, AR = NULL, out.AR = NULL, res_
 #' \item{\code{BIC}}{BIC (\code{out.AR=TRUE}のときは自己相関推定前の結果)}
 #' \item{\code{AIC.ar}}{\code{out.AR=TRUE}のときに\code{acf}関数で得られた自己相関を推定しない場合(0)とする場合(1)のAICの差}
 #' \item{\code{pred}}{予測された再生産関係}
+#' \item{\code{steepness}}{bio_parを与えたときに、steepness (h) やR0(漁獲がない場合の平均加入尾数), SB0(漁獲がない場合の平均親魚量)なども追加的に返す}
 #' }
 #'
 #' @export
@@ -131,7 +135,9 @@ fit.SR <- function(SRdata,
                    length=20,
                    max.ssb.pred=1.3, # 予測値を計算するSSBの最大値（観測された最大値への乗数）
                    p0=NULL,
-                   out.AR = TRUE #自己相関係数rhoを外で推定するか
+                   out.AR = TRUE, #自己相関係数rhoを外で推定するか
+                   bio_par = NULL,
+                   plus_group = TRUE
 ){
   validate_sr(SR = SR, method = method, AR = AR, out.AR = out.AR)
 
@@ -350,6 +356,10 @@ fit.SR <- function(SRdata,
   Res$AIC <- -2*loglik+2*k
   Res$AICc <- Res$AIC+2*k*(k+1)/(NN-k-1)
   Res$BIC <- -2*loglik+k*log(NN)
+
+  if(!is.null(bio_par)){
+    Res$steepness <- calc_steepness(SR=SR,Res$pars,bio_par$M,bio_par$waa,bio_par$maa,plus_group=TRUE)
+  }
 
   class(Res) <- "fit.SR"
   return(Res)
@@ -799,6 +809,8 @@ prof.lik <- function(Res,a=Res$pars$a,b=Res$pars$b,sd=Res$pars$sd,rho=ifelse(Res
 #' @param regime.par レジームによって変化するパラメータ(\code{c("a","b","sd")}の中から選ぶ)
 #' @param length 初期値を決める際のgridの長さ
 #' @param p0 \code{optim}で設定する初期値
+#' @param bio_par data.frame(waa=c(100,200,300),maa=c(0,1,1),M=c(0.3,0.3,0.3)) のような生物パラメータをあらわすデータフレーム。waaは資源量を計算するときのweight at age, maaはmaturity at age, Mは自然死亡係数。これを与えると、steepnessやR0も計算して返す
+#' @param plus_group hなどを計算するときに、プラスグループを考慮するか
 #' @inheritParams fit.SR
 #' @encoding UTF-8
 #' @examples
@@ -826,6 +838,7 @@ prof.lik <- function(Res,a=Res$pars$a,b=Res$pars$b,sd=Res$pars$sd,rho=ifelse(Res
 #' \item{\code{pred}}{レジームごとの各親魚量に対する加入量の予測値}
 #' \item{\code{pred_to_obs}}{観測値に対する予測値}
 #' \item{\code{summary_tbl}}{観測値と予測値を合わせた表}
+#' \item{\code{steepness}}{bio_parを与えたときに、steepness (h) やR0(漁獲がない場合の平均加入尾数), SB0(漁獲がない場合の平均親魚量)なども追加的に返す}
 #' }
 #'
 #' @export
@@ -842,7 +855,9 @@ fit.SRregime <- function(
   p0 = NULL,  # 初期値
   w = rep(1,length(SRdata$R)),
   max.ssb.pred = 1.3,
-  hessian = FALSE
+  hessian = FALSE,
+  bio_par = NULL,
+  plus_group = TRUE
 ) {
   argname <- ls()
   arglist <- lapply(argname,function(xx) eval(parse(text=xx)))
@@ -1026,6 +1041,15 @@ fit.SRregime <- function(
   Res$pred_to_obs <- pred_to_obs
   Res$summary_tbl
   class(Res) <- "fit.SRregime"
+
+  if(!is.null(bio_par)){
+      par.matrix <- Res$regime_pars[c("a","b")]
+      Res$steepness <- purrr::map_dfr(seq_len(nrow(par.matrix)),
+                                function(i){
+                                    calc_steepness(SR=SR,rec_pars=par.matrix[i,],M=bio_par$M,waa=bio_par$waa,maa=bio_par$maa,
+                                                   plus_group=plus_group)
+                                },.id="id")      
+  }  
 
   return(Res)
 }
@@ -1394,6 +1418,7 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
   if (class(boot.res$input$Res)=="fit.SR") {
     validate_sr(res_sr = boot.res$input$Res)
     # for fit.SR
+    # parameter histogram
     if (output) png(file = paste0(filename,"_pars.png"), width=10, height=10, res=432, units='in')
     par(pch=pch,lwd = lwd, mfrow=c(2,2))
     jmax = ifelse(boot.res$input$Res$pars$rho==0,3,4)
@@ -1420,6 +1445,35 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
     }
     if (output) dev.off()
 
+    # steepness histogram (if avairable)
+  if(!is.null(boot.res[[1]]$steepness)){
+    if (output) png(file = paste0(filename,"_pars_steepness.png"), width=10, height=10, res=432, units='in')
+    par(pch=pch,lwd = lwd, mfrow=c(2,2))
+    for (j in 1:4) {
+      par0 = c("SB0","R0","B0","h")[j]
+
+      hist(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$steepness[,par0]),xlab=par0,ylab="Frequency",main="",col="gray")
+      abline(v=boot.res$input$Res$steepness[,par0],col=2,lwd=3)
+      abline(v=median(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$steepness[,par0])),col=3,lwd=3,lty=2)
+      arrows(quantile(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$steepness[,par0]),0.5*(1-CI)),0,
+             quantile(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$steepness[,par0]),0.5*(1-CI)+CI),0,
+             col=4,lwd=3,code=3)
+      legend("topright",
+             legend=c("Estimate","Median","CI(0.8)"),lty=1:2,col=2:4,lwd=2,ncol=1,cex=1)
+      if (boot.res$input$method=="d") {
+        title(paste0(par0," in Data Bootstrap"))
+      } else {
+        if (boot.res$input$method=="p") {
+          title(paste0(par0," in Parametric Bootstrap"))
+        } else {
+          title(paste0(par0," in Non-Parametric Bootstrap"))
+        }
+      }
+    }
+    if (output) dev.off()        
+  }
+
+    # SR curve
     par(mfrow=c(1,1),pch=pch,lwd = lwd)
     if (output) png(file = paste0(filename,"_SRcurve.png"), width=10, height=7.5, res=432, units='in')
     data_SR = boot.res$input$Res$input$SRdata
@@ -1444,6 +1498,8 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
     # fit.SRregime
     regime_unique = boot.res$input$Res$regime_pars$regime
     obs_data = boot.res$input$Res$pred_to_obs
+
+    # histogram
     if (output) png(file = paste0(filename,"_pars.png"), width=15, height=5*nrow(boot.res$input$Res$regime_pars), res=432, units='in')
     par(lwd = lwd, mfrow=c(nrow(boot.res$input$Res$regime_pars),3))
     for (ii in 1:nrow(boot.res$input$Res$regime_pars)) {
@@ -1473,6 +1529,39 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
       }
     }
     if (output) dev.off()
+
+    # histogram (steepness)
+    if(!is.null(boot.res[[1]]$steepness)){
+      if (output) png(file = paste0(filename,"_pars_steepness.png"), width=15, height=5*nrow(boot.res$input$Res$regime_pars), res=432, units='in')
+      par(lwd = lwd, mfrow=c(nrow(boot.res$input$Res$regime_pars),3))
+      for (ii in 1:nrow(boot.res$input$Res$regime_pars)) {
+        regime = boot.res$input$Res$regime_pars$regime[ii]
+        jmax = 4
+        for (j in 1:jmax) {
+          par0 = c("SB0","R0","B0","h")[j]
+          boot_pars = sapply(1:boot.res$input$n, function(i) as.numeric(boot.res[[i]]$steepness[ii,par0]))
+          hist(boot_pars,xlab=par0,ylab="Frequency",main="",col="gray")
+          abline(v=as.numeric(boot.res$input$Res$steepness[ii,par0]),col=2,lwd=3)
+          abline(v=median(boot_pars),col=3,lwd=3,lty=2)
+          arrows(quantile(boot_pars,0.5*(1-CI)),0,
+                 quantile(boot_pars,0.5*(1-CI)+CI),0,
+                 col=4,lwd=3,code=3)
+          legend("topright",
+                 legend=c("Estimate","Median","CI(0.8)"),lty=1:2,col=2:4,lwd=2,ncol=1,cex=1)
+          if (boot.res$input$method=="d") {
+            title(paste0(par0," of Regime",regime," in Data Bootstrap"))
+          } else {
+            if (boot.res$input$method=="p") {
+              title(paste0(par0," of Regime",regime," in Para Bootstrap"))
+            } else {
+              title(paste0(par0," of Regime",regime," in Non-Para Bootstrap"))
+            }
+          }
+
+        }
+      }
+      if (output) dev.off()
+    }
 
     if (output) png(file = paste0(filename,"_SRcurve.png"), width=7.5*length(regime_unique), height=7.5, res=432, units='in')
     par(mfrow=c(1,length(regime_unique)))
@@ -2100,23 +2189,27 @@ boot_steepness <- function(res_SR, M, waa, maa, n=100, plus_group=TRUE){
     is.model.average <- class(res_SR)!="fit.SRregime" && class(res_SR)!="fit.SR"
     
     if(is.model.average){ # model average case (calculate recursively)
-      res_steepness <- purrr::map_dfr(res_SR, boot_steepness, n=n, M=M, waa=waa, maa=maa, plus_group=plus_group, .id="average_id")
+      res_steepness <- purrr::map_dfr(res_SR, boot_steepness, n=n, M=M, waa=waa, maa=maa, plus_group=plus_group, .id="id")
     }else{
       res_boot <- boot.SR(res_SR, n=n)
       if(class(res_boot[[1]])=="fit.SRregime"){ # regime shift
-          res_steepness <- purrr::map_dfr(res_boot, function(x){
-              par.matrix <- res_SR$regime_pars[c("a","b")]
+          res_steepness <- purrr::map_dfr(res_boot[1:n], function(x){
+              par.matrix <- x$regime_pars[c("a","b")]
               tmplist <- purrr::map_dfr(seq_len(nrow(par.matrix)),
                                     function(i){
                                         calc_steepness(SR=res_SR$input$SR,rec_pars=par.matrix[i,],M=M,waa=waa,maa=maa,
                                                        plus_group=plus_group)
-                                    },.id="regime_id")
+                                    },.id="id")
+              tmplist <- bind_cols(tmplist,par.matrix)
           })
       }
       if(class(res_boot[[1]])=="fit.SR"){ # normal
           res_steepness <- purrr::map_dfr(res_boot[1:n], function(x){
               calc_steepness(SR=res_SR$input$SR,rec_pars=x$pars,M=M,waa=waa,maa=maa,plus_group=plus_group)
           })
+          res_steepness$id <- 1
+          res_steepness <- res_steepness %>%
+              bind_cols(purrr::map_dfr(res_boot[1:n], function(x) x$pars))
       }}    
 
     res_steepness

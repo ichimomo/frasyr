@@ -5,9 +5,12 @@ load(system.file("extdata","SRdata_pma.rda",package = "frasyr"))
 SRmodel.list <- expand.grid(SR.rel = c("HS","BH","RI"), AR.type = c(0, 1), out.AR=c(TRUE,FALSE), L.type = c("L1", "L2"))
 SR.list <- list()
 
+year <- as.character(max(res_vpa_pma$input$rec.year))
+bio_par <- derive_biopar(res_vpa_pma,derive_year=year)
+
 for (i in 1:nrow(SRmodel.list)) {
     SR.list[[i]] <- fit.SR(SRdata_pma, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],
-                           AR = SRmodel.list$AR.type[i], out.AR =SRmodel.list$out.AR[i], hessian = FALSE)
+                           AR = SRmodel.list$AR.type[i], out.AR =SRmodel.list$out.AR[i], hessian = FALSE, bio_par = bio_par)
 }
 
 SRmodel.list$AICc <- sapply(SR.list, function(x) x$AICc)
@@ -51,6 +54,8 @@ test_that("oututput value check",{
   # boot strap ----
   boot_res_pma_check <- boot.SR(SRmodel.select)
 
+  bootSR.plot(boot_res_pma_check)
+
   boot_res_pma_median_pars_a <-median(sapply(1:boot_res_pma_check$input$n, function(i) boot_res_pma_check[[i]]$pars$a))
   boot_res_pma_median_pars_b <-median(sapply(1:boot_res_pma_check$input$n, function(i) boot_res_pma_check[[i]]$pars$b))
   boot_res_pma_median_pars_sd <-median(sapply(1:boot_res_pma_check$input$n, function(i) boot_res_pma_check[[i]]$pars$sd))
@@ -91,6 +96,7 @@ test_that("output value check",{
     boot_resSR1_check <- boot.SR(resSR1,n=nboot)
     boot_resSR2_check <- boot.SR(resSR2,n=nboot)
     boot_resSRregime_check <- boot.SR(resSRregime,n=nboot)
+    bootSR.plot(boot_resSRregime_check)
     
     boot_resSR1_median_pars_a <-median(sapply(1:boot_resSR1_check$input$n, function(i) boot_resSR1_check[[i]]$pars$a))
     boot_resSR1_median_pars_b <-median(sapply(1:boot_resSR1_check$input$n, function(i) boot_resSR1_check[[i]]$pars$b))

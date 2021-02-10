@@ -324,3 +324,20 @@ test_that("convert_2d_future",{
   # 一旦スキップ
 })
 
+test_that("derive_biopar",{
+    
+    a1 <- derive_biopar(res_vpa, derive_year=2000)
+    a2 <- derive_biopar(res_vpa, derive_year=2000:2003)
+    expect_equal(a1[,1:3],a2[,1:3])
+    (a1$faa + a2$faa) %>% round(2) %>% as.numeric() %>%
+        expect_equal(c(1.12,3.47,3.82,3.82))
+
+    rm(list=ls())
+    a1 <- derive_biopar(res_future_0.8HCR, derive_year=2030)
+    a2 <- derive_biopar(res_future_0.8HCR, derive_year=2031:2032)
+    expect_equal(a1[,c(1,3,4)],a2[,c(1,3,4)])
+    (a1$faa + a2$faa) %>% round(2) %>% as.numeric() %>%
+        expect_equal(c(0.22, 0.53, 0.60, 0.60))
+
+})
+

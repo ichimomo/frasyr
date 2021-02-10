@@ -1460,6 +1460,7 @@ Ft <- mean(faa[,ny],na.rm=TRUE)
     res$rep <- rep
     }
 
+  class(res) <- "vpa"
   return(invisible(res))
 
 

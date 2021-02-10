@@ -3,6 +3,7 @@
 
 context("check future_vpa with sample data") # マアジデータでの将来予測 ----
 
+options(warn=-1)
 data(res_vpa)
 data(res_sr_HSL2)
 
@@ -256,7 +257,7 @@ test_that("check MSE feature",{ # ----
   expect_equal(round(mean(get_wcatch(res_future_noMSE)["2019",])),32311) 
   expect_equal(round(mean(get_wcatch(res_future_MSE)["2019",])),32370)
 
-  check_MSE_sd0(data_future_test10, nsim_for_check = 1000)  
+  #check_MSE_sd0(data_future_test10, nsim_for_check = 1000)  # 2021/02/10でOK。時間かかるのでコメントアウトする
 
   # 漁獲量が一定の場合
   CC <- 30000  
