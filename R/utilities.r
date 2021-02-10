@@ -2132,7 +2132,7 @@ compare_future_performance <- function(future_list,res_vpa,res_MSY,
 #' @param SPRtarget target SPR (NULLの場合には最適化しない)
 #' @param return_SPR return SPR as well as Fratio
 #'
-#' もともとのF at ageの最大がexp(-9)よりも小さい場合にはFratio=0となる。一方で、F at ageをすごく大きくしても指定されたSPRを実現できないような場合のFratioの上限値を50とする。
+#' もともとのF at ageの最大がexp(-7)よりも小さい場合にはFratio=0となる。一方で、F at ageをすごく大きくしても指定されたSPRを実現できないような場合のFratioの上限値を50とする。
 #'
 #' @export
 #' @encoding UTF-8

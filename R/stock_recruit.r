@@ -1051,6 +1051,7 @@ fit.SRregime <- function(
                                 },.id="id")      
   }  
 
+  Res$pars <- NULL
   return(Res)
 }
 
@@ -1587,6 +1588,7 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
     }
     if (output) dev.off()
   }
+
 }
 
 #' 再生産関係のジャックナイフ解析
