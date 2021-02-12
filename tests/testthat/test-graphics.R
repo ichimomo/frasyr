@@ -163,3 +163,11 @@ test_that("plot_sprypr", {
   g1 <- plot_sprypr(result_vpa=res_vpa, type="perspr")
   expect_equal(class(g1)[1],"gg")
 })
+
+test_that("plot_SR_AReffect", {
+  
+  SRdata <- get.SRdata(res_vpa)
+  res_SR <- fit.SR(SRdata,SR="BH",AR=1,out.AR=FALSE)
+  (g <- plot_SR_AReffect(res_SR))
+  
+})
