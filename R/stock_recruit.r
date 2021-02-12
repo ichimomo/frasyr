@@ -95,6 +95,7 @@ validate_sr <- function(SR = NULL, method = NULL, AR = NULL, out.AR = NULL, res_
 #' @param p0 \code{optim}で設定する初期値
 #' @param bio_par data.frame(waa=c(100,200,300),maa=c(0,1,1),M=c(0.3,0.3,0.3)) のような生物パラメータをあらわすデータフレーム。waaは資源量を計算するときのweight at age, maaはmaturity at age, Mは自然死亡係数。これを与えると、steepnessやR0も計算して返す
 #' @param plus_group hなどを計算するときに、プラスグループを考慮するか
+#' # @param do_check.SRfit 計算が終わったあとでdo_check.SRfitを実施し、収束していなかった場合に１回だけ再計算するか（余計に時間がかかる）。デフォルトはFALSE
 #' 
 #' @encoding UTF-8
 #' @examples
@@ -137,7 +138,9 @@ fit.SR <- function(SRdata,
                    p0=NULL,
                    out.AR = TRUE, #自己相関係数rhoを外で推定するか
                    bio_par = NULL,
-                   plus_group = TRUE
+                   plus_group = TRUE,
+                   is_jitter = FALSE
+#                   do_check.SRfit = FALSE # 計算が終わったあとでdo_check.SRfitを実施し、収束していなかった場合に１回だけ再計算するか（余計に時間がかかる）
 ){
   validate_sr(SR = SR, method = method, AR = AR, out.AR = out.AR)
 
@@ -272,7 +275,9 @@ fit.SR <- function(SRdata,
   opt <- optim(init,obj.f2)
   #if (rep.opt) {
     for (i in 1:100) {
-      opt2 <- optim(opt$par,obj.f2)
+      if(is_jitter==FALSE) par2 <- opt$par
+      if(is_jitter==TRUE)  par2 <- opt$par + rnorm(length(opt$par),0,5)
+      opt2 <- optim(par2,obj.f2)  
       if (abs(opt$value-opt2$value)<1e-6) break
       opt <- opt2
     }
@@ -362,6 +367,18 @@ fit.SR <- function(SRdata,
   }
 
   class(Res) <- "fit.SR"
+
+# pending  
+#  if(do_check.SRfit==TRUE){
+#    Res2 <- Res
+#    Res2$input$do_check.SRfit <- FALSE
+#    check <- check.SRfit(Res2, output=FALSE)
+#    if (!is.null(check$optimum)) {
+#      cat(" ")
+#      Res2 <- check$optimum
+#      check <- check.SRfit(Res2,output=FALSE)
+#    }}
+
   return(Res)
 }
 
@@ -1870,9 +1887,9 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
   RES = list()
   # check convergence
   if (opt$convergence==0) {
-    cat(RES$convergence <- "Successful convergence","\n")
+    cat(RES$convergence <- "1. Successful convergence (OK)","\n")
   } else {
-    message(RES$convergence <- "False convergencen")
+    message(RES$convergence <- "1. False convergencen")
   }
   # hessian
   resSR2 = resSR
@@ -1894,9 +1911,9 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
     }
   }
   if (all(diag(resSR2$opt$hessian) > 0)) {
-    cat(RES$hessian <- "Hessian successfully having positive definite","\n")
+    cat(RES$hessian <- "2. Hessian successfully having positive definite (OK)","\n")
   } else {
-    message(RES$hessian <- "Hessian NOT having positive definite")
+    message(RES$hessian <- "2. Hessian NOT having positive definite")
   }
 
   # check boundary
@@ -1926,7 +1943,7 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
     }
   }
   if (is.null(RES$boundary)) {
-    cat(RES$boundary <- "Parameters not reaching boundaries (successful)","\n")
+    cat(RES$boundary <- "3. Parameters not reaching boundaries (successful, OK)","\n")
   } else {
     for (i in 1:length(RES$boundary)) {
       message(RES$boundary[i])
@@ -1961,13 +1978,13 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
   max_loglik = max(loglik)
   optimal = NULL
   if (resSR$loglik-max_loglik < -0.001) {
-    message(RES$optim <- "NOT achieving the global optimum")
+    message(RES$optim <- "4. NOT achieving the global optimum")
     diff_loglik = abs(resSR$loglik-max_loglik)
     message(paste0("Maximum difference of log-likelihood is ",round(diff_loglik,6)))
     optimal = resSR_list[[which.max(loglik)]]
     RES$loglik_diff = diff_loglik
   } else {
-    cat(RES$optim <- "Successfully achieving the global optimum","\n")
+    cat(RES$optim <- "4. Successfully achieving the global optimum (OK)","\n")
     # global optimumに達している場合のみ
     loglik_diff = purrr::map_dbl(loglik, function(x) abs(diff(c(x,max(loglik)))))
     problem = NULL
@@ -2011,7 +2028,7 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
       RES$par_summary <- par_summary
       RES$percent_bias_summary <- percent_bias_summary
     } else {
-      cat(RES$pars <- "Parameters successfully achieving the single solution","\n")
+      cat(RES$pars <- "5. Parameters successfully achieving the single solution (OK)","\n")
     }
   }
   if (output) {
