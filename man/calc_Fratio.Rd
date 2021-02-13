@@ -29,7 +29,7 @@ calc_Fratio(
 
 \item{return_SPR}{return SPR as well as Fratio
 
-もともとのF at ageの最大がexp(-9)よりも小さい場合にはFratio=0となる。一方で、F at ageをすごく大きくしても指定されたSPRを実現できないような場合のFratioの上限値を50とする。}
+もともとのF at ageの最大がexp(-7)よりも小さい場合にはFratio=0となる。一方で、F at ageをすごく大きくしても指定されたSPRを実現できないような場合のFratioの上限値を50とする。}
 }
 \description{
 calculate F/Ftarget based on F_\%SPR multiplier
