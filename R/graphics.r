@@ -577,7 +577,7 @@ plot_futures <- function(vpares=NULL,
     junit <- c("","十","百","千","万")[log10(biomass.unit)+1]
 
     rename_list <- tibble(stat=c("Recruitment","SSB","biomass","catch","beta_gamma","U","Fratio"),
-                          jstat=c(str_c("加入尾数(",number.name,"尾)"),
+                          jstat=c(str_c("加入尾数(",number.name,")"),
                                   str_c("親魚量 (",junit,"トン)"),
                                   str_c("資源量 (",junit,"トン)"),
                                   str_c("漁獲量 (",junit,"トン)"),
@@ -1701,3 +1701,53 @@ plot_sprypr <- function(result_vpa, type, years=NULL) {
   }
   force(plot)
 }
+
+
+
+#' ARの効果を差し引いて再生産関係をプロットする
+#'
+#' @param res fit.SRから返されるオブジェクト
+#' @examples
+#' \dontrun{
+#' 
+#' }
+#' 
+#' @encoding UTF-8
+#' @export
+
+
+plot_SR_AReffect <- function(res){
+    SRdata <- as_tibble(res$input$SRdata)
+    
+#    pred0 <- exp(log(SRdata$R)-res$resid)
+#    pred1 <- exp(log(pred0)+res$pars$rho*c(0,res$resid[1:(length(res$resid)-1)]))
+
+
+    SRdata2 <- bind_rows(SRdata %>% mutate(Data="Observed"),
+                         SRdata %>% mutate(R=exp(log(SRdata$R)- # res$resid - 
+                                                   res$pars$rho*c(0,res$resid[1:(length(res$resid)-1)])),
+                                           Data="Observed_without_AR"),
+                         )
+                          
+
+    SRdata2 <- SRdata2 %>%
+      mutate(SB=SSB, Data=factor(Data,levels=c("Observed","Observed_without_AR")))
+    
+#    if(obs_change==FALSE){
+#      g <- ggplot(SRdata)+
+#        geom_point(aes(x=SSB, y=R))+
+#        geom_line(aes(x=res$pred[,1],y=res$pred[,2]),data=res$pred)+
+#        geom_path(aes(x=SSB, y=pred1), color="red",linetype=1)+
+#        xlab("SB")+ylab("R")+theme_bw()
+#    }
+#    else{
+      g <- ggplot(SRdata2)+
+        geom_line(aes(x=res$pred[,1],y=res$pred[,2]),data=res$pred)+
+        geom_point(aes(x=SB, y=R, color=Data))+
+        xlab("SB")+ylab("Number of reruits")+
+        theme_SH(legend.position="top") +
+        scale_color_manual(values=c("black", "red"))
+#    }
+    return(g)
+}
+

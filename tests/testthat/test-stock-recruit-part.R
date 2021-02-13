@@ -400,11 +400,8 @@ test_that("check matching of fit.SRregime and fit.SR",{
     resSR2 <- fit.SR(SRdata2, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],AR = 0, hessian = FALSE,length=20, bio_par=bio_par)
     resSRregime <- fit.SRregime(SRdata, SR = as.character(SRmodel.list$SR.rel[i]), method = as.character(SRmodel.list$L.type[i]), regime.year = regime_year, regime.key = 0:1, regime.par = c("a","b","sd"), use.fit.SR = TRUE,bio_par=bio_par)
     
-    expect_equal(c(resSR1$pars$a,resSR2$pars$a)/resSRregime$pars$a,c(1,1),label=i,tol=1.0e-2)
     expect_equal(c(resSR1$pars$a,resSR2$pars$a)/resSRregime$regime_pars$a,c(1,1),label=i,tol=1.0e-2)
-    expect_equal(c(resSR1$pars$b,resSR2$pars$b)/resSRregime$pars$b,c(1,1),label=i,tol=1.0e-2)
     expect_equal(c(resSR1$pars$b,resSR2$pars$b)/resSRregime$regime_pars$b,c(1,1),label=i,tol=1.0e-2)
-    expect_equal(c(resSR1$pars$sd,resSR2$pars$sd)/resSRregime$pars$sd,c(1,1),label=i,tol=1.0e-2)
     expect_equal(c(resSR1$pars$sd,resSR2$pars$sd)/resSRregime$regime_pars$sd,c(1,1),label=i,tol=1.0e-2)
     expect_equal(resSR1$loglik+resSR2$loglik,resSRregime$loglik,label=i,tol=1.0e-3)
 
