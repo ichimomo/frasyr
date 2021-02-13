@@ -1551,7 +1551,7 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
     # histogram (steepness)
     if(!is.null(boot.res[[1]]$steepness)){
       if (output) png(file = paste0(filename,"_pars_steepness.png"), width=15, height=5*nrow(boot.res$input$Res$regime_pars), res=432, units='in')
-      par(lwd = lwd, mfrow=c(nrow(boot.res$input$Res$regime_pars),3))
+      par(lwd = lwd, mfrow=c(nrow(boot.res$input$Res$regime_pars),4))
       for (ii in 1:nrow(boot.res$input$Res$regime_pars)) {
         regime = boot.res$input$Res$regime_pars$regime[ii]
         jmax = 4
