@@ -15,7 +15,6 @@ jobs:
       matrix:
         config:
           - {os: windows-latest, r: '4.0', args: "--no-manual"}
-          - {os: macOS-latest, r: '4.0'}
           - {os: ubuntu-18.04, r: '4.0'}
 
     steps:
