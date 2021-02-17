@@ -565,13 +565,13 @@ test_that("density dependent maturity option",{
     data_future_maa <- redo_future(data_future_test,list(maa_fun=TRUE, waa_fun=TRUE,
                                                          res_vpa=res_vpa2, fix_recruit = NULL), only_data=TRUE)
     mean(data_future_maa$data$maa_rand_mat[,,1]) %>% round(3) %>% 
-        expect_equal(0.003)
+        expect_equal(0)
     data_future_maa$data$maa_par_mat[,1,"b0"] %>% round(2) %>% as.numeric %>%
-        expect_equal(c(0,0.88,1,1))
+        expect_equal(c(0,1.1,1,1))
     data_future_maa$data$maa_par_mat[,1,"sd"] %>% round(3) %>% as.numeric %>%
-        expect_equal(c(0.000,0.073,0.000,0.000))
+        expect_equal(c(0.000,0.0,0.000,0.000))
     data_future_maa$data$maa_par_mat[,1,"b1"] %>% round(5) %>% as.numeric %>%
-        expect_equal(c(0.00000,-0.00082,0.00000,0.00000))
+        expect_equal(c(0.00000,-0.0013,0.00000,0.00000))
     data_future_maa$data$maa_par_mat[2,1,c("min","max")] %>% as.numeric %>%
         expect_equal(range(res_vpa2$input$dat$maa[2,]))
 
