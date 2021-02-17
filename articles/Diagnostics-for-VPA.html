@@ -19,6 +19,8 @@
 <![endif]-->
 </head>
 <body data-spy="scroll" data-target="#toc">
+    
+
     <div class="container template-article">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -73,9 +75,9 @@
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>VPAモデル診断スクリプト</h1>
-                        <h4 class="author">Kohei Hamabe &amp; Momoko Ichinokawa</h4>
+                        <h4 data-toc-skip class="author">Kohei Hamabe &amp; Momoko Ichinokawa</h4>
             
-            <h4 class="date">2021-02-10</h4>
+            <h4 data-toc-skip class="date">2021-02-17</h4>
       
       
       <div class="hidden name"><code>Diagnostics-for-VPA.Rmd</code></div>
@@ -433,7 +435,7 @@
 <p>を指定します。コマンドは以下の通りです。</p>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">res_vpa_jitter</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_estcheck_vpa.html">do_estcheck_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>, n_ite<span class="op">=</span><span class="fl">10</span><span class="op">)</span></code></pre></div>
-<pre><code>Maximum likelihood in jitter analysis is:  23.60018 
+<pre><code>Maximum likelihood in jitter analysis is:  23.36542 
 Likelihood with estimated parameters is:  23.60018 </code></pre>
 <p>最初に引数で与えたVPA結果について、</p>
 <ul>
@@ -567,8 +569,8 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 <code class="sourceCode R"><span class="va">res_tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html">numeric</a></span><span class="op">(</span><span class="op">)</span>
 <span class="kw">for</span><span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span> <span class="va">res_tmp</span><span class="op">[</span><span class="va">i</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html">as.numeric</a></span><span class="op">(</span><span class="va">res_vpa_bootstrap</span><span class="op">$</span><span class="va">res_boot</span><span class="op">[[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="va">Fc.at.age</span><span class="op">[</span><span class="fl">4</span><span class="op">]</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html">quantile</a></span><span class="op">(</span><span class="va">res_tmp</span>, probs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">0.025</span>,<span class="fl">0.5</span>,<span class="fl">0.975</span><span class="op">)</span><span class="op">)</span></code></pre></div>
-<pre><code>    2.5%      50%    97.5% 
-0.470902 1.006103 6.245491 </code></pre>
+<pre><code>     2.5%       50%     97.5% 
+0.5139460 0.6181616 7.5536962 </code></pre>
 <p>この他、各パラメータの相関関係について、ブートストラップ標本を基にプロットが得られます。</p>
 <div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">res_vpa_bootstrap</span><span class="op">$</span><span class="va">plot_cor</span></code></pre></div>
@@ -625,6 +627,8 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 
   
 
+
+  
 
   </body>
 </html>

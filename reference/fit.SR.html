@@ -58,9 +58,15 @@
 
 
 
+  
+
+  
+
   </head>
 
   <body data-spy="scroll" data-target="#toc">
+    
+
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -138,7 +144,8 @@
   p0 <span class='op'>=</span> <span class='cn'>NULL</span>,
   out.AR <span class='op'>=</span> <span class='cn'>TRUE</span>,
   bio_par <span class='op'>=</span> <span class='cn'>NULL</span>,
-  plus_group <span class='op'>=</span> <span class='cn'>TRUE</span>
+  plus_group <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  is_jitter <span class='op'>=</span> <span class='cn'>FALSE</span>
 <span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -178,7 +185,8 @@
     </tr>
     <tr>
       <th>plus_group</th>
-      <td><p>hなどを計算するときに、プラスグループを考慮するか</p></td>
+      <td><p>hなどを計算するときに、プラスグループを考慮するか
+# @param do_check.SRfit 計算が終わったあとでdo_check.SRfitを実施し、収束していなかった場合に１回だけ再計算するか（余計に時間がかかる）。デフォルトはFALSE</p></td>
     </tr>
     </table>
 
@@ -235,6 +243,8 @@
 
   
 
+
+  
 
   </body>
 </html>
