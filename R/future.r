@@ -359,12 +359,14 @@ make_future_data <- function(res_vpa,
 
     for(a in 1:nage){
       for(i in 1:nsim){
-        tmp <- lm(maa_mat[a,,i]~naa_mat[a,,i])
+        data_tmp <- data.frame(naa=naa_mat[a,,i], maa=maa_mat[a,,i]) 
+        observed <- naa_mat[a,,i]>0
+        tmp <- lm(maa~naa, data=data_tmp[observed,])
         maa_par_mat[a,i,c("b0","b1")] <- as.numeric(tmp$coef[1:2])
         maa_par_mat[a,i,c("sd")] <- sqrt(mean(tmp$residual^2))
         maa_par_mat[a,i,c("min")] <- min(maa_mat[a,,i])
         maa_par_mat[a,i,c("max")] <- max(maa_mat[a,,i])        
-        maa_rand_mat[a,,i] <- tmp$residual
+        maa_rand_mat[a,observed,i] <- tmp$residual
         maa_rand_mat[a,maa_fun_year,i] <- rnorm(length(maa_fun_year),-0.5*maa_par_mat[a,i,c("sd")]^2,maa_par_mat[a,i,c("sd")])
       }}
     tmb_data$maa_rand_mat <- maa_rand_mat
