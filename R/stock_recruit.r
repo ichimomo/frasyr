@@ -1780,16 +1780,16 @@ prof.likSR = function(resSR,output=FALSE,filename="Profile_Likelihood",a_range =
         }
       }
       ba.grid = expand.grid(b=b.grid,a=a.grid)
-      ab_order = c("a"=which(resSR$regime_pars$a[j]==resSR$pars$a),"b"=which(resSR$regime_pars$b[j]==resSR$pars$b))
+      ab_order = c("a"=which(resSR$regime_pars$a[j]==resSR$regime_pars$a),"b"=which(resSR$regime_pars$b[j]==resSR$regime_pars$b))
       a_fix = resSR$regime_pars$a[j]
       b_fix = resSR$regime_pars$b[j]
-      ab = c(resSR$pars$a,resSR$pars$b)
+      ab = c(resSR$regime_pars$a,resSR$regime_pars$b)
       x = ab[!(ab %in% c(a_fix,b_fix))]
       obj.f = function(par_a,par_b,x) {
-        a = resSR$pars$a
+        a = resSR$regime_pars$a
         xa_length=length(a[-ab_order[1]])
         if (xa_length>0) a[-ab_order[1]] <- x[1:xa_length]
-        b = resSR$pars$b
+        b = resSR$regime_pars$b
         xb_length=length(b[-ab_order[2]])
         if (xb_length>0) b[-ab_order[2]] <- x[xa_length+(1:xb_length)]
         a[ab_order[1]] <- par_a
