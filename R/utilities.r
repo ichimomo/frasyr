@@ -2629,5 +2629,6 @@ derive_biopar <- function(res_obj=NULL, derive_year=NULL, stat=mean){
   }
 
   bio_par <- bio_par[apply(bio_par,1,sum)!=0,]
+  bio_par <- bio_par[!is.na(apply(bio_par,1,sum)),]    
   return(bio_par)
 }
