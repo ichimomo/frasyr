@@ -341,3 +341,8 @@ test_that("derive_biopar",{
 
 })
 
+
+test_that("calc_forward",{
+  naa2 <- calc_forward(naa=res_vpa$naa,faa=res_vpa$faa,M=res_vpa$input$dat$M,t=1,plus_age=4,plus_group=TRUE)[,2]
+  naa2 %>% expect_equal(res_vpa$naa[,2])
+})

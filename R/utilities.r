@@ -878,7 +878,12 @@ out.vpa <- function(res=NULL,    # VPA result
 
 #' csvファイルとしてまとめられた資源計算結果を読み込んでRのオブジェクトにする
 #' @param tfile 資源計算結果がまとめられたcsvファイルの名前
+#' @param Pope  VPA計算時にどっちを使っているかここで設定する（TRUE or FALSE）。デフォルトはNULLで、その場合にはcaa,faa,naaの関係から自動判別するが、自動判別の結果が出力されるので、それをみて正しく判断されているか確認してください。
+#' @param plus.group プラスグループを考慮するかどうか。こちらについても、NULLの場合にはfaaとnaaの関係から自動判別するが、結果を一応確認すること。
+#' 
 #' @encoding UTF-8
+#'
+#' 
 #'
 #' @export
 
@@ -893,7 +898,8 @@ read.vpa <- function(tfile,
                      Fc.label="Current F",
                      naa.label="numbers at age",
                      Blimit=NULL,
-                     Pope=NULL, # VPA計算時にどっちを使っているか入れる（TRUE or FALSE）。デフォルトはNULLでcaa,faa,naaの関係から自動判別するが、自動判別の結果はcatで出力されるので、それをみて正しく判断されているか確認してください。
+                     Pope=NULL,
+                     plus.group=NULL,
                      fc.year=NULL){
 
   tmpdata <- read.csv(tfile,header=F,as.is=F,colClasses="character")
@@ -982,6 +988,14 @@ read.vpa <- function(tfile,
   else{
     dres$input$Pope <- Pope
   }
+
+  ## プラスグループを考慮しているかどうかを判別する
+  if(is.null(plus.group)){
+    plus.group <- detect_plus_group(dres)
+    cat("Plus group is TRUE... OK?\n")
+  }
+  dres$input$plus.group <- plus.group
+    
   if(is.null(dres$Fc.at.age) && !is.null(fc.year)) dres$Fc.at.age <- apply(dres$faa[,colnames(dres$faa)%in%fc.year],1,mean)
 
   # その他、他関数で必要になるVPAへのインプット
@@ -2631,4 +2645,18 @@ derive_biopar <- function(res_obj=NULL, derive_year=NULL, stat=mean){
   bio_par <- bio_par[apply(bio_par,1,sum)!=0,]
   bio_par <- bio_par[!is.na(apply(bio_par,1,sum)),]    
   return(bio_par)
+}
+
+
+#' 与えられた個体群動態でプラスグループが考慮されているかどうか
+#' @param dres VPAの結果
+
+detect_plus_group <- function(dres){
+  naa2 <- dres$naa[,2]
+  plus_age <- max(which(!is.na(naa2)))
+  naa2_plus <- calc_forward(naa=dres$naa,faa=dres$faa,M=dres$input$dat$M,t=1,plus_age=plus_age,plus_group=TRUE)[,2]
+  naa2_noplus <- calc_forward(naa=dres$naa,faa=dres$faa,M=dres$input$dat$M,t=1,plus_age=plus_age,plus_group=FALSE)[,2]
+  
+  if(sum((naa2-naa2_plus)^2)<sum((naa2-naa2_noplus)^2)) plus.group <- TRUE else plus.group <- FALSE
+  return(plus.group)
 }

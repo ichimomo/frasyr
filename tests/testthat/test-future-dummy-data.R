@@ -194,6 +194,24 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
             optim_method="none", multi_init=0)
   expect_equal(as.numeric(mean(res_future$naa[1,c("2018"),])),c(5))  
   
+  ## vpa function without plus group (with dummy vpa data)
+  vpa_no_plus_input <- vpa_list[[1]]$input %>% list_modify(plus.group=FALSE)
+  vpa_no_plus_input$dat$caa[4,] <- vpa_no_plus_input$dat$caa[4,]/2
+  vpa_no_plus <- do.call(vpa,vpa_no_plus_input)
+  vpa_no_plus$naa %>% apply(1,mean) %>% as.numeric() %>%
+    expect_equal(c(4,3,2,1))
+  
+  expect_equal(detect_plus_group(vpa_no_plus),FALSE)
+  expect_equal(detect_plus_group(vpa_list[[1]]),TRUE)  
+
+  # VPAでプラスグループなしオプションを使う場合は将来予測にそのまま引き継がれるはずだが、do.callを使う場合にはそうでない
+  # 明示的に指定する
+  res_future_no_plus <- redo_future(data_future_test,
+                                    list(res_vpa=vpa_no_plus,M=c(0,0,0,0),plus_group=FALSE),
+                                    optim_method="none", multi_init=0)
+  expect_equal(mean(res_future_no_plus$naa[,as.character(2025:2030),]),4, tol=0.0001)
+
+  
 })
 
 context("check future_vpa_function for regime shift") # ダミーデータ・レジームシフト将来予測 ----
@@ -395,3 +413,6 @@ test_that("future_vpa function (with dummy vpa data) for regime shift (level 2-3
 
 })
 
+# no plus group option
+
+vpa_list[[1]]$input$plus.group <- FALSE
