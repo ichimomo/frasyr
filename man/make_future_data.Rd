@@ -10,6 +10,7 @@ make_future_data(
   nsim = 1000,
   nyear = 50,
   plus_age = NULL,
+  plus_group = NULL,
   future_initial_year_name = 2017,
   start_F_year_name = 2018,
   start_biopar_year_name = 2018,
@@ -69,7 +70,9 @@ make_future_data(
 
 \item{nyear}{将来予測の実施年数}
 
-\item{plus_age}{プラスグループとして計算する行（年齢ではないことに注意）。デフォルト値（NULL）ならfuture_initial_year_name年にNA以外の数値が入っている一番大きい年齢をプラスグループの年齢とする}
+\item{plus_age}{プラスグループとして計算する行（年齢ではないことに注意）。デフォルト値（NULL）ならfuture_initial_year_name年にNA以外の数値が入っている一番大きい行をプラスグループの行とする。plus_ageという名前だが、plus_group=FALSEの場合には、たんに最大年齢になる。}
+
+\item{plus_group}{プラスグループを考慮するかどうか。与えない場合、res_vpa$input$plus.groupの設定を引き継ぐ。ただし、inputを使ってdo.callする場合などにはうまく調整できないことがあるので、明示的に与えたほうがよいかも。}
 
 \item{future_initial_year_name}{将来予測の「初期値となる」年齢別資源尾数を参照する年。この年の年齢別資源尾数を使って翌年の個体群動態が将来予測で決定される}
 

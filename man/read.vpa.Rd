@@ -18,11 +18,16 @@ read.vpa(
   naa.label = "numbers at age",
   Blimit = NULL,
   Pope = NULL,
+  plus.group = NULL,
   fc.year = NULL
 )
 }
 \arguments{
 \item{tfile}{資源計算結果がまとめられたcsvファイルの名前}
+
+\item{Pope}{VPA計算時にどっちを使っているかここで設定する（TRUE or FALSE）。デフォルトはNULLで、その場合にはcaa,faa,naaの関係から自動判別するが、自動判別の結果が出力されるので、それをみて正しく判断されているか確認してください。}
+
+\item{plus.group}{プラスグループを考慮するかどうか。こちらについても、NULLの場合にはfaaとnaaの関係から自動判別するが、結果を一応確認すること。}
 }
 \description{
 csvファイルとしてまとめられた資源計算結果を読み込んでRのオブジェクトにする

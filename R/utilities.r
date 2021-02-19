@@ -2656,6 +2656,7 @@ detect_plus_group <- function(dres){
   plus_age <- max(which(!is.na(naa2)))
   naa2_plus <- calc_forward(naa=dres$naa,faa=dres$faa,M=dres$input$dat$M,t=1,plus_age=plus_age,plus_group=TRUE)[,2]
   naa2_noplus <- calc_forward(naa=dres$naa,faa=dres$faa,M=dres$input$dat$M,t=1,plus_age=plus_age,plus_group=FALSE)[,2]
+  
   if(sum((naa2-naa2_plus)^2)<sum((naa2-naa2_noplus)^2)) plus.group <- TRUE else plus.group <- FALSE
   return(plus.group)
 }
