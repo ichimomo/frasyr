@@ -1499,3 +1499,22 @@ get_wcatch <- function(res_future){
 }
 
 
+#' @export
+#' @encoding UTF-8
+#'
+
+calc_forward <- function(naa,M,faa,t, plus_age, plus_group = TRUE){
+  if(length(dim(naa))==3){
+    for(iage in 1:(plus_age-1)) {
+      naa[iage+1,t+1,] <- naa[iage,t,]*exp(-M[iage,t,]-faa[iage,t,])
+    }
+    if(plus_group == TRUE) naa[plus_age,t+1,] <- naa[plus_age,t+1,] + naa[plus_age,t,]*exp(-M[plus_age,t,]-faa[plus_age,t,])
+  }
+  else{
+    for(iage in 1:(plus_age-1)) {
+      naa[iage+1,t+1] <- naa[iage,t]*exp(-M[iage,t]-faa[iage,t])
+    }
+    if(plus_group == TRUE) naa[plus_age,t+1] <- naa[plus_age,t+1] + naa[plus_age,t]*exp(-M[plus_age,t]-faa[plus_age,t])    
+  }
+  return(naa)
+}
