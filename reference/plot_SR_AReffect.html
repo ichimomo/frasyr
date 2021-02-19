@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>csvファイルとしてまとめられた資源計算結果を読み込んでRのオブジェクトにする — read.vpa • frasyr</title>
+<title>ARの効果を差し引いて再生産関係をプロットする — plot_SR_AReffect • frasyr</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,8 @@
 
 
 
-<meta property="og:title" content="csvファイルとしてまとめられた資源計算結果を読み込んでRのオブジェクトにする — read.vpa" />
-<meta property="og:description" content="csvファイルとしてまとめられた資源計算結果を読み込んでRのオブジェクトにする" />
+<meta property="og:title" content="ARの効果を差し引いて再生産関係をプロットする — plot_SR_AReffect" />
+<meta property="og:description" content="ARの効果を差し引いて再生産関係をプロットする" />
 
 
 
@@ -123,50 +123,33 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>csvファイルとしてまとめられた資源計算結果を読み込んでRのオブジェクトにする</h1>
+    <h1>ARの効果を差し引いて再生産関係をプロットする</h1>
     
-    <div class="hidden name"><code>read.vpa.Rd</code></div>
+    <div class="hidden name"><code>plot_SR_AReffect.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>csvファイルとしてまとめられた資源計算結果を読み込んでRのオブジェクトにする</p>
+    <p>ARの効果を差し引いて再生産関係をプロットする</p>
     </div>
 
-    <pre class="usage"><span class='fu'>read.vpa</span><span class='op'>(</span>
-  <span class='va'>tfile</span>,
-  caa.label <span class='op'>=</span> <span class='st'>"catch at age"</span>,
-  maa.label <span class='op'>=</span> <span class='st'>"maturity at age"</span>,
-  waa.label <span class='op'>=</span> <span class='st'>"weight at age"</span>,
-  waa.biomass.label <span class='op'>=</span> <span class='st'>"weight at age for biomass calculation"</span>,
-  waa.catch.label <span class='op'>=</span> <span class='st'>"weight at age for catch calculation"</span>,
-  M.label <span class='op'>=</span> <span class='st'>"M at age"</span>,
-  faa.label <span class='op'>=</span> <span class='st'>"fishing mortality at age"</span>,
-  Fc.label <span class='op'>=</span> <span class='st'>"Current F"</span>,
-  naa.label <span class='op'>=</span> <span class='st'>"numbers at age"</span>,
-  Blimit <span class='op'>=</span> <span class='cn'>NULL</span>,
-  Pope <span class='op'>=</span> <span class='cn'>NULL</span>,
-  plus.group <span class='op'>=</span> <span class='cn'>NULL</span>,
-  fc.year <span class='op'>=</span> <span class='cn'>NULL</span>
-<span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>plot_SR_AReffect</span><span class='op'>(</span><span class='va'>res</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>tfile</th>
-      <td><p>資源計算結果がまとめられたcsvファイルの名前</p></td>
-    </tr>
-    <tr>
-      <th>Pope</th>
-      <td><p>VPA計算時にどっちを使っているかここで設定する（TRUE or FALSE）。デフォルトはNULLで、その場合にはcaa,faa,naaの関係から自動判別するが、自動判別の結果が出力されるので、それをみて正しく判断されているか確認してください。</p></td>
-    </tr>
-    <tr>
-      <th>plus.group</th>
-      <td><p>プラスグループを考慮するかどうか。こちらについても、NULLの場合にはfaaとnaaの関係から自動判別するが、結果を一応確認すること。</p></td>
+      <th>res</th>
+      <td><p>fit.SRから返されるオブジェクト</p></td>
     </tr>
     </table>
 
 
+    <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
+    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
+
+<span class='op'>}</span>
+
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

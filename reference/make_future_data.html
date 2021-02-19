@@ -137,6 +137,7 @@
   nsim <span class='op'>=</span> <span class='fl'>1000</span>,
   nyear <span class='op'>=</span> <span class='fl'>50</span>,
   plus_age <span class='op'>=</span> <span class='cn'>NULL</span>,
+  plus_group <span class='op'>=</span> <span class='cn'>NULL</span>,
   future_initial_year_name <span class='op'>=</span> <span class='fl'>2017</span>,
   start_F_year_name <span class='op'>=</span> <span class='fl'>2018</span>,
   start_biopar_year_name <span class='op'>=</span> <span class='fl'>2018</span>,
@@ -206,7 +207,11 @@
     </tr>
     <tr>
       <th>plus_age</th>
-      <td><p>プラスグループとして計算する行（年齢ではないことに注意）。デフォルト値（NULL）ならfuture_initial_year_name年にNA以外の数値が入っている一番大きい年齢をプラスグループの年齢とする</p></td>
+      <td><p>プラスグループとして計算する行（年齢ではないことに注意）。デフォルト値（NULL）ならfuture_initial_year_name年にNA以外の数値が入っている一番大きい行をプラスグループの行とする。plus_ageという名前だが、plus_group=FALSEの場合には、たんに最大年齢になる。</p></td>
+    </tr>
+    <tr>
+      <th>plus_group</th>
+      <td><p>プラスグループを考慮するかどうか。与えない場合、res_vpa$input$plus.groupの設定を引き継ぐ。ただし、inputを使ってdo.callする場合などにはうまく調整できないことがあるので、明示的に与えたほうがよいかも。</p></td>
     </tr>
     <tr>
       <th>future_initial_year_name</th>
