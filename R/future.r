@@ -6,7 +6,8 @@
 #' @param res_vpa vpaの結果 (vpa関数の返り値)
 #' @param nsim シミュレーションの繰り返し回数
 #' @param nyear 将来予測の実施年数
-#' @param plus_age プラスグループとして計算する行（年齢ではないことに注意）。デフォルト値（NULL）ならfuture_initial_year_name年にNA以外の数値が入っている一番大きい年齢をプラスグループの年齢とする
+#' @param plus_age プラスグループとして計算する行（年齢ではないことに注意）。デフォルト値（NULL）ならfuture_initial_year_name年にNA以外の数値が入っている一番大きい行をプラスグループの行とする。plus_ageという名前だが、plus_group=FALSEの場合には、たんに最大年齢になる。
+#' @param plus_group プラスグループを考慮するかどうか。与えない場合、res_vpa$input$plus.groupの設定を引き継ぐ。ただし、inputを使ってdo.callする場合などにはうまく調整できないことがあるので、明示的に与えたほうがよいかも。
 #' @param future_initial_year_name 将来予測の「初期値となる」年齢別資源尾数を参照する年。この年の年齢別資源尾数を使って翌年の個体群動態が将来予測で決定される
 #' @param start_F_year_name 将来予測でF全体にmultiplierを乗じる場合、multiplierを乗じる最初の年
 #' @param start_biopar_year_name 生物パラメータを将来の生物パラメータとして設定された値に置き換える年の最初の年
@@ -65,6 +66,7 @@ make_future_data <- function(res_vpa,
                              nsim = 1000, # number of simulation
                              nyear = 50, # number of future year
                              plus_age  = NULL, # if null, equal to row number as plus group
+                             plus_group = NULL, 
                              future_initial_year_name = 2017,
                              start_F_year_name = 2018,
                              start_biopar_year_name=2018,
@@ -156,6 +158,7 @@ make_future_data <- function(res_vpa,
   if(silent==FALSE) print(tmpdata)
 
   if(is.null(plus_age)) plus_age <- max(which(!is.na(res_vpa$naa[,future_initial_year])))
+  if(is.null(plus_group)) plus_group <- res_vpa$input$plus.group
 
   # define empty array
   waa_mat <- waa_catch_mat <- M_mat <- maa_mat <- naa_mat <- faa_mat <- caa_mat <- waa_catch_mat <-
@@ -313,6 +316,7 @@ make_future_data <- function(res_vpa,
                    nsim = nsim,
                    nage = nage,
                    plus_age = plus_age,
+                   plus_group = plus_group,
                    recruit_age = recruit_age,
                    max_exploitation_rate=max_exploitation_rate,
                    max_F=max_F,
@@ -567,6 +571,7 @@ future_vpa_R <- function(naa_mat,
                          nsim,
                          nage,
                          plus_age,
+                         plus_group,
                          recruit_age,
                          obj_stat,
                          objective,
@@ -862,7 +867,7 @@ future_vpa_R <- function(naa_mat,
       for(iage in 1:(plus_age-1)) {
         N_mat[iage+1,t+1,] <- N_mat[iage,t,]*exp(-M_mat[iage,t,]-F_mat[iage,t,])
       }
-      N_mat[plus_age,t+1,] <- N_mat[plus_age,t+1,] + N_mat[plus_age,t,]*exp(-M_mat[plus_age,t,]-F_mat[plus_age,t,])
+      if(plus_group == TRUE) N_mat[plus_age,t+1,] <- N_mat[plus_age,t+1,] + N_mat[plus_age,t,]*exp(-M_mat[plus_age,t,]-F_mat[plus_age,t,])
       if(is_waa_fun) waa_mat[,t,] <- waa_catch_mat[,t,] <- update_waa_mat(waa=waa_mat[,t,],rand=waa_rand_mat[,t,],naa=N_mat[,t,],pars_b0=waa_par_mat[,,"b0"],pars_b1=waa_par_mat[,,"b1"])
       if(is_maa_fun) maa_mat[,t,] <-                       update_maa_mat(maa=maa_mat[,t,],rand=maa_rand_mat[,t,],naa=N_mat[,t,],pars_b0=maa_par_mat[,,"b0"],pars_b1=maa_par_mat[,,"b1"],min_value=maa_par_mat[,,"min"],max_value=maa_par_mat[,,"max"])
     }
