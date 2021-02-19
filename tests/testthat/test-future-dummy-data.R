@@ -200,14 +200,18 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
   vpa_no_plus <- do.call(vpa,vpa_no_plus_input)
   vpa_no_plus$naa %>% apply(1,mean) %>% as.numeric() %>%
     expect_equal(c(4,3,2,1))
+  
+  expect_equal(detect_plus_group(vpa_no_plus),FALSE)
+  expect_equal(detect_plus_group(vpa_list[[1]]),TRUE)  
 
-  # VPAでプラスグループなしオプションを使う場合は将来予測にそのまま引き継がれる
-  # 現状ではエラーが出る（将来予測でプラスグループなしオプションがないので）
+  # VPAでプラスグループなしオプションを使う場合は将来予測にそのまま引き継がれるはずだが、do.callを使う場合にはそうでない
+  # 明示的に指定する
   res_future_no_plus <- redo_future(data_future_test,
-                                    list(res_vpa=vpa_no_plus,M=c(0,0,0,0)),
+                                    list(res_vpa=vpa_no_plus,M=c(0,0,0,0),plus_group=FALSE),
                                     optim_method="none", multi_init=0)
   expect_equal(mean(res_future_no_plus$naa[,as.character(2025:2030),]),4, tol=0.0001)
 
+  
 })
 
 context("check future_vpa_function for regime shift") # ダミーデータ・レジームシフト将来予測 ----
