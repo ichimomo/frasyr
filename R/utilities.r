@@ -205,6 +205,7 @@ Generation.Time <- function(vpares,
                             maa=NULL,
                             M.year=2014:2015,
                             M=NULL,
+                            age=NULL,
                             Plus = 19
 ){
 
@@ -219,10 +220,12 @@ Generation.Time <- function(vpares,
     M <- M[!is.na(M)]
   }
 
-  age <- as.numeric(names(maa))
-  maa <- c(maa, rep(1,Plus))
-  M <- c(M, rep(M[length(M)],Plus))
-  age <- c(age, max(age)+1:Plus)
+  if(is.null(age)) age <- as.numeric(names(maa))
+  if(Plus>0){
+    maa <- c(maa, rep(1,Plus))
+    M <- c(M, rep(M[length(M)],Plus))
+    age <- c(age, max(age)+1:Plus)
+  }
   A <- length(M)
   L <- c(1,exp(-cumsum(M[-A])))
   G <- sum(age*L*maa)/sum(L*maa)

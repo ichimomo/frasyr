@@ -143,7 +143,15 @@ test_that("solv.Feq",{
 })
 
 test_that("Generation.Time",{
-  # 使われていない。
+    Generation.Time(vpares=res_vpa) %>% round(3) %>%
+        expect_equal(2.919)
+    Generation.Time(vpares=res_vpa, Plus=0) %>% round(3) %>%
+        expect_equal(1.91)
+    Generation.Time(maa=c(1,1,1),M=c(0,0,0),age=0:2,Plus=0)%>%
+        expect_equal(mean(0:2))
+    Generation.Time(maa=c(1,1,1),M=c(0,0,0),age=0:2)%>%
+        expect_equal(mean(0:(2+19)))    
+
 })
 
 test_that("get.SPR", {
