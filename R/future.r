@@ -543,7 +543,8 @@ future_vpa <- function(tmb_data,
                         maa=res_future$maa[tmp,i,j],
                         M  =res_future$input$tmb_data$M_mat[tmp,i,j],
                         waa.catch=res_future$waa_catch_mat[tmp,i,j],
-                        SPRtarget=SPRtarget)
+                        SPRtarget=SPRtarget,
+                        plus_group=tmb_data$plus_group)
         }
       }}}
 
