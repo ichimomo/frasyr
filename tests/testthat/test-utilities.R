@@ -57,6 +57,7 @@ test_that("calc_future_perSPR accepts list with different length vectors", {
                                            maa       = future_data$data$maa_mat,
                                            M         = future_data$data$M_mat,
                                            waa.catch = future_data$data$waa_catch_mat),
+                               res_vpa=result_vpa,
                                Fvector = apply_year_colum(result_vpa$faa, 2007:2011),
                                target.year = list(waa       = 2014:2018,
                                                   waa.catch = 2014:2018,
@@ -143,7 +144,15 @@ test_that("solv.Feq",{
 })
 
 test_that("Generation.Time",{
-  # 使われていない。
+    Generation.Time(vpares=res_vpa) %>% round(3) %>%
+        expect_equal(2.919)
+    Generation.Time(vpares=res_vpa, Plus=0) %>% round(3) %>%
+        expect_equal(1.91)
+    Generation.Time(maa=c(1,1,1),M=c(0,0,0),age=0:2,Plus=0)%>%
+        expect_equal(mean(0:2))
+    Generation.Time(maa=c(1,1,1),M=c(0,0,0),age=0:2)%>%
+        expect_equal(mean(0:(2+19)))    
+
 })
 
 test_that("get.SPR", {
