@@ -57,6 +57,7 @@ test_that("calc_future_perSPR accepts list with different length vectors", {
                                            maa       = future_data$data$maa_mat,
                                            M         = future_data$data$M_mat,
                                            waa.catch = future_data$data$waa_catch_mat),
+                               res_vpa=result_vpa,
                                Fvector = apply_year_colum(result_vpa$faa, 2007:2011),
                                target.year = list(waa       = 2014:2018,
                                                   waa.catch = 2014:2018,
