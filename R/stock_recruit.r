@@ -363,7 +363,7 @@ fit.SR <- function(SRdata,
   Res$BIC <- -2*loglik+k*log(NN)
 
   if(!is.null(bio_par)){
-    Res$steepness <- calc_steepness(SR=SR,Res$pars,bio_par$M,bio_par$waa,bio_par$maa,plus_group=TRUE)
+    Res$steepness <- calc_steepness(SR=SR,Res$pars,bio_par$M,bio_par$waa,bio_par$maa,plus_group=plus_group)
   }
 
   class(Res) <- "fit.SR"
