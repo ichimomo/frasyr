@@ -221,8 +221,8 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
                                     optim_method="none",
                                     multi_init=BRP$summary$FpSPR.90.SPR[3])
   
-  x <- rev(rowMeans(res_future_no_plus_F90$SR_mat[,,"ssb"]))[1]/rev(rowMeans(res_future_no_plus$SR_mat[,,"ssb"]))[1]  %>%  unlist() %>% as.numeric()
-  expect_equal(round(x,3),0.9)
+  x <- rev(rowMeans(res_future_no_plus_F90$SR_mat[,,"ssb"]))[1]/rev(rowMeans(res_future_no_plus$SR_mat[,,"ssb"]))[1]  %>%  unlist() %>% as.numeric() %>% as.numeric()
+  expect_equal(round(as.numeric(x),3),0.9)
   
 
   

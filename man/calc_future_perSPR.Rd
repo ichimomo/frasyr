@@ -12,7 +12,6 @@ calc_future_perSPR(
   is_pope = NULL,
   plus_group = NULL,
   Fmax = 10,
-  max.age = Inf,
   target.col = NULL,
   target.year = NULL,
   SPRtarget = NULL,
@@ -29,8 +28,6 @@ calc_future_perSPR(
 \item{is_pope}{res_vpaがない場合、popeの式を使うか}
 
 \item{plus_group}{es_vpaがない場合、プラスグループを考慮するか}
-
-\item{max.age}{SPR計算のときに考慮する最大年齢。デフォルトは無限大。}
 
 \item{target.col}{将来予測の何列目の年を取り出すか（NULLの場合、最後の年）}
 
