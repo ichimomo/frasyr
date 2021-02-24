@@ -155,10 +155,14 @@ make_future_data <- function(res_vpa,
     group_by(allyear_label) %>%
     summarize(start=min(allyear_name),end=max(allyear_name)) %>%
     arrange(start)
-  if(silent==FALSE) print(tmpdata)
-
   if(is.null(plus_age)) plus_age <- max(which(!is.na(res_vpa$naa[,future_initial_year])))
   if(is.null(plus_group)) plus_group <- res_vpa$input$plus.group
+
+  if(silent==FALSE){
+      print(tmpdata)
+      cat("plus.group =",plus_group,"\n")
+      cat("Pope =",Pope,"\n")
+  }  
 
   # define empty array
   waa_mat <- waa_catch_mat <- M_mat <- maa_mat <- naa_mat <- faa_mat <- caa_mat <- waa_catch_mat <-

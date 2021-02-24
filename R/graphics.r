@@ -1685,7 +1685,7 @@ compare_kobeII <- function(kobeII_list,
 #' @param years 全ての年をプロットしない場合、\code{years=1985:2011}のようにプロットする年を指定する
 #' @export
 plot_sprypr <- function(result_vpa, type, years=NULL) {
-  df <- get.SPR(result_vpa, target.SPR = 30, Fmax = 10, max.age=Inf)$ysdata
+  df <- get.SPR(result_vpa, target.SPR = 30, Fmax = 10)$ysdata
   if (type == "perspr") {
     df$Year <- as.numeric(rownames(df))
     if (!is.null(years)) df = df %>% dplyr::filter(Year %in% years)

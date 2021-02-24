@@ -14,8 +14,10 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
 
   res_sr_list <- list()
   for(i in 1:length(vpa_list)){
+      biopar <- derive_biopar(vpa_list[[i]],derive_year=2017)
+      biopar$M[nrow(biopar)] <- 100
       x <- vpa_list[[i]]
-      res_sr <- res_sr_list[[i]] <- get.SRdata(x) %>% fit.SR(AR=0, SR="HS")
+      res_sr <- res_sr_list[[i]] <- get.SRdata(x) %>% fit.SR(AR=0, SR="HS",bio_par=biopar)
       # SB、Rが同じにならない（SD>0）ケースは単純テストから除く
       if(res_sr$pars$sd < 0.001){
         const_ssr <- mean(colSums(x$ssb))
@@ -210,6 +212,18 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
                                     list(res_vpa=vpa_no_plus,M=c(0,0,0,0),plus_group=FALSE),
                                     optim_method="none", multi_init=0)
   expect_equal(mean(res_future_no_plus$naa[,as.character(2025:2030),]),4, tol=0.0001)
+  rev(rowMeans(res_future_no_plus$SR_mat[,,"ssb"]))[1] %>% as.numeric() %>%
+      expect_equal(res_sr_list[[1]]$steepness$SB0)
+
+  BRP <- ref.F(vpa_no_plus,M=c(0,0,0,0.0001),Fcurrent=rep(Fvalue,4))
+  res_future_no_plus_F90 <- redo_future(data_future_test,
+                                    list(res_vpa=vpa_no_plus,M=c(0,0,0,0),plus_group=FALSE),
+                                    optim_method="none",
+                                    multi_init=BRP$summary$FpSPR.90.SPR[3])
+  
+  x <- rev(rowMeans(res_future_no_plus_F90$SR_mat[,,"ssb"]))[1]/rev(rowMeans(res_future_no_plus$SR_mat[,,"ssb"]))[1]  %>%  unlist() %>% as.numeric() %>% as.numeric()
+  expect_equal(round(as.numeric(x),3),0.9)
+  
 
   
 })
@@ -413,6 +427,3 @@ test_that("future_vpa function (with dummy vpa data) for regime shift (level 2-3
 
 })
 
-# no plus group option
-
-vpa_list[[1]]$input$plus.group <- FALSE

@@ -14,7 +14,7 @@ get.SPR(dres, target.SPR = 30, Fmax = 10, max.age = Inf)
 
 \item{Fmax}{F/Ftargetを推定するときに探索するFの乗数の最大値}
 
-\item{max.age}{SPRやYPRの計算をするときに最大何歳まで考慮するか（デフォルトは無限大)。値の指定の仕方はhelp(ref.F)を参照のこと}
+\item{max.age}{SPRやYPRの計算をするときに最大何歳まで考慮するか（年齢のラベルではなく、ベクトルの長さ。デフォルトは無限大)。VPA計算でプラスグループを考慮していない（dres$input$plus.group==FALSE)場合には自動的に設定される。}
 }
 \description{
 VPA計算結果を使って毎年のF at ageがどのくらいのSPR, YPRに相当するかを計算する。また、各年のFが、目標としたSPR（target.SPR）を達成するためのF(Ftarget)の何倍(F/Ftarget)に相当するかも計算する。F/Ftargetは数値的に探索するが、そのときのF/Ftargetの上限をFmaxにて指定する。十分大きい値（デフォルトは１０）を与えておけば大丈夫だが、Ftargetが非常に小さい数字になりそうな場合にはこの値をもっと大きくとるなどする。また、SPRの計算は、デフォルトでは等比級数の和の公式を使って、無限大の年齢までSPRを足しているが、max.ageを指定することで、有限の年齢までの和も計算できる。

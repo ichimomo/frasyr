@@ -281,7 +281,7 @@ dyn.msy <- function(naa.past,naa.init=NULL,fmsy,a,b,resid,resid.year,waa,maa,M,S
 #' @param maa.year 年を指定して生物パラメータを仮定する場合．年の範囲の平均値が用いられる．NULLの場合，VPA最終年の値が使われる
 #' @param rps.year Fmedの計算に使うRPSの年の範囲．NULLの場合，全範囲が用いられる
 #' @param rps.vector Fmedの計算に使うRPSのベクトル。rps.yearよりもこちらが優先される。
-#' @param max.age 加入年齢を０歳としたときに、SPR計算で考慮される最大の年齢（年齢の数ではないことに注意, デフォルトはInf）。加入年齢が１歳以上のときは、SPR計算で考慮したい年齢-加入年齢を入力する、またはmin.ageの引数に加入年齢を設定する。
+#' @param max.age 加入年齢を０歳としたときに、SPR計算で考慮される最大の年齢の名前（何行目とかじゃないことに注意, デフォルトはInf）。min.ageも同様。VPA結果を与える場合にはVPA結果から自動的にもってくる。
 #' @param min.age VPA結果を与える場合にはVPA結果から自動的にもってくるが、VPA結果を与えない場合、加入年齢を入力する
 #' @param  pSPR = seq(10,90,by=10), # F\%SPRを計算するときの％SPR
 #' @param d 0.001
@@ -431,16 +431,20 @@ ref.F <- function(
   }
 
   if(!is.null(res) && res$input$plus.group==FALSE){
-    max.age <- max(as.numeric(rownames(res$naa)))
     min.age <- min(as.numeric(rownames(res$naa)))
+    max.age <- max(as.numeric(rownames(res$naa)))    
   }
 
-  original.spr <- calc.rel.abund(Fcurrent,1,na,M,waa,waa.catch,maa,min.age=min.age,
-                                 max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)
-  original.spr0 <- calc.rel.abund(Fcurrent,0,na,M,waa,waa.catch,maa,min.age=min.age,
-                                  max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)
-  original.perspr <- sum(original.spr$spr,na.rm=T)/sum(original.spr0$spr,na.rm=T)
+  calc.rel.abund2_ <- function(Fx,multi){
+    calc.rel.abund(Fx,multi,na,M,waa,waa.catch,maa,
+                   min.age=min.age,
+                   max.age=max.age,
+                   Pope=Pope,ssb.coef=ssb.coef)
+  }
 
+  original.spr <- calc.rel.abund2_(Fcurrent,1)
+  original.spr0 <- calc.rel.abund2_(Fcurrent,0)
+  original.perspr <- sum(original.spr$spr,na.rm=T)/sum(original.spr0$spr,na.rm=T)
 
   # Fcurrent
   Fcurrent_max_mean <- c(max(Fcurrent,na.rm=T), mean(Fcurrent,na.rm=T))
@@ -448,8 +452,8 @@ ref.F <- function(
   # grid search
   Fcurrent_max <- Fcurrent_max_mean[1]
   F.range <- sort(c(F.range,  Fcurrent_max))
-  spr0 <- sum(calc.rel.abund(Fcurrent,0,na,M,waa,waa.catch,maa,min.age=min.age,max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)$spr,na.rm=T)
-  tmp <- lapply(F.range, function(x) calc.rel.abund(sel,x,na,M,waa,waa.catch,maa,min.age=min.age,max.age=max.age,Pope=Pope,ssb.coef=ssb.coef))
+  spr0 <- sum(original.spr0$spr,na.rm=T)
+  tmp <- lapply(F.range, function(x) calc.rel.abund2_(sel,x))
   ypr <- sapply(tmp,function(x) sum(x$ypr,na.rm=T))
   pspr <- sapply(tmp,function(x) sum(x$spr,na.rm=T))/spr0*100
   ypr.spr <- data.frame(F.range=F.range,ypr=ypr,pspr=pspr)
@@ -460,7 +464,7 @@ ref.F <- function(
   spr.f.est <- function(log.p, out=FALSE, sub="med", spr0=NULL){
     Fr <- exp(log.p)
 
-    tmp <- calc.rel.abund(sel,Fr,na,M,waa,waa.catch,maa,min.age=min.age,max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)
+    tmp <- calc.rel.abund2_(sel,Fr)
     rel.abund <- tmp$rel.abund
     spr <- sum(tmp$spr,na.rm=T)
     if (isTRUE(out)) obj <- spr
@@ -514,7 +518,7 @@ ref.F <- function(
   ypr.f.est <- function(log.p, out=FALSE){
     Fr <- exp(log.p)
 
-    tmp <- calc.rel.abund(sel,Fr,na,M,waa,waa.catch,maa,min.age=min.age,max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)
+    tmp <- calc.rel.abund2_(sel,Fr)
     rel.abund <- tmp$rel.abund
     ypr <- sum(tmp$ypr,na.rm=T)
 
@@ -532,7 +536,7 @@ ref.F <- function(
   Fp <- function(log.p, out=FALSE){
     Fr <- exp(log.p)
 
-    tmp <- calc.rel.abund(sel,Fr,na,M,waa,waa.catch,maa,min.age=min.age,max.age=max.age,Pope=Pope,ssb.coef=ssb.coef)
+    tmp <- calc.rel.abund2_(sel,Fr)
     rel.abund <- tmp$rel.abund
     ypr <- sum(tmp$ypr,na.rm=T)
     if (isTRUE(out)) obj <- ypr else obj <- -ypr
@@ -607,7 +611,7 @@ ref.F <- function(
 #' @param dres vpa関数の返り値
 #' @param target.SPR 目標とするSPR。この値を入れると、結果の$ysdata$"F/Ftarget"で、その年のFが目標としたSPR(％)を達成するためのF（Ftarget）の何倍になっているかを返す。デフォルトは30が入っている。このとき、SPRを計算するための生物パラメータ（年齢別体重・成熟率・死亡率）はそれぞれの年で仮定されているものを用いる。
 #' @param Fmax F/Ftargetを推定するときに探索するFの乗数の最大値
-#' @param max.age SPRやYPRの計算をするときに最大何歳まで考慮するか（年齢のラベルではなく、ベクトルの長さ。デフォルトは無限大)。VPA計算でプラスグループを考慮していない（dres$input$plus.group==FALSE)場合には自動的にmax.age <- nrow(dres$naa)とする。
+#' @param max.age SPRやYPRの計算をするときに最大何歳まで考慮するか（年齢のラベルではなく、ベクトルの長さ。デフォルトは無限大)。VPA計算でプラスグループを考慮していない（dres$input$plus.group==FALSE)場合には自動的に設定される。
 #' 
 #' @encoding UTF-8
 #'
@@ -621,10 +625,6 @@ ref.F <- function(
 #' @encoding UTF-8
 
 get.SPR <- function(dres,target.SPR=30,Fmax=10,max.age=Inf){
-  if(dres$input$plus.group==FALSE){
-    max.age <- nrow(dres$naa)
-    cat("max.age (Inf) is replaced with", max.age," because plus group option is FALSE (get.SPR)\n")
-  }
   dres$ysdata <- matrix(0,ncol(dres$faa),5)
   dimnames(dres$ysdata) <- list(colnames(dres$faa),c("perSPR","YPR","SPR","SPR0","F/Ftarget"))
   for(i in 1:ncol(dres$faa)){
@@ -635,7 +635,7 @@ get.SPR <- function(dres,target.SPR=30,Fmax=10,max.age=Inf){
       a <- ref.F(dres,waa.year=byear,maa.year=byear,M.year=byear,rps.year=2000:2011,
                  pSPR=round(target.SPR),
                  F.range=c(seq(from=0,to=ceiling(max(dres$Fc.at.age,na.rm=T)*Fmax),
-                               length=301),max(dres$Fc.at.age,na.rm=T)),plot=FALSE,max.age=max.age,min.age=0)
+                               length=301),max(dres$Fc.at.age,na.rm=T)),plot=FALSE)
       # YPRと%SPR
       dres$ysdata[i,1:2] <- (as.numeric(rev(a$ypr.spr[which(a$ypr.spr$Frange2Fcurrent==1)[1],2:3])))
       # SPR
@@ -1781,7 +1781,6 @@ calc_perspr <- function(...){
 #' @param is_pope res_vpaがない場合、popeの式を使うか
 #' @param plus_group es_vpaがない場合、プラスグループを考慮するか
 #' @param Fvector Fのベクトル
-#' @param max.age SPR計算のときに考慮する最大年齢。デフォルトは無限大。
 #' @param target.col 将来予測の何列目の年を取り出すか（NULLの場合、最後の年）
 #' @param target.year 将来予測の何年目を取り出すか（年の名前）（NULLの場合、最後の年）
 #' @param SPRtarget これを与えると、Fvectorを何倍すればここで指定した\%SPRと一致するかを返すようになる
@@ -1796,7 +1795,6 @@ calc_future_perSPR <- function(fout=NULL,
                                is_pope=NULL,
                                plus_group=NULL,                               
                         Fmax=10,
-                        max.age=Inf,
                         target.col=NULL,
                         target.year=NULL,
                         SPRtarget=NULL,
@@ -2182,9 +2180,14 @@ compare_future_performance <- function(future_list,res_vpa,res_MSY,
 calc_Fratio <- function(faa, waa, maa, M, SPRtarget=30, waa.catch=NULL,Pope=TRUE, return_SPR=FALSE, plus_group=TRUE, max.age=Inf){
 
   if(plus_group==FALSE) max.age  <- length(faa)
+
+  calc.rel.abund2_ <- function(sel,Fr){
+    calc.rel.abund(sel,Fr,na=length(faa),M=M, waa=waa, waa.catch=waa.catch,
+                     min.age=1,max.age=max.age,Pope=Pope,ssb.coef=0,maa=maa)
+  }
+  
   tmpfunc <- function(x,SPR0=0,...){
-    SPR_tmp <- calc.rel.abund(sel=faa,Fr=exp(x),na=length(faa),M=M, waa=waa, waa.catch=waa.catch,
-                              min.age=0,max.age=max.age,Pope=Pope,ssb.coef=0,maa=maa)$spr %>% sum()
+    SPR_tmp <- calc.rel.abund2_(faa,exp(x))$spr %>% sum()
     sum(((SPR_tmp/SPR0*100)-SPRtarget)^2)
   }
     
@@ -2192,16 +2195,12 @@ calc_Fratio <- function(faa, waa, maa, M, SPRtarget=30, waa.catch=NULL,Pope=TRUE
     
   else{
     tmp <- !is.na(faa)
-    SPR0 <- calc.rel.abund(sel=faa,Fr=0,na=length(faa),M=M, waa=waa, waa.catch=waa.catch,maa=maa,
-                           min.age=0,max.age=max.age,Pope=Pope,ssb.coef=0)$spr %>% sum()
-    SPR_original <- calc.rel.abund(sel=faa,Fr=1,na=length(faa),M=M, waa=waa, waa.catch=waa.catch,maa=maa,
-                                   min.age=0,max.age=max.age,Pope=Pope,ssb.coef=0)$spr %>% sum()
+    SPR0 <- calc.rel.abund2_(faa,0)$spr %>% sum()
+    SPR_original <- calc.rel.abund2_(faa,1)$spr %>% sum()
     SPR_original <- SPR_original/SPR0*100
     if(!is.null(SPRtarget)){
         opt_res <- optimize(tmpfunc,interval=c(-7,log(50)),SPR0=SPR0)
-        SPR_est <- calc.rel.abund(sel=faa,Fr=exp(opt_res$minimum),na=length(faa),
-                                  M=M, waa=waa, waa.catch=waa.catch,maa=maa,
-                                  min.age=0,max.age=max.age,Pope=Pope,ssb.coef=0)$spr %>% sum()
+        SPR_est <- calc.rel.abund2_(faa,exp(opt_res$minimum))$spr %>% sum()
         SPR_est <- SPR_est/SPR0 * 100
 #        if(abs(SPR_est-SPRtarget)>0.01) {return(NA)}
         Fratio <- 1/exp(opt_res$minimum)
@@ -2269,9 +2268,6 @@ load_folder <- function(folder_name){
 #' @export
 make_kobe_ratio <- function(result_vpa, result_msy) {
 
-  if(is.null(result_vpa$input$plus.group)) result_vpa$input$plus.group <- detect_plus_group(result_vpa)
-  if(result_vpa$input$plus.group==FALSE) max.age <- nrow(result_vpa$naa) else max.age <- Inf
-
   assertthat::assert_that(
     assertthat::has_name(result_vpa, c("ssb")),
     assertthat::has_name(result_msy, c("summary")),
@@ -2292,8 +2288,7 @@ make_kobe_ratio <- function(result_vpa, result_msy) {
   get_f_ratio <- function() {
     target_spr  <- derive_RP_value(result_msy$summary,"Btarget0")$perSPR * 100
     spr_history <- get.SPR(result_vpa,
-                           target_spr,
-                           max.age = max.age, Fmax = 7)
+                           target_spr, Fmax = 7)
 
     assertthat::assert_that(
       assertthat::validate_that(is.list(spr_history)),
