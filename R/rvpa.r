@@ -205,6 +205,7 @@ backward.calc <- function(caa,naa,M,na,k,min.caa=0.001,p=0.5,plus.group=TRUE,sel
   return(out)
 }
 
+# memo: plus groupオプションに対応させる必要あり(対応させたらメモは削除してください）
 forward.calc <- function(faa,naa,M,na,k){
   out <- rep(NA, na[k])
   for (i in 2:(na[k]-1)){
@@ -989,7 +990,7 @@ if (isTRUE(madara)){
         ssb <- baa*maa*exp(-ssb.coef*(faa+M))
 
         if (is.null(rec.new) & !isTRUE(last.catch.zero)) {
-          new.naa[1] <- median((naa[1,]/colSums(ssb))[years %in% rps.year])*sum(ssb[,ny+n.add],na.rm=TRUE)
+          new.naa[1] <- NA #median((naa[1,]/colSums(ssb))[years %in% rps.year])*sum(ssb[,ny+n.add],na.rm=TRUE)
         }else if(!is.null(rec.new)) {new.naa[1] <- rec.new
         }else if(is.null(rec.new) & isTRUE(last.catch.zero)){new.naa[1] <-NA}
 
@@ -1225,7 +1226,7 @@ if (isTRUE(madara)){
           ssb <- baa*maa*exp(-ssb.coef*(faa+M))
 
           if (is.null(rec.new) & !isTRUE(last.catch.zero)) {
-            new.naa[1] <- median((naa[1,]/colSums(ssb))[years %in% rps.year])*sum(ssb[,ny+n.add],na.rm=TRUE)
+            new.naa[1] <- NA # median((naa[1,]/colSums(ssb))[years %in% rps.year])*sum(ssb[,ny+n.add],na.rm=TRUE)
           }else if(!is.null(rec.new)) {new.naa[1] <- rec.new
           }else if(is.null(rec.new) & isTRUE(last.catch.zero)){new.naa[1] <-NA}
 
