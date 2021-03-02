@@ -105,8 +105,8 @@ test_that("plot_yield", {
                                 xlim.scale=0.7,ylim.scale=1.1)
                    )
 
-  expect_equal(class(g1)[1],"gg")
-  expect_equal(class(g2)[1],"gg")
+  expect_equal(class(g1[[1]])[1],"gg")
+  expect_equal(class(g1[[2]])[1],"gg")
 })
 
 test_that("plot_kobe_gg", {
