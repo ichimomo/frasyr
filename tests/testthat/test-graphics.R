@@ -87,29 +87,27 @@ test_that("plot_waa", {
   expect_equal(class(g1)[1],"list")
 })
 
-#test_that("plot_yield", {
-#  refs.plot <- dplyr::filter(res_MSY$summary, RP.definition%in%c("Btarget0", "Blimit0", "Bban0"))
-#  (graph_MSY$yield_curve_detail <- plot_yield(res_MSY$trace,
-#                                              refs.plot,
-#                                              refs.label=label_name_kobe,
-#                                              future=list(res_future_0.8HCR),
-#                                              past=res_vpa,label=FALSE,
-#                                              refs.color=rep("black",3),
-#                                              biomass.unit=1000,
-#                                              AR_select=FALSE,
-#                                              past_year_range=past_year_range_yieldcurve,
-#                                              xlim.scale=0.7,ylim.scale=1.1
-#                                              ) + theme_SH())
-#  refs.plot <- dplyr::filter(res_MSY_HSL1$summary, RP.definition%in%c("Btarget0", "Blimit0", "Bban0"))
-#  
-#  load(system.file("extdata","refs_base_pma.rda",package = "frasyr"))
-#  g1 <- plot_yield(MSY_obj=refs.plot, refs_base=refs_base_pma)
-#  
-#  g1 <- plot_yield(MSY_obj=res_MSY, refs_base=refs_base_pma)
-#  g2 <- plot_yield(MSY_obj=res_MSY_pma, refs_base=refs_base_pma, biomass.unit=1, age.label.ratio = 0.9)
-#  expect_equal(class(g1)[1],"gg")
-#  expect_equal(class(g2)[1],"gg")
-#})
+test_that("plot_yield", {
+  refs.plot <- dplyr::filter(res_MSY$summary, RP.definition%in%c("Btarget0", "Blimit0", "Bban0"))
+
+  g1 <- purrr::map(c(TRUE,FALSE),
+                   function(x)
+                     plot_yield(res_MSY$trace,
+                                refs.plot,
+                                refs.label=NULL,
+                                future=list(res_future_0.8HCR),
+                                past=res_vpa,label=FALSE,
+                                refs.color=rep("black",3),
+                                biomass.unit=1000,
+                                AR_select=FALSE,
+                                past_year_range=NULL,
+                                plus_group=x,
+                                xlim.scale=0.7,ylim.scale=1.1)
+                   )
+
+  expect_equal(class(g1[[1]])[1],"gg")
+  expect_equal(class(g1[[2]])[1],"gg")
+})
 
 test_that("plot_kobe_gg", {
   load(system.file("extdata","refs_base_pma.rda",package = "frasyr"))
