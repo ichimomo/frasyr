@@ -813,13 +813,20 @@ out.vpa <- function(res=NULL,    # VPA result
   }
 
   if(!is.null(srres)){
+
+    write("\n# SR fit data",file=csvname,append=T)
+    srres$input$SRdata %>% as_tibble() %>%  mutate(weight=srres$input$w) %>%
+      write_csv(path=csvname,append=T,col_names=TRUE)
+    
     write("\n# SR fit resutls",file=csvname,append=T)    
     if(class(srres)=="fit.SR"){
       sr_summary <-
-        as_tibble(srres$pars) %>% mutate(AICc   =srres$AICc,
-                                         AIC    =srres$AIC,
-                                         method=srres$input$method,
-                                         type  =srres$input$SR)
+        as_tibble(srres$pars) %>% mutate(AICc   = srres$AICc,
+                                         AIC    = srres$AIC,
+                                         method = srres$input$method,
+                                         type   = srres$input$SR,
+                                         AR     = srres$input$AR,
+                                         out.AR = srres$input$out.AR)
       write_csv(sr_summary,path=csvname,append=T,
                 col_names=TRUE)
     }
@@ -830,11 +837,11 @@ out.vpa <- function(res=NULL,    # VPA result
              type  =srres$input$SR) %>%
         write_csv(path=csvname,append=T,col_names=TRUE)
 
-      srres$regime_pars %>%
-        write_csv(path=csvname,append=T,col_names=TRUE)
+      partable <- srres$regime_pars 
     }
-    if(!is.null(srres$steepness)) srres$steepness %>%
-                                    write_csv(path=csvname,append=T,col_names=TRUE)          
+    if(!is.null(srres$steepness)) partable <- partable %>% left_join(srres$steepness)
+
+    write_csv(partable, path=csvname,append=T,col_names=TRUE)
   }
 
   if(!is.null(msyres)){
