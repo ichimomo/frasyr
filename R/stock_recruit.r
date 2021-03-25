@@ -1438,7 +1438,6 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
     # for fit.SR ----
     # parameter histogram ----
     if(ggplt){ # ggplot (plot histograms of a,b,B0,h,R0,rho,SB0,sd)
-      if (output) png(file = paste0(filename,"_pars.png"), width=10, height=10, res=432, units='in')
 
       res_boot_par_tibble <- purrr::map_dfr(boot.res[1:N], convert_SR_tibble) %>% dplyr::filter(type=="parameter"&name!="SPR0")
 
@@ -1457,12 +1456,11 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
 
       res_boot_par_tibble <- res_boot_par_tibble_summary %>% select(name, name_with_CI) %>% right_join(res_boot_par_tibble)
 
-      bootsr_col <- c("blue","blue","green","darkgreen")
-      plot_bootsr_col <- rep(bootsr_col,length(levels(as.factor(res_boot_par_tibble$name))))
-      plot_bootsr_est_col <- c("red")
+      plot_col <- c("blue","blue","red","darkgreen","green")
+      base_linetype <- c("solid")
       bootsr_linetype <- c("dashed","dashed","longdashed","solid")
       plot_bootsr_linetype <- rep(bootsr_linetype,length(levels(as.factor(res_boot_par_tibble$name))))
-      plot_bootsr_est_linetype <- c("solid")
+      #legend.labels <- c("estimated", "CI10", "CI90","mean","median")
 
       if (boot.res$input$method=="d") {
         plot_bootsr_title<- paste0("Data Bootstrap")
@@ -1474,10 +1472,12 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
         }
       }
 
-      ggplot(res_boot_par_tibble) + geom_histogram(aes(x=value)) + facet_wrap(.~fct_inorder(name_with_CI), scale="free")+theme_SH(legend.position="bottom") + labs(title=plot_bootsr_title)+
-        geom_vline(data=res_boot_par_tibble_summary, mapping = aes(xintercept=value,color=stats)) + scale_linetype_manual(name="",values = plot_bootsr_linetype) + scale_color_manual(name="",values = plot_bootsr_col) +
-        geom_vline(data=res_boot_par_base, mapping = aes(xintercept=value,color=stats))
-
+      boot_par_hist <-ggplot(res_boot_par_tibble) + geom_histogram(aes(x=value)) + facet_wrap(.~fct_inorder(name_with_CI), scale="free")+theme_SH(legend.position="bottom")  + labs(title=plot_bootsr_title)+
+        geom_vline(data=res_boot_par_base, mapping = aes(xintercept=value,color=stats),linetype=base_linetype) +
+        geom_vline(data=res_boot_par_tibble_summary, mapping = aes(xintercept=value,color=stats),linetype="dashed") +
+        scale_color_manual(name="stats",values = plot_col) #+
+      #scale_linetype_manual(name="",values = plot_bootsr_linetype) #+ #scale_color_discrete(name="stats",breaks=legend.labels)
+      if (output) ggsave(file = paste0(filename,"_pars.png"), plot=boot_par_hist, width=10, height=10,  units='in')
       if (output) dev.off()
     }
     else { #plot not using ggplot
