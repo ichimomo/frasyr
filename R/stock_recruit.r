@@ -1064,8 +1064,9 @@ fit.SRregime <- function(
       Res$steepness <- purrr::map_dfr(seq_len(nrow(par.matrix)),
                                 function(i){
                                     calc_steepness(SR=SR,rec_pars=par.matrix[i,],M=bio_par$M,waa=bio_par$waa,maa=bio_par$maa,
-                                                   plus_group=plus_group)
-                                },.id="id")
+                                                   plus_group=plus_group) %>%
+                                        mutate(regime=Res$regime_pars$regime[i])
+                                })
   }
 
   Res$pars <- NULL

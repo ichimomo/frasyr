@@ -970,6 +970,7 @@ plot_yield <- function(MSY_obj,refs_base,
                        future.replicate=NULL,
                        past=NULL,
                        past_year_range=NULL,
+                       plus_group=TRUE,
                        future.name=NULL){
 
   junit <- c("","十","百","千","万")[log10(biomass.unit)+1]
@@ -1007,7 +1008,9 @@ plot_yield <- function(MSY_obj,refs_base,
     refs.label <- str_c(refs_base$RP_name,":",refs_base$RP.definition)
     refs.color <- 1:length(refs.label)
   }
-  refs_base$refs.label <- refs.label
+    refs_base$refs.label <- refs.label
+
+  plus.char <- ifelse(plus_group==TRUE,"+","")
 
   xmax <- max(trace$ssb.mean,na.rm=T)
   age.label.position <- trace$ssb.mean[which.min((trace$ssb.mean-xmax*xlim.scale*age.label.ratio)^2)]
@@ -1015,7 +1018,7 @@ plot_yield <- function(MSY_obj,refs_base,
     mutate(cumcatch=cumsum(value)-value/2)%>%
     mutate(age=as.numeric(as.character(age)))
   age.label <- age.label %>%
-    mutate(age_name=str_c("Age ",age,ifelse(age.label$age==max(age.label$age),"+","")))
+    mutate(age_name=str_c("Age ",age,ifelse(age.label$age==max(age.label$age),plus.char,"")))
 
   g1 <- g1 + geom_area(aes(x=ssb.mean,y=value,fill=`年齢`),col="black",alpha=0.5,lwd=1*0.3528) +
     #    geom_line(aes(x=ssb.mean,y=catch.CV,fill=age)) +
