@@ -1403,7 +1403,7 @@ convert_SR_tibble <- function(res_SR){
     if(!is.null(res_SR$steepness)) resSRtibble<-bind_rows(resSRtibble,tibble(value=as.numeric(res_SR$steepness),type="parameter",name=names(res_SR$steepness)))
 
   }
-
+  return(resSRtibble)
 }
 
 #' 管理基準値の表を作成する

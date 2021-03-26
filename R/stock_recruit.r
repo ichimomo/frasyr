@@ -1438,7 +1438,7 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
     # for fit.SR ----
     # parameter histogram ----
     if(ggplt){ # ggplot (plot histograms of a,b,B0,h,R0,rho,SB0,sd)
-
+      if(is.null(convert_SR_tibble(boot.res[[1]]))) print("Do fit.SR with argument(bio.par) to calculate steepness.")
       res_boot_par_tibble <- purrr::map_dfr(boot.res[1:N], convert_SR_tibble) %>% dplyr::filter(type=="parameter"&name!="SPR0")
 
       res_boot_par_tibble_summary <- res_boot_par_tibble %>%  group_by(name) %>% summarise(median=median(value),mean=mean(value),CI10=quantile(value,0.1),CI90=quantile(value,0.9)) %>% mutate(name_with_CI = str_c(name," (",round(CI10,2),"-",round(CI90,2),")")) %>% pivot_longer(cols=-c(name,name_with_CI), names_to="stats")
