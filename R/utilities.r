@@ -817,8 +817,8 @@ out.vpa <- function(res=NULL,    # VPA result
     write("\n# SR fit data",file=csvname,append=T)
     srres$input$SRdata %>% as_tibble() %>%  mutate(weight=srres$input$w) %>%
       write_csv(path=csvname,append=T,col_names=TRUE)
-    
-    write("\n# SR fit resutls",file=csvname,append=T)    
+
+    write("\n# SR fit resutls",file=csvname,append=T)
     if(class(srres)=="fit.SR"){
       sr_summary <-
         as_tibble(srres$pars) %>% mutate(AICc   = srres$AICc,
@@ -837,7 +837,7 @@ out.vpa <- function(res=NULL,    # VPA result
              type  =srres$input$SR) %>%
         write_csv(path=csvname,append=T,col_names=TRUE)
 
-      partable <- srres$regime_pars 
+      partable <- srres$regime_pars
     }
     if(!is.null(srres$steepness)) partable <- partable %>% left_join(srres$steepness)
 
@@ -1411,18 +1411,21 @@ convert_SR_tibble <- function(res_SR){
                             res_SR$input$SRdata %>% as_tibble() %>%
                               mutate(type="observed",name="observed",residual=res_SR$resid))
     if(!is.null(res_SR$steepness)) resSRtibble<-bind_rows(resSRtibble,tibble(value=as.numeric(res_SR$steepness),type="parameter",name=names(res_SR$steepness)))
-  } else{ # regimeあり
-
-        resSR1 <- pivot_longer(res_SR$regime_pars,col=-regime) %>% mutate(type="parameter",name="parameter")
-
-        resSR2 <- res_SR$pred %>% mutate(type="prediction",name="prediction")
-        resSR3 <- res_SR$input$SRdata %>% as_tibble() %>%
+  }
+  if(class(res_SR)=="fit.SRregime"){ # regimeあり
+    resSR1 <- pivot_longer(res_SR$regime_pars,col=-regime) %>% mutate(type="parameter",name="parameter")
+    resSR2 <- res_SR$pred %>% mutate(type="prediction",name="prediction")
+    resSR3 <- res_SR$input$SRdata %>% as_tibble() %>%
                               mutate(type="observed",name="observed",residual=res_SR$regime_resid)
 
-        resSRtibble<-bind_rows(resSR1,resSR2,resSR3)
+    resSRtibble<-bind_rows(resSR1,resSR2,resSR3)
 
-    if(!is.null(res_SR$steepness)) resSRtibble<-bind_rows(resSRtibble,tibble(value=as.numeric(res_SR$steepness),type="parameter",name=names(res_SR$steepness)))
-
+    if(!is.null(res_SR$steepness)) {
+      for(j in 1:nrow(res_SR$steepness)){
+        res_steepness <- res_SR$steepness[j,]
+        resSRtibble<- bind_rows(resSRtibble,tibble(value=as.numeric(res_steepness),type="parameter",name=names(res_steepness)))
+      }
+    }
   }
   return(resSRtibble)
 }
