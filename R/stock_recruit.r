@@ -1508,7 +1508,7 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
       }
       if (output) dev.off()
 
-      # steepness histogram (if avairable) ----
+      # steepness histogram (if available) ----
       if(!is.null(boot.res[[1]]$steepness)){
         if (output) png(file = paste0(filename,"_pars_steepness.png"), width=10, height=10, res=432, units='in')
         par(pch=pch,lwd = lwd, mfrow=c(2,2))
