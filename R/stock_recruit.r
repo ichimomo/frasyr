@@ -1444,7 +1444,7 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
 
       res_boot_par_tibble_summary <- res_boot_par_tibble %>%  group_by(name) %>% summarise(median=median(value),mean=mean(value),CI10=quantile(value,0.1),CI90=quantile(value,0.9)) %>% mutate(name_with_CI = str_c(name," (",round(CI10,2),"-",round(CI90,2),")")) %>% pivot_longer(cols=-c(name,name_with_CI), names_to="stats")
 
-      res_boot_par_base <- res_boot_par_tibble_summary %>% filter(stats=="median")
+      res_boot_par_base <- res_boot_par_tibble_summary %>% filter(stats=="median") #推定結果のために中央値から形だけ持ってくる
       res_fitSRtibble <- convert_SR_tibble(boot.res[["input"]]$Res) %>% dplyr::filter(type=="parameter"&name!="SPR0")
 
       for(i in 1:length(res_boot_par_base)){
@@ -1479,7 +1479,7 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
         scale_color_manual(name="stats",values = plot_col) #+
       #scale_linetype_manual(name="",values = plot_bootsr_linetype) #+ #scale_color_discrete(name="stats",breaks=legend.labels)
       if (output) ggsave(file = paste0(filename,"_pars.png"), plot=boot_par_hist, width=10, height=10,  units='in')
-      if (output) dev.off()
+
     }
     else { #plot not using ggplot
       if (output) png(file = paste0(filename,"_pars.png"), width=10, height=10, res=432, units='in')
@@ -1561,13 +1561,61 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
     if (output) dev.off()
   } else {
     # fit.SRregime ----
-    if(ggplt){ # plot using ggplot
-
-    }
-    else{ # plot not using ggplot
 
     regime_unique = boot.res$input$Res$regime_pars$regime
     obs_data = boot.res$input$Res$pred_to_obs
+
+    if(ggplt){ # plot using ggplot
+      res_base = boot.res$input$Res
+
+      res_boot_par_tibble <- purrr::map_dfr(boot.res[1:N], convert_SR_tibble) %>% dplyr::filter(type=="parameter"&name!="SPR0")
+
+      legend.labels <- c("estimated", "CI10", "CI90","mean","median")
+      plot_col <- c("blue","blue","red","darkgreen","green")
+      base_linetype <- c("solid")
+      bootsr_linetype <- c("dashed","dashed","longdashed","solid")
+      plot_bootsr_linetype <- rep(bootsr_linetype,length(levels(as.factor(res_boot_par_tibble$name))))
+
+      regime.num <- length(levels(as.factor(res_boot_par_tibble$regime)))-1
+
+      for(k in 0:regime.num){
+        if (boot.res$input$method=="d") {
+          plot_bootsr_title<- paste0("Data Bootstrap regime",k)
+        } else {
+          if (boot.res$input$method=="p") {
+            plot_bootsr_title<- paste0("Parametric Bootstrap regime",k)
+          } else {
+            plot_bootsr_title<- paste0("Non-Parametric Bootstrap regime",k)
+          }
+        }
+
+
+        res_boot_par_tibble_regime<- res_boot_par_tibble %>% filter(regime==k)
+
+        res_boot_par_tibble_summary <- res_boot_par_tibble_regime %>%  group_by(name) %>% summarise(median=median(value),mean=mean(value),CI10=quantile(value,0.1),CI90=quantile(value,0.9)) %>% mutate(name_with_CI = str_c(name," (",round(CI10,2),"-",round(CI90,2),")")) %>% pivot_longer(cols=-c(name,name_with_CI), names_to="stats")
+
+        res_boot_par_base <- res_boot_par_tibble_summary %>% filter(stats=="median")
+        res_fitSRtibble <- convert_SR_tibble(res_base) %>% dplyr::filter(type=="parameter"&name!="SPR0") %>% filter(regime==k)
+        for(i in 1:nrow(res_boot_par_base)){
+          for(j in 1:nrow(res_boot_par_base)){
+            if(res_boot_par_base$name[i] == res_fitSRtibble$name[j])
+              res_boot_par_base$value[i] <- res_fitSRtibble$value[j]
+          }
+        }
+        res_boot_par_base$stats <- "estimated"
+
+        res_boot_par_tibble_regime <- res_boot_par_tibble_summary %>% select(name, name_with_CI) %>% right_join(res_boot_par_tibble_regime)
+
+        boot_par_hist <- ggplot(res_boot_par_tibble_regime) + geom_histogram(aes(x=value)) + facet_wrap(.~fct_inorder(name_with_CI), scale="free")+theme_SH(legend.position="bottom")  + labs(title=plot_bootsr_title)+
+          geom_vline(data=res_boot_par_base, mapping = aes(xintercept=value,color=stats),linetype=base_linetype) +
+          geom_vline(data=res_boot_par_tibble_summary, mapping = aes(xintercept=value,color=stats),linetype="dashed") +
+          scale_color_manual(name="stats",values = plot_col)
+        if (output) ggsave(file = paste0(filename,"_regime",k,"_pars.png"), plot=boot_par_hist, width=10, height=10,  units='in')
+
+      }
+
+    }
+    else{ # plot not using ggplot
 
     # histogram ----
     if (output) png(file = paste0(filename,"_pars.png"), width=15, height=5*nrow(boot.res$input$Res$regime_pars), res=432, units='in')
