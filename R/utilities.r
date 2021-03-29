@@ -1416,7 +1416,7 @@ convert_SR_tibble <- function(res_SR){
     resSR1 <- pivot_longer(res_SR$regime_pars,col=-regime) %>% mutate(type="parameter")
     resSR2 <- res_SR$pred %>% mutate(type="prediction",name="prediction")
     resSR3 <- res_SR$input$SRdata %>% as_tibble() %>%
-                              mutate(type="observed",name="observed",residual=res_SR$regime_resid)
+                              mutate(type="observed",name="observed",residual=res_SR$regime_resid$resid)
 
     resSRtibble<-bind_rows(resSR1,resSR2,resSR3)
 
