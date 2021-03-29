@@ -1413,7 +1413,7 @@ convert_SR_tibble <- function(res_SR){
     if(!is.null(res_SR$steepness)) resSRtibble<-bind_rows(resSRtibble,tibble(value=as.numeric(res_SR$steepness),type="parameter",name=names(res_SR$steepness)))
   }
   if(class(res_SR)=="fit.SRregime"){ # regimeあり
-    resSR1 <- pivot_longer(res_SR$regime_pars,col=-regime) %>% mutate(type="parameter",name="parameter")
+    resSR1 <- pivot_longer(res_SR$regime_pars,col=-regime) %>% mutate(type="parameter")
     resSR2 <- res_SR$pred %>% mutate(type="prediction",name="prediction")
     resSR3 <- res_SR$input$SRdata %>% as_tibble() %>%
                               mutate(type="observed",name="observed",residual=res_SR$regime_resid)
@@ -1423,7 +1423,8 @@ convert_SR_tibble <- function(res_SR){
     if(!is.null(res_SR$steepness)) {
       for(j in 1:nrow(res_SR$steepness)){
         res_steepness <- res_SR$steepness[j,]
-        resSRtibble<- bind_rows(resSRtibble,tibble(value=as.numeric(res_steepness),type="parameter",name=names(res_steepness)))
+        res_steepness_tibble <- pivot_longer(res_steepness,col=-regime) %>% mutate(type="parameter")
+        resSRtibble<- bind_rows(resSRtibble,res_steepness_tibble)
       }
     }
   }
