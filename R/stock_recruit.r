@@ -96,7 +96,7 @@ validate_sr <- function(SR = NULL, method = NULL, AR = NULL, out.AR = NULL, res_
 #' @param bio_par data.frame(waa=c(100,200,300),maa=c(0,1,1),M=c(0.3,0.3,0.3)) のような生物パラメータをあらわすデータフレーム。waaは資源量を計算するときのweight at age, maaはmaturity at age, Mは自然死亡係数。これを与えると、steepnessやR0も計算して返す
 #' @param plus_group hなどを計算するときに、プラスグループを考慮するか
 #' # @param do_check.SRfit 計算が終わったあとでdo_check.SRfitを実施し、収束していなかった場合に１回だけ再計算するか（余計に時間がかかる）。デフォルトはFALSE
-#' 
+#'
 #' @encoding UTF-8
 #' @examples
 #' \dontrun{
@@ -277,7 +277,7 @@ fit.SR <- function(SRdata,
     for (i in 1:100) {
       if(is_jitter==FALSE) par2 <- opt$par
       if(is_jitter==TRUE)  par2 <- opt$par + rnorm(length(opt$par),0,5)
-      opt2 <- optim(par2,obj.f2)  
+      opt2 <- optim(par2,obj.f2)
       if (abs(opt$value-opt2$value)<1e-6) break
       opt <- opt2
     }
@@ -368,7 +368,7 @@ fit.SR <- function(SRdata,
 
   class(Res) <- "fit.SR"
 
-# pending  
+# pending
 #  if(do_check.SRfit==TRUE){
 #    Res2 <- Res
 #    Res2$input$do_check.SRfit <- FALSE
@@ -395,8 +395,8 @@ fit.SR <- function(SRdata,
 #' @param p0 \code{optim}で設定する初期値
 #' @encoding UTF-8
 # #' @export
-#' @noRd  
-#' 
+#' @noRd
+#'
 fit.SRalpha <- function(SRdata,
                    SR="HS",
                    alpha=0,
@@ -1065,8 +1065,8 @@ fit.SRregime <- function(
                                 function(i){
                                     calc_steepness(SR=SR,rec_pars=par.matrix[i,],M=bio_par$M,waa=bio_par$waa,maa=bio_par$maa,
                                                    plus_group=plus_group)
-                                },.id="id")      
-  }  
+                                },.id="id")
+  }
 
   Res$pars <- NULL
   return(Res)
@@ -1488,7 +1488,7 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
         }
       }
     }
-    if (output) dev.off()        
+    if (output) dev.off()
   }
 
     # SR curve
@@ -1637,7 +1637,8 @@ jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename 
   if (is.plot) {
     jack.res <- RES
     data_SR = resSR$input$SRdata
-    if (class(resSR)=="fit.SR" || class(resSR)=="fit.SRalpha") {
+    # no regime ----
+    if (class(resSR)=="fit.SR" || class(resSR)=="fit.SRalpha") {         # plot parameters ----
       if (output) png(file = paste0(filename,"_pars.png"), width=10, height=10, res=432, units='in')
       par(mfrow=c(2,2),mar=c(3,3,2,2),oma=c(3,3,2,2),pch=pch,cex=cex)
       plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$pars$a),type="b",
@@ -1660,6 +1661,28 @@ jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename 
         }
       }
       if (output) dev.off()
+      if(!is.null(resSR$steepness)){ #steepness----
+        if (output) png(file = paste0(filename,"_steepness.png"), width=10, height=10, res=432, units='in')
+        par(mfrow=c(2,2),mar=c(3,3,2,2),oma=c(3,3,2,2),pch=pch,cex=cex)
+        plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$steepness$h),type="b",
+             xlab="Year removed",ylab="",main="h in jackknife",ylim=resSR$steepness$h*ylim.range)
+        abline(resSR$steepness$h,0,lwd=2,col=2,lty=2)
+
+        plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$steepness$B0),type="b",
+           xlab="Year removed",ylab="",main="B0 in jackknife",ylim=resSR$steepness$B0*ylim.range)
+        abline(resSR$steepness$B0,0,lwd=2,col=2,lty=2)
+
+        plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$steepness$R0),type="b",
+         xlab="Year removed",ylab="",main="R0 in jackknife",ylim=resSR$steepness$R0*ylim.range)
+        abline(resSR$steepness$R0,0,lwd=2,col=2,lty=2)
+
+        plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$steepness$SB0),type="b",
+           xlab="Year removed",ylab="",main="SB0 in jackknife",ylim=resSR$steepness$SB0*ylim.range)
+        abline(resSR$steepness$SB0,0,lwd=2,col=2,lty=2)
+        if (output) dev.off()
+      }
+
+    # plot SR curve ----
       if (output) png(file = paste0(filename,"_SRcurve.png"), width=8, height=5, res=432, units='in')
       par(mar=c(3,3,2,2),oma=c(3,3,2,2),mfrow=c(1,1))
       plot(data_SR$R ~ data_SR$SSB, cex=2, type = "p",xlab="SSB",ylab="R",pch=1,
@@ -1671,8 +1694,11 @@ jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename 
       points(resSR$pred$SSB,resSR$pred$R,col=2,type="l",lwd=3,lty=2)
       legend("topright", legend=c("Estimated SR function","A jackkine SR function"),col=c("red",rgb(0,0,1,alpha=0.1)),lty=c(2,1), cex=0.8)
       if (output) dev.off()
-    } else { #fit.SRregime
+    }
+    #fit.SRregime ----
+    else {
       regime_unique = resSR$regime_resid$regime %>% unique()
+      # plot parameters ----
       if (output) png(file = paste0(filename,"_pars.png"), width=15, height=7.5, res=432, units='in')
       par(mar=c(3,3,2,2),oma=c(3,3,2,2),mfrow=c(length(regime_unique),3),pch=pch,cex=cex)
       for(j in 1:length(regime_unique)) {
@@ -1693,6 +1719,37 @@ jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename 
         abline(v=resSR$input$regime.year-0.5,lwd=1,lty=3,col="blue")
       }
       if (output) dev.off()
+
+      if(!is.null(resSR$steepness)){
+        if (output) png(file = paste0(filename,"_steepness.png"), width=15, height=7.5, res=432, units='in')
+        par(mar=c(3,3,2,2),oma=c(3,3,2,2),mfrow=c(length(regime_unique),4),pch=pch,cex=cex)
+        for(j in 1:length(regime_unique)) {
+        plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$steepness$h[j]),type="b",
+             xlab="Year removed",ylab="",
+             main=paste0("h in jackknife (regime ",regime_unique[j],")"),ylim=resSR$steepness$h[j]*ylim.range)
+        abline(resSR$steepness$h[j],0,lwd=2,col=2,lty=2)
+        abline(v=resSR$input$regime.year-0.5,lwd=1,lty=3,col="blue")
+
+        plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$steepness$B0[j]),type="b",
+             xlab="Year removed",ylab="",
+             main=paste0("B0 in jackknife (regime ",regime_unique[j],")"),ylim=resSR$steepness$B0[j]*ylim.range)
+        abline(resSR$steepness$B0[j],0,lwd=2,col=2,lty=2)
+        abline(v=resSR$input$regime.year-0.5,lwd=1,lty=3,col="blue")
+        plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$steepness$R0[j]),type="b",
+             xlab="Year removed",ylab="",
+             main=paste0("R0 in jackknife (regime ",regime_unique[j],")"),ylim=resSR$steepness$R0[j]*ylim.range)
+        abline(resSR$steepness$R0[j],0,lwd=2,col=2,lty=2)
+        abline(v=resSR$input$regime.year-0.5,lwd=1,lty=3,col="blue")
+        plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$steepness$SB0[j]),type="b",
+             xlab="Year removed",ylab="",
+             main=paste0("SB0 in jackknife (regime ",regime_unique[j],")"),ylim=resSR$steepness$SB0[j]*ylim.range)
+        abline(resSR$steepness$SB0[j],0,lwd=2,col=2,lty=2)
+        abline(v=resSR$input$regime.year-0.5,lwd=1,lty=3,col="blue")
+        }
+        if (output) dev.off()
+      }
+
+      # plot SRcurve ----
       obs_data = resSR$pred_to_obs
       if (output) png(file = paste0(filename,"_SRcurve.png"), width=12, height=6, res=432, units='in')
       par(mar=c(3,3,2,2),oma=c(3,3,2,2),mfrow=c(1,length(regime_unique)))
@@ -1712,6 +1769,7 @@ jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename 
       if (output) dev.off()
     }
   }
+
   return(invisible(RES))
 }
 
@@ -2078,7 +2136,7 @@ bootSR.ggplot = function(boot.res, CI=0.80) {
 }
 
 #' 再生産関係の推定パラメータの相関を出力する関数
-#' 
+#'
 #' @inheritParams fit.SR
 #' @inheritParams fit.SRregime
 #' @param resSR \code{fit.SR}または\code{fit.SRregime}のオブジェクト
@@ -2114,9 +2172,9 @@ corSR = function(resSR) {
 }
 
 #' Steepness (h) と関連するパラメータ (SB0,R0,B0)を計算する関数
-#' 
-#' @param SR "HS", "BH", "RI"のいずれか 
-#' @param rec_pars 再生産関係のパラメータで\code{rec_pars$a},\code{rec_pars$b}で使用する 
+#'
+#' @param SR "HS", "BH", "RI"のいずれか
+#' @param rec_pars 再生産関係のパラメータで\code{rec_pars$a},\code{rec_pars$b}で使用する
 #' @param M 年齢別自然死亡係数 (ベクトルで与えるか、年齢共通の場合\code{M=0.4}のようにしてもよい)
 #' @param waa （親魚量の）年齢別体重
 #' @param maa 年齢別親魚量
@@ -2155,13 +2213,13 @@ calc_steepness = function(SR="HS",rec_pars,M,waa,maa,plus_group=TRUE) {
   }
   NAA0 = 1
   for (i in 1:(length(waa)-1)) {
-    NAA0 = c(NAA0,rev(NAA0)[1]*exp(-M[i])) 
+    NAA0 = c(NAA0,rev(NAA0)[1]*exp(-M[i]))
   }
   if (plus_group) NAA0[length(NAA0)] = rev(NAA0)[1]/(1-exp(-1*rev(M)[1]))
   BAA0 = NAA0*waa
   SSB0 = BAA0*maa
   SPR0 = sum(SSB0) #get.SRRと一致 (testに使える)
-  
+
   # 再生産関係とy=(1/SPR0)*xの交点を求める
   rec_a = rec_pars$a
   rec_b = rec_pars$b
@@ -2184,7 +2242,7 @@ calc_steepness = function(SR="HS",rec_pars,M,waa,maa,plus_group=TRUE) {
     R0 = SB0/SPR0
     h = (rec_a*0.2*SB0*exp(-rec_b*0.2*SB0))/R0
   }
-  
+
   B0 = sum(R0*BAA0)
   Res = data.frame(SPR0 = SPR0, SB0 = SB0, R0 = R0, B0 = B0, h = h)
   return(Res)
@@ -2192,21 +2250,21 @@ calc_steepness = function(SR="HS",rec_pars,M,waa,maa,plus_group=TRUE) {
 
 
 #' 再生産関係の推定結果からbootstrapを実行し、hの分布を計算する関数
-#' 
+#'
 #' @param res_SR fit.SRまたはfit.SRregime、モデル平均の結果
 #' @param M 年齢別自然死亡係数 (ベクトルで与えるか、年齢共通の場合\code{M=0.4}のようにしてもよい)
 #' @param waa （親魚量の）年齢別体重
 #' @param maa 年齢別親魚量
 #' @param plus_group 最高齢がプラスグループかどうか
-#' 
+#'
 #' @export
-#' 
+#'
 
 
 boot_steepness <- function(res_SR, M, waa, maa, n=100, plus_group=TRUE){
 
     is.model.average <- class(res_SR)!="fit.SRregime" && class(res_SR)!="fit.SR"
-    
+
     if(is.model.average){ # model average case (calculate recursively)
       res_steepness <- purrr::map_dfr(res_SR, boot_steepness, n=n, M=M, waa=waa, maa=maa, plus_group=plus_group, .id="id")
     }else{
@@ -2229,7 +2287,7 @@ boot_steepness <- function(res_SR, M, waa, maa, n=100, plus_group=TRUE){
           res_steepness$id <- 1
           res_steepness <- res_steepness %>%
               bind_cols(purrr::map_dfr(res_boot[1:n], function(x) x$pars))
-      }}    
+      }}
 
     res_steepness
 }
