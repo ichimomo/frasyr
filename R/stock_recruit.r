@@ -1432,67 +1432,114 @@ autocor.plot = function(resSR,use.resid=1,lag.max=NULL,output = FALSE,filename =
 #' @param filename ファイル名
 #' @encoding UTF-8
 #' @export
-bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1.2,pch=1,...) {
+bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1.2,pch=1,ggplt=FALSE,...) {
   res_base = boot.res$input$Res
   if (class(boot.res$input$Res)=="fit.SR") {
     validate_sr(res_sr = boot.res$input$Res)
-    # for fit.SR
-    # parameter histogram
-    if (output) png(file = paste0(filename,"_pars.png"), width=10, height=10, res=432, units='in')
-    par(pch=pch,lwd = lwd, mfrow=c(2,2))
-    jmax = ifelse(boot.res$input$Res$pars$rho==0,3,4)
-    for (j in 1:jmax) {
-      par0 = c("a","b","sd","rho")[j]
+    # for fit.SR ----
+    # parameter histogram ----
+    if(ggplt){ # ggplot (plot histograms of a,b,B0,h,R0,rho,SB0,sd)
+      if(is.null(convert_SR_tibble(boot.res[[1]]))) print("Do fit.SR with argument(bio.par) to calculate steepness.")
+      res_boot_par_tibble <- purrr::map_dfr(boot.res[1:N], convert_SR_tibble) %>% dplyr::filter(type=="parameter"&name!="SPR0")
 
-      hist(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$pars[,par0]),xlab=par0,ylab="Frequency",main="",col="gray")
-      abline(v=boot.res$input$Res$pars[,par0],col=2,lwd=3)
-      abline(v=median(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$pars[,par0])),col=3,lwd=3,lty=2)
-      arrows(quantile(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$pars[,par0]),0.5*(1-CI)),0,
-             quantile(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$pars[,par0]),0.5*(1-CI)+CI),0,
-             col=4,lwd=3,code=3)
-      legend("topright",
-             legend=c("Estimate","Median","CI(0.8)"),lty=1:2,col=2:4,lwd=2,ncol=1,cex=1)
-      if (boot.res$input$method=="d") {
-        title(paste0(par0," in Data Bootstrap"))
-      } else {
-        if (boot.res$input$method=="p") {
-          title(paste0(par0," in Parametric Bootstrap"))
-        } else {
-          title(paste0(par0," in Non-Parametric Bootstrap"))
+      res_boot_par_tibble_summary <- res_boot_par_tibble %>%  group_by(name) %>% summarise(median=median(value),mean=mean(value),CI10=quantile(value,0.1),CI90=quantile(value,0.9)) %>% mutate(name_with_CI = str_c(name," (",round(CI10,2),"-",round(CI90,2),")")) %>% pivot_longer(cols=-c(name,name_with_CI), names_to="stats")
+
+      res_boot_par_base <- res_boot_par_tibble_summary %>% filter(stats=="median") #推定結果のために中央値から形だけ持ってくる
+      res_fitSRtibble <- convert_SR_tibble(boot.res[["input"]]$Res) %>% dplyr::filter(type=="parameter"&name!="SPR0")
+
+      for(i in 1:length(res_boot_par_base)){
+        for(j in 1:length(res_boot_par_base)){
+          if(res_boot_par_base$name[i] ==res_fitSRtibble$name[j])
+            res_boot_par_base$value[i] <- res_fitSRtibble$value[j]
         }
       }
-    }
-    if (output) dev.off()
+      res_boot_par_base$stats <- "estimated"
 
-    # steepness histogram (if avairable)
-  if(!is.null(boot.res[[1]]$steepness)){
-    if (output) png(file = paste0(filename,"_pars_steepness.png"), width=10, height=10, res=432, units='in')
-    par(pch=pch,lwd = lwd, mfrow=c(2,2))
-    for (j in 1:4) {
-      par0 = c("SB0","R0","B0","h")[j]
+      res_boot_par_tibble <- res_boot_par_tibble_summary %>% select(name, name_with_CI) %>% right_join(res_boot_par_tibble)
 
-      hist(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$steepness[,par0]),xlab=par0,ylab="Frequency",main="",col="gray")
-      abline(v=boot.res$input$Res$steepness[,par0],col=2,lwd=3)
-      abline(v=median(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$steepness[,par0])),col=3,lwd=3,lty=2)
-      arrows(quantile(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$steepness[,par0]),0.5*(1-CI)),0,
-             quantile(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$steepness[,par0]),0.5*(1-CI)+CI),0,
-             col=4,lwd=3,code=3)
-      legend("topright",
-             legend=c("Estimate","Median","CI(0.8)"),lty=1:2,col=2:4,lwd=2,ncol=1,cex=1)
+      plot_col <- c("blue","blue","red","darkgreen","green")
+      base_linetype <- c("solid")
+      bootsr_linetype <- c("dashed","dashed","longdashed","solid")
+      plot_bootsr_linetype <- rep(bootsr_linetype,length(levels(as.factor(res_boot_par_tibble$name))))
+      #legend.labels <- c("estimated", "CI10", "CI90","mean","median")
+
       if (boot.res$input$method=="d") {
-        title(paste0(par0," in Data Bootstrap"))
+        plot_bootsr_title<- paste0("Data Bootstrap")
       } else {
         if (boot.res$input$method=="p") {
-          title(paste0(par0," in Parametric Bootstrap"))
+          plot_bootsr_title<- paste0("Parametric Bootstrap")
         } else {
-          title(paste0(par0," in Non-Parametric Bootstrap"))
+          plot_bootsr_title<- paste0("Non-Parametric Bootstrap")
         }
       }
-    }
-    if (output) dev.off()
-  }
 
-    # SR curve
+      boot_par_hist <-ggplot(res_boot_par_tibble) + geom_histogram(aes(x=value)) + facet_wrap(.~fct_inorder(name_with_CI), scale="free")+theme_SH(legend.position="bottom")  + labs(title=plot_bootsr_title)+
+        geom_vline(data=res_boot_par_base, mapping = aes(xintercept=value,color=stats),linetype=base_linetype) +
+        geom_vline(data=res_boot_par_tibble_summary, mapping = aes(xintercept=value,color=stats),linetype="dashed") +
+        scale_color_manual(name="stats",values = plot_col) #+
+      #scale_linetype_manual(name="",values = plot_bootsr_linetype) #+ #scale_color_discrete(name="stats",breaks=legend.labels)
+      if (output) ggsave(file = paste0(filename,"_pars.png"), plot=boot_par_hist, width=10, height=10,  units='in')
+
+    }
+    else { #plot not using ggplot
+      if (output) png(file = paste0(filename,"_pars.png"), width=10, height=10, res=432, units='in')
+      par(pch=pch,lwd = lwd, mfrow=c(2,2))
+      jmax = ifelse(boot.res$input$Res$pars$rho==0,3,4)
+      for (j in 1:jmax) {
+        par0 = c("a","b","sd","rho")[j]
+
+        hist(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$pars[,par0]),xlab=par0,ylab="Frequency",main="",col="gray")
+        abline(v=boot.res$input$Res$pars[,par0],col=2,lwd=3)
+        abline(v=median(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$pars[,par0])),col=3,lwd=3,lty=2)
+        arrows(quantile(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$pars[,par0]),0.5*(1-CI)),0,
+               quantile(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$pars[,par0]),0.5*(1-CI)+CI),0,
+               col=4,lwd=3,code=3)
+        legend("topright",
+               legend=c("Estimate","Median","CI(0.8)"),lty=1:2,col=2:4,lwd=2,ncol=1,cex=1)
+        if (boot.res$input$method=="d") {
+          title(paste0(par0," in Data Bootstrap"))
+        } else {
+          if (boot.res$input$method=="p") {
+            title(paste0(par0," in Parametric Bootstrap"))
+          } else {
+            title(paste0(par0," in Non-Parametric Bootstrap"))
+          }
+        }
+      }
+      if (output) dev.off()
+
+      # steepness histogram (if available) ----
+      if(!is.null(boot.res[[1]]$steepness)){
+        if (output) png(file = paste0(filename,"_pars_steepness.png"), width=10, height=10, res=432, units='in')
+        par(pch=pch,lwd = lwd, mfrow=c(2,2))
+        for (j in 1:4) {
+          par0 = c("SB0","R0","B0","h")[j]
+
+          hist(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$steepness[,par0]),xlab=par0,ylab="Frequency",main="",col="gray")
+          abline(v=boot.res$input$Res$steepness[,par0],col=2,lwd=3)
+          abline(v=median(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$steepness[,par0])),col=3,lwd=3,lty=2)
+          arrows(quantile(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$steepness[,par0]),0.5*(1-CI)),0,
+                 quantile(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$steepness[,par0]),0.5*(1-CI)+CI),0,
+                 col=4,lwd=3,code=3)
+          legend("topright",
+                 legend=c("Estimate","Median","CI(0.8)"),lty=1:2,col=2:4,lwd=2,ncol=1,cex=1)
+          if (boot.res$input$method=="d") {
+            title(paste0(par0," in Data Bootstrap"))
+          } else {
+            if (boot.res$input$method=="p") {
+              title(paste0(par0," in Parametric Bootstrap"))
+            } else {
+              title(paste0(par0," in Non-Parametric Bootstrap"))
+            }
+          }
+        }
+        if (output) dev.off()
+      }
+
+    }
+
+
+    # SR curve ----
     par(mfrow=c(1,1),pch=pch,lwd = lwd)
     if (output) png(file = paste0(filename,"_SRcurve.png"), width=10, height=7.5, res=432, units='in')
     data_SR = boot.res$input$Res$input$SRdata
@@ -1514,11 +1561,64 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
     points(res_base$pred$SSB,res_base$pred$R,col=2,type="l",lwd=3)
     if (output) dev.off()
   } else {
-    # fit.SRregime
+    # fit.SRregime ----
+
     regime_unique = boot.res$input$Res$regime_pars$regime
     obs_data = boot.res$input$Res$pred_to_obs
 
-    # histogram
+    if(ggplt){ # plot using ggplot
+      res_base = boot.res$input$Res
+
+      res_boot_par_tibble <- purrr::map_dfr(boot.res[1:N], convert_SR_tibble) %>% dplyr::filter(type=="parameter"&name!="SPR0")
+
+      legend.labels <- c("estimated", "CI10", "CI90","mean","median")
+      plot_col <- c("blue","blue","red","darkgreen","green")
+      base_linetype <- c("solid")
+      bootsr_linetype <- c("dashed","dashed","longdashed","solid")
+      plot_bootsr_linetype <- rep(bootsr_linetype,length(levels(as.factor(res_boot_par_tibble$name))))
+
+      regime.num <- length(levels(as.factor(res_boot_par_tibble$regime)))-1
+
+      for(k in 0:regime.num){
+        if (boot.res$input$method=="d") {
+          plot_bootsr_title<- paste0("Data Bootstrap regime",k)
+        } else {
+          if (boot.res$input$method=="p") {
+            plot_bootsr_title<- paste0("Parametric Bootstrap regime",k)
+          } else {
+            plot_bootsr_title<- paste0("Non-Parametric Bootstrap regime",k)
+          }
+        }
+
+
+        res_boot_par_tibble_regime<- res_boot_par_tibble %>% filter(regime==k)
+
+        res_boot_par_tibble_summary <- res_boot_par_tibble_regime %>%  group_by(name) %>% summarise(median=median(value),mean=mean(value),CI10=quantile(value,0.1),CI90=quantile(value,0.9)) %>% mutate(name_with_CI = str_c(name," (",round(CI10,2),"-",round(CI90,2),")")) %>% pivot_longer(cols=-c(name,name_with_CI), names_to="stats")
+
+        res_boot_par_base <- res_boot_par_tibble_summary %>% filter(stats=="median")
+        res_fitSRtibble <- convert_SR_tibble(res_base) %>% dplyr::filter(type=="parameter"&name!="SPR0") %>% filter(regime==k)
+        for(i in 1:nrow(res_boot_par_base)){
+          for(j in 1:nrow(res_boot_par_base)){
+            if(res_boot_par_base$name[i] == res_fitSRtibble$name[j])
+              res_boot_par_base$value[i] <- res_fitSRtibble$value[j]
+          }
+        }
+        res_boot_par_base$stats <- "estimated"
+
+        res_boot_par_tibble_regime <- res_boot_par_tibble_summary %>% select(name, name_with_CI) %>% right_join(res_boot_par_tibble_regime)
+
+        boot_par_hist <- ggplot(res_boot_par_tibble_regime) + geom_histogram(aes(x=value)) + facet_wrap(.~fct_inorder(name_with_CI), scale="free")+theme_SH(legend.position="bottom")  + labs(title=plot_bootsr_title)+
+          geom_vline(data=res_boot_par_base, mapping = aes(xintercept=value,color=stats),linetype=base_linetype) +
+          geom_vline(data=res_boot_par_tibble_summary, mapping = aes(xintercept=value,color=stats),linetype="dashed") +
+          scale_color_manual(name="stats",values = plot_col)
+        if (output) ggsave(file = paste0(filename,"_regime",k,"_pars.png"), plot=boot_par_hist, width=10, height=10,  units='in')
+
+      }
+
+    }
+    else{ # plot not using ggplot
+
+    # histogram ----
     if (output) png(file = paste0(filename,"_pars.png"), width=15, height=5*nrow(boot.res$input$Res$regime_pars), res=432, units='in')
     par(lwd = lwd, mfrow=c(nrow(boot.res$input$Res$regime_pars),3))
     for (ii in 1:nrow(boot.res$input$Res$regime_pars)) {
@@ -1549,7 +1649,7 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
     }
     if (output) dev.off()
 
-    # histogram (steepness)
+    # histogram (steepness) ----
     if(!is.null(boot.res[[1]]$steepness)){
       if (output) png(file = paste0(filename,"_pars_steepness.png"), width=15, height=5*nrow(boot.res$input$Res$regime_pars), res=432, units='in')
       par(lwd = lwd, mfrow=c(nrow(boot.res$input$Res$regime_pars),4))
@@ -1581,7 +1681,9 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
       }
       if (output) dev.off()
     }
+    }
 
+    # SR curve -----
     if (output) png(file = paste0(filename,"_SRcurve.png"), width=7.5*length(regime_unique), height=7.5, res=432, units='in')
     par(mfrow=c(1,length(regime_unique)))
     for(i in 1:length(regime_unique)) {
