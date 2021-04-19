@@ -1728,6 +1728,22 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
 #' @param output pngファイルに出力するか否か
 #' @param filename ファイル名
 #' @encoding UTF-8
+#' @examples
+#' \dontrun{
+#' data(res_vpa)
+#' SRdata <- get.SRdata(res_vpa)
+#' resSR <- fit.SR(SRdata, SR = c("HS","BH","RI")[1],
+#'                 method = c("L1","L2")[2], AR = 1,
+#'                 out.AR = TRUE)
+#' res_jackSR <- jackknife.SR(resSR,output = T)
+#'
+#' # if calculate steepness
+#' bio_par <- derive_biopar(res_obj=res_vpa,derive_year = 2010)
+#' resSR <- fit.SR(SRdata, SR = c("HS","BH","RI")[1],
+#'                 method = c("L1","L2")[2], AR = 1,
+#'                 out.AR = TRUE,bio_par=bio_par)
+#' res_jackSR <- jackknife.SR(resSR,output = T)
+#' }
 #' @export
 jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename = "jackknife",ylim.range = c(0.5,1.5),pch=19,cex=1.1,...) {
   RES = lapply(1:length(resSR$input$SRdata$SSB), function(i){
