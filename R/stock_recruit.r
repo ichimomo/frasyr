@@ -107,7 +107,7 @@ validate_sr <- function(SR = NULL, method = NULL, AR = NULL, out.AR = NULL, res_
 #'                 out.AR = TRUE)
 #' resSR$pars
 #'
-#' # if calculate steepness
+#' # steepnessを出力する場合、vpa出力結果オブジェクトと該当年をderive_bioparの引数にしてbio_parオブジェクトを作成し、fit.SRの引数に入れる
 #' bio_par <- derive_biopar(res_obj=res_vpa,derive_year = 2010)
 #' resSR <- fit.SR(SRdata, SR = c("HS","BH","RI")[1],
 #'                 method = c("L1","L2")[2], AR = 1,
