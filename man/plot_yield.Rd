@@ -21,6 +21,7 @@ plot_yield(
   future.replicate = NULL,
   past = NULL,
   past_year_range = NULL,
+  plus_group = TRUE,
   future.name = NULL
 )
 }
