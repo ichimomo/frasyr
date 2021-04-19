@@ -48,10 +48,10 @@ calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=
 
 #'
 #' 年齢別生物パラメータとFと漁獲量を与えると与えた漁獲量と一致するFへの乗数を返す
-#' 
+#'
 #' @param max_exploitation_rate 潜在的に漁獲できる漁獲量＜入力した漁獲量の場合、潜在的に漁獲できる漁獲量の何％まで実際に漁獲するか
 #' @param max_F F at ageの最大値となる値の上限をどこにおくか
-#' 
+#'
 #' @export
 #' @encoding UTF-8
 
@@ -94,14 +94,14 @@ caa.est.mat <- function(naa,saa,waa,M,catch.obs,Pope,set_max1=TRUE,max_exploitat
 #' 年齢別生物パラメータとFと漁獲量を与えると与えた漁獲量と一致するFへの乗数を返す (optimを使わないでやろうとしたけどだめだったやつ）
 #'
 #' これだと漁獲量をぴったりに返すFのvectorは得られるが、もとの選択率に一致しない
-#' 
+#'
 #' @param naa numbers at age
 #' @param saa selectivity at age
 #' @param waa weight at age
 #' @param M natural mortality at age
 #' @param max_exploitation_rate 潜在的に漁獲できる漁獲量＜入力した漁獲量の場合、潜在的に漁獲できる漁獲量の何％まで実際に漁獲するか
 #' @param max_F F at ageの最大値となる値の上限をどこにおくか
-#' 
+#'
 #' @export
 #' @encoding UTF-8
 
@@ -120,11 +120,11 @@ caa.est.mat_wrong <- function(naa,saa,waa,M,catch.obs,Pope,max_exploitation_rate
     Fvector <- solv.Feq(caa_expected, naa, M)
   }
   else{
-    Fvector <- solv.Feq.Pope(caa_expected, naa, M)    
+    Fvector <- solv.Feq.Pope(caa_expected, naa, M)
   }
 
-  if( max_F < max(Fvector)) Fvector <- max_F * Fvector/max(Fvector) 
-    
+  if( max_F < max(Fvector)) Fvector <- max_F * Fvector/max(Fvector)
+
   realized.catch <- catch_equation(naa,Fvector,waa,M,Pope)
   if(abs(sum(realized.catch)/catch.obs-1)>0.1) warning("expected catch:",catch.obs,", realized catch:",realized.catch)
   multi <- mean(Fvector/saa)
@@ -307,7 +307,7 @@ dyn.msy <- function(naa.past,naa.init=NULL,fmsy,a,b,resid,resid.year,waa,maa,M,S
 #'                    waa=rep(100,5),maa=c(0,0,1,1,1),M=rep(0.3,5),waa.catch=rep(100,5),
 #'                    rps.vector=NULL, # Fmedを計算したりする場合のRPSのベクトル.NULLでもOK
 #'                    Pope=TRUE,min.age=0,pSPR=c(30,40))
-#' 
+#'
 #'
 #' @export
 #' @import tibble
@@ -327,8 +327,8 @@ ref.F <- function(
   maa.year=NULL,
   rps.year = NULL, # Fmedの計算に使うRPSの年の範囲．NULLの場合，全範囲が用いられる
   rps.vector = NULL,
-  max.age = Inf, 
-  min.age = 0, 
+  max.age = Inf,
+  min.age = 0,
   d = 0.001,
   Fem.init = 0.5,
   Fmax.init = 1.5, # Fmaxの初期値
@@ -362,7 +362,7 @@ ref.F <- function(
     if(is.null(waa.year)) waa.year <- rev(years)[1]
     if(is.null(maa.year)) maa.year <- rev(years)[1]
     if(is.null(M.year)) M.year <- rev(years)[1]
-    
+
     if(is.null(waa))  waa <- apply_year_colum(res$input$dat$waa,waa.year)
     if(is.null(M))    M   <- apply_year_colum(res$input$dat$M,M.year)
     if(is.null(maa))  maa <- apply_year_colum(res$input$dat$maa,maa.year)
@@ -401,21 +401,21 @@ ref.F <- function(
       rps <- NULL
       rps.q <- NULL
       spr.q <- NULL
-      rps.data <- NULL      
+      rps.data <- NULL
     }
   }
   if(is.null(res)){ # VPA結果を与えない場合
     sel <- Fcurrent/max(Fcurrent,na.rm=TRUE)
     na <- length(Fcurrent)
-    assertthat::assert_that(length(Fcurrent) == na)    
+    assertthat::assert_that(length(Fcurrent) == na)
     assertthat::assert_that(length(waa) == na)
     assertthat::assert_that(length(maa) == na)
     assertthat::assert_that(length(M)   == na)
     assertthat::assert_that(length(waa.catch) == na)
     assertthat::assert_that(!is.null(Pope))
-    ssb.coef <- 0    
+    ssb.coef <- 0
 
-    if(!is.null(rps.vector)){    
+    if(!is.null(rps.vector)){
       rps <- rps.data <- rps.vector
       rps.q <- quantile(rps, na.rm=TRUE, probs=c(0.1,0.5,0.9))
       rps.q <- c(rps.q,mean(as.numeric(rps), na.rm=TRUE))
@@ -432,7 +432,7 @@ ref.F <- function(
 
   if(!is.null(res) && res$input$plus.group==FALSE){
     min.age <- min(as.numeric(rownames(res$naa)))
-    max.age <- max(as.numeric(rownames(res$naa)))    
+    max.age <- max(as.numeric(rownames(res$naa)))
   }
 
   calc.rel.abund2_ <- function(Fx,multi){
@@ -612,7 +612,7 @@ ref.F <- function(
 #' @param target.SPR 目標とするSPR。この値を入れると、結果の$ysdata$"F/Ftarget"で、その年のFが目標としたSPR(％)を達成するためのF（Ftarget）の何倍になっているかを返す。デフォルトは30が入っている。このとき、SPRを計算するための生物パラメータ（年齢別体重・成熟率・死亡率）はそれぞれの年で仮定されているものを用いる。
 #' @param Fmax F/Ftargetを推定するときに探索するFの乗数の最大値
 #' @param max.age SPRやYPRの計算をするときに最大何歳まで考慮するか（年齢のラベルではなく、ベクトルの長さ。デフォルトは無限大)。VPA計算でプラスグループを考慮していない（dres$input$plus.group==FALSE)場合には自動的に設定される。
-#' 
+#'
 #' @encoding UTF-8
 #'
 #' @examples
@@ -817,8 +817,8 @@ out.vpa <- function(res=NULL,    # VPA result
     write("\n# SR fit data",file=csvname,append=T)
     srres$input$SRdata %>% as_tibble() %>%  mutate(weight=srres$input$w) %>%
       write_csv(path=csvname,append=T,col_names=TRUE)
-    
-    write("\n# SR fit resutls",file=csvname,append=T)    
+
+    write("\n# SR fit resutls",file=csvname,append=T)
     if(class(srres)=="fit.SR"){
       sr_summary <-
         as_tibble(srres$pars) %>% mutate(AICc   = srres$AICc,
@@ -837,7 +837,7 @@ out.vpa <- function(res=NULL,    # VPA result
              type  =srres$input$SR) %>%
         write_csv(path=csvname,append=T,col_names=TRUE)
 
-      partable <- srres$regime_pars 
+      partable <- srres$regime_pars
     }
     if(!is.null(srres$steepness)) partable <- partable %>% left_join(srres$steepness)
 
@@ -906,7 +906,7 @@ out.vpa <- function(res=NULL,    # VPA result
   if(!is.null(kobe.ratio)){
     write("\n# Kobe ratio",file=csvname,append=T)
     kobe.ratio %>%
-        write_csv(path=csvname,append=T, col_names=TRUE)      
+        write_csv(path=csvname,append=T, col_names=TRUE)
   }
 
 }
@@ -915,10 +915,10 @@ out.vpa <- function(res=NULL,    # VPA result
 #' @param tfile 資源計算結果がまとめられたcsvファイルの名前
 #' @param Pope  VPA計算時にどっちを使っているかここで設定する（TRUE or FALSE）。デフォルトはNULLで、その場合にはcaa,faa,naaの関係から自動判別するが、自動判別の結果が出力されるので、それをみて正しく判断されているか確認してください。
 #' @param plus.group プラスグループを考慮するかどうか。こちらについても、NULLの場合にはfaaとnaaの関係から自動判別するが、結果を一応確認すること。
-#' 
+#'
 #' @encoding UTF-8
 #'
-#' 
+#'
 #'
 #' @export
 
@@ -1030,7 +1030,7 @@ read.vpa <- function(tfile,
     cat("Plus group is TRUE... OK?\n")
   }
   dres$input$plus.group <- plus.group
-    
+
   if(is.null(dres$Fc.at.age) && !is.null(fc.year)) dres$Fc.at.age <- apply(dres$faa[,colnames(dres$faa)%in%fc.year],1,mean)
 
   # その他、他関数で必要になるVPAへのインプット
@@ -1275,12 +1275,12 @@ convert_2d_future <- function(df, name, label="tmp"){
 #'
 
 convert_future_list_table <- function(fout_list,name_vector=NULL,label="tmp"){
-  
+
   if(is.null(name_vector)){
     if(!is.null(names(fout_list))) name_vector <- names(fout_list)
     else name_vector <- 1:length(fout_list)
   }
-  
+
   res <- purrr::map_dfr(1:length(fout_list),
                  function(i){
                    convert_future_table(fout_list[[i]],label=name_vector[i]) %>%
@@ -1405,10 +1405,30 @@ convert_vpa_tibble <- function(vpares,SPRtarget=NULL){
 #'
 
 convert_SR_tibble <- function(res_SR){
-  bind_rows(tibble(value=as.numeric(res_SR$pars),type="parameter",name=names(res_SR$pars)),
-            res_SR$pred %>% mutate(type="prediction",name="prediction"),
-            res_SR$input$SRdata %>% as_tibble() %>%
-              mutate(type="observed",name="observed",residual=res_SR$resid))
+  if(class(res_SR)=="fit.SR"){
+    resSRtibble <-bind_rows(tibble(value=as.numeric(res_SR$pars),type="parameter",name=names(res_SR$pars)),
+                            res_SR$pred %>% mutate(type="prediction",name="prediction"),
+                            res_SR$input$SRdata %>% as_tibble() %>%
+                              mutate(type="observed",name="observed",residual=res_SR$resid))
+    if(!is.null(res_SR$steepness)) resSRtibble<-bind_rows(resSRtibble,tibble(value=as.numeric(res_SR$steepness),type="parameter",name=names(res_SR$steepness)))
+  }
+  if(class(res_SR)=="fit.SRregime"){ # regimeあり
+    resSR1 <- pivot_longer(res_SR$regime_pars,col=-regime) %>% mutate(type="parameter")
+    resSR2 <- res_SR$pred %>% mutate(type="prediction",name="prediction")
+    resSR3 <- res_SR$input$SRdata %>% as_tibble() %>%
+                              mutate(type="observed",name="observed",residual=res_SR$regime_resid$resid)
+
+    resSRtibble<-bind_rows(resSR1,resSR2,resSR3)
+
+    if(!is.null(res_SR$steepness)) {
+      for(j in 1:nrow(res_SR$steepness)){
+        res_steepness <- res_SR$steepness[j,]
+        res_steepness_tibble <- pivot_longer(res_steepness,col=-regime) %>% mutate(type="parameter")
+        resSRtibble<- bind_rows(resSRtibble,res_steepness_tibble)
+      }
+    }
+  }
+  return(resSRtibble)
 }
 
 #' 管理基準値の表を作成する
@@ -1467,7 +1487,7 @@ derive_RP_value <- function(refs_base,RP_name){
 #' @param kobeII_data beta.simulationまたはconvert_future_list_tableの返り値
 #' @param res_vpa VPAの結果
 #' @param Bspecific 特定の資源量を一回でも下回るリスクを計算する。下回るリスクを判断する年はyear.riskに従う
-#' 
+#'
 #' @export
 #'
 #' @encoding UTF-8
@@ -1515,7 +1535,7 @@ make_kobeII_table <- function(kobeII_data,
       summarise(biomass.mean=mean(value)) %>%
       spread(key=year,value=biomass.mean) %>% ungroup() %>%
       arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
-      mutate(stat_name="biomass.mean"))    
+      mutate(stat_name="biomass.mean"))
 
   # 親魚, 下10%
   (ssb.ci10 <- kobeII_data %>%
@@ -1612,7 +1632,7 @@ make_kobeII_table <- function(kobeII_data,
       xx <- sum(x[-1]/x[-length(x)]<0.5,na.rm=T) # 0が2つ続く場合にNAが発生するがそこは計算から除く
       return(xx)
   }
-    
+
     #  calc.aav2 <- function(x){ xx <- sum(x[-1]/x[-length(x)]<0.5); if(is.na(xx)) browser() else return(xx)}
   catch.risk <- kobeII_data %>%
     dplyr::filter(year%in%year.risk,stat=="catch") %>%
@@ -1622,7 +1642,7 @@ make_kobeII_table <- function(kobeII_data,
     summarise(value=mean(catch.aav>0)) %>%
     arrange(HCR_name,desc(beta))%>%
     mutate(stat_name="catch.risk")
-  
+
   bban.risk <- kobeII_data %>%
     dplyr::filter(year%in%year.risk & stat=="SSB") %>%
     group_by(HCR_name,beta,sim) %>%
@@ -1651,7 +1671,7 @@ make_kobeII_table <- function(kobeII_data,
     mutate(stat_name="overfishing.risk")
 
   redzone.risk1 <- kobeII_data %>%
-    dplyr::filter(year%in%year.risk,stat=="Fratio")  
+    dplyr::filter(year%in%year.risk,stat=="Fratio")
 
   redzone.risk2 <- kobeII_data %>%
     dplyr::filter(year%in%year.risk,stat=="SSB") %>%
@@ -1663,10 +1683,10 @@ make_kobeII_table <- function(kobeII_data,
 #  browser()
 
   redzone.risk <- redzone.risk2 %>%
-    group_by(HCR_name,beta,sim) %>%        
+    group_by(HCR_name,beta,sim) %>%
      dplyr::summarise(sum.redzone=sum(is.redzone==TRUE)) %>%
     group_by(HCR_name,beta) %>%
-    dplyr::summarise(value=mean(sum.redzone>0)) %>%    
+    dplyr::summarise(value=mean(sum.redzone>0)) %>%
     arrange(HCR_name,desc(beta)) %>%
     mutate(stat_name="redzone.risk")
 
@@ -1691,7 +1711,7 @@ make_kobeII_table <- function(kobeII_data,
     dplyr::filter(year%in%year.risk,stat=="Fratio") %>%
     mutate(is.over.Ftar= round(value,2) > 1)
   overssbtar$is.over.Ftar <- overFtar$is.over.Ftar
-           
+
   kobe.stat <- overssbtar %>%
       mutate("red"   =(is.over.ssbtar==FALSE) & (is.over.Ftar==TRUE),
              "green" =(is.over.ssbtar==TRUE ) & (is.over.Ftar==FALSE),
@@ -1704,10 +1724,10 @@ make_kobeII_table <- function(kobeII_data,
               orange.prob=mean(orange,na.rm=T))  %>%
       mutate(stat_name="kobe.stat")
 
-  
+
   res_list <- list(catch.mean   = catch.mean,
                    ssb.mean         = ssb.mean,
-                   biomass.mean         = biomass.mean,                   
+                   biomass.mean         = biomass.mean,
                    ssb.lower10percent            = ssb.ci10,
                    ssb.upper90percent            = ssb.ci90,
                    prob.over.ssbtarget  = ssbtarget.table,
@@ -1731,7 +1751,7 @@ make_kobeII_table <- function(kobeII_data,
 #' kobeII matrixの簡易版（Btarget, Blimitは決め打ちでβのみ変える)
 #'
 #' @param year_beta_change betaを変更する年の範囲。NULLの場合には全部の年を変える。
-#' 
+#'
 #' @encoding UTF-8
 #' @export
 #'
@@ -1757,7 +1777,7 @@ beta.simulation <- function(finput,beta_vector,year.lag=0,type="old",year_beta_c
       else{
         finput$tmb_data$HCR_mat[year_column_beta_change,,"beta"] <- beta_vector[i]
         if(!is.null(finput$MSE_input_data)) finput$MSE_input_data$input$HCR_beta <- beta_vector[i]
-        fres_base <- do.call(future_vpa,finput) 
+        fres_base <- do.call(future_vpa,finput)
         fres_base <- format_to_old_future(fres_base)
       }
       tmp <- convert_future_table(fres_base,label=beta_vector[i]) %>%
@@ -1773,8 +1793,8 @@ beta.simulation <- function(finput,beta_vector,year.lag=0,type="old",year_beta_c
     tb <- foreach::foreach(i=1:length(beta_vector),.combine="rbind")%dopar%{
       finput$tmb_data$HCR_mat[year_column_beta_change,,"beta"] <- beta_vector[i]
       if(!is.null(finput$MSE_input_data)) finput$MSE_input_data$input$HCR_beta <- beta_vector[i]
-      fres_base <- do.call(future_vpa,finput) 
-      fres_base <- format_to_old_future(fres_base)    
+      fres_base <- do.call(future_vpa,finput)
+      fres_base <- format_to_old_future(fres_base)
       tmp <- convert_future_table(fres_base,label=beta_vector[i]) %>%
         rename(HCR_name=label)  %>% mutate(beta=beta_vector[i])
       tmp
@@ -1786,7 +1806,7 @@ beta.simulation <- function(finput,beta_vector,year.lag=0,type="old",year_beta_c
 
 
 #' MSYを達成するときの\%SPRを計算する(calc_future_perSPRのwrapper)
-#' 
+#'
 #' @encoding UTF-8
 #' @export
 #'
@@ -1805,16 +1825,16 @@ calc_perspr <- function(...){
 #' @param target.col 将来予測の何列目の年を取り出すか（NULLの場合、最後の年）
 #' @param target.year 将来予測の何年目を取り出すか（年の名前）（NULLの場合、最後の年）
 #' @param SPRtarget これを与えると、Fvectorを何倍すればここで指定した\%SPRと一致するかを返すようになる
-#' 
+#'
 #' @encoding UTF-8
 #' @export
-#' 
+#'
 
 calc_future_perSPR <- function(fout=NULL,
                                res_vpa=NULL,
                                Fvector,
                                is_pope=NULL,
-                               plus_group=NULL,                               
+                               plus_group=NULL,
                         Fmax=10,
                         target.col=NULL,
                         target.year=NULL,
@@ -1833,7 +1853,7 @@ calc_future_perSPR <- function(fout=NULL,
 
   # シミュレーションが複数回ある場合には、その平均値を用いる
   if(is.null(target.col) && is.null(target.year)){
-    waa.tmp       <- fout.tmp$waa      [,dim(fout.tmp$waa)      [[2]],] %>% apply(1,mean) 
+    waa.tmp       <- fout.tmp$waa      [,dim(fout.tmp$waa)      [[2]],] %>% apply(1,mean)
     waa.catch.tmp <- fout.tmp$waa.catch[,dim(fout.tmp$waa.catch)[[2]],] %>% apply(1,mean)
     maa.tmp       <- fout.tmp$maa      [,dim(fout.tmp$maa)      [[2]],] %>% apply(1,mean)
     M.tmp         <- fout.tmp$M        [,dim(fout.tmp$M)        [[2]],] %>% apply(1,mean)
@@ -1854,7 +1874,7 @@ calc_future_perSPR <- function(fout=NULL,
         maa.tmp       <- fout.tmp$maa      [,as.character(target.year$maa),,drop=FALSE] %>% apply(c(1,3),mean) %>% apply(1,mean)
         M.tmp         <- fout.tmp$M        [,as.character(target.year$M),,drop=FALSE] %>% apply(c(1,3),mean) %>% apply(1,mean)
       }
-    }    
+    }
     if(!is.null(target.col)){
       waa.tmp       <- fout.tmp$waa[,target.col,]       %>% apply(1,mean)
       waa.catch.tmp <- fout.tmp$waa.catch[,target.col,] %>% apply(1,mean)
@@ -1887,7 +1907,7 @@ calc_future_perSPR <- function(fout=NULL,
     tmp$waa <- waa.tmp
     tmp$waa.catch <- waa.catch.tmp
     tmp$maa <- maa.tmp
-    tmp$M <- M.tmp            
+    tmp$M <- M.tmp
     return(tmp)
   }
 }
@@ -2206,14 +2226,14 @@ calc_Fratio <- function(faa, waa, maa, M, SPRtarget=30, waa.catch=NULL,Pope=TRUE
     calc.rel.abund(sel,Fr,na=length(faa),M=M, waa=waa, waa.catch=waa.catch,
                      min.age=1,max.age=max.age,Pope=Pope,ssb.coef=0,maa=maa)
   }
-  
+
   tmpfunc <- function(x,SPR0=0,...){
     SPR_tmp <- calc.rel.abund2_(faa,exp(x))$spr %>% sum()
     sum(((SPR_tmp/SPR0*100)-SPRtarget)^2)
   }
-    
+
   if(max(faa)<exp(-7)){ return(0) }
-    
+
   else{
     tmp <- !is.na(faa)
     SPR0 <- calc.rel.abund2_(faa,0)$spr %>% sum()
@@ -2230,7 +2250,7 @@ calc_Fratio <- function(faa, waa, maa, M, SPRtarget=30, waa.catch=NULL,Pope=TRUE
       SPR_est <- SPR_original
       Fratio <- 1
     }
-    
+
     if(isTRUE(return_SPR)){
         list(Fratio=Fratio, SPR_est=SPR_est, SPR_target=SPRtarget, SPR_original=SPR_original)
     }
@@ -2243,9 +2263,9 @@ calc_Fratio <- function(faa, waa, maa, M, SPRtarget=30, waa.catch=NULL,Pope=TRUE
 
 #'
 #' 使うフォルダ名を与えると一連の結果の関数を読み込む関数
-#' 
+#'
 #' @export
-#' @encoding UTF-8 
+#' @encoding UTF-8
 #'
 
 load_folder <- function(folder_name){
@@ -2258,14 +2278,14 @@ load_folder <- function(folder_name){
       }
       if(isTRUE(str_detect(file_name, pattern=".csv"))){
         a <- read_csv(str_c(folder_name,"/",file_name))
-      }      
+      }
     }
     else{
       a <- NA
     }
     return(a)
   }
-    
+
   file_name <- c("res_MSY.rda","res_SR.rda","res_future_0.8HCR.rda","kobeII.table.rda","model_selection.csv")
 
   res_all <- list()
@@ -2350,7 +2370,7 @@ source_lines <- function(file, lines){
 
 #' re-calculate projection with different arguments
 #'
-#' 
+#'
 
 redo_future <- function(data_future, input_data_list, SR_sd=NULL, SR_b=NULL, only_data=FALSE,is_regime=(class(data_future$input$res_SR)=="fit.SRregime"), ...){
   input_data <- data_future$input
@@ -2360,9 +2380,9 @@ redo_future <- function(data_future, input_data_list, SR_sd=NULL, SR_b=NULL, onl
 
   if(!is.null(SR_sd)){
     if(is_regime){
-      cat("This is regime future\n")            
+      cat("This is regime future\n")
       input_data$res_SR$regime_pars$sd[] <- SR_sd
-      input_data$res_SR$pars$sd[] <- SR_sd        
+      input_data$res_SR$pars$sd[] <- SR_sd
     }
     else{
       input_data$res_SR$pars$sd[] <- SR_sd
@@ -2372,13 +2392,13 @@ redo_future <- function(data_future, input_data_list, SR_sd=NULL, SR_b=NULL, onl
 
   if(!is.null(SR_b)){
     if(is_regime){
-      cat("This is regime future\n")      
+      cat("This is regime future\n")
       input_data$res_SR$regime_pars$b <- SR_b
     }
     else{
       input_data$res_SR$pars$b <- SR_b
     }
-  }  
+  }
 
   future_data <- safe_call(make_future_data,input_data)
   if(only_data==TRUE) return(future_data) else future_vpa(future_data$data,...)
@@ -2390,7 +2410,7 @@ redo_future <- function(data_future, input_data_list, SR_sd=NULL, SR_b=NULL, onl
 #' HSを仮定していて、折れ点の下側から将来予測するような場合には、将来予測の最初のほうは一致しない。マッチングする年代などを工夫する必要がある
 #'
 #' @export
-#' 
+#'
 
 test_sd0_future <- function(data_future,nsim=NULL,nyear=10,future_range=NULL,...){
 
@@ -2408,7 +2428,7 @@ test_sd0_future <- function(data_future,nsim=NULL,nyear=10,future_range=NULL,...
   tol <- 0.007
   if(is.null(nsim)) nsim <- round((0.5/tol)^2) # 1%以下（0.7%）の誤差が期待されるnsim
   cat("nsim for checking sd=0:",nsim,"\n")
-  
+
   # run 2 funture projections
   res1 <- redo_future(data_future, list(nsim=nsim, nyear=nyear), multi_init=0.01, ...)
   res2 <- redo_future(data_future, list(nsim=2   , nyear=nyear), multi_init=0.01, SR_sd=0, ...)
@@ -2416,7 +2436,7 @@ test_sd0_future <- function(data_future,nsim=NULL,nyear=10,future_range=NULL,...
   a <- try(compare_future_res12(res1,res2,future_range=future_range))
 
   cat("* Fをなるべく小さくした場合の将来予測において、決定論的予測と確率的予測の平均値がほぼ同じになるか？（ここでnoが出る場合にはバグの可能性があるので管理者に連絡してください）（モデル平均・バックワードリサンプリングの場合にはnoになっちゃいます（今後改善））: ",ifelse(class(a)=="try-error", "not ","OK\n"))
- 
+
   return(lst(res1,res2,a))
 }
 
@@ -2431,14 +2451,14 @@ compare_future_res12 <- function(res1,res2,tol=0.01, future_range=NULL){
       mean_difference_in_naa <- 1-mean(apply(res1$naa[,future_range,],c(1,2),mean,na.rm=TRUE)/
                                      apply(res2$naa[,future_range,],c(1,2),mean,na.rm=TRUE),na.rm=T)
       mean_difference_in_wcaa <- 1-mean(apply(res1$wcaa[,future_range,],c(1,2),mean,na.rm=TRUE)/
-                                      apply(res2$wcaa[,future_range,],c(1,2),mean,na.rm=TRUE),na.rm=T)      
+                                      apply(res2$wcaa[,future_range,],c(1,2),mean,na.rm=TRUE),na.rm=T)
   }
 
   cat("mean_difference in naa=", mean_difference_in_naa,"\n")
   expect_equal(mean_difference_in_naa,0,tol=tol)
 
   cat("mean_difference in wcaa=", mean_difference_in_wcaa,"\n")
-  expect_equal(mean_difference_in_wcaa,0,tol=tol)  
+  expect_equal(mean_difference_in_wcaa,0,tol=tol)
 }
 
 #'
@@ -2448,13 +2468,13 @@ compare_future_res12 <- function(res1,res2,tol=0.01, future_range=NULL){
 #' 2. MSE_nsim=2にしてMSE_sd=0にしても良いかどうか
 #'
 #' @export
-#' 
+#'
 
 check_MSE_sd0 <- function(data_future, data_MSE=NULL, nsim_for_check=10000, tol=c(0.01,0.01,0.01)){
 
   data_future_sd0 <- redo_future(data_future,list(nyear=5,nsim=5),only_data=TRUE,SR_sd=0)
   data_future     <- redo_future(data_future,list(nyear=5,nsim=5),only_data=TRUE)
-  data_future_10000 <- redo_future(data_future,list(nyear=5,nsim=nsim_for_check),only_data=TRUE)  
+  data_future_10000 <- redo_future(data_future,list(nyear=5,nsim=nsim_for_check),only_data=TRUE)
 
   if(!is.null(data_MSE)) data_MSE <- redo_future(data_MSE,list(nyear=5,nsim=5),only_data=TRUE)
   else data_MSE <- data_future
@@ -2467,7 +2487,7 @@ check_MSE_sd0 <- function(data_future, data_MSE=NULL, nsim_for_check=10000, tol=
                      optim_method="none",multi_init = 1,SPRtarget=0.3,
                      do_MSE=FALSE, MSE_input_data=data_future_sd0,MSE_nsim=2)
   a1 <- try(compare_future_res12(res1,res2,tol=tol[1]))
-  cat("* 真の個体群動態のSD=0のとき, MSEした結果と単純シミュレーションの結果が一致するか？（加入の残差にリサンプリングを使っている場合にはSD=0でも決定論的予測にならないので一致しなくても大丈夫。対数正規分布残差でここがOKにならない場合にはバグの可能性があるので管理者に連絡してください） ",ifelse(class(a1)=="try-error", "not ",""),"OK\n")  
+  cat("* 真の個体群動態のSD=0のとき, MSEした結果と単純シミュレーションの結果が一致するか？（加入の残差にリサンプリングを使っている場合にはSD=0でも決定論的予測にならないので一致しなくても大丈夫。対数正規分布残差でここがOKにならない場合にはバグの可能性があるので管理者に連絡してください） ",ifelse(class(a1)=="try-error", "not ",""),"OK\n")
 
   # check sd in MSE=0 is OK?
   res1.time <- system.time(
@@ -2492,12 +2512,12 @@ check_MSE_sd0 <- function(data_future, data_MSE=NULL, nsim_for_check=10000, tol=
 
   res2 <- future_vpa(tmb_data=data_future_10000$data,
                      optim_method="none",multi_init = 1,SPRtarget=0.3,
-                     do_MSE=TRUE, MSE_nsim=2, MSE_sd=0, MSE_input_data=data_future_10000)  
+                     do_MSE=TRUE, MSE_nsim=2, MSE_sd=0, MSE_input_data=data_future_10000)
   # ここのtorelanceはそんなに高くない
   a3 <- try(expect_equal(mean(get_wcatch(res1)["2019",])/
                mean(get_wcatch(res2)["2019",]),
                1,tol=tol[3]))
-  cat("* HCRを導入する最初の年のABCは通常の将来予測の平均漁獲量と、MSEを十分回数実施したときの平均漁獲量と一致するはず。それぞれnsim_for_check回数分計算した場合、一致するか？（上の２つが通っている場合、ここもOKになるはず。OKにならなかったらバグの可能性があるので管理者に連絡してください）: ",ifelse(class(a3)=="try-error", "not ",""),"OK\n")  
+  cat("* HCRを導入する最初の年のABCは通常の将来予測の平均漁獲量と、MSEを十分回数実施したときの平均漁獲量と一致するはず。それぞれnsim_for_check回数分計算した場合、一致するか？（上の２つが通っている場合、ここもOKになるはず。OKにならなかったらバグの可能性があるので管理者に連絡してください）: ",ifelse(class(a3)=="try-error", "not ",""),"OK\n")
   return(lst(a1,a2,a3,res1,res2))
 }
 
@@ -2523,12 +2543,12 @@ take_interval <- function(prob,target){
 #' 将来予測結果を入れる場合には複数のシミュレーション、年の間の結果をすべてstatする
 #'
 #' @export
-#' 
+#'
 
 derive_biopar <- function(res_obj=NULL, derive_year=NULL, stat=mean){
 
   derive_year <- as.character(derive_year)
-  
+
   if(!is.null(res_obj$input$tune)){
     res_obj$input$dat$faa <- res_obj$faa
     bio_par <- purrr::map_dfc(res_obj$input$dat[c("M","waa","maa","faa")],
@@ -2545,7 +2565,7 @@ derive_biopar <- function(res_obj=NULL, derive_year=NULL, stat=mean){
   }
 
   bio_par <- bio_par[apply(bio_par,1,sum)!=0,]
-  bio_par <- bio_par[!is.na(apply(bio_par,1,sum)),]    
+  bio_par <- bio_par[!is.na(apply(bio_par,1,sum)),]
   return(bio_par)
 }
 
@@ -2558,7 +2578,6 @@ detect_plus_group <- function(dres){
   plus_age <- max(which(!is.na(naa2)))
   naa2_plus <- calc_forward(naa=dres$naa,faa=dres$faa,M=dres$input$dat$M,t=1,plus_age=plus_age,plus_group=TRUE)[,2]
   naa2_noplus <- calc_forward(naa=dres$naa,faa=dres$faa,M=dres$input$dat$M,t=1,plus_age=plus_age,plus_group=FALSE)[,2]
-  
-  if(sum((naa2-naa2_plus)^2)<sum((naa2-naa2_noplus)^2)) plus.group <- TRUE else plus.group <- FALSE
+  if(sum((naa2-naa2_plus)^2,na.rm=T)<sum((naa2-naa2_noplus)^2,na.rm=T)) plus.group <- TRUE else plus.group <- FALSE
   return(plus.group)
 }
