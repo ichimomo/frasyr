@@ -205,13 +205,21 @@ backward.calc <- function(caa,naa,M,na,k,min.caa=0.001,p=0.5,plus.group=TRUE,sel
   return(out)
 }
 
-# memo: plus groupオプションに対応させる必要あり(対応させたらメモは削除してください）
-forward.calc <- function(faa,naa,M,na,k){
+
+forward.calc <- function(faa,naa,M,na,k,plus.group=plus.group){
   out <- rep(NA, na[k])
   for (i in 2:(na[k]-1)){
-    out[i] <- naa[i-1,k-1]*exp(-faa[i-1,k-1]-M[i-1,k-1])
+    out[i] <- naa[i-1,k-1]*exp(-faa[i-1,k-1]-M[i-1,k-1]) #最終年の最低年齢より上，最高年齢より下のnaaを計算してる
   }
-  out[na[k]] <- sum(sapply(seq(na[k]-1,max(na[k], na[k-1])), plus.group.eq, naa=naa, faa=faa, M=M, k=k))
+  if (isTRUE(plus.group)){
+    out[na[k]] <- sum(sapply(seq(na[k]-1,max(na[k], na[k-1])), plus.group.eq, naa=naa, faa=faa, M=M, k=k)) #最終年最高年齢のnaa
+  }
+  else
+  {
+    out[na[k]] <- sapply(na[k]-1, plus.group.eq, naa=naa, faa=faa, M=M, k=k)
+  }
+  
+  
   return(out)
 }
 
@@ -982,8 +990,8 @@ if (isTRUE(madara)){
 
     if (isTRUE(tune)){
       if (n.add==1 & !is.na(mean(index[,ny+n.add],na.rm=TRUE))){
-
-        new.naa <- forward.calc(faa,naa,M,na,ny+n.add)
+        
+        new.naa <- forward.calc(faa,naa,M,na,ny+n.add,plus.group=plus.group)
 
         naa[,ny+n.add] <- new.naa
         baa <- naa*waa
@@ -1219,7 +1227,7 @@ if (isTRUE(madara)){
         # next year
 
         if (n.add==1 & is.na(naa[1,ny+n.add])){
-          new.naa <- forward.calc(faa,naa,M,na,ny+n.add)
+          new.naa <- forward.calc(faa,naa,M,na,ny+n.add,plus.group=plus.group)
           if (!is.null(f.new) & !is.null(saa.new)) faa[,ny+n.add] <- f.new*saa.new else faa[,ny+n.add] <- 0
           naa[,ny+n.add] <- new.naa
           baa <- naa*waa
