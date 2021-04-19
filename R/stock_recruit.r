@@ -106,6 +106,14 @@ validate_sr <- function(SR = NULL, method = NULL, AR = NULL, out.AR = NULL, res_
 #'                 method = c("L1","L2")[2], AR = 1,
 #'                 out.AR = TRUE)
 #' resSR$pars
+#'
+#' # if calculate steepness
+#' bio_par <- derive_biopar(res_obj=res_vpa,derive_year = 2010)
+#' resSR <- fit.SR(SRdata, SR = c("HS","BH","RI")[1],
+#'                 method = c("L1","L2")[2], AR = 1,
+#'                 out.AR = TRUE,bio_par=bio_par)
+#' resSR$pars
+#' resSR$steepness
 #' }
 #' @return 以下の要素からなるリスト
 #' \describe{
