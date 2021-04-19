@@ -1441,7 +1441,7 @@ autocor.plot = function(resSR,use.resid=1,lag.max=NULL,output = FALSE,filename =
 #'
 #' boot.SR(boot.res=resSR,output=T)
 #'
-#' #ggplotで出力する場合
+#' #in case of ggplot
 #' boot.SR(boot.res=resSR,output=T,ggplt=T)
 #'
 #' }
