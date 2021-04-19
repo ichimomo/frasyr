@@ -1431,6 +1431,20 @@ autocor.plot = function(resSR,use.resid=1,lag.max=NULL,output = FALSE,filename =
 #' @param output pngファイルに出力するか否か
 #' @param filename ファイル名
 #' @encoding UTF-8
+#' @examples
+#' \dontrun{
+#' data(res_vpa)
+#' SRdata <- get.SRdata(res_vpa)
+#' resSR <- fit.SR(SRdata, SR = c("HS","BH","RI")[1],
+#'                 method = c("L1","L2")[2], AR = 1,
+#'                 out.AR = TRUE)
+#'
+#' boot.SR(boot.res=resSR,output=T)
+#'
+#' #ggplotで出力する場合
+#' boot.SR(boot.res=resSR,output=T,ggplt=T)
+#'
+#' }
 #' @export
 bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1.2,pch=1,ggplt=FALSE,...) {
   res_base = boot.res$input$Res
