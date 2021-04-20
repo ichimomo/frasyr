@@ -383,6 +383,14 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
   res_vpa_base0_lst0_zen1 <- vpa(vpadat_lst0, tf.year=2007:2009, last.catch.zero = TRUE, 
                                  Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="all", est.method="ml", b.est=FALSE, abund=c("N","N","N","N","N","N"),min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),rec.new=NULL)
   expect_equal(as.numeric(res_vpa_base0_lst0_zen1$naa[1,10]),NA_real_)
+  expect_equal(as.numeric(round(res_vpa_base0_lst0_zen1$naa[,10],2)),c(NA_real_,538.18,25.87,150.63))
+  
+  #   全F推定法: last.catch.zero=TRUEで，rec.new=NULLのとき，plus.group=FALSE
+  res_vpa_base0_lst0_zen11 <- vpa(vpadat_lst0, tf.year=2007:2009, last.catch.zero = TRUE, 
+                                 Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="all", est.method="ml", b.est=FALSE, abund=c("N","N","N","N","N","N"),min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),rec.new=NULL,plus.group=FALSE)
+
+  expect_equal(as.numeric(round(res_vpa_base0_lst0_zen11$naa[,10],2)),c(NA_real_,685.22,86.13,118.49))
+  
   
   #   全F推定法: last.catch.zero=TRUEで，rec.new=1000のとき，最新年の0歳は1000となる
   res_vpa_base0_lst0_zen2 <- vpa(vpadat_lst0, tf.year=2007:2009, last.catch.zero = TRUE, 
