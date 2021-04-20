@@ -837,11 +837,12 @@ out.vpa <- function(res=NULL,    # VPA result
              type  =srres$input$SR) %>%
         write_csv(path=csvname,append=T,col_names=TRUE)
 
-      partable <- srres$regime_pars
-    }
-    if(!is.null(srres$steepness)) partable <- partable %>% left_join(srres$steepness)
+      partable <- srres$regime_pars 
+      if(!is.null(srres$steepness)) partable <- partable %>% left_join(srres$steepness)
+      # tentative 
+      write_csv(partable, path=csvname,append=T,col_names=TRUE)
 
-    write_csv(partable, path=csvname,append=T,col_names=TRUE)
+    }
   }
 
   if(!is.null(msyres)){
@@ -1274,18 +1275,24 @@ convert_2d_future <- function(df, name, label="tmp"){
 #' @export
 #'
 
-convert_future_list_table <- function(fout_list,name_vector=NULL,label="tmp"){
+
+convert_future_list_table <- function(fout_list,name_vector=NULL,beta_vector=NULL,label="tmp"){
+  
 
   if(is.null(name_vector)){
     if(!is.null(names(fout_list))) name_vector <- names(fout_list)
     else name_vector <- 1:length(fout_list)
   }
 
+  if(is.null(beta_vector)){
+    beta_vector <- name_vector
+  }    
+  
   res <- purrr::map_dfr(1:length(fout_list),
                  function(i){
                    convert_future_table(fout_list[[i]],label=name_vector[i]) %>%
                      rename(HCR_name=label) %>%
-                     mutate(beta=name_vector[i])
+                     mutate(beta=beta_vector[i])
                  })
   return(res)
 }
@@ -1488,7 +1495,14 @@ derive_RP_value <- function(refs_base,RP_name){
 #' @param res_vpa VPAの結果
 #' @param Bspecific 特定の資源量を一回でも下回るリスクを計算する。下回るリスクを判断する年はyear.riskに従う
 #'
+
+#' @details
+#' tidy形式になっているkobeII_dataにおいて、HCR_name, betaの列のラベルの組み合わせを一つの管理方式として、その管理方式ごとに少尉予測の結果を集計する
+#' 
+
 #' @export
+#'
+#' 
 #'
 #' @encoding UTF-8
 
