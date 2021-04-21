@@ -1745,7 +1745,7 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
 #' res_jackSR <- jackknife.SR(resSR,output = T)
 #' }
 #' @export
-jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename = "jackknife",ylim.range = c(0.5,1.5),pch=19,cex=1.1,...) {
+jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename = "jackknife",ylim.range = c(0,1.5),pch=19,cex=1.1,...) {
   RES = lapply(1:length(resSR$input$SRdata$SSB), function(i){
     jack <- resSR
     jack$input$w[i] <- 0
