@@ -411,7 +411,7 @@ compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000, newplot=F
 
         SRpred <- purrr::map_dfr(SRlist,
                              function(x) x$pred, .id="再生産関係")
-    SRpred$再生産関係 <- as.factor(SRpred$再生産関係)
+    #SRpred$再生産関係 <- as.factor(SRpred$再生産関係)
     font_MAC <- "HiraginoSans-W3"#"Japan1GothicBBB"#
 
     if(isTRUE(stringr::str_detect(version$os, pattern="darwin"))){ # plot 設定 for mac----
@@ -455,7 +455,6 @@ compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000, newplot=F
     }
 
     if(is.null(SRlist)) names(SRlist) <- 1:length(SRlist)
-
 
   g1 <- plot_SRdata(SRdata,type="gg")
 
