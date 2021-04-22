@@ -430,7 +430,7 @@ compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000, newplot=F
       g1 <- ggplot(data=SRpred)
       g1 <- g1 + geom_line(data=SRpred,
                            mapping=aes(x=SSB/biomass.unit,y=R/number.unit, linetype=再生産関係, col=再生産関係))
-      g1 <- g1 + geom_point(data=SRdata, mapping=aes(x=SRdata$SSB/biomass.unit, y=SRdata$R/number.unit), color="black")
+      g1 <- g1 + geom_point(data=SRdata, mapping=aes(x=SSB/biomass.unit, y=R/number.unit), color="black")
       g1 <- g1 + xlim(c(0,max(SRdata$SSB/biomass.unit))) + ylim(c(0,max(SRdata$R/number.unit))) +
         xlab("親魚量（千トン）") + ylab("加入尾数（百万尾)") + theme_SH(legend.position="top")
       g1
@@ -438,7 +438,6 @@ compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000, newplot=F
     }
   }
   else{
-
   g1 <- plot_SRdata(SRdata,type="gg")
 
   SRpred <- purrr::map_dfr(SRlist,
