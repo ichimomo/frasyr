@@ -447,10 +447,8 @@ compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000, newplot=F
     theme(legend.position="top") +
     xlab(str_c("SSB (x",biomass.unit,")")) +
     ylab(str_c("Number (x",number.unit,")"))
-
-  g1
   }
-
+  g1
 }
 
 #' fit.SRregimeの結果で得られた再生産関係をプロットするための関数
