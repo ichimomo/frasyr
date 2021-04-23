@@ -166,19 +166,24 @@ backward.calc <- function(caa,naa,M,na,k,min.caa=0.001,p=0.5,plus.group=TRUE,sel
   out <- rep(NA, na[k])
   if(na[k+1] > na[k]){
     if(isTRUE(sel.update)){stop("Selectivity update method is currently not supported for the plus group change scenario")}
-    for (i in 1:(na[k]-2)){
-      out[i] <- naa[i+1,k+1]*exp(M[i,k])+caa[i,k]*exp(p*M[i,k])
-    }
     if (isTRUE(plus.group) & use.equ=="new"){
+      for (i in 1:(na[k]-2)){
+        out[i] <- naa[i+1,k+1]*exp(M[i,k])+caa[i,k]*exp(p*M[i,k])
+      }
       out[na[k]-1]<- (caa[na[k]-1,k]*alpha  * (naa[na[k],k+1]+naa[na[k+1],k+1]) * exp(M[na[k]-1,k]))/(caa[na[k]-1,k]*alpha +caa[na[k],k]) + caa[na[k]-1,k] * exp(p * M[na[k]-1,k])
       out[na[k]]  <- (caa[na[k],k] * (naa[na[k],k+1]+naa[na[k+1],k+1]) * exp(M[na[k],k]))/(caa[na[k]-1,k]*alpha +caa[na[k],k]) + caa[na[k],k] * exp(p * M[na[k],k])
     }
     else if (isTRUE(plus.group) & use.equ=="old"){
-      out[na[k]-1]<- pmax(caa[na[k]-1,k],min.caa)*alpha/(pmax(caa[na[k]-1,k],min.caa)*alpha +pmax(caa[na[k],k],min.caa))* naa[na[k],k+1] * exp(M[na[k]-1,k])+ caa[na[k]-1,k] * exp(p * M[na[k]-1,k])
-
-      out[na[k]]<- pmax(caa[na[k],k], min.caa)/(pmax(caa[na[k]-1,k], min.caa)*alpha + pmax(caa[na[k],k], min.caa)) * naa[na[k], k+1] * exp(M[na[k],k]) + caa[na[k], k] * exp(p * M[na[k],k])
+      for (i in 1:(na[k])){
+        out[i] <- naa[i+1,k+1]*exp(M[i,k])+caa[i,k]*exp(p*M[i,k])
+      }
+      #out[na[k]-1]<- pmax(caa[na[k]-1,k],min.caa)*alpha/(pmax(caa[na[k]-1,k],min.caa)*alpha +pmax(caa[na[k],k],min.caa))* naa[na[k],k+1] * exp(M[na[k]-1,k])+ caa[na[k]-1,k] * exp(p * M[na[k]-1,k])
+      #out[na[k]]<- pmax(caa[na[k],k], min.caa)/(pmax(caa[na[k]-1,k], min.caa)*alpha + pmax(caa[na[k],k], min.caa)) * naa[na[k], k+1] * exp(M[na[k],k]) + caa[na[k], k] * exp(p * M[na[k],k])
     }
     else{
+      for (i in 1:(na[k]-2)){
+        out[i] <- naa[i+1,k+1]*exp(M[i,k])+caa[i,k]*exp(p*M[i,k])
+      }
       out[na[k]-1] <- naa[na[k],k+1]*exp(M[na[k]-1,k])+caa[na[k]-1,k]*exp(p*M[na[k]-1,k])
       out[na[k]] <- out[na[k]-1]*caa[na[k],k]/caa[na[k]-1,k]*exp(p*(M[na[k],k]-M[na[k]-1,k]))
     }
