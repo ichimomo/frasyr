@@ -23,6 +23,18 @@ theme_SH <- function(legend.position="none",base_size=12){
           axis.line.x=element_line(size= 0.3528),
           axis.line.y=element_line(size= 0.3528),
           legend.position=legend.position)
+
+  if(isTRUE(stringr::str_detect(version$os, pattern="darwin"))){
+    font_MAC <- "HiraginoSans-W3"#"Japan1GothicBBB"#
+    theme_bw(base_size=base_size) +
+      theme(panel.grid = element_blank(),
+            axis.text.x=element_text(size=11,color="black"),
+            axis.text.y=element_text(size=11,color="black"),
+            axis.line.x=element_line(size= 0.3528),
+            axis.line.y=element_line(size= 0.3528),
+            legend.position=legend.position, text =element_text(family = font_MAC) )
+  }
+
 }
 
 #' 会議用の図の出力関数（大きさ・サイズの指定済）：通常サイズ
@@ -415,13 +427,13 @@ compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000, newplot=F
     font_MAC <- "HiraginoSans-W3"#"Japan1GothicBBB"#
 
     if(isTRUE(stringr::str_detect(version$os, pattern="darwin"))){ # plot 設定 for mac----
-    g1 <- ggplot(data=SRpred)+
-      theme(legend.position="top",text = element_text(family = font_MAC))
+    g1 <- ggplot(data=SRpred)
     g1 <- g1 + geom_line(data=SRpred,
                          mapping=aes(x=SSB/biomass.unit,y=R/number.unit, linetype=再生産関係, col=再生産関係))
     g1 <- g1 + geom_point(data=SRdata, mapping=aes(x=SSB/biomass.unit, y=R/number.unit), color="black")
     g1 <- g1 + xlim(c(0,max(SRdata$SSB/biomass.unit))) + ylim(c(0,max(SRdata$R/number.unit))) +
-      labs(x = "親魚量（千トン）", y = "加入尾数（百万尾)")
+      labs(x = "親魚量（千トン）", y = "加入尾数（百万尾)")+ theme_SH() +
+      theme(legend.position="top",text=element_text(family = font_MAC))
     g1
     ggsave_SH(g1, file=paste("./",output_folder,"/resSRcomp.png",sep=""))
     }
@@ -431,7 +443,7 @@ compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000, newplot=F
                            mapping=aes(x=SSB/biomass.unit,y=R/number.unit, linetype=再生産関係, col=再生産関係))
       g1 <- g1 + geom_point(data=SRdata, mapping=aes(x=SSB/biomass.unit, y=R/number.unit), color="black")
       g1 <- g1 + xlim(c(0,max(SRdata$SSB/biomass.unit))) + ylim(c(0,max(SRdata$R/number.unit))) +
-        labs(x = "親魚量（千トン）", y = "加入尾数（百万尾)") +
+        labs(x = "親魚量（千トン）", y = "加入尾数（百万尾)") + theme_SH() +
         theme(legend.position="top")
       g1
       ggsave_SH(g1, file=paste("./",output_folder,"/resSRcomp.png",sep=""))
