@@ -853,8 +853,9 @@ vpa <- function(
      }
      saa1[na[ny], ny] <- get(stat.tf[na[ny]-1])(saa1[na[ny], years %in% tf.year])
      if(length(p)==1) faa1[1:na[ny], ny] <- p*sel.func(saa1, def=sel.def)[1:na[ny],ny] else  faa1[1:na[ny], ny] <- p[length(p)]*sel.func(saa1, def=sel.def)[1:na[ny],ny]
-     faa1[na[ny], ny] <- alpha*faa1[na[ny]-1, ny]
-
+     if(use.equ!="old"){ 
+       faa1[na[ny], ny] <- alpha*faa1[na[ny]-1, ny]
+     } 
      dd <- max(sqrt((saa1[,ny] - saa[,ny])^2))
      itt <- itt + 1
 
