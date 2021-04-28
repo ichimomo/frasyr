@@ -77,7 +77,7 @@
       <h1 data-toc-skip>VPA関数を使った資源量推定</h1>
                         <h4 data-toc-skip class="author">市野川桃子</h4>
             
-            <h4 data-toc-skip class="date">2021-04-20</h4>
+            <h4 data-toc-skip class="date">2021-04-28</h4>
       
       
       <div class="hidden name"><code>vpa.Rmd</code></div>
@@ -89,10 +89,10 @@
 <p>こちら　<a href="http://cse.fra.affrc.go.jp/ichimomo/fish/rvpa.html" class="external-link uri">http://cse.fra.affrc.go.jp/ichimomo/fish/rvpa.html</a>　のサイトからの転載になります． データも，このサイトから持ってきています．</p>
 <div id="vpaの実施" class="section level1">
 <h1 class="hasAnchor">
-<a href="#vpa%E3%81%AE%E5%AE%9F%E6%96%BD" class="anchor"></a>VPAの実施</h1>
+<a href="#vpa%E3%81%AE%E5%AE%9F%E6%96%BD" class="anchor" aria-hidden="true"></a>VPAの実施</h1>
 <div id="データの読み込み" class="section level2">
 <h2 class="hasAnchor">
-<a href="#%E3%83%87%E3%83%BC%E3%82%BF%E3%81%AE%E8%AA%AD%E3%81%BF%E8%BE%BC%E3%81%BF" class="anchor"></a>データの読み込み</h2>
+<a href="#%E3%83%87%E3%83%BC%E3%82%BF%E3%81%AE%E8%AA%AD%E3%81%BF%E8%BE%BC%E3%81%BF" class="anchor" aria-hidden="true"></a>データの読み込み</h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">frasyr</span><span class="op">)</span>
 <span class="co">#&gt; Warning: replacing previous import 'magrittr::set_names' by 'purrr::set_names'</span>
@@ -127,7 +127,7 @@
 </div>
 <div id="vpa結果を外部から読み込む場合" class="section level2">
 <h2 class="hasAnchor">
-<a href="#vpa%E7%B5%90%E6%9E%9C%E3%82%92%E5%A4%96%E9%83%A8%E3%81%8B%E3%82%89%E8%AA%AD%E3%81%BF%E8%BE%BC%E3%82%80%E5%A0%B4%E5%90%88" class="anchor"></a>VPA結果を外部から読み込む場合</h2>
+<a href="#vpa%E7%B5%90%E6%9E%9C%E3%82%92%E5%A4%96%E9%83%A8%E3%81%8B%E3%82%89%E8%AA%AD%E3%81%BF%E8%BE%BC%E3%82%80%E5%A0%B4%E5%90%88" class="anchor" aria-hidden="true"></a>VPA結果を外部から読み込む場合</h2>
 <ul>
 <li>read.vpa関数を使って読み込めます</li>
 <li>out.vpa関数による出力と同じ書式になりますので、out.vpa関数でひな形ファイルを作成してから、エクセルでそれを編集し、read.vpa関数で読むと良いと思います</li>
@@ -141,10 +141,10 @@
 </div>
 <div id="さまざまなvpaのデモ" class="section level1">
 <h1 class="hasAnchor">
-<a href="#%E3%81%95%E3%81%BE%E3%81%96%E3%81%BE%E3%81%AAvpa%E3%81%AE%E3%83%87%E3%83%A2" class="anchor"></a>さまざまなVPAのデモ</h1>
+<a href="#%E3%81%95%E3%81%BE%E3%81%96%E3%81%BE%E3%81%AAvpa%E3%81%AE%E3%83%87%E3%83%A2" class="anchor" aria-hidden="true"></a>さまざまなVPAのデモ</h1>
 <div id="データの読み込みと整形" class="section level2">
 <h2 class="hasAnchor">
-<a href="#%E3%83%87%E3%83%BC%E3%82%BF%E3%81%AE%E8%AA%AD%E3%81%BF%E8%BE%BC%E3%81%BF%E3%81%A8%E6%95%B4%E5%BD%A2" class="anchor"></a>データの読み込みと整形</h2>
+<a href="#%E3%83%87%E3%83%BC%E3%82%BF%E3%81%AE%E8%AA%AD%E3%81%BF%E8%BE%BC%E3%81%BF%E3%81%A8%E6%95%B4%E5%BD%A2" class="anchor" aria-hidden="true"></a>データの読み込みと整形</h2>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># 読み込み</span>
 <span class="va">caa</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex1_caa.csv"</span>,  row.names<span class="op">=</span><span class="fl">1</span><span class="op">)</span>
@@ -158,7 +158,7 @@
 </div>
 <div id="チューニングなしvpaのバリエーション" class="section level2">
 <h2 class="hasAnchor">
-<a href="#%E3%83%81%E3%83%A5%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0%E3%81%AA%E3%81%97vpa%E3%81%AE%E3%83%90%E3%83%AA%E3%82%A8%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3" class="anchor"></a>チューニングなしVPAのバリエーション</h2>
+<a href="#%E3%83%81%E3%83%A5%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0%E3%81%AA%E3%81%97vpa%E3%81%AE%E3%83%90%E3%83%AA%E3%82%A8%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3" class="anchor" aria-hidden="true"></a>チューニングなしVPAのバリエーション</h2>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R">  <span class="co"># p.initは初期値。収束しない場合（Fがゼロになる場合など）は、初期値を変えてみる</span>
   <span class="co"># fc.yearは、Fcurrentを計算する範囲。管理基準値と将来予測で使われる。</span>
@@ -170,7 +170,7 @@
 </div>
 <div id="チューニングvpaのバリエーション" class="section level2">
 <h2 class="hasAnchor">
-<a href="#%E3%83%81%E3%83%A5%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0vpa%E3%81%AE%E3%83%90%E3%83%AA%E3%82%A8%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3" class="anchor"></a>チューニングVPAのバリエーション</h2>
+<a href="#%E3%83%81%E3%83%A5%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0vpa%E3%81%AE%E3%83%90%E3%83%AA%E3%82%A8%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3" class="anchor" aria-hidden="true"></a>チューニングVPAのバリエーション</h2>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co">## vout2; チューニング，選択率updateなし</span>
 <span class="va">vout2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">dat</span>,tune<span class="op">=</span><span class="cn">TRUE</span>,sel.update<span class="op">=</span><span class="cn">FALSE</span>,Pope<span class="op">=</span><span class="cn">FALSE</span>,
@@ -195,16 +195,16 @@
 </div>
 <div id="モデル診断推定パラメータの不確実性の評価" class="section level1">
 <h1 class="hasAnchor">
-<a href="#%E3%83%A2%E3%83%87%E3%83%AB%E8%A8%BA%E6%96%AD%E6%8E%A8%E5%AE%9A%E3%83%91%E3%83%A9%E3%83%A1%E3%83%BC%E3%82%BF%E3%81%AE%E4%B8%8D%E7%A2%BA%E5%AE%9F%E6%80%A7%E3%81%AE%E8%A9%95%E4%BE%A1" class="anchor"></a>モデル診断・推定パラメータの不確実性の評価</h1>
+<a href="#%E3%83%A2%E3%83%87%E3%83%AB%E8%A8%BA%E6%96%AD%E6%8E%A8%E5%AE%9A%E3%83%91%E3%83%A9%E3%83%A1%E3%83%BC%E3%82%BF%E3%81%AE%E4%B8%8D%E7%A2%BA%E5%AE%9F%E6%80%A7%E3%81%AE%E8%A9%95%E4%BE%A1" class="anchor" aria-hidden="true"></a>モデル診断・推定パラメータの不確実性の評価</h1>
 <div id="尤度プロファイル" class="section level2">
 <h2 class="hasAnchor">
-<a href="#%E5%B0%A4%E5%BA%A6%E3%83%97%E3%83%AD%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB" class="anchor"></a>尤度プロファイル</h2>
+<a href="#%E5%B0%A4%E5%BA%A6%E3%83%97%E3%83%AD%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB" class="anchor" aria-hidden="true"></a>尤度プロファイル</h2>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">ci0</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/profile_likelihood.vpa.html">profile_likelihood.vpa</a></span><span class="op">(</span><span class="va">vout3</span>, method<span class="op">=</span><span class="st">"ci"</span>,Alpha<span class="op">=</span><span class="fl">0.80</span><span class="op">)</span><span class="op">$</span><span class="va">ci</span></code></pre></div>
 </div>
 <div id="ブートストラップ" class="section level2">
 <h2 class="hasAnchor">
-<a href="#%E3%83%96%E3%83%BC%E3%83%88%E3%82%B9%E3%83%88%E3%83%A9%E3%83%83%E3%83%97" class="anchor"></a>ブートストラップ</h2>
+<a href="#%E3%83%96%E3%83%BC%E3%83%88%E3%82%B9%E3%83%88%E3%83%A9%E3%83%83%E3%83%97" class="anchor" aria-hidden="true"></a>ブートストラップ</h2>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co">## ノンパラメトリックブートストラップ(method="n")</span>
 <span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span>
@@ -292,7 +292,7 @@
 </div>
 <div id="残差の自己相関のチェック" class="section level2">
 <h2 class="hasAnchor">
-<a href="#%E6%AE%8B%E5%B7%AE%E3%81%AE%E8%87%AA%E5%B7%B1%E7%9B%B8%E9%96%A2%E3%81%AE%E3%83%81%E3%82%A7%E3%83%83%E3%82%AF" class="anchor"></a>残差の自己相関のチェック</h2>
+<a href="#%E6%AE%8B%E5%B7%AE%E3%81%AE%E8%87%AA%E5%B7%B1%E7%9B%B8%E9%96%A2%E3%81%AE%E3%83%81%E3%82%A7%E3%83%83%E3%82%AF" class="anchor" aria-hidden="true"></a>残差の自己相関のチェック</h2>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">resid</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">vout3</span><span class="op">$</span><span class="va">pred.index</span><span class="op">)</span> <span class="op">-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">index</span><span class="op">)</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">resid</span>,type<span class="op">=</span><span class="st">"b"</span><span class="op">)</span></code></pre></div>
