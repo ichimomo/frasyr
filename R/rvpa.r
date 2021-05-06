@@ -230,9 +230,24 @@ forward.calc <- function(faa,naa,M,na,k,plus.group=plus.group){
 
 plus.group.eq <- function(x, naa, faa, M, k) naa[x,k-1]*exp(-faa[x,k-1]-M[x,k-1])
 
-f.at.age <- function(caa,naa,M,na,k,p=0.5,alpha=1) {
+f.at.age <- function(caa,naa,M,na,k,p=0.5,alpha=1,use.equ) {
+ if(na[k+1]>na[k]){
+ if (use.equ=="new"){
+ out <- -log(1-caa[1:(na[k]-1),k]*exp(p*M[1:(na[k]-1),k])/naa[1:(na[k]-1),k])
+  c(out, alpha*out[length(out)])
+ }
+ else
+ {
+  out <- -log(1-caa[1:(na[k]),k]*exp(p*M[1:(na[k]),k])/naa[1:(na[k]),k])
+   c(out)
+ }
+ }
+ else
+ {
   out <- -log(1-caa[1:(na[k]-1),k]*exp(p*M[1:(na[k]-1),k])/naa[1:(na[k]-1),k])
   c(out, alpha*out[length(out)])
+  
+  }
 }
 
 sel.func <- function(faa, def="maxage") {
@@ -827,7 +842,7 @@ vpa <- function(
       if (isTRUE(Pope)){
         for (i in (ny-1):1){
          naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update,alpha=alpha, use.equ=use.equ)
-         faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha)
+         faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha, use.equ=use.equ)
        }
      }
      else{
@@ -839,8 +854,9 @@ vpa <- function(
            faa[na[i]-1, i] <- hira.est(caa,naa,M,na[i]-1,i,alpha=alpha,min.caa=min.caa,maxit=maxit,d=d)
          }
          else faa[na[i]-1, i] <- ik.est(caa,naa,M,na[i]-1,i,min.caa=min.caa,maxit=maxit,d=d)
-
+        
          faa[na[i], i] <- alpha*faa[na[i]-1, i]
+		 
          naa[1:na[i], i] <- vpa.core(caa,faa,M,i)
        }
      }
@@ -883,7 +899,7 @@ vpa <- function(
       naa[, ny] <- vpa.core.Pope(caa,faa,M,ny,p=p.pope)
       for (i in (ny-1):(ny-na[ny]+1)){
         naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update,alpha=alpha,use.equ=use.equ)
-        faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha)
+        faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha, use.equ=use.equ)
       }
     }
  }
@@ -892,7 +908,7 @@ vpa <- function(
    if (isTRUE(Pope)){
      for (i in (ny-1):1){
        naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update,alpha=alpha, use.equ=use.equ)
-       faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha)
+       faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha, use.equ=use.equ)
       }
    }
   else{
