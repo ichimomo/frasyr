@@ -552,6 +552,7 @@ future_vpa <- function(tmb_data,
         }
       }}}
 
+  res_future$summary <- derive_future_summary(res_future)
   return(res_future)
 
   # 足りないもの
