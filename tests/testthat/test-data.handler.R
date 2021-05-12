@@ -589,7 +589,7 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
   #二段階法：est.method=最小二乗法による推定 (use.equ="old")
   res_vpa_pgc0_tune1l_o <- vpa(vpadat_pgc0, tf.year=2015:2016, last.catch.zero = FALSE, 
                              Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.f=sel.f1, est.method="ls", b.est=FALSE,abund=c("B","B"),use.equ="old")
-  expect_equal(as.numeric(round(rowMeans(res_vpa_pgc0_tune1l_o$naa),2)),c(3.33,2.32,1.99,NA))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_pgc0_tune1l_o$naa),2)),c(3.42,2.41,2.07,NA))
   expect_equal(as.numeric(round(res_vpa_pgc0_tune1l_o$sigma,2)),0.36)
   
   #二段階法：est.method=最尤法による推定 (use.equ="new")
@@ -601,7 +601,7 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
   #二段階法：est.method=最尤法による推定 (use.equ="old")
   res_vpa_pgc0_tune1m_o <- vpa(vpadat_pgc0, tf.year=2015:2016, last.catch.zero = FALSE, 
                              Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.f=sel.f1, est.method="ml", b.est=FALSE,abund=c("B","B"),use.equ="old")
-  expect_equal(as.numeric(round(rowMeans(res_vpa_pgc0_tune1m_o$naa),2)),c(3.33,2.32,1.98,NA))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_pgc0_tune1m_o$naa),2)),c(3.41,2.40,2.07,NA))
   expect_equal(as.numeric(round(res_vpa_pgc0_tune1m_o$sigma,2)),c(0.39,0.34))
   
   #二段階法：est.method=最尤法による推定(2つの指数のsdが異なる場合） (use.equ="new")
@@ -617,8 +617,8 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
   vpa_pgc0_index_change$index[1,is.na(vpa_pgc0_index_change$index[1,])] <- exp(mean(log(c(1,2))))
   res_vpa_pgc0_index_change_tune1m_o <- vpa(vpa_pgc0_index_change, tf.year=2015:2016, last.catch.zero = FALSE, 
                                           Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.f=sel.f1, est.method="ml", b.est=FALSE,abund=c("B","B"), use.equ="old")
-  expect_equal(round(as.numeric(rowMeans(res_vpa_pgc0_index_change_tune1m_o$naa)),2),c(3.35,2.33,2.00,NA))
-  expect_equal(round(as.numeric(res_vpa_pgc0_index_change_tune1m_o$sigma),2),c(0.29,0.34))
+  expect_equal(round(as.numeric(rowMeans(res_vpa_pgc0_index_change_tune1m_o$naa)),2),c(3.45,2.42,2.09,NA))
+  expect_equal(round(as.numeric(res_vpa_pgc0_index_change_tune1m_o$sigma),2),c(0.29,0.35))
   
   #二段階法：est.method=最小二乗法による推定＋指標値の非線形性bの推定(use.equ="new")
   res_vpa_pgc0_estb_tune1l_b <- vpa(vpadat_pgc0_estb,last.catch.zero = FALSE, min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
@@ -630,9 +630,9 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
   #二段階法：est.method=最小二乗法による推定＋指標値の非線形性bの推定(use.equ="old")
   res_vpa_pgc0_estb_tune1l_b_o <- vpa(vpadat_pgc0_estb,last.catch.zero = FALSE, min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
                                     Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.f=sel.f3,est.method="ls", b.est=TRUE,abund=c("N","N","N","N","N","N"),fc.year=1998:2000, use.equ="old")
-  expect_equal(as.numeric(round(rowMeans(res_vpa_pgc0_estb_tune1l_b_o$naa),2)),c(633.14,298.27,152.18,NA))
-  expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune1l_b_o$b,2)),c(0.68,0.32,0.53,0.36,0.45,0.75))
-  expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune1l_b_o$sigma,2)),0.21)
+  expect_equal(as.numeric(round(rowMeans(res_vpa_pgc0_estb_tune1l_b_o$naa),2)),c(653.18,311.59,156.09,NA))
+  expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune1l_b_o$b,2)),c(0.68,0.33,0.53,0.37,0.45,0.76))
+  expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune1l_b_o$sigma,2)),0.2)
   
   #二段階法：est.method=最尤法による推定＋指標値の非線形性bの推定(use.equ="new")
   res_vpa_pgc0_estb_tune1m_b <- vpa(vpadat_pgc0_estb, last.catch.zero = FALSE, min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
@@ -644,9 +644,9 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
   #二段階法：est.method=最尤法による推定＋指標値の非線形性bの推定(use.equ="old")
   res_vpa_pgc0_estb_tune1m_b_o <- vpa(vpadat_pgc0_estb, last.catch.zero = FALSE, min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
                                     Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.f=sel.f3, est.method="ml", b.est=TRUE,abund=c("N","N","N","N","N","N"),fc.year=1998:2000, use.equ="old")
-  expect_equal(as.numeric(round(rowMeans(res_vpa_pgc0_estb_tune1m_b_o$naa),2)),c(648.00,303.64,155.48,NA))
-  expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune1m_b_o$b,2)),c(0.77,0.36,0.60,0.42,0.51,0.83))
-  expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune1m_b_o$sigma,2)),c(0.21,0.19,0.13,0.14,0.18,0.33))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_pgc0_estb_tune1m_b_o$naa),2)),c(667.07,316.62,159.18,NA))
+  expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune1m_b_o$b,2)),c(0.76,0.37,0.59,0.42,0.50,0.84))
+  expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune1m_b_o$sigma,2)),c(0.21,0.18,0.12,0.14,0.18,0.32))
   
   #二段階法：est.method=最尤法による推定＋指標値の非線形性bの推定+指標２と３のシグマは同じ(use.equ="new")
   res_vpa_pgc0_estb_tune1m_b_sigma <- vpa(vpadat_pgc0_estb, last.catch.zero = FALSE, min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
@@ -668,9 +668,9 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
   #二段階法：est.method=最尤法による推定＋指標値の非線形性bの推定＋一部のbは固定(use.equ="old")
   res_vpa_pgc0_estb_tune1m_b_fix_o <- vpa(vpadat_pgc0_estb, last.catch.zero = FALSE, min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
                                         Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.f=sel.f3, est.method="ml", b.est=TRUE,abund=c("N","N","N","N","N","N"),b.fix=c(NA,0.7,NA,NA,NA,1),fc.year=1998:2000,use.equ="old")
-  expect_equal(as.numeric(round(rowMeans(res_vpa_pgc0_estb_tune1m_b_fix_o$naa),2)),c(664.02,309.44,159.05,NA))
-  expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune1m_b_fix_o$b,2)),c(0.88,0.70,0.67,0.49,0.57,1.00))
-  expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune1m_b_fix_o$sigma,2)),c(0.22,0.21,0.13,0.14,0.19,0.34))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_pgc0_estb_tune1m_b_fix_o$naa),2)),c(683.77,322.68,162.90,NA))
+  expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune1m_b_fix_o$b,2)),c(0.86,0.70,0.66,0.48,0.56,1.00))
+  expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune1m_b_fix_o$sigma,2)),c(0.21,0.20,0.13,0.14,0.18,0.33))
   
   #2-2: 選択率更新法によるtuning ----
   #現状では，＋グループが途中で変わる場合の計算には対応していないのでテストは省略
