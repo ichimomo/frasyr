@@ -35,3 +35,6 @@ make_kobeII_table(
 \description{
 beta.simluationの結果などを読んで、kobeII talbeに整形する関数
 }
+\details{
+tidy形式になっているkobeII_dataにおいて、HCR_name, betaの列のラベルの組み合わせを一つの管理方式として、その管理方式ごとに少尉予測の結果を集計する
+}
