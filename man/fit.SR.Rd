@@ -70,5 +70,13 @@ resSR <- fit.SR(SRdata, SR = c("HS","BH","RI")[1],
                 method = c("L1","L2")[2], AR = 1,
                 out.AR = TRUE)
 resSR$pars
+
+# When outputting steepness, create a bio_par object using derive_biopar function with the res_vpa object and the corresponding year as its argument, and put the bio_par object in the argument of fit.SR.
+bio_par <- derive_biopar(res_obj=res_vpa,derive_year = 2010)
+resSR <- fit.SR(SRdata, SR = c("HS","BH","RI")[1],
+                method = c("L1","L2")[2], AR = 1,
+                out.AR = TRUE,bio_par=bio_par)
+resSR$pars
+resSR$steepness
 }
 }

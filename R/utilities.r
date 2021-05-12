@@ -2595,3 +2595,40 @@ detect_plus_group <- function(dres){
   if(sum((naa2-naa2_plus)^2,na.rm=T)<sum((naa2-naa2_noplus)^2,na.rm=T)) plus.group <- TRUE else plus.group <- FALSE
   return(plus.group)
 }
+
+
+#' future_vpaの返り値に要約統計量を加えるための内部関数
+#'
+#' @param res_future future_futureの返り値
+#' @param target 指定するとtargetで指定した列の値のみが抽出される。NULLの場合は全シミュレーションの平均値
+#'
+#' @export
+#' 
+
+derive_future_summary <- function(res_future, target=NULL){
+
+  assertthat::assert_that(class(res_future) == "future_new")
+  
+  if(is.null(target)){
+    tmpfunc <- function(x) apply(x,1,mean)
+  }
+  if(!is.null(target)){
+    tmpfunc <- function(x) x[,target]
+  }  
+
+  biomass <- apply(res_future$naa*res_future$waa,c(2,3),sum)
+  Fmean <- apply(res_future$faa,c(2,3),sum)
+    
+  tibble(
+    year    = as.numeric(dimnames(res_future$SR_mat[,,"ssb"])[[1]]),
+    SSB     = tmpfunc(res_future$SR_mat[,,"ssb"]),
+    biomass = tmpfunc(biomass),
+    recruit = tmpfunc(res_future$SR_mat[,,"recruit"]),
+    catch   = tmpfunc(res_future$HCR_realized[,,"wcatch"]),
+    beta    = tmpfunc(res_future$HCR_mat[,,"beta"]),
+    Blimit  = tmpfunc(res_future$HCR_mat[,,"Blimit"]),
+    Bban    = tmpfunc(res_future$HCR_mat[,,"Bban"]),        
+    beta_gamma = tmpfunc(res_future$HCR_realized[,,"beta_gamma"]),
+    Fmean      = tmpfunc(Fmean),
+    Fratio     = tmpfunc(res_future$HCR_realized[,,"Fratio"]))
+}

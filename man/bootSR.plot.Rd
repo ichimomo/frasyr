@@ -12,6 +12,7 @@ bootSR.plot(
   filename = "boot",
   lwd = 1.2,
   pch = 1,
+  ggplt = FALSE,
   ...
 )
 }
