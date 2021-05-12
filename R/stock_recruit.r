@@ -106,6 +106,14 @@ validate_sr <- function(SR = NULL, method = NULL, AR = NULL, out.AR = NULL, res_
 #'                 method = c("L1","L2")[2], AR = 1,
 #'                 out.AR = TRUE)
 #' resSR$pars
+#'
+#' # When outputting steepness, create a bio_par object using derive_biopar function with the res_vpa object and the corresponding year as its argument, and put the bio_par object in the argument of fit.SR.
+#' bio_par <- derive_biopar(res_obj=res_vpa,derive_year = 2010)
+#' resSR <- fit.SR(SRdata, SR = c("HS","BH","RI")[1],
+#'                 method = c("L1","L2")[2], AR = 1,
+#'                 out.AR = TRUE,bio_par=bio_par)
+#' resSR$pars
+#' resSR$steepness
 #' }
 #' @return 以下の要素からなるリスト
 #' \describe{
@@ -1538,6 +1546,7 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
 
     }
 
+
     # SR curve ----
     par(mfrow=c(1,1),pch=pch,lwd = lwd)
     if (output) png(file = paste0(filename,"_SRcurve.png"), width=10, height=7.5, res=432, units='in')
@@ -1719,8 +1728,24 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
 #' @param output pngファイルに出力するか否か
 #' @param filename ファイル名
 #' @encoding UTF-8
+#' @examples
+#' \dontrun{
+#' data(res_vpa)
+#' SRdata <- get.SRdata(res_vpa)
+#' resSR <- fit.SR(SRdata, SR = c("HS","BH","RI")[1],
+#'                 method = c("L1","L2")[2], AR = 1,
+#'                 out.AR = TRUE)
+#' res_jackSR <- jackknife.SR(resSR,output = T)
+#'
+#' # if calculate steepness
+#' bio_par <- derive_biopar(res_obj=res_vpa,derive_year = 2010)
+#' resSR <- fit.SR(SRdata, SR = c("HS","BH","RI")[1],
+#'                 method = c("L1","L2")[2], AR = 1,
+#'                 out.AR = TRUE,bio_par=bio_par)
+#' res_jackSR <- jackknife.SR(resSR,output = T)
+#' }
 #' @export
-jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename = "jackknife",ylim.range = c(0.5,1.5),pch=19,cex=1.1,...) {
+jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename = "jackknife",ylim.range = c(0,1.5),pch=19,cex=1.1,...) {
   RES = lapply(1:length(resSR$input$SRdata$SSB), function(i){
     jack <- resSR
     jack$input$w[i] <- 0
@@ -1739,7 +1764,8 @@ jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename 
   if (is.plot) {
     jack.res <- RES
     data_SR = resSR$input$SRdata
-    if (class(resSR)=="fit.SR" || class(resSR)=="fit.SRalpha") {
+    # no regime ----
+    if (class(resSR)=="fit.SR" || class(resSR)=="fit.SRalpha") {         # plot parameters ----
       if (output) png(file = paste0(filename,"_pars.png"), width=10, height=10, res=432, units='in')
       par(mfrow=c(2,2),mar=c(3,3,2,2),oma=c(3,3,2,2),pch=pch,cex=cex)
       plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$pars$a),type="b",
@@ -1762,6 +1788,28 @@ jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename 
         }
       }
       if (output) dev.off()
+      if(!is.null(resSR$steepness)){ #steepness----
+        if (output) png(file = paste0(filename,"_steepness.png"), width=10, height=10, res=432, units='in')
+        par(mfrow=c(2,2),mar=c(3,3,2,2),oma=c(3,3,2,2),pch=pch,cex=cex)
+        plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$steepness$h),type="b",
+             xlab="Year removed",ylab="",main="h in jackknife",ylim=resSR$steepness$h*ylim.range)
+        abline(resSR$steepness$h,0,lwd=2,col=2,lty=2)
+
+        plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$steepness$B0),type="b",
+           xlab="Year removed",ylab="",main="B0 in jackknife",ylim=resSR$steepness$B0*ylim.range)
+        abline(resSR$steepness$B0,0,lwd=2,col=2,lty=2)
+
+        plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$steepness$R0),type="b",
+         xlab="Year removed",ylab="",main="R0 in jackknife",ylim=resSR$steepness$R0*ylim.range)
+        abline(resSR$steepness$R0,0,lwd=2,col=2,lty=2)
+
+        plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$steepness$SB0),type="b",
+           xlab="Year removed",ylab="",main="SB0 in jackknife",ylim=resSR$steepness$SB0*ylim.range)
+        abline(resSR$steepness$SB0,0,lwd=2,col=2,lty=2)
+        if (output) dev.off()
+      }
+
+    # plot SR curve ----
       if (output) png(file = paste0(filename,"_SRcurve.png"), width=8, height=5, res=432, units='in')
       par(mar=c(3,3,2,2),oma=c(3,3,2,2),mfrow=c(1,1))
       plot(data_SR$R ~ data_SR$SSB, cex=2, type = "p",xlab="SSB",ylab="R",pch=1,
@@ -1773,8 +1821,11 @@ jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename 
       points(resSR$pred$SSB,resSR$pred$R,col=2,type="l",lwd=3,lty=2)
       legend("topright", legend=c("Estimated SR function","A jackkine SR function"),col=c("red",rgb(0,0,1,alpha=0.1)),lty=c(2,1), cex=0.8)
       if (output) dev.off()
-    } else { #fit.SRregime
+    }
+    #fit.SRregime ----
+    else {
       regime_unique = resSR$regime_resid$regime %>% unique()
+      # plot parameters ----
       if (output) png(file = paste0(filename,"_pars.png"), width=15, height=7.5, res=432, units='in')
       par(mar=c(3,3,2,2),oma=c(3,3,2,2),mfrow=c(length(regime_unique),3),pch=pch,cex=cex)
       for(j in 1:length(regime_unique)) {
@@ -1795,6 +1846,37 @@ jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename 
         abline(v=resSR$input$regime.year-0.5,lwd=1,lty=3,col="blue")
       }
       if (output) dev.off()
+
+      if(!is.null(resSR$steepness)){
+        if (output) png(file = paste0(filename,"_steepness.png"), width=15, height=7.5, res=432, units='in')
+        par(mar=c(3,3,2,2),oma=c(3,3,2,2),mfrow=c(length(regime_unique),4),pch=pch,cex=cex)
+        for(j in 1:length(regime_unique)) {
+        plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$steepness$h[j]),type="b",
+             xlab="Year removed",ylab="",
+             main=paste0("h in jackknife (regime ",regime_unique[j],")"),ylim=resSR$steepness$h[j]*ylim.range)
+        abline(resSR$steepness$h[j],0,lwd=2,col=2,lty=2)
+        abline(v=resSR$input$regime.year-0.5,lwd=1,lty=3,col="blue")
+
+        plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$steepness$B0[j]),type="b",
+             xlab="Year removed",ylab="",
+             main=paste0("B0 in jackknife (regime ",regime_unique[j],")"),ylim=resSR$steepness$B0[j]*ylim.range)
+        abline(resSR$steepness$B0[j],0,lwd=2,col=2,lty=2)
+        abline(v=resSR$input$regime.year-0.5,lwd=1,lty=3,col="blue")
+        plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$steepness$R0[j]),type="b",
+             xlab="Year removed",ylab="",
+             main=paste0("R0 in jackknife (regime ",regime_unique[j],")"),ylim=resSR$steepness$R0[j]*ylim.range)
+        abline(resSR$steepness$R0[j],0,lwd=2,col=2,lty=2)
+        abline(v=resSR$input$regime.year-0.5,lwd=1,lty=3,col="blue")
+        plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$steepness$SB0[j]),type="b",
+             xlab="Year removed",ylab="",
+             main=paste0("SB0 in jackknife (regime ",regime_unique[j],")"),ylim=resSR$steepness$SB0[j]*ylim.range)
+        abline(resSR$steepness$SB0[j],0,lwd=2,col=2,lty=2)
+        abline(v=resSR$input$regime.year-0.5,lwd=1,lty=3,col="blue")
+        }
+        if (output) dev.off()
+      }
+
+      # plot SRcurve ----
       obs_data = resSR$pred_to_obs
       if (output) png(file = paste0(filename,"_SRcurve.png"), width=12, height=6, res=432, units='in')
       par(mar=c(3,3,2,2),oma=c(3,3,2,2),mfrow=c(1,length(regime_unique)))
@@ -1814,6 +1896,7 @@ jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename 
       if (output) dev.off()
     }
   }
+
   return(invisible(RES))
 }
 
