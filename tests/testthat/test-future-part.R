@@ -1,5 +1,4 @@
-# library(frasyr) # devtools::load_all()
-# library(tidyverse)
+# library(frasyr) ; devtools::load_all(); library(tidyverse)
 
 context("check future_vpa with sample data") # マアジデータでの将来予測 ----
 
@@ -54,17 +53,23 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
   #  expect_equal(x,c(0,0,1),tol=0.005)
   
   # option fix_recruit、fix_wcatchのチェック
-  catch <- apply(res_future_test$wcaa,c(2,3),sum)
   expect_equal(mean(res_future_test$naa[1,"2020",]), 1000)
-  expect_equal(mean(catch["2020",]), 1000, tol=0.001)
-  expect_equal(mean(catch["2021",]), 2000, tol=0.001)  
+  res_future_test$summary %>% dplyr::filter(year==2020 | year==2021) %>%
+      select(catch) %>% unlist() %>% as.numeric() %>%
+      expect_equal(c(1000,2000), tol=0.001)
+  # catch <- apply(res_future_test$wcaa,c(2,3),sum)  
+  # expect_equal(mean(catch["2020",]), 1000, tol=0.001)  
+  # expect_equal(mean(catch["2021",]), 2000, tol=0.001)  
   # beta=0の場合でもwcatchを優先させる
-  res_future_test <- redo_future(data_future_test, list(HCR_beta=0, fix_recruit=NULL,start_ABC_year_name=2020, nyear=5))
-  catch <- apply(res_future_test$wcaa,c(2,3),sum)
-  expect_equal(mean(catch["2020",]), 1000, tol=0.001)
-  expect_equal(mean(catch["2021",]), 2000, tol=0.001)
-  expect_equal(mean(catch["2022",]), 0, tol=0.001)
   
+  res_future_test <- redo_future(data_future_test, list(HCR_beta=0, fix_recruit=NULL,start_ABC_year_name=2020, nyear=5))
+  res_future_test$summary %>% dplyr::filter(year%in%2020:2022) %>%
+      select(catch) %>% unlist() %>% as.numeric() %>%
+      expect_equal(c(1000,2000,0), tol=0.001)  
+#  catch <- apply(res_future_test$wcaa,c(2,3),sum)
+#  expect_equal(mean(catch["2020",]), 1000, tol=0.001)
+#  expect_equal(mean(catch["2021",]), 2000, tol=0.001)
+#  expect_equal(mean(catch["2022",]), 0, tol=0.001)
 
   # backward-resamplingの場合 ----
   data_future_backward <- redo_future(data_future_test,
