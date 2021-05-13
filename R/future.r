@@ -713,7 +713,7 @@ future_vpa_R <- function(naa_mat,
      # ここでmax_Fの設定を上書きするようにしていたけど、それを廃止
      # MSE_input_dataそのままの設定を使うようにする
 #     MSE_input_data$input$max_F <- max_F_MSE 
-#     MSE_input_data$input$max_exploitation_rate <- max_exploitation_rate_MSE
+     #     MSE_input_data$input$max_exploitation_rate <- max_exploitation_rate_MSE
      MSE_dummy_data <- safe_call(make_future_data,MSE_input_data$input)$data
      MSE_dummy_data <- MSE_dummy_data %>%
         purrr::list_modify(future_initial_year   = t-2,
@@ -831,25 +831,22 @@ future_vpa_R <- function(naa_mat,
 
     # 漁獲量の変動の上限・下限設定をする場合
     if(t>=start_ABC_year && sum(!is.na(HCR_mat[t,,"TAC_upper_CV"]))){
-      # expect_wcatchが空のところはexpect_wcatchを全部計算する　
-      if(sum(HCR_mat[t,,"expect_wcatch"]==0)>0){
+      # expect_wcatchが全部空だったらexpect catchを計算して入れる
+      if(all(HCR_mat[t,,"expect_wcatch"]==0)){
         HCR_mat[t,,"expect_wcatch"] <- catch_equation(N_mat[,t,],F_mat[,t,],waa_catch_mat[,t,],M_mat[,t,],Pope=Pope) %>% colSums()
       }
       # CVよりも小さい・大きかったら上限値にexpect_wcatchを置き換える
-      upper_catch <- HCR_realized[t-1,,"wcatch"] * HCR_mat[t,,"TAC_upper_CV"]
-      is_over_upper_catch  <- HCR_mat[t,,"expect_wcatch"]>upper_catch
-      HCR_mat[t,is_over_upper_catch, "expect_wcatch"] <- upper_catch[is_over_upper_catch ]
+      HCR_mat[t,, "expect_wcatch"] <-
+        set_upper_limit_catch(HCR_realized[t-1,,"wcatch"], HCR_mat[t,,"expect_wcatch"], HCR_mat[t,,"TAC_upper_CV"])
     }
 
     if(t>=start_ABC_year && sum(!is.na(HCR_mat[t,,"TAC_lower_CV"]))){
-      # expect_wcatchが空のところはexpect_wcatchを全部計算する　
-      if(sum(HCR_mat[t,,"expect_wcatch"]==0)>0){
+      # expect_wcatchが全部空だったらexpect catchを計算して入れる
+      if(all(HCR_mat[t,,"expect_wcatch"]==0)){
         HCR_mat[t,,"expect_wcatch"] <- catch_equation(N_mat[,t,],F_mat[,t,],waa_catch_mat[,t,],M_mat[,t,],Pope=Pope) %>% colSums()
       }
-      # CVよりも小さい・大きかったら上限値にexpect_wcatchを置き換える
-      lower_catch <- HCR_realized[t-1,,"wcatch"] * HCR_mat[t,,"TAC_lower_CV"]
-      is_under_lower_catch <- HCR_mat[t,,"expect_wcatch"]<lower_catch
-      HCR_mat[t,is_under_lower_catch,"expect_wcatch"] <- lower_catch[is_under_lower_catch]
+      HCR_mat[t,, "expect_wcatch"] <-
+        set_lower_limit_catch(HCR_realized[t-1,,"wcatch"], HCR_mat[t,,"expect_wcatch"], HCR_mat[t,,"TAC_lower_CV"])      
     }    
 
     if(sum(HCR_mat[t,,"expect_wcatch"])>0){
@@ -1523,4 +1520,18 @@ calc_forward <- function(naa,M,faa,t, plus_age, plus_group = TRUE){
     if(plus_group == TRUE) naa[plus_age,t+1] <- naa[plus_age,t+1] + naa[plus_age,t]*exp(-M[plus_age,t]-faa[plus_age,t])    
   }
   return(naa)
+}
+
+set_upper_limit_catch <- function(catch_previous_year, catch_current_year, upper_limit){
+  upper_catch <- catch_previous_year * upper_limit
+  is_over_upper_catch  <- catch_current_year > upper_catch
+  catch_current_year[is_over_upper_catch] <- upper_catch[is_over_upper_catch]
+  catch_current_year
+}
+
+set_lower_limit_catch <- function(catch_previous_year, catch_current_year, lower_limit){
+  lower_catch <- catch_previous_year * lower_limit
+  is_under_lower_catch  <- catch_current_year < lower_catch
+  catch_current_year[is_under_lower_catch] <- lower_catch[is_under_lower_catch]
+  catch_current_year
 }
