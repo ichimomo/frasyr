@@ -2582,26 +2582,34 @@ plot_summary_performance <- function(folder_names, scenario_names,
 
 
 #'
-#' @param Fvector
-#' @param res_vpa
-#' @param target_year
-#' @param target_year_separate list(Fimpact_year=2015:2018, select_year=2013:2018) # 漁獲圧を引用する年と選択率を引用する年が異なる場合
-#' @param specify_selectivity target_yearの漁獲圧で漁獲するが選択率はspecify_selectivityで与えたものに置き換える
+#' F at ageをVPAの結果から%SPRで変換したりするときのユーティリティ関数
+#'
+#' Fvector, (res_vpa, target_year), (res_vpa, target_year_separate), (specify_selectivity, target_year_biopar, future_year_biopar, data_future) のどれかのセットが必要
+#' 
+#' @param Fvector 年齢別Fのベクトル（これが入っていればこのままのFvectorを返す）
+#' @param res_vpa VPAの結果オブジェクト
+#' @param target_year VPAの結果からtarget_yearの漁獲圧平均して返す
+#' @param target_year_separate list(Fimpact_year=2015:2018, select_year=2013:2018) VPAの結果におけるFimpact_yearの漁獲圧を%SPRに換算し、選択率を引用する年（select_year）の平均Fの選択率のもとでFimpact_yearの%SPRを達成するようなベクトルを返す場合
+#' @param specify_selectivity (選択率のベクトル) target_yearの漁獲圧で漁獲するが選択率はspecify_selectivityで与えたものに置き換える。将来予測１年目に、Fmsyの選択率を仮定するが、漁獲圧はFcurrentに換算するような場合に使う。FcurrentをSPR換算するときの生物パラメータの年範囲がtarget_year_biopar, 選択率のほうをSPR換算するときに使うパラメータの年範囲future_year_bioparで指定され,データは data_futureからとってくる
 #' @param target_year_biopar specify_selectivityを使う場合、target_yearをSPR換算するときの生物パラメータの年の範囲
-#' @param future_year_biopar  specify_selectivityを使う場合、選択率→Fvectorにするときに使う生物パラメータの範囲（将来年も可）。NULLの場合、将来予測の最後の年が使われる
+#' @param future_year_biopar  specify_selectivityを使う場合、選択率→Fvectorにするときに使う生物パラメータの年の範囲（将来年も可）。NULLの場合、将来予測の最後の年が使われる
 #' @param data_future specify_selectivityを使う場合、将来予測するためのデータ
 #' 
 #' @export
 #'
 #' 
 
-set_Fvector <- function(Fvector = NULL, res_vpa=NULL, target_year=NULL,
-                            target_year_separate = NULL, 
-                            specify_selectivity = NULL, 
-                            target_year_biopar = NULL, 
-                            future_year_biopar = NULL, 
-                            data_future = NULL){
-  #  assertthat::assert_that(type %in% c(1,3,4,6,7))
+convert_and_derive_Fvector <- function(Fvector = NULL,
+                                       res_vpa=NULL,
+                                       target_year=NULL,
+                                       target_year_separate = NULL, 
+                                       specify_selectivity = NULL, 
+                                       target_year_biopar = NULL, 
+                                       future_year_biopar = NULL, 
+                                       data_future = NULL){
+    #  assertthat::assert_that(type %in% c(1,3,4,6,7))
+  if(!is.null(Fvector)) return(Fvector)
+  
   if(is.null(Fvector)){
     
     if(!is.null(year_range)) Fvector <- apply_year_colum(res_vpa$faa,target_year=target_year)
