@@ -1,6 +1,8 @@
-library(frasyr)
+# library(frasyr) ; devtools::load_all(); library(tidyverse)
+
 context("check future_vpa with sample data") # マアジデータでの将来予測 ----
 
+options(warn=-1)
 data(res_vpa)
 data(res_sr_HSL2)
 
@@ -51,17 +53,23 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
   #  expect_equal(x,c(0,0,1),tol=0.005)
   
   # option fix_recruit、fix_wcatchのチェック
-  catch <- apply(res_future_test$wcaa,c(2,3),sum)
   expect_equal(mean(res_future_test$naa[1,"2020",]), 1000)
-  expect_equal(mean(catch["2020",]), 1000, tol=0.001)
-  expect_equal(mean(catch["2021",]), 2000, tol=0.001)  
+  res_future_test$summary %>% dplyr::filter(year==2020 | year==2021) %>%
+      select(catch) %>% unlist() %>% as.numeric() %>%
+      expect_equal(c(1000,2000), tol=0.001)
+  # catch <- apply(res_future_test$wcaa,c(2,3),sum)  
+  # expect_equal(mean(catch["2020",]), 1000, tol=0.001)  
+  # expect_equal(mean(catch["2021",]), 2000, tol=0.001)  
   # beta=0の場合でもwcatchを優先させる
-  res_future_test <- redo_future(data_future_test, list(HCR_beta=0, fix_recruit=NULL,start_ABC_year_name=2020, nyear=5))
-  catch <- apply(res_future_test$wcaa,c(2,3),sum)
-  expect_equal(mean(catch["2020",]), 1000, tol=0.001)
-  expect_equal(mean(catch["2021",]), 2000, tol=0.001)
-  expect_equal(mean(catch["2022",]), 0, tol=0.001)
   
+  res_future_test <- redo_future(data_future_test, list(HCR_beta=0, fix_recruit=NULL,start_ABC_year_name=2020, nyear=5))
+  res_future_test$summary %>% dplyr::filter(year%in%2020:2022) %>%
+      select(catch) %>% unlist() %>% as.numeric() %>%
+      expect_equal(c(1000,2000,0), tol=0.001)  
+#  catch <- apply(res_future_test$wcaa,c(2,3),sum)
+#  expect_equal(mean(catch["2020",]), 1000, tol=0.001)
+#  expect_equal(mean(catch["2021",]), 2000, tol=0.001)
+#  expect_equal(mean(catch["2022",]), 0, tol=0.001)
 
   # backward-resamplingの場合 ----
   data_future_backward <- redo_future(data_future_test,
@@ -254,7 +262,7 @@ test_that("check MSE feature",{ # ----
   expect_equal(round(mean(get_wcatch(res_future_noMSE)["2019",])),32311) 
   expect_equal(round(mean(get_wcatch(res_future_MSE)["2019",])),32370)
 
-  check_MSE_sd0(data_future_test10, nsim_for_check = 1000)  
+  #check_MSE_sd0(data_future_test10, nsim_for_check = 1000)  # 2021/02/10でOK。時間かかるのでコメントアウトする
 
   # 漁獲量が一定の場合
   CC <- 30000  
@@ -283,23 +291,34 @@ test_that("check MSE feature",{ # ----
                             do_MSE=FALSE, MSE_input_data=data_future_test10,
                             SPRtarget=0.3,
                             MSE_nsim=100)
+
+  expect_equal(max(res_future3$faa[,as.character(2020:2025),]),
+               max(res_future_noMSE$faa[,"2018",1]),tol=0.0001)
   
-  # 上限あり（MSE）  
+  # 上限あり（MSE）
+  # Fの上限を決める、という管理方策を用いる場合には
+  # MSEの設定でmax_Fをつけ、真のほうにはmax_Fはつけない
+  data_future_test10_for_MSE <- data_future_test10
+  data_future_test10_for_MSE$input$max_F <- max(res_future_noMSE$faa[,"2018",1])
+  data_future_test10_for_MSE$input$fix_wcatch <- tibble(year=2020:2025, wcatch=CC)
+  
   res_future4 <- redo_future(data_future_test10,
                             list(nsim=10,nyear=10,
                                  fix_recruit=NULL,
-                                 fix_wcatch=tibble(year=2020:2025, wcatch=CC),
-                                 max_F=max(res_future_noMSE$faa[,"2018",1])),
-                            do_MSE=TRUE, MSE_input_data=data_future_test10,
+                                 max_F=5,
+                                 fix_wcatch=tibble(year=2020:2025, wcatch=CC)),
+                            do_MSE=TRUE, MSE_input_data=data_future_test10_for_MSE,
                             SPRtarget=0.3,
                             MSE_nsim=100)
 
   # この図が見たかった！
   #plot(res_future3$HCR_realized[as.character(2020:2025),,"Fratio"],
   #     res_future4$HCR_realized[as.character(2020:2025),,"Fratio"])
+  # boxplot(t(res_future4$HCR_realized[as.character(2020:2025),,"wcatch"]))
   max(res_future4$HCR_realized[as.character(2020:2025),,"Fratio"]) %>%
     round(2) %>% 
-    expect_equal(0.18)
+      #    expect_equal(0.18)
+    expect_equal(0.55)      
 
   tmpfunc <- function(res_future){
       x <- t(get_wcatch(res_future)[as.character(2021:2025),])
@@ -545,23 +564,30 @@ test_that("density dependent maturity option",{
 
     # maa&waaを置き換えてwaa_fun, maa_funをやる
     res_vpa2 <- res_vpa
-    res_vpa2$input$dat$maa[2,] <- 1-res_vpa$naa[2,]/max(res_vpa$naa[2,])
+    res_vpa2$input$dat$maa[2,] <- 1-res_vpa$naa[2,]/max(res_vpa$naa[2,]) + 0.1
     res_vpa2$input$dat$waa[] <- res_vpa2$input$dat$waa[] * exp(rnorm(length(unlist(res_vpa$input$dat$waa)), 0, 0.1))
 
     data_future_maa <- redo_future(data_future_test,list(maa_fun=TRUE, waa_fun=TRUE,
                                                          res_vpa=res_vpa2, fix_recruit = NULL), only_data=TRUE)
     mean(data_future_maa$data$maa_rand_mat[,,1]) %>% round(3) %>% 
-        expect_equal(0.003)
+        expect_equal(0)
     data_future_maa$data$maa_par_mat[,1,"b0"] %>% round(2) %>% as.numeric %>%
-        expect_equal(c(0,0.78,1,1))
+        expect_equal(c(0,1.1,1,1))
     data_future_maa$data$maa_par_mat[,1,"sd"] %>% round(3) %>% as.numeric %>%
-        expect_equal(c(0.000,0.073,0.000,0.000))
+        expect_equal(c(0.000,0.0,0.000,0.000))
     data_future_maa$data$maa_par_mat[,1,"b1"] %>% round(5) %>% as.numeric %>%
-        expect_equal(c(0.00000,-0.00082,0.00000,0.00000))
+        expect_equal(c(0.00000,-0.0013,0.00000,0.00000))
+    data_future_maa$data$maa_par_mat[2,1,c("min","max")] %>% as.numeric %>%
+        expect_equal(range(res_vpa2$input$dat$maa[2,]))
 
     # 十分なテストではないがとりあえず
-    res_future_maa <- future_vpa(data_future_maa$data)
+    res_future_maa <- future_vpa(data_future_maa$data,multi_init=1.5)
     expect_equal(sum(apply(res_future_maa$waa[1,,],1,sd)==0),30)
     expect_equal(sum(apply(res_future_maa$maa[2,,],1,sd)==0),30)
+
+    # 最小・最大値で足切りできているかを確認
+    expect_equal(range(res_future_maa$maa[2,as.character(2017:2030),]),
+                 range(res_vpa2$input$dat$maa[2,]))
+    
 })
 

@@ -65,7 +65,7 @@ bを1以外の値で固定した、あるいはbを考慮しなかった場合�
 \seealso{
 vpa計算について:  \code{\link{vpa}}
 作図について: \code{\link{plot_vpa}}
-https://ichimomo.github.io/frasyr/doc/Diagnostics-for-VPA.html
+https://ichimomo.github.io/frasyr/articles/Diagnostics-for-VPA.html
 }
 \author{
 濵邉昂平, 市野川桃子

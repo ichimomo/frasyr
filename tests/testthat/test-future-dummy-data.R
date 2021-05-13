@@ -14,8 +14,10 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
 
   res_sr_list <- list()
   for(i in 1:length(vpa_list)){
+      biopar <- derive_biopar(vpa_list[[i]],derive_year=2017)
+      biopar$M[nrow(biopar)] <- 100
       x <- vpa_list[[i]]
-      res_sr <- res_sr_list[[i]] <- get.SRdata(x) %>% fit.SR(AR=0, SR="HS")
+      res_sr <- res_sr_list[[i]] <- get.SRdata(x) %>% fit.SR(AR=0, SR="HS",bio_par=biopar)
       # SB、Rが同じにならない（SD>0）ケースは単純テストから除く
       if(res_sr$pars$sd < 0.001){
         const_ssr <- mean(colSums(x$ssb))
@@ -194,6 +196,36 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
             optim_method="none", multi_init=0)
   expect_equal(as.numeric(mean(res_future$naa[1,c("2018"),])),c(5))  
   
+  ## vpa function without plus group (with dummy vpa data)
+  vpa_no_plus_input <- vpa_list[[1]]$input %>% list_modify(plus.group=FALSE)
+  vpa_no_plus_input$dat$caa[4,] <- vpa_no_plus_input$dat$caa[4,]/2
+  vpa_no_plus <- do.call(vpa,vpa_no_plus_input)
+  vpa_no_plus$naa %>% apply(1,mean) %>% as.numeric() %>%
+    expect_equal(c(4,3,2,1))
+  
+  expect_equal(detect_plus_group(vpa_no_plus),FALSE)
+  expect_equal(detect_plus_group(vpa_list[[1]]),TRUE)  
+
+  # VPAでプラスグループなしオプションを使う場合は将来予測にそのまま引き継がれるはずだが、do.callを使う場合にはそうでない
+  # 明示的に指定する
+  res_future_no_plus <- redo_future(data_future_test,
+                                    list(res_vpa=vpa_no_plus,M=c(0,0,0,0),plus_group=FALSE),
+                                    optim_method="none", multi_init=0)
+  expect_equal(mean(res_future_no_plus$naa[,as.character(2025:2030),]),4, tol=0.0001)
+  rev(rowMeans(res_future_no_plus$SR_mat[,,"ssb"]))[1] %>% as.numeric() %>%
+      expect_equal(res_sr_list[[1]]$steepness$SB0)
+
+  BRP <- ref.F(vpa_no_plus,M=c(0,0,0,0.0001),Fcurrent=rep(Fvalue,4))
+  res_future_no_plus_F90 <- redo_future(data_future_test,
+                                    list(res_vpa=vpa_no_plus,M=c(0,0,0,0),plus_group=FALSE),
+                                    optim_method="none",
+                                    multi_init=BRP$summary$FpSPR.90.SPR[3])
+  
+  x <- rev(rowMeans(res_future_no_plus_F90$SR_mat[,,"ssb"]))[1]/rev(rowMeans(res_future_no_plus$SR_mat[,,"ssb"]))[1]  %>%  unlist() %>% as.numeric() %>% as.numeric()
+  expect_equal(round(as.numeric(x),3),0.9)
+  
+
+  
 })
 
 context("check future_vpa_function for regime shift") # ダミーデータ・レジームシフト将来予測 ----
@@ -209,7 +241,7 @@ test_that("future_vpa function (with dummy vpa data) for regime shift (level 2-3
   res_sr_list[[2]] <- fit.SRregime(get.SRdata(vpa_list[[1]]),
                                    SR="HS",method="L2",regime.key=c(0,1),
                                    regime.par=c("a","b","sd"),regime.year=2005)
-  res_sr_list[[2]]$pars$sd[2] <- 0.3 # 本当は両方ゼロだがテストのために0.3を入れる
+#  res_sr_list[[2]]$pars$sd[2] <- 0.3 # 本当は両方ゼロだがテストのために0.3を入れる
   res_sr_list[[2]]$regime_pars$sd[2] <- 0.3 # 本当は両方ゼロだがテストのために0.3を入れる
 
 #  names(res_sr_list) <- names(vpa_list)

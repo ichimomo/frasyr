@@ -21,6 +21,7 @@ Imports:
     dplyr,
     tidyr,
     readr,
+    forcats,
     stringr,
     formattable,
     ggrepel,

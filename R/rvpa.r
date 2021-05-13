@@ -166,19 +166,24 @@ backward.calc <- function(caa,naa,M,na,k,min.caa=0.001,p=0.5,plus.group=TRUE,sel
   out <- rep(NA, na[k])
   if(na[k+1] > na[k]){
     if(isTRUE(sel.update)){stop("Selectivity update method is currently not supported for the plus group change scenario")}
-    for (i in 1:(na[k]-2)){
-      out[i] <- naa[i+1,k+1]*exp(M[i,k])+caa[i,k]*exp(p*M[i,k])
-    }
     if (isTRUE(plus.group) & use.equ=="new"){
+      for (i in 1:(na[k]-2)){
+        out[i] <- naa[i+1,k+1]*exp(M[i,k])+caa[i,k]*exp(p*M[i,k])
+      }
       out[na[k]-1]<- (caa[na[k]-1,k]*alpha  * (naa[na[k],k+1]+naa[na[k+1],k+1]) * exp(M[na[k]-1,k]))/(caa[na[k]-1,k]*alpha +caa[na[k],k]) + caa[na[k]-1,k] * exp(p * M[na[k]-1,k])
       out[na[k]]  <- (caa[na[k],k] * (naa[na[k],k+1]+naa[na[k+1],k+1]) * exp(M[na[k],k]))/(caa[na[k]-1,k]*alpha +caa[na[k],k]) + caa[na[k],k] * exp(p * M[na[k],k])
     }
     else if (isTRUE(plus.group) & use.equ=="old"){
-      out[na[k]-1]<- pmax(caa[na[k]-1,k],min.caa)*alpha/(pmax(caa[na[k]-1,k],min.caa)*alpha +pmax(caa[na[k],k],min.caa))* naa[na[k],k+1] * exp(M[na[k]-1,k])+ caa[na[k]-1,k] * exp(p * M[na[k]-1,k])
-
-      out[na[k]]<- pmax(caa[na[k],k], min.caa)/(pmax(caa[na[k]-1,k], min.caa)*alpha + pmax(caa[na[k],k], min.caa)) * naa[na[k], k+1] * exp(M[na[k],k]) + caa[na[k], k] * exp(p * M[na[k],k])
+      for (i in 1:(na[k])){
+        out[i] <- naa[i+1,k+1]*exp(M[i,k])+caa[i,k]*exp(p*M[i,k])
+      }
+      #out[na[k]-1]<- pmax(caa[na[k]-1,k],min.caa)*alpha/(pmax(caa[na[k]-1,k],min.caa)*alpha +pmax(caa[na[k],k],min.caa))* naa[na[k],k+1] * exp(M[na[k]-1,k])+ caa[na[k]-1,k] * exp(p * M[na[k]-1,k])
+      #out[na[k]]<- pmax(caa[na[k],k], min.caa)/(pmax(caa[na[k]-1,k], min.caa)*alpha + pmax(caa[na[k],k], min.caa)) * naa[na[k], k+1] * exp(M[na[k],k]) + caa[na[k], k] * exp(p * M[na[k],k])
     }
     else{
+      for (i in 1:(na[k]-2)){
+        out[i] <- naa[i+1,k+1]*exp(M[i,k])+caa[i,k]*exp(p*M[i,k])
+      }
       out[na[k]-1] <- naa[na[k],k+1]*exp(M[na[k]-1,k])+caa[na[k]-1,k]*exp(p*M[na[k]-1,k])
       out[na[k]] <- out[na[k]-1]*caa[na[k],k]/caa[na[k]-1,k]*exp(p*(M[na[k],k]-M[na[k]-1,k]))
     }
@@ -205,20 +210,44 @@ backward.calc <- function(caa,naa,M,na,k,min.caa=0.001,p=0.5,plus.group=TRUE,sel
   return(out)
 }
 
-forward.calc <- function(faa,naa,M,na,k){
+
+forward.calc <- function(faa,naa,M,na,k,plus.group=plus.group){
   out <- rep(NA, na[k])
   for (i in 2:(na[k]-1)){
-    out[i] <- naa[i-1,k-1]*exp(-faa[i-1,k-1]-M[i-1,k-1])
+    out[i] <- naa[i-1,k-1]*exp(-faa[i-1,k-1]-M[i-1,k-1]) #最終年の最低年齢より上，最高年齢より下のnaaを計算してる
   }
-  out[na[k]] <- sum(sapply(seq(na[k]-1,max(na[k], na[k-1])), plus.group.eq, naa=naa, faa=faa, M=M, k=k))
+  if (isTRUE(plus.group)){
+    out[na[k]] <- sum(sapply(seq(na[k]-1,max(na[k], na[k-1])), plus.group.eq, naa=naa, faa=faa, M=M, k=k)) #最終年最高年齢のnaa
+  }
+  else
+  {
+    out[na[k]] <- sapply(na[k]-1, plus.group.eq, naa=naa, faa=faa, M=M, k=k)
+  }
+  
+  
   return(out)
 }
 
 plus.group.eq <- function(x, naa, faa, M, k) naa[x,k-1]*exp(-faa[x,k-1]-M[x,k-1])
 
-f.at.age <- function(caa,naa,M,na,k,p=0.5,alpha=1) {
+f.at.age <- function(caa,naa,M,na,k,p=0.5,alpha=1,use.equ) {
+ if(na[k+1]>na[k]){
+ if (use.equ=="new"){
+ out <- -log(1-caa[1:(na[k]-1),k]*exp(p*M[1:(na[k]-1),k])/naa[1:(na[k]-1),k])
+  c(out, alpha*out[length(out)])
+ }
+ else
+ {
+  out <- -log(1-caa[1:(na[k]),k]*exp(p*M[1:(na[k]),k])/naa[1:(na[k]),k])
+   c(out)
+ }
+ }
+ else
+ {
   out <- -log(1-caa[1:(na[k]-1),k]*exp(p*M[1:(na[k]-1),k])/naa[1:(na[k]-1),k])
   c(out, alpha*out[length(out)])
+  
+  }
 }
 
 sel.func <- function(faa, def="maxage") {
@@ -813,7 +842,7 @@ vpa <- function(
       if (isTRUE(Pope)){
         for (i in (ny-1):1){
          naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update,alpha=alpha, use.equ=use.equ)
-         faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha)
+         faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha, use.equ=use.equ)
        }
      }
      else{
@@ -825,8 +854,9 @@ vpa <- function(
            faa[na[i]-1, i] <- hira.est(caa,naa,M,na[i]-1,i,alpha=alpha,min.caa=min.caa,maxit=maxit,d=d)
          }
          else faa[na[i]-1, i] <- ik.est(caa,naa,M,na[i]-1,i,min.caa=min.caa,maxit=maxit,d=d)
-
+        
          faa[na[i], i] <- alpha*faa[na[i]-1, i]
+		 
          naa[1:na[i], i] <- vpa.core(caa,faa,M,i)
        }
      }
@@ -869,7 +899,7 @@ vpa <- function(
       naa[, ny] <- vpa.core.Pope(caa,faa,M,ny,p=p.pope)
       for (i in (ny-1):(ny-na[ny]+1)){
         naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update,alpha=alpha,use.equ=use.equ)
-        faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha)
+        faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha, use.equ=use.equ)
       }
     }
  }
@@ -878,7 +908,7 @@ vpa <- function(
    if (isTRUE(Pope)){
      for (i in (ny-1):1){
        naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update,alpha=alpha, use.equ=use.equ)
-       faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha)
+       faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha, use.equ=use.equ)
       }
    }
   else{
@@ -981,15 +1011,15 @@ if (isTRUE(madara)){
 
     if (isTRUE(tune)){
       if (n.add==1 & !is.na(mean(index[,ny+n.add],na.rm=TRUE))){
-
-        new.naa <- forward.calc(faa,naa,M,na,ny+n.add)
+        
+        new.naa <- forward.calc(faa,naa,M,na,ny+n.add,plus.group=plus.group)
 
         naa[,ny+n.add] <- new.naa
         baa <- naa*waa
         ssb <- baa*maa*exp(-ssb.coef*(faa+M))
 
         if (is.null(rec.new) & !isTRUE(last.catch.zero)) {
-          new.naa[1] <- median((naa[1,]/colSums(ssb))[years %in% rps.year])*sum(ssb[,ny+n.add],na.rm=TRUE)
+          new.naa[1] <- NA #median((naa[1,]/colSums(ssb))[years %in% rps.year])*sum(ssb[,ny+n.add],na.rm=TRUE)
         }else if(!is.null(rec.new)) {new.naa[1] <- rec.new
         }else if(is.null(rec.new) & isTRUE(last.catch.zero)){new.naa[1] <-NA}
 
@@ -1218,14 +1248,14 @@ if (isTRUE(madara)){
         # next year
 
         if (n.add==1 & is.na(naa[1,ny+n.add])){
-          new.naa <- forward.calc(faa,naa,M,na,ny+n.add)
+          new.naa <- forward.calc(faa,naa,M,na,ny+n.add,plus.group=plus.group)
           if (!is.null(f.new) & !is.null(saa.new)) faa[,ny+n.add] <- f.new*saa.new else faa[,ny+n.add] <- 0
           naa[,ny+n.add] <- new.naa
           baa <- naa*waa
           ssb <- baa*maa*exp(-ssb.coef*(faa+M))
 
           if (is.null(rec.new) & !isTRUE(last.catch.zero)) {
-            new.naa[1] <- median((naa[1,]/colSums(ssb))[years %in% rps.year])*sum(ssb[,ny+n.add],na.rm=TRUE)
+            new.naa[1] <- NA # median((naa[1,]/colSums(ssb))[years %in% rps.year])*sum(ssb[,ny+n.add],na.rm=TRUE)
           }else if(!is.null(rec.new)) {new.naa[1] <- rec.new
           }else if(is.null(rec.new) & isTRUE(last.catch.zero)){new.naa[1] <-NA}
 
@@ -1460,6 +1490,7 @@ Ft <- mean(faa[,ny],na.rm=TRUE)
     res$rep <- rep
     }
 
+  class(res) <- "vpa"
   return(invisible(res))
 
 

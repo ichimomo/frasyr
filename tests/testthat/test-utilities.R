@@ -57,6 +57,7 @@ test_that("calc_future_perSPR accepts list with different length vectors", {
                                            maa       = future_data$data$maa_mat,
                                            M         = future_data$data$M_mat,
                                            waa.catch = future_data$data$waa_catch_mat),
+                               res_vpa=result_vpa,
                                Fvector = apply_year_colum(result_vpa$faa, 2007:2011),
                                target.year = list(waa       = 2014:2018,
                                                   waa.catch = 2014:2018,
@@ -143,7 +144,15 @@ test_that("solv.Feq",{
 })
 
 test_that("Generation.Time",{
-  # 使われていない。
+    Generation.Time(vpares=res_vpa) %>% round(3) %>%
+        expect_equal(2.919)
+    Generation.Time(vpares=res_vpa, Plus=0) %>% round(3) %>%
+        expect_equal(1.91)
+    Generation.Time(maa=c(1,1,1),M=c(0,0,0),age=0:2,Plus=0)%>%
+        expect_equal(mean(0:2))
+    Generation.Time(maa=c(1,1,1),M=c(0,0,0),age=0:2)%>%
+        expect_equal(mean(0:(2+19)))    
+
 })
 
 test_that("get.SPR", {
@@ -324,3 +333,25 @@ test_that("convert_2d_future",{
   # 一旦スキップ
 })
 
+test_that("derive_biopar",{
+    
+    a1 <- derive_biopar(res_vpa, derive_year=2000)
+    a2 <- derive_biopar(res_vpa, derive_year=2000:2003)
+    expect_equal(a1[,1:3],a2[,1:3])
+    (a1$faa + a2$faa) %>% round(2) %>% as.numeric() %>%
+        expect_equal(c(1.12,3.47,3.82,3.82))
+
+    rm(list=ls())
+    a1 <- derive_biopar(res_future_0.8HCR, derive_year=2030)
+    a2 <- derive_biopar(res_future_0.8HCR, derive_year=2031:2032)
+    expect_equal(a1[,c(1,3,4)],a2[,c(1,3,4)])
+    (a1$faa + a2$faa) %>% round(2) %>% as.numeric() %>%
+        expect_equal(c(0.22, 0.53, 0.60, 0.60))
+
+})
+
+
+test_that("calc_forward",{
+  naa2 <- calc_forward(naa=res_vpa$naa,faa=res_vpa$faa,M=res_vpa$input$dat$M,t=1,plus_age=4,plus_group=TRUE)[,2]
+  naa2 %>% expect_equal(res_vpa$naa[,2])
+})

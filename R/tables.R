@@ -185,6 +185,7 @@ adhoc_table <- function(result_vpa, yrs_preabc, number, sbtarget = NULL, fmsy = 
     latest_recentyr <- yrs_preabc[length(yrs_preabc)]
     years <- paste0(oldest_recentyr, "--", latest_recentyr)
     pspr  <- calc_future_perSPR(
+      res_vpa     = result_vpa,
       fout        = list(waa       = data_future$data$waa_mat,
                          maa       = data_future$data$maa_mat,
                          M         = data_future$data$M_mat,

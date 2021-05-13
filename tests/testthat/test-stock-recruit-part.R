@@ -395,15 +395,19 @@ test_that("check matching of fit.SRregime and fit.SR",{
   SRdata2 = list(year=regime2, R=SRdata$R[SRdata$year %in% regime2],SSB=SRdata$SSB[SRdata$year %in% regime2])
   # レジームを完全に分けたときのfit.SRregimeの結果とfit.SRの結果が一致するかのテスト
   for (i in 1:nrow(SRmodel.list)) {
-    resSR1 <- fit.SR(SRdata1, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],AR = 0, hessian = FALSE,length=20)
-    resSR2 <- fit.SR(SRdata2, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],AR = 0, hessian = FALSE,length=20)
-    resSRregime <- fit.SRregime(SRdata, SR = as.character(SRmodel.list$SR.rel[i]), method = as.character(SRmodel.list$L.type[i]), regime.year = regime_year, regime.key = 0:1, regime.par = c("a","b","sd"), use.fit.SR = TRUE)
-    expect_equal(c(resSR1$pars$a,resSR2$pars$a)/resSRregime$pars$a,c(1,1),label=i,tol=1.0e-2)
+    bio_par <- derive_biopar(res_vpa, derive_year=2017)
+    resSR1 <- fit.SR(SRdata1, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],AR = 0, hessian = FALSE,length=20, bio_par=bio_par)
+    resSR2 <- fit.SR(SRdata2, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],AR = 0, hessian = FALSE,length=20, bio_par=bio_par)
+    resSRregime <- fit.SRregime(SRdata, SR = as.character(SRmodel.list$SR.rel[i]), method = as.character(SRmodel.list$L.type[i]), regime.year = regime_year, regime.key = 0:1, regime.par = c("a","b","sd"), use.fit.SR = TRUE,bio_par=bio_par)
+    
     expect_equal(c(resSR1$pars$a,resSR2$pars$a)/resSRregime$regime_pars$a,c(1,1),label=i,tol=1.0e-2)
-    expect_equal(c(resSR1$pars$b,resSR2$pars$b)/resSRregime$pars$b,c(1,1),label=i,tol=1.0e-2)
     expect_equal(c(resSR1$pars$b,resSR2$pars$b)/resSRregime$regime_pars$b,c(1,1),label=i,tol=1.0e-2)
-    expect_equal(c(resSR1$pars$sd,resSR2$pars$sd)/resSRregime$pars$sd,c(1,1),label=i,tol=1.0e-2)
     expect_equal(c(resSR1$pars$sd,resSR2$pars$sd)/resSRregime$regime_pars$sd,c(1,1),label=i,tol=1.0e-2)
     expect_equal(resSR1$loglik+resSR2$loglik,resSRregime$loglik,label=i,tol=1.0e-3)
+
+    x1 <- bind_rows(resSR1$steepness,resSR2$steepness) %>%
+      mutate(id=c(1,2)) %>% select(SPR0,SB0,R0,B0,h)
+    x2 <- resSRregime$steepness[c("SPR0","SB0","R0","B0","h")]
+    expect_equal(all(round(x2/x1,1)==1),TRUE)
   }
 })
