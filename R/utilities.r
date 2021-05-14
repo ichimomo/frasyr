@@ -1899,17 +1899,28 @@ calc_future_perSPR <- function(fout=NULL,
     }
     }}
   else{ # 将来予測結果が与えられない場合にはVPA結果からもってくる
-      if(!is.list(target.year)){      
-        waa.tmp       <- res_vpa$input$waa[as.character(target.year)]
-        waa.catch.tmp <- res_vpa$input$waa.catch[as.character(target.year)]
-        maa.tmp       <- res_vpa$input$maa[as.character(target.year)]
-        M.tmp       <- res_vpa$input$M[as.character(target.year)]
+      if(!is.list(target.year)){
+        target.year.char <- as.character(target.year)        
+        waa.tmp       <- res_vpa$input$dat$waa      [target.year.char] %>% apply(1,mean)
+        maa.tmp       <- res_vpa$input$dat$maa      [target.year.char] %>% apply(1,mean)
+        M.tmp         <- res_vpa$input$dat$M        [target.year.char] %>% apply(1,mean)
+        if(!is.null(res_vpa$input$dat$waa.catch)){
+          waa.catch.tmp <- res_vpa$input$dat$waa.catch[target.year.char] %>% apply(1,mean)
+        }
+        else{
+          waa.catch.tmp <- waa.tmp
+        }
       }
       else{
-        waa.tmp       <- res_vpa$input$waa[as.character(target.year$waa)]
-        waa.catch.tmp <- res_vpa$input$waa.catch[as.character(target.year$waa.catch)]
-        maa.tmp       <- res_vpa$input$maa[as.character(target.year$maa)]
-        M.tmp       <- res_vpa$input$M[as.character(target.year$M.tmp)]        
+        waa.tmp       <- res_vpa$input$dat$waa      [as.character(target.year$waa)      ] %>% apply(1,mean)
+        maa.tmp       <- res_vpa$input$dat$maa      [as.character(target.year$maa)      ] %>% apply(1,mean)
+        M.tmp         <- res_vpa$input$dat$M        [as.character(target.year$M.tmp)    ] %>% apply(1,mean)
+        if(!is.null(res_vpa$input$dat$waa.catch)){
+          waa.catch.tmp <- res_vpa$input$dat$waa.catch[as.character(target.year$waa.catch)] %>% apply(1,mean)
+        }
+        else{
+          waa.catch.tmp <- waa.tmp
+        }        
       }
     }
 
@@ -2657,7 +2668,7 @@ derive_future_summary <- function(res_future, target=NULL){
 #' @param data_future 将来予測のためのデータ(生物パラメータを将来予測期間から撮ってくる場合に必要)
 #' @param faa_vector 漁獲圧を代表するベクトル
 #' @param faa_vector_year 漁獲圧を取り出すときの年の範囲(VPA期間限定)
-#' @param faa_bio_year 漁獲圧をSPRに換算するときに生物パラメータを取り出す年の範囲(data_futureがある場合将来予測年も指定可能。生物パラメータが密度によって変わる場合)
+#' @param faa_bio_year 漁獲圧をSPRに換算するときに生物パラメータを取り出す年の範囲(data_futureがある場合将来予測年も指定可能。生物パラメータが密度によって変わる場合)。list(waa = 2014:2018, waa.catch = 2014:2018, maa = 2016:2018,M   = 2014:2018)とすると生物パラメータによって異なる期間の指定も可能。下のsaa_bio_yearも同様
 #' @param saa_vector 選択率を代表するベクトル
 #' @param saa_vector_year 選択率を取り出すときの年の範囲(VPA期間限定)
 #' @param saa_bio_year 選択率をSPRに換算するときに生物パラメータを取り出す年の範囲(data_futureがある場合将来予測年も指定可能。生物パラメータが密度によって変わる場合)
@@ -2669,11 +2680,11 @@ derive_future_summary <- function(res_future, target=NULL){
 convert_Fvector <- function(res_vpa=NULL,
                             res_future = NULL,
                             faa_vector=NULL,
-                            faa_vector_year,
-                            faa_bio_year,
+                            faa_vector_year=NULL,
+                            faa_bio_year=NULL,
                             saa_vector=NULL,
-                            saa_vector_year,
-                            saa_bio_year){
+                            saa_vector_year=NULL,
+                            saa_bio_year=NULL){
 
   assert_that((is.null(faa_vector) | is.null(faa_vector_year)),
               (is.null(saa_vector) | is.null(saa_vector_year)))
@@ -2685,14 +2696,15 @@ convert_Fvector <- function(res_vpa=NULL,
   faa_perSPR <- calc_future_perSPR(fout=res_future,
                                    res_vpa=res_vpa,
                                    Fvector=faa_vector,
-                                   target.year=faa_biopar)
+                                   target.year=faa_bio_year)
+  cat("%SPR in faa=", faa_perSPR,"\n")
   # saa_vectorがfaa_vectorに相当する%SPRになるためには何倍にしないといけないか
   saa_multiplier <- calc_future_perSPR(fout=res_future,
                                        res_vpa=res_vpa,
                                        Fvector=saa_vector,
-                                       target.year=saa_biopar, 
-                                       SPRtarget=Fcurrent_perSPR)
+                                       target.year=saa_bio_year, 
+                                       SPRtarget=faa_perSPR)
   # faaの漁獲圧の大きさに相当するsaaの選択率を持ったF at age
-  Fvector <- saa_vector/saa_multilier$Fratio      
-  return(Fvector)
+  Fvector <- saa_vector/saa_multiplier$Fratio      
+  return(lst(Fvector, faa_perSPR))
 }
