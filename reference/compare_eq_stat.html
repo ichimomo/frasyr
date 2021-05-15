@@ -58,8 +58,6 @@
 
 
 
-<!-- dependencies from examples -->
-
 
   
 
@@ -135,7 +133,7 @@
     <p>例えば、横軸を平均親魚量(ssb.mean)、縦軸を平均漁獲量(catch.mean)にすると漁獲量曲線が得られる。どの統計量がプロットできるかはest.MSYの返り値res_MSYの$trace以下の名前を参照(names(res_MSY$trace))。</p>
     </div>
 
-    <pre class="usage"><span class='fu'>compare_eq_stat</span><span class='op'>(</span>
+    <div class="ref-usage sourceCode"><pre class='sourceCode r'><code><span class='fu'>compare_eq_stat</span><span class='op'>(</span>
   <span class='va'>MSYlist</span>,
   x_axis_name <span class='op'>=</span> <span class='st'>"fmulti"</span>,
   y_axis_name <span class='op'>=</span> <span class='st'>"catch.mean"</span>,
@@ -144,7 +142,7 @@
   is.scale <span class='op'>=</span> <span class='cn'>FALSE</span>,
   MSYname <span class='op'>=</span> <span class='cn'>NULL</span>,
   plot_CI80 <span class='op'>=</span> <span class='cn'>FALSE</span>
-<span class='op'>)</span></pre>
+<span class='op'>)</span></code></pre></div>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -173,23 +171,23 @@
 
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='va'>res_MSY_HSL1</span><span class='op'>)</span>
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='va'>res_MSY_HSL2</span><span class='op'>)</span>
-<span class='va'>MSY_list</span> <span class='op'>&lt;-</span> <span class='fu'>tibble</span><span class='fu'>::</span><span class='fu'><a href='https://tibble.tidyverse.org/reference/lst.html'>lst</a></span><span class='op'>(</span><span class='va'>res_MSY_HSL1</span>, <span class='va'>res_MSY_HSL2</span><span class='op'>)</span>
-<span class='co'># 縦軸を漁獲量、横軸をFの大きさ</span>
-<span class='va'>g1</span> <span class='op'>&lt;-</span> <span class='fu'>compare_eq_stat</span><span class='op'>(</span><span class='va'>MSY_list</span>,x_axis_name<span class='op'>=</span><span class='st'>"fmulti"</span>,y_axis_name<span class='op'>=</span><span class='st'>"catch.mean"</span><span class='op'>)</span>
-<span class='co'># 縦軸を親魚量にする</span>
-<span class='va'>g2</span> <span class='op'>&lt;-</span> <span class='fu'>compare_eq_stat</span><span class='op'>(</span><span class='va'>MSY_list</span>,x_axis_name<span class='op'>=</span><span class='st'>"fmulti"</span>,y_axis_name<span class='op'>=</span><span class='st'>"ssb.mean"</span><span class='op'>)</span>
-<span class='co'># 縦軸を加入量</span>
-<span class='va'>g3</span> <span class='op'>&lt;-</span> <span class='fu'>compare_eq_stat</span><span class='op'>(</span><span class='va'>MSY_list</span>,x_axis_name<span class='op'>=</span><span class='st'>"fmulti"</span>,y_axis_name<span class='op'>=</span><span class='st'>"rec.mean"</span><span class='op'>)</span>
-<span class='fu'>gridExtra</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/pkg/gridExtra/man/arrangeGrob.html'>grid.arrange</a></span><span class='op'>(</span><span class='va'>g1</span>,<span class='va'>g2</span>,<span class='va'>g3</span>,ncol<span class='op'>=</span><span class='fl'>1</span><span class='op'>)</span>
-
-<span class='va'>g3.withCI</span> <span class='op'>&lt;-</span> <span class='fu'>compare_eq_stat</span><span class='op'>(</span><span class='va'>MSY_list</span>,x_axis_name<span class='op'>=</span><span class='st'>"fmulti"</span>,y_axis_name<span class='op'>=</span><span class='st'>"rec.mean"</span>,plot_CI80<span class='op'>=</span><span class='cn'>TRUE</span><span class='op'>)</span>
-
-<span class='op'>}</span>
-
-</div></pre>
+    <div class="ref-examples sourceCode"><pre class='sourceCode r'><code><span class='r-in'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span></span>
+<span class='r-in'><span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='va'>res_MSY_HSL1</span><span class='op'>)</span></span>
+<span class='r-in'><span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='va'>res_MSY_HSL2</span><span class='op'>)</span></span>
+<span class='r-in'><span class='va'>MSY_list</span> <span class='op'>&lt;-</span> <span class='fu'>tibble</span><span class='fu'>::</span><span class='fu'><a href='https://tibble.tidyverse.org/reference/lst.html'>lst</a></span><span class='op'>(</span><span class='va'>res_MSY_HSL1</span>, <span class='va'>res_MSY_HSL2</span><span class='op'>)</span></span>
+<span class='r-in'><span class='co'># 縦軸を漁獲量、横軸をFの大きさ</span></span>
+<span class='r-in'><span class='va'>g1</span> <span class='op'>&lt;-</span> <span class='fu'>compare_eq_stat</span><span class='op'>(</span><span class='va'>MSY_list</span>,x_axis_name<span class='op'>=</span><span class='st'>"fmulti"</span>,y_axis_name<span class='op'>=</span><span class='st'>"catch.mean"</span><span class='op'>)</span></span>
+<span class='r-in'><span class='co'># 縦軸を親魚量にする</span></span>
+<span class='r-in'><span class='va'>g2</span> <span class='op'>&lt;-</span> <span class='fu'>compare_eq_stat</span><span class='op'>(</span><span class='va'>MSY_list</span>,x_axis_name<span class='op'>=</span><span class='st'>"fmulti"</span>,y_axis_name<span class='op'>=</span><span class='st'>"ssb.mean"</span><span class='op'>)</span></span>
+<span class='r-in'><span class='co'># 縦軸を加入量</span></span>
+<span class='r-in'><span class='va'>g3</span> <span class='op'>&lt;-</span> <span class='fu'>compare_eq_stat</span><span class='op'>(</span><span class='va'>MSY_list</span>,x_axis_name<span class='op'>=</span><span class='st'>"fmulti"</span>,y_axis_name<span class='op'>=</span><span class='st'>"rec.mean"</span><span class='op'>)</span></span>
+<span class='r-in'><span class='fu'>gridExtra</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/pkg/gridExtra/man/arrangeGrob.html'>grid.arrange</a></span><span class='op'>(</span><span class='va'>g1</span>,<span class='va'>g2</span>,<span class='va'>g3</span>,ncol<span class='op'>=</span><span class='fl'>1</span><span class='op'>)</span></span>
+<span class='r-in'></span>
+<span class='r-in'><span class='va'>g3.withCI</span> <span class='op'>&lt;-</span> <span class='fu'>compare_eq_stat</span><span class='op'>(</span><span class='va'>MSY_list</span>,x_axis_name<span class='op'>=</span><span class='st'>"fmulti"</span>,y_axis_name<span class='op'>=</span><span class='st'>"rec.mean"</span>,plot_CI80<span class='op'>=</span><span class='cn'>TRUE</span><span class='op'>)</span></span>
+<span class='r-in'></span>
+<span class='r-in'><span class='op'>}</span></span>
+<span class='r-in'></span>
+</code></pre></div>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
