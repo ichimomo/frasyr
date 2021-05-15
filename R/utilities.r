@@ -1932,7 +1932,7 @@ calc_future_perSPR <- function(fout=NULL,
   maa.tmp <- maa.tmp[allsumpars!=0]
   M.tmp <- M.tmp[ allsumpars!=0]
   Fvector <- Fvector %>%  as.numeric()
-  Fvector <- Fvector[allsumpars!=0]
+  Fvector <- Fvector[allsumpars!=0 & !is.na(allsumpars)]
   ## ここまで緊急措置
 
   # SPRを計算
@@ -2273,7 +2273,7 @@ calc_Fratio <- function(faa, waa, maa, M, SPRtarget=30, waa.catch=NULL,Pope=TRUE
     sum(((SPR_tmp/SPR0*100)-SPRtarget)^2)
   }
 
-  if(max(faa)<exp(-7)){ return(0) }
+  if(max(faa, na.rm=T)<exp(-7)){ return(0) }
 
   else{
     tmp <- !is.na(faa)
