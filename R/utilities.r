@@ -1865,24 +1865,26 @@ calc_future_perSPR <- function(fout=NULL,
     plus_group <- res_vpa$input$plus.group
   }
 
-  # シミュレーションが複数回ある場合には、その平均値を用いる
-  if(is.null(target.col) && is.null(target.year)){
-    waa.tmp       <- fout.tmp$waa      [,dim(fout.tmp$waa)      [[2]],] %>% apply(1,mean)
-    waa.catch.tmp <- fout.tmp$waa.catch[,dim(fout.tmp$waa.catch)[[2]],] %>% apply(1,mean)
-    maa.tmp       <- fout.tmp$maa      [,dim(fout.tmp$maa)      [[2]],] %>% apply(1,mean)
-    M.tmp         <- fout.tmp$M        [,dim(fout.tmp$M)        [[2]],] %>% apply(1,mean)
-  }
-  else{
-    # 年の範囲を指定する場合、年で平均してから、シミュレーション回数で平均する
-    if(!is.null(target.year)){
-      if(!is.list(target.year)){
-        target.year.char <- as.character(target.year)
-        waa.tmp       <- fout.tmp$waa      [,target.year.char,,drop=FALSE] %>% apply(c(1,3),mean) %>% apply(1,mean)
-        waa.catch.tmp <- fout.tmp$waa.catch[,target.year.char,,drop=FALSE] %>% apply(c(1,3),mean) %>% apply(1,mean)
-        maa.tmp       <- fout.tmp$maa      [,target.year.char,,drop=FALSE] %>% apply(c(1,3),mean) %>% apply(1,mean)
-        M.tmp         <- fout.tmp$M        [,target.year.char,,drop=FALSE] %>% apply(c(1,3),mean) %>% apply(1,mean)
+  # 将来予測結果が与えられた場合
+  if(!is.null(fout)){
+    # シミュレーションが複数回ある場合には、その平均値を用いる
+    if(is.null(target.col) && is.null(target.year)){
+      waa.tmp       <- fout.tmp$waa      [,dim(fout.tmp$waa)      [[2]],] %>% apply(1,mean)
+      waa.catch.tmp <- fout.tmp$waa.catch[,dim(fout.tmp$waa.catch)[[2]],] %>% apply(1,mean)
+      maa.tmp       <- fout.tmp$maa      [,dim(fout.tmp$maa)      [[2]],] %>% apply(1,mean)
+      M.tmp         <- fout.tmp$M        [,dim(fout.tmp$M)        [[2]],] %>% apply(1,mean)
+    }
+    else{
+      # 年の範囲を指定する場合、年で平均してから、シミュレーション回数で平均する
+      if(!is.null(target.year)){
+        if(!is.list(target.year)){
+          target.year.char <- as.character(target.year)
+          waa.tmp       <- fout.tmp$waa      [,target.year.char,,drop=FALSE] %>% apply(c(1,3),mean) %>% apply(1,mean)
+          waa.catch.tmp <- fout.tmp$waa.catch[,target.year.char,,drop=FALSE] %>% apply(c(1,3),mean) %>% apply(1,mean)
+          maa.tmp       <- fout.tmp$maa      [,target.year.char,,drop=FALSE] %>% apply(c(1,3),mean) %>% apply(1,mean)
+          M.tmp         <- fout.tmp$M        [,target.year.char,,drop=FALSE] %>% apply(c(1,3),mean) %>% apply(1,mean)
       }
-      else{
+        else{
         waa.tmp       <- fout.tmp$waa      [,as.character(target.year$waa),,drop=FALSE] %>% apply(c(1,3),mean) %>% apply(1,mean)
         waa.catch.tmp <- fout.tmp$waa.catch[,as.character(target.year$waa.catch),,drop=FALSE] %>% apply(c(1,3),mean) %>% apply(1,mean)
         maa.tmp       <- fout.tmp$maa      [,as.character(target.year$maa),,drop=FALSE] %>% apply(c(1,3),mean) %>% apply(1,mean)
@@ -1895,7 +1897,32 @@ calc_future_perSPR <- function(fout=NULL,
       maa.tmp       <- fout.tmp$maa[,target.col,]       %>% apply(1,mean)
       M.tmp         <- fout.tmp$M[,target.col,]         %>% apply(1,mean)
     }
-  }
+    }}
+  else{ # 将来予測結果が与えられない場合にはVPA結果からもってくる
+      if(!is.list(target.year)){
+        target.year.char <- as.character(target.year)        
+        waa.tmp       <- res_vpa$input$dat$waa      [target.year.char] %>% apply(1,mean)
+        maa.tmp       <- res_vpa$input$dat$maa      [target.year.char] %>% apply(1,mean)
+        M.tmp         <- res_vpa$input$dat$M        [target.year.char] %>% apply(1,mean)
+        if(!is.null(res_vpa$input$dat$waa.catch)){
+          waa.catch.tmp <- res_vpa$input$dat$waa.catch[target.year.char] %>% apply(1,mean)
+        }
+        else{
+          waa.catch.tmp <- waa.tmp
+        }
+      }
+      else{
+        waa.tmp       <- res_vpa$input$dat$waa      [as.character(target.year$waa)      ] %>% apply(1,mean)
+        maa.tmp       <- res_vpa$input$dat$maa      [as.character(target.year$maa)      ] %>% apply(1,mean)
+        M.tmp         <- res_vpa$input$dat$M        [as.character(target.year$M.tmp)    ] %>% apply(1,mean)
+        if(!is.null(res_vpa$input$dat$waa.catch)){
+          waa.catch.tmp <- res_vpa$input$dat$waa.catch[as.character(target.year$waa.catch)] %>% apply(1,mean)
+        }
+        else{
+          waa.catch.tmp <- waa.tmp
+        }        
+      }
+    }
 
   # 緊急措置。本来ならどこをプラスグループとして与えるかを引数として与えないといけない
   # 現状で、すべてのカラムがゼロ＝資源計算では考慮されていないセルとして認識されている
@@ -1905,7 +1932,7 @@ calc_future_perSPR <- function(fout=NULL,
   maa.tmp <- maa.tmp[allsumpars!=0]
   M.tmp <- M.tmp[ allsumpars!=0]
   Fvector <- Fvector %>%  as.numeric()
-  Fvector <- Fvector[allsumpars!=0]
+  Fvector <- Fvector[allsumpars!=0 & !is.na(allsumpars)]
   ## ここまで緊急措置
 
   # SPRを計算
@@ -2246,7 +2273,7 @@ calc_Fratio <- function(faa, waa, maa, M, SPRtarget=30, waa.catch=NULL,Pope=TRUE
     sum(((SPR_tmp/SPR0*100)-SPRtarget)^2)
   }
 
-  if(max(faa)<exp(-7)){ return(0) }
+  if(max(faa, na.rm=T)<exp(-7)){ return(0) }
 
   else{
     tmp <- !is.na(faa)
@@ -2631,4 +2658,53 @@ derive_future_summary <- function(res_future, target=NULL){
     beta_gamma = tmpfunc(res_future$HCR_realized[,,"beta_gamma"]),
     Fmean      = tmpfunc(Fmean),
     Fratio     = tmpfunc(res_future$HCR_realized[,,"Fratio"]))
+}
+
+
+#'
+#' F at ageをVPAの結果から%SPRで変換したりするための関数
+#' 
+#' @param res_vpa VPAの結果オブジェクト(Popeの設定やF at ageをこちらからとってくる)
+#' @param data_future 将来予測のためのデータ(生物パラメータを将来予測期間から撮ってくる場合に必要)
+#' @param faa_vector 漁獲圧を代表するベクトル
+#' @param faa_vector_year 漁獲圧を取り出すときの年の範囲(VPA期間限定)
+#' @param faa_bio_year 漁獲圧をSPRに換算するときに生物パラメータを取り出す年の範囲(data_futureがある場合将来予測年も指定可能。生物パラメータが密度によって変わる場合)。list(waa = 2014:2018, waa.catch = 2014:2018, maa = 2016:2018,M   = 2014:2018)とすると生物パラメータによって異なる期間の指定も可能。下のsaa_bio_yearも同様
+#' @param saa_vector 選択率を代表するベクトル
+#' @param saa_vector_year 選択率を取り出すときの年の範囲(VPA期間限定)
+#' @param saa_bio_year 選択率をSPRに換算するときに生物パラメータを取り出す年の範囲(data_futureがある場合将来予測年も指定可能。生物パラメータが密度によって変わる場合)
+#' 
+#' @export
+#'
+#' 
+
+convert_Fvector <- function(res_vpa=NULL,
+                            res_future = NULL,
+                            faa_vector=NULL,
+                            faa_vector_year=NULL,
+                            faa_bio_year=NULL,
+                            saa_vector=NULL,
+                            saa_vector_year=NULL,
+                            saa_bio_year=NULL){
+
+  assert_that((is.null(faa_vector) | is.null(faa_vector_year)),
+              (is.null(saa_vector) | is.null(saa_vector_year)))
+  
+  if(is.null(faa_vector)) faa_vector <- apply_year_colum(res_vpa$faa,target_year=faa_vector_year)
+  if(is.null(saa_vector)) saa_vector <- apply_year_colum(res_vpa$faa,target_year=saa_vector_year)    
+    
+  # faa_vectorが何％のSPRにあたるか
+  faa_perSPR <- calc_future_perSPR(fout=res_future,
+                                   res_vpa=res_vpa,
+                                   Fvector=faa_vector,
+                                   target.year=faa_bio_year)
+  cat("%SPR in faa=", faa_perSPR,"\n")
+  # saa_vectorがfaa_vectorに相当する%SPRになるためには何倍にしないといけないか
+  saa_multiplier <- calc_future_perSPR(fout=res_future,
+                                       res_vpa=res_vpa,
+                                       Fvector=saa_vector,
+                                       target.year=saa_bio_year, 
+                                       SPRtarget=faa_perSPR)
+  # faaの漁獲圧の大きさに相当するsaaの選択率を持ったF at age
+  Fvector <- saa_vector/saa_multiplier$Fratio      
+  return(lst(Fvector, faa_perSPR))
 }

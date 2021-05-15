@@ -78,6 +78,36 @@ test_that("ref.F (level 2)",{
   expect_equal(MSY_perSPR1,MSY_perSPR2,tol=1e-4)
   expect_equal(MSY_perSPR1,MSY_perSPR3,tol=1e-4)
 
+  # calc_future_perSPR with VPA
+  faa <- res_vpa_pma$Fc.at.age %>% as.numeric()
+  tmp1 <- calc_future_perSPR(fout=NULL,res_vpa=res_vpa_pma,Fvector=faa,
+                             plus_group=res_vpa_example$input$plus.group,target.year=2011:2010)
+  expect_equal(res_ref_f_pma_check$currentSPR$perSPR,tmp1)
+
+  # プラスグループを考慮しない場合
+  res_vpa_pma_noplus <- res_vpa_pma
+  res_vpa_pma_noplus$input$plus.group <- FALSE
+  res_ref_f_pma_check_noplus <- ref.F(res_vpa_pma_noplus,Fcurrent=NULL,waa=NULL,maa=NULL,M=NULL,waa.catch=NULL,M.year=NULL,
+                                      waa.year=NULL,maa.year=NULL,rps.year = as.numeric(colnames(res_vpa_pma$naa)),
+                                      max.age = Inf,min.age = 0,
+                                      d = 0.001,Fem.init = 0.5,Fmax.init = 1.5,F0.1.init = 0.7,pSPR = seq(10,90,by=10),
+                                      iterlim=1000,plot=TRUE,Pope=FALSE,F.range = seq(from=0,to=2,length=101) )
+  tmp2 <- calc_future_perSPR(fout=NULL,res_vpa=res_vpa_pma_noplus,Fvector=faa,
+                             target.year=2011:2010)
+  expect_equal(res_ref_f_pma_check_noplus$currentSPR$perSPR,tmp2)
+
+  # check convert_Fvector
+  tmp1 <- convert_Fvector(res_vpa = res_vpa_pma,        faa_vector=faa, faa_bio_year=2011,
+                          saa_vector = rep(1,length(faa)), saa_bio_year=2011)
+  tmp2 <- convert_Fvector(res_vpa = res_vpa_pma_noplus, faa_vector=faa, faa_bio_year=2011,
+                          saa_vector = rep(1,length(faa)), saa_bio_year=2011)
+  tmp3 <- convert_Fvector(res_vpa = res_vpa_pma,        faa_vector=tmp1$Fvector, faa_bio_year=2011,
+                          saa_vector = faa, saa_bio_year=2011)
+  expect_equal(mean(faa/tmp3$Fvector),1,tol=0.0001)
+  expect_equal(tmp1$faa_perSPR, res_ref_f_pma_check$currentSPR$perSPR)
+  expect_equal(tmp2$faa_perSPR, res_ref_f_pma_check_noplus$currentSPR$perSPR)  
+  expect_equal(mean(faa/tmp3$Fvector),1,tol=0.0001)
+  
   # just for run
   MSY_Fratio <- calc_perspr(res_future_0.8HCR,res_vpa=res_vpa_example,Fvector=res_MSY$F.msy,SPRtarget=0.3)
 
