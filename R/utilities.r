@@ -913,6 +913,8 @@ out.vpa <- function(res=NULL,    # VPA result
 }
 
 #' csvファイルとしてまとめられた資源計算結果を読み込んでRのオブジェクトにする
+#'
+#' @param release.label 放流データを読み込みたい場合。ここで指定したラベルをつけて、年齢を行、年を列とするデータを入れる（catch at ageと同じ構造だが、年齢は必要な年齢だけ取り出した形で良い）
 #' @param tfile 資源計算結果がまとめられたcsvファイルの名前
 #' @param Pope  VPA計算時にどっちを使っているかここで設定する（TRUE or FALSE）。デフォルトはNULLで、その場合にはcaa,faa,naaの関係から自動判別するが、自動判別の結果が出力されるので、それをみて正しく判断されているか確認してください。
 #' @param plus.group プラスグループを考慮するかどうか。こちらについても、NULLの場合にはfaaとnaaの関係から自動判別するが、結果を一応確認すること。
@@ -933,6 +935,7 @@ read.vpa <- function(tfile,
                      faa.label="fishing mortality at age",
                      Fc.label="Current F",
                      naa.label="numbers at age",
+                     release.label="data released",
                      Blimit=NULL,
                      Pope=NULL,
                      plus.group=NULL,
@@ -942,6 +945,7 @@ read.vpa <- function(tfile,
 
   tmpfunc <- function(tmpdata,label,type=NULL){
     flags <- which(substr(tmpdata[,1],1,1)=="#")
+    flags <- c(flags, nrow(tmpdata)+1)
     flag.name <- tmpdata[flags,1]
     flag.name <- gsub("#","",flag.name)
     flag.name <- gsub(" ","",flag.name)
@@ -961,6 +965,7 @@ read.vpa <- function(tfile,
         tdat <- sapply((tdat[-1,-1]),as.numeric)
         tmp.names <- lapply(tmp.names,function(x) x[x!=""])
         tmp.names <- lapply(tmp.names,function(x) x[!is.na(x)])
+        if(is.null(dim(tdat))) dim(tdat) <- sapply(tmp.names,length)        
         dimnames(tdat) <- tmp.names
         tdat <- as.data.frame(tdat)
       }
@@ -985,6 +990,7 @@ read.vpa <- function(tfile,
   dres$input$dat$caa <- tmpfunc(tmpdata,caa.label)
   dres$input$dat$M <- tmpfunc(tmpdata,M.label)
   dres$input$dat$waa <- tmpfunc(tmpdata,waa.label)
+  dres$release <- tmpfunc(tmpdata,release.label)
   if(is.null(dres$input$dat$waa)) dres$input$dat$waa <- tmpfunc(tmpdata,waa.biomass.label)
   dres$input$dat$waa.catch <- tmpfunc(tmpdata,waa.catch.label)
   if(is.null(dres$input$dat$waa.catch)) dres$input$dat$waa.catch <- dres$input$dat$waa

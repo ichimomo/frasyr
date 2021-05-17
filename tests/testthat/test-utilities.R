@@ -355,3 +355,13 @@ test_that("calc_forward",{
   naa2 <- calc_forward(naa=res_vpa$naa,faa=res_vpa$faa,M=res_vpa$input$dat$M,t=1,plus_age=4,plus_group=TRUE)[,2]
   naa2 %>% expect_equal(res_vpa$naa[,2])
 })
+
+test_that("read_vpa with release data",{
+
+  # normal vpa
+  res_vpa <- read.vpa(system.file("extdata","res_vpa_dummy.csv",package="frasyr"))
+  # vpa with relase data
+  res_vpa <- read.vpa(system.file("extdata","res_vpa_dummy_release_fish.csv",package="frasyr"))
+  
+  
+})
