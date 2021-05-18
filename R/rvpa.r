@@ -17,7 +17,8 @@ data.handler <- function(
   M = 0.4,
   maa.tune=NULL,
   waa.catch=NULL,
-  catch.prop=NULL
+  catch.prop=NULL,
+  release.data=NULL
 )
 {
   years <- as.numeric(sapply(strsplit(names(caa[1,]),"X"), function(x) x[2]))
@@ -50,6 +51,8 @@ data.handler <- function(
 
   if (!is.null(index)) colnames(index) <- years
 
+  if (!is.null(release.data)) colnames(release.data) <- years  
+
   if (is.null(dim(M))) M <- as.data.frame(matrix(M, nrow=nrow(caa), ncol=ncol(caa)))
 
   colnames(M) <- years
@@ -70,7 +73,7 @@ data.handler <- function(
     )
   )
   
-  res <- list(caa=caa, maa=maa, waa=waa, index=index, M=M, maa.tune=maa.tune, waa.catch=waa.catch, catch.prop=catch.prop)
+  res <- list(caa=caa, maa=maa, waa=waa, index=index, M=M, maa.tune=maa.tune, waa.catch=waa.catch, catch.prop=catch.prop, release.data=release.data)
 
   invisible(res)
 }

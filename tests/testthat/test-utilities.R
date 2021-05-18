@@ -363,5 +363,4 @@ test_that("read_vpa with release data",{
   # vpa with relase data
   res_vpa <- read.vpa(system.file("extdata","res_vpa_dummy_release_fish.csv",package="frasyr"))
   
-  
 })

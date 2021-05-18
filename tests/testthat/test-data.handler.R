@@ -742,3 +742,22 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
        res_vpa_rec0_nontune,
        file="res_vpa_files.rda")
 })
+
+test_that("vpa with release data",{
+  
+  data_base <- readr::read_csv(system.file("extdata","all_dummy_data_base.csv",package="frasyr"))
+  data_release <- readr::read_csv(system.file("extdata","data_released.csv",package="frasyr")) 
+  vpadat_base0 <- data.handler(caa=to_vpa_data(data_base, label_name="caa"),
+                         waa=to_vpa_data(data_base, label_name="waa"),
+                         maa=to_vpa_data(data_base, label_name="maa"),
+                         M  = 0.4,
+                         index = to_vpa_data(data_base, label_name="abund"),
+                         maa.tune = NULL,
+                         waa.catch = NULL,
+                         catch.prop = NULL,
+                         release.data = data_release)
+  res_vpa_base0_nontune <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
+                               Pope = TRUE, p.init = 0.5) 
+
+  
+}
