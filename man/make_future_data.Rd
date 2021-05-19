@@ -42,11 +42,8 @@ make_future_data(
   HCR_TAC_reserve_amount = NA,
   HCR_TAC_carry_rate = NA,
   HCR_TAC_carry_amount = NA,
-<<<<<<< HEAD
-=======
   HCR_TAC_upper_CV = NA,
   HCR_TAC_lower_CV = NA,
->>>>>>> dev
   HCR_function_name = "HCR_default",
   Pope = res_vpa$input$Pope,
   fix_recruit = NULL,
@@ -117,17 +114,11 @@ make_future_data(
 
 \item{HCR_Bban_year}{Bbanを年によって変える場合。tibble(year=2020:2024, Bban=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える。HCR_Bbanで設定されたBbanは上書きされる。}
 
-\item{HCR_TAC_reserve_rate}{その年の総漁獲可能量に対する獲り残し率}
+\item{HCR_TAC_reserve_rate}{TACの取り残し率}
 
 \item{HCR_TAC_reserve_amount}{その年の総漁獲可能量に対する獲り残し量}
 
-<<<<<<< HEAD
-\item{HCR_TAC_carry_rate}{当初TACの何％まで持ち越せるか}
-
-\item{HCR_TAC_carry_amount}{当初TACのうち何トンまで持ち越せるか}
-=======
 \item{HCR_TAC_carry_rate}{TACの何％まで持ち越せるか}
->>>>>>> dev
 
 \item{HCR_TAC_carry_amount}{当初TACのうち何トンまで持ち越せるか}
 

@@ -13,7 +13,9 @@ Type objective_function<Type>::operator() ()
   DATA_SCALAR(alpha);
   DATA_SCALAR(lambda);
   DATA_SCALAR(beta);
-  DATA_IVECTOR(Ab_type);  // Ab_type = 1: SSB, Ab_type = 2: number at age, Ab_type = 3: biomass at age
+  DATA_IVECTOR(Ab_type);  // Ab_type = 1: SSB, Ab_type = 2: number at age, Ab_type = 3: biomass at age, AD_type = 4: Bs(biomass x selectivity)
+  DATA_INTEGER(sel_def); //selectivity definition (which F or age should be set at 1)
+  // 0:max, 1: mean, 2: maxage
   DATA_IVECTOR(Ab_type_age);
   DATA_IVECTOR(Ab_type_max_age);
   DATA_VECTOR(w);
@@ -57,12 +59,13 @@ Type objective_function<Type>::operator() ()
   sigma.fill(0.0);
   nI2.fill(0.0);
 
-  Type sum_log_ssb, sum_log_N, sum_log_B;
+  Type sum_log_ssb, sum_log_N, sum_log_B, sum_log_Bs;
 
   matrix<Type> F(Y,A);
   matrix<Type> N(Y,A);
   matrix<Type> B(Y,A);
   matrix<Type> Z(Y,A);
+  matrix<Type> S(Y,A);
   F.fill(0.0);
   N.fill(0.0);
 
@@ -137,6 +140,27 @@ Type objective_function<Type>::operator() ()
     }
     U(y) += Catch_weight(y)/B_total(y);
   }
+  
+  vector<Type> Sel1(Y);
+  vector<Type> FY(A);
+  for (int y=0;y<Y;y++){
+    for (int i=0;i<A;i++) {
+      FY(i)=F(y,i);
+      }
+    if (sel_def==0) { //max
+      Sel1(y)=max(FY);
+    }else{
+      if (sel_def==1) { //mean
+        Sel1(y)=F.col(y).sum();
+        Sel1(y)/=A;
+      }else{//maxage
+        Sel1(y)=F(y,A-1);
+        }
+      }
+    for (int i=0;i<A;i++){
+      S(y,i)=F(y,i)/Sel1(y);
+    }
+    }
 
   Type denom;
 
@@ -246,6 +270,42 @@ Type objective_function<Type>::operator() ()
          sigma2(k) += pow(log(CPUE(j,k)+MISS(j,k))-NM(j,k)*(log(q(k))+b(k)*log(sum_B(j))),2);
        }
     }
+    if (Ab_type(k)==4){
+      sum_log_Bs=0.0;
+      mean_log_abund(k)=0.0;
+      sd_log_abund(k)=0.0;
+      vector<Type> sum_Bs(Y);
+      for (int j=0;j<Y;j++){
+        sum_Bs(j)=0.0;
+        for (int l=Ab_type_age(k);l<Ab_type_max_age(k);l++){
+          sum_Bs(j) += B(j,l)*S(j,l);
+        }
+        sum_log_cpue(k) += log(CPUE(j,k)+MISS(j,k));
+        sum_log_Bs += NM(j,k)*log(sum_Bs(j));
+      }
+      if (b_fix(k)==0){
+        for (int h=0;h<Y;h++){
+          b(k) += NM(h,k)*((log(CPUE(h,k)+MISS(h,k))-sum_log_cpue(k)/nI(k))*(NM(h,k)*log(sum_Bs(h))-sum_log_Bs/nI(k)));
+          denom += NM(h,k)*((NM(h,k)*log(sum_Bs(h))-sum_log_Bs/nI(k))*(NM(h,k)*log(sum_Bs(h))-sum_log_Bs/nI(k)));
+        }
+        b(k) /= denom;
+      } else b(k)=b_fix(k);
+      for (int h=0;h<Y;h++){
+        q(k) += log(CPUE(h,k)+MISS(h,k))-b(k)*NM(h,k)*log(sum_Bs(h));
+        mean_log_abund(k) += NM(h,k)*log(sum_Bs(h));
+      }
+      mean_log_abund(k) /= nI(k);
+      for (int h=0;h<Y;h++){
+        sd_log_abund(k) += pow(NM(h,k)*(log(sum_Bs(h))-mean_log_abund(k)),Type(2.0));
+      }
+      sd_log_abund(k) /= nI(k);
+      sd_log_abund(k) = pow(sd_log_abund(k), Type(0.5));
+      q(k) /= nI(k);
+      q(k) = exp(q(k));
+      for (int j=0;j<Y;j++){
+        sigma2(k) += pow(log(CPUE(j,k)+MISS(j,k))-NM(j,k)*(log(q(k))+b(k)*log(sum_Bs(j))),2);
+      }
+      }
   }
 
   Type f=0;

@@ -210,8 +210,6 @@ vpa(
 \item{sdreport}{\code{TMB=TRUE}のときに\code{sdreport()}を実行するかどうか（naa, faa, 資源量, 親魚量, Fの平均, 漁獲割合のSDを計算する）}
 
 \item{use.equ}{plus groupが途中で変わる場合の計算式の選択 （old = 従来の方法（プラスグループが延長している年はプラスグループのＦが一歳若い年齢のＦと等しいという仮定は置かない），new= 新しい方法（プラスグループが延長している年はプラスグループのＦが一歳若い年齢のＦと等しいという仮定を置く)}
-<<<<<<< HEAD
-=======
 }
 \value{
 list object:
@@ -245,7 +243,6 @@ list object:
 \item{\code{sbb}}{推定された年別年齢別産卵親魚量}
 \item{\code{saa}}{推定された年別年齢別選択率}
 }
->>>>>>> dev
 }
 \description{
 VPAによる資源計算を実施する
