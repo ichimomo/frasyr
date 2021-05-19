@@ -10,6 +10,7 @@ make_future_data(
   nsim = 1000,
   nyear = 50,
   plus_age = NULL,
+  plus_group = NULL,
   future_initial_year_name = 2017,
   start_F_year_name = 2018,
   start_biopar_year_name = 2018,
@@ -22,6 +23,8 @@ make_future_data(
   start_waafun_year_name = start_biopar_year_name,
   maa_year,
   maa = NULL,
+  maa_fun = FALSE,
+  start_maafun_year_name = start_biopar_year_name,
   M_year,
   M = NULL,
   faa_year = NULL,
@@ -33,10 +36,17 @@ make_future_data(
   HCR_Bban = -1,
   HCR_year_lag = 0,
   HCR_beta_year = NULL,
+  HCR_Blimit_year = NULL,
+  HCR_Bban_year = NULL,
   HCR_TAC_reserve_rate = NA,
   HCR_TAC_reserve_amount = NA,
   HCR_TAC_carry_rate = NA,
   HCR_TAC_carry_amount = NA,
+<<<<<<< HEAD
+=======
+  HCR_TAC_upper_CV = NA,
+  HCR_TAC_lower_CV = NA,
+>>>>>>> dev
   HCR_function_name = "HCR_default",
   Pope = res_vpa$input$Pope,
   fix_recruit = NULL,
@@ -63,7 +73,9 @@ make_future_data(
 
 \item{nyear}{将来予測の実施年数}
 
-\item{plus_age}{プラスグループとして計算する行（年齢ではないことに注意）。デフォルト値（NULL）ならfuture_initial_year_name年にNA以外の数値が入っている一番大きい年齢をプラスグループの年齢とする}
+\item{plus_age}{プラスグループとして計算する行（年齢ではないことに注意）。デフォルト値（NULL）ならfuture_initial_year_name年にNA以外の数値が入っている一番大きい行をプラスグループの行とする。plus_ageという名前だが、plus_group=FALSEの場合には、たんに最大年齢になる。}
+
+\item{plus_group}{プラスグループを考慮するかどうか。与えない場合、res_vpa$input$plus.groupの設定を引き継ぐ。ただし、inputを使ってdo.callする場合などにはうまく調整できないことがあるので、明示的に与えたほうがよいかも。}
 
 \item{future_initial_year_name}{将来予測の「初期値となる」年齢別資源尾数を参照する年。この年の年齢別資源尾数を使って翌年の個体群動態が将来予測で決定される}
 
@@ -81,6 +93,8 @@ make_future_data(
 
 \item{start_waafun_year_name}{上記の設定がスタートする最初の年。それ以外の年は上で設定されたパラメータが使われる}
 
+\item{maa_fun}{maturity ~ number の回帰式から将来のmaturityを予測する(暫定的、太平洋マダラでのみ利用)}
+
 \item{faa_year}{将来のFを過去の平均値とする場合、平均をとる年を指定する。下のcurrentF, futureFが指定されている場合にはこの設定は無視される}
 
 \item{currentF}{start_ABC_yar_name以前に使うFのベクトル（いわゆるcurrent F）}
@@ -97,15 +111,29 @@ make_future_data(
 
 \item{HCR_year_lag}{HCRするときにいつのタイミングのssbを参照するか.0の場合、ABC計算年のSSBを参照する。正の値1を入れると1年前のssbを参照する}
 
-\item{HCR_beta_year}{betaを年によって変える場合。tibble(year=2020:2024, beta=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える}
+\item{HCR_beta_year}{betaを年によって変える場合。tibble(year=2020:2024, beta=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える。HCR_betaで設定されたbetaは上書きされる。}
+
+\item{HCR_Blimit_year}{Blimitを年によって変える場合。tibble(year=2020:2024, Blimit=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える。HCR_Blimitで設定されたBlimitは上書きされる。}
+
+\item{HCR_Bban_year}{Bbanを年によって変える場合。tibble(year=2020:2024, Bban=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える。HCR_Bbanで設定されたBbanは上書きされる。}
 
 \item{HCR_TAC_reserve_rate}{その年の総漁獲可能量に対する獲り残し率}
 
 \item{HCR_TAC_reserve_amount}{その年の総漁獲可能量に対する獲り残し量}
 
+<<<<<<< HEAD
 \item{HCR_TAC_carry_rate}{当初TACの何％まで持ち越せるか}
 
 \item{HCR_TAC_carry_amount}{当初TACのうち何トンまで持ち越せるか}
+=======
+\item{HCR_TAC_carry_rate}{TACの何％まで持ち越せるか}
+>>>>>>> dev
+
+\item{HCR_TAC_carry_amount}{当初TACのうち何トンまで持ち越せるか}
+
+\item{HCR_TAC_upper_CV}{漁獲量が前年の漁獲量のHCR_TAC_upper_CV倍と比較し、それよりも変化が大きい場合には前年の漁獲量xHCR_TAC_upper_CVを上限とする。単一の値か、tibble形式 tibble(year=2020:2024, TAC_upper_CV=rep(0.1,5)) で与える}
+
+\item{HCR_TAC_lower_CV}{漁獲量が前年の漁獲量のHCR_TAC_lower_CV倍と比較し、それよりも変化が大きい場合には前年の漁獲量xHCR_TAC_lower_CVを下限とする。単一の値か、tibble形式 tibble(year=2020:2024, TAC_lower_CV=rep(0.1,5)) で与える}
 
 \item{HCR_function_name}{デフォルトは"HCR_default" ここを変更(関数名を文字列で与える。関数は別に定義しておく)すると自作のHCRが適用される。その場合、データのほうで定義されているbeta, Blimit, Bbanなど、同じ名前のものは有効}
 

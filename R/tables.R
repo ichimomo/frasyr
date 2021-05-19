@@ -185,6 +185,7 @@ adhoc_table <- function(result_vpa, yrs_preabc, number, sbtarget = NULL, fmsy = 
     latest_recentyr <- yrs_preabc[length(yrs_preabc)]
     years <- paste0(oldest_recentyr, "--", latest_recentyr)
     pspr  <- calc_future_perSPR(
+      res_vpa     = result_vpa,
       fout        = list(waa       = data_future$data$waa_mat,
                          maa       = data_future$data$maa_mat,
                          M         = data_future$data$M_mat,
@@ -297,7 +298,7 @@ make_msytable <- function(result_msy) {
 #' @param yr_preabc Vector of future years preceding ABC year
 #' @export
 make_abctable <- function(kobe_table, result_future, beta, year, faa_pre, faa_after, yr_preabc) {
-  return_ <- function() {
+    return_ <- function() {
     df <- data.frame(abc_(),
                      ssb_mean_(),
                      f_over_recentf_(),
@@ -318,6 +319,7 @@ make_abctable <- function(kobe_table, result_future, beta, year, faa_pre, faa_af
   }
   ssb_mean_  <- function(){
     extract_from_kobe_table(kobe_table,
+                            beta = beta,                              
                             what = "ssb.mean",
                             year = year,
                             unit = "千トン")

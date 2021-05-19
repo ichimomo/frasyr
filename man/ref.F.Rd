@@ -53,7 +53,7 @@ ref.F(
 
 \item{rps.vector}{Fmedの計算に使うRPSのベクトル。rps.yearよりもこちらが優先される。}
 
-\item{max.age}{加入年齢を０歳としたときに、SPR計算で考慮される最大の年齢（年齢の数ではないことに注意, デフォルトはInf）。加入年齢が１歳以上のときは、SPR計算で考慮したい年齢-加入年齢を入力する、またはmin.ageの引数に加入年齢を設定する。}
+\item{max.age}{加入年齢を０歳としたときに、SPR計算で考慮される最大の年齢の名前（何行目とかじゃないことに注意, デフォルトはInf）。min.ageも同様。VPA結果を与える場合にはVPA結果から自動的にもってくる。}
 
 \item{min.age}{VPA結果を与える場合にはVPA結果から自動的にもってくるが、VPA結果を与えない場合、加入年齢を入力する}
 
@@ -79,18 +79,18 @@ ref.F(
 再生産関係を仮定しない管理基準値計算(SPR,YPR,F0.1,Fmax)のための関数
 }
 \note{
-F_SPRのF管理基準値の初期値は　与えられたFのもとでのSPR/目的のSPR　を初期値とするように調整されるので不要。
+F_SPRのF管理基準値の初期値は　与えられたFのもとでのSPR/目的のSPR　を初期値とするように調整されるので不要。プラスグループを考慮するかどうかはVPAの結果のinput$plus.groupから自動判別される。
 }
 \examples{
 data(res_vpa)
-# VPA繝<87>繝ｼ繧ｿ繧剃ｽｿ縺<86>蝣ｴ蜷<88>
+# VPAデータを使う場合
 res_refF1 <- ref.F(res=res_vpa,Fcurrent=frasyr::apply_year_colum(res_vpa$faa,2015:2017),
                 waa.year=2015:2017,maa.year=2015:2017,M.year=2015:2017)
 
-# 逕溽黄繝代Λ繝｡繝ｼ繧ｿ繧偵ョ繝ｼ繧ｿ縺ｨ縺励※荳弱∴繧句<a0>ｴ蜷<88>
+# 生物パラメータをデータとして与える場合
 res_refF2 <- ref.F(res=NULL,Fcurrent=rep(0.1,5),
                    waa=rep(100,5),maa=c(0,0,1,1,1),M=rep(0.3,5),waa.catch=rep(100,5),
-                   rps.vector=NULL, # Fmed繧定ｨ育ｮ励＠縺溘ｊ縺吶ｋ蝣ｴ蜷医<81>ｮRPS縺ｮ繝吶け繝医Ν.NULL縺ｧ繧０K
+                   rps.vector=NULL, # Fmedを計算したりする場合のRPSのベクトル.NULLでもOK
                    Pope=TRUE,min.age=0,pSPR=c(30,40))
 
 

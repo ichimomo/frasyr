@@ -2,20 +2,20 @@ library(frasyr)
 
 context("check the correlation between parameters and the steepness")
 
-test_that("output value check",{
+# vpaとget.SRdataの結果を読み込み
+load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
+load(system.file("extdata","SRdata_pma.rda",package = "frasyr"))
 
-  # vpaとget.SRdataの結果を読み込み
-  load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
-  load(system.file("extdata","SRdata_pma.rda",package = "frasyr"))
+SRmodel.list <- expand.grid(SR.rel = c("HS","BH","RI"), AR.type = c(0, 1), out.AR=c(TRUE,FALSE), L.type = c("L1", "L2"))
 
-  SRmodel.list <- expand.grid(SR.rel = c("HS","BH","RI"), AR.type = c(0, 1), out.AR=c(TRUE,FALSE), L.type = c("L1", "L2"))
+res.SRfit <- list()
 
-  res.SRfit <- list()
-
-  # fit.SR計算
-  for (i in 1:nrow(SRmodel.list)){
+# fit.SR計算
+for (i in 1:nrow(SRmodel.list)){
     res.SRfit[[i]] <- fit.SR(SRdata = SRdata_pma,SR=SRmodel.list$SR.rel[i],method=SRmodel.list$L.type[i],AR=SRmodel.list$AR.type[i],out.AR=SRmodel.list$out.AR[i])
-    }
+}
+
+test_that("output value check",{
 
   year <- as.character(max(res_vpa_pma$input$rec.year))
 
@@ -36,6 +36,12 @@ test_that("output value check",{
     #スティープネス
     steepness_pma_check <- calc_steepness(SR=res.SRfit[[i]]$input$SR,rec_pars=res.SRfit[[i]]$pars,M=res_vpa_pma$input$dat$M[,year],waa=res_vpa_pma$input$dat$waa[,year],maa=res_vpa_pma$input$dat$maa[,year])
 
+    # use fit.SR otion
+    steepness_pma_check2 <- do.call(fit.SR,
+                                    list_modify(res.SRfit[[i]]$input, bio_par=derive_biopar(res_vpa_pma,derive_year=year)))
+    steepness_pma_check2$steepness %>% 
+        expect_equal(steepness_pma_check)
+    
     #上記結果の読み込み(corSR)
     corSR_file <- sprintf("res_corSR_pma_%s_%s_AR%d_outAR%d.rda",SRmodel.list$SR.rel[i],SRmodel.list$L.type[i], SRmodel.list$AR.type[i],SRmodel.list$out.AR[i])
     load(system.file("extdata",corSR_file,package = "frasyr"))
@@ -596,5 +602,4 @@ test_that("output value check",{
   # get.SPRからのSPR0と照合h
   expect_equal(steepness_pma_check$SPR0, SPR0_by_getSPR$ysdata[1,4])
 
-
-  })
+})

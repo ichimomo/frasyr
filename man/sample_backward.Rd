@@ -17,10 +17,3 @@ sample_backward(residual, n, duration)
 \description{
 過去にさかのぼってブロックサンプリングをおこなう
 }
-\examples{
-
-set.seed(1)
-res <- sample_backward(rep(1:5,each=5), 30, 5)
-apply(matrix(res,5,6),2,min)
-
-}

@@ -45,7 +45,7 @@
 #' @seealso
 #' vpa計算について:  \code{\link{vpa}}
 #' 作図について: \code{\link{plot_vpa}}
-#' https://ichimomo.github.io/frasyr/doc/Diagnostics-for-VPA.html
+#' https://ichimomo.github.io/frasyr/articles/Diagnostics-for-VPA.html
 #'
 #'
 #' @encoding UTF-8
@@ -329,7 +329,7 @@ do_sensitivity_vpa <- function(res,
 #' @seealso
 #' レトロスペクティブ解析について:  \code{\link{retro.est}}
 #' 作図について: \code{\link{plot_vpa}}
-#' https://ichimomo.github.io/frasyr/doc/Diagnostics-for-VPA.html
+#' https://ichimomo.github.io/frasyr/articles/Diagnostics-for-VPA.html
 #'
 #'
 #' @encoding UTF-8
@@ -423,7 +423,7 @@ do_retrospective_vpa <- function(res,
 #' @author 濵邉昂平, 市野川桃子
 #'
 #' @seealso
-#' https://ichimomo.github.io/frasyr/doc/Diagnostics-for-VPA.html
+#' https://ichimomo.github.io/frasyr/articles/Diagnostics-for-VPA.html
 #'
 #'
 #' @encoding UTF-8
@@ -585,7 +585,7 @@ do_estcheck_vpa <- function(res, n_ite = 20, sd_jitter = 1, what_plot = NULL, TM
 #' @author 濵邉昂平, 市野川桃子
 #'
 #' @seealso
-#' https://ichimomo.github.io/frasyr/doc/Diagnostics-for-VPA.html
+#' https://ichimomo.github.io/frasyr/articles/Diagnostics-for-VPA.html
 #'
 #'
 #' @encoding UTF-8
@@ -595,11 +595,14 @@ do_estcheck_vpa <- function(res, n_ite = 20, sd_jitter = 1, what_plot = NULL, TM
 # author: Kohei Hamabe
 
 plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_year = FALSE){
-  if(res$input$use.index == "all"){
+  if(is.numeric(res$input$use.index)){
+    assertthat::assert_that(length(res$input$dat$index[,1]) >= length(res$input$use.index))
+    used_index <- res$input$dat$index[res$input$use.index,]
+  } else if(res$input$use.index == "all") {
     used_index <- res$input$dat$index
   } else {
-    used_index <- res$input$dat$index[res$input$use.index,]
-  } # 7月7日加筆（浜辺）vpa関数の引数use.index対策
+    assertthat::assert_that(is.numeric(res$input$use.index)|res$input$use.index=="all")
+  }
 
   d_tmp <- matrix(NA,
                   nrow = length(used_index[1,]),
@@ -787,7 +790,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
 #'
 #' @seealso
 #' 作図について: \code{\link{plot_vpa}}
-#' https://ichimomo.github.io/frasyr/doc/Diagnostics-for-VPA.html
+#' https://ichimomo.github.io/frasyr/articles/Diagnostics-for-VPA.html
 #'
 #'
 #' @encoding UTF-8
@@ -1065,7 +1068,7 @@ do_jackknife_vpa <- function(res,
 #'
 #' @seealso
 #' ブートストラップ法について:  \code{\link{boo.vpa}}
-#' https://ichimomo.github.io/frasyr/doc/Diagnostics-for-VPA.html
+#' https://ichimomo.github.io/frasyr/articles/Diagnostics-for-VPA.html
 #'
 #'
 #' @encoding UTF-8
@@ -1175,7 +1178,7 @@ plot_resboot_vpa <- function(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
 #' @author 濵邉昂平, 市野川桃子
 #'
 #' @seealso
-#' https://ichimomo.github.io/frasyr/doc/Diagnostics-for-VPA.html
+#' https://ichimomo.github.io/frasyr/articles/Diagnostics-for-VPA.html
 #'
 #'
 #' @encoding UTF-8

@@ -5,7 +5,16 @@
 \alias{convert_future_list_table}
 \title{future_vpaの結果オブジェクトのリストをtibble形式に変換する関数}
 \usage{
+<<<<<<< HEAD
 convert_future_list_table(fout_list, name_vector = NULL, label = "tmp")
+=======
+convert_future_list_table(
+  fout_list,
+  name_vector = NULL,
+  beta_vector = NULL,
+  label = "tmp"
+)
+>>>>>>> dev
 }
 \arguments{
 \item{fout_list}{future_vpaの結果のオブジェクトのリスト}

@@ -51,6 +51,37 @@ get.SRdata <- function(vpares,R.dat = NULL,
     return(dat[c("year","SSB","R")])
 }
 
+#' 再生産関係のパラメタが想定した形になっているかを確認
+#'
+#' @inheritParams fit.SR
+#' @param res_sr fit.SR の結果
+validate_sr <- function(SR = NULL, method = NULL, AR = NULL, out.AR = NULL, res_sr = NULL) {
+  if (!is.null(SR)) {
+    assertthat::assert_that(
+      length(SR) == 1,
+      SR %in% c("HS", "BH", "RI")
+    )
+  }
+  if (!is.null(method)) {
+    method = as.character(method)
+    assertthat::assert_that(method %in% c("L1", "L2"))
+  }
+  if (!is.null(AR)) {
+    assertthat::assert_that(
+      is.numeric(AR),
+      AR %in% c(0, 1)
+    )
+  }
+  if (!is.null(out.AR)) {
+    assertthat::assert_that(is.logical(out.AR))
+  }
+  if (!is.null(res_sr)) {
+    validate_sr(SR     = res_sr$input$SR,
+                method = res_sr$input$method,
+                AR     = res_sr$input$AR,
+                out.AR = res_sr$input$out.AR)
+  }
+}
 
 #' 再生産関係の推定
 #'
@@ -62,6 +93,10 @@ get.SRdata <- function(vpares,R.dat = NULL,
 #' @param out.AR 自己相関係数を一度再生産関係を推定したのちに、外部から推定するか（1), 内部で推定するか(0)
 #' @param length 初期値を決める際のgridの長さ
 #' @param p0 \code{optim}で設定する初期値
+#' @param bio_par data.frame(waa=c(100,200,300),maa=c(0,1,1),M=c(0.3,0.3,0.3)) のような生物パラメータをあらわすデータフレーム。waaは資源量を計算するときのweight at age, maaはmaturity at age, Mは自然死亡係数。これを与えると、steepnessやR0も計算して返す
+#' @param plus_group hなどを計算するときに、プラスグループを考慮するか
+#' # @param do_check.SRfit 計算が終わったあとでdo_check.SRfitを実施し、収束していなかった場合に１回だけ再計算するか（余計に時間がかかる）。デフォルトはFALSE
+#'
 #' @encoding UTF-8
 #' @examples
 #' \dontrun{
@@ -71,6 +106,14 @@ get.SRdata <- function(vpares,R.dat = NULL,
 #'                 method = c("L1","L2")[2], AR = 1,
 #'                 out.AR = TRUE)
 #' resSR$pars
+#'
+#' # When outputting steepness, create a bio_par object using derive_biopar function with the res_vpa object and the corresponding year as its argument, and put the bio_par object in the argument of fit.SR.
+#' bio_par <- derive_biopar(res_obj=res_vpa,derive_year = 2010)
+#' resSR <- fit.SR(SRdata, SR = c("HS","BH","RI")[1],
+#'                 method = c("L1","L2")[2], AR = 1,
+#'                 out.AR = TRUE,bio_par=bio_par)
+#' resSR$pars
+#' resSR$steepness
 #' }
 #' @return 以下の要素からなるリスト
 #' \describe{
@@ -86,6 +129,7 @@ get.SRdata <- function(vpares,R.dat = NULL,
 #' \item{\code{BIC}}{BIC (\code{out.AR=TRUE}のときは自己相関推定前の結果)}
 #' \item{\code{AIC.ar}}{\code{out.AR=TRUE}のときに\code{acf}関数で得られた自己相関を推定しない場合(0)とする場合(1)のAICの差}
 #' \item{\code{pred}}{予測された再生産関係}
+#' \item{\code{steepness}}{bio_parを与えたときに、steepness (h) やR0(漁獲がない場合の平均加入尾数), SB0(漁獲がない場合の平均親魚量)なども追加的に返す}
 #' }
 #'
 #' @export
@@ -100,8 +144,13 @@ fit.SR <- function(SRdata,
                    length=20,
                    max.ssb.pred=1.3, # 予測値を計算するSSBの最大値（観測された最大値への乗数）
                    p0=NULL,
-                   out.AR = TRUE #自己相関係数rhoを外で推定するか
+                   out.AR = TRUE, #自己相関係数rhoを外で推定するか
+                   bio_par = NULL,
+                   plus_group = TRUE,
+                   is_jitter = FALSE
+#                   do_check.SRfit = FALSE # 計算が終わったあとでdo_check.SRfitを実施し、収束していなかった場合に１回だけ再計算するか（余計に時間がかかる）
 ){
+  validate_sr(SR = SR, method = method, AR = AR, out.AR = out.AR)
 
   argname <- ls()
   arglist <- lapply(argname,function(xx) eval(parse(text=xx)))
@@ -234,7 +283,9 @@ fit.SR <- function(SRdata,
   opt <- optim(init,obj.f2)
   #if (rep.opt) {
     for (i in 1:100) {
-      opt2 <- optim(opt$par,obj.f2)
+      if(is_jitter==FALSE) par2 <- opt$par
+      if(is_jitter==TRUE)  par2 <- opt$par + rnorm(length(opt$par),0,5)
+      opt2 <- optim(par2,obj.f2)
       if (abs(opt$value-opt2$value)<1e-6) break
       opt <- opt2
     }
@@ -319,7 +370,23 @@ fit.SR <- function(SRdata,
   Res$AICc <- Res$AIC+2*k*(k+1)/(NN-k-1)
   Res$BIC <- -2*loglik+k*log(NN)
 
+  if(!is.null(bio_par)){
+    Res$steepness <- calc_steepness(SR=SR,Res$pars,bio_par$M,bio_par$waa,bio_par$maa,plus_group=plus_group)
+  }
+
   class(Res) <- "fit.SR"
+
+# pending
+#  if(do_check.SRfit==TRUE){
+#    Res2 <- Res
+#    Res2$input$do_check.SRfit <- FALSE
+#    check <- check.SRfit(Res2, output=FALSE)
+#    if (!is.null(check$optimum)) {
+#      cat(" ")
+#      Res2 <- check$optimum
+#      check <- check.SRfit(Res2,output=FALSE)
+#    }}
+
   return(Res)
 }
 
@@ -336,8 +403,8 @@ fit.SR <- function(SRdata,
 #' @param p0 \code{optim}で設定する初期値
 #' @encoding UTF-8
 # #' @export
-#' @noRd  
-#' 
+#' @noRd
+#'
 fit.SRalpha <- function(SRdata,
                    SR="HS",
                    alpha=0,
@@ -360,6 +427,7 @@ fit.SRalpha <- function(SRdata,
   N <- length(rec)
   NN <- sum(w) #likelihoodを計算するサンプル数
 
+  validate_sr(SR = SR)
   #  if (SR=="HS") SRF <- function(x,a,b) a*(x+sqrt(b^2+gamma^2/4)-sqrt((x-b)^2+gamma^2/4))
   if (SR=="HS") SRF <- function(x,a,b) ifelse(x>b,b*a,x*a)
   if (SR=="BH") SRF <- function(x,a,b) a*x/(1+b*x)
@@ -479,6 +547,7 @@ fit.SR2 <- function(SRdata,
   N <- length(rec)
   NN <- sum(w) #sample size for likelihood calculation
 
+  validate_sr(SR = SR, method = method, AR = AR)
   if (SR=="HS") SRF <- function(x,a,b,c) ifelse(x>b,b*a,a*b*(x/b)^c)
   if (SR=="BH") SRF <- function(x,a,b,c) (a/b)/(1+1/(b*x)^c)
   if (SR=="RI") SRF <- function(x,a,b,c) a/(b*exp(1))*(b*x)^c*exp(c*(1-b*x))
@@ -609,6 +678,7 @@ boot.SR <- function(Res,method="p",n=100,seed=1){
   names(arglist) <- argname
   N <- length(Res$input$SRdata$SSB)
 
+  validate_sr(res_sr = Res)
   if (Res$input$SR=="HS") SRF <- function(x,a,b) ifelse(x>b,b*a,x*a)
   if (Res$input$SR=="BH") SRF <- function(x,a,b) a*x/(1+b*x)
   if (Res$input$SR=="RI") SRF <- function(x,a,b) a*x*exp(-b*x)
@@ -720,6 +790,7 @@ prof.lik <- function(Res,a=Res$pars$a,b=Res$pars$b,sd=Res$pars$sd,rho=ifelse(Res
   w <- Res$input$w
 
 #  if (SR=="HS") SRF <- function(x,a,b) a*(x+sqrt(b^2+gamma^2/4)-sqrt((x-b)^2+gamma^2/4))
+  validate_sr(SR = SR)
   if (SR=="HS") SRF <- function(x,a,b) ifelse(x>b,b*a,x*a)
   if (SR=="BH") SRF <- function(x,a,b) a*x/(1+b*x)
   if (SR=="RI") SRF <- function(x,a,b) a*x*exp(-b*x)
@@ -763,6 +834,8 @@ prof.lik <- function(Res,a=Res$pars$a,b=Res$pars$b,sd=Res$pars$sd,rho=ifelse(Res
 #' @param regime.par レジームによって変化するパラメータ(\code{c("a","b","sd")}の中から選ぶ)
 #' @param length 初期値を決める際のgridの長さ
 #' @param p0 \code{optim}で設定する初期値
+#' @param bio_par data.frame(waa=c(100,200,300),maa=c(0,1,1),M=c(0.3,0.3,0.3)) のような生物パラメータをあらわすデータフレーム。waaは資源量を計算するときのweight at age, maaはmaturity at age, Mは自然死亡係数。これを与えると、steepnessやR0も計算して返す
+#' @param plus_group hなどを計算するときに、プラスグループを考慮するか
 #' @inheritParams fit.SR
 #' @encoding UTF-8
 #' @examples
@@ -790,6 +863,7 @@ prof.lik <- function(Res,a=Res$pars$a,b=Res$pars$b,sd=Res$pars$sd,rho=ifelse(Res
 #' \item{\code{pred}}{レジームごとの各親魚量に対する加入量の予測値}
 #' \item{\code{pred_to_obs}}{観測値に対する予測値}
 #' \item{\code{summary_tbl}}{観測値と予測値を合わせた表}
+#' \item{\code{steepness}}{bio_parを与えたときに、steepness (h) やR0(漁獲がない場合の平均加入尾数), SB0(漁獲がない場合の平均親魚量)なども追加的に返す}
 #' }
 #'
 #' @export
@@ -806,7 +880,9 @@ fit.SRregime <- function(
   p0 = NULL,  # 初期値
   w = rep(1,length(SRdata$R)),
   max.ssb.pred = 1.3,
-  hessian = FALSE
+  hessian = FALSE,
+  bio_par = NULL,
+  plus_group = TRUE
 ) {
   argname <- ls()
   arglist <- lapply(argname,function(xx) eval(parse(text=xx)))
@@ -831,6 +907,7 @@ fit.SRregime <- function(
   if ("b" %in% regime.par) b_key <- regime
   if ("sd" %in% regime.par) sd_key <- regime
 
+  validate_sr(SR = SR, method = method)
   if (SR=="HS") SRF <- function(x,a,b) ifelse(x>b,b*a,x*a)
   if (SR=="BH") SRF <- function(x,a,b) a*x/(1+b*x)
   if (SR=="RI") SRF <- function(x,a,b) a*x*exp(-b*x)
@@ -990,6 +1067,17 @@ fit.SRregime <- function(
   Res$summary_tbl
   class(Res) <- "fit.SRregime"
 
+  if(!is.null(bio_par)){
+      par.matrix <- Res$regime_pars[c("a","b")]
+      Res$steepness <- purrr::map_dfr(seq_len(nrow(par.matrix)),
+                                function(i){
+                                    calc_steepness(SR=SR,rec_pars=par.matrix[i,],M=bio_par$M,waa=bio_par$waa,maa=bio_par$maa,
+                                                   plus_group=plus_group) %>%
+                                        mutate(regime=Res$regime_pars$regime[i])
+                                })
+  }
+
+  Res$pars <- NULL
   return(Res)
 }
 
@@ -999,6 +1087,7 @@ fit.SRregime <- function(
 #' @encoding UTF-8
 #' @export
 calc.StdResid = function(resSR) {
+  validate_sr(res_sr = resSR)
   if(class(resSR) == "fit.SR") { #fit.SR
     if (resSR$input$method == "L2") {
       sigma = rep(sqrt(sum(resSR$resid^2)/length(resSR$resid)),length(resSR$resid))
@@ -1055,6 +1144,7 @@ check.SRdist = function(resSR,test.ks=TRUE,output=FALSE,filename = "SR_error_dis
   main_name=paste0(resSR$input$SR," ",resSR$input$method," ")
 
   if (class(resSR)=="fit.SR" && resSR$input$AR && isTRUE(resSR$input$out.AR)) {
+    validate_sr(res_sr = resSR)
     for(i in 1:2) {
       if (i==1) {
         std.resid = std.resid.res$std.resid
@@ -1174,6 +1264,7 @@ check.SRdist = function(resSR,test.ks=TRUE,output=FALSE,filename = "SR_error_dis
 calc.residAR = function(resSR, per_regime=TRUE, output=TRUE, filename="residARouter") {
   RES = list()
   if (class(resSR) == "fit.SR") { #fit.SR
+    validate_sr(res_sr = resSR)
     if (resSR$input$AR && !isTRUE(resSR$input$out.AR)) {
       warning("This function is meaningless when AR=TRUE & out.AR=FALSE")
     }
@@ -1300,6 +1391,7 @@ autocor.plot = function(resSR,use.resid=1,lag.max=NULL,output = FALSE,filename =
   if (output) png(file = paste0(filename,".png"), width=15, height=5, res=432, units='in')
   par(pch=pch,lwd = lwd, mfrow=c(1,3),cex=cex)
   if (class(resSR) == "fit.SR") { #fit.SR
+    validate_sr(res_sr = resSR)
     if (use.resid==1) {
       Resid = resSR$resid
       plot(Year,Resid,pch=pch,main="",xlab="Year",ylab="Deviance",cex.lab=cex.lab,...)
@@ -1348,36 +1440,114 @@ autocor.plot = function(resSR,use.resid=1,lag.max=NULL,output = FALSE,filename =
 #' @param filename ファイル名
 #' @encoding UTF-8
 #' @export
-bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1.2,pch=1,...) {
+bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1.2,pch=1,ggplt=FALSE,...) {
   res_base = boot.res$input$Res
   if (class(boot.res$input$Res)=="fit.SR") {
-    # for fit.SR
-    if (output) png(file = paste0(filename,"_pars.png"), width=10, height=10, res=432, units='in')
-    par(pch=pch,lwd = lwd, mfrow=c(2,2))
-    jmax = ifelse(boot.res$input$Res$pars$rho==0,3,4)
-    for (j in 1:jmax) {
-      par0 = c("a","b","sd","rho")[j]
+    validate_sr(res_sr = boot.res$input$Res)
+    # for fit.SR ----
+    # parameter histogram ----
+    if(ggplt){ # ggplot (plot histograms of a,b,B0,h,R0,rho,SB0,sd)
+      if(is.null(convert_SR_tibble(boot.res[[1]]))) print("Do fit.SR with argument(bio.par) to calculate steepness.")
+      res_boot_par_tibble <- purrr::map_dfr(boot.res[1:N], convert_SR_tibble) %>% dplyr::filter(type=="parameter"&name!="SPR0")
 
-      hist(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$pars[,par0]),xlab=par0,ylab="Frequency",main="",col="gray")
-      abline(v=boot.res$input$Res$pars[,par0],col=2,lwd=3)
-      abline(v=median(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$pars[,par0])),col=3,lwd=3,lty=2)
-      arrows(quantile(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$pars[,par0]),0.5*(1-CI)),0,
-             quantile(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$pars[,par0]),0.5*(1-CI)+CI),0,
-             col=4,lwd=3,code=3)
-      legend("topright",
-             legend=c("Estimate","Median","CI(0.8)"),lty=1:2,col=2:4,lwd=2,ncol=1,cex=1)
-      if (boot.res$input$method=="d") {
-        title(paste0(par0," in Data Bootstrap"))
-      } else {
-        if (boot.res$input$method=="p") {
-          title(paste0(par0," in Parametric Bootstrap"))
-        } else {
-          title(paste0(par0," in Non-Parametric Bootstrap"))
+      res_boot_par_tibble_summary <- res_boot_par_tibble %>%  group_by(name) %>% summarise(median=median(value),mean=mean(value),CI10=quantile(value,0.1),CI90=quantile(value,0.9)) %>% mutate(name_with_CI = str_c(name," (",round(CI10,2),"-",round(CI90,2),")")) %>% pivot_longer(cols=-c(name,name_with_CI), names_to="stats")
+
+      res_boot_par_base <- res_boot_par_tibble_summary %>% filter(stats=="median") #推定結果のために中央値から形だけ持ってくる
+      res_fitSRtibble <- convert_SR_tibble(boot.res[["input"]]$Res) %>% dplyr::filter(type=="parameter"&name!="SPR0")
+
+      for(i in 1:length(res_boot_par_base)){
+        for(j in 1:length(res_boot_par_base)){
+          if(res_boot_par_base$name[i] ==res_fitSRtibble$name[j])
+            res_boot_par_base$value[i] <- res_fitSRtibble$value[j]
         }
       }
-    }
-    if (output) dev.off()
+      res_boot_par_base$stats <- "estimated"
 
+      res_boot_par_tibble <- res_boot_par_tibble_summary %>% select(name, name_with_CI) %>% right_join(res_boot_par_tibble)
+
+      plot_col <- c("blue","blue","red","darkgreen","green")
+      base_linetype <- c("solid")
+      bootsr_linetype <- c("dashed","dashed","longdashed","solid")
+      plot_bootsr_linetype <- rep(bootsr_linetype,length(levels(as.factor(res_boot_par_tibble$name))))
+      #legend.labels <- c("estimated", "CI10", "CI90","mean","median")
+
+      if (boot.res$input$method=="d") {
+        plot_bootsr_title<- paste0("Data Bootstrap")
+      } else {
+        if (boot.res$input$method=="p") {
+          plot_bootsr_title<- paste0("Parametric Bootstrap")
+        } else {
+          plot_bootsr_title<- paste0("Non-Parametric Bootstrap")
+        }
+      }
+
+      boot_par_hist <-ggplot(res_boot_par_tibble) + geom_histogram(aes(x=value)) + facet_wrap(.~fct_inorder(name_with_CI), scale="free")+theme_SH(legend.position="bottom")  + labs(title=plot_bootsr_title)+
+        geom_vline(data=res_boot_par_base, mapping = aes(xintercept=value,color=stats),linetype=base_linetype) +
+        geom_vline(data=res_boot_par_tibble_summary, mapping = aes(xintercept=value,color=stats),linetype="dashed") +
+        scale_color_manual(name="stats",values = plot_col) #+
+      #scale_linetype_manual(name="",values = plot_bootsr_linetype) #+ #scale_color_discrete(name="stats",breaks=legend.labels)
+      if (output) ggsave(file = paste0(filename,"_pars.png"), plot=boot_par_hist, width=10, height=10,  units='in')
+
+    }
+    else { #plot not using ggplot
+      if (output) png(file = paste0(filename,"_pars.png"), width=10, height=10, res=432, units='in')
+      par(pch=pch,lwd = lwd, mfrow=c(2,2))
+      jmax = ifelse(boot.res$input$Res$pars$rho==0,3,4)
+      for (j in 1:jmax) {
+        par0 = c("a","b","sd","rho")[j]
+
+        hist(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$pars[,par0]),xlab=par0,ylab="Frequency",main="",col="gray")
+        abline(v=boot.res$input$Res$pars[,par0],col=2,lwd=3)
+        abline(v=median(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$pars[,par0])),col=3,lwd=3,lty=2)
+        arrows(quantile(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$pars[,par0]),0.5*(1-CI)),0,
+               quantile(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$pars[,par0]),0.5*(1-CI)+CI),0,
+               col=4,lwd=3,code=3)
+        legend("topright",
+               legend=c("Estimate","Median","CI(0.8)"),lty=1:2,col=2:4,lwd=2,ncol=1,cex=1)
+        if (boot.res$input$method=="d") {
+          title(paste0(par0," in Data Bootstrap"))
+        } else {
+          if (boot.res$input$method=="p") {
+            title(paste0(par0," in Parametric Bootstrap"))
+          } else {
+            title(paste0(par0," in Non-Parametric Bootstrap"))
+          }
+        }
+      }
+      if (output) dev.off()
+
+      # steepness histogram (if available) ----
+      if(!is.null(boot.res[[1]]$steepness)){
+        if (output) png(file = paste0(filename,"_pars_steepness.png"), width=10, height=10, res=432, units='in')
+        par(pch=pch,lwd = lwd, mfrow=c(2,2))
+        for (j in 1:4) {
+          par0 = c("SB0","R0","B0","h")[j]
+
+          hist(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$steepness[,par0]),xlab=par0,ylab="Frequency",main="",col="gray")
+          abline(v=boot.res$input$Res$steepness[,par0],col=2,lwd=3)
+          abline(v=median(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$steepness[,par0])),col=3,lwd=3,lty=2)
+          arrows(quantile(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$steepness[,par0]),0.5*(1-CI)),0,
+                 quantile(sapply(1:boot.res$input$n, function(i) boot.res[[i]]$steepness[,par0]),0.5*(1-CI)+CI),0,
+                 col=4,lwd=3,code=3)
+          legend("topright",
+                 legend=c("Estimate","Median","CI(0.8)"),lty=1:2,col=2:4,lwd=2,ncol=1,cex=1)
+          if (boot.res$input$method=="d") {
+            title(paste0(par0," in Data Bootstrap"))
+          } else {
+            if (boot.res$input$method=="p") {
+              title(paste0(par0," in Parametric Bootstrap"))
+            } else {
+              title(paste0(par0," in Non-Parametric Bootstrap"))
+            }
+          }
+        }
+        if (output) dev.off()
+      }
+
+    }
+
+
+    # SR curve ----
     par(mfrow=c(1,1),pch=pch,lwd = lwd)
     if (output) png(file = paste0(filename,"_SRcurve.png"), width=10, height=7.5, res=432, units='in')
     data_SR = boot.res$input$Res$input$SRdata
@@ -1399,9 +1569,64 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
     points(res_base$pred$SSB,res_base$pred$R,col=2,type="l",lwd=3)
     if (output) dev.off()
   } else {
-    # fit.SRregime
+    # fit.SRregime ----
+
     regime_unique = boot.res$input$Res$regime_pars$regime
     obs_data = boot.res$input$Res$pred_to_obs
+
+    if(ggplt){ # plot using ggplot
+      res_base = boot.res$input$Res
+
+      res_boot_par_tibble <- purrr::map_dfr(boot.res[1:N], convert_SR_tibble) %>% dplyr::filter(type=="parameter"&name!="SPR0")
+
+      legend.labels <- c("estimated", "CI10", "CI90","mean","median")
+      plot_col <- c("blue","blue","red","darkgreen","green")
+      base_linetype <- c("solid")
+      bootsr_linetype <- c("dashed","dashed","longdashed","solid")
+      plot_bootsr_linetype <- rep(bootsr_linetype,length(levels(as.factor(res_boot_par_tibble$name))))
+
+      regime.num <- length(levels(as.factor(res_boot_par_tibble$regime)))-1
+
+      for(k in 0:regime.num){
+        if (boot.res$input$method=="d") {
+          plot_bootsr_title<- paste0("Data Bootstrap regime",k)
+        } else {
+          if (boot.res$input$method=="p") {
+            plot_bootsr_title<- paste0("Parametric Bootstrap regime",k)
+          } else {
+            plot_bootsr_title<- paste0("Non-Parametric Bootstrap regime",k)
+          }
+        }
+
+
+        res_boot_par_tibble_regime<- res_boot_par_tibble %>% filter(regime==k)
+
+        res_boot_par_tibble_summary <- res_boot_par_tibble_regime %>%  group_by(name) %>% summarise(median=median(value),mean=mean(value),CI10=quantile(value,0.1),CI90=quantile(value,0.9)) %>% mutate(name_with_CI = str_c(name," (",round(CI10,2),"-",round(CI90,2),")")) %>% pivot_longer(cols=-c(name,name_with_CI), names_to="stats")
+
+        res_boot_par_base <- res_boot_par_tibble_summary %>% filter(stats=="median")
+        res_fitSRtibble <- convert_SR_tibble(res_base) %>% dplyr::filter(type=="parameter"&name!="SPR0") %>% filter(regime==k)
+        for(i in 1:nrow(res_boot_par_base)){
+          for(j in 1:nrow(res_boot_par_base)){
+            if(res_boot_par_base$name[i] == res_fitSRtibble$name[j])
+              res_boot_par_base$value[i] <- res_fitSRtibble$value[j]
+          }
+        }
+        res_boot_par_base$stats <- "estimated"
+
+        res_boot_par_tibble_regime <- res_boot_par_tibble_summary %>% select(name, name_with_CI) %>% right_join(res_boot_par_tibble_regime)
+
+        boot_par_hist <- ggplot(res_boot_par_tibble_regime) + geom_histogram(aes(x=value)) + facet_wrap(.~fct_inorder(name_with_CI), scale="free")+theme_SH(legend.position="bottom")  + labs(title=plot_bootsr_title)+
+          geom_vline(data=res_boot_par_base, mapping = aes(xintercept=value,color=stats),linetype=base_linetype) +
+          geom_vline(data=res_boot_par_tibble_summary, mapping = aes(xintercept=value,color=stats),linetype="dashed") +
+          scale_color_manual(name="stats",values = plot_col)
+        if (output) ggsave(file = paste0(filename,"_regime",k,"_pars.png"), plot=boot_par_hist, width=10, height=10,  units='in')
+
+      }
+
+    }
+    else{ # plot not using ggplot
+
+    # histogram ----
     if (output) png(file = paste0(filename,"_pars.png"), width=15, height=5*nrow(boot.res$input$Res$regime_pars), res=432, units='in')
     par(lwd = lwd, mfrow=c(nrow(boot.res$input$Res$regime_pars),3))
     for (ii in 1:nrow(boot.res$input$Res$regime_pars)) {
@@ -1432,6 +1657,41 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
     }
     if (output) dev.off()
 
+    # histogram (steepness) ----
+    if(!is.null(boot.res[[1]]$steepness)){
+      if (output) png(file = paste0(filename,"_pars_steepness.png"), width=15, height=5*nrow(boot.res$input$Res$regime_pars), res=432, units='in')
+      par(lwd = lwd, mfrow=c(nrow(boot.res$input$Res$regime_pars),4))
+      for (ii in 1:nrow(boot.res$input$Res$regime_pars)) {
+        regime = boot.res$input$Res$regime_pars$regime[ii]
+        jmax = 4
+        for (j in 1:jmax) {
+          par0 = c("SB0","R0","B0","h")[j]
+          boot_pars = sapply(1:boot.res$input$n, function(i) as.numeric(boot.res[[i]]$steepness[ii,par0]))
+          hist(boot_pars,xlab=par0,ylab="Frequency",main="",col="gray")
+          abline(v=as.numeric(boot.res$input$Res$steepness[ii,par0]),col=2,lwd=3)
+          abline(v=median(boot_pars),col=3,lwd=3,lty=2)
+          arrows(quantile(boot_pars,0.5*(1-CI)),0,
+                 quantile(boot_pars,0.5*(1-CI)+CI),0,
+                 col=4,lwd=3,code=3)
+          legend("topright",
+                 legend=c("Estimate","Median","CI(0.8)"),lty=1:2,col=2:4,lwd=2,ncol=1,cex=1)
+          if (boot.res$input$method=="d") {
+            title(paste0(par0," of Regime",regime," in Data Bootstrap"))
+          } else {
+            if (boot.res$input$method=="p") {
+              title(paste0(par0," of Regime",regime," in Para Bootstrap"))
+            } else {
+              title(paste0(par0," of Regime",regime," in Non-Para Bootstrap"))
+            }
+          }
+
+        }
+      }
+      if (output) dev.off()
+    }
+    }
+
+    # SR curve -----
     if (output) png(file = paste0(filename,"_SRcurve.png"), width=7.5*length(regime_unique), height=7.5, res=432, units='in')
     par(mfrow=c(1,length(regime_unique)))
     for(i in 1:length(regime_unique)) {
@@ -1456,6 +1716,7 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
     }
     if (output) dev.off()
   }
+
 }
 
 #' 再生産関係のジャックナイフ解析
@@ -1467,13 +1728,30 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
 #' @param output pngファイルに出力するか否か
 #' @param filename ファイル名
 #' @encoding UTF-8
+#' @examples
+#' \dontrun{
+#' data(res_vpa)
+#' SRdata <- get.SRdata(res_vpa)
+#' resSR <- fit.SR(SRdata, SR = c("HS","BH","RI")[1],
+#'                 method = c("L1","L2")[2], AR = 1,
+#'                 out.AR = TRUE)
+#' res_jackSR <- jackknife.SR(resSR,output = T)
+#'
+#' # if calculate steepness
+#' bio_par <- derive_biopar(res_obj=res_vpa,derive_year = 2010)
+#' resSR <- fit.SR(SRdata, SR = c("HS","BH","RI")[1],
+#'                 method = c("L1","L2")[2], AR = 1,
+#'                 out.AR = TRUE,bio_par=bio_par)
+#' res_jackSR <- jackknife.SR(resSR,output = T)
+#' }
 #' @export
-jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename = "jackknife",ylim.range = c(0.5,1.5),pch=19,cex=1.1,...) {
+jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename = "jackknife",ylim.range = c(0,1.5),pch=19,cex=1.1,...) {
   RES = lapply(1:length(resSR$input$SRdata$SSB), function(i){
     jack <- resSR
     jack$input$w[i] <- 0
     if (use.p0) jack$input$p0 <- resSR$opt$par
     if (class(resSR)=="fit.SR") {
+      validate_sr(res_sr = resSR)
       do.call(fit.SR,jack$input)
     } else {
       if (class(resSR)=="fit.SRregime") {
@@ -1486,7 +1764,8 @@ jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename 
   if (is.plot) {
     jack.res <- RES
     data_SR = resSR$input$SRdata
-    if (class(resSR)=="fit.SR" || class(resSR)=="fit.SRalpha") {
+    # no regime ----
+    if (class(resSR)=="fit.SR" || class(resSR)=="fit.SRalpha") {         # plot parameters ----
       if (output) png(file = paste0(filename,"_pars.png"), width=10, height=10, res=432, units='in')
       par(mfrow=c(2,2),mar=c(3,3,2,2),oma=c(3,3,2,2),pch=pch,cex=cex)
       plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$pars$a),type="b",
@@ -1509,6 +1788,28 @@ jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename 
         }
       }
       if (output) dev.off()
+      if(!is.null(resSR$steepness)){ #steepness----
+        if (output) png(file = paste0(filename,"_steepness.png"), width=10, height=10, res=432, units='in')
+        par(mfrow=c(2,2),mar=c(3,3,2,2),oma=c(3,3,2,2),pch=pch,cex=cex)
+        plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$steepness$h),type="b",
+             xlab="Year removed",ylab="",main="h in jackknife",ylim=resSR$steepness$h*ylim.range)
+        abline(resSR$steepness$h,0,lwd=2,col=2,lty=2)
+
+        plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$steepness$B0),type="b",
+           xlab="Year removed",ylab="",main="B0 in jackknife",ylim=resSR$steepness$B0*ylim.range)
+        abline(resSR$steepness$B0,0,lwd=2,col=2,lty=2)
+
+        plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$steepness$R0),type="b",
+         xlab="Year removed",ylab="",main="R0 in jackknife",ylim=resSR$steepness$R0*ylim.range)
+        abline(resSR$steepness$R0,0,lwd=2,col=2,lty=2)
+
+        plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$steepness$SB0),type="b",
+           xlab="Year removed",ylab="",main="SB0 in jackknife",ylim=resSR$steepness$SB0*ylim.range)
+        abline(resSR$steepness$SB0,0,lwd=2,col=2,lty=2)
+        if (output) dev.off()
+      }
+
+    # plot SR curve ----
       if (output) png(file = paste0(filename,"_SRcurve.png"), width=8, height=5, res=432, units='in')
       par(mar=c(3,3,2,2),oma=c(3,3,2,2),mfrow=c(1,1))
       plot(data_SR$R ~ data_SR$SSB, cex=2, type = "p",xlab="SSB",ylab="R",pch=1,
@@ -1520,8 +1821,11 @@ jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename 
       points(resSR$pred$SSB,resSR$pred$R,col=2,type="l",lwd=3,lty=2)
       legend("topright", legend=c("Estimated SR function","A jackkine SR function"),col=c("red",rgb(0,0,1,alpha=0.1)),lty=c(2,1), cex=0.8)
       if (output) dev.off()
-    } else { #fit.SRregime
+    }
+    #fit.SRregime ----
+    else {
       regime_unique = resSR$regime_resid$regime %>% unique()
+      # plot parameters ----
       if (output) png(file = paste0(filename,"_pars.png"), width=15, height=7.5, res=432, units='in')
       par(mar=c(3,3,2,2),oma=c(3,3,2,2),mfrow=c(length(regime_unique),3),pch=pch,cex=cex)
       for(j in 1:length(regime_unique)) {
@@ -1542,6 +1846,37 @@ jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename 
         abline(v=resSR$input$regime.year-0.5,lwd=1,lty=3,col="blue")
       }
       if (output) dev.off()
+
+      if(!is.null(resSR$steepness)){
+        if (output) png(file = paste0(filename,"_steepness.png"), width=15, height=7.5, res=432, units='in')
+        par(mar=c(3,3,2,2),oma=c(3,3,2,2),mfrow=c(length(regime_unique),4),pch=pch,cex=cex)
+        for(j in 1:length(regime_unique)) {
+        plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$steepness$h[j]),type="b",
+             xlab="Year removed",ylab="",
+             main=paste0("h in jackknife (regime ",regime_unique[j],")"),ylim=resSR$steepness$h[j]*ylim.range)
+        abline(resSR$steepness$h[j],0,lwd=2,col=2,lty=2)
+        abline(v=resSR$input$regime.year-0.5,lwd=1,lty=3,col="blue")
+
+        plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$steepness$B0[j]),type="b",
+             xlab="Year removed",ylab="",
+             main=paste0("B0 in jackknife (regime ",regime_unique[j],")"),ylim=resSR$steepness$B0[j]*ylim.range)
+        abline(resSR$steepness$B0[j],0,lwd=2,col=2,lty=2)
+        abline(v=resSR$input$regime.year-0.5,lwd=1,lty=3,col="blue")
+        plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$steepness$R0[j]),type="b",
+             xlab="Year removed",ylab="",
+             main=paste0("R0 in jackknife (regime ",regime_unique[j],")"),ylim=resSR$steepness$R0[j]*ylim.range)
+        abline(resSR$steepness$R0[j],0,lwd=2,col=2,lty=2)
+        abline(v=resSR$input$regime.year-0.5,lwd=1,lty=3,col="blue")
+        plot(data_SR$year,sapply(1:length(data_SR$year), function(i) jack.res[[i]]$steepness$SB0[j]),type="b",
+             xlab="Year removed",ylab="",
+             main=paste0("SB0 in jackknife (regime ",regime_unique[j],")"),ylim=resSR$steepness$SB0[j]*ylim.range)
+        abline(resSR$steepness$SB0[j],0,lwd=2,col=2,lty=2)
+        abline(v=resSR$input$regime.year-0.5,lwd=1,lty=3,col="blue")
+        }
+        if (output) dev.off()
+      }
+
+      # plot SRcurve ----
       obs_data = resSR$pred_to_obs
       if (output) png(file = paste0(filename,"_SRcurve.png"), width=12, height=6, res=432, units='in')
       par(mar=c(3,3,2,2),oma=c(3,3,2,2),mfrow=c(1,length(regime_unique)))
@@ -1561,6 +1896,7 @@ jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename 
       if (output) dev.off()
     }
   }
+
   return(invisible(RES))
 }
 
@@ -1581,6 +1917,7 @@ prof.likSR = function(resSR,output=FALSE,filename="Profile_Likelihood",a_range =
   if (is.null(a_range)) a_range = c(0.5,2)
   if (is.null(b_range)) b_range = c(0.5,2)
   if (class(resSR) == "fit.SR") {
+    validate_sr(res_sr = resSR)
     a.grid <- seq(resSR$pars$a*a_range[1],resSR$pars$a*a_range[2],length=length)
     if (resSR$input$SR!="HS" || !isTRUE(HS_b_restrict)) {
       b.grid <- seq(resSR$pars$b*b_range[1],resSR$pars$b*b_range[2],length=length)
@@ -1628,16 +1965,16 @@ prof.likSR = function(resSR,output=FALSE,filename="Profile_Likelihood",a_range =
         }
       }
       ba.grid = expand.grid(b=b.grid,a=a.grid)
-      ab_order = c("a"=which(resSR$regime_pars$a[j]==resSR$pars$a),"b"=which(resSR$regime_pars$b[j]==resSR$pars$b))
+      ab_order = c("a"=which(resSR$regime_pars$a[j]==resSR$regime_pars$a),"b"=which(resSR$regime_pars$b[j]==resSR$regime_pars$b))
       a_fix = resSR$regime_pars$a[j]
       b_fix = resSR$regime_pars$b[j]
-      ab = c(resSR$pars$a,resSR$pars$b)
+      ab = c(resSR$regime_pars$a,resSR$regime_pars$b)
       x = ab[!(ab %in% c(a_fix,b_fix))]
       obj.f = function(par_a,par_b,x) {
-        a = resSR$pars$a
+        a = resSR$regime_pars$a
         xa_length=length(a[-ab_order[1]])
         if (xa_length>0) a[-ab_order[1]] <- x[1:xa_length]
-        b = resSR$pars$b
+        b = resSR$regime_pars$b
         xb_length=length(b[-ab_order[2]])
         if (xb_length>0) b[-ab_order[2]] <- x[xa_length+(1:xb_length)]
         a[ab_order[1]] <- par_a
@@ -1686,6 +2023,7 @@ out.SR = function(resSR,filename = "resSR") {
   RES$SR = resSR$input$SR
   RES$method = resSR$input$method
   if (class(resSR) == "fit.SR") {
+    validate_sr(res_sr = resSR)
     RES$AR = resSR$input$AR
     RES$out.AR = resSR$input$out.AR
     RES$pars = resSR$pars
@@ -1734,9 +2072,9 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
   RES = list()
   # check convergence
   if (opt$convergence==0) {
-    cat(RES$convergence <- "Successful convergence","\n")
+    cat(RES$convergence <- "1. Successful convergence (OK)","\n")
   } else {
-    message(RES$convergence <- "False convergencen")
+    message(RES$convergence <- "1. False convergencen")
   }
   # hessian
   resSR2 = resSR
@@ -1745,6 +2083,7 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
     input$p0 = resSR$opt$par
     input$hessian = TRUE
     if (class(resSR) == "fit.SR") {
+      validate_sr(res_sr = resSR)
       #input$rep.opt = TRUE
       resSR2 = do.call(fit.SR, input)
     } else {
@@ -1757,9 +2096,9 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
     }
   }
   if (all(diag(resSR2$opt$hessian) > 0)) {
-    cat(RES$hessian <- "Hessian successfully having positive definite","\n")
+    cat(RES$hessian <- "2. Hessian successfully having positive definite (OK)","\n")
   } else {
-    message(RES$hessian <- "Hessian NOT having positive definite")
+    message(RES$hessian <- "2. Hessian NOT having positive definite")
   }
 
   # check boundary
@@ -1789,7 +2128,7 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
     }
   }
   if (is.null(RES$boundary)) {
-    cat(RES$boundary <- "Parameters not reaching boundaries (successful)","\n")
+    cat(RES$boundary <- "3. Parameters not reaching boundaries (successful, OK)","\n")
   } else {
     for (i in 1:length(RES$boundary)) {
       message(RES$boundary[i])
@@ -1824,13 +2163,13 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
   max_loglik = max(loglik)
   optimal = NULL
   if (resSR$loglik-max_loglik < -0.001) {
-    message(RES$optim <- "NOT achieving the global optimum")
+    message(RES$optim <- "4. NOT achieving the global optimum")
     diff_loglik = abs(resSR$loglik-max_loglik)
     message(paste0("Maximum difference of log-likelihood is ",round(diff_loglik,6)))
     optimal = resSR_list[[which.max(loglik)]]
     RES$loglik_diff = diff_loglik
   } else {
-    cat(RES$optim <- "Successfully achieving the global optimum","\n")
+    cat(RES$optim <- "4. Successfully achieving the global optimum (OK)","\n")
     # global optimumに達している場合のみ
     loglik_diff = purrr::map_dbl(loglik, function(x) abs(diff(c(x,max(loglik)))))
     problem = NULL
@@ -1874,7 +2213,7 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
       RES$par_summary <- par_summary
       RES$percent_bias_summary <- percent_bias_summary
     } else {
-      cat(RES$pars <- "Parameters successfully achieving the single solution","\n")
+      cat(RES$pars <- "5. Parameters successfully achieving the single solution (OK)","\n")
     }
   }
   if (output) {
@@ -1924,7 +2263,7 @@ bootSR.ggplot = function(boot.res, CI=0.80) {
 }
 
 #' 再生産関係の推定パラメータの相関を出力する関数
-#' 
+#'
 #' @inheritParams fit.SR
 #' @inheritParams fit.SRregime
 #' @param resSR \code{fit.SR}または\code{fit.SRregime}のオブジェクト
@@ -1960,9 +2299,9 @@ corSR = function(resSR) {
 }
 
 #' Steepness (h) と関連するパラメータ (SB0,R0,B0)を計算する関数
-#' 
-#' @param SR "HS", "BH", "RI"のいずれか 
-#' @param rec_pars 再生産関係のパラメータで\code{rec_pars$a},\code{rec_pars$b}で使用する 
+#'
+#' @param SR "HS", "BH", "RI"のいずれか
+#' @param rec_pars 再生産関係のパラメータで\code{rec_pars$a},\code{rec_pars$b}で使用する
 #' @param M 年齢別自然死亡係数 (ベクトルで与えるか、年齢共通の場合\code{M=0.4}のようにしてもよい)
 #' @param waa （親魚量の）年齢別体重
 #' @param maa 年齢別親魚量
@@ -2001,16 +2340,17 @@ calc_steepness = function(SR="HS",rec_pars,M,waa,maa,plus_group=TRUE) {
   }
   NAA0 = 1
   for (i in 1:(length(waa)-1)) {
-    NAA0 = c(NAA0,rev(NAA0)[1]*exp(-M[i])) 
+    NAA0 = c(NAA0,rev(NAA0)[1]*exp(-M[i]))
   }
   if (plus_group) NAA0[length(NAA0)] = rev(NAA0)[1]/(1-exp(-1*rev(M)[1]))
   BAA0 = NAA0*waa
   SSB0 = BAA0*maa
   SPR0 = sum(SSB0) #get.SRRと一致 (testに使える)
-  
+
   # 再生産関係とy=(1/SPR0)*xの交点を求める
   rec_a = rec_pars$a
   rec_b = rec_pars$b
+  validate_sr(SR = SR)
   if (SR == "HS") {
     R0 = rec_pars$a * rec_pars$b
     SB0 = R0*SPR0
@@ -2029,9 +2369,52 @@ calc_steepness = function(SR="HS",rec_pars,M,waa,maa,plus_group=TRUE) {
     R0 = SB0/SPR0
     h = (rec_a*0.2*SB0*exp(-rec_b*0.2*SB0))/R0
   }
-  
+
   B0 = sum(R0*BAA0)
   Res = data.frame(SPR0 = SPR0, SB0 = SB0, R0 = R0, B0 = B0, h = h)
   return(Res)
 }
 
+
+#' 再生産関係の推定結果からbootstrapを実行し、hの分布を計算する関数
+#'
+#' @param res_SR fit.SRまたはfit.SRregime、モデル平均の結果
+#' @param M 年齢別自然死亡係数 (ベクトルで与えるか、年齢共通の場合\code{M=0.4}のようにしてもよい)
+#' @param waa （親魚量の）年齢別体重
+#' @param maa 年齢別親魚量
+#' @param plus_group 最高齢がプラスグループかどうか
+#'
+#' @export
+#'
+
+
+boot_steepness <- function(res_SR, M, waa, maa, n=100, plus_group=TRUE){
+
+    is.model.average <- class(res_SR)!="fit.SRregime" && class(res_SR)!="fit.SR"
+
+    if(is.model.average){ # model average case (calculate recursively)
+      res_steepness <- purrr::map_dfr(res_SR, boot_steepness, n=n, M=M, waa=waa, maa=maa, plus_group=plus_group, .id="id")
+    }else{
+      res_boot <- boot.SR(res_SR, n=n)
+      if(class(res_boot[[1]])=="fit.SRregime"){ # regime shift
+          res_steepness <- purrr::map_dfr(res_boot[1:n], function(x){
+              par.matrix <- x$regime_pars[c("a","b")]
+              tmplist <- purrr::map_dfr(seq_len(nrow(par.matrix)),
+                                    function(i){
+                                        calc_steepness(SR=res_SR$input$SR,rec_pars=par.matrix[i,],M=M,waa=waa,maa=maa,
+                                                       plus_group=plus_group)
+                                    },.id="id")
+              tmplist <- bind_cols(tmplist,par.matrix)
+          })
+      }
+      if(class(res_boot[[1]])=="fit.SR"){ # normal
+          res_steepness <- purrr::map_dfr(res_boot[1:n], function(x){
+              calc_steepness(SR=res_SR$input$SR,rec_pars=x$pars,M=M,waa=waa,maa=maa,plus_group=plus_group)
+          })
+          res_steepness$id <- 1
+          res_steepness <- res_steepness %>%
+              bind_cols(purrr::map_dfr(res_boot[1:n], function(x) x$pars))
+      }}
+
+    res_steepness
+}

@@ -9,8 +9,9 @@ calc_future_perSPR(
   fout = NULL,
   res_vpa = NULL,
   Fvector,
+  is_pope = NULL,
+  plus_group = NULL,
   Fmax = 10,
-  max.age = Inf,
   target.col = NULL,
   target.year = NULL,
   SPRtarget = NULL,
@@ -20,11 +21,13 @@ calc_future_perSPR(
 \arguments{
 \item{fout}{将来予測のアウトプット（finputがない場合)。future_vpaの結果はformat_to_old_future関数をかまさないと動かない。}
 
-\item{res_vpa}{Popeの式を使うかどうかだけのために利用。実際、漁獲量は計算していないので、不要といえば不要。}
+\item{res_vpa}{Popeの式を使うかどうか、plus_groupの設定のために利用。実際、漁獲量は計算していないので、不要といえば不要。is_popleとplus_groupが設定されていてもこちらを優先する。}
 
 \item{Fvector}{Fのベクトル}
 
-\item{max.age}{SPR計算のときに考慮する最大年齢。デフォルトは無限大。}
+\item{is_pope}{res_vpaがない場合、popeの式を使うか}
+
+\item{plus_group}{es_vpaがない場合、プラスグループを考慮するか}
 
 \item{target.col}{将来予測の何列目の年を取り出すか（NULLの場合、最後の年）}
 

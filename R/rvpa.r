@@ -31,15 +31,19 @@ data.handler <- function(
   if (!is.null(waa.catch)) {
     if (is.null(dim(waa.catch)) | dim(waa.catch)[2]==1) waa.catch <- as.data.frame(matrix(unlist(waa.catch), nrow=nrow(caa), ncol=ncol(caa)))
     colnames(waa.catch) <- years
-    expect_equal(rownames(caa),rownames(waa.catch))
-    expect_equal(colnames(caa),colnames(waa.catch))
+    assertthat::assert_that(
+      all(rownames(caa) == rownames(waa.catch)),
+      all(colnames(caa) == colnames(waa.catch))
+    )
   }
 
   if (!is.null(maa.tune)) {
     if (is.null(dim(maa.tune)) | dim(maa.tune)[2]==1) maa.tune <- as.data.frame(matrix(unlist(maa.tune), nrow=nrow(caa), ncol=ncol(caa)))
     colnames(maa.tune) <- years
-    expect_equal(rownames(caa),rownames(maa.tune))
-    expect_equal(colnames(caa),colnames(maa.tune))
+    assertthat::assert_that(
+      all(rownames(caa) == rownames(maa.tune)),
+      all(colnames(caa) == colnames(maa.tune))
+    )
   }
 
   if (!is.null(catch.prop)) colnames(catch.prop) <- years
@@ -51,13 +55,20 @@ data.handler <- function(
   colnames(M) <- years
   rownames(M) <- rownames(caa)
   
-  expect_equal(rownames(caa),rownames(maa))
-  expect_equal(rownames(caa),rownames(waa))
-  expect_equal(rownames(caa),rownames(M))
-  
-  expect_equal(colnames(caa),colnames(maa))
-  expect_equal(colnames(caa),colnames(waa))
-  expect_equal(colnames(caa),colnames(M))
+  assertthat::assert_that(
+    all(
+      rownames(caa) == purrr::flatten_chr(purrr::map(list(maa,
+                                                          waa,
+                                                          M),
+                                                     rownames))
+    ),
+    all(
+      colnames(caa) == purrr::flatten_chr(purrr::map(list(maa,
+                                                          waa,
+                                                          M),
+                                                     colnames))
+    )
+  )
   
   res <- list(caa=caa, maa=maa, waa=waa, index=index, M=M, maa.tune=maa.tune, waa.catch=waa.catch, catch.prop=catch.prop)
 
@@ -155,19 +166,24 @@ backward.calc <- function(caa,naa,M,na,k,min.caa=0.001,p=0.5,plus.group=TRUE,sel
   out <- rep(NA, na[k])
   if(na[k+1] > na[k]){
     if(isTRUE(sel.update)){stop("Selectivity update method is currently not supported for the plus group change scenario")}
-    for (i in 1:(na[k]-2)){
-      out[i] <- naa[i+1,k+1]*exp(M[i,k])+caa[i,k]*exp(p*M[i,k])
-    }
     if (isTRUE(plus.group) & use.equ=="new"){
+      for (i in 1:(na[k]-2)){
+        out[i] <- naa[i+1,k+1]*exp(M[i,k])+caa[i,k]*exp(p*M[i,k])
+      }
       out[na[k]-1]<- (caa[na[k]-1,k]*alpha  * (naa[na[k],k+1]+naa[na[k+1],k+1]) * exp(M[na[k]-1,k]))/(caa[na[k]-1,k]*alpha +caa[na[k],k]) + caa[na[k]-1,k] * exp(p * M[na[k]-1,k])
       out[na[k]]  <- (caa[na[k],k] * (naa[na[k],k+1]+naa[na[k+1],k+1]) * exp(M[na[k],k]))/(caa[na[k]-1,k]*alpha +caa[na[k],k]) + caa[na[k],k] * exp(p * M[na[k],k])
     }
     else if (isTRUE(plus.group) & use.equ=="old"){
-      out[na[k]-1]<- pmax(caa[na[k]-1,k],min.caa)*alpha/(pmax(caa[na[k]-1,k],min.caa)*alpha +pmax(caa[na[k],k],min.caa))* naa[na[k],k+1] * exp(M[na[k]-1,k])+ caa[na[k]-1,k] * exp(p * M[na[k]-1,k])
-      
-      out[na[k]]<- pmax(caa[na[k],k], min.caa)/(pmax(caa[na[k]-1,k], min.caa)*alpha + pmax(caa[na[k],k], min.caa)) * naa[na[k], k+1] * exp(M[na[k],k]) + caa[na[k], k] * exp(p * M[na[k],k])
+      for (i in 1:(na[k])){
+        out[i] <- naa[i+1,k+1]*exp(M[i,k])+caa[i,k]*exp(p*M[i,k])
+      }
+      #out[na[k]-1]<- pmax(caa[na[k]-1,k],min.caa)*alpha/(pmax(caa[na[k]-1,k],min.caa)*alpha +pmax(caa[na[k],k],min.caa))* naa[na[k],k+1] * exp(M[na[k]-1,k])+ caa[na[k]-1,k] * exp(p * M[na[k]-1,k])
+      #out[na[k]]<- pmax(caa[na[k],k], min.caa)/(pmax(caa[na[k]-1,k], min.caa)*alpha + pmax(caa[na[k],k], min.caa)) * naa[na[k], k+1] * exp(M[na[k],k]) + caa[na[k], k] * exp(p * M[na[k],k])
     }
     else{
+      for (i in 1:(na[k]-2)){
+        out[i] <- naa[i+1,k+1]*exp(M[i,k])+caa[i,k]*exp(p*M[i,k])
+      }
       out[na[k]-1] <- naa[na[k],k+1]*exp(M[na[k]-1,k])+caa[na[k]-1,k]*exp(p*M[na[k]-1,k])
       out[na[k]] <- out[na[k]-1]*caa[na[k],k]/caa[na[k]-1,k]*exp(p*(M[na[k],k]-M[na[k]-1,k]))
     }
@@ -194,20 +210,44 @@ backward.calc <- function(caa,naa,M,na,k,min.caa=0.001,p=0.5,plus.group=TRUE,sel
   return(out)
 }
 
-forward.calc <- function(faa,naa,M,na,k){
+
+forward.calc <- function(faa,naa,M,na,k,plus.group=plus.group){
   out <- rep(NA, na[k])
   for (i in 2:(na[k]-1)){
-    out[i] <- naa[i-1,k-1]*exp(-faa[i-1,k-1]-M[i-1,k-1])
+    out[i] <- naa[i-1,k-1]*exp(-faa[i-1,k-1]-M[i-1,k-1]) #最終年の最低年齢より上，最高年齢より下のnaaを計算してる
   }
-  out[na[k]] <- sum(sapply(seq(na[k]-1,max(na[k], na[k-1])), plus.group.eq, naa=naa, faa=faa, M=M, k=k))
+  if (isTRUE(plus.group)){
+    out[na[k]] <- sum(sapply(seq(na[k]-1,max(na[k], na[k-1])), plus.group.eq, naa=naa, faa=faa, M=M, k=k)) #最終年最高年齢のnaa
+  }
+  else
+  {
+    out[na[k]] <- sapply(na[k]-1, plus.group.eq, naa=naa, faa=faa, M=M, k=k)
+  }
+  
+  
   return(out)
 }
 
 plus.group.eq <- function(x, naa, faa, M, k) naa[x,k-1]*exp(-faa[x,k-1]-M[x,k-1])
 
-f.at.age <- function(caa,naa,M,na,k,p=0.5,alpha=1) {
+f.at.age <- function(caa,naa,M,na,k,p=0.5,alpha=1,use.equ) {
+ if(na[k+1]>na[k]){
+ if (use.equ=="new"){
+ out <- -log(1-caa[1:(na[k]-1),k]*exp(p*M[1:(na[k]-1),k])/naa[1:(na[k]-1),k])
+  c(out, alpha*out[length(out)])
+ }
+ else
+ {
+  out <- -log(1-caa[1:(na[k]),k]*exp(p*M[1:(na[k]),k])/naa[1:(na[k]),k])
+   c(out)
+ }
+ }
+ else
+ {
   out <- -log(1-caa[1:(na[k]-1),k]*exp(p*M[1:(na[k]-1),k])/naa[1:(na[k]-1),k])
   c(out, alpha*out[length(out)])
+  
+  }
 }
 
 sel.func <- function(faa, def="maxage") {
@@ -498,6 +538,37 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param p_by_age 選択率更新法でridgeVPAの際にpenalty="p"のときに年齢別にペナルテイーを与えるか与えないか．与えたい場合はTRUEとして,penalty_age（eta=NULLのとき）もしくはno_eta_age(etaがNULLでないとき）に年齢範囲を指定する．
 #' @param sdreport \code{TMB=TRUE}のときに\code{sdreport()}を実行するかどうか（naa, faa, 資源量, 親魚量, Fの平均, 漁獲割合のSDを計算する）
 #' @param use.equ plus groupが途中で変わる場合の計算式の選択 （old = 従来の方法（プラスグループが延長している年はプラスグループのＦが一歳若い年齢のＦと等しいという仮定は置かない），new= 新しい方法（プラスグループが延長している年はプラスグループのＦが一歳若い年齢のＦと等しいという仮定を置く)
+#' @return list object:
+#' \describe{
+#' \item{\code{input}}{解析に用いたデータや仮定}
+#' \item{\code{term.f}}{推定されたターミナルF}
+#' \item{\code{np}}{推定されたターミナルFの数}
+#' \item{\code{minimum}}{最適解における目的関数の値（合計）}
+#' \item{\code{minimum.c}}{最適解における目的関数の値（個々）}
+#' \item{\code{logLik}}{負の対数尤度}
+#' \item{\code{gradient}}{最適解での傾き}
+#' \item{\code{code}}{最適化法から返されるコード（どのような理由で最適化が停止したのかがわかる）}
+#' \item{\code{q}}{推定されたq（資源量指標値の比例定数））}
+#' \item{\code{b}}{推定されたb（資源量指標値の非線形性））}
+#' \item{\code{sigma}}{資源量指標値の分散の平方根}
+#' \item{\code{convergence}}{解が収束していれば1，そうでないと0}
+#' \item{\code{message}}{最適化に関する注意（あれば）}
+#' \item{\code{hessian}}{ヘッセ行列の値}
+#' \item{\code{Ft}}{最終年のFの平均値}
+#' \item{\code{Fc.at.age}}{Fcurrentで指定した年における平均のF}
+#' \item{\code{Fc.mean}}{Fc.at.ageを平均したもの}
+#' \item{\code{Fc.max}}{Fc.at.ageの最大値}
+#' \item{\code{last.year}}{vpaを計算する最終年を別に指定した場合}
+#' \item{\code{Pope}}{popeの近似式を用いたか否か}
+#' \item{\code{ssb.coef}}{産卵親魚量の計算時期（年始めなら0,年中央なら0.5,年最後なら1)}
+#' \item{\code{pred.index}}{推定された資源量指標値}
+#' \item{\code{wcaa}}{caa*waa.catch}
+#' \item{\code{naa}}{推定された年別年齢別資源尾数}
+#' \item{\code{faa}}{推定された年別年齢別漁獲係数}
+#' \item{\code{baa}}{推定された年別年齢別資源重量}
+#' \item{\code{sbb}}{推定された年別年齢別産卵親魚量}
+#' \item{\code{saa}}{推定された年別年齢別選択率}
+#' }
 #' @encoding UTF-8
 #'
 #' @export
@@ -771,7 +842,7 @@ vpa <- function(
       if (isTRUE(Pope)){
         for (i in (ny-1):1){
          naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update,alpha=alpha, use.equ=use.equ)
-         faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha)
+         faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha, use.equ=use.equ)
        }
      }
      else{
@@ -783,8 +854,9 @@ vpa <- function(
            faa[na[i]-1, i] <- hira.est(caa,naa,M,na[i]-1,i,alpha=alpha,min.caa=min.caa,maxit=maxit,d=d)
          }
          else faa[na[i]-1, i] <- ik.est(caa,naa,M,na[i]-1,i,min.caa=min.caa,maxit=maxit,d=d)
-
+        
          faa[na[i], i] <- alpha*faa[na[i]-1, i]
+		 
          naa[1:na[i], i] <- vpa.core(caa,faa,M,i)
        }
      }
@@ -827,7 +899,7 @@ vpa <- function(
       naa[, ny] <- vpa.core.Pope(caa,faa,M,ny,p=p.pope)
       for (i in (ny-1):(ny-na[ny]+1)){
         naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update,alpha=alpha,use.equ=use.equ)
-        faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha)
+        faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha, use.equ=use.equ)
       }
     }
  }
@@ -836,7 +908,7 @@ vpa <- function(
    if (isTRUE(Pope)){
      for (i in (ny-1):1){
        naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update,alpha=alpha, use.equ=use.equ)
-       faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha)
+       faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha, use.equ=use.equ)
       }
    }
   else{
@@ -939,15 +1011,15 @@ if (isTRUE(madara)){
 
     if (isTRUE(tune)){
       if (n.add==1 & !is.na(mean(index[,ny+n.add],na.rm=TRUE))){
-
-        new.naa <- forward.calc(faa,naa,M,na,ny+n.add)
+        
+        new.naa <- forward.calc(faa,naa,M,na,ny+n.add,plus.group=plus.group)
 
         naa[,ny+n.add] <- new.naa
         baa <- naa*waa
         ssb <- baa*maa*exp(-ssb.coef*(faa+M))
 
         if (is.null(rec.new) & !isTRUE(last.catch.zero)) {
-          new.naa[1] <- median((naa[1,]/colSums(ssb))[years %in% rps.year])*sum(ssb[,ny+n.add],na.rm=TRUE)
+          new.naa[1] <- NA #median((naa[1,]/colSums(ssb))[years %in% rps.year])*sum(ssb[,ny+n.add],na.rm=TRUE)
         }else if(!is.null(rec.new)) {new.naa[1] <- rec.new
         }else if(is.null(rec.new) & isTRUE(last.catch.zero)){new.naa[1] <-NA}
 
@@ -1176,14 +1248,14 @@ if (isTRUE(madara)){
         # next year
 
         if (n.add==1 & is.na(naa[1,ny+n.add])){
-          new.naa <- forward.calc(faa,naa,M,na,ny+n.add)
+          new.naa <- forward.calc(faa,naa,M,na,ny+n.add,plus.group=plus.group)
           if (!is.null(f.new) & !is.null(saa.new)) faa[,ny+n.add] <- f.new*saa.new else faa[,ny+n.add] <- 0
           naa[,ny+n.add] <- new.naa
           baa <- naa*waa
           ssb <- baa*maa*exp(-ssb.coef*(faa+M))
 
           if (is.null(rec.new) & !isTRUE(last.catch.zero)) {
-            new.naa[1] <- median((naa[1,]/colSums(ssb))[years %in% rps.year])*sum(ssb[,ny+n.add],na.rm=TRUE)
+            new.naa[1] <- NA # median((naa[1,]/colSums(ssb))[years %in% rps.year])*sum(ssb[,ny+n.add],na.rm=TRUE)
           }else if(!is.null(rec.new)) {new.naa[1] <- rec.new
           }else if(is.null(rec.new) & isTRUE(last.catch.zero)){new.naa[1] <-NA}
 
@@ -1418,6 +1490,7 @@ Ft <- mean(faa[,ny],na.rm=TRUE)
     res$rep <- rep
     }
 
+  class(res) <- "vpa"
   return(invisible(res))
 
 
@@ -1571,7 +1644,12 @@ profile.likelihood.vpa.B <- function(res,Alpha=0.95,min.p=1.0E-6,max.p=1,L=20,me
 #' bootstrapを実施する
 #'
 #' @param res vpaの出力値
+#' @param method "p": パラメトリックブートストラップ。"n": ノンパラメトリックブートストラップ。"r": 残差をスムージングした後ブートストラップt法
+#'
 #' @encoding UTF-8
+#'
+#' @seealso
+#' https://ichimomo.github.io/frasyr/articles/Diagnostics-for-VPA.html
 #'
 #' @export
 
@@ -1580,24 +1658,35 @@ boo.vpa <- function(res,B=5,method="p",mean.correction=FALSE){
   ## method == "n": non-parametric bootstrap
   ## method == "r": smoothed residual bootstrap-t
 
-  index <- res$input$dat$index
-  p.index <- res$pred.index
-  resid <- log(as.matrix(index))-log(as.matrix(p.index))
+  assertthat::assert_that(method == "p" | method == "n" | method == "r")
 
-  R <- nrow(resid)
+  if(is.numeric(res$input$use.index)){
+    index <- res$input$dat$index[res$input$use.index,]
+    p.index <- res$pred.index
+    assertthat::assert_that(nrow(index) == nrow(p.index)) # obsとpredのデータの種類数が違ったら止める
+    resid <- log(as.matrix(index))-log(as.matrix(p.index))
+  } else { # use.index = "all" (default)
+    index <- res$input$dat$index
+    p.index <- res$pred.index
+    resid <- log(as.matrix(index))-log(as.matrix(p.index))
+  }
 
-  n <- apply(resid,1,function(x) sum(!is.na(x)))
-
-  np <- res$np
-
+  R <- nrow(resid)                               # 残差の行数(=用いたデータの数)
+  n <- apply(resid,1,function(x) sum(!is.na(x))) # 残差の数
+  np <- res$np                                   # パラメータ数
   rs2 <- rowSums(resid^2, na.rm=TRUE)/(n-np)
 
   res.c <- res
 
-  res.c$input$p.init <- res$term.f[1]
+  if(np == 1){
+    res.c$input$p.init <- res$term.f[1] # original code
+  } else {
+    res.c$input$p.init <- c(res$term.f,
+                            rev(res$term.f)[1]*res$input$alpha
+                            )    # 初期値とターミナルF合わせてる
+  }
 
-  b.index <- res$input$dat$index
-
+  b.index <- res$input$dat$index # ブートストラップCPUEの箱を先に作っておく
   Res1 <- list()
 
   for (b in 1:B){

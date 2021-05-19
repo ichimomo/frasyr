@@ -29,7 +29,7 @@ plot_residual_vpa(
 残差プロットの関数
 }
 \seealso{
-https://ichimomo.github.io/frasyr/doc/Diagnostics-for-VPA.html
+https://ichimomo.github.io/frasyr/articles/Diagnostics-for-VPA.html
 }
 \author{
 濵邉昂平, 市野川桃子
