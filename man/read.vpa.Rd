@@ -16,6 +16,7 @@ read.vpa(
   faa.label = "fishing mortality at age",
   Fc.label = "Current F",
   naa.label = "numbers at age",
+  release.label = "release dat",
   Blimit = NULL,
   Pope = NULL,
   plus.group = NULL,
@@ -24,6 +25,8 @@ read.vpa(
 }
 \arguments{
 \item{tfile}{資源計算結果がまとめられたcsvファイルの名前}
+
+\item{release.label}{放流データを読み込みたい場合。ここで指定したラベルをつけて、年齢を行、年を列とするデータを入れる（catch at ageと同じ構造だが、年齢は必要な年齢だけ取り出した形で良い）}
 
 \item{Pope}{VPA計算時にどっちを使っているかここで設定する（TRUE or FALSE）。デフォルトはNULLで、その場合にはcaa,faa,naaの関係から自動判別するが、自動判別の結果が出力されるので、それをみて正しく判断されているか確認してください。}
 

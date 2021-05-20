@@ -14,41 +14,98 @@ NULL
 
 #' VPAの結果から再生産関係推定用のデータを作成する
 #'
+#' VPA結果に放流尾数が含まれている場合、天然加入尾数＝加入尾数ー放流尾数として計算する
+#'
 #' @param vpares VPAの結果のオブジェクト
+#' @param R.dat VPAの結果オブジェクトでなく直接データを与えたい場合の加入の値
+#' @param SSB.dat VPAの結果オブジェクトでなく直接データを与えたい場合の親魚量の値
+#' @param release.dat VPAの結果オブジェクトでなく直接データを与えたい場合の放流尾数の値
+#' @param return.df データフレームとして結果を返すか。このオプション関係なくデータフレームとして返すように変更したので、近いうちに廃止予定
+#' 
 #' @encoding UTF-8
+#' 
 #' @export
-get.SRdata <- function(vpares,R.dat = NULL,
+get.SRdata <- function(vpares=NULL,
+                       R.dat = NULL,
                        SSB.dat = NULL,
-                       years = as.numeric(colnames(vpares$naa)),
-                       return.df = FALSE){
+                       release.dat=NULL,
+                       years = NULL,
+                       weight.year = NULL,
+                       return.df = TRUE){
+    
+    is.release <- !is.null(release.dat) | !is.null(vpares$input$dat$release.dat)
+    if(is.null(years) && !is.null(vpares)) years <- as.numeric(colnames(vpares$naa))
+    
     # R.datとSSB.datだけが与えられた場合、それを使ってシンプルにフィットする
     if (!is.null(R.dat) & !is.null(SSB.dat)) {
-        dat <- data.frame(R = R.dat,SSB = SSB.dat,year = 1:length(R.dat))
+        assertthat::assert_that(length(R.dat)==length(SSB.dat))
+        if(!is.null(release.dat)){
+            assertthat::assert_that(length(R.dat)==length(release.dat))
+            R.dat <- R.dat - release.dat
+        }
+        if(is.null(years)){
+            years <- 1:length(R.dat)
+        }
+        else{
+            assertthat::assert_that(length(R.dat)==length(years))
+        }
+        dat <- data.frame(R = R.dat,SSB = SSB.dat,year = years)
+        if(!is.null(release.dat)) R.dat$release <- release.dat
     } else {
     # データの整形
         n <- ncol(vpares$naa)
         L <- as.numeric(rownames(vpares$naa)[1])
 
         dat      <- list()
-        dat$R    <- as.numeric(vpares$naa[1,])
         dat$SSB  <- as.numeric(colSums(vpares$ssb,na.rm = TRUE))
         dat$year <- as.numeric(colnames(vpares$ssb))
+
+        if(!is.null(vpares$input$dat$release.dat)){
+            release_age <- which(rownames(vpares$naa)%in%rownames(vpares$input$dat$release.dat))
+            naa <- vpares$naa
+            naa[release_age, ] <- naa[release_age, ] - vpares$input$dat$release.dat
+            dat$R <-  as.numeric(naa[1,])
+            dat$R[dat$R<0] <- 0.001
+            dat$release <- vpares$input$dat$release.dat
+        }
+        else{
+            dat$R    <- as.numeric(vpares$naa[1,])
+            if(!is.null(release.dat)){
+                dat$R <- dat$R-release.dat
+                dat$release <- release.dat
+            }
+        }
+        
     # 加入年齢分だけずらす
         dat$R    <- dat$R[(L+1):n]
         dat$SSB  <- dat$SSB[1:(n-L)]
         dat$year <- dat$year[(L+1):n]
+        if(is.release) dat$release <- as.numeric(dat$release[(L+1):n])
 
     # データの抽出
         dat <- as.data.frame(dat)
         dat <- dat[dat$year%in%years,]
     }
 
-    class(dat) <- "SRdata"
     assertthat::assert_that(all(dat[["R"]] > 0))
-    if (return.df == TRUE) return(data.frame(year = dat$year,
-                                             SSB  = dat$SSB,
-                                             R    = dat$R))
-    return(dat[c("year","SSB","R")])
+    class(dat) <- "SRdata"
+    
+    #if (return.df == TRUE) return(data.frame(year = dat$year,
+    #SSB  = dat$SSB,
+    #                                         R    = dat$R,
+    #                                             release=dat$release))
+    #return(dat[c("year","SSB","R","release")])
+    dat.df <- data.frame(year = dat$year,
+                      SSB  = dat$SSB,
+                      R    = dat$R)
+    if(is.release) dat.df$release <- dat$release
+
+    if(!is.null(weight.year)){
+        dat.df$weight <- 0
+        dat.df$weight[dat$year %in% weight.year]  <- 1
+    }
+    return(dat.df)
+    
 }
 
 #' 再生産関係のパラメタが想定した形になっているかを確認
@@ -140,7 +197,7 @@ fit.SR <- function(SRdata,
                    method="L2",
                    AR=1,
                    # TMB=FALSE,
-                   hessian=FALSE,w=rep(1,length(SRdata$R)),
+                   hessian=FALSE,w=NULL,
                    length=20,
                    max.ssb.pred=1.3, # 予測値を計算するSSBの最大値（観測された最大値への乗数）
                    p0=NULL,
@@ -155,6 +212,10 @@ fit.SR <- function(SRdata,
   argname <- ls()
   arglist <- lapply(argname,function(xx) eval(parse(text=xx)))
   names(arglist) <- argname
+
+#  if(!is.null(SRdata$weight)) w <- SRdata$w
+  if(is.null(w)) SRdata$weight <- rep(1,length(SRdata$R))
+  w <- SRdata$weight
 
   if (AR==0) out.AR <- FALSE
   rec <- SRdata$R
@@ -878,7 +939,7 @@ fit.SRregime <- function(
   use.fit.SR = TRUE,
   length=10,  # parameter (a,b) の初期値を決めるときにgrid searchする数
   p0 = NULL,  # 初期値
-  w = rep(1,length(SRdata$R)),
+  w = NULL,
   max.ssb.pred = 1.3,
   hessian = FALSE,
   bio_par = NULL,
@@ -887,6 +948,9 @@ fit.SRregime <- function(
   argname <- ls()
   arglist <- lapply(argname,function(xx) eval(parse(text=xx)))
   names(arglist) <- argname
+
+  if(!is.null(SRdata$weight)) w <- SRdata$w
+  if(is.null(w)) w <- rep(1,length(SRdata$R))  
 
   rec <- SRdata$R
   ssb <- SRdata$SSB

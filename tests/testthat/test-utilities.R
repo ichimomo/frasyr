@@ -356,11 +356,3 @@ test_that("calc_forward",{
   naa2 %>% expect_equal(res_vpa$naa[,2])
 })
 
-test_that("read_vpa with release data",{
-
-  # normal vpa
-  res_vpa <- read.vpa(system.file("extdata","res_vpa_dummy.csv",package="frasyr"))
-  # vpa with relase data
-  res_vpa <- read.vpa(system.file("extdata","res_vpa_dummy_release_fish.csv",package="frasyr"))
-  
-})
