@@ -478,7 +478,7 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param Pope  Popeの近似式を使うかどうか
 #' @param p.pope  Popeの式でどこで漁獲するか（0.5 = 真ん中の時期）
 #' @param tune    tuningをするかどうか
-#' @param abund  tuningの際，何の指標に対応するか
+#' @param abund  tuningの際，何の指標に対応するか. "N"=年の終わりの資源尾数，"Nm"=年の中間での資源尾数，"B"=年の終わりの資源重量，"Bm"=年の中間での資源重量，"SSB"=産卵親魚量，"Bs"=資源重量×選択率，"Bo"=資源重量×オメガで調節された選択率，"Ns"=資源尾数×選択率，"SSBm"=年の中間での産卵親魚量，"N1sj"=1歳の資源尾数（日本海スケトウダラ用）,"N0sj"=0歳の資源尾数（日本海スケトウダラ用），"F"=漁獲係数の平均
 #' @param min.age tuning指標の年齢参照範囲の下限
 #' @param max.age tuning指標の年齢参照範囲の上限
 #' @param link    tuningのlink関数
