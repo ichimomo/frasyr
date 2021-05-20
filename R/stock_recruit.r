@@ -59,7 +59,7 @@ validate_sr <- function(SR = NULL, method = NULL, AR = NULL, out.AR = NULL, res_
   if (!is.null(SR)) {
     assertthat::assert_that(
       length(SR) == 1,
-      SR %in% c("HS", "BH", "RI")
+      SR %in% c("HS", "BH", "RI","Mesnil")
     )
   }
   if (!is.null(method)) {
@@ -87,7 +87,7 @@ validate_sr <- function(SR = NULL, method = NULL, AR = NULL, out.AR = NULL, res_
 #'
 #' 3種類の再生産関係の推定を、最小二乗法か最小絶対値法で、さらに加入の残差の自己相関を考慮して行うことができる
 #' @param SRdata \code{get.SRdata}で作成した再生産関係データ
-#' @param SR 再生産関係 (\code{"HS"}: Hockey-stick, \code{"BH"}: Beverton-Holt, \code{"RI"}: Ricker)
+#' @param SR 再生産関係 (\code{"HS"}: Hockey-stick, \code{"BH"}: Beverton-Holt, \code{"RI"}: Ricker, \code{"Mesnil"}: Continuous HS)
 #' @param method 最適化法（\code{"L2"}: 最小二乗法, \code{"L1"}: 最小絶対値法）
 #' @param AR 自己相関を推定するか(1), しないか(0)
 #' @param out.AR 自己相関係数を一度再生産関係を推定したのちに、外部から推定するか（1), 内部で推定するか(0)
@@ -95,6 +95,7 @@ validate_sr <- function(SR = NULL, method = NULL, AR = NULL, out.AR = NULL, res_
 #' @param p0 \code{optim}で設定する初期値
 #' @param bio_par data.frame(waa=c(100,200,300),maa=c(0,1,1),M=c(0.3,0.3,0.3)) のような生物パラメータをあらわすデータフレーム。waaは資源量を計算するときのweight at age, maaはmaturity at age, Mは自然死亡係数。これを与えると、steepnessやR0も計算して返す
 #' @param plus_group hなどを計算するときに、プラスグループを考慮するか
+#' @param gamma \code{SR="Mesnil"}のときに使用するsmoothing parameter
 #' # @param do_check.SRfit 計算が終わったあとでdo_check.SRfitを実施し、収束していなかった場合に１回だけ再計算するか（余計に時間がかかる）。デフォルトはFALSE
 #'
 #' @encoding UTF-8
@@ -147,7 +148,8 @@ fit.SR <- function(SRdata,
                    out.AR = TRUE, #自己相関係数rhoを外で推定するか
                    bio_par = NULL,
                    plus_group = TRUE,
-                   is_jitter = FALSE
+                   is_jitter = FALSE,
+                   gamma=0.01
 #                   do_check.SRfit = FALSE # 計算が終わったあとでdo_check.SRfitを実施し、収束していなかった場合に１回だけ再計算するか（余計に時間がかかる）
 ){
   validate_sr(SR = SR, method = method, AR = AR, out.AR = out.AR)
@@ -167,7 +169,8 @@ fit.SR <- function(SRdata,
   if (SR=="HS") SRF <- function(x,a,b) ifelse(x>b,b*a,x*a)
   if (SR=="BH") SRF <- function(x,a,b) a*x/(1+b*x)
   if (SR=="RI") SRF <- function(x,a,b) a*x*exp(-b*x)
-
+  if (SR=="Mesnil") SRF <- function(x,a,b) 0.5*a*(x+sqrt(b^2+gamma^2/4)-sqrt((x-b)^2+gamma^2/4))
+  
   if (length(SRdata$R) != length(w)) stop("The length of 'w' is not appropriate!")
 
   one_max = max(SRdata$year[w>0])
@@ -253,20 +256,20 @@ fit.SR <- function(SRdata,
   if (is.null(p0)) {
     a.range <- range(rec/ssb)
     b.range <- range(1/ssb)
-    if (SR == "HS") b.range <- range(ssb)
+    if (SR == "HS" | SR=="Mesnil") b.range <- range(ssb)
     grids <- as.matrix(expand.grid(
       seq(a.range[1],a.range[2],len=length),
       seq(b.range[1],b.range[2],len=length)
     ))
     init <- as.numeric(grids[which.min(sapply(1:nrow(grids),function(i) obj.f(grids[i,1],grids[i,2],0))),])
     init[1] <- log(init[1])
-    init[2] <- ifelse (SR == "HS",-log(max(0.000001,(max(ssb)-min(ssb))/max(init[2]-min(ssb),0.000001)-1)),log(init[2]))
+    init[2] <- ifelse (SR == "HS" | SR =="Mesnil",-log(max(0.000001,(max(ssb)-min(ssb))/max(init[2]-min(ssb),0.000001)-1)),log(init[2]))
     if (AR != 0 && !isTRUE(out.AR)) init[3] <- 0
   } else {
     init = p0
   }
 
-  if (SR == "HS") {
+  if (SR == "HS" | SR == "Mesnil") {
     if (AR == 0 || out.AR) {
       obj.f2 <- function(x) obj.f(exp(x[1]),min(ssb)+(max(ssb)-min(ssb))/(1+exp(-x[2])),0)
     } else {
@@ -299,7 +302,7 @@ fit.SR <- function(SRdata,
   Res$opt <- opt
 
   a <- exp(opt$par[1])
-  b <- ifelse(SR=="HS",min(ssb)+(max(ssb)-min(ssb))/(1+exp(-opt$par[2])),exp(opt$par[2]))
+  b <- ifelse(SR=="HS"|SR=="Mesnil",min(ssb)+(max(ssb)-min(ssb))/(1+exp(-opt$par[2])),exp(opt$par[2]))
   rho <- ifelse(AR==0,0,ifelse(out.AR,0,1/(1+exp(-opt$par[3]))))
 
   if (method == "L2" && AR==1 && out.AR==FALSE && zero_min<one_max) {
