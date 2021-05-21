@@ -2411,8 +2411,8 @@ make_kobe_ratio <- function(result_vpa, result_msy) {
 #'
 #' @export
 
-source_lines <- function(file, lines){
-    source(textConnection(readLines(file)[lines]))
+source_lines <- function(file, lines, encoding="UTF-8",...){
+    source(textConnection(readLines(file, encoding=encoding)[lines]),...)
 }
 
 #' re-calculate projection with different arguments

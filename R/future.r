@@ -1075,10 +1075,6 @@ set_SR_mat <- function(res_vpa=NULL,
   if(resid_type=="resample" | resid_type=="backward"){
     # 推定された残差をそのまま使う
     if(resample_year_range==0){
-      #            sampled_residual <- res_SR$resid[res_SR$input$w==1]
-      #            if(isTRUE(bias_correction)) bias_factor <- log(mean(exp(sampled_residual))) else bias_factor <- 0
-      #            SR_mat[random_rec_year_period,,"rand_resid"] <- sample(sampled_residual, nsim*length(random_rec_year_period), replace=TRUE)
-      #            SR_mat[random_rec_year_period,,"deviance"] <- SR_mat[random_rec_year_period,,"rand_resid"]-bias_factor
       resample_year_range <- sort(res_SR$input$SRdata$year[res_SR$input$w==1])
     }
 

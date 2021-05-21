@@ -213,10 +213,11 @@ fit.SR <- function(SRdata,
   arglist <- lapply(argname,function(xx) eval(parse(text=xx)))
   names(arglist) <- argname
 
-#  if(!is.null(SRdata$weight)) w <- SRdata$w
-  if(is.null(w)) SRdata$weight <- rep(1,length(SRdata$R))
-  w <- SRdata$weight
-
+  tmp <- check_consistent_w(w, SRdata)
+  SRdata <- tmp$SRdata
+  w <- arglist$w <- tmp$w
+  
+  
   if (AR==0) out.AR <- FALSE
   rec <- SRdata$R
   ssb <- SRdata$SSB
@@ -949,9 +950,12 @@ fit.SRregime <- function(
   arglist <- lapply(argname,function(xx) eval(parse(text=xx)))
   names(arglist) <- argname
 
-  if(!is.null(SRdata$weight)) w <- SRdata$w
-  if(is.null(w)) w <- rep(1,length(SRdata$R))  
-
+  #  if(!is.null(SRdata$weight)) w <- SRdata$w
+  #  if(is.null(w)) w <- rep(1,length(SRdata$R))
+  tmp <- check_consistent_w(w, SRdata)
+  SRdata <- tmp$SRdata
+  w <- arglist$w <- tmp$w  
+  
   rec <- SRdata$R
   ssb <- SRdata$SSB
   N <- length(rec)
@@ -1512,6 +1516,7 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
     # parameter histogram ----
     if(ggplt){ # ggplot (plot histograms of a,b,B0,h,R0,rho,SB0,sd)
       if(is.null(convert_SR_tibble(boot.res[[1]]))) print("Do fit.SR with argument(bio.par) to calculate steepness.")
+      N <- boot.res$input$n
       res_boot_par_tibble <- purrr::map_dfr(boot.res[1:N], convert_SR_tibble) %>% dplyr::filter(type=="parameter"&name!="SPR0")
 
       res_boot_par_tibble_summary <- res_boot_par_tibble %>%  group_by(name) %>% summarise(median=median(value),mean=mean(value),CI10=quantile(value,0.1),CI90=quantile(value,0.9)) %>% mutate(name_with_CI = str_c(name," (",round(CI10,2),"-",round(CI90,2),")")) %>% pivot_longer(cols=-c(name,name_with_CI), names_to="stats")
@@ -2481,4 +2486,14 @@ boot_steepness <- function(res_SR, M, waa, maa, n=100, plus_group=TRUE){
       }}
 
     res_steepness
+}
+
+#' fit.SRとfit.SRregimeの重み付け（どのデータを使うか）の設定方法は、引数wで与える場合とSRdata$weightで与える場合の２パターンある。両者が矛盾なく設定されているかを確認するための関数
+
+check_consistent_w <- function(w, SRdata){
+    if(is.null(SRdata$weight)  && is.null(w)) SRdata$weight <- w <- rep(1,length(SRdata$R))
+    if(is.null(SRdata$weight)  && !is.null(w)) SRdata$weight <- w
+    if(!is.null(SRdata$weight) &&  is.null(w)) w <- SRdata$weight
+    if(!is.null(SRdata$weight) && !is.null(w) && sum(unlist(SRdata$weight)!=unlist(w))>0) stop("SRdata$weight と引数wの両方に重み付けの指定がなされていて、両者が違います")
+    lst(w,SRdata)
 }

@@ -54,7 +54,9 @@ test_that("oututput value check",{
   # boot strap ----
   boot_res_pma_check <- boot.SR(SRmodel.select)
 
-  bootSR.plot(boot_res_pma_check)
+  pdf("tmp.pdf")
+  bootSR.plot(boot_res_pma_check, ggplt=TRUE)
+  dev.off()
 
   boot_res_pma_median_pars_a <-median(sapply(1:boot_res_pma_check$input$n, function(i) boot_res_pma_check[[i]]$pars$a))
   boot_res_pma_median_pars_b <-median(sapply(1:boot_res_pma_check$input$n, function(i) boot_res_pma_check[[i]]$pars$b))
