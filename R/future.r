@@ -1029,7 +1029,9 @@ set_SR_mat <- function(res_vpa=NULL,
     res_SR$pars$rho <- 0
   }
   SR_mat[,,"rho"] <- res_SR$pars$rho
-  SR_mat[,,"intercept"] <- recruit_intercept
+  SR_mat[random_rec_year_period,,"intercept"] <- recruit_intercept # future intercept
+  if(!is.null(res_SR$input$SRdata$release))
+    SR_mat[as.character(res_SR$input$SRdata$year),,"intercept"] <- res_SR$input$SRdata$release
 
   if(!is.null(res_vpa)){
     SR_mat[1:(start_random_rec_year-1),,"ssb"] <- as.numeric(colSums(res_vpa$ssb,na.rm=T))[1:(start_random_rec_year-1)]
@@ -1039,9 +1041,10 @@ set_SR_mat <- function(res_vpa=NULL,
   recruit_range <- (recruit_age+1):(start_random_rec_year-1)
   ssb_range     <- 1:(start_random_rec_year-1-recruit_age)
 
-  # re-culcurate recruitment deviation
+  # re-culcurate past recruitment deviation
+  # intercept=relase fish
   SR_mat[recruit_range,,"deviance"] <- SR_mat[recruit_range,,"rand_resid"] <-
-    log(SR_mat[recruit_range,,"recruit"]) -
+    log(SR_mat[recruit_range,,"recruit"]-SR_mat[recruit_range,,"intercept"]) -
     log(SRF(SR_mat[ssb_range,,"ssb"],SR_mat[recruit_range,,"a"],SR_mat[recruit_range,,"b"]))
 
   # define future recruitment deviation
