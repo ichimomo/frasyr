@@ -1360,7 +1360,8 @@ if (isTRUE(madara)){
 
     index2 <- as.matrix(t(apply(index,1,function(x) ifelse(is.na(x),0,x))))
 
-    Ab_type <- ifelse(abund=="SSB", 1, ifelse(abund=="N", 2, 3))
+    Ab_type <- ifelse(abund=="SSB", 1, ifelse(abund=="N", 2, ifelse(abund=="SSB", 3, 4)))
+    sel_def <- ifelse(sel.def=="max",0,ifelse(sel.def=="mean",1,2))
     Ab_type_age <- ifelse(is.na(min.age),0,min.age)
     Ab_type_max_age <- ifelse(is.na(max.age),0,max.age)+1
 
@@ -1388,7 +1389,9 @@ if (isTRUE(madara)){
     if (is.null(eta)) eta <- -1.0
     eta_age <- rep(1,length(p.init))
     eta_age[eta.age+1] <- 0
-    data2 <- list(Est=ifelse(est.method=="ls",0,1),b_fix=as.numeric(b_fix),alpha=alpha,lambda=lambda,beta=beta,Ab_type=Ab_type,Ab_type_age=Ab_type_age,Ab_type_max_age=Ab_type_max_age,w=index.w,af=af,CATCH=t(as.matrix(dat$caa)),WEI=t(as.matrix(dat$waa)),MAT=t(MAA),M=t(as.matrix(dat$M)),CPUE=t(index2),MISS=t(ifelse(index2==0,1,0)),Last_Catch_Zero=ifelse(isTRUE(last.catch.zero),1,0),sigma_constraint=sigma_constraint,eta=eta,eta_age=eta_age)
+    data2 <- list(Est=ifelse(est.method=="ls",0,1),b_fix=as.numeric(b_fix),
+                  alpha=alpha,lambda=lambda,beta=beta,Ab_type=Ab_type,sel_def=sel_def,
+                  Ab_type_age=Ab_type_age,Ab_type_max_age=Ab_type_max_age,w=index.w,af=af,CATCH=t(as.matrix(dat$caa)),WEI=t(as.matrix(dat$waa)),MAT=t(MAA),M=t(as.matrix(dat$M)),CPUE=t(index2),MISS=t(ifelse(index2==0,1,0)),Last_Catch_Zero=ifelse(isTRUE(last.catch.zero),1,0),sigma_constraint=sigma_constraint,eta=eta,eta_age=eta_age)
 
     parameters <- list(
       log_F=log(p.init)

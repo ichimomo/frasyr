@@ -512,12 +512,14 @@ SRregime_plot <- function (SRregime_result,xscale=1000,xlabel="SSB",yscale=1,yla
 #' @param future.name 将来予測のリストの名前。ない場合はfuture.listについている名前を使う
 #' @param CI_range 予測区間の範囲。デフォルトは８０\%でc(0.1,0.9)
 #' @param maxyear 表示する年の最大
+#' @param minyear 表示する年の最小
 #' @param is.plot.CIrange 予測区間を表示するかどうか
+#' @param is.plot.CIline 予測区間の上限と下限の線を引くか
 #' @param what.plot Recruitment,SSB,biomass,catch,beta_gamma,U,Fratioのうち何をプロットするか。これらの文字列のベクトルで指定する
 #' @param n_example 個々のシミュレーションの例を示す数
 #' @param width_example 個々のシミュレーションをプロットする場合の線の太さ (default=0.7)
 #' @param future.replicate どのreplicateを選ぶかを選択する。この場合n_exampleによる指定は無効になる
-#' @param number.init 尾数（加入尾数とか）のときの単位
+#' @param number.unit 尾数（加入尾数とか）のときの単位
 #' @param biomass.unit 量の単位
 #' @param number.name 尾数の凡例をどのように表示するか（「億尾」とか）
 #' @param RP_name 管理基準値をどのように名前つけるか
@@ -541,7 +543,9 @@ plot_futures <- function(vpares=NULL,
                          future_tibble=NULL,
                          CI_range=c(0.1,0.9),
                          maxyear=NULL,
+                         minyear=NULL,
                          is.plot.CIrange=TRUE,
+                         is.plot.CIline = TRUE,
                          what.plot=c("Recruitment","SSB","biomass","catch","beta_gamma","U","Fratio"),
                          biomass.unit=1,
                          number.unit=1,
@@ -634,6 +638,7 @@ plot_futures <- function(vpares=NULL,
     group_by(sim,scenario)
 
   if(is.null(maxyear)) maxyear <- max(future_tibble$year)
+  if(is.null(minyear)) minyear <- min(future_tibble$year)
 
   #  min.age <- as.numeric(rownames(vpares$naa)[1])
   if(!is.null(vpares)){
@@ -713,14 +718,17 @@ plot_futures <- function(vpares=NULL,
     ggplot()
 
   if(isTRUE(is.plot.CIrange)){
-    g1 <- g1+
-      geom_line(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario!="VPA" & year <= maxyear),
-                mapping=aes(x=year,y=high,lty=scenario,color=scenario))+
-      geom_line(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario!="VPA" & year <= maxyear),
-                mapping=aes(x=year,y=low,lty=scenario,color=scenario))+
-      geom_ribbon(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario!="VPA" & year <= maxyear),
+    if (isTRUE(is.plot.CIline)) {
+      g1 <- g1+
+        geom_line(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario!="VPA" & year %in% minyear:maxyear),
+                  mapping=aes(x=year,y=high,lty=scenario,color=scenario))+
+        geom_line(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario!="VPA" & year %in% minyear:maxyear),
+                  mapping=aes(x=year,y=low,lty=scenario,color=scenario))
+    }
+    g1 <- g1 + 
+      geom_ribbon(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario!="VPA" & year %in% minyear:maxyear),
                   mapping=aes(x=year,ymin=low,ymax=high,fill=scenario),alpha=0.4)+
-      geom_line(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario!="VPA" & year <= maxyear),
+      geom_line(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario!="VPA" & year %in% minyear:maxyear),
                 mapping=aes(x=year,y=mean,color=scenario),lwd=1)
   }
   #    else{
@@ -737,7 +745,7 @@ plot_futures <- function(vpares=NULL,
     scale_y_continuous(expand=expansion(mult=c(0,0.05)))+
     facet_wrap(~factor(jstat,levels=rename_list$jstat),scales="free_y",ncol=ncol)+
     xlab("年")+ylab("")+ labs(fill = "",linetype="",color="")+
-    xlim(min(future_tibble$year),maxyear)
+    xlim(minyear,maxyear)
 
   if("SSB" %in% what.plot){
     g1 <- g1 + geom_hline(data = ssb_RP,
@@ -767,7 +775,7 @@ plot_futures <- function(vpares=NULL,
                            lwd=example_width)
     }
     else{
-      g1 <- g1 + geom_line(data=dplyr::filter(future.example,year <= maxyear),
+      g1 <- g1 + geom_line(data=dplyr::filter(future.example,year %in% minyear:maxyear),
                            mapping=aes(x=year,y=value,
                                        color=scenario),
                            lwd=example_width)
