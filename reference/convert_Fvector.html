@@ -6,7 +6,38 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Make table for stock assessment result — make_stock_table • frasyr</title>
+<title>F at ageをVPAの結果から
+
+convert_Fvector(
+  res_vpa = NULL,
+  res_future = NULL,
+  faa_vector = NULL,
+  faa_vector_year = NULL,
+  faa_bio_year = NULL,
+  saa_vector = NULL,
+  saa_vector_year = NULL,
+  saa_bio_year = NULL
+)
+
+
+res_vpaVPAの結果オブジェクト(Popeの設定やF at ageをこちらからとってくる)
+
+faa_vector漁獲圧を代表するベクトル
+
+faa_vector_year漁獲圧を取り出すときの年の範囲(VPA期間限定)
+
+faa_bio_year漁獲圧をSPRに換算するときに生物パラメータを取り出す年の範囲(data_futureがある場合将来予測年も指定可能。生物パラメータが密度によって変わる場合)。list(waa = 2014:2018, waa.catch = 2014:2018, maa = 2016:2018,M   = 2014:2018)とすると生物パラメータによって異なる期間の指定も可能。下のsaa_bio_yearも同様
+
+saa_vector選択率を代表するベクトル
+
+saa_vector_year選択率を取り出すときの年の範囲(VPA期間限定)
+
+saa_bio_year選択率をSPRに換算するときに生物パラメータを取り出す年の範囲(data_futureがある場合将来予測年も指定可能。生物パラメータが密度によって変わる場合)
+
+data_future将来予測のためのデータ(生物パラメータを将来予測期間から撮ってくる場合に必要)
+
+
+F at ageをVPAの結果から — convert_Fvector • frasyr</title>
 
 
 <!-- jquery -->
@@ -39,8 +70,38 @@
 
 
 
-<meta property="og:title" content="Make table for stock assessment result — make_stock_table" />
-<meta property="og:description" content="Make table for stock assessment result" />
+<meta property="og:title" content="F at ageをVPAの結果から
+
+convert_Fvector(
+  res_vpa = NULL,
+  res_future = NULL,
+  faa_vector = NULL,
+  faa_vector_year = NULL,
+  faa_bio_year = NULL,
+  saa_vector = NULL,
+  saa_vector_year = NULL,
+  saa_bio_year = NULL
+)
+
+
+res_vpaVPAの結果オブジェクト(Popeの設定やF at ageをこちらからとってくる)
+
+faa_vector漁獲圧を代表するベクトル
+
+faa_vector_year漁獲圧を取り出すときの年の範囲(VPA期間限定)
+
+faa_bio_year漁獲圧をSPRに換算するときに生物パラメータを取り出す年の範囲(data_futureがある場合将来予測年も指定可能。生物パラメータが密度によって変わる場合)。list(waa = 2014:2018, waa.catch = 2014:2018, maa = 2016:2018,M   = 2014:2018)とすると生物パラメータによって異なる期間の指定も可能。下のsaa_bio_yearも同様
+
+saa_vector選択率を代表するベクトル
+
+saa_vector_year選択率を取り出すときの年の範囲(VPA期間限定)
+
+saa_bio_year選択率をSPRに換算するときに生物パラメータを取り出す年の範囲(data_futureがある場合将来予測年も指定可能。生物パラメータが密度によって変わる場合)
+
+data_future将来予測のためのデータ(生物パラメータを将来予測期間から撮ってくる場合に必要)
+
+
+F at ageをVPAの結果から — convert_Fvector" />
 
 
 
@@ -124,45 +185,46 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Make table for stock assessment result</h1>
+    <h1>F at ageをVPAの結果から<!-- %SPRで変換したりするための関数} -->
+
+convert_Fvector(
+  res_vpa = NULL,
+  res_future = NULL,
+  faa_vector = NULL,
+  faa_vector_year = NULL,
+  faa_bio_year = NULL,
+  saa_vector = NULL,
+  saa_vector_year = NULL,
+  saa_bio_year = NULL
+)
+
+
+res_vpaVPAの結果オブジェクト(Popeの設定やF at ageをこちらからとってくる)
+
+faa_vector漁獲圧を代表するベクトル
+
+faa_vector_year漁獲圧を取り出すときの年の範囲(VPA期間限定)
+
+faa_bio_year漁獲圧をSPRに換算するときに生物パラメータを取り出す年の範囲(data_futureがある場合将来予測年も指定可能。生物パラメータが密度によって変わる場合)。list(waa = 2014:2018, waa.catch = 2014:2018, maa = 2016:2018,M   = 2014:2018)とすると生物パラメータによって異なる期間の指定も可能。下のsaa_bio_yearも同様
+
+saa_vector選択率を代表するベクトル
+
+saa_vector_year選択率を取り出すときの年の範囲(VPA期間限定)
+
+saa_bio_year選択率をSPRに換算するときに生物パラメータを取り出す年の範囲(data_futureがある場合将来予測年も指定可能。生物パラメータが密度によって変わる場合)
+
+data_future将来予測のためのデータ(生物パラメータを将来予測期間から撮ってくる場合に必要)
+
+
+F at ageをVPAの結果から<!-- %SPRで変換したりするための関数 --></h1>
     
-    <div class="hidden name"><code>make_stock_table.Rd</code></div>
+    <div class="hidden name"><code>convert_Fvector.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Make table for stock assessment result</p>
     </div>
 
-    <div class="ref-usage sourceCode"><pre class='sourceCode r'><code><span class='fu'>make_stock_table</span><span class='op'>(</span>
-  <span class='va'>result_vpa</span>,
-  <span class='va'>result_msy</span>,
-  <span class='va'>result_future</span>,
-  <span class='va'>yr_future_start</span>,
-  <span class='va'>yr_abc</span>,
-  <span class='va'>faa_pre_abc</span>,
-  unit <span class='op'>=</span> <span class='st'>"\u767e繝医Φ"</span>
-<span class='op'>)</span></code></pre></div>
 
-    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
-    <table class="ref-arguments">
-    <colgroup><col class="name" /><col class="desc" /></colgroup>
-    <tr>
-      <th>result_vpa</th>
-      <td><p>Obejct returned from <code><a href='vpa.html'>vpa()</a></code></p></td>
-    </tr>
-    <tr>
-      <th>result_msy</th>
-      <td><p>Object MSY result created previous SC meeting...?</p></td>
-    </tr>
-    <tr>
-      <th>result_future</th>
-      <td><p>Object returnd from <code><a href='future_vpa.html'>future_vpa()</a></code></p></td>
-    </tr>
-    <tr>
-      <th>yr_future_start</th>
-      <td><p>Year when future projection starts</p></td>
-    </tr>
-    </table>
 
 
   </div>

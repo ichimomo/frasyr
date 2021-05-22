@@ -121,6 +121,9 @@
     <loc>/reference/compare_kobeII.html</loc>
   </url>
   <url>
+    <loc>/reference/convert_Fvector.html</loc>
+  </url>
+  <url>
     <loc>/reference/convert_SR_tibble.html</loc>
   </url>
   <url>
@@ -146,6 +149,9 @@
   </url>
   <url>
     <loc>/reference/derive_biopar.html</loc>
+  </url>
+  <url>
+    <loc>/reference/derive_future_summary.html</loc>
   </url>
   <url>
     <loc>/reference/detect_plus_group.html</loc>

@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Make table for stock assessment result — make_stock_table • frasyr</title>
+<title>future_vpaの返り値に要約統計量を加えるための内部関数 — derive_future_summary • frasyr</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,8 @@
 
 
 
-<meta property="og:title" content="Make table for stock assessment result — make_stock_table" />
-<meta property="og:description" content="Make table for stock assessment result" />
+<meta property="og:title" content="future_vpaの返り値に要約統計量を加えるための内部関数 — derive_future_summary" />
+<meta property="og:description" content="future_vpaの返り値に要約統計量を加えるための内部関数" />
 
 
 
@@ -124,43 +124,27 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Make table for stock assessment result</h1>
+    <h1>future_vpaの返り値に要約統計量を加えるための内部関数</h1>
     
-    <div class="hidden name"><code>make_stock_table.Rd</code></div>
+    <div class="hidden name"><code>derive_future_summary.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Make table for stock assessment result</p>
+    <p>future_vpaの返り値に要約統計量を加えるための内部関数</p>
     </div>
 
-    <div class="ref-usage sourceCode"><pre class='sourceCode r'><code><span class='fu'>make_stock_table</span><span class='op'>(</span>
-  <span class='va'>result_vpa</span>,
-  <span class='va'>result_msy</span>,
-  <span class='va'>result_future</span>,
-  <span class='va'>yr_future_start</span>,
-  <span class='va'>yr_abc</span>,
-  <span class='va'>faa_pre_abc</span>,
-  unit <span class='op'>=</span> <span class='st'>"\u767e繝医Φ"</span>
-<span class='op'>)</span></code></pre></div>
+    <div class="ref-usage sourceCode"><pre class='sourceCode r'><code><span class='fu'>derive_future_summary</span><span class='op'>(</span><span class='va'>res_future</span>, target <span class='op'>=</span> <span class='cn'>NULL</span><span class='op'>)</span></code></pre></div>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>result_vpa</th>
-      <td><p>Obejct returned from <code><a href='vpa.html'>vpa()</a></code></p></td>
+      <th>res_future</th>
+      <td><p>future_futureの返り値</p></td>
     </tr>
     <tr>
-      <th>result_msy</th>
-      <td><p>Object MSY result created previous SC meeting...?</p></td>
-    </tr>
-    <tr>
-      <th>result_future</th>
-      <td><p>Object returnd from <code><a href='future_vpa.html'>future_vpa()</a></code></p></td>
-    </tr>
-    <tr>
-      <th>yr_future_start</th>
-      <td><p>Year when future projection starts</p></td>
+      <th>target</th>
+      <td><p>指定するとtargetで指定した列の値のみが抽出される。NULLの場合は全シミュレーションの平均値</p></td>
     </tr>
     </table>
 

@@ -140,7 +140,9 @@
   future_tibble <span class='op'>=</span> <span class='cn'>NULL</span>,
   CI_range <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.1</span>, <span class='fl'>0.9</span><span class='op'>)</span>,
   maxyear <span class='op'>=</span> <span class='cn'>NULL</span>,
+  minyear <span class='op'>=</span> <span class='cn'>NULL</span>,
   is.plot.CIrange <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  is.plot.CIline <span class='op'>=</span> <span class='cn'>TRUE</span>,
   what.plot <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"Recruitment"</span>, <span class='st'>"SSB"</span>, <span class='st'>"biomass"</span>, <span class='st'>"catch"</span>, <span class='st'>"beta_gamma"</span>, <span class='st'>"U"</span>, <span class='st'>"Fratio"</span><span class='op'>)</span>,
   biomass.unit <span class='op'>=</span> <span class='fl'>1</span>,
   number.unit <span class='op'>=</span> <span class='fl'>1</span>,
@@ -186,8 +188,16 @@
       <td><p>表示する年の最大</p></td>
     </tr>
     <tr>
+      <th>minyear</th>
+      <td><p>表示する年の最小</p></td>
+    </tr>
+    <tr>
       <th>is.plot.CIrange</th>
       <td><p>予測区間を表示するかどうか</p></td>
+    </tr>
+    <tr>
+      <th>is.plot.CIline</th>
+      <td><p>予測区間の上限と下限の線を引くか</p></td>
     </tr>
     <tr>
       <th>what.plot</th>
@@ -196,6 +206,10 @@
     <tr>
       <th>biomass.unit</th>
       <td><p>量の単位</p></td>
+    </tr>
+    <tr>
+      <th>number.unit</th>
+      <td><p>尾数（加入尾数とか）のときの単位</p></td>
     </tr>
     <tr>
       <th>number.name</th>
@@ -256,10 +270,6 @@
     <tr>
       <th>width_example</th>
       <td><p>個々のシミュレーションをプロットする場合の線の太さ (default=0.7)</p></td>
-    </tr>
-    <tr>
-      <th>number.init</th>
-      <td><p>尾数（加入尾数とか）のときの単位</p></td>
     </tr>
     </table>
 
