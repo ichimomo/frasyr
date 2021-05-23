@@ -75,7 +75,8 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
                      Pope=res_vpa_base0_nontune$input$Pope,
                      fix_recruit=NULL,
                      fix_wcatch=NULL
-    )
+                     )
+  save(data_future_test, file="data_future_test.rda")
 
   # simple
   res_future_F0.1 <- future_vpa(tmb_data=data_future_test$data,
