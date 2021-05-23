@@ -257,20 +257,37 @@ plot_Fref <- function(rres,xlabel="max", # or, "mean","Fref/Fcur"
 #'
 
 plot_SRdata <- function(SRdata, type=c("classic","gg")[1]){
-  if(type=="classic") plot(SRdata$SSB,SRdata$R,xlab="SSB",ylab="R",xlim=c(0,max(SRdata$SSB)),ylim=c(0,max(SRdata$R)))
+  is_release_data <- "release" %in% names(SRdata)
+  if(is_release_data){
+    allR <- SRdata$allR <- SRdata$R + SRdata$release
+  }
+  else{
+    allR <- SRdata$R
+  }  
+  if(type=="classic"){
+    plot(SRdata$SSB,SRdata$R,xlab="SSB",ylab="R",xlim=c(0,max(SRdata$SSB)),ylim=c(0,max(allR)))
+    if(is_release_data)  points(SRdata$SSB,allR,col=2,pch=3)
+  }
   if(type=="gg"){
     if(!"id"%in%names(SRdata)){
-      ggplot2::qplot(y=R,x=SSB,data=as_tibble(SRdata),
-                     xlab="SSB",ylab="R",xlim=c(0,max(SRdata$SSB)),ylim=c(0,max(SRdata$R))) + theme_SH()
+      g0 <- ggplot2::qplot(y=R,x=SSB,data=as_tibble(SRdata),
+                           xlab="SSB",ylab="R",xlim=c(0,NA),ylim=c(0,NA)) + theme_SH()
+      if(is_release_data){
+        g0 <- g0 + geom_point(aes(y=allR,x=SSB), color=2, shape=3)
+      }
     }
     else{
-      ggplot(SRdata)+
+      g0 <- ggplot(SRdata)+
         geom_point(aes(y=R,x=SSB,color=id),
                     xlab="SSB",ylab="R",
-                    xlim=c(0,max(SRdata$SSB)),ylim=c(0,max(SRdata$R))) +
+                    xlim=c(0,NA),ylim=c(0,NA)) +
         theme_SH()+
         theme(legend.position="top")
+      if(is_release_data){
+        g0 <- g0 + geom_point(aes(y=allR,x=SSB, color=id),shape=3)
+      }
     }
+    return(g0)
   }
 }
 
@@ -301,7 +318,16 @@ SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千ト�
     mutate(type="obs")
   SRdata.pred <- as_tibble(SR_result$pred) %>%
     mutate(type="pred", year=NA, R=R)
-  alldata <- bind_rows(SRdata,SRdata.pred) %>%
+  
+  is_release_data <- "release" %in% names(SR_result$input$SRdata)
+  if(is_release_data){
+    SRdata.release <- SR_result$input$SRdata %>% mutate(allR=release+R) %>%
+      select(-R, -release) %>% rename(R=allR) %>% mutate(type="release")
+  }
+  else{
+    SRdata.release <- NULL
+  }
+  alldata <- bind_rows(SRdata,SRdata.pred,SRdata.release) %>%
     mutate(R=R/yscale,SSB=SSB/xscale)
   ymax <- max(alldata$R)
   year.max <- max(alldata$year,na.rm=T)
@@ -345,6 +371,11 @@ SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千ト�
     xlab(str_c("親魚資源量 (",xlabel,")"))+
     ylab(str_c("加入尾数 (",ylabel,")"))+
     coord_cartesian(ylim=c(0,ymax*1.05),expand=0)
+
+  if(is_release_data){
+    g1 <- g1 + geom_point(data=dplyr::filter(alldata,type=="release"),
+                          aes(y=R,x=SSB),shape=3)
+  }
 
   if(recruit_intercept>0){
     g1 <- g1+stat_function(fun=SRF,
