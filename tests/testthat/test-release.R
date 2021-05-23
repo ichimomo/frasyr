@@ -1,5 +1,3 @@
-data_base <- readr::read_csv(system.file("extdata","all_dummy_data_base.csv",package="frasyr"))
-
 test_that("read_vpa with release data",{
 
   # read.vpaによる放流データ利用
@@ -22,50 +20,47 @@ test_that("read_vpa with release data",{
                c("year","SSB","R","weight"))
   
   # data.handlerによる放流データ利用
-  data_release <- to_vpa_data(data_base, label_name="caa")[1,]
-  release.number <- 2
-  data_release[] <- release.number
-  
-  res_SRdat_D1 <- data.handler(caa=to_vpa_data(data_base, label_name="caa"),
-               waa=to_vpa_data(data_base, label_name="waa"),
-               maa=to_vpa_data(data_base, label_name="maa"),
-               M  = 0.4,
-               index = to_vpa_data(data_base, label_name="abund"),
-               maa.tune = NULL,
-               waa.catch = NULL,
-               catch.prop = NULL,
-               release.dat = data_release) %>%
-    vpa(tf.year=2015:2016, last.catch.zero = FALSE, 
-        Pope = TRUE, p.init = 0.5) %>%
+  load("res_vpa_files.rda")
+  load("data_future_test.rda")  
+  data_SR_release <- res_vpa_base0_nontune_release %>%
       get.SRdata(weight.year=1990:2100)
-  expect_equal(names(res_SRdat_D1),
+  res_SR_release <- fit.SR(SRdata=data_SR_release, AR=0)
+
+  data_SR <- res_vpa_base0_nontune %>%
+      get.SRdata(weight.year=1990:2100)
+  res_SR <- fit.SR(SRdata=data_SR, AR=0)  
+
+  expect_equal(names(data_SR_release),
                c("year","SSB","R","release","weight"))
-  
-  res_SRdat_D0 <- data.handler(caa=to_vpa_data(data_base, label_name="caa"),
-                             waa=to_vpa_data(data_base, label_name="waa"),
-                             maa=to_vpa_data(data_base, label_name="maa"),
-                             M  = 0.4,
-                             index = to_vpa_data(data_base, label_name="abund"),
-                             maa.tune = NULL,
-                             waa.catch = NULL,
-                             catch.prop = NULL, release.dat = NULL) %>%
-    vpa(tf.year=2015:2016, last.catch.zero = FALSE, 
-        Pope = TRUE, p.init = 0.5) %>%
-      get.SRdata(weight.year=1990:2100)
-  expect_equal(names(res_SRdat_D0),
-               c("year","SSB","R","weight"))  
+  expect_equal(res_SR_release$pars$a*res_SR_release$pars$b,2,tol=0.001)
 
-  expect_equal(mean(res_SRdat_D0$R-res_SRdat_D1$R), release.number)
-  expect_equal(mean(res_SRdat_R0$R-res_SRdat_R1$R), 990.491, tol=0.0001) 
+  # 過去・将来に放流がある場合の将来予測
+  res_future_release <- redo_future(data_future_test,
+                                    list(res_SR=res_SR_release, recruit_intercept=2))
+  res_future <- redo_future(data_future_test,list(res_SR=res_SR))
+  plot.SR(res_SR_release, recruit_intercept=2)  
+  expect_equal(select(res_future$summary,-intercept),select(res_future_release$summary,-intercept))
 
-  # get.SRdataの段階でRが差し引かれているためこのあと、fit.SRは変更しなくてOK
-  SR0.par <- fit.SR(SRdata=res_SRdat_D0, AR=0)
-  SR1.par <- fit.SR(SRdata=res_SRdat_D1, AR=0)
+  # 過去・将来に放流があり、SD>0、自己相関>0の場合
+  res_vpa_base0_nontune_release2 <- res_vpa_base0_nontune_release
+  nyear <- ncol(res_vpa_base0_nontune_release2$naa)
+  res_vpa_base0_nontune_release2$naa[1,nyear] <- (res_vpa_base0_nontune_release2$naa[1,nyear] - res_vpa_base0_nontune_release2$input$dat$release[nyear]) * exp(log(2)) + res_vpa_base0_nontune_release2$input$dat$release[nyear]
+  res_SR_release2 <- res_SR_release
+  res_SR_release2$pars$rho <- 0.9
+  res_SR_release2$pars$sd <- 0.1
+  data_future_release2 <- redo_future(data_future_test,
+                                     list(res_SR=res_SR_release2, recruit_intercept=2,
+                                          res_vpa=res_vpa_base0_nontune_release2),
+                                     only_data=T)
+  res_future_release2 <- test_sd0_future(data_future_release2)  
+  future_deviance1 <- res_future_release2$res2$SR_mat[as.character(2017:2026),1,"deviance"]
+  expected_deviance <- future_deviance1["2017"]*(0.9^(0:9))
+  expect_equal(as.numeric(exp(future_deviance1)[1]), 2, tol=0.0001)
+  expect_equal(as.numeric(future_deviance1/expected_deviance), rep(1,10), tol=0.0001)
 
-  expect_equal(SR0.par$pars$b*SR0.par$pars$a,mean(res_SRdat_D0$R),tol=0.001)
-  expect_equal(SR1.par$pars$b*SR1.par$pars$a,mean(res_SRdat_D1$R),tol=0.001)
-
-
-
+  future_deviance2 <- res_future_release2$res1$summary %>% filter(year%in%2017:2026) %>%
+      select(deviance) %>% unlist %>% as.numeric
+  expected_deviance <- future_deviance2[1]*(0.9^(0:9))    
+  expect_equal(as.numeric(future_deviance2/expected_deviance), rep(1,10), tol=0.05)
   
 })
