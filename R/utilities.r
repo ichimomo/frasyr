@@ -2671,7 +2671,7 @@ derive_future_summary <- function(res_future, target=NULL){
 
 
 #'
-#' F at ageをVPAの結果から%SPRで変換したりするための関数
+#' F at ageをVPAの結果から\%SPRで変換したりするための関数
 #' 
 #' @param res_vpa VPAの結果オブジェクト(Popeの設定やF at ageをこちらからとってくる)
 #' @param data_future 将来予測のためのデータ(生物パラメータを将来予測期間から撮ってくる場合に必要)

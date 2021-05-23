@@ -46,7 +46,8 @@ test_that("read_vpa with release data",{
   nyear <- ncol(res_vpa_base0_nontune_release2$naa)
   res_vpa_base0_nontune_release2$naa[1,nyear] <- (res_vpa_base0_nontune_release2$naa[1,nyear] - res_vpa_base0_nontune_release2$input$dat$release[nyear]) * exp(log(2)) + res_vpa_base0_nontune_release2$input$dat$release[nyear]
   res_SR_release2 <- res_SR_release
-  res_SR_release2$pars$rho <- 0.9
+  rho_assumption <- 0.3  
+  res_SR_release2$pars$rho <- rho_assumption
   res_SR_release2$pars$sd <- 0.1
   data_future_release2 <- redo_future(data_future_test,
                                      list(res_SR=res_SR_release2, recruit_intercept=2,
@@ -54,13 +55,14 @@ test_that("read_vpa with release data",{
                                      only_data=T)
   res_future_release2 <- test_sd0_future(data_future_release2)  
   future_deviance1 <- res_future_release2$res2$SR_mat[as.character(2017:2026),1,"deviance"]
-  expected_deviance <- future_deviance1["2017"]*(0.9^(0:9))
+  expected_deviance <- future_deviance1["2017"]*(rho_assumption^(0:9))
   expect_equal(as.numeric(exp(future_deviance1)[1]), 2, tol=0.0001)
   expect_equal(as.numeric(future_deviance1/expected_deviance), rep(1,10), tol=0.0001)
 
   future_deviance2 <- res_future_release2$res1$summary %>% filter(year%in%2017:2026) %>%
       select(deviance) %>% unlist %>% as.numeric
-  expected_deviance <- future_deviance2[1]*(0.9^(0:9))    
-  expect_equal(as.numeric(future_deviance2/expected_deviance), rep(1,10), tol=0.05)
+  expected_deviance <- future_deviance2[1]*(rho_assumption^(0:9))    
+  expect_equal(future_deviance2-expected_deviance, rep(0,10), tol=0.01)
+  expect_equal(future_deviance2-as.numeric(future_deviance1), rep(0,10), tol=0.01)  
   
 })

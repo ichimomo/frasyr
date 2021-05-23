@@ -1044,8 +1044,8 @@ set_SR_mat <- function(res_vpa=NULL,
   # re-culcurate past recruitment deviation
   # intercept=relase fish
   SR_mat[recruit_range,,"deviance"] <- SR_mat[recruit_range,,"rand_resid"] <-
-    log(SR_mat[recruit_range,,"recruit"]-SR_mat[recruit_range,,"intercept"]) -
-    log(SRF(SR_mat[ssb_range,,"ssb"],SR_mat[recruit_range,,"a"],SR_mat[recruit_range,,"b"]))
+      log(SR_mat[recruit_range,,"recruit"]-SR_mat[recruit_range,,"intercept"]) -
+      log(SRF(SR_mat[ssb_range,,"ssb"],SR_mat[recruit_range,,"a"],SR_mat[recruit_range,,"b"]))
 
   # define future recruitment deviation
   set.seed(seed_number)
