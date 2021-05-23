@@ -89,6 +89,21 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
                               maa.tune = NULL,
                               waa.catch = NULL,
                               catch.prop = NULL)
+
+  # 放流データを含むVPAデータ
+  data_release <- to_vpa_data(data_base, label_name="caa")[1,]
+  release.number <- 2
+  data_release[] <- release.number
+  
+  vpadat_base0_release <- data.handler(caa=to_vpa_data(data_base, label_name="caa"),
+                               waa=to_vpa_data(data_base, label_name="waa"),
+                               maa=to_vpa_data(data_base, label_name="maa"),
+                               M  = 0,
+                               index = to_vpa_data(data_base, label_name="abund"),
+                               maa.tune = NULL,
+                               waa.catch = NULL,
+                               release.dat = data_release,
+                               catch.prop = NULL)
   
   # vpa (no tuning) ----
 
@@ -100,6 +115,11 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
   res_vpa_base0_nontune <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
                                Pope = TRUE, p.init = 0.5) 
   expect_equal(as.numeric(rowMeans(res_vpa_base0_nontune$naa)), 
+               true_number)
+
+  res_vpa_base0_nontune_release <- vpa(vpadat_base0_release, tf.year=2015:2016, last.catch.zero = FALSE, 
+                                       Pope = TRUE, p.init = 0.5)
+  expect_equal(as.numeric(rowMeans(res_vpa_base0_nontune_release$naa)), 
                true_number)
   
   res_vpa_base1_nontune <- vpa(vpadat_base1, tf.year=2015:2016, last.catch.zero = FALSE, 
@@ -742,6 +762,7 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
        res_vpa_base1_nontune,
        res_vpa_pgc0_nontune,
        res_vpa_rec0_nontune,
+       res_vpa_base0_nontune_release,
        file="res_vpa_files.rda")
 })
 
