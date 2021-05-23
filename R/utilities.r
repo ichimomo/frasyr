@@ -2643,7 +2643,7 @@ derive_future_summary <- function(res_future, target=NULL){
   assertthat::assert_that(class(res_future) == "future_new")
   
   if(is.null(target)){
-    tmpfunc <- function(x) apply(x,1,mean)
+    tmpfunc <- function(x, fun=mean) apply(x,1,fun)
   }
   if(!is.null(target)){
     tmpfunc <- function(x) x[,target]
@@ -2657,6 +2657,9 @@ derive_future_summary <- function(res_future, target=NULL){
     SSB     = tmpfunc(res_future$SR_mat[,,"ssb"]),
     biomass = tmpfunc(biomass),
     recruit = tmpfunc(res_future$SR_mat[,,"recruit"]),
+    intercept = tmpfunc(res_future$SR_mat[,,"intercept"]),
+    deviance = tmpfunc(res_future$SR_mat[,,"deviance"]),
+    deviance_sd = tmpfunc(res_future$SR_mat[,,"deviance"],fun=sd),            
     catch   = tmpfunc(res_future$HCR_realized[,,"wcatch"]),
     beta    = tmpfunc(res_future$HCR_mat[,,"beta"]),
     Blimit  = tmpfunc(res_future$HCR_mat[,,"Blimit"]),
