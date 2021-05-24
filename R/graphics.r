@@ -405,40 +405,7 @@ SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千ト�
 compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000, newplot=TRUE, output_folder=""){
 
 
-  if(newplot){
-    if(!is.null(SRlist[[1]]$input)){
-      SRdata <- purrr::map_dfr(SRlist[], function(x){
-        x$input$SRdata %>%
-          as_tibble() %>%
-          mutate(SSB=SSB, R=R)
-      },.id="id")
-    }
-    else{ # for model average
-      SRdata <- purrr::map_dfr(SRlist, function(x){
-        x[[1]]$input$SRdata %>%
-          as_tibble() %>%
-          mutate(SSB=SSB, R=R)
-      },.id="id")
-    }
-
-    if(is.null(SRlist)) names(SRlist) <- 1:length(SRlist)
-
-        SRpred <- purrr::map_dfr(SRlist,
-                             function(x) x$pred, .id="再生産関係")
-    #SRpred$再生産関係 <- as.factor(SRpred$再生産関係)
-    font_MAC <- "HiraginoSans-W3"#"Japan1GothicBBB"#
-
-    g1 <- ggplot(data=SRpred)
-    g1 <- g1 + geom_line(data=SRpred,
-                         mapping=aes(x=SSB/biomass.unit,y=R/number.unit, linetype=再生産関係, col=再生産関係))
-    g1 <- g1 + geom_point(data=SRdata, mapping=aes(x=SSB/biomass.unit, y=R/number.unit), color="black")
-    g1 <- g1 + xlim(c(0,max(SRdata$SSB/biomass.unit))) + ylim(c(0,max(SRdata$R/number.unit))) +
-      labs(x = "親魚量（千トン）", y = "加入尾数（百万尾)") + theme_SH(legend.position="top")
-    g1
-    ggsave_SH(g1, file=paste("./",output_folder,"/resSRcomp.png",sep=""))
-    g1
-  }
-  else{
+#  else{
     if(!is.null(SRlist[[1]]$input)){
       SRdata <- purrr::map_dfr(SRlist[], function(x){
         x$input$SRdata %>%
@@ -465,7 +432,7 @@ compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000, newplot=T
     xlab(str_c("SSB (x",biomass.unit,")")) +
     ylab(str_c("Number (x",number.unit,")"))
   g1
-  }
+  #}
 }
 
 #' fit.SRregimeの結果で得られた再生産関係をプロットするための関数
