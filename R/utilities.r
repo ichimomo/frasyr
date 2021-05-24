@@ -913,6 +913,8 @@ out.vpa <- function(res=NULL,    # VPA result
 }
 
 #' csvファイルとしてまとめられた資源計算結果を読み込んでRのオブジェクトにする
+#'
+#' @param release.label 放流データを読み込みたい場合。ここで指定したラベルをつけて、年齢を行、年を列とするデータを入れる（catch at ageと同じ構造だが、年齢は必要な年齢だけ取り出した形で良い）
 #' @param tfile 資源計算結果がまとめられたcsvファイルの名前
 #' @param Pope  VPA計算時にどっちを使っているかここで設定する（TRUE or FALSE）。デフォルトはNULLで、その場合にはcaa,faa,naaの関係から自動判別するが、自動判別の結果が出力されるので、それをみて正しく判断されているか確認してください。
 #' @param plus.group プラスグループを考慮するかどうか。こちらについても、NULLの場合にはfaaとnaaの関係から自動判別するが、結果を一応確認すること。
@@ -933,6 +935,7 @@ read.vpa <- function(tfile,
                      faa.label="fishing mortality at age",
                      Fc.label="Current F",
                      naa.label="numbers at age",
+                     release.label="release dat",
                      Blimit=NULL,
                      Pope=NULL,
                      plus.group=NULL,
@@ -942,6 +945,7 @@ read.vpa <- function(tfile,
 
   tmpfunc <- function(tmpdata,label,type=NULL){
     flags <- which(substr(tmpdata[,1],1,1)=="#")
+    flags <- c(flags, nrow(tmpdata)+1)
     flag.name <- tmpdata[flags,1]
     flag.name <- gsub("#","",flag.name)
     flag.name <- gsub(" ","",flag.name)
@@ -961,6 +965,7 @@ read.vpa <- function(tfile,
         tdat <- sapply((tdat[-1,-1]),as.numeric)
         tmp.names <- lapply(tmp.names,function(x) x[x!=""])
         tmp.names <- lapply(tmp.names,function(x) x[!is.na(x)])
+        if(is.null(dim(tdat))) dim(tdat) <- sapply(tmp.names,length)        
         dimnames(tdat) <- tmp.names
         tdat <- as.data.frame(tdat)
       }
@@ -985,6 +990,7 @@ read.vpa <- function(tfile,
   dres$input$dat$caa <- tmpfunc(tmpdata,caa.label)
   dres$input$dat$M <- tmpfunc(tmpdata,M.label)
   dres$input$dat$waa <- tmpfunc(tmpdata,waa.label)
+  dres$input$dat$release.dat <- tmpfunc(tmpdata,release.label)
   if(is.null(dres$input$dat$waa)) dres$input$dat$waa <- tmpfunc(tmpdata,waa.biomass.label)
   dres$input$dat$waa.catch <- tmpfunc(tmpdata,waa.catch.label)
   if(is.null(dres$input$dat$waa.catch)) dres$input$dat$waa.catch <- dres$input$dat$waa
@@ -2405,8 +2411,8 @@ make_kobe_ratio <- function(result_vpa, result_msy) {
 #'
 #' @export
 
-source_lines <- function(file, lines){
-    source(textConnection(readLines(file)[lines]))
+source_lines <- function(file, lines, encoding="UTF-8",...){
+    source(textConnection(readLines(file, encoding=encoding)[lines]),...)
 }
 
 #' re-calculate projection with different arguments
@@ -2613,6 +2619,8 @@ derive_biopar <- function(res_obj=NULL, derive_year=NULL, stat=mean){
 
 #' 与えられた個体群動態でプラスグループが考慮されているかどうか
 #' @param dres VPAの結果
+#'
+#' @export
 
 detect_plus_group <- function(dres){
   naa2 <- dres$naa[,2]
@@ -2637,7 +2645,7 @@ derive_future_summary <- function(res_future, target=NULL){
   assertthat::assert_that(class(res_future) == "future_new")
   
   if(is.null(target)){
-    tmpfunc <- function(x) apply(x,1,mean)
+    tmpfunc <- function(x, fun=mean) apply(x,1,fun)
   }
   if(!is.null(target)){
     tmpfunc <- function(x) x[,target]
@@ -2651,6 +2659,9 @@ derive_future_summary <- function(res_future, target=NULL){
     SSB     = tmpfunc(res_future$SR_mat[,,"ssb"]),
     biomass = tmpfunc(biomass),
     recruit = tmpfunc(res_future$SR_mat[,,"recruit"]),
+    intercept = tmpfunc(res_future$SR_mat[,,"intercept"]),
+    deviance = tmpfunc(res_future$SR_mat[,,"deviance"]),
+    deviance_sd = tmpfunc(res_future$SR_mat[,,"deviance"],fun=sd),            
     catch   = tmpfunc(res_future$HCR_realized[,,"wcatch"]),
     beta    = tmpfunc(res_future$HCR_mat[,,"beta"]),
     Blimit  = tmpfunc(res_future$HCR_mat[,,"Blimit"]),
@@ -2662,7 +2673,7 @@ derive_future_summary <- function(res_future, target=NULL){
 
 
 #'
-#' F at ageをVPAの結果から%SPRで変換したりするための関数
+#' F at ageをVPAの結果から\%SPRで変換したりするための関数
 #' 
 #' @param res_vpa VPAの結果オブジェクト(Popeの設定やF at ageをこちらからとってくる)
 #' @param data_future 将来予測のためのデータ(生物パラメータを将来予測期間から撮ってくる場合に必要)

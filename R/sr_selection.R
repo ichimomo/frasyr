@@ -56,7 +56,7 @@ draw_SRline <- function(fitted, observed, show.year) {
 #' }
 #' @export
 fit_draw_SRline <- function(vpares, SR, method, show.year = FALSE) {
-  rawdata <- get.SRdata(vpares = vpares, return.df = TRUE)
+  rawdata <- get.SRdata(vpares = vpares)
   models  <- expand.grid(model = SR,
                          method = method,
                          stringsAsFactors = FALSE)

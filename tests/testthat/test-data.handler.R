@@ -89,6 +89,21 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
                               maa.tune = NULL,
                               waa.catch = NULL,
                               catch.prop = NULL)
+
+  # 放流データを含むVPAデータ
+  data_release <- to_vpa_data(data_base, label_name="caa")[1,]
+  release.number <- 2
+  data_release[] <- release.number
+  
+  vpadat_base0_release <- data.handler(caa=to_vpa_data(data_base, label_name="caa"),
+                               waa=to_vpa_data(data_base, label_name="waa"),
+                               maa=to_vpa_data(data_base, label_name="maa"),
+                               M  = 0,
+                               index = to_vpa_data(data_base, label_name="abund"),
+                               maa.tune = NULL,
+                               waa.catch = NULL,
+                               release.dat = data_release,
+                               catch.prop = NULL)
   
   # vpa (no tuning) ----
 
@@ -101,6 +116,11 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
                                Pope = TRUE, p.init = 0.5) 
   expect_equal(as.numeric(rowMeans(res_vpa_base0_nontune$naa)), 
                true_number)
+
+  res_vpa_base0_nontune_release <- vpa(vpadat_base0_release, tf.year=2015:2016, last.catch.zero = FALSE, 
+                                       Pope = TRUE, p.init = 0.5)
+  expect_equal(as.numeric(rowMeans(res_vpa_base0_nontune_release$naa)), 
+               true_number)
   
   res_vpa_base1_nontune <- vpa(vpadat_base1, tf.year=2015:2016, last.catch.zero = FALSE, 
                                Pope = TRUE, p.init = 0.5) 
@@ -111,7 +131,6 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
   res_vpa_lst0 <- vpa(vpadat_lst0, tf.year=2007:2008, last.catch.zero = TRUE, 
                                Pope = TRUE, p.init = 0.5, plus.group=TRUE) 
   expect_equal(as.numeric(round(rowMeans(res_vpa_lst0$ssb),2)),c(NA,16.40,37.92,30.63))
-			   
   
   # プラスグループが変わる場合はtrue_numberには一致しない；どうテストすべきか？
   res_vpa_pgc0_nontune <- vpa(vpadat_pgc0, tf.year=2015:2016, last.catch.zero = FALSE, 
@@ -125,7 +144,10 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
                true_number)
   
   res_vpa_rec2_nontune <- vpa(vpadat_rec2, tf.year=2015:2016, last.catch.zero = FALSE, 
-                              Pope = TRUE, p.init = 0.5) 
+                              Pope = TRUE, p.init = 0.5)
+
+  data_SR <- get.SRdata(res_vpa_rec2_nontune)
+  expect_equal(nrow(data_SR), ncol(res_vpa_rec2_nontune$naa)-2)
   
   # catch計算用のwaaを２倍にしているbase1データでは漁獲量が倍になる
   expect_equal(res_vpa_base0_nontune$wcaa*2,
@@ -740,5 +762,7 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
        res_vpa_base1_nontune,
        res_vpa_pgc0_nontune,
        res_vpa_rec0_nontune,
+       res_vpa_base0_nontune_release,
        file="res_vpa_files.rda")
 })
+

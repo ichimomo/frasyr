@@ -2,7 +2,7 @@
 % Please edit documentation in R/utilities.r
 \name{convert_Fvector}
 \alias{convert_Fvector}
-\title{F at ageをVPAの結果から%SPRで変換したりするための関数}
+\title{F at ageをVPAの結果から\%SPRで変換したりするための関数}
 \usage{
 convert_Fvector(
   res_vpa = NULL,
@@ -33,5 +33,5 @@ convert_Fvector(
 \item{data_future}{将来予測のためのデータ(生物パラメータを将来予測期間から撮ってくる場合に必要)}
 }
 \description{
-F at ageをVPAの結果から%SPRで変換したりするための関数
+F at ageをVPAの結果から\%SPRで変換したりするための関数
 }
