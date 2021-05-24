@@ -2619,6 +2619,8 @@ derive_biopar <- function(res_obj=NULL, derive_year=NULL, stat=mean){
 
 #' 与えられた個体群動態でプラスグループが考慮されているかどうか
 #' @param dres VPAの結果
+#'
+#' @export
 
 detect_plus_group <- function(dres){
   naa2 <- dres$naa[,2]
