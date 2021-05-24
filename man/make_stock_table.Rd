@@ -11,7 +11,7 @@ make_stock_table(
   yr_future_start,
   yr_abc,
   faa_pre_abc,
-  unit = "百トン"
+  unit = "\\u767e繝医Φ"
 )
 }
 \arguments{

@@ -481,7 +481,7 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param Pope  Popeの近似式を使うかどうか
 #' @param p.pope  Popeの式でどこで漁獲するか（0.5 = 真ん中の時期）
 #' @param tune    tuningをするかどうか
-#' @param abund  tuningの際，何の指標に対応するか
+#' @param abund  tuningの際，何の指標に対応するか. "N"=年の終わりの資源尾数，"Nm"=年の中間での資源尾数，"B"=年の終わりの資源重量，"Bm"=年の中間での資源重量，"SSB"=産卵親魚量，"Bs"=資源重量×選択率，"Bo"=資源重量×オメガで調節された選択率，"Ns"=資源尾数×選択率，"SSBm"=年の中間での産卵親魚量，"N1sj"=1歳の資源尾数（日本海スケトウダラ用）,"N0sj"=0歳の資源尾数（日本海スケトウダラ用），"F"=漁獲係数の平均
 #' @param min.age tuning指標の年齢参照範囲の下限
 #' @param max.age tuning指標の年齢参照範囲の上限
 #' @param link    tuningのlink関数
@@ -1363,7 +1363,8 @@ if (isTRUE(madara)){
 
     index2 <- as.matrix(t(apply(index,1,function(x) ifelse(is.na(x),0,x))))
 
-    Ab_type <- ifelse(abund=="SSB", 1, ifelse(abund=="N", 2, 3))
+    Ab_type <- ifelse(abund=="SSB", 1, ifelse(abund=="N", 2, ifelse(abund=="SSB", 3, 4)))
+    sel_def <- ifelse(sel.def=="max",0,ifelse(sel.def=="mean",1,2))
     Ab_type_age <- ifelse(is.na(min.age),0,min.age)
     Ab_type_max_age <- ifelse(is.na(max.age),0,max.age)+1
 
@@ -1391,7 +1392,9 @@ if (isTRUE(madara)){
     if (is.null(eta)) eta <- -1.0
     eta_age <- rep(1,length(p.init))
     eta_age[eta.age+1] <- 0
-    data2 <- list(Est=ifelse(est.method=="ls",0,1),b_fix=as.numeric(b_fix),alpha=alpha,lambda=lambda,beta=beta,Ab_type=Ab_type,Ab_type_age=Ab_type_age,Ab_type_max_age=Ab_type_max_age,w=index.w,af=af,CATCH=t(as.matrix(dat$caa)),WEI=t(as.matrix(dat$waa)),MAT=t(MAA),M=t(as.matrix(dat$M)),CPUE=t(index2),MISS=t(ifelse(index2==0,1,0)),Last_Catch_Zero=ifelse(isTRUE(last.catch.zero),1,0),sigma_constraint=sigma_constraint,eta=eta,eta_age=eta_age)
+    data2 <- list(Est=ifelse(est.method=="ls",0,1),b_fix=as.numeric(b_fix),
+                  alpha=alpha,lambda=lambda,beta=beta,Ab_type=Ab_type,sel_def=sel_def,
+                  Ab_type_age=Ab_type_age,Ab_type_max_age=Ab_type_max_age,w=index.w,af=af,CATCH=t(as.matrix(dat$caa)),WEI=t(as.matrix(dat$waa)),MAT=t(MAA),M=t(as.matrix(dat$M)),CPUE=t(index2),MISS=t(ifelse(index2==0,1,0)),Last_Catch_Zero=ifelse(isTRUE(last.catch.zero),1,0),sigma_constraint=sigma_constraint,eta=eta,eta_age=eta_age)
 
     parameters <- list(
       log_F=log(p.init)
