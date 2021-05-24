@@ -35,11 +35,11 @@ compare_eq_stat(
 data(res_MSY_HSL1)
 data(res_MSY_HSL2)
 MSY_list <- tibble::lst(res_MSY_HSL1, res_MSY_HSL2)
-# 縦軸を漁獲量、横軸をFの大きさ
+# 邵ｦ霆ｸ繧呈ｼ∫佐驥上∵ｨｪ霆ｸ繧巽縺ｮ螟ｧ縺阪＆
 g1 <- compare_eq_stat(MSY_list,x_axis_name="fmulti",y_axis_name="catch.mean")
-# 縦軸を親魚量にする
+# 邵ｦ霆ｸ繧定ｦｪ鬲夐㍼縺ｫ縺吶ｋ
 g2 <- compare_eq_stat(MSY_list,x_axis_name="fmulti",y_axis_name="ssb.mean")
-# 縦軸を加入量
+# 邵ｦ霆ｸ繧貞刈蜈･驥<8f>
 g3 <- compare_eq_stat(MSY_list,x_axis_name="fmulti",y_axis_name="rec.mean")
 gridExtra::grid.arrange(g1,g2,g3,ncol=1)
 
