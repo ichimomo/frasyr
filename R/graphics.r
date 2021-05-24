@@ -16,13 +16,27 @@ pt1             <- 0.3528
 #' @encoding UTF-8
 
 theme_SH <- function(legend.position="none",base_size=12){
-  theme_bw(base_size=base_size) +
-    theme(panel.grid = element_blank(),
-          axis.text.x=element_text(size=11,color="black"),
-          axis.text.y=element_text(size=11,color="black"),
-          axis.line.x=element_line(size= 0.3528),
-          axis.line.y=element_line(size= 0.3528),
-          legend.position=legend.position)
+
+  if(isTRUE(stringr::str_detect(version$os, pattern="darwin"))){
+    font_MAC <- "HiraginoSans-W3"#"Japan1GothicBBB"#
+    theme_bw(base_size=base_size) +
+      theme(panel.grid = element_blank(),
+            axis.text.x=element_text(size=11,color="black"),
+            axis.text.y=element_text(size=11,color="black"),
+            axis.line.x=element_line(size= 0.3528),
+            axis.line.y=element_line(size= 0.3528),
+            legend.position=legend.position, text =element_text(family = font_MAC) )
+  }
+  else{
+    theme_bw(base_size=base_size) +
+      theme(panel.grid = element_blank(),
+            axis.text.x=element_text(size=11,color="black"),
+            axis.text.y=element_text(size=11,color="black"),
+            axis.line.x=element_line(size= 0.3528),
+            axis.line.y=element_line(size= 0.3528),
+            legend.position=legend.position)
+
+  }
 }
 
 #' 会議用の図の出力関数（大きさ・サイズの指定済）：通常サイズ
@@ -237,7 +251,7 @@ plot_Fref <- function(rres,xlabel="max", # or, "mean","Fref/Fcur"
   text(xx,max(ypr)*seq(from=0.5,to=0.3,length=length(vline.text)),vline.text)
   legend("topright",lty=1:2,legend=c("SPR","YPR"))
 
-  invisible(data.frame(F.range=F.range,spr=spr,ypr=ypr))  
+  invisible(data.frame(F.range=F.range,spr=spr,ypr=ypr))
   #old.par[c("cin","cxy","csi","cra","csy","din","page")] <- NULL
   #par(old.par)
 }
@@ -419,24 +433,59 @@ SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千ト�
 #'
 #'
 
-compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000){
+compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000, newplot=TRUE, output_folder=""){
 
-  if(!is.null(SRlist[[1]]$input)){
-    SRdata <- purrr::map_dfr(SRlist[], function(x){
-      x$input$SRdata %>%
-        as_tibble() %>%
-        mutate(SSB=SSB/biomass.unit, R=R/number.unit)
-    },.id="id")
-  }
-  else{ # for model average
-    SRdata <- purrr::map_dfr(SRlist, function(x){
-      x[[1]]$input$SRdata %>%
-        as_tibble() %>%
-        mutate(SSB=SSB/biomass.unit, R=R/number.unit)
-    },.id="id")
-  }
 
-  if(is.null(SRlist)) names(SRlist) <- 1:length(SRlist)
+  if(newplot){
+    if(!is.null(SRlist[[1]]$input)){
+      SRdata <- purrr::map_dfr(SRlist[], function(x){
+        x$input$SRdata %>%
+          as_tibble() %>%
+          mutate(SSB=SSB, R=R)
+      },.id="id")
+    }
+    else{ # for model average
+      SRdata <- purrr::map_dfr(SRlist, function(x){
+        x[[1]]$input$SRdata %>%
+          as_tibble() %>%
+          mutate(SSB=SSB, R=R)
+      },.id="id")
+    }
+
+    if(is.null(SRlist)) names(SRlist) <- 1:length(SRlist)
+
+        SRpred <- purrr::map_dfr(SRlist,
+                             function(x) x$pred, .id="SR_type")
+        #SRpred$再生産関係 <- as.factor(SRpred$再生産関係)
+    font_MAC <- "HiraginoSans-W3"#"Japan1GothicBBB"#
+
+    g1 <- ggplot(data=SRpred)
+    g1 <- g1 + geom_line(data=SRpred,
+                         mapping=aes(x=SSB/biomass.unit,y=R/number.unit, linetype=SR_type, col=SR_type))
+    g1 <- g1 + geom_point(data=SRdata, mapping=aes(x=SSB/biomass.unit, y=R/number.unit), color="black")
+    g1 <- g1 + xlim(c(0,max(SRdata$SSB/biomass.unit))) + ylim(c(0,max(SRdata$R/number.unit))) +
+      labs(x = "親魚量（千トン）", y = "加入尾数（百万尾)") + theme_SH(legend.position="top")
+    #g1
+    ggsave_SH(g1, file=paste("./",output_folder,"/resSRcomp.png",sep=""))
+    g1
+  }
+  else{
+    if(!is.null(SRlist[[1]]$input)){
+      SRdata <- purrr::map_dfr(SRlist[], function(x){
+        x$input$SRdata %>%
+          as_tibble() %>%
+          mutate(SSB=SSB/biomass.unit, R=R/number.unit)
+      },.id="id")
+    }
+    else{ # for model average
+      SRdata <- purrr::map_dfr(SRlist, function(x){
+        x[[1]]$input$SRdata %>%
+          as_tibble() %>%
+          mutate(SSB=SSB/biomass.unit, R=R/number.unit)
+      },.id="id")
+    }
+
+    if(is.null(SRlist)) names(SRlist) <- 1:length(SRlist)
 
   g1 <- plot_SRdata(SRdata,type="gg")
 
@@ -446,8 +495,8 @@ compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000){
     theme(legend.position="top") +
     xlab(str_c("SSB (x",biomass.unit,")")) +
     ylab(str_c("Number (x",number.unit,")"))
-
   g1
+  }
 }
 
 #' fit.SRregimeの結果で得られた再生産関係をプロットするための関数
@@ -798,7 +847,7 @@ plot_futures <- function(vpares=NULL,
 
   if(n_example>0){
       if(n_example>1){
-        tmpdata <- dplyr::filter(future.example,year <= maxyear) 
+        tmpdata <- dplyr::filter(future.example,year <= maxyear)
         g1 <- g1 + geom_line(data=tmpdata,
                            mapping=aes(x=year,y=value,
                                        alpha=as.factor(sim),
@@ -1234,12 +1283,12 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
     #     mutate(year_group = ifelse(year >= diff.year[i], year_group+1, year_group))
     # }
   }
-  
+
   if(is.null(labeling.year)){
     years <- unique(UBdata$year)
     labeling.year <- c(years[years%%5==0],max(years))
   }
-  
+
   UBdata <- UBdata %>%
     mutate(year.label=ifelse(year%in%labeling.year,year,""),
            year_group=1)
@@ -1459,7 +1508,7 @@ plot_HCR_by_catch <- function(trace,
   }
 
   n <- nrow(trace)
-  HCR_function <- get(HCR_function_name)  
+  HCR_function <- get(HCR_function_name)
   gamma <- HCR_function(as.numeric(trace$ssb.mean),
                        Blimit=rep(SBlim,n),Bban=rep(SBban,n),beta=rep(beta,n))
   F_matrix <- outer(gamma, Fmsy_vector)
@@ -1751,30 +1800,30 @@ plot_sprypr <- function(result_vpa, type, years=NULL) {
 #' @param res fit.SRから返されるオブジェクト
 #' @examples
 #' \dontrun{
-#' 
+#'
 #' }
-#' 
+#'
 #' @encoding UTF-8
 #' @export
 
 
 plot_SR_AReffect <- function(res){
     SRdata <- as_tibble(res$input$SRdata)
-    
+
 #    pred0 <- exp(log(SRdata$R)-res$resid)
 #    pred1 <- exp(log(pred0)+res$pars$rho*c(0,res$resid[1:(length(res$resid)-1)]))
 
 
     SRdata2 <- bind_rows(SRdata %>% mutate(Data="Observed"),
-                         SRdata %>% mutate(R=exp(log(SRdata$R)- # res$resid - 
+                         SRdata %>% mutate(R=exp(log(SRdata$R)- # res$resid -
                                                    res$pars$rho*c(0,res$resid[1:(length(res$resid)-1)])),
                                            Data="Observed_without_AR"),
                          )
-                          
+
 
     SRdata2 <- SRdata2 %>%
       mutate(SB=SSB, Data=factor(Data,levels=c("Observed","Observed_without_AR")))
-    
+
 #    if(obs_change==FALSE){
 #      g <- ggplot(SRdata)+
 #        geom_point(aes(x=SSB, y=R))+
