@@ -40,7 +40,7 @@
 
 
 <meta property="og:title" content="VPAの結果から再生産関係推定用のデータを作成する — get.SRdata" />
-<meta property="og:description" content="VPAの結果から再生産関係推定用のデータを作成する" />
+<meta property="og:description" content="VPA結果に放流尾数が含まれている場合、天然加入尾数＝加入尾数ー放流尾数として計算する" />
 
 
 
@@ -130,15 +130,17 @@
     </div>
 
     <div class="ref-description">
-    <p>VPAの結果から再生産関係推定用のデータを作成する</p>
+    <p>VPA結果に放流尾数が含まれている場合、天然加入尾数＝加入尾数ー放流尾数として計算する</p>
     </div>
 
     <div class="ref-usage sourceCode"><pre class='sourceCode r'><code><span class='fu'>get.SRdata</span><span class='op'>(</span>
-  <span class='va'>vpares</span>,
+  vpares <span class='op'>=</span> <span class='cn'>NULL</span>,
   R.dat <span class='op'>=</span> <span class='cn'>NULL</span>,
   SSB.dat <span class='op'>=</span> <span class='cn'>NULL</span>,
-  years <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/numeric.html'>as.numeric</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span><span class='op'>(</span><span class='va'>vpares</span><span class='op'>$</span><span class='va'>naa</span><span class='op'>)</span><span class='op'>)</span>,
-  return.df <span class='op'>=</span> <span class='cn'>FALSE</span>
+  release.dat <span class='op'>=</span> <span class='cn'>NULL</span>,
+  years <span class='op'>=</span> <span class='cn'>NULL</span>,
+  weight.year <span class='op'>=</span> <span class='cn'>NULL</span>,
+  return.df <span class='op'>=</span> <span class='cn'>TRUE</span>
 <span class='op'>)</span></code></pre></div>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -147,6 +149,22 @@
     <tr>
       <th>vpares</th>
       <td><p>VPAの結果のオブジェクト</p></td>
+    </tr>
+    <tr>
+      <th>R.dat</th>
+      <td><p>VPAの結果オブジェクトでなく直接データを与えたい場合の加入の値</p></td>
+    </tr>
+    <tr>
+      <th>SSB.dat</th>
+      <td><p>VPAの結果オブジェクトでなく直接データを与えたい場合の親魚量の値</p></td>
+    </tr>
+    <tr>
+      <th>release.dat</th>
+      <td><p>VPAの結果オブジェクトでなく直接データを与えたい場合の放流尾数の値</p></td>
+    </tr>
+    <tr>
+      <th>return.df</th>
+      <td><p>データフレームとして結果を返すか。このオプション関係なくデータフレームとして返すように変更したので、近いうちに廃止予定</p></td>
     </tr>
     </table>
 

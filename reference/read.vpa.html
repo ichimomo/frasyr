@@ -144,6 +144,7 @@
   faa.label <span class='op'>=</span> <span class='st'>"fishing mortality at age"</span>,
   Fc.label <span class='op'>=</span> <span class='st'>"Current F"</span>,
   naa.label <span class='op'>=</span> <span class='st'>"numbers at age"</span>,
+  release.label <span class='op'>=</span> <span class='st'>"release dat"</span>,
   Blimit <span class='op'>=</span> <span class='cn'>NULL</span>,
   Pope <span class='op'>=</span> <span class='cn'>NULL</span>,
   plus.group <span class='op'>=</span> <span class='cn'>NULL</span>,
@@ -156,6 +157,10 @@
     <tr>
       <th>tfile</th>
       <td><p>資源計算結果がまとめられたcsvファイルの名前</p></td>
+    </tr>
+    <tr>
+      <th>release.label</th>
+      <td><p>放流データを読み込みたい場合。ここで指定したラベルをつけて、年齢を行、年を列とするデータを入れる（catch at ageと同じ構造だが、年齢は必要な年齢だけ取り出した形で良い）</p></td>
     </tr>
     <tr>
       <th>Pope</th>

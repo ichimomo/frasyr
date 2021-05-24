@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>csvデータを読み込んでvpa用のデータを作成する関数 — data.handler • frasyr</title>
+<title>fit.SRとfit.SRregimeの重み付け（どのデータを使うか）の設定方法は、引数wで与える場合とSRdata$weightで与える場合の２パターンある。両者が矛盾なく設定されているかを確認するための関数 — check_consistent_w • frasyr</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,8 @@
 
 
 
-<meta property="og:title" content="csvデータを読み込んでvpa用のデータを作成する関数 — data.handler" />
-<meta property="og:description" content="csvデータを読み込んでvpa用のデータを作成する関数" />
+<meta property="og:title" content="fit.SRとfit.SRregimeの重み付け（どのデータを使うか）の設定方法は、引数wで与える場合とSRdata$weightで与える場合の２パターンある。両者が矛盾なく設定されているかを確認するための関数 — check_consistent_w" />
+<meta property="og:description" content="fit.SRとfit.SRregimeの重み付け（どのデータを使うか）の設定方法は、引数wで与える場合とSRdata$weightで与える場合の２パターンある。両者が矛盾なく設定されているかを確認するための関数" />
 
 
 
@@ -124,51 +124,17 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>csvデータを読み込んでvpa用のデータを作成する関数</h1>
+    <h1>fit.SRとfit.SRregimeの重み付け（どのデータを使うか）の設定方法は、引数wで与える場合とSRdata$weightで与える場合の２パターンある。両者が矛盾なく設定されているかを確認するための関数</h1>
     
-    <div class="hidden name"><code>data.handler.Rd</code></div>
+    <div class="hidden name"><code>check_consistent_w.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>csvデータを読み込んでvpa用のデータを作成する関数</p>
+    <p>fit.SRとfit.SRregimeの重み付け（どのデータを使うか）の設定方法は、引数wで与える場合とSRdata$weightで与える場合の２パターンある。両者が矛盾なく設定されているかを確認するための関数</p>
     </div>
 
-    <div class="ref-usage sourceCode"><pre class='sourceCode r'><code><span class='fu'>data.handler</span><span class='op'>(</span>
-  <span class='va'>caa</span>,
-  <span class='va'>waa</span>,
-  <span class='va'>maa</span>,
-  index <span class='op'>=</span> <span class='cn'>NULL</span>,
-  M <span class='op'>=</span> <span class='fl'>0.4</span>,
-  maa.tune <span class='op'>=</span> <span class='cn'>NULL</span>,
-  waa.catch <span class='op'>=</span> <span class='cn'>NULL</span>,
-  catch.prop <span class='op'>=</span> <span class='cn'>NULL</span>,
-  release.dat <span class='op'>=</span> <span class='cn'>NULL</span>
-<span class='op'>)</span></code></pre></div>
+    <div class="ref-usage sourceCode"><pre class='sourceCode r'><code><span class='fu'>check_consistent_w</span><span class='op'>(</span><span class='va'>w</span>, <span class='va'>SRdata</span><span class='op'>)</span></code></pre></div>
 
-    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
-    <table class="ref-arguments">
-    <colgroup><col class="name" /><col class="desc" /></colgroup>
-    <tr>
-      <th>caa</th>
-      <td><p>catch at age</p></td>
-    </tr>
-    <tr>
-      <th>waa</th>
-      <td><p>weight at age</p></td>
-    </tr>
-    <tr>
-      <th>maa</th>
-      <td><p>maturity at age</p></td>
-    </tr>
-    <tr>
-      <th>maa.tune</th>
-      <td><p>チューニングに使うmaturity at ageが異なる場合</p></td>
-    </tr>
-    <tr>
-      <th>waa.catch</th>
-      <td><p>abundanceとcatchでwaaが異なる場合</p></td>
-    </tr>
-    </table>
 
 
   </div>
