@@ -21,6 +21,7 @@ NULL
 #' @param SSB.dat VPAの結果オブジェクトでなく直接データを与えたい場合の親魚量の値
 #' @param release.dat VPAの結果オブジェクトでなく直接データを与えたい場合の放流尾数の値
 #' @param return.df データフレームとして結果を返すか。このオプション関係なくデータフレームとして返すように変更したので、近いうちに廃止予定
+#' @param weight.year fit.SRに渡すとき、フィットの対象とする年を指定する。特例として０を与えると、全部の年のデータが使われるようになる。返り値にweightという列が加わる。
 #' 
 #' @encoding UTF-8
 #' 
@@ -103,6 +104,10 @@ get.SRdata <- function(vpares=NULL,
     if(!is.null(weight.year)){
         dat.df$weight <- 0
         dat.df$weight[dat$year %in% weight.year]  <- 1
+
+        if(weight.year==0){
+            dat.df$weight[]  <- 1
+        }
     }
     return(dat.df)
     
