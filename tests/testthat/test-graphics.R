@@ -37,14 +37,14 @@ test_that("plot_SRdata", {
   g1 <- plot_SRdata(SRdata_pma, type="gg")
   g2 <- plot_SRdata(SRdata_pma)
   expect_equal(class(g1)[1],"gg")
-  expect_equal(class(g2)[1],"NULL") 
+  expect_equal(class(g2)[1],"NULL")
 })
 
 test_that("SRplot_gg", {
   g1 <- SRplot_gg(res_sr_HSL1)
   g2 <- SRplot_gg(res_sr_HSL2)
   expect_equal(class(g1)[1],"gg")
-  expect_equal(class(g2)[1],"gg") 
+  expect_equal(class(g2)[1],"gg")
 })
 
 test_that("compare_SRfit",{
@@ -65,20 +65,20 @@ test_that("SRregime_plot",{
   # 本当の意味でのテストにはなっていない
   expect_equal(class(g1)[1],"gg")
   (g1 <- compare_SRfit(list(resSRregime, resSRregime),
-                       biomass.unit=1000, number.unit=1000))
-  expect_equal(class(g1)[1],"gg")  
+                       biomass.unit=1000, number.unit=1000,newplot = F))
+  expect_equal(class(g1)[1],"gg")
 })
 
 test_that("SRregime_plot",{
     data(res_sr_HSL1)
     data(res_sr_HSL2)
     (g1 <- compare_SRfit(list(HSL1=res_sr_HSL1, HSL2=res_sr_HSL2),
-                         biomass.unit=1000, number.unit=1000))
-    expect_equal(class(g1)[1],"gg")      
+                         biomass.unit=1000, number.unit=1000,newplot = F))
+    expect_equal(class(g1)[1],"gg")
     (g1 <- compare_SRfit(list(L1=list(res_sr_HSL1,res_sr_HSL1),
                               L2=list(res_sr_HSL1,res_sr_HSL2)),
-                         biomass.unit=1000, number.unit=1000))    
-    expect_equal(class(g1)[1],"gg")      
+                         biomass.unit=1000, number.unit=1000,newplot = F))
+    expect_equal(class(g1)[1],"gg")
 
 })
 
@@ -154,7 +154,7 @@ test_that("compare_MSY",{
 #})
 
 test_that("compare_kobeII",{
-  
+
 })
 
 test_that("plot_sprypr", {
@@ -163,9 +163,9 @@ test_that("plot_sprypr", {
 })
 
 test_that("plot_SR_AReffect", {
-  
+
   SRdata <- get.SRdata(res_vpa)
   res_SR <- fit.SR(SRdata,SR="BH",AR=1,out.AR=FALSE)
   (g <- plot_SR_AReffect(res_SR))
-  
+
 })
