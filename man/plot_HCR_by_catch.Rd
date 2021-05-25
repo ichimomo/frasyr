@@ -25,8 +25,7 @@ plot_HCR_by_catch(
   is.text = TRUE,
   HCR_function_name = "HCR_default",
   Pope = TRUE,
-  RP.label = c("\\u76ee\\u6a19\\u7ba1\\u7406\\u57fa\\u6e96\\u5024",
-    "\\u9650\\u754c\\u7ba1\\u7406\\u57fa\\u6e96\\u5024", "\\u7981\\u6f01\\u6c34\\u6e96")
+  RP.label = c("目標管理基準値", "限界管理基準値", "禁漁水準")
 )
 }
 \arguments{

@@ -105,7 +105,7 @@ get.SRdata <- function(vpares=NULL,
         dat.df$weight <- 0
         dat.df$weight[dat$year %in% weight.year]  <- 1
 
-        if(weight.year==0){
+        if(length(weight.year)==1 && weight.year==0){
             dat.df$weight[]  <- 1
         }
     }

@@ -543,7 +543,7 @@ compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000, newplot=T
 #' @examples
 #' \dontrun{
 #' data(res_vpa)
-#' SRdata <- get.SRdata(res_vpa)
+#' SRdata <- get.SRdata(res_vpa, weight.year=1988:2015)
 #' resSRregime <- fit.SRregime(SRdata, SR="HS", method="L2",
 #'                             regime.year=c(1994,2003), regime.key=c(0,1,0),
 #'                             regime.par = c("a","b","sd")[2:3])
@@ -554,11 +554,17 @@ compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000, newplot=T
 #' @export
 #'
 
-SRregime_plot <- function (SRregime_result,xscale=1000,xlabel="SSB",yscale=1,ylabel="R",
+SRregime_plot <- plot_SRregime <- function (SRregime_result,xscale=1000,xlabel="SSB",yscale=1,ylabel="R",
                            labeling.year = NULL, show.legend = TRUE, legend.title = "Regime",regime.name = NULL,
                            base_size = 16, add.info = TRUE) {
   pred_data = SRregime_result$pred %>% mutate(Category = "Pred")
   obs_data = select(SRregime_result$pred_to_obs, -Pred, -resid) %>% mutate(Category = "Obs")
+  if(!is.null(SRregime_result$input$SRdata$weight)){
+    obs_data$weight <- factor(SRregime_result$input$SRdata$weight,levels=c("0","1"))
+  }
+  else{
+    obs_data$weight <- factor(1,levels=c("0","1"))
+    }
   combined_data = full_join(pred_data, obs_data) %>%
     mutate(Year = as.double(Year))
   if (is.null(labeling.year)) labeling.year <- c(min(obs_data$Year),obs_data$Year[obs_data$Year %% 5 == 0],max(obs_data$Year))
@@ -567,7 +573,9 @@ SRregime_plot <- function (SRregime_result,xscale=1000,xlabel="SSB",yscale=1,yla
     mutate(SSB = SSB/xscale, R = R/yscale)
   g1 = ggplot(combined_data, aes(x=SSB,y=R,label=label)) +
     geom_path(data=dplyr::filter(combined_data, Category=="Pred"),aes(group=Regime,colour=Regime,linetype=Regime),size=2, show.legend = show.legend)+
-    geom_point(data=dplyr::filter(combined_data, Category=="Obs"),aes(group=Regime,colour=Regime),size=3, show.legend = show.legend)+
+    geom_point(data=dplyr::filter(combined_data, Category=="Obs"),aes(group=Regime,colour=Regime, shape=weight),size=3, show.legend = show.legend)+
+    scale_shape_manual(values = c(3, 21)) +
+    scale_color_manual(values = c(1, 2)) +
     geom_path(data=dplyr::filter(combined_data, Category=="Obs"),colour="darkgray",size=1)+
     xlab(xlabel)+ylab(ylabel)+
     ggrepel::geom_label_repel()+
@@ -577,7 +585,7 @@ SRregime_plot <- function (SRregime_result,xscale=1000,xlabel="SSB",yscale=1,yla
     if (is.null(regime.name)) {
       regime.name = unique(combined_data$Regime)
     }
-    g1 = g1 + scale_colour_hue(name=legend.title, labels = regime.name) +
+    g1 = g1 + #scale_colour_hue(name=legend.title, labels = regime.name) +
       scale_linetype_discrete(name=legend.title, labels = regime.name)
   }
   if (add.info) {
