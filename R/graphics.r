@@ -309,12 +309,32 @@ plot_SRdata <- function(SRdata, type=c("classic","gg")[1]){
 #' 再生産関係をプロットする関数
 #'
 #' @param SR_result fit.SRの結果のオブジェクト
+#' @param refs 管理基準値 (list(Blimit=0, Bmsy=10, Bban=0))
+#' @param
+#' @param
+#' @param
+#' @param
+#' 
 #' @encoding UTF-8
 #'
+#' @examples
+#' \dontrun{
+#'   data(res_sr_HSL1)
+#'   plot_SR(res_sr_HSL1)
+#'   plot_SR(res_sr_HSL1, refs=list(Blimit=20000, Bmsy=60000, Bban=0),
+#'           recruit_intercept=100, plot_CI=TRUE)
+#'
+#'   SRdata2 <- res_sr_HSL1$input$SRdata %>% as.data.frame()
+#'   SRdata2$weight <- 1
+#'   SRdata2$release <- 100 # 放流データがある場合
+#'   SRdata2$weight[length(SRdata2$weight)] <- 0 # 最後の年をフィットに使わない設定
+#'   res_SR2 <- fit.SR(SRdata=SRdata2, method="L1", AR=0)
+#'   plot_SR(res_SR2)
+#' }
 #' @export
 #'
 
-SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,ylabel="尾",
+SRplot_gg <- plot.SR <- plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,ylabel="尾",
                                  labeling.year=NULL,add.info=TRUE, recruit_intercept=0,
                                  plot_CI=FALSE, CI=0.9){
 
@@ -329,14 +349,16 @@ SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千ト�
   }
 
   SRdata <- as_tibble(SR_result$input$SRdata) %>%
-    mutate(type="obs")
+      mutate(type="obs")
+  if(is.null(SRdata$weight)) SRdata$weight <- 1
+  SRdata <- SRdata %>% mutate(weight=factor(weight,levels=c("0","1")))
   SRdata.pred <- as_tibble(SR_result$pred) %>%
     mutate(type="pred", year=NA, R=R)
   
   is_release_data <- "release" %in% names(SR_result$input$SRdata)
   if(is_release_data){
     SRdata.release <- SR_result$input$SRdata %>% mutate(allR=release+R) %>%
-      select(-R, -release) %>% rename(R=allR) %>% mutate(type="release")
+      select(-R, -release) %>% rename(R=allR) %>% mutate(type="release", weight=factor(weight, levels=c("0","1")))
   }
   else{
     SRdata.release <- NULL
@@ -375,7 +397,8 @@ SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千ト�
   g1 <- g1+  geom_path(data=dplyr::filter(alldata,type=="obs"),
                        aes(y=R,x=SSB),color="black") +
     geom_point(data=dplyr::filter(alldata,type=="obs"),
-               aes(y=R,x=SSB),shape=21,fill="white") +
+               aes(y=R,x=SSB,shape=weight),fill="white") +
+    scale_shape_manual(values = c(3, 21)) +
     ggrepel::geom_text_repel(data=dplyr::filter(alldata,type=="obs"),
                              segment.alpha=0.5,nudge_y=5,
                              aes(y=R,x=SSB,label=pick.year)) +
@@ -388,7 +411,7 @@ SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千ト�
 
   if(is_release_data){
     g1 <- g1 + geom_point(data=dplyr::filter(alldata,type=="release"),
-                          aes(y=R,x=SSB),shape=3)
+                          aes(y=R,x=SSB,shape=weight),color=gray(0.5))
   }
 
   if(recruit_intercept>0){
@@ -400,8 +423,11 @@ SRplot_gg <- plot.SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千ト�
   }
 
   if(add.info){
-    g1 <- g1+labs(caption=str_c("関数形: ",SR_result$input$SR,", 自己相関: ",SR_result$input$AR,
-                                ", 最適化法",SR_result$input$method,", AICc: ",round(SR_result$AICc,2)))
+    cap1 <- str_c("関数形: ",SR_result$input$SR,", 自己相関: ",SR_result$input$AR,
+                  ", 最適化法",SR_result$input$method,", AICc: ",round(SR_result$AICc,2))
+    if(sum(SRdata$weight=="0")>0) cap1 <- str_c(cap1, "\n パラメータ推定に利用（丸）,利用していない（バツ） ")
+    if(is_release_data) cap1 <- str_c(cap1, "\n 灰色：放流＋天然、黒：天然のみ")
+    g1 <- g1+labs(caption=cap1)
   }
 
   if(!is.null(refs)){
