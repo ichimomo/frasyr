@@ -9,9 +9,9 @@ SRplot_gg(
   SR_result,
   refs = NULL,
   xscale = 1000,
-  xlabel = "\\u5343繝医Φ",
+  xlabel = "千トン",
   yscale = 1,
-  ylabel = "\\u5c3e",
+  ylabel = "尾",
   labeling.year = NULL,
   add.info = TRUE,
   recruit_intercept = 0,
@@ -21,7 +21,24 @@ SRplot_gg(
 }
 \arguments{
 \item{SR_result}{fit.SRの結果のオブジェクト}
+
+\item{refs}{管理基準値 (list(Blimit=0, Bmsy=10, Bban=0))}
 }
 \description{
 再生産関係をプロットする関数
+}
+\examples{
+\dontrun{
+  data(res_sr_HSL1)
+  plot_SR(res_sr_HSL1)
+  plot_SR(res_sr_HSL1, refs=list(Blimit=20000, Bmsy=60000, Bban=0),
+          recruit_intercept=100, plot_CI=TRUE)
+
+  SRdata2 <- res_sr_HSL1$input$SRdata \%>\% as.data.frame()
+  SRdata2$weight <- 1
+  SRdata2$release <- 100 # 放流データがある場合
+  SRdata2$weight[length(SRdata2$weight)] <- 0 # 最後の年をフィットに使わない設定
+  res_SR2 <- fit.SR(SRdata=SRdata2, method="L1", AR=0)
+  plot_SR(res_SR2)
+}
 }
