@@ -152,6 +152,7 @@ validate_sr <- function(SR = NULL, method = NULL, AR = NULL, out.AR = NULL, res_
 #' @param p0 \code{optim}で設定する初期値
 #' @param bio_par data.frame(waa=c(100,200,300),maa=c(0,1,1),M=c(0.3,0.3,0.3)) のような生物パラメータをあらわすデータフレーム。waaは資源量を計算するときのweight at age, maaはmaturity at age, Mは自然死亡係数。これを与えると、steepnessやR0も計算して返す
 #' @param plus_group hなどを計算するときに、プラスグループを考慮するか
+#' @param HS_fix_b SR=HSのとき、折れ点bを固定して計算したい時に値を代入。デフォルットはNULL
 #' # @param do_check.SRfit 計算が終わったあとでdo_check.SRfitを実施し、収束していなかった場合に１回だけ再計算するか（余計に時間がかかる）。デフォルトはFALSE
 #'
 #' @encoding UTF-8
@@ -232,6 +233,8 @@ fit.SR <- function(SRdata,
   if (SR=="RI") SRF <- function(x,a,b) a*x*exp(-b*x)
 
   if (length(SRdata$R) != length(w)) stop("The length of 'w' is not appropriate!")
+
+  if (!is.null(HS_fix_b) && SR!="HS" ) stop("Set SR type as HS if you use HS_fix_b option!")
 
   one_max = max(SRdata$year[w>0])
   zero_min =ifelse(sum(w==0)>0, min(SRdata$year[w==0]),one_max)
