@@ -313,7 +313,7 @@ fit.SR <- function(SRdata,
     }
     }
 
-  if(!is.null(HS_fix_b)){
+  if(is.null(HS_fix_b)){
     if (is.null(p0)) {
       a.range <- range(rec/ssb)
       b.range <- range(1/ssb)
@@ -399,7 +399,7 @@ fit.SR <- function(SRdata,
   Res$obj.f2 <- obj.f2
   Res$opt <- opt
 
-  if(!is.null(HS_fix_b)){
+  if(is.null(HS_fix_b)){
     a <- exp(opt$par[1])
     b <- ifelse(SR=="HS",min(ssb)+(max(ssb)-min(ssb))/(1+exp(-opt$par[2])),exp(opt$par[2]))
     rho <- ifelse(AR==0,0,ifelse(out.AR,0,1/(1+exp(-opt$par[3]))))
