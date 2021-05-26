@@ -21,9 +21,9 @@ NULL
 #' @param SSB.dat VPAの結果オブジェクトでなく直接データを与えたい場合の親魚量の値
 #' @param release.dat VPAの結果オブジェクトでなく直接データを与えたい場合の放流尾数の値
 #' @param return.df データフレームとして結果を返すか。このオプション関係なくデータフレームとして返すように変更したので、近いうちに廃止予定
-#' 
+#'
 #' @encoding UTF-8
-#' 
+#'
 #' @export
 get.SRdata <- function(vpares=NULL,
                        R.dat = NULL,
@@ -32,10 +32,10 @@ get.SRdata <- function(vpares=NULL,
                        years = NULL,
                        weight.year = NULL,
                        return.df = TRUE){
-    
+
     is.release <- !is.null(release.dat) | !is.null(vpares$input$dat$release.dat)
     if(is.null(years) && !is.null(vpares)) years <- as.numeric(colnames(vpares$naa))
-    
+
     # R.datとSSB.datだけが与えられた場合、それを使ってシンプルにフィットする
     if (!is.null(R.dat) & !is.null(SSB.dat)) {
         assertthat::assert_that(length(R.dat)==length(SSB.dat))
@@ -75,7 +75,7 @@ get.SRdata <- function(vpares=NULL,
                 dat$release <- release.dat
             }
         }
-        
+
     # 加入年齢分だけずらす
         dat$R    <- dat$R[(L+1):n]
         dat$SSB  <- dat$SSB[1:(n-L)]
@@ -89,7 +89,7 @@ get.SRdata <- function(vpares=NULL,
 
     assertthat::assert_that(all(dat[["R"]] > 0))
     class(dat) <- "SRdata"
-    
+
     #if (return.df == TRUE) return(data.frame(year = dat$year,
     #SSB  = dat$SSB,
     #                                         R    = dat$R,
@@ -105,7 +105,7 @@ get.SRdata <- function(vpares=NULL,
         dat.df$weight[dat$year %in% weight.year]  <- 1
     }
     return(dat.df)
-    
+
 }
 
 #' 再生産関係のパラメタが想定した形になっているかを確認
@@ -204,7 +204,8 @@ fit.SR <- function(SRdata,
                    out.AR = TRUE, #自己相関係数rhoを外で推定するか
                    bio_par = NULL,
                    plus_group = TRUE,
-                   is_jitter = FALSE
+                   is_jitter = FALSE,
+                   HS_fix_b = NULL
 #                   do_check.SRfit = FALSE # 計算が終わったあとでdo_check.SRfitを実施し、収束していなかった場合に１回だけ再計算するか（余計に時間がかかる）
 ){
   validate_sr(SR = SR, method = method, AR = AR, out.AR = out.AR)
@@ -216,8 +217,8 @@ fit.SR <- function(SRdata,
   tmp <- check_consistent_w(w, SRdata)
   SRdata <- tmp$SRdata
   w <- arglist$w <- tmp$w
-  
-  
+
+
   if (AR==0) out.AR <- FALSE
   rec <- SRdata$R
   ssb <- SRdata$SSB
@@ -312,38 +313,39 @@ fit.SR <- function(SRdata,
     }
     }
 
-  if (is.null(p0)) {
-    a.range <- range(rec/ssb)
-    b.range <- range(1/ssb)
-    if (SR == "HS") b.range <- range(ssb)
-    grids <- as.matrix(expand.grid(
-      seq(a.range[1],a.range[2],len=length),
-      seq(b.range[1],b.range[2],len=length)
-    ))
-    init <- as.numeric(grids[which.min(sapply(1:nrow(grids),function(i) obj.f(grids[i,1],grids[i,2],0))),])
-    init[1] <- log(init[1])
-    init[2] <- ifelse (SR == "HS",-log(max(0.000001,(max(ssb)-min(ssb))/max(init[2]-min(ssb),0.000001)-1)),log(init[2]))
-    if (AR != 0 && !isTRUE(out.AR)) init[3] <- 0
-  } else {
-    init = p0
-  }
-
-  if (SR == "HS") {
-    if (AR == 0 || out.AR) {
-      obj.f2 <- function(x) obj.f(exp(x[1]),min(ssb)+(max(ssb)-min(ssb))/(1+exp(-x[2])),0)
+  if(!is.null(HS_fix_b)){
+    if (is.null(p0)) {
+      a.range <- range(rec/ssb)
+      b.range <- range(1/ssb)
+      if (SR == "HS") b.range <- range(ssb)
+      grids <- as.matrix(expand.grid(
+        seq(a.range[1],a.range[2],len=length),
+        seq(b.range[1],b.range[2],len=length)
+      ))
+      init <- as.numeric(grids[which.min(sapply(1:nrow(grids),function(i) obj.f(grids[i,1],grids[i,2],0))),])
+      init[1] <- log(init[1])
+      init[2] <- ifelse (SR == "HS",-log(max(0.000001,(max(ssb)-min(ssb))/max(init[2]-min(ssb),0.000001)-1)),log(init[2]))
+      if (AR != 0 && !isTRUE(out.AR)) init[3] <- 0
     } else {
-      obj.f2 <-  function(x) obj.f(exp(x[1]),min(ssb)+(max(ssb)-min(ssb))/(1+exp(-x[2])),1/(1+exp(-x[3])))
+      init = p0
     }
-  } else {
-    if (AR == 0 || out.AR) {
-      obj.f2 <- function(x) obj.f(exp(x[1]),exp(x[2]),0)
-    } else {
-      obj.f2 <-  function(x) obj.f(exp(x[1]),exp(x[2]),1/(1+exp(-x[3])))
-    }
-  }
 
-  opt <- optim(init,obj.f2)
-  #if (rep.opt) {
+    if (SR == "HS") {
+      if (AR == 0 || out.AR) {
+        obj.f2 <- function(x) obj.f(exp(x[1]),min(ssb)+(max(ssb)-min(ssb))/(1+exp(-x[2])),0)
+      } else {
+        obj.f2 <-  function(x) obj.f(exp(x[1]),min(ssb)+(max(ssb)-min(ssb))/(1+exp(-x[2])),1/(1+exp(-x[3])))
+      }
+    } else {
+      if (AR == 0 || out.AR) {
+        obj.f2 <- function(x) obj.f(exp(x[1]),exp(x[2]),0)
+      } else {
+        obj.f2 <-  function(x) obj.f(exp(x[1]),exp(x[2]),1/(1+exp(-x[3])))
+      }
+    }
+
+    opt <- optim(init,obj.f2)
+    #if (rep.opt) {
     for (i in 1:100) {
       if(is_jitter==FALSE) par2 <- opt$par
       if(is_jitter==TRUE)  par2 <- opt$par + rnorm(length(opt$par),0,5)
@@ -351,8 +353,45 @@ fit.SR <- function(SRdata,
       if (abs(opt$value-opt2$value)<1e-6) break
       opt <- opt2
     }
-  #}
-  opt <- optim(opt$par,obj.f2,method="BFGS",hessian=hessian)
+    #}
+    opt <- optim(opt$par,obj.f2,method="BFGS",hessian=hessian)
+
+  }
+  else{
+    if (is.null(p0)) {
+      a.range <- range(rec/ssb)
+      grids <- as.matrix(seq(a.range[1],a.range[2],len=length))
+      init <- as.numeric(grids[which.min(sapply(1:length(grids),function(i) obj.f(grids[i,1],HS_fix_b,0))),])
+      init[1] <- log(init[1])
+      if (AR != 0 && !isTRUE(out.AR)) init[2] <- 0
+    } else {
+      init = p0
+    }
+
+    if (AR == 0 || out.AR) {
+      obj.f2 <- function(x) obj.f(exp(x[1]),HS_fix_b,0)
+      opt <- optim(init,obj.f2,method ="Brent",upper = log(max(a.range)), lower = log(min(a.range)))
+      #if (rep.opt) {
+      #}
+
+    } else {
+      obj.f2 <-  function(x) obj.f(exp(x[1]),HS_fix_b,1/(1+exp(-x[2])))
+
+      opt <- optim(init,obj.f2)
+      #if (rep.opt) {
+      for (i in 1:100) {
+        if(is_jitter==FALSE) par2 <- opt$par
+        if(is_jitter==TRUE)  par2 <- opt$par + rnorm(length(opt$par),0,5)
+        opt2 <- optim(par2,obj.f2)
+        if (abs(opt$value-opt2$value)<1e-6) break
+        opt <- opt2
+      }
+      #}
+      opt <- optim(opt$par,obj.f2,method="BFGS",hessian=hessian)
+
+    }
+
+  }
 
   Res <- list()
   Res$input <- arglist
@@ -360,9 +399,15 @@ fit.SR <- function(SRdata,
   Res$obj.f2 <- obj.f2
   Res$opt <- opt
 
-  a <- exp(opt$par[1])
-  b <- ifelse(SR=="HS",min(ssb)+(max(ssb)-min(ssb))/(1+exp(-opt$par[2])),exp(opt$par[2]))
-  rho <- ifelse(AR==0,0,ifelse(out.AR,0,1/(1+exp(-opt$par[3]))))
+  if(!is.null(HS_fix_b)){
+    a <- exp(opt$par[1])
+    b <- ifelse(SR=="HS",min(ssb)+(max(ssb)-min(ssb))/(1+exp(-opt$par[2])),exp(opt$par[2]))
+    rho <- ifelse(AR==0,0,ifelse(out.AR,0,1/(1+exp(-opt$par[3]))))
+  } else{
+    a <- exp(opt$par[1])
+    b <- HS_fix_b
+    rho <- ifelse(AR==0,0,ifelse(out.AR,0,1/(1+exp(-opt$par[2]))))
+  }
 
   if (method == "L2" && AR==1 && out.AR==FALSE && zero_min<one_max) {
     resid = obj.f(a=a,b=b,rho=rho,out="resid")
@@ -954,8 +999,8 @@ fit.SRregime <- function(
   #  if(is.null(w)) w <- rep(1,length(SRdata$R))
   tmp <- check_consistent_w(w, SRdata)
   SRdata <- tmp$SRdata
-  w <- arglist$w <- tmp$w  
-  
+  w <- arglist$w <- tmp$w
+
   rec <- SRdata$R
   ssb <- SRdata$SSB
   N <- length(rec)
