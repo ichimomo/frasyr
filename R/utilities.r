@@ -896,7 +896,7 @@ out.vpa <- function(res=NULL,    # VPA result
     kobeII.table_name <- names(kobeII)
     for(i in 1:length(kobeII.table_name)){
       tmptable <- kobeII[kobeII.table_name[i]][[1]]
-      if(!is.na(tmptable)){
+      if(!is.na(tmptable) && nrow(tmptable)>0){
         write(str_c("\n# ",kobeII.table_name[i]),file=csvname,append=T)
         write_csv(tmptable,path=csvname,append=TRUE,
                   col_names = TRUE)
