@@ -139,9 +139,11 @@
   faa_vector <span class='op'>=</span> <span class='cn'>NULL</span>,
   faa_vector_year <span class='op'>=</span> <span class='cn'>NULL</span>,
   faa_bio_year <span class='op'>=</span> <span class='cn'>NULL</span>,
+  faa_bio <span class='op'>=</span> <span class='cn'>NULL</span>,
   saa_vector <span class='op'>=</span> <span class='cn'>NULL</span>,
   saa_vector_year <span class='op'>=</span> <span class='cn'>NULL</span>,
-  saa_bio_year <span class='op'>=</span> <span class='cn'>NULL</span>
+  saa_bio_year <span class='op'>=</span> <span class='cn'>NULL</span>,
+  saa_bio <span class='op'>=</span> <span class='cn'>NULL</span>
 <span class='op'>)</span></code></pre></div>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -164,6 +166,10 @@
       <td><p>漁獲圧をSPRに換算するときに生物パラメータを取り出す年の範囲(data_futureがある場合将来予測年も指定可能。生物パラメータが密度によって変わる場合)。list(waa = 2014:2018, waa.catch = 2014:2018, maa = 2016:2018,M   = 2014:2018)とすると生物パラメータによって異なる期間の指定も可能。下のsaa_bio_yearも同様</p></td>
     </tr>
     <tr>
+      <th>faa_bio</th>
+      <td><p>漁獲圧をSPRに換算するとき用いる生物パラメータそのものtibble(waa=waa, maa=maa, M=M)として指定する</p></td>
+    </tr>
+    <tr>
       <th>saa_vector</th>
       <td><p>選択率を代表するベクトル</p></td>
     </tr>
@@ -174,6 +180,10 @@
     <tr>
       <th>saa_bio_year</th>
       <td><p>選択率をSPRに換算するときに生物パラメータを取り出す年の範囲(data_futureがある場合将来予測年も指定可能。生物パラメータが密度によって変わる場合)</p></td>
+    </tr>
+    <tr>
+      <th>saa_bio</th>
+      <td><p>選択率をSPRに換算するとき用いる生物パラメータそのものtibble(waa=waa, maa=maa, M=M)として指定する</p></td>
     </tr>
     <tr>
       <th>data_future</th>
