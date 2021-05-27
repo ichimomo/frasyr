@@ -1539,6 +1539,11 @@ set_lower_limit_catch <- function(catch_previous_year, catch_current_year, lower
 #'
 #' future_vpaを使ってMSY管理基準値などを計算するwrapper関数
 #'
+#' @param data_future make_future_dataの返り値
+#' @param candidate_PGY PGYの計算候補
+#' @param candidate_B0 b0の計算候補
+#' @param candidate_Babs Babsの計算候補
+#'
 #' @export
 #' @encoding UTF-8
 #'
