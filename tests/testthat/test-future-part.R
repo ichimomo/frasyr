@@ -43,6 +43,7 @@ data_future_test <- make_future_data(res_vpa, # VPAの結果
                                      )
 
 test_that("future_vpa function (with sample vpa data) (level 2)",{
+    
   # check SD0
   x <- test_sd0_future(data_future_test)
   res_future_test <- x[[1]]
@@ -113,6 +114,12 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
   #expect_equal(round(res_future_test_R$multi,3),0.527)
   # 1000回だと0.527, 100回だと0.537
   expect_equal(round(res_future_test_R$multi,3),0.537)
+
+  res_MSY1 <- est_MSYRP(data_future=data_future_test, candidate_PGY=c(0.1,0.6),
+                        candidate_B0=c(0.2), candidate_Babs=20000)
+  expect_equal(res_MSY1$res_MSY$summary$"Fref/Fcur"[1], res_future_test_R$multi, tol=0.00001)
+  expect_equal(tail(res_future_test_R$summary$SSB,n=1) %>% as.numeric(),
+               res_MSY1$res_MSY$summary$SSB[1] %>% as.numeric(), tol=1)
 
   # MSY計算の場合 (バックワード)
   res_future_test_backward <- future_vpa(tmb_data=data_future_backward$data,
