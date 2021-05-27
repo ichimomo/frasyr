@@ -11,6 +11,7 @@ calc_future_perSPR(
   Fvector,
   is_pope = NULL,
   plus_group = NULL,
+  biopar = NULL,
   Fmax = 10,
   target.col = NULL,
   target.year = NULL,
