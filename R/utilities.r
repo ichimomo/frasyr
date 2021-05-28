@@ -21,6 +21,9 @@ NULL
 #'
 #' 年齢別パラメータを与えて、１年分前進計算する
 #'
+#' @param min.age 最小の年齢（０歳がデフォルト）。数でなくて名前
+#' @param max.age 最大の年齢。数でなくて名前なので、０からスタートして２歳までの場合には、min.age=0, max.age=2とするか、min.age=1, max.age=3とする
+#'
 #' @export
 #' @encoding UTF-8
 
@@ -29,8 +32,9 @@ calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=
   if(is.null(waa.catch)) waa.catch <- waa
   rel.abund <- rep(NA, na)
   rel.abund[1] <- 1
-  for (i in 2:(na-1)) {
-    rel.abund[i] <- rel.abund[i-1]*exp(-M[i-1]-sel[i-1]*Fr)
+    
+  for (i in seq_len(na-1)) {
+    rel.abund[i+1] <- rel.abund[i]*exp(-M[i]-sel[i]*Fr)
   }
   rel.abund[na] <- rel.abund[na-1]*exp(-M[na-1]-sel[na-1]*Fr)*(1-exp(-((max.age-min.age)-(na-2))*(M[na]+sel[na]*Fr)))/(1-exp(-M[na]-sel[na]*Fr))
 
