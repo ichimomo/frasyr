@@ -972,14 +972,14 @@ set_SR_mat <- function(res_vpa=NULL,
                        fix_recruit=NULL
 ){
 
+  nsim <- dim(SR_mat)[[2]]  
   allyear_name <- dimnames(SR_mat)[[1]]
   start_random_rec_year  <- which(allyear_name==start_random_rec_year_name)
   random_rec_year_period <- (start_random_rec_year):length(allyear_name)
 
   # check arguments in fix_recruit
   assertthat::assert_that(sum(!fix_recruit$year %in% allyear_name)==0)
-
-    if(!resid_type%in%c("lognormal","resample","backward")) stop("resid_type is invalid.")
+  if(!resid_type%in%c("lognormal","resample","backward")) stop("resid_type is invalid.")
 
   if(!is.null(model_average_option)){
     weight <- arrange_weight(model_average_option$weight,nsim)
@@ -998,7 +998,7 @@ set_SR_mat <- function(res_vpa=NULL,
     )
   }    
 
-  if(is.null(model_average_option){
+  if(is.null(model_average_option)){
     # define SR function
     if(res_SR$input$SR=="HS"){
       SR_mat[,,"SR_type"] <- 1
@@ -1064,7 +1064,6 @@ set_SR_mat <- function(res_vpa=NULL,
 
       # define future recruitment deviation
       set.seed(seed_number)
-      nsim <- dim(SR_mat)[[2]]
 
       if(resid_type=="lognormal"){
         if(isTRUE(bias_correction)){
@@ -1554,6 +1553,8 @@ est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE,
                       only_lowerPGY="lower", candidate_B0=-1, candidate_Babs=-1, calc_yieldcurve=TRUE,
                       select_Btarget=0, select_Blimit=0, select_Bban=0){
 
+  res_vpa_MSY <- data_future$input$res_vpa
+  res_SR_MSY <-  data_future$input$res_SR
   # F=0からssbがゼロになるまでFを順次大きくしたtraceを実行する
   trace.multi <- unique(sort(c(0.001,seq(from=0,to=2,by=0.1),10,100)))
   trace_pre <- frasyr::trace_future(data_future$data, trace.multi=trace.multi, ncore=ncore)
