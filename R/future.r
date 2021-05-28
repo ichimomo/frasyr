@@ -1534,3 +1534,177 @@ set_lower_limit_catch <- function(catch_previous_year, catch_current_year, lower
   catch_current_year[is_under_lower_catch] <- lower_catch[is_under_lower_catch]
   catch_current_year
 }
+
+
+#'
+#' future_vpaを使ってMSY管理基準値などを計算するwrapper関数
+#'
+#' @param data_future make_future_dataの返り値
+#' @param candidate_PGY PGYの計算候補
+#' @param candidate_B0 b0の計算候補
+#' @param candidate_Babs Babsの計算候補
+#'
+#' @export
+#' @encoding UTF-8
+#'
+
+est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE, candidate_PGY=c(0.1,0.6),
+                      only_lowerPGY="lower", candidate_B0=-1, candidate_Babs=-1, calc_yieldcurve=TRUE,
+                      select_Btarget=0, select_Blimit=0, select_Bban=0){
+
+  # F=0からssbがゼロになるまでFを順次大きくしたtraceを実行する
+  trace.multi <- unique(sort(c(0.001,seq(from=0,to=2,by=0.1),10,100)))
+  trace_pre <- frasyr::trace_future(data_future$data, trace.multi=trace.multi, ncore=ncore)
+  B0stat <- trace_pre %>% dplyr::filter(fmulti==0) %>% mutate(RP_name="B0")
+  trace.multi2 <- unique(range(trace.multi[trace_pre$ssb.mean>0.001]))
+
+  f_range <- range(trace.multi[which.max(trace_pre$catch.mean)+c(-1,1)])
+  f_range[f_range==0] <- 0.0001
+
+  # 以降、初期値はそれを参考に決める
+  res_future_MSY <- future_vpa(tmb_data = data_future$data,
+                               optim_method=optim_method,
+                               multi_init=mean(f_range),
+                               multi_lower=f_range[1],
+                               multi_upper=f_range[2],
+                               compile=compile_tmb)
+
+    MSYstat <- res_future_MSY %>% get.stat(use_new_output=TRUE) %>%
+      mutate(RP_name="MSY")
+
+      # 他管理基準値を推定するためのオブジェクトを作っておく
+    obj_mat <- NULL
+    if(candidate_PGY[1]>0){
+
+        obj_mat <- bind_rows(obj_mat,
+                             tibble(RP_name    = str_c("PGY",candidate_PGY,"lower",sep="_"),
+                                    obj_value  = candidate_PGY * MSYstat$catch.mean,
+                                    multi_init = res_future_MSY$multi*1.2,
+                                    multi_lower= res_future_MSY$multi,
+                                    multi_upper= 10,
+                                    objective="PGY"
+                                    ))
+
+        if(only_lowerPGY=="both"){
+            obj_mat2 <- tibble(RP_name    = str_c("PGY",candidate_PGY,"upper",sep="_"),
+                               obj_value  = candidate_PGY * MSYstat$catch.mean,
+                               multi_init = res_future_MSY$multi*0.5,
+                               multi_upper= res_future_MSY$multi,
+                               multi_lower= 0.001,
+                               objective="PGY")
+            obj_mat <- bind_rows(obj_mat, obj_mat2)
+        }
+    }
+
+    if(candidate_B0[1]>0){
+        fssb.range <- trace.multi[trace_pre$ssb.mean>0.1]
+        obj_mat <- bind_rows(obj_mat,
+                             tibble(RP_name    = str_c("B0-",candidate_B0*100,"%"),
+                                    obj_value  = candidate_B0 * B0stat$ssb.mean,
+                                    multi_init = mean(fssb.range),
+                                    multi_upper= max (fssb.range),
+                                    multi_lower= 0.001,
+                                    objective="SSB"
+                                    ))
+    }
+
+    if(candidate_Babs[1]>0){
+        fssb.range <- trace.multi[trace_pre$ssb.mean>0.1]
+        obj_mat <- bind_rows(obj_mat,
+                             tibble(RP_name    = str_c("Ben-",candidate_Babs,""),
+                                    obj_value  = candidate_Babs,
+                                    multi_init = mean(fssb.range),
+                                    multi_upper= max (fssb.range),
+                                    multi_lower= 0.001,
+                                    objective="SSB"
+                                    ))
+    }
+
+    # obj_matをまとめてmapで回す
+    other_RP_stat <- NULL
+    if(!is.null(obj_mat)){
+
+        other_RP_stat <-
+            purrr::map_dfr(1:nrow(obj_mat),
+                           function(x){
+                               res <- future_vpa(tmb_data     = data_future$data,
+                                                 optim_method = optim_method_msy,
+                                                 multi_init   = obj_mat$multi_init[x],
+                                                 multi_lower  = obj_mat$multi_lower[x],
+                                                 multi_upper  = obj_mat$multi_upper[x],
+                                                 compile      = FALSE,
+                                                 objective    = obj_mat$objective[x],
+                                                 obj_value    = obj_mat$obj_value[x],
+                                                 obj_stat     = "mean") %>%
+                                   get.stat(use_new_output=TRUE)})
+
+        other_RP_stat <- bind_cols(other_RP_stat, select(obj_mat, RP_name))
+        print(bind_cols(obj_mat[,1:2], select(other_RP_stat,catch.mean, ssb.mean)))
+    }
+
+    all.stat <- bind_rows(MSYstat, B0stat, other_RP_stat)
+    sum.stat <- get_summary_stat(all.stat)
+
+    if(calc_yieldcurve==TRUE){
+        # update trace
+        trace.multi2 <- c(res_MSY$summary$"Fref/Fcur",trace.multi2)
+        trace.multi2 <- trace.multi2[trace.multi2>0] %>%
+            purrr::map(function(x) x * c(0.9,0.925,0.95,0.975,1.025,1.05,1.075)) %>%
+            unlist() %>% sort() %>% unique()
+        diff.trace <- diff(log(trace.multi2))
+        trace.multi2[which(mean(diff.trace)<diff.trace)]
+        trace.multi2 <- c(trace.multi2,
+                          trace.multi2[which(mean(diff.trace)<diff.trace)] +
+                          diff.trace[which(mean(diff.trace)<diff.trace)]/2) %>%
+            sort()
+        trace_pre2 <- trace_future(data_future$data,
+                                   trace.multi=trace.multi2, ncore=ncore)
+        trace_pre <- bind_rows(trace_pre,trace_pre2)
+        trace_pre <- trace_pre[!duplicated(trace_pre$ssb.mean),]
+    }
+
+    res_MSY <- lst(all.stat=all.stat, summary=sum.stat$sumvalue,
+                   Fvector=sum.stat$Fvector,input=res_future_MSY$input,
+                   input_data=data_future$input,
+                   trace=trace_pre, res_vpa=res_vpa_MSY, res_SR=res_SR_MSY)
+
+    res_MSY$summary$perSPR <-
+        purrr::map_dbl(1:dim(res_MSY$Fvector)[1],
+                   function(x)
+                       calc_perspr(fout=format_to_old_future(res_future_MSY),
+                                   res_vpa=res_vpa_MSY,Fvector=res_MSY$Fvector[x,]))
+
+    # define RP.definition for Btarget
+    if(select_Btarget!=0){
+        if(select_Btarget<0){
+            print(select(res_MSY$summary,-Catch.CV))
+            select_Btarget <- readline("Enter row number to be Btarget: ")
+            select_Btarget <- as.integer(select_Btarget)
+        }
+        res_MSY$summary$RP.definition[1] <- NA
+        res_MSY$summary$RP.definition[select_Btarget] <- "Btarget0"
+    }
+    # define RP.definition for Blimit
+    if(select_Blimit!=0){
+        if(select_Blimit<0){
+            print(select(res_MSY$summary,-Catch.CV))
+            select_Blimit <- readline("Enter row number to be Blimit: ")
+            select_Blimit <- as.integer(select_Blimit)
+        }
+        res_MSY$summary$RP.definition[which(res_MSY$summary$RP.definition=="Blimit0")] <- NA
+        res_MSY$summary$RP.definition[select_Blimit] <- "Blimit0"
+    }
+    # define RP.definition for Bban
+    if(select_Bban!=0){
+        if(select_Bban<0){
+            print(select(res_MSY$summary,-Catch.CV,-RP.definition))
+            select_Bban <- readline("Enter row number to be Bban: ")
+            select_Bban <- as.integer(select_Bban)
+        }
+        res_MSY$summary$RP.definition[which(res_MSY$summary$RP.definition=="Bban0")] <- NA
+        res_MSY$summary$RP.definition[select_Bban] <- "Bban0"
+    }
+
+  return(lst(res_MSY, res_future_MSY))
+    
+}
