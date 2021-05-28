@@ -979,125 +979,7 @@ set_SR_mat <- function(res_vpa=NULL,
   # check arguments in fix_recruit
   assertthat::assert_that(sum(!fix_recruit$year %in% allyear_name)==0)
 
-  if(!resid_type%in%c("lognormal","resample","backward")) stop("resid_type is invalid.")
-
-  # define SR function
-  if(res_SR$input$SR=="HS"){
-    SR_mat[,,"SR_type"] <- 1
-    SRF <- SRF_HS
-  }
-  if(res_SR$input$SR=="BH"){
-    SR_mat[,,"SR_type"] <- 2
-    SRF <- SRF_BH
-  }
-  if(res_SR$input$SR=="RI"){
-    SR_mat[,,"SR_type"] <- 3
-    SRF <- SRF_RI
-  }
-
-  # define SR parameter
-  if(is.null(regime_shift_option)){
-    SR_mat[,,"a"] <- res_SR$pars$a
-    SR_mat[,,"b"] <- res_SR$pars$b
-    SR_mat[,,"sd"] <- res_SR$pars$sd
-  }
-  else{
-    regime_data <- res_SR$regime_resid %>%
-      left_join(res_SR$regime_pars, by="regime") %>%
-      bind_cols(res_SR$input$SRdata)
-    SR_mat[as.character(regime_data$year),,"a"] <- regime_data$a
-    SR_mat[as.character(regime_data$year),,"b"] <- regime_data$b
-    SR_mat[as.character(regime_data$year),,"sd"] <- regime_data$sd
-    future_regime_par <- res_SR$regime_pars %>% dplyr::filter(regime==regime_shift_option$future_regime)
-    SR_mat[random_rec_year_period,,"a"] <- future_regime_par$a
-    SR_mat[random_rec_year_period,,"b"] <- future_regime_par$b
-    SR_mat[random_rec_year_period,,"sd"] <- future_regime_par$sd
-
-    # どのレジームに属するか明示的に指定されないケースが出てくる。
-    # そういう場合は将来予測のレジームのパラメータを使うようにする→要改善
-    missing_year <- which(!(1:dim(SR_mat)[[1]] %in% c(which(allyear_name %in% as.character(regime_data$year)),random_rec_year_period)))
-
-    if(length(missing_year)>0){
-        SR_mat[missing_year,,"a"] <- future_regime_par$a
-        SR_mat[missing_year,,"b"] <- future_regime_par$b
-        SR_mat[missing_year,,"sd"] <- future_regime_par$sd
-    }
-
-    res_SR$pars$rho <- 0
-  }
-  SR_mat[,,"rho"] <- res_SR$pars$rho
-  SR_mat[random_rec_year_period,,"intercept"] <- recruit_intercept # future intercept
-  if(!is.null(res_SR$input$SRdata$release))
-    SR_mat[as.character(res_SR$input$SRdata$year),,"intercept"] <- res_SR$input$SRdata$release
-
-  if(!is.null(res_vpa)){
-    SR_mat[1:(start_random_rec_year-1),,"ssb"] <- as.numeric(colSums(res_vpa$ssb,na.rm=T))[1:(start_random_rec_year-1)]
-    SR_mat[1:(start_random_rec_year-1),,"recruit"] <- as.numeric(res_vpa$naa[1,1:(start_random_rec_year-1)])
-  }
-
-  recruit_range <- (recruit_age+1):(start_random_rec_year-1)
-  ssb_range     <- 1:(start_random_rec_year-1-recruit_age)
-
-  # re-culcurate past recruitment deviation
-  # intercept=relase fish
-  SR_mat[recruit_range,,"deviance"] <- SR_mat[recruit_range,,"rand_resid"] <-
-      log(SR_mat[recruit_range,,"recruit"]-SR_mat[recruit_range,,"intercept"]) -
-      log(SRF(SR_mat[ssb_range,,"ssb"],SR_mat[recruit_range,,"a"],SR_mat[recruit_range,,"b"]))
-
-  # define future recruitment deviation
-  set.seed(seed_number)
-  nsim <- dim(SR_mat)[[2]]
-
-  if(resid_type=="lognormal"){
-    if(isTRUE(bias_correction)){
-      #            sd_with_AR <- sqrt(res_SR$pars$sd^2/(1-res_SR$pars$rho^2))
-      #            bias_factor <- 0.5* sd_with_AR^2
-      sd_with_AR <- sqrt(SR_mat[,,"sd"]^2/(1-SR_mat[,,"rho"]^2))
-      SR_mat[,,"bias_factor"] <- 0.5 * sd_with_AR^2
-      SR_mat[-random_rec_year_period,,"bias_factor"] <- 0
-    }
-    else{
-      #            bias_factor <- 0
-      SR_mat[,,"bias_factor"] <- 0
-    }
-
-    tmp_SR <- t(SR_mat[random_rec_year_period,,"rand_resid"])
-    tmp_SR[] <- rnorm(nsim*length(random_rec_year_period), mean=0,
-                      sd=t(SR_mat[random_rec_year_period,,"sd"]))
-    SR_mat[random_rec_year_period,,"rand_resid"] <- t(tmp_SR)
-
-    for(t in random_rec_year_period){
-      SR_mat[t, ,"deviance"] <- SR_mat[t-1, ,"deviance"]*SR_mat[t,,"rho"] + SR_mat[t, ,"rand_resid"]
-    }
-    SR_mat[random_rec_year_period,,"deviance"] <- SR_mat[random_rec_year_period,,"deviance"] - SR_mat[random_rec_year_period,,"bias_factor"]
-  }
-
-  if(resid_type=="resample" | resid_type=="backward"){
-    # 推定された残差をそのまま使う
-    if(resample_year_range==0){
-      resample_year_range <- sort(res_SR$input$SRdata$year[res_SR$input$w==1])
-    }
-
-    sampled_residual <- SR_mat[as.character(resample_year_range),,"rand_resid"]
-    if(isTRUE(bias_correction)){
-      #            bias_factor <- log(colMeans(exp(sampled_residual)))
-      SR_mat[random_rec_year_period,,"bias_factor"] <- rep(log(colMeans(exp(sampled_residual))),
-                                                           each=length(random_rec_year_period))
-    }
-    else{
-      #            bias_factor <- rep(0,ncol(sampled_residual))
-      SR_mat[random_rec_year_period,,"bias_factor"] <- 0
-    }
-    for(i in 1:ncol(sampled_residual)){
-      if(resid_type=="resample"){
-        SR_mat[random_rec_year_period,i,"rand_resid"] <- sample(sampled_residual[,i], length(random_rec_year_period), replace=TRUE)
-      }
-      if(resid_type=="backward"){
-        SR_mat[random_rec_year_period,i,"rand_resid"] <- sample_backward(sampled_residual[,i], length(random_rec_year_period), backward_duration)
-      }
-      SR_mat[random_rec_year_period,i,"deviance"] <- SR_mat[random_rec_year_period,i,"rand_resid"]-SR_mat[random_rec_year_period,i,"bias_factor"]
-    }
-  }
+    if(!resid_type%in%c("lognormal","resample","backward")) stop("resid_type is invalid.")
 
   if(!is.null(model_average_option)){
     weight <- arrange_weight(model_average_option$weight,nsim)
@@ -1114,6 +996,126 @@ set_SR_mat <- function(res_vpa=NULL,
                              regime_shift_option = regime_shift_option,
                              bias_correction = bias_correction
     )
+  }    
+
+  if(is.null(model_average_option){
+    # define SR function
+    if(res_SR$input$SR=="HS"){
+      SR_mat[,,"SR_type"] <- 1
+      SRF <- SRF_HS
+    }
+    if(res_SR$input$SR=="BH"){
+      SR_mat[,,"SR_type"] <- 2
+      SRF <- SRF_BH
+    }
+    if(res_SR$input$SR=="RI"){
+      SR_mat[,,"SR_type"] <- 3
+      SRF <- SRF_RI
+    }
+
+    # define SR parameter
+    if(is.null(regime_shift_option)){
+      SR_mat[,,"a"] <- res_SR$pars$a
+      SR_mat[,,"b"] <- res_SR$pars$b
+      SR_mat[,,"sd"] <- res_SR$pars$sd
+    }
+    else{
+      regime_data <- res_SR$regime_resid %>%
+        left_join(res_SR$regime_pars, by="regime") %>%
+        bind_cols(res_SR$input$SRdata)
+      SR_mat[as.character(regime_data$year),,"a"] <- regime_data$a
+      SR_mat[as.character(regime_data$year),,"b"] <- regime_data$b
+      SR_mat[as.character(regime_data$year),,"sd"] <- regime_data$sd
+      future_regime_par <- res_SR$regime_pars %>% dplyr::filter(regime==regime_shift_option$future_regime)
+      SR_mat[random_rec_year_period,,"a"] <- future_regime_par$a
+      SR_mat[random_rec_year_period,,"b"] <- future_regime_par$b
+      SR_mat[random_rec_year_period,,"sd"] <- future_regime_par$sd
+
+      # どのレジームに属するか明示的に指定されないケースが出てくる。
+      # そういう場合は将来予測のレジームのパラメータを使うようにする→要改善
+      missing_year <- which(!(1:dim(SR_mat)[[1]] %in% c(which(allyear_name %in% as.character(regime_data$year)),random_rec_year_period)))
+
+      if(length(missing_year)>0){
+        SR_mat[missing_year,,"a"] <- future_regime_par$a
+        SR_mat[missing_year,,"b"] <- future_regime_par$b
+        SR_mat[missing_year,,"sd"] <- future_regime_par$sd
+      }
+
+      res_SR$pars$rho <- 0
+    }
+    SR_mat[,,"rho"] <- res_SR$pars$rho
+    SR_mat[random_rec_year_period,,"intercept"] <- recruit_intercept # future intercept
+    if(!is.null(res_SR$input$SRdata$release))
+      SR_mat[as.character(res_SR$input$SRdata$year),,"intercept"] <- res_SR$input$SRdata$release
+
+      if(!is.null(res_vpa)){
+        SR_mat[1:(start_random_rec_year-1),,"ssb"] <- as.numeric(colSums(res_vpa$ssb,na.rm=T))[1:(start_random_rec_year-1)]
+        SR_mat[1:(start_random_rec_year-1),,"recruit"] <- as.numeric(res_vpa$naa[1,1:(start_random_rec_year-1)])
+      }
+
+      recruit_range <- (recruit_age+1):(start_random_rec_year-1)
+      ssb_range     <- 1:(start_random_rec_year-1-recruit_age)
+
+      # re-culcurate past recruitment deviation
+      # intercept=relase fish
+      SR_mat[recruit_range,,"deviance"] <- SR_mat[recruit_range,,"rand_resid"] <-
+        log(SR_mat[recruit_range,,"recruit"]-SR_mat[recruit_range,,"intercept"]) -
+        log(SRF(SR_mat[ssb_range,,"ssb"],SR_mat[recruit_range,,"a"],SR_mat[recruit_range,,"b"]))
+
+      # define future recruitment deviation
+      set.seed(seed_number)
+      nsim <- dim(SR_mat)[[2]]
+
+      if(resid_type=="lognormal"){
+        if(isTRUE(bias_correction)){
+          #            sd_with_AR <- sqrt(res_SR$pars$sd^2/(1-res_SR$pars$rho^2))
+          #            bias_factor <- 0.5* sd_with_AR^2
+          sd_with_AR <- sqrt(SR_mat[,,"sd"]^2/(1-SR_mat[,,"rho"]^2))
+          SR_mat[,,"bias_factor"] <- 0.5 * sd_with_AR^2
+          SR_mat[-random_rec_year_period,,"bias_factor"] <- 0
+        }
+        else{
+          #            bias_factor <- 0
+          SR_mat[,,"bias_factor"] <- 0
+        }
+
+        tmp_SR <- t(SR_mat[random_rec_year_period,,"rand_resid"])
+        tmp_SR[] <- rnorm(nsim*length(random_rec_year_period), mean=0,
+                          sd=t(SR_mat[random_rec_year_period,,"sd"]))
+        SR_mat[random_rec_year_period,,"rand_resid"] <- t(tmp_SR)
+
+        for(t in random_rec_year_period){
+          SR_mat[t, ,"deviance"] <- SR_mat[t-1, ,"deviance"]*SR_mat[t,,"rho"] + SR_mat[t, ,"rand_resid"]
+        }
+        SR_mat[random_rec_year_period,,"deviance"] <- SR_mat[random_rec_year_period,,"deviance"] - SR_mat[random_rec_year_period,,"bias_factor"]
+      }
+
+      if(resid_type=="resample" | resid_type=="backward"){
+        # 推定された残差をそのまま使う
+        if(resample_year_range==0){
+          resample_year_range <- sort(res_SR$input$SRdata$year[res_SR$input$w==1])
+        }
+
+        sampled_residual <- SR_mat[as.character(resample_year_range),,"rand_resid"]
+        if(isTRUE(bias_correction)){
+          #            bias_factor <- log(colMeans(exp(sampled_residual)))
+          SR_mat[random_rec_year_period,,"bias_factor"] <- rep(log(colMeans(exp(sampled_residual))),
+                                                               each=length(random_rec_year_period))
+        }
+        else{
+          #            bias_factor <- rep(0,ncol(sampled_residual))
+          SR_mat[random_rec_year_period,,"bias_factor"] <- 0
+        }
+        for(i in 1:ncol(sampled_residual)){
+          if(resid_type=="resample"){
+            SR_mat[random_rec_year_period,i,"rand_resid"] <- sample(sampled_residual[,i], length(random_rec_year_period), replace=TRUE)
+          }
+          if(resid_type=="backward"){
+            SR_mat[random_rec_year_period,i,"rand_resid"] <- sample_backward(sampled_residual[,i], length(random_rec_year_period), backward_duration)
+          }
+          SR_mat[random_rec_year_period,i,"deviance"] <- SR_mat[random_rec_year_period,i,"rand_resid"]-SR_mat[random_rec_year_period,i,"bias_factor"]
+        }
+      }
   }
 
   # when fix recruitment
