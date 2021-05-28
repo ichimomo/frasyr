@@ -1631,7 +1631,7 @@ est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE,
             purrr::map_dfr(1:nrow(obj_mat),
                            function(x){
                                res <- future_vpa(tmb_data     = data_future$data,
-                                                 optim_method = optim_method_msy,
+                                                 optim_method = optim_method,
                                                  multi_init   = obj_mat$multi_init[x],
                                                  multi_lower  = obj_mat$multi_lower[x],
                                                  multi_upper  = obj_mat$multi_upper[x],
