@@ -40,7 +40,7 @@ retrieve_input <- function(result, new_sd = NULL) {
     retrieved$res_SR$pars$sd <- new_sd      
   }
   
-  is_model_averaged <- class(res_SR_MSY) == "list" && !is.null(res_SR_MSY[[1]]$input)
+  is_model_averaged <- class(retrieved$res_SR) == "list" && !is.null(retrieved$res_SR$input)
   if(is_model_averaged){
     for(i in 1:length(retrieved$res_SR)){
       retrieved$res_SR[[i]]$pars$sd <- new_sd
