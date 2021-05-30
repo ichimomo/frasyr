@@ -1856,10 +1856,10 @@ calc_perspr <- function(...){
 
 calc_future_perSPR <- function(fout=NULL,
                                res_vpa=NULL,
+                               biopar=NULL,
                                Fvector,
                                is_pope=NULL,
                                plus_group=NULL,
-                               biopar=NULL,
                         Fmax=10,
                         target.col=NULL,
                         target.year=NULL,
@@ -1867,18 +1867,20 @@ calc_future_perSPR <- function(fout=NULL,
                         SPR_unit="digit" # or "%"
 ){
 
+  if(!is.null(res_vpa)){
+    info_source <- "vpa"
+    is_pope <- res_vpa$input$Pope
+    plus_group <- res_vpa$input$plus.group
+  }
+  if(!is.null(fout))  info_source  <- "future"
+  if(!is.null(biopar))  info_source  <- "bio" # bioが優先される
+  
   fout.tmp <- fout
 
   SPR_multi <- ifelse(SPR_unit=="%", 100, 1)
 
-  if(!is.null(res_vpa)){
-    is_pope <- res_vpa$input$Pope
-    plus_group <- res_vpa$input$plus.group
-  }
-
-  if(is.null(biopar)){
   # 将来予測結果が与えられた場合
-  if(!is.null(fout)){
+  if(info_source=="future"){
     # シミュレーションが複数回ある場合には、その平均値を用いる
     if(is.null(target.col) && is.null(target.year)){
       waa.tmp       <- fout.tmp$waa      [,dim(fout.tmp$waa)      [[2]],] %>% apply(1,mean)
@@ -1910,31 +1912,38 @@ calc_future_perSPR <- function(fout=NULL,
       M.tmp         <- fout.tmp$M[,target.col,]         %>% apply(1,mean)
     }
     }}
-  else{ # 将来予測結果が与えられない場合にはVPA結果からもってくる
-      if(!is.list(target.year)){
-        target.year.char <- as.character(target.year)        
-        waa.tmp       <- res_vpa$input$dat$waa      [target.year.char] %>% apply(1,mean)
-        maa.tmp       <- res_vpa$input$dat$maa      [target.year.char] %>% apply(1,mean)
-        M.tmp         <- res_vpa$input$dat$M        [target.year.char] %>% apply(1,mean)
-        if(!is.null(res_vpa$input$dat$waa.catch)){
-          waa.catch.tmp <- res_vpa$input$dat$waa.catch[target.year.char] %>% apply(1,mean)
-        }
-        else{
-          waa.catch.tmp <- waa.tmp
-        }
+
+  if(info_source=="vpa"){ # 将来予測結果が与えられない場合にはVPA結果からもってくる
+    if(!is.list(target.year)){
+      target.year.char <- as.character(target.year)        
+      waa.tmp       <- res_vpa$input$dat$waa      [target.year.char] %>% apply(1,mean)
+      maa.tmp       <- res_vpa$input$dat$maa      [target.year.char] %>% apply(1,mean)
+      M.tmp         <- res_vpa$input$dat$M        [target.year.char] %>% apply(1,mean)
+      if(!is.null(res_vpa$input$dat$waa.catch)){
+        waa.catch.tmp <- res_vpa$input$dat$waa.catch[target.year.char] %>% apply(1,mean)
       }
       else{
-        waa.tmp       <- res_vpa$input$dat$waa      [as.character(target.year$waa)      ] %>% apply(1,mean)
-        maa.tmp       <- res_vpa$input$dat$maa      [as.character(target.year$maa)      ] %>% apply(1,mean)
-        M.tmp         <- res_vpa$input$dat$M        [as.character(target.year$M.tmp)    ] %>% apply(1,mean)
-        if(!is.null(res_vpa$input$dat$waa.catch)){
-          waa.catch.tmp <- res_vpa$input$dat$waa.catch[as.character(target.year$waa.catch)] %>% apply(1,mean)
-        }
-        else{
-          waa.catch.tmp <- waa.tmp
-        }        
+        waa.catch.tmp <- waa.tmp
       }
-    
+    }
+    else{
+      waa.tmp       <- res_vpa$input$dat$waa      [as.character(target.year$waa)      ] %>% apply(1,mean)
+      maa.tmp       <- res_vpa$input$dat$maa      [as.character(target.year$maa)      ] %>% apply(1,mean)
+      M.tmp         <- res_vpa$input$dat$M        [as.character(target.year$M.tmp)    ] %>% apply(1,mean)
+      if(!is.null(res_vpa$input$dat$waa.catch)){
+        waa.catch.tmp <- res_vpa$input$dat$waa.catch[as.character(target.year$waa.catch)] %>% apply(1,mean)
+      }
+      else{
+        waa.catch.tmp <- waa.tmp
+      }        
+    }}
+
+  if(info_source=="bio"){
+    waa.tmp <- biopar$waa
+    maa.tmp <- biopar$maa
+    M.tmp <- biopar$M
+    waa.catch.tmp <- biopar$waa.catch
+  }
 
   # 緊急措置。本来ならどこをプラスグループとして与えるかを引数として与えないといけない
   # 現状で、すべてのカラムがゼロ＝資源計算では考慮されていないセルとして認識されている
@@ -1945,26 +1954,6 @@ calc_future_perSPR <- function(fout=NULL,
   M.tmp <- M.tmp[ allsumpars!=0]
   Fvector <- Fvector %>%  as.numeric()
   Fvector <- Fvector[allsumpars!=0 & !is.na(allsumpars)]
-  ## ここまで緊急措置
-    }}
-
-  if(!is.null(biopar)){
-    waa.tmp <- biopar$waa
-    maa.tmp <- biopar$maa
-    M.tmp <- biopar$M
-    waa.catch.tmp <- biopar$waa.catch
-    
-    # 緊急措置。本来ならどこをプラスグループとして与えるかを引数として与えないといけない
-    # 現状で、すべてのカラムがゼロ＝資源計算では考慮されていないセルとして認識されている
-    allsumpars <- waa.tmp+waa.catch.tmp+maa.tmp+M.tmp
-    waa.tmp <- waa.tmp[allsumpars!=0]
-    waa.catch.tmp <- waa.catch.tmp[allsumpars!=0]
-    maa.tmp <- maa.tmp[allsumpars!=0]
-    M.tmp <- M.tmp[ allsumpars!=0]
-    Fvector <- Fvector %>%  as.numeric()
-    Fvector <- Fvector[allsumpars!=0 & !is.na(allsumpars)]    
-  }            
-
 
   # SPRを計算
   if(!is.null(SPRtarget)) SPRtarget_tmp <- SPRtarget/SPR_multi*100 else SPRtarget_tmp <- NULL
