@@ -1934,7 +1934,7 @@ calc_future_perSPR <- function(fout=NULL,
           waa.catch.tmp <- waa.tmp
         }        
       }
-    }
+    
 
   # 緊急措置。本来ならどこをプラスグループとして与えるかを引数として与えないといけない
   # 現状で、すべてのカラムがゼロ＝資源計算では考慮されていないセルとして認識されている
@@ -1946,14 +1946,25 @@ calc_future_perSPR <- function(fout=NULL,
   Fvector <- Fvector %>%  as.numeric()
   Fvector <- Fvector[allsumpars!=0 & !is.na(allsumpars)]
   ## ここまで緊急措置
-  }
+    }}
 
   if(!is.null(biopar)){
     waa.tmp <- biopar$waa
     maa.tmp <- biopar$maa
     M.tmp <- biopar$M
-    waa.catch.tmp <- biopar$waa.catch    
-  }
+    waa.catch.tmp <- biopar$waa.catch
+    
+    # 緊急措置。本来ならどこをプラスグループとして与えるかを引数として与えないといけない
+    # 現状で、すべてのカラムがゼロ＝資源計算では考慮されていないセルとして認識されている
+    allsumpars <- waa.tmp+waa.catch.tmp+maa.tmp+M.tmp
+    waa.tmp <- waa.tmp[allsumpars!=0]
+    waa.catch.tmp <- waa.catch.tmp[allsumpars!=0]
+    maa.tmp <- maa.tmp[allsumpars!=0]
+    M.tmp <- M.tmp[ allsumpars!=0]
+    Fvector <- Fvector %>%  as.numeric()
+    Fvector <- Fvector[allsumpars!=0 & !is.na(allsumpars)]    
+  }            
+
 
   # SPRを計算
   if(!is.null(SPRtarget)) SPRtarget_tmp <- SPRtarget/SPR_multi*100 else SPRtarget_tmp <- NULL
