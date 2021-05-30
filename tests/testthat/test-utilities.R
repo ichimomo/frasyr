@@ -306,7 +306,7 @@ test_that("get.trace",{
 
 test_that("make kobeII table", {
   test_that("beta.simulation() works", {
-    kobe_data <- beta.simulation(generate_dummy_future_new_object()$input,
+    kobe_data <- beta.simulation(generate_dummy_future_new_object(nsim=2)$input,
                                  beta_vector = seq(0, 1, 0.5),
                                  year.lag = 0,
                                  type = "new")
