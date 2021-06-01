@@ -509,6 +509,7 @@ ref.F <- function(
       tmp <- ifelse(tmp<=0,1,tmp)
       tmp <- ifelse(tmp>length(ypr.spr$F.range),length(ypr.spr$F.range),tmp)
       Fspr.init <- log(ypr.spr$F.range[tmp]) #original.perspr/i*100
+      Fspr.init[Fspr.init==-Inf] <- -10
       FpSPR.res <- optimize(spr.f.est, Fspr.init,out=FALSE,sub=i,spr0=spr0)
       #nlm(spr.f.est, Fspr.init, out=FALSE, sub=i, spr0=spr0, iterlim=iterlim)
       #      cat("Estimate F%spr: initial value=", Fspr.init," : estimated value=",exp(FpSPR.res$estimate),"\n")
@@ -633,7 +634,7 @@ get.SPR <- function(dres,target.SPR=30,Fmax=10,max.age=Inf){
   dimnames(dres$ysdata) <- list(colnames(dres$faa),c("perSPR","YPR","SPR","SPR0","F/Ftarget"))
   for(i in 1:ncol(dres$faa)){
     dres$Fc.at.age <- dres$faa[,i] # Fc.at.ageに対象年のFAAを入れる
-    if(all(dres$Fc.at.age>0, na.rm=T)){
+    if(!all(dres$Fc.at.age==0, na.rm=T)){
       byear <- colnames(dres$faa)[i] # 何年の生物パラメータを使うか
 
       a <- ref.F(dres,waa.year=byear,maa.year=byear,M.year=byear,rps.year=2000:2011,
@@ -2743,3 +2744,18 @@ convert_Fvector <- function(res_vpa=NULL,
   Fvector <- saa_vector/saa_multiplier$Fratio      
   return(lst(Fvector, faa_perSPR))
 }
+
+
+# 縦の行列の年によって足し算する; 関数の汎用版
+#' @export
+
+rowtapply2 <- function(a0,FUN.name){                                                  
+    FUN <- get(FUN.name)
+    yname <- floor(as.numeric(rownames(a0))) 
+    res <- matrix(0,length(unique(yname)),ncol(a0))
+    for(i in 1:ncol(a0)){                                                               
+        res[,i] <- tapply(a0[,i],yname,FUN)                                               
+    }
+    dimnames(res) <- list(unique(yname),colnames(a0))                                   
+    res                                                                                 
+}    
