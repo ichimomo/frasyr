@@ -2502,3 +2502,43 @@ check_consistent_w <- function(w, SRdata){
     if(!is.null(SRdata$weight) && !is.null(w) && sum(unlist(SRdata$weight)!=unlist(w))>0) stop("SRdata$weight と引数wの両方に重み付けの指定がなされていて、両者が違います")
     lst(w,SRdata)
 }
+
+
+#'
+#' 再生産関係を網羅的にフィットする
+#'
+#' regimeなしのものだけに対応
+#'
+#'  @export
+#'
+
+tryall_SR <- function(data_SR, plus_group=TRUE, bio_par=NULL){
+
+  SRmodel.list <- expand.grid(SR.rel = c("HS","BH","RI"), L.type = c("L1", "L2")) %>%
+    as_tibble()
+
+  SRmodel.list$pars <- purrr::map2(SRmodel.list$SR.rel, SRmodel.list$L.type,
+                                   function(x,y){
+                                     res1 <- unlist(fit.SR(data_SR, SR = x, method = y, 
+                                                           AR = 0, hessian = FALSE, out.AR=TRUE,
+                                                           bio_par = bio_par, plus_group = plus_group)
+                                                    [c("pars","AICc","steepness")])
+                                     tmp <- fit.SR(data_SR, SR = x, method = y, 
+                                                   AR = 1, hessian = FALSE, out.AR=TRUE,
+                                                   bio_par = bio_par, plus_group = plus_group)
+                                     res2 <- unlist(tmp[c("pars","AICc","steepness")])
+                                     res2 <- c(res2,"deltaAIC(AIC_AR-AIC_noAR)"=tmp$AIC.ar[2]-tmp$AIC.ar[1])
+                                     res3 <- unlist(fit.SR(data_SR, SR = x, method = y, 
+                                                           AR = 1, hessian = FALSE, out.AR=FALSE, 
+                                                           bio_par = bio_par, plus_group = plus_group)[c("pars","AICc","steepness")])
+                                     bind_rows(res1,res2,res3,.id="id")
+                                   })
+
+  SRmodel.list <- SRmodel.list %>%
+    unnest(col=pars) %>%
+    left_join(tibble(id=as.character(1:3),AR.type=c("non","outer","inner"))) %>%
+    arrange(AICc,AR.type)
+
+  return(SRmodel.list)
+  
+}
