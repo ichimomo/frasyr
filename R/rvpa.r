@@ -1760,12 +1760,14 @@ cv.est <- function(res,n=5){
 #' @param b.fix b推定してる場合にbを固定するかどうか
 #' @param remove.maxAgeF Mohn's rhoを計算する際に最高齢のFを除くか（alphaを仮定して計算していることが多いから）
 #' @param ssb.forecast Mohn's rhoを計算する際にSSBは1年後を計算するか(last.catch.zero=TRUEのときのみ有効)
+#' @param remove.short.index 年数が2年以下になった指標値を除いて計算する
 #' @encoding UTF-8
 #' @export
 #'
 
 retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE,
-                      remove.maxAgeF=FALSE,ssb.forecast=FALSE,sel.mat=NULL){
+                      remove.maxAgeF=FALSE,ssb.forecast=FALSE,sel.mat=NULL, 
+                      remove.short.index=FALSE){
    res.c <- res
    res.c$input$plot <- FALSE
    Res <- list()
@@ -1816,6 +1818,17 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE,
 
      # last.catch.zero = TRUE用に修正
      if (res.c$input$last.catch.zero) {res.c$input$dat$caa[,nc-1] <- 0; Y <- nc-2} else Y <- nc-1
+     
+     if (isTRUE(remove.short.index)) {
+         index_n = apply(res.c$input$dat$index,1,function(x) length(x)-sum(is.na(x)))
+         use.index = 1:nrow(res.c$input$dat$index)
+         if (res.c$input$use.index[1]=="all") {
+           use.index = use.index[index_n > 2] 
+         } else {
+           use.index = intersect(res.c$input$use.index,use.index[index_n > 2])
+         }
+         res.c$input$use.index <- use.index
+     }
 
      res1 <- safe_call(vpa,res.c$input, force=TRUE) # do.callからsafe_callに変更(浜辺'20/06/30)
 

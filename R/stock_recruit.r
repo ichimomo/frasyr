@@ -2334,48 +2334,95 @@ corSR = function(resSR) {
 #' }
 #' @encoding UTF-8
 #' @export
-calc_steepness = function(SR="HS",rec_pars,M,waa,maa,plus_group=TRUE) {
+calc_steepness = function(SR="HS",rec_pars,M,waa,maa,plus_group=TRUE,faa = NULL, Pope=TRUE) {
   if (length(M)==1) {
     M = rep(M,length(waa))
   }
   if (length(waa) != length(maa) || length(M) != length(maa)) {
     stop("The lengths of 'waa' and 'maa' must be equal")
   }
-  NAA0 = 1
-  for (i in 1:(length(waa)-1)) {
-    NAA0 = c(NAA0,rev(NAA0)[1]*exp(-M[i]))
+  is_MSY <- ifelse(is.null(faa),0,1)
+  if (is.null(faa)) {
+    faa <- rep(0,length(waa))
   }
-  if (plus_group) NAA0[length(NAA0)] = rev(NAA0)[1]/(1-exp(-1*rev(M)[1]))
-  BAA0 = NAA0*waa
-  SSB0 = BAA0*maa
-  SPR0 = sum(SSB0) #get.SRRと一致 (testに使える)
-
-  # 再生産関係とy=(1/SPR0)*xの交点を求める
-  rec_a = rec_pars$a
-  rec_b = rec_pars$b
-  validate_sr(SR = SR)
-  if (SR == "HS") {
-    R0 = rec_pars$a * rec_pars$b
-    SB0 = R0*SPR0
-    if (SB0<rec_b) {
-      warning("Virgin equilibrium does not exist!")
+  est_detMSY = function(x) {
+    NAA0 = 1
+    for (i in 1:(length(waa)-1)) {
+      NAA0 = c(NAA0,rev(NAA0)[1]*exp(-M[i]-x*faa[i]))
     }
-    h = (SB0-rec_b)/SB0
+    if (plus_group) {
+      NAA0[length(NAA0)] = rev(NAA0)[1]/(1-exp(-1*rev(M)[1]-x*rev(faa)[1]))
+    }
+    BAA0 = NAA0*waa
+    SSB0 = BAA0*maa
+    SPR0 = sum(SSB0) #get.SRRと一致 (testに使える)
+    
+    # 再生産関係とy=(1/SPR0)*xの交点を求める
+    rec_a = rec_pars$a
+    rec_b = rec_pars$b
+    validate_sr(SR = SR)
+    if (SR == "HS") {
+      R0 = rec_pars$a*rec_pars$b
+      SB0 = R0*SPR0
+      if (SB0<rec_b) {
+        # warning("Virgin equilibrium does not exist!")
+        R0 <- 0
+        SB0 <- 0
+      }
+      h = (SB0-rec_b)/SB0
+    }
+    if (SR == "Mesnil") {
+      gamma <- rec_pars$gamma
+      K = sqrt(rec_b^2+gamma^2/4)
+      SB0 = (2*K/(SPR0*rec_a/2)-2*rec_b-2*K)/(1/(SPR0*rec_a/2)^2-2/(SPR0*rec_a/2)) #Mesnil and Rochet 2010 ICES JMSより
+      R0 = SB0/SPR0
+      if (1/SPR0>rec_a) {
+        # warning("Virgin equilibrium does not exist!")
+        R0 <- 0
+        SB0 <- 0
+      }
+      h = (SB0-rec_b)/SB0 # steepnessの定義はHSと同じでよい？
+    }
+    if (SR == "BH") {
+      SB0 = (rec_a*SPR0-1)/rec_b
+      R0 = SB0/SPR0
+      h = (rec_a*0.2*SB0/(1+rec_b*0.2*SB0))/R0
+    }
+    if (SR == "RI") {
+      SB0 = (1/rec_b)*log(rec_a*SPR0)
+      R0 = SB0/SPR0
+      h = (rec_a*0.2*SB0*exp(-rec_b*0.2*SB0))/R0
+    }
+    B0 = sum(R0*BAA0)
+    Res = data.frame(SPR0 = SPR0, SB0 = SB0, R0 = R0, B0 = B0, h = h)
+    
+    if(is_MSY==1){
+      ypr.spr = ref.F(Fcurrent=x*faa,M=M,waa=waa,waa.catch = waa,maa =maa, 
+                      Pope=Pope,pSPR=NULL,F.range=NULL,plot=FALSE)
+      ypr.spr <- ypr.spr$ypr.spr[1,]
+      Yield <- as.numeric(R0*ypr.spr["ypr"])
+      Res = cbind(Res,data.frame(Yield=Yield))
+    }
+    return(Res)
   }
-  if (SR == "BH") {
-    SB0 = (rec_a*SPR0-1)/rec_b
-    R0 = SB0/SPR0
-    h = (rec_a*0.2*SB0/(1+rec_b*0.2*SB0))/R0
+  
+  RES = est_detMSY(0)
+  if (is_MSY==1) RES = RES %>% dplyr::select(-Yield)
+  if(is_MSY==1){
+    obj_fun = function(x) {
+      RES = est_detMSY(x)
+      return(-RES$Yield)
+    }
+    x_grid = seq(0,10,length=101) 
+    tmp = x_grid %>% purrr::map_dbl(.,obj_fun)
+    Opt = optimize(obj_fun,x_grid[c(which.min(tmp)-1,which.min(tmp)+1)])
+    Fmsy2F=Opt$minimum
+    RES2 = est_detMSY(Fmsy2F)
+    RES2 = RES2 %>% dplyr::select(-h) %>% dplyr::mutate(Fmsy2F=Fmsy2F)
+    colnames(RES2) <- c("SPRmsy","SBmsy","Rmsy","Bmsy","MSY","Fmsy2F")
+    RES = cbind(RES,RES2)
   }
-  if (SR == "RI") {
-    SB0 = (1/rec_b)*log(rec_a*SPR0)
-    R0 = SB0/SPR0
-    h = (rec_a*0.2*SB0*exp(-rec_b*0.2*SB0))/R0
-  }
-
-  B0 = sum(R0*BAA0)
-  Res = data.frame(SPR0 = SPR0, SB0 = SB0, R0 = R0, B0 = B0, h = h)
-  return(Res)
+  return(RES)
 }
 
 

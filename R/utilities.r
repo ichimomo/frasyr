@@ -1353,7 +1353,11 @@ convert_vector <- function(vector,name){
 convert_vpa_tibble <- function(vpares,SPRtarget=NULL){
 
   if (is.null(vpares$input$dat$waa.catch)) {
-    total.catch <- colSums(vpares$input$dat$caa*vpares$input$dat$waa,na.rm=T)
+    if (class(vpares)=="sam") {
+      total.catch <- colSums(vpares$caa*vpares$input$dat$waa,na.rm=T)
+    } else {
+      total.catch <- colSums(vpares$input$dat$caa*vpares$input$dat$waa,na.rm=T)
+    }
   } else {
     total.catch <- colSums(vpares$input$dat$caa*vpares$input$dat$waa.catch,na.rm=T)
   }
