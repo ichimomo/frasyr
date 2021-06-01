@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>ある系群から別の系群への移入が想定される場合の再生産関係の推定（マアジ用） — fit.SRmig • frasyr</title>
+<title>future_vpaを使ってMSY管理基準値などを計算するwrapper関数 — est_MSYRP • frasyr</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,8 @@
 
 
 
-<meta property="og:title" content="ある系群から別の系群への移入が想定される場合の再生産関係の推定（マアジ用） — fit.SRmig" />
-<meta property="og:description" content="ある系群から別の系群への移入が想定される場合の再生産関係の推定（マアジ用）" />
+<meta property="og:title" content="future_vpaを使ってMSY管理基準値などを計算するwrapper関数 — est_MSYRP" />
+<meta property="og:description" content="future_vpaを使ってMSY管理基準値などを計算するwrapper関数" />
 
 
 
@@ -124,47 +124,48 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>ある系群から別の系群への移入が想定される場合の再生産関係の推定（マアジ用）</h1>
+    <h1>future_vpaを使ってMSY管理基準値などを計算するwrapper関数</h1>
     
-    <div class="hidden name"><code>fit.SRmig.Rd</code></div>
+    <div class="hidden name"><code>est_MSYRP.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>ある系群から別の系群への移入が想定される場合の再生産関係の推定（マアジ用）</p>
+    <p>future_vpaを使ってMSY管理基準値などを計算するwrapper関数</p>
     </div>
 
-    <div class="ref-usage sourceCode"><pre class='sourceCode r'><code><span class='fu'>fit.SRmig</span><span class='op'>(</span>
-  <span class='va'>SRdata1</span>,
-  <span class='va'>SRdata2</span>,
-  SR <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"HS"</span>, <span class='st'>"HS"</span><span class='op'>)</span>,
-  AR <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='cn'>FALSE</span>, <span class='cn'>FALSE</span><span class='op'>)</span>,
-  mig_year <span class='op'>=</span> <span class='cn'>NULL</span>,
-  mig_type <span class='op'>=</span> <span class='fl'>0</span>,
-  one_patch <span class='op'>=</span> <span class='cn'>FALSE</span>,
-  sigma_omega_ratio <span class='op'>=</span> <span class='fl'>0</span>,
-  omega_fix <span class='op'>=</span> <span class='cn'>NA</span>,
-  phase <span class='op'>=</span> <span class='cn'>FALSE</span>,
-  p0_list <span class='op'>=</span> <span class='cn'>NULL</span>
+    <div class="ref-usage sourceCode"><pre class='sourceCode r'><code><span class='fu'>est_MSYRP</span><span class='op'>(</span>
+  <span class='va'>data_future</span>,
+  ncore <span class='op'>=</span> <span class='fl'>0</span>,
+  optim_method <span class='op'>=</span> <span class='st'>"R"</span>,
+  compile_tmb <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  candidate_PGY <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.1</span>, <span class='fl'>0.6</span><span class='op'>)</span>,
+  only_lowerPGY <span class='op'>=</span> <span class='st'>"lower"</span>,
+  candidate_B0 <span class='op'>=</span> <span class='op'>-</span><span class='fl'>1</span>,
+  candidate_Babs <span class='op'>=</span> <span class='op'>-</span><span class='fl'>1</span>,
+  calc_yieldcurve <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  select_Btarget <span class='op'>=</span> <span class='fl'>0</span>,
+  select_Blimit <span class='op'>=</span> <span class='fl'>0</span>,
+  select_Bban <span class='op'>=</span> <span class='fl'>0</span>
 <span class='op'>)</span></code></pre></div>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>SRdata1</th>
-      <td><p>移出が生じている系群の<code>SRdata</code>のオブジェクト</p></td>
+      <th>data_future</th>
+      <td><p>make_future_dataの返り値</p></td>
     </tr>
     <tr>
-      <th>SRdata2</th>
-      <td><p>移入が生じている系群の<code>SRdata</code>のオブジェクト</p></td>
+      <th>candidate_PGY</th>
+      <td><p>PGYの計算候補</p></td>
     </tr>
     <tr>
-      <th>mig_year</th>
-      <td><p>移出入が生じている期間</p></td>
+      <th>candidate_B0</th>
+      <td><p>b0の計算候補</p></td>
     </tr>
     <tr>
-      <th>mig_type</th>
-      <td><p>0: 移出入なし, 1: 一定の割合で移入が生じる, 2: 平均的な割合からランダムに変動する, 3:移出する割合が自己回帰モデルで変化する, 4: 移出する割合がランダムウォーク</p></td>
+      <th>candidate_Babs</th>
+      <td><p>Babsの計算候補</p></td>
     </tr>
     </table>
 
