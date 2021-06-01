@@ -2,7 +2,7 @@
 % Please edit documentation in R/utilities.r
 \name{convert_Fvector}
 \alias{convert_Fvector}
-\title{F at ageをVPAの結果から%SPRで変換したりするための関数}
+\title{F at ageをVPAの結果から\%SPRで変換したりするための関数}
 \usage{
 convert_Fvector(
   res_vpa = NULL,
@@ -10,9 +10,11 @@ convert_Fvector(
   faa_vector = NULL,
   faa_vector_year = NULL,
   faa_bio_year = NULL,
+  faa_bio = NULL,
   saa_vector = NULL,
   saa_vector_year = NULL,
-  saa_bio_year = NULL
+  saa_bio_year = NULL,
+  saa_bio = NULL
 )
 }
 \arguments{
@@ -24,14 +26,18 @@ convert_Fvector(
 
 \item{faa_bio_year}{漁獲圧をSPRに換算するときに生物パラメータを取り出す年の範囲(data_futureがある場合将来予測年も指定可能。生物パラメータが密度によって変わる場合)。list(waa = 2014:2018, waa.catch = 2014:2018, maa = 2016:2018,M   = 2014:2018)とすると生物パラメータによって異なる期間の指定も可能。下のsaa_bio_yearも同様}
 
+\item{faa_bio}{漁獲圧をSPRに換算するとき用いる生物パラメータそのものtibble(waa=waa, maa=maa, M=M)として指定する}
+
 \item{saa_vector}{選択率を代表するベクトル}
 
 \item{saa_vector_year}{選択率を取り出すときの年の範囲(VPA期間限定)}
 
 \item{saa_bio_year}{選択率をSPRに換算するときに生物パラメータを取り出す年の範囲(data_futureがある場合将来予測年も指定可能。生物パラメータが密度によって変わる場合)}
 
+\item{saa_bio}{選択率をSPRに換算するとき用いる生物パラメータそのものtibble(waa=waa, maa=maa, M=M)として指定する}
+
 \item{data_future}{将来予測のためのデータ(生物パラメータを将来予測期間から撮ってくる場合に必要)}
 }
 \description{
-F at ageをVPAの結果から%SPRで変換したりするための関数
+F at ageをVPAの結果から\%SPRで変換したりするための関数
 }

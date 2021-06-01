@@ -72,6 +72,7 @@ test_that("out.AR", {
 context("stock-recruitment SRdata")
 
 test_that("output value check",{
+    
   load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
   SRdata_pma_check <- get.SRdata(res_vpa_pma)
 
@@ -411,3 +412,4 @@ test_that("check matching of fit.SRregime and fit.SR",{
     expect_equal(all(round(x2/x1,1)==1),TRUE)
   }
 })
+

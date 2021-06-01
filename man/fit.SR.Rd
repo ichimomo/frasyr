@@ -11,7 +11,7 @@ fit.SR(
   method = "L2",
   AR = 1,
   hessian = FALSE,
-  w = rep(1, length(SRdata$R)),
+  w = NULL,
   length = 20,
   max.ssb.pred = 1.3,
   p0 = NULL,

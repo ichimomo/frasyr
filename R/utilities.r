@@ -21,6 +21,9 @@ NULL
 #'
 #' 年齢別パラメータを与えて、１年分前進計算する
 #'
+#' @param min.age 最小の年齢（０歳がデフォルト）。数でなくて名前
+#' @param max.age 最大の年齢。数でなくて名前なので、０からスタートして２歳までの場合には、min.age=0, max.age=2とするか、min.age=1, max.age=3とする
+#'
 #' @export
 #' @encoding UTF-8
 
@@ -29,8 +32,9 @@ calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=
   if(is.null(waa.catch)) waa.catch <- waa
   rel.abund <- rep(NA, na)
   rel.abund[1] <- 1
-  for (i in 2:(na-1)) {
-    rel.abund[i] <- rel.abund[i-1]*exp(-M[i-1]-sel[i-1]*Fr)
+    
+  for (i in seq_len(na-1)) {
+    rel.abund[i+1] <- rel.abund[i]*exp(-M[i]-sel[i]*Fr)
   }
   rel.abund[na] <- rel.abund[na-1]*exp(-M[na-1]-sel[na-1]*Fr)*(1-exp(-((max.age-min.age)-(na-2))*(M[na]+sel[na]*Fr)))/(1-exp(-M[na]-sel[na]*Fr))
 
@@ -505,6 +509,7 @@ ref.F <- function(
       tmp <- ifelse(tmp<=0,1,tmp)
       tmp <- ifelse(tmp>length(ypr.spr$F.range),length(ypr.spr$F.range),tmp)
       Fspr.init <- log(ypr.spr$F.range[tmp]) #original.perspr/i*100
+      Fspr.init[Fspr.init==-Inf] <- -10
       FpSPR.res <- optimize(spr.f.est, Fspr.init,out=FALSE,sub=i,spr0=spr0)
       #nlm(spr.f.est, Fspr.init, out=FALSE, sub=i, spr0=spr0, iterlim=iterlim)
       #      cat("Estimate F%spr: initial value=", Fspr.init," : estimated value=",exp(FpSPR.res$estimate),"\n")
@@ -629,7 +634,7 @@ get.SPR <- function(dres,target.SPR=30,Fmax=10,max.age=Inf){
   dimnames(dres$ysdata) <- list(colnames(dres$faa),c("perSPR","YPR","SPR","SPR0","F/Ftarget"))
   for(i in 1:ncol(dres$faa)){
     dres$Fc.at.age <- dres$faa[,i] # Fc.at.ageに対象年のFAAを入れる
-    if(all(dres$Fc.at.age>0, na.rm=T)){
+    if(!all(dres$Fc.at.age==0, na.rm=T)){
       byear <- colnames(dres$faa)[i] # 何年の生物パラメータを使うか
 
       a <- ref.F(dres,waa.year=byear,maa.year=byear,M.year=byear,rps.year=2000:2011,
@@ -896,7 +901,7 @@ out.vpa <- function(res=NULL,    # VPA result
     kobeII.table_name <- names(kobeII)
     for(i in 1:length(kobeII.table_name)){
       tmptable <- kobeII[kobeII.table_name[i]][[1]]
-      if(!is.na(tmptable)){
+      if(!is.na(tmptable) && nrow(tmptable)>0){
         write(str_c("\n# ",kobeII.table_name[i]),file=csvname,append=T)
         write_csv(tmptable,path=csvname,append=TRUE,
                   col_names = TRUE)
@@ -913,6 +918,8 @@ out.vpa <- function(res=NULL,    # VPA result
 }
 
 #' csvファイルとしてまとめられた資源計算結果を読み込んでRのオブジェクトにする
+#'
+#' @param release.label 放流データを読み込みたい場合。ここで指定したラベルをつけて、年齢を行、年を列とするデータを入れる（catch at ageと同じ構造だが、年齢は必要な年齢だけ取り出した形で良い）
 #' @param tfile 資源計算結果がまとめられたcsvファイルの名前
 #' @param Pope  VPA計算時にどっちを使っているかここで設定する（TRUE or FALSE）。デフォルトはNULLで、その場合にはcaa,faa,naaの関係から自動判別するが、自動判別の結果が出力されるので、それをみて正しく判断されているか確認してください。
 #' @param plus.group プラスグループを考慮するかどうか。こちらについても、NULLの場合にはfaaとnaaの関係から自動判別するが、結果を一応確認すること。
@@ -933,6 +940,7 @@ read.vpa <- function(tfile,
                      faa.label="fishing mortality at age",
                      Fc.label="Current F",
                      naa.label="numbers at age",
+                     release.label="release dat",
                      Blimit=NULL,
                      Pope=NULL,
                      plus.group=NULL,
@@ -942,6 +950,7 @@ read.vpa <- function(tfile,
 
   tmpfunc <- function(tmpdata,label,type=NULL){
     flags <- which(substr(tmpdata[,1],1,1)=="#")
+    flags <- c(flags, nrow(tmpdata)+1)
     flag.name <- tmpdata[flags,1]
     flag.name <- gsub("#","",flag.name)
     flag.name <- gsub(" ","",flag.name)
@@ -961,6 +970,7 @@ read.vpa <- function(tfile,
         tdat <- sapply((tdat[-1,-1]),as.numeric)
         tmp.names <- lapply(tmp.names,function(x) x[x!=""])
         tmp.names <- lapply(tmp.names,function(x) x[!is.na(x)])
+        if(is.null(dim(tdat))) dim(tdat) <- sapply(tmp.names,length)        
         dimnames(tdat) <- tmp.names
         tdat <- as.data.frame(tdat)
       }
@@ -985,6 +995,7 @@ read.vpa <- function(tfile,
   dres$input$dat$caa <- tmpfunc(tmpdata,caa.label)
   dres$input$dat$M <- tmpfunc(tmpdata,M.label)
   dres$input$dat$waa <- tmpfunc(tmpdata,waa.label)
+  dres$input$dat$release.dat <- tmpfunc(tmpdata,release.label)
   if(is.null(dres$input$dat$waa)) dres$input$dat$waa <- tmpfunc(tmpdata,waa.biomass.label)
   dres$input$dat$waa.catch <- tmpfunc(tmpdata,waa.catch.label)
   if(is.null(dres$input$dat$waa.catch)) dres$input$dat$waa.catch <- dres$input$dat$waa
@@ -1850,6 +1861,7 @@ calc_perspr <- function(...){
 
 calc_future_perSPR <- function(fout=NULL,
                                res_vpa=NULL,
+                               biopar=NULL,
                                Fvector,
                                is_pope=NULL,
                                plus_group=NULL,
@@ -1860,17 +1872,20 @@ calc_future_perSPR <- function(fout=NULL,
                         SPR_unit="digit" # or "%"
 ){
 
+  if(!is.null(res_vpa)){
+    info_source <- "vpa"
+    is_pope <- res_vpa$input$Pope
+    plus_group <- res_vpa$input$plus.group
+  }
+  if(!is.null(fout))  info_source  <- "future"
+  if(!is.null(biopar))  info_source  <- "bio" # bioが優先される
+  
   fout.tmp <- fout
 
   SPR_multi <- ifelse(SPR_unit=="%", 100, 1)
 
-  if(!is.null(res_vpa)){
-    is_pope <- res_vpa$input$Pope
-    plus_group <- res_vpa$input$plus.group
-  }
-
   # 将来予測結果が与えられた場合
-  if(!is.null(fout)){
+  if(info_source=="future"){
     # シミュレーションが複数回ある場合には、その平均値を用いる
     if(is.null(target.col) && is.null(target.year)){
       waa.tmp       <- fout.tmp$waa      [,dim(fout.tmp$waa)      [[2]],] %>% apply(1,mean)
@@ -1902,31 +1917,38 @@ calc_future_perSPR <- function(fout=NULL,
       M.tmp         <- fout.tmp$M[,target.col,]         %>% apply(1,mean)
     }
     }}
-  else{ # 将来予測結果が与えられない場合にはVPA結果からもってくる
-      if(!is.list(target.year)){
-        target.year.char <- as.character(target.year)        
-        waa.tmp       <- res_vpa$input$dat$waa      [target.year.char] %>% apply(1,mean)
-        maa.tmp       <- res_vpa$input$dat$maa      [target.year.char] %>% apply(1,mean)
-        M.tmp         <- res_vpa$input$dat$M        [target.year.char] %>% apply(1,mean)
-        if(!is.null(res_vpa$input$dat$waa.catch)){
-          waa.catch.tmp <- res_vpa$input$dat$waa.catch[target.year.char] %>% apply(1,mean)
-        }
-        else{
-          waa.catch.tmp <- waa.tmp
-        }
+
+  if(info_source=="vpa"){ # 将来予測結果が与えられない場合にはVPA結果からもってくる
+    if(!is.list(target.year)){
+      target.year.char <- as.character(target.year)        
+      waa.tmp       <- res_vpa$input$dat$waa      [target.year.char] %>% apply(1,mean)
+      maa.tmp       <- res_vpa$input$dat$maa      [target.year.char] %>% apply(1,mean)
+      M.tmp         <- res_vpa$input$dat$M        [target.year.char] %>% apply(1,mean)
+      if(!is.null(res_vpa$input$dat$waa.catch)){
+        waa.catch.tmp <- res_vpa$input$dat$waa.catch[target.year.char] %>% apply(1,mean)
       }
       else{
-        waa.tmp       <- res_vpa$input$dat$waa      [as.character(target.year$waa)      ] %>% apply(1,mean)
-        maa.tmp       <- res_vpa$input$dat$maa      [as.character(target.year$maa)      ] %>% apply(1,mean)
-        M.tmp         <- res_vpa$input$dat$M        [as.character(target.year$M.tmp)    ] %>% apply(1,mean)
-        if(!is.null(res_vpa$input$dat$waa.catch)){
-          waa.catch.tmp <- res_vpa$input$dat$waa.catch[as.character(target.year$waa.catch)] %>% apply(1,mean)
-        }
-        else{
-          waa.catch.tmp <- waa.tmp
-        }        
+        waa.catch.tmp <- waa.tmp
       }
     }
+    else{
+      waa.tmp       <- res_vpa$input$dat$waa      [as.character(target.year$waa)      ] %>% apply(1,mean)
+      maa.tmp       <- res_vpa$input$dat$maa      [as.character(target.year$maa)      ] %>% apply(1,mean)
+      M.tmp         <- res_vpa$input$dat$M        [as.character(target.year$M.tmp)    ] %>% apply(1,mean)
+      if(!is.null(res_vpa$input$dat$waa.catch)){
+        waa.catch.tmp <- res_vpa$input$dat$waa.catch[as.character(target.year$waa.catch)] %>% apply(1,mean)
+      }
+      else{
+        waa.catch.tmp <- waa.tmp
+      }        
+    }}
+
+  if(info_source=="bio"){
+    waa.tmp <- biopar$waa
+    maa.tmp <- biopar$maa
+    M.tmp <- biopar$M
+    waa.catch.tmp <- biopar$waa.catch
+  }
 
   # 緊急措置。本来ならどこをプラスグループとして与えるかを引数として与えないといけない
   # 現状で、すべてのカラムがゼロ＝資源計算では考慮されていないセルとして認識されている
@@ -1937,11 +1959,10 @@ calc_future_perSPR <- function(fout=NULL,
   M.tmp <- M.tmp[ allsumpars!=0]
   Fvector <- Fvector %>%  as.numeric()
   Fvector <- Fvector[allsumpars!=0 & !is.na(allsumpars)]
-  ## ここまで緊急措置
 
   # SPRを計算
   if(!is.null(SPRtarget)) SPRtarget_tmp <- SPRtarget/SPR_multi*100 else SPRtarget_tmp <- NULL
-  tmp <- calc_Fratio(Fvector,waa.tmp,maa=maa.tmp,M=M.tmp,SPRtarget=SPRtarget_tmp,
+  tmp <- calc_Fratio(Fvector,waa=waa.tmp,maa=maa.tmp,M=M.tmp,SPRtarget=SPRtarget_tmp,
                      waa.catch=waa.catch.tmp,Pope=is_pope,
                      return_SPR=TRUE,plus_group=plus_group)
   if(is.null(SPRtarget))  return(ifelse(length(tmp)==1,1*SPR_multi,tmp$SPR_original/100*SPR_multi))
@@ -2409,8 +2430,8 @@ make_kobe_ratio <- function(result_vpa, result_msy) {
 #'
 #' @export
 
-source_lines <- function(file, lines){
-    source(textConnection(readLines(file)[lines]))
+source_lines <- function(file, lines, encoding="UTF-8",...){
+    source(textConnection(readLines(file, encoding=encoding)[lines]),...)
 }
 
 #' re-calculate projection with different arguments
@@ -2617,6 +2638,8 @@ derive_biopar <- function(res_obj=NULL, derive_year=NULL, stat=mean){
 
 #' 与えられた個体群動態でプラスグループが考慮されているかどうか
 #' @param dres VPAの結果
+#'
+#' @export
 
 detect_plus_group <- function(dres){
   naa2 <- dres$naa[,2]
@@ -2641,7 +2664,7 @@ derive_future_summary <- function(res_future, target=NULL){
   assertthat::assert_that(class(res_future) == "future_new")
   
   if(is.null(target)){
-    tmpfunc <- function(x) apply(x,1,mean)
+    tmpfunc <- function(x, fun=mean) apply(x,1,fun)
   }
   if(!is.null(target)){
     tmpfunc <- function(x) x[,target]
@@ -2655,6 +2678,9 @@ derive_future_summary <- function(res_future, target=NULL){
     SSB     = tmpfunc(res_future$SR_mat[,,"ssb"]),
     biomass = tmpfunc(biomass),
     recruit = tmpfunc(res_future$SR_mat[,,"recruit"]),
+    intercept = tmpfunc(res_future$SR_mat[,,"intercept"]),
+    deviance = tmpfunc(res_future$SR_mat[,,"deviance"]),
+    deviance_sd = tmpfunc(res_future$SR_mat[,,"deviance"],fun=sd),            
     catch   = tmpfunc(res_future$HCR_realized[,,"wcatch"]),
     beta    = tmpfunc(res_future$HCR_mat[,,"beta"]),
     Blimit  = tmpfunc(res_future$HCR_mat[,,"Blimit"]),
@@ -2666,16 +2692,18 @@ derive_future_summary <- function(res_future, target=NULL){
 
 
 #'
-#' F at ageをVPAの結果から%SPRで変換したりするための関数
+#' F at ageをVPAの結果から\%SPRで変換したりするための関数
 #' 
 #' @param res_vpa VPAの結果オブジェクト(Popeの設定やF at ageをこちらからとってくる)
 #' @param data_future 将来予測のためのデータ(生物パラメータを将来予測期間から撮ってくる場合に必要)
 #' @param faa_vector 漁獲圧を代表するベクトル
 #' @param faa_vector_year 漁獲圧を取り出すときの年の範囲(VPA期間限定)
 #' @param faa_bio_year 漁獲圧をSPRに換算するときに生物パラメータを取り出す年の範囲(data_futureがある場合将来予測年も指定可能。生物パラメータが密度によって変わる場合)。list(waa = 2014:2018, waa.catch = 2014:2018, maa = 2016:2018,M   = 2014:2018)とすると生物パラメータによって異なる期間の指定も可能。下のsaa_bio_yearも同様
+#' @param faa_bio 漁獲圧をSPRに換算するとき用いる生物パラメータそのものtibble(waa=waa, maa=maa, M=M)として指定する
 #' @param saa_vector 選択率を代表するベクトル
 #' @param saa_vector_year 選択率を取り出すときの年の範囲(VPA期間限定)
 #' @param saa_bio_year 選択率をSPRに換算するときに生物パラメータを取り出す年の範囲(data_futureがある場合将来予測年も指定可能。生物パラメータが密度によって変わる場合)
+#' @param saa_bio 選択率をSPRに換算するとき用いる生物パラメータそのものtibble(waa=waa, maa=maa, M=M)として指定する
 #' 
 #' @export
 #'
@@ -2686,29 +2714,52 @@ convert_Fvector <- function(res_vpa=NULL,
                             faa_vector=NULL,
                             faa_vector_year=NULL,
                             faa_bio_year=NULL,
+                            faa_bio=NULL,                            
                             saa_vector=NULL,
                             saa_vector_year=NULL,
-                            saa_bio_year=NULL){
+                            saa_bio_year=NULL,
+                            saa_bio=NULL){
 
-  assert_that((is.null(faa_vector) | is.null(faa_vector_year)),
-              (is.null(saa_vector) | is.null(saa_vector_year)))
+  assert_that(
+    (is.null(faa_vector)   | is.null(faa_vector_year)),
+    (is.null(saa_vector)   | is.null(saa_vector_year)),
+    (is.null(saa_bio_year) | is.null(saa_bio)),
+    (is.null(faa_bio_year) | is.null(faa_bio))
+  )
   
   if(is.null(faa_vector)) faa_vector <- apply_year_colum(res_vpa$faa,target_year=faa_vector_year)
   if(is.null(saa_vector)) saa_vector <- apply_year_colum(res_vpa$faa,target_year=saa_vector_year)    
     
   # faa_vectorが何％のSPRにあたるか
-  faa_perSPR <- calc_future_perSPR(fout=res_future,
-                                   res_vpa=res_vpa,
-                                   Fvector=faa_vector,
-                                   target.year=faa_bio_year)
+  faa_perSPR <- calc_future_perSPR(fout    = res_future,
+                                   res_vpa = res_vpa,
+                                   Fvector = faa_vector,
+                                   target.year = faa_bio_year,
+                                   biopar = faa_bio)
   cat("%SPR in faa=", faa_perSPR,"\n")
   # saa_vectorがfaa_vectorに相当する%SPRになるためには何倍にしないといけないか
   saa_multiplier <- calc_future_perSPR(fout=res_future,
                                        res_vpa=res_vpa,
                                        Fvector=saa_vector,
                                        target.year=saa_bio_year, 
-                                       SPRtarget=faa_perSPR)
+                                       SPRtarget=faa_perSPR,
+                                       biopar=saa_bio)
   # faaの漁獲圧の大きさに相当するsaaの選択率を持ったF at age
   Fvector <- saa_vector/saa_multiplier$Fratio      
   return(lst(Fvector, faa_perSPR))
 }
+
+
+# 縦の行列の年によって足し算する; 関数の汎用版
+#' @export
+
+rowtapply2 <- function(a0,FUN.name){                                                  
+    FUN <- get(FUN.name)
+    yname <- floor(as.numeric(rownames(a0))) 
+    res <- matrix(0,length(unique(yname)),ncol(a0))
+    for(i in 1:ncol(a0)){                                                               
+        res[,i] <- tapply(a0[,i],yname,FUN)                                               
+    }
+    dimnames(res) <- list(unique(yname),colnames(a0))                                   
+    res                                                                                 
+}    

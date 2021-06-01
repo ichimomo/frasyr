@@ -19,6 +19,11 @@ calc.rel.abund(
   ssb.coef = 0
 )
 }
+\arguments{
+\item{min.age}{最小の年齢（０歳がデフォルト）。数でなくて名前}
+
+\item{max.age}{最大の年齢。数でなくて名前なので、０からスタートして２歳までの場合には、min.age=0, max.age=2とするか、min.age=1, max.age=3とする}
+}
 \description{
 年齢別パラメータを与えて、１年分前進計算する
 }

@@ -14,41 +14,103 @@ NULL
 
 #' VPAの結果から再生産関係推定用のデータを作成する
 #'
+#' VPA結果に放流尾数が含まれている場合、天然加入尾数＝加入尾数ー放流尾数として計算する
+#'
 #' @param vpares VPAの結果のオブジェクト
+#' @param R.dat VPAの結果オブジェクトでなく直接データを与えたい場合の加入の値
+#' @param SSB.dat VPAの結果オブジェクトでなく直接データを与えたい場合の親魚量の値
+#' @param release.dat VPAの結果オブジェクトでなく直接データを与えたい場合の放流尾数の値
+#' @param return.df データフレームとして結果を返すか。このオプション関係なくデータフレームとして返すように変更したので、近いうちに廃止予定
+#' @param weight.year fit.SRに渡すとき、フィットの対象とする年を指定する。特例として０を与えると、全部の年のデータが使われるようになる。返り値にweightという列が加わる。
+#' 
 #' @encoding UTF-8
+#' 
 #' @export
-get.SRdata <- function(vpares,R.dat = NULL,
+get.SRdata <- function(vpares=NULL,
+                       R.dat = NULL,
                        SSB.dat = NULL,
-                       years = as.numeric(colnames(vpares$naa)),
-                       return.df = FALSE){
+                       release.dat=NULL,
+                       years = NULL,
+                       weight.year = NULL,
+                       return.df = TRUE){
+    
+    is.release <- !is.null(release.dat) | !is.null(vpares$input$dat$release.dat)
+    if(is.null(years) && !is.null(vpares)) years <- as.numeric(colnames(vpares$naa))
+    
     # R.datとSSB.datだけが与えられた場合、それを使ってシンプルにフィットする
     if (!is.null(R.dat) & !is.null(SSB.dat)) {
-        dat <- data.frame(R = R.dat,SSB = SSB.dat,year = 1:length(R.dat))
+        assertthat::assert_that(length(R.dat)==length(SSB.dat))
+        if(!is.null(release.dat)){
+            assertthat::assert_that(length(R.dat)==length(release.dat))
+            R.dat <- R.dat - release.dat
+        }
+        if(is.null(years)){
+            years <- 1:length(R.dat)
+        }
+        else{
+            assertthat::assert_that(length(R.dat)==length(years))
+        }
+        dat <- data.frame(R = R.dat,SSB = SSB.dat,year = years)
+        if(!is.null(release.dat)) R.dat$release <- release.dat
     } else {
     # データの整形
         n <- ncol(vpares$naa)
         L <- as.numeric(rownames(vpares$naa)[1])
 
         dat      <- list()
-        dat$R    <- as.numeric(vpares$naa[1,])
         dat$SSB  <- as.numeric(colSums(vpares$ssb,na.rm = TRUE))
         dat$year <- as.numeric(colnames(vpares$ssb))
+
+        if(!is.null(vpares$input$dat$release.dat)){
+            release_age <- which(rownames(vpares$naa)%in%rownames(vpares$input$dat$release.dat))
+            naa <- vpares$naa
+            naa[release_age, ] <- naa[release_age, ] - vpares$input$dat$release.dat
+            dat$R <-  as.numeric(naa[1,])
+            dat$R[dat$R<0] <- 0.001
+            dat$release <- vpares$input$dat$release.dat
+        }
+        else{
+            dat$R    <- as.numeric(vpares$naa[1,])
+            if(!is.null(release.dat)){
+                dat$R <- dat$R-release.dat
+                dat$release <- release.dat
+            }
+        }
+        
     # 加入年齢分だけずらす
         dat$R    <- dat$R[(L+1):n]
         dat$SSB  <- dat$SSB[1:(n-L)]
         dat$year <- dat$year[(L+1):n]
+        if(is.release) dat$release <- as.numeric(dat$release[(L+1):n])
 
     # データの抽出
         dat <- as.data.frame(dat)
         dat <- dat[dat$year%in%years,]
     }
 
-    class(dat) <- "SRdata"
     assertthat::assert_that(all(dat[["R"]] > 0))
-    if (return.df == TRUE) return(data.frame(year = dat$year,
-                                             SSB  = dat$SSB,
-                                             R    = dat$R))
-    return(dat[c("year","SSB","R")])
+    class(dat) <- "SRdata"
+    
+    #if (return.df == TRUE) return(data.frame(year = dat$year,
+    #SSB  = dat$SSB,
+    #                                         R    = dat$R,
+    #                                             release=dat$release))
+    #return(dat[c("year","SSB","R","release")])
+    dat.df <- data.frame(year = dat$year,
+                      SSB  = dat$SSB,
+                      R    = dat$R)
+    if(is.release) dat.df$release <- dat$release
+
+    if(!is.null(weight.year)){
+        dat.df$weight <- 0
+        dat.df$weight[dat$year %in% weight.year]  <- 1
+
+        if(length(weight.year)==1 && weight.year==0){
+            dat.df$weight[]  <- 1
+        }
+    }
+    return(dat.df)
+    
 }
 
 #' 再生産関係のパラメタが想定した形になっているかを確認
@@ -141,7 +203,7 @@ fit.SR <- function(SRdata,
                    method="L2",
                    AR=1,
                    # TMB=FALSE,
-                   hessian=FALSE,w=rep(1,length(SRdata$R)),
+                   hessian=FALSE,w=NULL,
                    length=20,
                    max.ssb.pred=1.3, # 予測値を計算するSSBの最大値（観測された最大値への乗数）
                    p0=NULL,
@@ -158,6 +220,11 @@ fit.SR <- function(SRdata,
   arglist <- lapply(argname,function(xx) eval(parse(text=xx)))
   names(arglist) <- argname
 
+  tmp <- check_consistent_w(w, SRdata)
+  SRdata <- tmp$SRdata
+  w <- arglist$w <- tmp$w
+  
+  
   if (AR==0) out.AR <- FALSE
   rec <- SRdata$R
   ssb <- SRdata$SSB
@@ -881,7 +948,7 @@ fit.SRregime <- function(
   use.fit.SR = TRUE,
   length=10,  # parameter (a,b) の初期値を決めるときにgrid searchする数
   p0 = NULL,  # 初期値
-  w = rep(1,length(SRdata$R)),
+  w = NULL,
   max.ssb.pred = 1.3,
   hessian = FALSE,
   bio_par = NULL,
@@ -891,6 +958,12 @@ fit.SRregime <- function(
   arglist <- lapply(argname,function(xx) eval(parse(text=xx)))
   names(arglist) <- argname
 
+  #  if(!is.null(SRdata$weight)) w <- SRdata$w
+  #  if(is.null(w)) w <- rep(1,length(SRdata$R))
+  tmp <- check_consistent_w(w, SRdata)
+  SRdata <- tmp$SRdata
+  w <- arglist$w <- tmp$w  
+  
   rec <- SRdata$R
   ssb <- SRdata$SSB
   N <- length(rec)
@@ -1451,6 +1524,7 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
     # parameter histogram ----
     if(ggplt){ # ggplot (plot histograms of a,b,B0,h,R0,rho,SB0,sd)
       if(is.null(convert_SR_tibble(boot.res[[1]]))) print("Do fit.SR with argument(bio.par) to calculate steepness.")
+      N <- boot.res$input$n
       res_boot_par_tibble <- purrr::map_dfr(boot.res[1:N], convert_SR_tibble) %>% dplyr::filter(type=="parameter"&name!="SPR0")
 
       res_boot_par_tibble_summary <- res_boot_par_tibble %>%  group_by(name) %>% summarise(median=median(value),mean=mean(value),CI10=quantile(value,0.1),CI90=quantile(value,0.9)) %>% mutate(name_with_CI = str_c(name," (",round(CI10,2),"-",round(CI90,2),")")) %>% pivot_longer(cols=-c(name,name_with_CI), names_to="stats")
@@ -2467,4 +2541,54 @@ boot_steepness <- function(res_SR, M, waa, maa, n=100, plus_group=TRUE){
       }}
 
     res_steepness
+}
+
+#' fit.SRとfit.SRregimeの重み付け（どのデータを使うか）の設定方法は、引数wで与える場合とSRdata$weightで与える場合の２パターンある。両者が矛盾なく設定されているかを確認するための関数
+
+check_consistent_w <- function(w, SRdata){
+    if(is.null(SRdata$weight)  && is.null(w)) SRdata$weight <- w <- rep(1,length(SRdata$R))
+    if(is.null(SRdata$weight)  && !is.null(w)) SRdata$weight <- w
+    if(!is.null(SRdata$weight) &&  is.null(w)) w <- SRdata$weight
+    if(!is.null(SRdata$weight) && !is.null(w) && sum(unlist(SRdata$weight)!=unlist(w))>0) stop("SRdata$weight と引数wの両方に重み付けの指定がなされていて、両者が違います")
+    lst(w,SRdata)
+}
+
+
+#'
+#' 再生産関係を網羅的にフィットする
+#'
+#' regimeなしのものだけに対応
+#'
+#'  @export
+#'
+
+tryall_SR <- function(data_SR, plus_group=TRUE, bio_par=NULL){
+
+  SRmodel.list <- expand.grid(SR.rel = c("HS","BH","RI"), L.type = c("L1", "L2")) %>%
+    as_tibble()
+
+  SRmodel.list$pars <- purrr::map2(SRmodel.list$SR.rel, SRmodel.list$L.type,
+                                   function(x,y){
+                                     res1 <- unlist(fit.SR(data_SR, SR = x, method = y, 
+                                                           AR = 0, hessian = FALSE, out.AR=TRUE,
+                                                           bio_par = bio_par, plus_group = plus_group)
+                                                    [c("pars","AICc","steepness")])
+                                     tmp <- fit.SR(data_SR, SR = x, method = y, 
+                                                   AR = 1, hessian = FALSE, out.AR=TRUE,
+                                                   bio_par = bio_par, plus_group = plus_group)
+                                     res2 <- unlist(tmp[c("pars","AICc","steepness")])
+                                     res2 <- c(res2,"deltaAIC(AIC_AR-AIC_noAR)"=tmp$AIC.ar[2]-tmp$AIC.ar[1])
+                                     res3 <- unlist(fit.SR(data_SR, SR = x, method = y, 
+                                                           AR = 1, hessian = FALSE, out.AR=FALSE, 
+                                                           bio_par = bio_par, plus_group = plus_group)[c("pars","AICc","steepness")])
+                                     bind_rows(res1,res2,res3,.id="id")
+                                   })
+
+  SRmodel.list <- SRmodel.list %>%
+    unnest(col=pars) %>%
+    left_join(tibble(id=as.character(1:3),AR.type=c("non","outer","inner"))) %>%
+    arrange(AICc,AR.type)
+
+  return(SRmodel.list)
+  
 }

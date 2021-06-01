@@ -75,7 +75,8 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
                      Pope=res_vpa_base0_nontune$input$Pope,
                      fix_recruit=NULL,
                      fix_wcatch=NULL
-    )
+                     )
+  save(data_future_test, file="data_future_test.rda")
 
   # simple
   res_future_F0.1 <- future_vpa(tmb_data=data_future_test$data,
@@ -427,3 +428,46 @@ test_that("future_vpa function (with dummy vpa data) for regime shift (level 2-3
 
 })
 
+
+res_vpa <- read.vpa(system.file("extdata","res_vpa_dummy_age2.csv",package="frasyr"))
+res_SR <- get.SRdata(res_vpa,weight.year = 1981:2018) %>% fit.SR()
+
+max_vpa_year <- max(as.numeric(colnames(res_vpa$naa)))
+bio_year <- rev(as.numeric(colnames(res_vpa$naa)))[1:3]
+Fvalue <- 0.2
+data_future_test <-
+    make_future_data(res_vpa,
+                     nsim = 10,
+                     nyear = 20,
+                     future_initial_year_name = max_vpa_year, # 年齢別資源尾数を参照して将来予測をスタートする年
+                     start_F_year_name = max_vpa_year+1, # この関数で指定したFに置き換える最初の年
+                     start_biopar_year_name=max_vpa_year+1, # この関数で指定した生物パラメータに置き換える最初の年
+                     start_random_rec_year_name = max_vpa_year+1, # この関数で指定した再生産関係からの加入の予測値に置き換える最初の年
+                     # biopar setting
+                     waa_year=bio_year, waa=NULL, # 将来の年齢別体重の設定。過去の年を指定し、その平均値を使うか、直接ベクトルで指定するか。以下も同じ。
+                     waa_catch_year=bio_year, waa_catch=NULL,
+                     maa_year=bio_year, maa=NULL,
+                     M_year=bio_year, M=c(1,1),
+                     # faa setting
+                     faa_year=2015:2017, # currentF, futureFが指定されない場合だけ有効になる。将来のFを指定の年の平均値とする
+                     currentF=rep(Fvalue,2),futureF=rep(Fvalue,2), # 将来のABC.year以前のFとABC.year以降のFのベクトル
+                     # HCR setting (not work when using TMB)
+                     start_ABC_year_name=max_vpa_year+2, # HCRを適用する最初の年
+                     HCR_beta=1, # HCRのbeta
+                     HCR_Blimit=-1, # HCRのBlimit
+                     HCR_Bban=-1, # HCRのBban
+                     HCR_year_lag=0, # HCRで何年遅れにするか
+                     # SR setting
+                     res_SR=res_SR, # 将来予測に使いたい再生産関係の推定結果が入っているfit.SRの返り値
+                     seed_number=1,
+                     resid_type="lognormal", # 加入の誤差分布（"lognormal": 対数正規分布、"resample": 残差リサンプリング）
+                     resample_year_range=0, # リサンプリングの場合、残差をリサンプリングする年の範囲
+                     bias_correction=TRUE, # バイアス補正をするかどうか
+                     recruit_intercept=0, # 移入や放流などで一定の加入がある場合に足す加入尾数
+                     # Other
+                     Pope=TRUE,
+                     fix_recruit=NULL,
+                     fix_wcatch=NULL
+                     )
+
+aa <- est_MSYRP(data_future_test)

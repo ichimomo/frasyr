@@ -43,6 +43,7 @@ data_future_test <- make_future_data(res_vpa, # VPAの結果
                                      )
 
 test_that("future_vpa function (with sample vpa data) (level 2)",{
+    
   # check SD0
   x <- test_sd0_future(data_future_test)
   res_future_test <- x[[1]]
@@ -113,6 +114,12 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
   #expect_equal(round(res_future_test_R$multi,3),0.527)
   # 1000回だと0.527, 100回だと0.537
   expect_equal(round(res_future_test_R$multi,3),0.537)
+
+  res_MSY1 <- est_MSYRP(data_future=data_future_test, candidate_PGY=c(0.1,0.6),
+                        candidate_B0=c(0.2), candidate_Babs=20000)
+  expect_equal(res_MSY1$res_MSY$summary$"Fref/Fcur"[1], res_future_test_R$multi, tol=0.00001)
+  expect_equal(tail(res_future_test_R$summary$SSB,n=1) %>% as.numeric(),
+               res_MSY1$res_MSY$summary$SSB[1] %>% as.numeric(), tol=1)
 
   # MSY計算の場合 (バックワード)
   res_future_test_backward <- future_vpa(tmb_data=data_future_backward$data,
@@ -215,11 +222,22 @@ test_that("future_vpa function (yerly change of beta, Blimit and Bban) (level 2)
   expect_equal(range(x[as.character(2019:2020),]),CV_range)
   expect_equal(range(x[as.character(2021:2023),]),c(0.58,1.87))
 
-  data_future <- redo_future(data_future_test,
-                             list(nsim=10,nyear=7,
-                                  HCR_TAC_upper_CV=tibble(year=2019:2021,TAC_upper_CV=CV_range[2]),
-                                  HCR_TAC_lower_CV=tibble(year=2019:2021,TAC_lower_CV=CV_range[1])),
-                             only_data=TRUE)
+  # MSE
+  tmp <- redo_future(data_future_test,
+                            list(nsim=10,nyear=7,
+                                 HCR_TAC_upper_CV=CV_range[2],
+                                 HCR_TAC_lower_CV=CV_range[1],
+                                 HCR_Blimit=430000, HCR_Bban=400000),
+                     only_data=TRUE) 
+  tmp2 <- future_vpa(tmp$data,
+                     do_MSE=FALSE, MSE_input_data=tmp)
+  
+  # check_MSE_seしたいが計算時間かかるのでコメントアウト
+  #data_future <- redo_future(data_future_test,
+  #                             list(nsim=10,nyear=7,
+  #                                  HCR_TAC_upper_CV=tibble(year=2019:2021,TAC_upper_CV=CV_range[2]),
+  #                                HCR_TAC_lower_CV=tibble(year=2019:2021,TAC_lower_CV=CV_range[1])),
+  #                           only_data=TRUE)
   #  check_MSE_sd0(data_future, nsim_for_check = 5000)[1:3] %>% as.numeric()
   # 1,2 はOK。3も大丈夫そうなのに、2％くらいずれる、、。
 
@@ -591,3 +609,12 @@ test_that("density dependent maturity option",{
     
 })
 
+test_that("set_upper_limit_catch & set_lower_limit_catch",{
+  set_upper_limit_catch(rep(10,10), 5:14, 1.2) %>%
+    expect_equal(c(5:12,12,12))
+  set_upper_limit_catch(rep(10,10), 5:14, c(rep(1.2,8),1,1)) %>%
+    expect_equal(c(5:12,10,10))
+
+  set_lower_limit_catch(rep(10,10), 5:14, c(rep(0.8,10))) %>%
+    expect_equal(c(rep(8,4),9:14))
+})

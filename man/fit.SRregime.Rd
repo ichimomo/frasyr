@@ -15,7 +15,7 @@ fit.SRregime(
   use.fit.SR = TRUE,
   length = 10,
   p0 = NULL,
-  w = rep(1, length(SRdata$R)),
+  w = NULL,
   max.ssb.pred = 1.3,
   hessian = FALSE,
   bio_par = NULL,

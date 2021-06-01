@@ -713,7 +713,7 @@ future_vpa_R <- function(naa_mat,
      # ここでmax_Fの設定を上書きするようにしていたけど、それを廃止
      # MSE_input_dataそのままの設定を使うようにする
 #     MSE_input_data$input$max_F <- max_F_MSE 
-#     MSE_input_data$input$max_exploitation_rate <- max_exploitation_rate_MSE
+     #     MSE_input_data$input$max_exploitation_rate <- max_exploitation_rate_MSE
      MSE_dummy_data <- safe_call(make_future_data,MSE_input_data$input)$data
      MSE_dummy_data <- MSE_dummy_data %>%
         purrr::list_modify(future_initial_year   = t-2,
@@ -831,25 +831,22 @@ future_vpa_R <- function(naa_mat,
 
     # 漁獲量の変動の上限・下限設定をする場合
     if(t>=start_ABC_year && sum(!is.na(HCR_mat[t,,"TAC_upper_CV"]))){
-      # expect_wcatchが空のところはexpect_wcatchを全部計算する　
-      if(sum(HCR_mat[t,,"expect_wcatch"]==0)>0){
+      # expect_wcatchが全部空だったらexpect catchを計算して入れる
+      if(all(HCR_mat[t,,"expect_wcatch"]==0)){
         HCR_mat[t,,"expect_wcatch"] <- catch_equation(N_mat[,t,],F_mat[,t,],waa_catch_mat[,t,],M_mat[,t,],Pope=Pope) %>% colSums()
       }
       # CVよりも小さい・大きかったら上限値にexpect_wcatchを置き換える
-      upper_catch <- HCR_realized[t-1,,"wcatch"] * HCR_mat[t,,"TAC_upper_CV"]
-      is_over_upper_catch  <- HCR_mat[t,,"expect_wcatch"]>upper_catch
-      HCR_mat[t,is_over_upper_catch, "expect_wcatch"] <- upper_catch[is_over_upper_catch ]
+      HCR_mat[t,, "expect_wcatch"] <-
+        set_upper_limit_catch(HCR_realized[t-1,,"wcatch"], HCR_mat[t,,"expect_wcatch"], HCR_mat[t,,"TAC_upper_CV"])
     }
 
     if(t>=start_ABC_year && sum(!is.na(HCR_mat[t,,"TAC_lower_CV"]))){
-      # expect_wcatchが空のところはexpect_wcatchを全部計算する　
-      if(sum(HCR_mat[t,,"expect_wcatch"]==0)>0){
+      # expect_wcatchが全部空だったらexpect catchを計算して入れる
+      if(all(HCR_mat[t,,"expect_wcatch"]==0)){
         HCR_mat[t,,"expect_wcatch"] <- catch_equation(N_mat[,t,],F_mat[,t,],waa_catch_mat[,t,],M_mat[,t,],Pope=Pope) %>% colSums()
       }
-      # CVよりも小さい・大きかったら上限値にexpect_wcatchを置き換える
-      lower_catch <- HCR_realized[t-1,,"wcatch"] * HCR_mat[t,,"TAC_lower_CV"]
-      is_under_lower_catch <- HCR_mat[t,,"expect_wcatch"]<lower_catch
-      HCR_mat[t,is_under_lower_catch,"expect_wcatch"] <- lower_catch[is_under_lower_catch]
+      HCR_mat[t,, "expect_wcatch"] <-
+        set_lower_limit_catch(HCR_realized[t-1,,"wcatch"], HCR_mat[t,,"expect_wcatch"], HCR_mat[t,,"TAC_lower_CV"])      
     }    
 
     if(sum(HCR_mat[t,,"expect_wcatch"])>0){
@@ -975,133 +972,14 @@ set_SR_mat <- function(res_vpa=NULL,
                        fix_recruit=NULL
 ){
 
+  nsim <- dim(SR_mat)[[2]]  
   allyear_name <- dimnames(SR_mat)[[1]]
   start_random_rec_year  <- which(allyear_name==start_random_rec_year_name)
   random_rec_year_period <- (start_random_rec_year):length(allyear_name)
 
   # check arguments in fix_recruit
   assertthat::assert_that(sum(!fix_recruit$year %in% allyear_name)==0)
-
   if(!resid_type%in%c("lognormal","resample","backward")) stop("resid_type is invalid.")
-
-  # define SR function
-  if(res_SR$input$SR=="HS"){
-    SR_mat[,,"SR_type"] <- 1
-    SRF <- SRF_HS
-  }
-  if(res_SR$input$SR=="BH"){
-    SR_mat[,,"SR_type"] <- 2
-    SRF <- SRF_BH
-  }
-  if(res_SR$input$SR=="RI"){
-    SR_mat[,,"SR_type"] <- 3
-    SRF <- SRF_RI
-  }
-
-  # define SR parameter
-  if(is.null(regime_shift_option)){
-    SR_mat[,,"a"] <- res_SR$pars$a
-    SR_mat[,,"b"] <- res_SR$pars$b
-    SR_mat[,,"sd"] <- res_SR$pars$sd
-  }
-  else{
-    regime_data <- res_SR$regime_resid %>%
-      left_join(res_SR$regime_pars, by="regime") %>%
-      bind_cols(res_SR$input$SRdata)
-    SR_mat[as.character(regime_data$year),,"a"] <- regime_data$a
-    SR_mat[as.character(regime_data$year),,"b"] <- regime_data$b
-    SR_mat[as.character(regime_data$year),,"sd"] <- regime_data$sd
-    future_regime_par <- res_SR$regime_pars %>% dplyr::filter(regime==regime_shift_option$future_regime)
-    SR_mat[random_rec_year_period,,"a"] <- future_regime_par$a
-    SR_mat[random_rec_year_period,,"b"] <- future_regime_par$b
-    SR_mat[random_rec_year_period,,"sd"] <- future_regime_par$sd
-
-    # どのレジームに属するか明示的に指定されないケースが出てくる。
-    # そういう場合は将来予測のレジームのパラメータを使うようにする→要改善
-    missing_year <- which(!(1:dim(SR_mat)[[1]] %in% c(which(allyear_name %in% as.character(regime_data$year)),random_rec_year_period)))
-
-    if(length(missing_year)>0){
-        SR_mat[missing_year,,"a"] <- future_regime_par$a
-        SR_mat[missing_year,,"b"] <- future_regime_par$b
-        SR_mat[missing_year,,"sd"] <- future_regime_par$sd
-    }
-
-    res_SR$pars$rho <- 0
-  }
-  SR_mat[,,"rho"] <- res_SR$pars$rho
-  SR_mat[,,"intercept"] <- recruit_intercept
-
-  if(!is.null(res_vpa)){
-    SR_mat[1:(start_random_rec_year-1),,"ssb"] <- as.numeric(colSums(res_vpa$ssb,na.rm=T))[1:(start_random_rec_year-1)]
-    SR_mat[1:(start_random_rec_year-1),,"recruit"] <- as.numeric(res_vpa$naa[1,1:(start_random_rec_year-1)])
-  }
-
-  recruit_range <- (recruit_age+1):(start_random_rec_year-1)
-  ssb_range     <- 1:(start_random_rec_year-1-recruit_age)
-
-  # re-culcurate recruitment deviation
-  SR_mat[recruit_range,,"deviance"] <- SR_mat[recruit_range,,"rand_resid"] <-
-    log(SR_mat[recruit_range,,"recruit"]) -
-    log(SRF(SR_mat[ssb_range,,"ssb"],SR_mat[recruit_range,,"a"],SR_mat[recruit_range,,"b"]))
-
-  # define future recruitment deviation
-  set.seed(seed_number)
-  nsim <- dim(SR_mat)[[2]]
-
-  if(resid_type=="lognormal"){
-    if(isTRUE(bias_correction)){
-      #            sd_with_AR <- sqrt(res_SR$pars$sd^2/(1-res_SR$pars$rho^2))
-      #            bias_factor <- 0.5* sd_with_AR^2
-      sd_with_AR <- sqrt(SR_mat[,,"sd"]^2/(1-SR_mat[,,"rho"]^2))
-      SR_mat[,,"bias_factor"] <- 0.5 * sd_with_AR^2
-      SR_mat[-random_rec_year_period,,"bias_factor"] <- 0
-    }
-    else{
-      #            bias_factor <- 0
-      SR_mat[,,"bias_factor"] <- 0
-    }
-
-    tmp_SR <- t(SR_mat[random_rec_year_period,,"rand_resid"])
-    tmp_SR[] <- rnorm(nsim*length(random_rec_year_period), mean=0,
-                      sd=t(SR_mat[random_rec_year_period,,"sd"]))
-    SR_mat[random_rec_year_period,,"rand_resid"] <- t(tmp_SR)
-
-    for(t in random_rec_year_period){
-      SR_mat[t, ,"deviance"] <- SR_mat[t-1, ,"deviance"]*SR_mat[t,,"rho"] + SR_mat[t, ,"rand_resid"]
-    }
-    SR_mat[random_rec_year_period,,"deviance"] <- SR_mat[random_rec_year_period,,"deviance"] - SR_mat[random_rec_year_period,,"bias_factor"]
-  }
-
-  if(resid_type=="resample" | resid_type=="backward"){
-    # 推定された残差をそのまま使う
-    if(resample_year_range==0){
-      #            sampled_residual <- res_SR$resid[res_SR$input$w==1]
-      #            if(isTRUE(bias_correction)) bias_factor <- log(mean(exp(sampled_residual))) else bias_factor <- 0
-      #            SR_mat[random_rec_year_period,,"rand_resid"] <- sample(sampled_residual, nsim*length(random_rec_year_period), replace=TRUE)
-      #            SR_mat[random_rec_year_period,,"deviance"] <- SR_mat[random_rec_year_period,,"rand_resid"]-bias_factor
-      resample_year_range <- sort(res_SR$input$SRdata$year[res_SR$input$w==1])
-    }
-
-    sampled_residual <- SR_mat[as.character(resample_year_range),,"rand_resid"]
-    if(isTRUE(bias_correction)){
-      #            bias_factor <- log(colMeans(exp(sampled_residual)))
-      SR_mat[random_rec_year_period,,"bias_factor"] <- rep(log(colMeans(exp(sampled_residual))),
-                                                           each=length(random_rec_year_period))
-    }
-    else{
-      #            bias_factor <- rep(0,ncol(sampled_residual))
-      SR_mat[random_rec_year_period,,"bias_factor"] <- 0
-    }
-    for(i in 1:ncol(sampled_residual)){
-      if(resid_type=="resample"){
-        SR_mat[random_rec_year_period,i,"rand_resid"] <- sample(sampled_residual[,i], length(random_rec_year_period), replace=TRUE)
-      }
-      if(resid_type=="backward"){
-        SR_mat[random_rec_year_period,i,"rand_resid"] <- sample_backward(sampled_residual[,i], length(random_rec_year_period), backward_duration)
-      }
-      SR_mat[random_rec_year_period,i,"deviance"] <- SR_mat[random_rec_year_period,i,"rand_resid"]-SR_mat[random_rec_year_period,i,"bias_factor"]
-    }
-  }
 
   if(!is.null(model_average_option)){
     weight <- arrange_weight(model_average_option$weight,nsim)
@@ -1118,6 +996,125 @@ set_SR_mat <- function(res_vpa=NULL,
                              regime_shift_option = regime_shift_option,
                              bias_correction = bias_correction
     )
+  }    
+
+  if(is.null(model_average_option)){
+    # define SR function
+    if(res_SR$input$SR=="HS"){
+      SR_mat[,,"SR_type"] <- 1
+      SRF <- SRF_HS
+    }
+    if(res_SR$input$SR=="BH"){
+      SR_mat[,,"SR_type"] <- 2
+      SRF <- SRF_BH
+    }
+    if(res_SR$input$SR=="RI"){
+      SR_mat[,,"SR_type"] <- 3
+      SRF <- SRF_RI
+    }
+
+    # define SR parameter
+    if(is.null(regime_shift_option)){
+      SR_mat[,,"a"] <- res_SR$pars$a
+      SR_mat[,,"b"] <- res_SR$pars$b
+      SR_mat[,,"sd"] <- res_SR$pars$sd
+    }
+    else{
+      regime_data <- res_SR$regime_resid %>%
+        left_join(res_SR$regime_pars, by="regime") %>%
+        bind_cols(res_SR$input$SRdata)
+      SR_mat[as.character(regime_data$year),,"a"] <- regime_data$a
+      SR_mat[as.character(regime_data$year),,"b"] <- regime_data$b
+      SR_mat[as.character(regime_data$year),,"sd"] <- regime_data$sd
+      future_regime_par <- res_SR$regime_pars %>% dplyr::filter(regime==regime_shift_option$future_regime)
+      SR_mat[random_rec_year_period,,"a"] <- future_regime_par$a
+      SR_mat[random_rec_year_period,,"b"] <- future_regime_par$b
+      SR_mat[random_rec_year_period,,"sd"] <- future_regime_par$sd
+
+      # どのレジームに属するか明示的に指定されないケースが出てくる。
+      # そういう場合は将来予測のレジームのパラメータを使うようにする→要改善
+      missing_year <- which(!(1:dim(SR_mat)[[1]] %in% c(which(allyear_name %in% as.character(regime_data$year)),random_rec_year_period)))
+
+      if(length(missing_year)>0){
+        SR_mat[missing_year,,"a"] <- future_regime_par$a
+        SR_mat[missing_year,,"b"] <- future_regime_par$b
+        SR_mat[missing_year,,"sd"] <- future_regime_par$sd
+      }
+
+      res_SR$pars$rho <- 0
+    }
+    SR_mat[,,"rho"] <- res_SR$pars$rho
+    SR_mat[random_rec_year_period,,"intercept"] <- recruit_intercept # future intercept
+    if(!is.null(res_SR$input$SRdata$release))
+      SR_mat[as.character(res_SR$input$SRdata$year),,"intercept"] <- res_SR$input$SRdata$release
+
+      if(!is.null(res_vpa)){
+        SR_mat[1:(start_random_rec_year-1),,"ssb"] <- as.numeric(colSums(res_vpa$ssb,na.rm=T))[1:(start_random_rec_year-1)]
+        SR_mat[1:(start_random_rec_year-1),,"recruit"] <- as.numeric(res_vpa$naa[1,1:(start_random_rec_year-1)])
+      }
+
+      recruit_range <- (recruit_age+1):(start_random_rec_year-1)
+      ssb_range     <- 1:(start_random_rec_year-1-recruit_age)
+
+      # re-culcurate past recruitment deviation
+      # intercept=relase fish
+      SR_mat[recruit_range,,"deviance"] <- SR_mat[recruit_range,,"rand_resid"] <-
+        log(SR_mat[recruit_range,,"recruit"]-SR_mat[recruit_range,,"intercept"]) -
+        log(SRF(SR_mat[ssb_range,,"ssb"],SR_mat[recruit_range,,"a"],SR_mat[recruit_range,,"b"]))
+
+      # define future recruitment deviation
+      set.seed(seed_number)
+
+      if(resid_type=="lognormal"){
+        if(isTRUE(bias_correction)){
+          #            sd_with_AR <- sqrt(res_SR$pars$sd^2/(1-res_SR$pars$rho^2))
+          #            bias_factor <- 0.5* sd_with_AR^2
+          sd_with_AR <- sqrt(SR_mat[,,"sd"]^2/(1-SR_mat[,,"rho"]^2))
+          SR_mat[,,"bias_factor"] <- 0.5 * sd_with_AR^2
+          SR_mat[-random_rec_year_period,,"bias_factor"] <- 0
+        }
+        else{
+          #            bias_factor <- 0
+          SR_mat[,,"bias_factor"] <- 0
+        }
+
+        tmp_SR <- t(SR_mat[random_rec_year_period,,"rand_resid"])
+        tmp_SR[] <- rnorm(nsim*length(random_rec_year_period), mean=0,
+                          sd=t(SR_mat[random_rec_year_period,,"sd"]))
+        SR_mat[random_rec_year_period,,"rand_resid"] <- t(tmp_SR)
+
+        for(t in random_rec_year_period){
+          SR_mat[t, ,"deviance"] <- SR_mat[t-1, ,"deviance"]*SR_mat[t,,"rho"] + SR_mat[t, ,"rand_resid"]
+        }
+        SR_mat[random_rec_year_period,,"deviance"] <- SR_mat[random_rec_year_period,,"deviance"] - SR_mat[random_rec_year_period,,"bias_factor"]
+      }
+
+      if(resid_type=="resample" | resid_type=="backward"){
+        # 推定された残差をそのまま使う
+        if(resample_year_range==0){
+          resample_year_range <- sort(res_SR$input$SRdata$year[res_SR$input$w==1])
+        }
+
+        sampled_residual <- SR_mat[as.character(resample_year_range),,"rand_resid"]
+        if(isTRUE(bias_correction)){
+          #            bias_factor <- log(colMeans(exp(sampled_residual)))
+          SR_mat[random_rec_year_period,,"bias_factor"] <- rep(log(colMeans(exp(sampled_residual))),
+                                                               each=length(random_rec_year_period))
+        }
+        else{
+          #            bias_factor <- rep(0,ncol(sampled_residual))
+          SR_mat[random_rec_year_period,,"bias_factor"] <- 0
+        }
+        for(i in 1:ncol(sampled_residual)){
+          if(resid_type=="resample"){
+            SR_mat[random_rec_year_period,i,"rand_resid"] <- sample(sampled_residual[,i], length(random_rec_year_period), replace=TRUE)
+          }
+          if(resid_type=="backward"){
+            SR_mat[random_rec_year_period,i,"rand_resid"] <- sample_backward(sampled_residual[,i], length(random_rec_year_period), backward_duration)
+          }
+          SR_mat[random_rec_year_period,i,"deviance"] <- SR_mat[random_rec_year_period,i,"rand_resid"]-SR_mat[random_rec_year_period,i,"bias_factor"]
+        }
+      }
   }
 
   # when fix recruitment
@@ -1523,4 +1520,194 @@ calc_forward <- function(naa,M,faa,t, plus_age, plus_group = TRUE){
     if(plus_group == TRUE) naa[plus_age,t+1] <- naa[plus_age,t+1] + naa[plus_age,t]*exp(-M[plus_age,t]-faa[plus_age,t])    
   }
   return(naa)
+}
+
+set_upper_limit_catch <- function(catch_previous_year, catch_current_year, upper_limit){
+  upper_catch <- catch_previous_year * upper_limit
+  is_over_upper_catch  <- catch_current_year > upper_catch
+  catch_current_year[is_over_upper_catch] <- upper_catch[is_over_upper_catch]
+  catch_current_year
+}
+
+set_lower_limit_catch <- function(catch_previous_year, catch_current_year, lower_limit){
+  lower_catch <- catch_previous_year * lower_limit
+  is_under_lower_catch  <- catch_current_year < lower_catch
+  catch_current_year[is_under_lower_catch] <- lower_catch[is_under_lower_catch]
+  catch_current_year
+}
+
+
+#'
+#' future_vpaを使ってMSY管理基準値などを計算するwrapper関数
+#'
+#' @param data_future make_future_dataの返り値
+#' @param candidate_PGY PGYの計算候補
+#' @param candidate_B0 b0の計算候補
+#' @param candidate_Babs Babsの計算候補
+#'
+#' @export
+#' @encoding UTF-8
+#'
+
+est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE, candidate_PGY=c(0.1,0.6),
+                      only_lowerPGY="lower", candidate_B0=-1, candidate_Babs=-1, calc_yieldcurve=TRUE,
+                      select_Btarget=0, select_Blimit=0, select_Bban=0){
+
+  res_vpa_MSY <- data_future$input$res_vpa
+  res_SR_MSY <-  data_future$input$res_SR
+  # F=0からssbがゼロになるまでFを順次大きくしたtraceを実行する
+  trace.multi <- unique(sort(c(0.001,seq(from=0,to=2,by=0.1),10,100)))
+  trace_pre <- frasyr::trace_future(data_future$data, trace.multi=trace.multi, ncore=ncore)
+  B0stat <- trace_pre %>% dplyr::filter(fmulti==0) %>% mutate(RP_name="B0")
+  trace.multi2 <- unique(range(trace.multi[trace_pre$ssb.mean>0.001]))
+
+  f_range <- range(trace.multi[which.max(trace_pre$catch.mean)+c(-1,1)])
+  f_range[f_range==0] <- 0.0001
+
+  # 以降、初期値はそれを参考に決める
+  res_future_MSY <- future_vpa(tmb_data = data_future$data,
+                               optim_method=optim_method,
+                               multi_init=mean(f_range),
+                               multi_lower=f_range[1],
+                               multi_upper=f_range[2],
+                               compile=compile_tmb)
+
+    MSYstat <- res_future_MSY %>% get.stat(use_new_output=TRUE) %>%
+      mutate(RP_name="MSY")
+
+      # 他管理基準値を推定するためのオブジェクトを作っておく
+    obj_mat <- NULL
+    if(candidate_PGY[1]>0){
+
+        obj_mat <- bind_rows(obj_mat,
+                             tibble(RP_name    = str_c("PGY",candidate_PGY,"lower",sep="_"),
+                                    obj_value  = candidate_PGY * MSYstat$catch.mean,
+                                    multi_init = res_future_MSY$multi*1.2,
+                                    multi_lower= res_future_MSY$multi,
+                                    multi_upper= 10,
+                                    objective="PGY"
+                                    ))
+
+        if(only_lowerPGY=="both"){
+            obj_mat2 <- tibble(RP_name    = str_c("PGY",candidate_PGY,"upper",sep="_"),
+                               obj_value  = candidate_PGY * MSYstat$catch.mean,
+                               multi_init = res_future_MSY$multi*0.5,
+                               multi_upper= res_future_MSY$multi,
+                               multi_lower= 0.001,
+                               objective="PGY")
+            obj_mat <- bind_rows(obj_mat, obj_mat2)
+        }
+    }
+
+    if(candidate_B0[1]>0){
+        fssb.range <- trace.multi[trace_pre$ssb.mean>0.1]
+        obj_mat <- bind_rows(obj_mat,
+                             tibble(RP_name    = str_c("B0-",candidate_B0*100,"%"),
+                                    obj_value  = candidate_B0 * B0stat$ssb.mean,
+                                    multi_init = mean(fssb.range),
+                                    multi_upper= max (fssb.range),
+                                    multi_lower= 0.001,
+                                    objective="SSB"
+                                    ))
+    }
+
+    if(candidate_Babs[1]>0){
+        fssb.range <- trace.multi[trace_pre$ssb.mean>0.1]
+        obj_mat <- bind_rows(obj_mat,
+                             tibble(RP_name    = str_c("Ben-",candidate_Babs,""),
+                                    obj_value  = candidate_Babs,
+                                    multi_init = mean(fssb.range),
+                                    multi_upper= max (fssb.range),
+                                    multi_lower= 0.001,
+                                    objective="SSB"
+                                    ))
+    }
+
+    # obj_matをまとめてmapで回す
+    other_RP_stat <- NULL
+    if(!is.null(obj_mat)){
+
+        other_RP_stat <-
+            purrr::map_dfr(1:nrow(obj_mat),
+                           function(x){
+                               res <- future_vpa(tmb_data     = data_future$data,
+                                                 optim_method = optim_method,
+                                                 multi_init   = obj_mat$multi_init[x],
+                                                 multi_lower  = obj_mat$multi_lower[x],
+                                                 multi_upper  = obj_mat$multi_upper[x],
+                                                 compile      = FALSE,
+                                                 objective    = obj_mat$objective[x],
+                                                 obj_value    = obj_mat$obj_value[x],
+                                                 obj_stat     = "mean") %>%
+                                   get.stat(use_new_output=TRUE)})
+
+        other_RP_stat <- bind_cols(other_RP_stat, select(obj_mat, RP_name))
+        print(bind_cols(obj_mat[,1:2], select(other_RP_stat,catch.mean, ssb.mean)))
+    }
+
+    all.stat <- bind_rows(MSYstat, B0stat, other_RP_stat)
+    sum.stat <- get_summary_stat(all.stat)
+
+    if(calc_yieldcurve==TRUE){
+        # update trace
+        trace.multi2 <- c(res_MSY$summary$"Fref/Fcur",trace.multi2)
+        trace.multi2 <- trace.multi2[trace.multi2>0] %>%
+            purrr::map(function(x) x * c(0.9,0.925,0.95,0.975,1.025,1.05,1.075)) %>%
+            unlist() %>% sort() %>% unique()
+        diff.trace <- diff(log(trace.multi2))
+        trace.multi2[which(mean(diff.trace)<diff.trace)]
+        trace.multi2 <- c(trace.multi2,
+                          trace.multi2[which(mean(diff.trace)<diff.trace)] +
+                          diff.trace[which(mean(diff.trace)<diff.trace)]/2) %>%
+            sort()
+        trace_pre2 <- trace_future(data_future$data,
+                                   trace.multi=trace.multi2, ncore=ncore)
+        trace_pre <- bind_rows(trace_pre,trace_pre2)
+        trace_pre <- trace_pre[!duplicated(trace_pre$ssb.mean),]
+    }
+
+    res_MSY <- lst(all.stat=all.stat, summary=sum.stat$sumvalue,
+                   Fvector=sum.stat$Fvector,input=res_future_MSY$input,
+                   input_data=data_future$input,
+                   trace=trace_pre, res_vpa=res_vpa_MSY, res_SR=res_SR_MSY)
+
+    res_MSY$summary$perSPR <-
+        purrr::map_dbl(1:dim(res_MSY$Fvector)[1],
+                   function(x)
+                       calc_perspr(fout=format_to_old_future(res_future_MSY),
+                                   res_vpa=res_vpa_MSY,Fvector=res_MSY$Fvector[x,]))
+
+    # define RP.definition for Btarget
+    if(select_Btarget!=0){
+        if(select_Btarget<0){
+            print(select(res_MSY$summary,-Catch.CV))
+            select_Btarget <- readline("Enter row number to be Btarget: ")
+            select_Btarget <- as.integer(select_Btarget)
+        }
+        res_MSY$summary$RP.definition[1] <- NA
+        res_MSY$summary$RP.definition[select_Btarget] <- "Btarget0"
+    }
+    # define RP.definition for Blimit
+    if(select_Blimit!=0){
+        if(select_Blimit<0){
+            print(select(res_MSY$summary,-Catch.CV))
+            select_Blimit <- readline("Enter row number to be Blimit: ")
+            select_Blimit <- as.integer(select_Blimit)
+        }
+        res_MSY$summary$RP.definition[which(res_MSY$summary$RP.definition=="Blimit0")] <- NA
+        res_MSY$summary$RP.definition[select_Blimit] <- "Blimit0"
+    }
+    # define RP.definition for Bban
+    if(select_Bban!=0){
+        if(select_Bban<0){
+            print(select(res_MSY$summary,-Catch.CV,-RP.definition))
+            select_Bban <- readline("Enter row number to be Bban: ")
+            select_Bban <- as.integer(select_Bban)
+        }
+        res_MSY$summary$RP.definition[which(res_MSY$summary$RP.definition=="Bban0")] <- NA
+        res_MSY$summary$RP.definition[select_Bban] <- "Bban0"
+    }
+
+  return(lst(res_MSY, res_future_MSY, data_future_MSY = data_future))
+    
 }
