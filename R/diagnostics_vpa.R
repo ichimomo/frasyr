@@ -594,7 +594,7 @@ do_estcheck_vpa <- function(res, n_ite = 20, sd_jitter = 1, what_plot = NULL, TM
 
 # author: Kohei Hamabe
 
-plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_year = FALSE){
+plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_year = FALSE, plot_scale = TRUE, resid_CI=TRUE){
   if(is.numeric(res$input$use.index)){
     assertthat::assert_that(length(res$input$dat$index[,1]) >= length(res$input$use.index))
     used_index <- res$input$dat$index[res$input$use.index,]
@@ -603,6 +603,10 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
   } else {
     assertthat::assert_that(is.numeric(res$input$use.index)|res$input$use.index=="all")
   }
+  # グラフ間のスケールを統一するか否か
+  if(plot_scale) scale_tmp <- "fixed" else scale_tmp <- "free"
+  # x軸の範囲
+  if(is.numeric(plot_year)) xlim_year <- c(min(plot_year), max(plot_year)) else xlim_year <- c(min(as.numeric(colnames(res_vpa_estb$naa))), max(as.numeric(colnames(res_vpa_estb$naa))))
 
   d_tmp <- matrix(NA,
                   nrow = length(used_index[1,]),
@@ -624,16 +628,9 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
     resid_tmp <- log(d_tmp[,i+1]) - log(res$pred.index[i,]) # 対数残差
     sd_resid_tmp <- resid_tmp/sd(resid_tmp, na.rm = TRUE) # 対数残差の標準化残差
 
-    # res$abund文字列中に"N"の文字があれば尾数スケールだから、予測指数のスケールもそのまま
-    # 逆に"N"の文字がない（＝BやSSBの場合）、リスケーリング分かける計算！！
-    tmp <- str_split(res$input$abund[i], "") %>% unlist()
-    if(sum(tmp == "N") == 0){
-      d_tmp[,(i+length(res$q)*1+4)] <- (res$pred.index[i,]/res$q[i])^(1/res$b[i])*res$input$scale
+    #abund.extractor関数で書き換え #catch.prop引数は不要か
+    d_tmp[,(i+length(res$q)*1+4)] <- abund.extractor(abund = res$input$abund[i], naa = res$naa, faa = res$faa, dat = res$input$dat, min.age = res$input$min.age[i], max.age = res$input$max.age[i], link = res$input$link, base = res$input$base, af = res$input$af, sel.def = res$input$sel.def, p.m=res$input$p.m, omega=res$input$omega, scale=res$input$scale)
 
-      # 資源重量の場合、リスケーリング分かけて補正
-    } else {
-      d_tmp[,(i+length(res$q)*1+4)] <- (res$pred.index[i,]/res$q[i])^(1/res$b[i])
-    } # if(リスケーリング計算)
 
     d_tmp[,(i+length(res$q)*2+4)] <- res$pred.index[i,] # q*N^B計算結果
     d_tmp[,(i+length(res$q)*3+4)] <- resid_tmp
@@ -673,50 +670,83 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
 
   if(!is.null(index_name)){
     if(!length(index_name) == length(res$q)) stop(paste0("Length of index_name was different to the number of indices"))
-    d_tidy$Index_Label <- rep(index_name, length(d_tmp[,1]))
+    d_tidy$Index_Label <- rep(index_name, nrow(d_tmp))
   }
 
-  # グラフ間のスケールを統一するか否か
-#  if(plot_scale) scale_tmp <- "fixed" else scale_tmp <- "free"
-  # x軸の範囲
-  if(is.numeric(plot_year)) xlim_year <- c(min(plot_year), max(plot_year)) else xlim_year <- c(min(d_tidy$year), max(d_tidy$year))
+  # RMSEの計算
+  rmse.numeric <- numeric()
+  for(i in 1:length(unique(d_tidy$Index_Label))){
+    calc.data <- d_tidy[d_tidy$Index_Label==unique(d_tidy$Index_Label)[i],]
+    rmse.numeric[i] <- (sum(calc.data$resid^2)/length(calc.data$resid)) %>% sqrt
+  } # for(i): calculation of RMSEs
+  rmse_data <- tibble(Index_Label = unique(d_tidy$Index_Label), value = rmse.numeric) %>%
+    mutate(y = min(d_tidy$resid), x = xlim_year[1])
+  rmse_data$stat <- rmse_data$Index_Label
+  # RMSEの計算(標準化残差の場合)
+  rmse.numeric <- numeric()
+  for(i in 1:length(unique(d_tidy$Index_Label))){
+    calc.data <- d_tidy[d_tidy$Index_Label==unique(d_tidy$Index_Label)[i],]
+    rmse.numeric[i] <- (sum(calc.data$sd.resid^2)/length(calc.data$sd.resid)) %>% sqrt
+  } # for(i): calculation of RMSEs
+  sd.rmse_data <- tibble(Index_Label = unique(d_tidy$Index_Label), value = rmse.numeric) %>%
+    mutate(y = min(d_tidy$resid), x = xlim_year[1])
+  sd.rmse_data$stat <- rmse_data$Index_Label
 
-  if(isTRUE(plot_smooth)){
+
+  if(isTRUE(resid_CI)){
     g1 <- ggplot(d_tidy) +
+      geom_ribbon(aes(x = year, ymin = -qnorm(0.025)*sigma, ymax = qnorm(0.025)*sigma), alpha=0.05)+
+      geom_ribbon(aes(x = year, ymin = -qnorm(0.1)*sigma, ymax = qnorm(0.1)*sigma), alpha=0.1)+
       geom_point(aes(x=year, y=resid, colour = Index_Label), size = 2) +
       geom_smooth(aes(x=year, y=resid, colour = Index_Label), lwd = 0.5, se=FALSE, lty=2) +
-      facet_wrap(~Index_Label, scale="fixed")+
+      facet_wrap(~Index_Label, scale=scale_tmp)+
       geom_hline(yintercept = 0, size = 1)+
       xlab("Year") +
       xlim(xlim_year) +
       ylab("log(Residual)") +
-      theme_SH(base_size = 14)
+      theme_SH(base_size = 14)+
+      geom_label(data = rmse_data,
+                 mapping = aes(x = x, y = y, label = str_c("RMSE=", round(value,2))),
+                 vjust="inward", hjust="inward")
     g1_sd <- ggplot(d_tidy) +
+      geom_ribbon(aes(x = year, ymin = -qnorm(0.025), ymax = qnorm(0.025)), alpha=0.05)+
+      geom_ribbon(aes(x = year, ymin = -qnorm(0.1), ymax = qnorm(0.1)), alpha=0.1)+
       geom_point(aes(x=year, y=sd.resid, colour = Index_Label), size = 2) +
       geom_smooth(aes(x=year, y=sd.resid, colour = Index_Label), lwd = 0.5, se=FALSE, lty=2) +
-      facet_wrap(~Index_Label, scale="fixed") +
+      facet_wrap(~Index_Label, scale=scale_tmp) +
       geom_hline(yintercept = 0, size = 1)+
       xlab("Year") +
       xlim(xlim_year) +
       ylab("log(Residual)") +
-      theme_SH(base_size = 14)
+      theme_SH(base_size = 14)+
+      geom_label(data = sd.rmse_data,
+                 mapping = aes(x = x, y = y, label = str_c("RMSE=", round(value,2))),
+                 vjust="inward", hjust="inward")
   } else {
     g1 <- ggplot(d_tidy) +
       geom_point(aes(x=year, y=resid, colour = Index_Label), size = 2) +
-      facet_wrap(~Index_Label, scale="fixed")+
+      geom_smooth(aes(x=year, y=resid, colour = Index_Label), lwd = 0.5, se=FALSE, lty=2) +
+      facet_wrap(~Index_Label, scale=scale_tmp)+
       geom_hline(yintercept = 0, size = 1)+
       xlab("Year") +
       xlim(xlim_year) +
       ylab("log(Residual)") +
-      theme_SH(base_size = 14)
+      theme_SH(base_size = 14)+
+      geom_label(data = rmse_data,
+                 mapping = aes(x = x, y = y, label = str_c("RMSE=", round(value,2))),
+                 vjust="inward", hjust="inward")
     g1_sd <- ggplot(d_tidy) +
       geom_point(aes(x=year, y=sd.resid, colour = Index_Label), size = 2) +
-      facet_wrap(~Index_Label, scale="fixed") +
+      geom_smooth(aes(x=year, y=sd.resid, colour = Index_Label), lwd = 0.5, se=FALSE, lty=2) +
+      facet_wrap(~Index_Label, scale=scale_tmp) +
       geom_hline(yintercept = 0, size = 1)+
       xlab("Year") +
       xlim(xlim_year) +
       ylab("log(Residual)") +
-      theme_SH(base_size = 14)
+      theme_SH(base_size = 14)+
+      geom_label(data = sd.rmse_data,
+                 mapping = aes(x = x, y = y, label = str_c("RMSE=", round(value,2))),
+                 vjust="inward", hjust="inward")
   }
 
   g2 <- ggplot(d_tidy) +
