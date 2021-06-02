@@ -2489,7 +2489,7 @@ calc_steepness = function(SR="HS",rec_pars,M,waa,maa,plus_group=TRUE,faa = NULL,
     }
     x_grid = seq(0,10,length=101) 
     tmp = x_grid %>% purrr::map_dbl(.,obj_fun)
-    Opt = optimize(obj_fun,x_grid[c(which.min(tmp)-1,which.min(tmp)+1)])
+    Opt = optimize(obj_fun,x_grid[c(max(1,which.min(tmp)-1),min(which.min(tmp)+1,length(x_grid)))])
     Fmsy2F=Opt$minimum
     RES2 = est_detMSY(Fmsy2F)
     RES2 = RES2 %>% dplyr::select(-h) %>% dplyr::mutate(Fmsy2F=Fmsy2F)
