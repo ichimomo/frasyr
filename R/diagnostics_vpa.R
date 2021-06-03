@@ -686,8 +686,6 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
   if(plot_scale) sd.thred_y <- c(NA,NA) else sd.thred_y <- c(-thred_sd.resid,thred_sd.resid)
   sd.y.posi_rho_data <- which(!range(d_tidy$sd.resid,na.rm = TRUE)==sd.thred_y)[1]
 
-
-
   # 残差プロットに追加する観測誤差と自己相関係数のtidy data
   rho_data <- tibble(Index_Label = unique(d_tidy$Index_Label), sigma = res$sigma, ar1 = rho.numeric) %>%
     mutate(y = thred_y[y.posi_rho_data], x = xlim_year[1], y.sd = sd.thred_y[sd.y.posi_rho_data])
