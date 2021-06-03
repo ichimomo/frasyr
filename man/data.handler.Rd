@@ -13,7 +13,8 @@ data.handler(
   M = 0.4,
   maa.tune = NULL,
   waa.catch = NULL,
-  catch.prop = NULL
+  catch.prop = NULL,
+  release.dat = NULL
 )
 }
 \arguments{

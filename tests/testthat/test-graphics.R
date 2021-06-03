@@ -37,14 +37,14 @@ test_that("plot_SRdata", {
   g1 <- plot_SRdata(SRdata_pma, type="gg")
   g2 <- plot_SRdata(SRdata_pma)
   expect_equal(class(g1)[1],"gg")
-  expect_equal(class(g2)[1],"NULL") 
+  expect_equal(class(g2)[1],"NULL")
 })
 
 test_that("SRplot_gg", {
   g1 <- SRplot_gg(res_sr_HSL1)
   g2 <- SRplot_gg(res_sr_HSL2)
   expect_equal(class(g1)[1],"gg")
-  expect_equal(class(g2)[1],"gg") 
+  expect_equal(class(g2)[1],"gg")
 })
 
 test_that("compare_SRfit",{
@@ -65,20 +65,20 @@ test_that("SRregime_plot",{
   # 本当の意味でのテストにはなっていない
   expect_equal(class(g1)[1],"gg")
   (g1 <- compare_SRfit(list(resSRregime, resSRregime),
-                       biomass.unit=1000, number.unit=1000))
-  expect_equal(class(g1)[1],"gg")  
+                       biomass.unit=1000, number.unit=1000,newplot = F))
+  expect_equal(class(g1)[1],"gg")
 })
 
 test_that("SRregime_plot",{
     data(res_sr_HSL1)
     data(res_sr_HSL2)
     (g1 <- compare_SRfit(list(HSL1=res_sr_HSL1, HSL2=res_sr_HSL2),
-                         biomass.unit=1000, number.unit=1000))
-    expect_equal(class(g1)[1],"gg")      
+                         biomass.unit=1000, number.unit=1000,newplot = F))
+    expect_equal(class(g1)[1],"gg")
     (g1 <- compare_SRfit(list(L1=list(res_sr_HSL1,res_sr_HSL1),
                               L2=list(res_sr_HSL1,res_sr_HSL2)),
-                         biomass.unit=1000, number.unit=1000))    
-    expect_equal(class(g1)[1],"gg")      
+                         biomass.unit=1000, number.unit=1000,newplot = F))
+    expect_equal(class(g1)[1],"gg")
 
 })
 
@@ -87,29 +87,27 @@ test_that("plot_waa", {
   expect_equal(class(g1)[1],"list")
 })
 
-#test_that("plot_yield", {
-#  refs.plot <- dplyr::filter(res_MSY$summary, RP.definition%in%c("Btarget0", "Blimit0", "Bban0"))
-#  (graph_MSY$yield_curve_detail <- plot_yield(res_MSY$trace,
-#                                              refs.plot,
-#                                              refs.label=label_name_kobe,
-#                                              future=list(res_future_0.8HCR),
-#                                              past=res_vpa,label=FALSE,
-#                                              refs.color=rep("black",3),
-#                                              biomass.unit=1000,
-#                                              AR_select=FALSE,
-#                                              past_year_range=past_year_range_yieldcurve,
-#                                              xlim.scale=0.7,ylim.scale=1.1
-#                                              ) + theme_SH())
-#  refs.plot <- dplyr::filter(res_MSY_HSL1$summary, RP.definition%in%c("Btarget0", "Blimit0", "Bban0"))
-#  
-#  load(system.file("extdata","refs_base_pma.rda",package = "frasyr"))
-#  g1 <- plot_yield(MSY_obj=refs.plot, refs_base=refs_base_pma)
-#  
-#  g1 <- plot_yield(MSY_obj=res_MSY, refs_base=refs_base_pma)
-#  g2 <- plot_yield(MSY_obj=res_MSY_pma, refs_base=refs_base_pma, biomass.unit=1, age.label.ratio = 0.9)
-#  expect_equal(class(g1)[1],"gg")
-#  expect_equal(class(g2)[1],"gg")
-#})
+test_that("plot_yield", {
+  refs.plot <- dplyr::filter(res_MSY$summary, RP.definition%in%c("Btarget0", "Blimit0", "Bban0"))
+
+  g1 <- purrr::map(c(TRUE,FALSE),
+                   function(x)
+                     plot_yield(res_MSY$trace,
+                                refs.plot,
+                                refs.label=NULL,
+                                future=list(res_future_0.8HCR),
+                                past=res_vpa,label=FALSE,
+                                refs.color=rep("black",3),
+                                biomass.unit=1000,
+                                AR_select=FALSE,
+                                past_year_range=NULL,
+                                plus_group=x,
+                                xlim.scale=0.7,ylim.scale=1.1)
+                   )
+
+  expect_equal(class(g1[[1]])[1],"gg")
+  expect_equal(class(g1[[2]])[1],"gg")
+})
 
 test_that("plot_kobe_gg", {
   load(system.file("extdata","refs_base_pma.rda",package = "frasyr"))
@@ -156,10 +154,18 @@ test_that("compare_MSY",{
 #})
 
 test_that("compare_kobeII",{
-  
+
 })
 
 test_that("plot_sprypr", {
   g1 <- plot_sprypr(result_vpa=res_vpa, type="perspr")
   expect_equal(class(g1)[1],"gg")
+})
+
+test_that("plot_SR_AReffect", {
+
+  SRdata <- get.SRdata(res_vpa)
+  res_SR <- fit.SR(SRdata,SR="BH",AR=1,out.AR=FALSE)
+  (g <- plot_SR_AReffect(res_SR))
+
 })

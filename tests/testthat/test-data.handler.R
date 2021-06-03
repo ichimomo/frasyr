@@ -89,6 +89,21 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
                               maa.tune = NULL,
                               waa.catch = NULL,
                               catch.prop = NULL)
+
+  # 放流データを含むVPAデータ
+  data_release <- to_vpa_data(data_base, label_name="caa")[1,]
+  release.number <- 2
+  data_release[] <- release.number
+  
+  vpadat_base0_release <- data.handler(caa=to_vpa_data(data_base, label_name="caa"),
+                               waa=to_vpa_data(data_base, label_name="waa"),
+                               maa=to_vpa_data(data_base, label_name="maa"),
+                               M  = 0,
+                               index = to_vpa_data(data_base, label_name="abund"),
+                               maa.tune = NULL,
+                               waa.catch = NULL,
+                               release.dat = data_release,
+                               catch.prop = NULL)
   
   # vpa (no tuning) ----
 
@@ -101,6 +116,11 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
                                Pope = TRUE, p.init = 0.5) 
   expect_equal(as.numeric(rowMeans(res_vpa_base0_nontune$naa)), 
                true_number)
+
+  res_vpa_base0_nontune_release <- vpa(vpadat_base0_release, tf.year=2015:2016, last.catch.zero = FALSE, 
+                                       Pope = TRUE, p.init = 0.5)
+  expect_equal(as.numeric(rowMeans(res_vpa_base0_nontune_release$naa)), 
+               true_number)
   
   res_vpa_base1_nontune <- vpa(vpadat_base1, tf.year=2015:2016, last.catch.zero = FALSE, 
                                Pope = TRUE, p.init = 0.5) 
@@ -111,7 +131,6 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
   res_vpa_lst0 <- vpa(vpadat_lst0, tf.year=2007:2008, last.catch.zero = TRUE, 
                                Pope = TRUE, p.init = 0.5, plus.group=TRUE) 
   expect_equal(as.numeric(round(rowMeans(res_vpa_lst0$ssb),2)),c(NA,16.40,37.92,30.63))
-			   
   
   # プラスグループが変わる場合はtrue_numberには一致しない；どうテストすべきか？
   res_vpa_pgc0_nontune <- vpa(vpadat_pgc0, tf.year=2015:2016, last.catch.zero = FALSE, 
@@ -125,7 +144,10 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
                true_number)
   
   res_vpa_rec2_nontune <- vpa(vpadat_rec2, tf.year=2015:2016, last.catch.zero = FALSE, 
-                              Pope = TRUE, p.init = 0.5) 
+                              Pope = TRUE, p.init = 0.5)
+
+  data_SR <- get.SRdata(res_vpa_rec2_nontune)
+  expect_equal(nrow(data_SR), ncol(res_vpa_rec2_nontune$naa)-2)
   
   # catch計算用のwaaを２倍にしているbase1データでは漁獲量が倍になる
   expect_equal(res_vpa_base0_nontune$wcaa*2,
@@ -383,6 +405,14 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
   res_vpa_base0_lst0_zen1 <- vpa(vpadat_lst0, tf.year=2007:2009, last.catch.zero = TRUE, 
                                  Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="all", est.method="ml", b.est=FALSE, abund=c("N","N","N","N","N","N"),min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),rec.new=NULL)
   expect_equal(as.numeric(res_vpa_base0_lst0_zen1$naa[1,10]),NA_real_)
+  expect_equal(as.numeric(round(res_vpa_base0_lst0_zen1$naa[,10],2)),c(NA_real_,538.18,25.87,150.63))
+  
+  #   全F推定法: last.catch.zero=TRUEで，rec.new=NULLのとき，plus.group=FALSE
+  res_vpa_base0_lst0_zen11 <- vpa(vpadat_lst0, tf.year=2007:2009, last.catch.zero = TRUE, 
+                                 Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="all", est.method="ml", b.est=FALSE, abund=c("N","N","N","N","N","N"),min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),rec.new=NULL,plus.group=FALSE)
+
+  expect_equal(as.numeric(round(res_vpa_base0_lst0_zen11$naa[,10],2)),c(NA_real_,685.22,86.13,118.49))
+  
   
   #   全F推定法: last.catch.zero=TRUEで，rec.new=1000のとき，最新年の0歳は1000となる
   res_vpa_base0_lst0_zen2 <- vpa(vpadat_lst0, tf.year=2007:2009, last.catch.zero = TRUE, 
@@ -581,7 +611,7 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
   #二段階法：est.method=最小二乗法による推定 (use.equ="old")
   res_vpa_pgc0_tune1l_o <- vpa(vpadat_pgc0, tf.year=2015:2016, last.catch.zero = FALSE, 
                              Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.f=sel.f1, est.method="ls", b.est=FALSE,abund=c("B","B"),use.equ="old")
-  expect_equal(as.numeric(round(rowMeans(res_vpa_pgc0_tune1l_o$naa),2)),c(3.33,2.32,1.99,NA))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_pgc0_tune1l_o$naa),2)),c(3.42,2.41,2.07,NA))
   expect_equal(as.numeric(round(res_vpa_pgc0_tune1l_o$sigma,2)),0.36)
   
   #二段階法：est.method=最尤法による推定 (use.equ="new")
@@ -593,7 +623,7 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
   #二段階法：est.method=最尤法による推定 (use.equ="old")
   res_vpa_pgc0_tune1m_o <- vpa(vpadat_pgc0, tf.year=2015:2016, last.catch.zero = FALSE, 
                              Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.f=sel.f1, est.method="ml", b.est=FALSE,abund=c("B","B"),use.equ="old")
-  expect_equal(as.numeric(round(rowMeans(res_vpa_pgc0_tune1m_o$naa),2)),c(3.33,2.32,1.98,NA))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_pgc0_tune1m_o$naa),2)),c(3.41,2.40,2.07,NA))
   expect_equal(as.numeric(round(res_vpa_pgc0_tune1m_o$sigma,2)),c(0.39,0.34))
   
   #二段階法：est.method=最尤法による推定(2つの指数のsdが異なる場合） (use.equ="new")
@@ -609,8 +639,8 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
   vpa_pgc0_index_change$index[1,is.na(vpa_pgc0_index_change$index[1,])] <- exp(mean(log(c(1,2))))
   res_vpa_pgc0_index_change_tune1m_o <- vpa(vpa_pgc0_index_change, tf.year=2015:2016, last.catch.zero = FALSE, 
                                           Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.f=sel.f1, est.method="ml", b.est=FALSE,abund=c("B","B"), use.equ="old")
-  expect_equal(round(as.numeric(rowMeans(res_vpa_pgc0_index_change_tune1m_o$naa)),2),c(3.35,2.33,2.00,NA))
-  expect_equal(round(as.numeric(res_vpa_pgc0_index_change_tune1m_o$sigma),2),c(0.29,0.34))
+  expect_equal(round(as.numeric(rowMeans(res_vpa_pgc0_index_change_tune1m_o$naa)),2),c(3.45,2.42,2.09,NA))
+  expect_equal(round(as.numeric(res_vpa_pgc0_index_change_tune1m_o$sigma),2),c(0.29,0.35))
   
   #二段階法：est.method=最小二乗法による推定＋指標値の非線形性bの推定(use.equ="new")
   res_vpa_pgc0_estb_tune1l_b <- vpa(vpadat_pgc0_estb,last.catch.zero = FALSE, min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
@@ -622,9 +652,9 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
   #二段階法：est.method=最小二乗法による推定＋指標値の非線形性bの推定(use.equ="old")
   res_vpa_pgc0_estb_tune1l_b_o <- vpa(vpadat_pgc0_estb,last.catch.zero = FALSE, min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
                                     Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.f=sel.f3,est.method="ls", b.est=TRUE,abund=c("N","N","N","N","N","N"),fc.year=1998:2000, use.equ="old")
-  expect_equal(as.numeric(round(rowMeans(res_vpa_pgc0_estb_tune1l_b_o$naa),2)),c(633.14,298.27,152.18,NA))
-  expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune1l_b_o$b,2)),c(0.68,0.32,0.53,0.36,0.45,0.75))
-  expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune1l_b_o$sigma,2)),0.21)
+  expect_equal(as.numeric(round(rowMeans(res_vpa_pgc0_estb_tune1l_b_o$naa),2)),c(653.18,311.59,156.09,NA))
+  expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune1l_b_o$b,2)),c(0.68,0.33,0.53,0.37,0.45,0.76))
+  expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune1l_b_o$sigma,2)),0.2)
   
   #二段階法：est.method=最尤法による推定＋指標値の非線形性bの推定(use.equ="new")
   res_vpa_pgc0_estb_tune1m_b <- vpa(vpadat_pgc0_estb, last.catch.zero = FALSE, min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
@@ -636,9 +666,9 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
   #二段階法：est.method=最尤法による推定＋指標値の非線形性bの推定(use.equ="old")
   res_vpa_pgc0_estb_tune1m_b_o <- vpa(vpadat_pgc0_estb, last.catch.zero = FALSE, min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
                                     Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.f=sel.f3, est.method="ml", b.est=TRUE,abund=c("N","N","N","N","N","N"),fc.year=1998:2000, use.equ="old")
-  expect_equal(as.numeric(round(rowMeans(res_vpa_pgc0_estb_tune1m_b_o$naa),2)),c(648.00,303.64,155.48,NA))
-  expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune1m_b_o$b,2)),c(0.77,0.36,0.60,0.42,0.51,0.83))
-  expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune1m_b_o$sigma,2)),c(0.21,0.19,0.13,0.14,0.18,0.33))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_pgc0_estb_tune1m_b_o$naa),2)),c(667.07,316.62,159.18,NA))
+  expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune1m_b_o$b,2)),c(0.76,0.37,0.59,0.42,0.50,0.84))
+  expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune1m_b_o$sigma,2)),c(0.21,0.18,0.12,0.14,0.18,0.32))
   
   #二段階法：est.method=最尤法による推定＋指標値の非線形性bの推定+指標２と３のシグマは同じ(use.equ="new")
   res_vpa_pgc0_estb_tune1m_b_sigma <- vpa(vpadat_pgc0_estb, last.catch.zero = FALSE, min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
@@ -660,9 +690,9 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
   #二段階法：est.method=最尤法による推定＋指標値の非線形性bの推定＋一部のbは固定(use.equ="old")
   res_vpa_pgc0_estb_tune1m_b_fix_o <- vpa(vpadat_pgc0_estb, last.catch.zero = FALSE, min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
                                         Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.f=sel.f3, est.method="ml", b.est=TRUE,abund=c("N","N","N","N","N","N"),b.fix=c(NA,0.7,NA,NA,NA,1),fc.year=1998:2000,use.equ="old")
-  expect_equal(as.numeric(round(rowMeans(res_vpa_pgc0_estb_tune1m_b_fix_o$naa),2)),c(664.02,309.44,159.05,NA))
-  expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune1m_b_fix_o$b,2)),c(0.88,0.70,0.67,0.49,0.57,1.00))
-  expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune1m_b_fix_o$sigma,2)),c(0.22,0.21,0.13,0.14,0.19,0.34))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_pgc0_estb_tune1m_b_fix_o$naa),2)),c(683.77,322.68,162.90,NA))
+  expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune1m_b_fix_o$b,2)),c(0.86,0.70,0.66,0.48,0.56,1.00))
+  expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune1m_b_fix_o$sigma,2)),c(0.21,0.20,0.13,0.14,0.18,0.33))
   
   #2-2: 選択率更新法によるtuning ----
   #現状では，＋グループが途中で変わる場合の計算には対応していないのでテストは省略
@@ -732,5 +762,7 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
        res_vpa_base1_nontune,
        res_vpa_pgc0_nontune,
        res_vpa_rec0_nontune,
+       res_vpa_base0_nontune_release,
        file="res_vpa_files.rda")
 })
+

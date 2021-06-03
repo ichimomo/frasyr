@@ -14,8 +14,10 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
 
   res_sr_list <- list()
   for(i in 1:length(vpa_list)){
+      biopar <- derive_biopar(vpa_list[[i]],derive_year=2017)
+      biopar$M[nrow(biopar)] <- 100
       x <- vpa_list[[i]]
-      res_sr <- res_sr_list[[i]] <- get.SRdata(x) %>% fit.SR(AR=0, SR="HS")
+      res_sr <- res_sr_list[[i]] <- get.SRdata(x) %>% fit.SR(AR=0, SR="HS",bio_par=biopar)
       # SB、Rが同じにならない（SD>0）ケースは単純テストから除く
       if(res_sr$pars$sd < 0.001){
         const_ssr <- mean(colSums(x$ssb))
@@ -73,7 +75,8 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
                      Pope=res_vpa_base0_nontune$input$Pope,
                      fix_recruit=NULL,
                      fix_wcatch=NULL
-    )
+                     )
+  save(data_future_test, file="data_future_test.rda")
 
   # simple
   res_future_F0.1 <- future_vpa(tmb_data=data_future_test$data,
@@ -194,6 +197,36 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
             optim_method="none", multi_init=0)
   expect_equal(as.numeric(mean(res_future$naa[1,c("2018"),])),c(5))  
   
+  ## vpa function without plus group (with dummy vpa data)
+  vpa_no_plus_input <- vpa_list[[1]]$input %>% list_modify(plus.group=FALSE)
+  vpa_no_plus_input$dat$caa[4,] <- vpa_no_plus_input$dat$caa[4,]/2
+  vpa_no_plus <- do.call(vpa,vpa_no_plus_input)
+  vpa_no_plus$naa %>% apply(1,mean) %>% as.numeric() %>%
+    expect_equal(c(4,3,2,1))
+  
+  expect_equal(detect_plus_group(vpa_no_plus),FALSE)
+  expect_equal(detect_plus_group(vpa_list[[1]]),TRUE)  
+
+  # VPAでプラスグループなしオプションを使う場合は将来予測にそのまま引き継がれるはずだが、do.callを使う場合にはそうでない
+  # 明示的に指定する
+  res_future_no_plus <- redo_future(data_future_test,
+                                    list(res_vpa=vpa_no_plus,M=c(0,0,0,0),plus_group=FALSE),
+                                    optim_method="none", multi_init=0)
+  expect_equal(mean(res_future_no_plus$naa[,as.character(2025:2030),]),4, tol=0.0001)
+  rev(rowMeans(res_future_no_plus$SR_mat[,,"ssb"]))[1] %>% as.numeric() %>%
+      expect_equal(res_sr_list[[1]]$steepness$SB0)
+
+  BRP <- ref.F(vpa_no_plus,M=c(0,0,0,0.0001),Fcurrent=rep(Fvalue,4))
+  res_future_no_plus_F90 <- redo_future(data_future_test,
+                                    list(res_vpa=vpa_no_plus,M=c(0,0,0,0),plus_group=FALSE),
+                                    optim_method="none",
+                                    multi_init=BRP$summary$FpSPR.90.SPR[3])
+  
+  x <- rev(rowMeans(res_future_no_plus_F90$SR_mat[,,"ssb"]))[1]/rev(rowMeans(res_future_no_plus$SR_mat[,,"ssb"]))[1]  %>%  unlist() %>% as.numeric() %>% as.numeric()
+  expect_equal(round(as.numeric(x),3),0.9)
+  
+
+  
 })
 
 context("check future_vpa_function for regime shift") # ダミーデータ・レジームシフト将来予測 ----
@@ -209,7 +242,7 @@ test_that("future_vpa function (with dummy vpa data) for regime shift (level 2-3
   res_sr_list[[2]] <- fit.SRregime(get.SRdata(vpa_list[[1]]),
                                    SR="HS",method="L2",regime.key=c(0,1),
                                    regime.par=c("a","b","sd"),regime.year=2005)
-  res_sr_list[[2]]$pars$sd[2] <- 0.3 # 本当は両方ゼロだがテストのために0.3を入れる
+#  res_sr_list[[2]]$pars$sd[2] <- 0.3 # 本当は両方ゼロだがテストのために0.3を入れる
   res_sr_list[[2]]$regime_pars$sd[2] <- 0.3 # 本当は両方ゼロだがテストのために0.3を入れる
 
 #  names(res_sr_list) <- names(vpa_list)
@@ -395,3 +428,46 @@ test_that("future_vpa function (with dummy vpa data) for regime shift (level 2-3
 
 })
 
+
+res_vpa <- read.vpa(system.file("extdata","res_vpa_dummy_age2.csv",package="frasyr"))
+res_SR <- get.SRdata(res_vpa,weight.year = 1981:2018) %>% fit.SR()
+
+max_vpa_year <- max(as.numeric(colnames(res_vpa$naa)))
+bio_year <- rev(as.numeric(colnames(res_vpa$naa)))[1:3]
+Fvalue <- 0.2
+data_future_test <-
+    make_future_data(res_vpa,
+                     nsim = 10,
+                     nyear = 20,
+                     future_initial_year_name = max_vpa_year, # 年齢別資源尾数を参照して将来予測をスタートする年
+                     start_F_year_name = max_vpa_year+1, # この関数で指定したFに置き換える最初の年
+                     start_biopar_year_name=max_vpa_year+1, # この関数で指定した生物パラメータに置き換える最初の年
+                     start_random_rec_year_name = max_vpa_year+1, # この関数で指定した再生産関係からの加入の予測値に置き換える最初の年
+                     # biopar setting
+                     waa_year=bio_year, waa=NULL, # 将来の年齢別体重の設定。過去の年を指定し、その平均値を使うか、直接ベクトルで指定するか。以下も同じ。
+                     waa_catch_year=bio_year, waa_catch=NULL,
+                     maa_year=bio_year, maa=NULL,
+                     M_year=bio_year, M=c(1,1),
+                     # faa setting
+                     faa_year=2015:2017, # currentF, futureFが指定されない場合だけ有効になる。将来のFを指定の年の平均値とする
+                     currentF=rep(Fvalue,2),futureF=rep(Fvalue,2), # 将来のABC.year以前のFとABC.year以降のFのベクトル
+                     # HCR setting (not work when using TMB)
+                     start_ABC_year_name=max_vpa_year+2, # HCRを適用する最初の年
+                     HCR_beta=1, # HCRのbeta
+                     HCR_Blimit=-1, # HCRのBlimit
+                     HCR_Bban=-1, # HCRのBban
+                     HCR_year_lag=0, # HCRで何年遅れにするか
+                     # SR setting
+                     res_SR=res_SR, # 将来予測に使いたい再生産関係の推定結果が入っているfit.SRの返り値
+                     seed_number=1,
+                     resid_type="lognormal", # 加入の誤差分布（"lognormal": 対数正規分布、"resample": 残差リサンプリング）
+                     resample_year_range=0, # リサンプリングの場合、残差をリサンプリングする年の範囲
+                     bias_correction=TRUE, # バイアス補正をするかどうか
+                     recruit_intercept=0, # 移入や放流などで一定の加入がある場合に足す加入尾数
+                     # Other
+                     Pope=TRUE,
+                     fix_recruit=NULL,
+                     fix_wcatch=NULL
+                     )
+
+aa <- est_MSYRP(data_future_test)

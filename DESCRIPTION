@@ -1,6 +1,6 @@
 Package: frasyr
 Title: Fisheries Research Agency (FRA) provides the method for calculating sustainable yield (SY) with R
-Version: 2.1.1.0
+Version: 2.2.0.0
 Authors@R: c(person(given="Momoko", family="Ichinokawa", email = "ichimomo@fra.affrc.go.jp", role = c("aut", "cre")),
 	   person(given="Akira", family="Hayashi", email = "akirahayashi@fra.affrc.go.jp", role = c("aut")),
 	   person(given="Mitsuyo", family="Miyagawa", email = "mmiyagawa@fra.affrc.go.jp", role = c("aut")),
@@ -21,6 +21,7 @@ Imports:
     dplyr,
     tidyr,
     readr,
+    forcats,
     stringr,
     formattable,
     ggrepel,
@@ -32,11 +33,11 @@ Imports:
     EnvStats,
     assertthat,
     foreach,
-    doParallel,    
+    doParallel,
+    testthat,
+    covr,    
     GGally
 Suggests:
     knitr,
     rmarkdown,
-    testthat,
-    covr
 VignetteBuilder: knitr

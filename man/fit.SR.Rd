@@ -11,11 +11,14 @@ fit.SR(
   method = "L2",
   AR = 1,
   hessian = FALSE,
-  w = rep(1, length(SRdata$R)),
+  w = NULL,
   length = 20,
   max.ssb.pred = 1.3,
   p0 = NULL,
-  out.AR = TRUE
+  out.AR = TRUE,
+  bio_par = NULL,
+  plus_group = TRUE,
+  is_jitter = FALSE
 )
 }
 \arguments{
@@ -32,6 +35,11 @@ fit.SR(
 \item{p0}{\code{optim}で設定する初期値}
 
 \item{out.AR}{自己相関係数を一度再生産関係を推定したのちに、外部から推定するか（1), 内部で推定するか(0)}
+
+\item{bio_par}{data.frame(waa=c(100,200,300),maa=c(0,1,1),M=c(0.3,0.3,0.3)) のような生物パラメータをあらわすデータフレーム。waaは資源量を計算するときのweight at age, maaはmaturity at age, Mは自然死亡係数。これを与えると、steepnessやR0も計算して返す}
+
+\item{plus_group}{hなどを計算するときに、プラスグループを考慮するか
+# @param do_check.SRfit 計算が終わったあとでdo_check.SRfitを実施し、収束していなかった場合に１回だけ再計算するか（余計に時間がかかる）。デフォルトはFALSE}
 }
 \value{
 以下の要素からなるリスト
@@ -48,6 +56,7 @@ fit.SR(
 \item{\code{BIC}}{BIC (\code{out.AR=TRUE}のときは自己相関推定前の結果)}
 \item{\code{AIC.ar}}{\code{out.AR=TRUE}のときに\code{acf}関数で得られた自己相関を推定しない場合(0)とする場合(1)のAICの差}
 \item{\code{pred}}{予測された再生産関係}
+\item{\code{steepness}}{bio_parを与えたときに、steepness (h) やR0(漁獲がない場合の平均加入尾数), SB0(漁獲がない場合の平均親魚量)なども追加的に返す}
 }
 }
 \description{
@@ -61,5 +70,13 @@ resSR <- fit.SR(SRdata, SR = c("HS","BH","RI")[1],
                 method = c("L1","L2")[2], AR = 1,
                 out.AR = TRUE)
 resSR$pars
+
+# When outputting steepness, create a bio_par object using derive_biopar function with the res_vpa object and the corresponding year as its argument, and put the bio_par object in the argument of fit.SR.
+bio_par <- derive_biopar(res_obj=res_vpa,derive_year = 2010)
+resSR <- fit.SR(SRdata, SR = c("HS","BH","RI")[1],
+                method = c("L1","L2")[2], AR = 1,
+                out.AR = TRUE,bio_par=bio_par)
+resSR$pars
+resSR$steepness
 }
 }

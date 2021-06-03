@@ -57,6 +57,7 @@ test_that("calc_future_perSPR accepts list with different length vectors", {
                                            maa       = future_data$data$maa_mat,
                                            M         = future_data$data$M_mat,
                                            waa.catch = future_data$data$waa_catch_mat),
+                               res_vpa=result_vpa,
                                Fvector = apply_year_colum(result_vpa$faa, 2007:2011),
                                target.year = list(waa       = 2014:2018,
                                                   waa.catch = 2014:2018,
@@ -70,18 +71,26 @@ test_that("test caa.est.mat", {
   expect_catch <- 0.5
 
   # set usual F => OK
-  res <- caa.est.mat(c(1,1,1,1),c(1,1,1,1),c(1,1,1,1),c(0,0,0,0),catch.obs=expect_catch,Pope=TRUE,set_max1=FALSE)
+  res <- caa.est.mat(c(1,1,1,1),c(1,1,1,1),c(1,1,1,1),c(0,0,0,0),catch.obs=expect_catch,Pope=TRUE)
   expect_equal(round(sum(res$caa),3),round(expect_catch,3))
+
+  res <- caa.est.mat(c(1,1,1,1),c(1,1,1,1),c(1,1,1,1),c(0,0,0,0),catch.obs=expect_catch,Pope=FALSE)
+  expect_equal(round(sum(res$caa),3),round(expect_catch,3))  
 
   # set very small F => OK
   res <- caa.est.mat(c(1,1,1,1),c(0.00001,0.00001,0.00001,0.00001),c(1,1,1,1),c(0,0,0,0),
                      catch.obs=expect_catch,Pope=TRUE)
   expect_equal(round(sum(res$caa),3),round(expect_catch,3))
 
+  res <- caa.est.mat(c(1,1,1,1),c(0.00001,0.00001,0.00001,0.00001),c(1,1,1,1),c(0,0,0,0),
+                     catch.obs=expect_catch,Pope=FALSE)
+  expect_equal(round(sum(res$caa),3),round(expect_catch,3))  
+
   # naa is very small => warning
   expect_warning(caa.est.mat(c(0.01,0.01,0.01,0.01),c(1,1,1,1),c(1,1,1,1),c(0,0,0,0),
-                     catch.obs=expect_catch,Pope=TRUE))
-
+                             catch.obs=expect_catch,Pope=TRUE))
+  expect_warning(caa.est.mat(c(0.01,0.01,0.01,0.01),c(1,1,1,1),c(1,1,1,1),c(0,0,0,0),
+                             catch.obs=expect_catch,Pope=FALSE))  
 })
 
 test_that("calc.rel.abund",{
@@ -109,6 +118,40 @@ test_that("calc.rel.abund",{
   expect_equal(calc_rel_abund_popeT,calc_rel_abund_popeT_check)
   expect_equal(calc_rel_abund_popeF,calc_rel_abund_popeF_check)
 
+  # 2歳分しか年齢がない場合
+  age.test <- c(1:2)
+  Fc.test <- rep(1,length(age.test))
+  waa.test <- c(1:2)
+  maa.test <- c(0,1)
+  M.test <- rep(0.5,length(age.test))
+
+  calc_rel_abund_age2 <- calc.rel.abund(sel = Fc.test,Fr=1,na = length(age.test),M = M.test,waa = waa.test, maa = maa.test, Pope = TRUE)
+
+  calc_rel_abund_age2_noplus <- calc.rel.abund(sel = Fc.test,Fr=1,na = length(age.test),M = M.test,waa = waa.test, maa = maa.test, Pope = TRUE, max.age=2)
+
+  # 3歳分あるとき
+  age.test <- c(1:3)
+  Fc.test <- rep(1,length(age.test))
+  waa.test <- c(1:2,2)
+  maa.test <- c(0,1,1)
+  M.test <- rep(0.5,length(age.test))
+
+  calc_rel_abund_age3 <- calc.rel.abund(sel = Fc.test,Fr=1,na = length(age.test),M = M.test,waa = waa.test, maa = maa.test, Pope = TRUE)
+  
+  expect_equal(sapply(calc_rel_abund_age3,sum),
+               sapply(calc_rel_abund_age2,sum))
+
+  # 2歳分, F=0, M=0
+  age.test <- c(1:3)
+  Fc.test <- rep(0,length(age.test))
+  waa.test <- rep(1,length(age.test))
+  maa.test <- rep(1,length(age.test))
+  M.test <- rep(0.001,length(age.test))
+  calc_rel_abund_age2 <- calc.rel.abund(sel = Fc.test,Fr=1,na = length(age.test),M = M.test,waa = waa.test, maa = maa.test, Pope = TRUE)
+  calc_rel_abund_age2_noplus <- calc.rel.abund(sel = Fc.test,Fr=1,na = length(age.test),M = M.test,waa = waa.test, maa = maa.test, Pope = TRUE, max.age=length(age.test),min.age=1)
+  expect_equal(sum(calc_rel_abund_age2$rel.abund), 1000.5, tol=0.001)
+  expect_equal(calc_rel_abund_age2_noplus$rel.abund,c(1,1,1), tol=0.01)
+
 })
 
 test_that("catch_equation",{
@@ -135,7 +178,15 @@ test_that("solv.Feq",{
 })
 
 test_that("Generation.Time",{
-  # 使われていない。
+    Generation.Time(vpares=res_vpa) %>% round(3) %>%
+        expect_equal(2.919)
+    Generation.Time(vpares=res_vpa, Plus=0) %>% round(3) %>%
+        expect_equal(1.91)
+    Generation.Time(maa=c(1,1,1),M=c(0,0,0),age=0:2,Plus=0)%>%
+        expect_equal(mean(0:2))
+    Generation.Time(maa=c(1,1,1),M=c(0,0,0),age=0:2)%>%
+        expect_equal(mean(0:(2+19)))    
+
 })
 
 test_that("get.SPR", {
@@ -248,13 +299,14 @@ test_that("get.stat4",{
 
 test_that("get.trace",{
     data("res_MSY_HSL2")
-    #get.trace(res_MSY_HSL2$trace)
-    #expect_false(is_null(get.trace(res_MSY_HSL1)))
+    get.trace(res_MSY_HSL2$trace) %>%
+        select(ssb.mean) %>% slice(1) %>% as.numeric() %>%
+        expect_equal(463754.3, tol=0.1)
 })
 
 test_that("make kobeII table", {
   test_that("beta.simulation() works", {
-    kobe_data <- beta.simulation(generate_dummy_future_new_object()$input,
+    kobe_data <- beta.simulation(generate_dummy_future_new_object(nsim=2)$input,
                                  beta_vector = seq(0, 1, 0.5),
                                  year.lag = 0,
                                  type = "new")
@@ -314,5 +366,28 @@ test_that("convert_df",{
 
 test_that("convert_2d_future",{
   # 一旦スキップ
+})
+
+test_that("derive_biopar",{
+    
+    a1 <- derive_biopar(res_vpa, derive_year=2000)
+    a2 <- derive_biopar(res_vpa, derive_year=2000:2003)
+    expect_equal(a1[,1:3],a2[,1:3])
+    (a1$faa + a2$faa) %>% round(2) %>% as.numeric() %>%
+        expect_equal(c(1.12,3.47,3.82,3.82))
+
+    rm(list=ls())
+    a1 <- derive_biopar(res_future_0.8HCR, derive_year=2030)
+    a2 <- derive_biopar(res_future_0.8HCR, derive_year=2031:2032)
+    expect_equal(a1[,c(1,3,4)],a2[,c(1,3,4)])
+    (a1$faa + a2$faa) %>% round(2) %>% as.numeric() %>%
+        expect_equal(c(0.22, 0.53, 0.60, 0.60))
+
+})
+
+
+test_that("calc_forward",{
+  naa2 <- calc_forward(naa=res_vpa$naa,faa=res_vpa$faa,M=res_vpa$input$dat$M,t=1,plus_age=4,plus_group=TRUE)[,2]
+  naa2 %>% expect_equal(res_vpa$naa[,2])
 })
 

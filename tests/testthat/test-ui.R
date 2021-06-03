@@ -7,37 +7,39 @@ test_that("load_data() works", {
 
 context("Reuse input from the result of scientist meeting")
 
-dummy_future_result <-
-  list(
-    data = "data",
-    input = list(model_average_option = 123,
-                 res_SR = list(pars = list(sd = 0.123)))
-  )
+## dummy_future_result <-
+##   list(
+##     data = "data",
+##     input = list(model_average_option = 123,
+##                  res_SR = list(pars = list(sd = 0.123)))
+##   )
 
-test_that("reuse inputs as-is", {
+load("data_future_test.rda")
 
-  retrieved <- retrieve_input(dummy_future_result)
+## test_that("reuse inputs as-is", {
 
-  expect_setequal(names(retrieved), c("model_average_option", "res_SR"))
+##   retrieved <- retrieve_input(data_future_test)
 
-  expect_equal(retrieved$model_average_option, 123)
-  expect_equal(retrieved$res_SR$pars$sd,     0.123)
+##   expect_setequal(names(retrieved), c("model_average_option", "res_SR"))
 
-  list_without_input <- list(data = "data")
+##   expect_equal(retrieved$model_average_option, 123)
+##   expect_equal(retrieved$res_SR$pars$sd,     0.123)
 
-  expect_error(
-    retrieve_input(list_without_input),
-  )
-})
+##   list_without_input <- list(data = "data")
+
+##   expect_error(
+##     retrieve_input(list_without_input),
+##   )
+## })
 
 test_that("reuse inputs with modification", {
 
-  retrieved <- retrieve_input(dummy_future_result, new_sd = 0)
+  retrieved <- retrieve_input(data_future_test, new_sd = 0)
   expect_equal(retrieved$res_SR$pars$sd, 0)
 
-  retrieved <- retrieve_input(dummy_future_result, new_sd = 0.456)
+  retrieved <- retrieve_input(data_future_test, new_sd = 0.456)
   expect_equal(retrieved$res_SR$pars$sd, 0.456)
 
-  expect_error(retrieve_input(dummy_future_result, new_sd = "a"),
+  expect_error(retrieve_input(data_future_test, new_sd = "a"),
                "'new_sd' should be numeric")
 })
