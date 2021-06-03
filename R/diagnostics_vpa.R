@@ -677,6 +677,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
     calc.data <- d_tidy[d_tidy$Index_Label==unique(d_tidy$Index_Label)[i],]
     rho.numeric[i] <- arima(calc.data$resid,order = c(1,0,0))$coef[1]
   }
+<<<<<<< HEAD
 
   # 残差プロットのy軸の上下限
   thred_resid <- range(d_tidy$resid,na.rm = TRUE) %>% abs() %>% max()
@@ -690,6 +691,21 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
   rho_data <- tibble(Index_Label = unique(d_tidy$Index_Label), sigma = res$sigma, ar1 = rho.numeric) %>%
     mutate(y = thred_y[y.posi_rho_data], x = xlim_year[1], y.sd = sd.thred_y[sd.y.posi_rho_data])
 
+=======
+
+  # 残差プロットのy軸の上下限
+  thred_resid <- range(d_tidy$resid,na.rm = TRUE) %>% abs() %>% max()
+  if(plot_scale) thred_y <- c(NA,NA) else thred_y <- c(-thred_resid,thred_resid)
+  y.posi_rho_data <- which(!range(d_tidy$resid,na.rm = TRUE)==thred_y)[1]
+  thred_sd.resid <- range(d_tidy$sd.resid,na.rm = TRUE) %>% abs() %>% max()
+  if(plot_scale) sd.thred_y <- c(NA,NA) else sd.thred_y <- c(-thred_sd.resid,thred_sd.resid)
+  sd.y.posi_rho_data <- which(!range(d_tidy$sd.resid,na.rm = TRUE)==sd.thred_y)[1]
+
+  # 残差プロットに追加する観測誤差と自己相関係数のtidy data
+  rho_data <- tibble(Index_Label = unique(d_tidy$Index_Label), sigma = res$sigma, ar1 = rho.numeric) %>%
+    mutate(y = thred_y[y.posi_rho_data], x = xlim_year[1], y.sd = sd.thred_y[sd.y.posi_rho_data])
+
+>>>>>>> 477ae23ca0c05cf9bcd1a5da016b71c51a4ffe01
 
   if(isTRUE(resid_CI)){
     g1 <- ggplot(d_tidy) +
@@ -720,7 +736,11 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
       theme_SH(base_size = 14)+
       geom_label(data = rho_data,
                  mapping = aes(x = x, y = if(plot_scale)min(d_tidy$sd.resid) else y.sd, label = str_c("sigma=", round(sigma,2),", rho=", round(ar1,2))),
+<<<<<<< HEAD
                  vjust="inward", hjust="inward")
+=======
+        vjust="inward", hjust="inward")
+>>>>>>> 477ae23ca0c05cf9bcd1a5da016b71c51a4ffe01
   } else {
     g1 <- ggplot(d_tidy) +
       geom_point(aes(x=year, y=resid, colour = Index_Label), size = 2) +
