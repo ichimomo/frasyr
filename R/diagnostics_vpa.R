@@ -634,7 +634,11 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
     d_tmp[,(i+length(res$q)*3+4)] <- resid_tmp
     d_tmp[,(i+length(res$q)*4+4)] <- sd_resid_tmp
     d_tmp[,(i+length(res$q)*5+4)] <- rep(res$q[i], length(d_tmp[,1]))
-    d_tmp[,(i+length(res$q)*6+4)] <- rep(res$sigma[i], length(d_tmp[,1]))
+    d_tmp[,(i+length(res$q)*6+4)] <- if(res$input$est.method=="ml"){
+      rep(res$sigma[i], length(d_tmp[,1])) # ML
+    } else {
+      rep(res$sigma[1], length(d_tmp[,1])) # LS
+    }
     d_tmp[,(i+length(res$q)*7+4)] <- rep(res$b[i], length(d_tmp[,1]))
     if(i >= 10){
       name_tmp1[i] <- paste0("obs_Index",i)
