@@ -1819,10 +1819,15 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
 #' res_jackSR <- jackknife.SR(resSR,output = T)
 #' }
 #' @export
+#' 
+
 jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename = "jackknife",ylim.range = c(0,1.5),pch=19,cex=1.1,...) {
-  RES = lapply(1:length(resSR$input$SRdata$SSB), function(i){
+
+  used_data <- which(resSR$input$w==1)
+  if(is.null(resSR$input$SRdata$weight)) resSR$input$SRdata$weight <- resSR$input$w
+  RES = lapply(used_data, function(i){
     jack <- resSR
-    jack$input$w[i] <- 0
+    jack$input$w[i] <- jack$input$SRdata$weight[i] <- 0
     if (use.p0) jack$input$p0 <- resSR$opt$par
     if (class(resSR)=="fit.SR") {
       validate_sr(res_sr = resSR)
@@ -2509,7 +2514,7 @@ check_consistent_w <- function(w, SRdata){
 #'
 #' regimeなしのものだけに対応
 #'
-#'  @export
+#' @export
 #'
 
 tryall_SR <- function(data_SR, plus_group=TRUE, bio_par=NULL){
