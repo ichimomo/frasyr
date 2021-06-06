@@ -951,6 +951,20 @@ plot_futures_simple <- function(fres.list,conf=c(0.1,0.5,0.9),target="SSB",legen
   invisible(aa)
 }
 
+#' @export
+#' 
+
+plot.future <- function(...){
+    plot_future_simple(...)
+}
+
+#' @export
+#' 
+
+plot.futures <- function(...){
+    plot_futures_simple(...)
+}
+
 #' 一つの将来予測の結果をプロットする（ggplotは使わず）
 #'
 #' @param fres0 future.vpaからの出力結果
