@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>@export — take_interval • frasyr</title>
+<title>一つの将来予測の結果をプロットする（ggplotは使わず） — plot_future_simple • frasyr</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,8 @@
 
 
 
-<meta property="og:title" content="@export — take_interval" />
-<meta property="og:description" content="@export" />
+<meta property="og:title" content="一つの将来予測の結果をプロットする（ggplotは使わず） — plot_future_simple" />
+<meta property="og:description" content="一つの将来予測の結果をプロットする（ggplotは使わず）" />
 
 
 
@@ -123,17 +123,39 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>@export</h1>
+    <h1>一つの将来予測の結果をプロットする（ggplotは使わず）</h1>
     
-    <div class="hidden name"><code>take_interval.Rd</code></div>
+    <div class="hidden name"><code>plot_future_simple.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>@export</p>
+    <p>一つの将来予測の結果をプロットする（ggplotは使わず）</p>
     </div>
 
-    <div class="ref-usage sourceCode"><pre class='sourceCode r'><code><span class='fu'>take_interval</span><span class='op'>(</span><span class='va'>prob</span>, <span class='va'>target</span><span class='op'>)</span></code></pre></div>
+    <div class="ref-usage sourceCode"><pre class='sourceCode r'><code><span class='fu'>plot_future_simple</span><span class='op'>(</span>
+  <span class='va'>fres0</span>,
+  ylim.tmp <span class='op'>=</span> <span class='cn'>NULL</span>,
+  xlim.tmp <span class='op'>=</span> <span class='cn'>NULL</span>,
+  vpares <span class='op'>=</span> <span class='cn'>NULL</span>,
+  what <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='cn'>TRUE</span>, <span class='cn'>TRUE</span>, <span class='cn'>TRUE</span><span class='op'>)</span>,
+  conf <span class='op'>=</span> <span class='fl'>0.1</span>,
+  N.line <span class='op'>=</span> <span class='fl'>0</span>,
+  det.run <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  label <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"Biomass"</span>, <span class='st'>"SSB"</span>, <span class='st'>"Catch"</span><span class='op'>)</span>,
+  is.legend <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  add <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  col <span class='op'>=</span> <span class='cn'>NULL</span>,
+  <span class='va'>...</span>
+<span class='op'>)</span></code></pre></div>
 
+    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
+    <table class="ref-arguments">
+    <colgroup><col class="name" /><col class="desc" /></colgroup>
+    <tr>
+      <th>fres0</th>
+      <td><p>future.vpaからの出力結果</p></td>
+    </tr>
+    </table>
 
 
   </div>

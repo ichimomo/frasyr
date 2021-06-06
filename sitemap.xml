@@ -277,12 +277,6 @@
     <loc>/reference/out.vpa.html</loc>
   </url>
   <url>
-    <loc>/reference/plot.future.html</loc>
-  </url>
-  <url>
-    <loc>/reference/plot.futures.html</loc>
-  </url>
-  <url>
     <loc>/reference/plot_Fcurrent.html</loc>
   </url>
   <url>
@@ -301,7 +295,13 @@
     <loc>/reference/plot_SRdata.html</loc>
   </url>
   <url>
+    <loc>/reference/plot_future_simple.html</loc>
+  </url>
+  <url>
     <loc>/reference/plot_futures.html</loc>
+  </url>
+  <url>
+    <loc>/reference/plot_futures_simple.html</loc>
   </url>
   <url>
     <loc>/reference/plot_kobe_gg.html</loc>
@@ -383,6 +383,9 @@
   </url>
   <url>
     <loc>/reference/to_vpa_data.html</loc>
+  </url>
+  <url>
+    <loc>/reference/tryall_SR.html</loc>
   </url>
   <url>
     <loc>/reference/use_rvpa_tmb.html</loc>
