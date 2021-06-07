@@ -4,7 +4,7 @@
 \alias{source_lines}
 \title{Source specific lines in an R file}
 \usage{
-source_lines(file, lines)
+source_lines(file, lines, encoding = "UTF-8", ...)
 }
 \arguments{
 \item{file}{character string with the path to the file to source.}

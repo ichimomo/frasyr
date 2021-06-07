@@ -11,7 +11,7 @@ jackknife.SR(
   use.p0 = TRUE,
   output = FALSE,
   filename = "jackknife",
-  ylim.range = c(0.5, 1.5),
+  ylim.range = c(0, 1.5),
   pch = 19,
   cex = 1.1,
   ...
@@ -30,4 +30,21 @@ jackknife.SR(
 }
 \description{
 結果のプロットもこの関数で行う
+}
+\examples{
+\dontrun{
+data(res_vpa)
+SRdata <- get.SRdata(res_vpa)
+resSR <- fit.SR(SRdata, SR = c("HS","BH","RI")[1],
+                method = c("L1","L2")[2], AR = 1,
+                out.AR = TRUE)
+res_jackSR <- jackknife.SR(resSR,output = T)
+
+# if calculate steepness
+bio_par <- derive_biopar(res_obj=res_vpa,derive_year = 2010)
+resSR <- fit.SR(SRdata, SR = c("HS","BH","RI")[1],
+                method = c("L1","L2")[2], AR = 1,
+                out.AR = TRUE,bio_par=bio_par)
+res_jackSR <- jackknife.SR(resSR,output = T)
+}
 }

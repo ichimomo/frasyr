@@ -12,6 +12,7 @@ out.vpa(
   fres_current = NULL,
   fres_HCR = NULL,
   kobeII = NULL,
+  kobe.ratio = NULL,
   filename = "vpa",
   csvname = NULL,
   pdfname = NULL,

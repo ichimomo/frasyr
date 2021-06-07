@@ -26,7 +26,7 @@ plot_resboot_vpa(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
 }
 \seealso{
 ブートストラップ法について:  \code{\link{boo.vpa}}
-https://ichimomo.github.io/frasyr/doc/Diagnostics-for-VPA.html
+https://ichimomo.github.io/frasyr/articles/Diagnostics-for-VPA.html
 }
 \author{
 濵邉昂平, 市野川桃子

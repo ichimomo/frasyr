@@ -21,7 +21,6 @@ load_data <- function(fname) {
 retrieve_input <- function(result, new_sd = NULL) {
   assertthat::assert_that(
     assertthat::has_name(result, "input"),
-    assertthat::has_name(result$input$res_SR$pars, "sd"),
     assertthat::has_name(result$input, "model_average_option")
   )
 
@@ -31,7 +30,21 @@ retrieve_input <- function(result, new_sd = NULL) {
 
   if (is.numeric(new_sd) == FALSE) stop("'new_sd' should be numeric")
 
-  retrieved$res_SR$pars$sd <- new_sd
+  if(class(retrieved$res_SR)=="fit.SRregime"){
+    assertthat::has_name(result$input$res_SR$regime_pars, "sd")
+    retrieved$res_SR$regime_pars$sd[] <- new_sd
+  }
+  
+  if(class(retrieved$res_SR)=="fit.SR"){
+    assertthat::has_name(result$input$res_SR$pars, "sd")
+    retrieved$res_SR$pars$sd <- new_sd      
+  }
+  
+  is_model_averaged <- class(retrieved$res_SR) == "list" && !is.null(retrieved$res_SR$input)
+  if(is_model_averaged){
+    for(i in 1:length(retrieved$res_SR)){
+      retrieved$res_SR[[i]]$pars$sd <- new_sd
+    }}
 
   force(retrieved)
 }

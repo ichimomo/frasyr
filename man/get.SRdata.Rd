@@ -6,16 +6,28 @@
 \title{VPAの結果から再生産関係推定用のデータを作成する}
 \usage{
 get.SRdata(
-  vpares,
+  vpares = NULL,
   R.dat = NULL,
   SSB.dat = NULL,
-  years = as.numeric(colnames(vpares$naa)),
-  return.df = FALSE
+  release.dat = NULL,
+  years = NULL,
+  weight.year = NULL,
+  return.df = TRUE
 )
 }
 \arguments{
 \item{vpares}{VPAの結果のオブジェクト}
+
+\item{R.dat}{VPAの結果オブジェクトでなく直接データを与えたい場合の加入の値}
+
+\item{SSB.dat}{VPAの結果オブジェクトでなく直接データを与えたい場合の親魚量の値}
+
+\item{release.dat}{VPAの結果オブジェクトでなく直接データを与えたい場合の放流尾数の値}
+
+\item{weight.year}{fit.SRに渡すとき、フィットの対象とする年を指定する。特例として０を与えると、全部の年のデータが使われるようになる。返り値にweightという列が加わる。}
+
+\item{return.df}{データフレームとして結果を返すか。このオプション関係なくデータフレームとして返すように変更したので、近いうちに廃止予定}
 }
 \description{
-VPAの結果から再生産関係推定用のデータを作成する
+VPA結果に放流尾数が含まれている場合、天然加入尾数＝加入尾数ー放流尾数として計算する
 }

@@ -5,7 +5,13 @@
 \alias{compare_SRfit}
 \title{複数の再生産関係を比較する関数}
 \usage{
-compare_SRfit(SRlist, biomass.unit = 1000, number.unit = 1000)
+compare_SRfit(
+  SRlist,
+  biomass.unit = 1000,
+  number.unit = 1000,
+  newplot = TRUE,
+  output_folder = ""
+)
 }
 \arguments{
 \item{SRlist}{再生産関係の推定結果のリスト。}

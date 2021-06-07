@@ -78,7 +78,13 @@ vpa(
   eta = NULL,
   eta.age = 0,
   tmb.file = "rvpa_tmb",
-  remove.abund = NULL
+  remove.abund = NULL,
+  madara = FALSE,
+  p_by_age = FALSE,
+  penalty_age = NULL,
+  no_eta_age = NULL,
+  sdreport = FALSE,
+  use.equ = "new"
 )
 }
 \arguments{
@@ -112,7 +118,7 @@ vpa(
 
 \item{tune}{tuningをするかどうか}
 
-\item{abund}{tuningの際，何の指標に対応するか}
+\item{abund}{tuningの際，何の指標に対応するか. "N"=年の終わりの資源尾数，"Nm"=年の中間での資源尾数，"B"=年の終わりの資源重量，"Bm"=年の中間での資源重量，"SSB"=産卵親魚量，"Bs"=資源重量×選択率，"Bo"=資源重量×オメガで調節された選択率，"Ns"=資源尾数×選択率，"SSBm"=年の中間での産卵親魚量，"N1sj"=1歳の資源尾数（日本海スケトウダラ用）,"N0sj"=0歳の資源尾数（日本海スケトウダラ用），"F"=漁獲係数の平均}
 
 \item{min.age}{tuning指標の年齢参照範囲の下限}
 
@@ -162,7 +168,7 @@ vpa(
 
 \item{no.est}{パラメータ推定しない．}
 
-\item{est.method}{推定方法 （ls = 最小二乗法，ml = 最尤法）}
+\item{est.method}{推定方法 （ls = 最小二乗法，ml = 最尤法,  ls_nolog =最小二乗法で実数)}
 
 \item{b.est}{bを推定するかどうか}
 
@@ -174,15 +180,17 @@ vpa(
 
 \item{max.iter}{q,b,sigma計算の際の最大繰り返し数}
 
-\item{lambda}{ridge回帰係数}
+\item{lambda}{ridge penaltyの大きさ}
 
 \item{beta}{penaltyのexponent  (beta = 1: lasso, 2: ridge)}
+
+\item{penalty}{ridgeVPAの際に与えるpenaltyの種類．"p"=指定した年齢範囲の最終年の年齢別Fのbeta乗の和，"f"=｛最終年の年齢aのF－（tf.yearで指定した年のa歳の平均のF)｝のbeta乗の和，"s"=｛最終年の年齢aのs－（tf.yearで指定した年のa歳の平均のs)｝のbeta乗の和}
 
 \item{ssb.def}{i: 年はじめ，m: 年中央, l: 年最後}
 
 \item{ssb.lag}{0: no lag, 1: lag 1}
 
-\item{TMB}{TMBで高速計算する場合TMB=TRUE (事前にuse_rvpa_tmb()を実行)}
+\item{TMB}{TMBで高速計算する場合TMB=TRUE (事前にuse_rvpa_tmb()を実行)　全Ｆ推定法，POPE=TRUE, alpha=1, 途中でプラスグループが変化しない場合のみのときに使用可能}
 
 \item{sigma.constraint}{sigmaパラメータの制約.使い方としては，指標が５つあり，2番目と3番目の指標のsigmaは同じとしたい場合はc(1,2,2,3,4)と指定する}
 
@@ -193,6 +201,51 @@ vpa(
 \item{tmb.file}{TMB=TRUEのとき使用するcppファイルの名前}
 
 \item{remove.abund}{ある値を引いた値に対してチューニングに使用する（トラフグ伊勢・三河湾系群で放流魚を引いて天然魚のみに対してチューニングするため）.}
+
+\item{madara}{マダラ太平洋系群で用いているチューニングのやり方}
+
+\item{p_by_age}{選択率更新法でridgeVPAの際にpenalty="p"のときに年齢別にペナルテイーを与えるか与えないか．与えたい場合はTRUEとして,penalty_age（eta=NULLのとき）もしくはno_eta_age(etaがNULLでないとき）に年齢範囲を指定する．}
+
+\item{penalty_age}{選択率更新法でridgeVPAをする際のpenalty="p"のときで，etaがNULLで，p_by_age=TRUE (年齢別にペナルテイーを与えたい）ときにペナルテイーを与える年齢範囲．0歳から2歳までなら0：２とする．}
+
+\item{no_eta_age}{選択率更新法でridgeVPAの際にpenalty="p"のときで，etaがNULLでなく，p_by_age=TRUE (年齢別にペナルテイーを与えたい）ときに，etaがかからないほうの年齢範囲}
+
+\item{sdreport}{\code{TMB=TRUE}のときに\code{sdreport()}を実行するかどうか（naa, faa, 資源量, 親魚量, Fの平均, 漁獲割合のSDを計算する）}
+
+\item{use.equ}{plus groupが途中で変わる場合の計算式の選択 （old = 従来の方法（プラスグループが延長している年はプラスグループのＦが一歳若い年齢のＦと等しいという仮定は置かない），new= 新しい方法（プラスグループが延長している年はプラスグループのＦが一歳若い年齢のＦと等しいという仮定を置く)}
+}
+\value{
+list object:
+\describe{
+\item{\code{input}}{解析に用いたデータや仮定}
+\item{\code{term.f}}{推定されたターミナルF}
+\item{\code{np}}{推定されたターミナルFの数}
+\item{\code{minimum}}{最適解における目的関数の値（合計）}
+\item{\code{minimum.c}}{最適解における目的関数の値（個々）}
+\item{\code{logLik}}{負の対数尤度}
+\item{\code{gradient}}{最適解での傾き}
+\item{\code{code}}{最適化法から返されるコード（どのような理由で最適化が停止したのかがわかる）}
+\item{\code{q}}{推定されたq（資源量指標値の比例定数））}
+\item{\code{b}}{推定されたb（資源量指標値の非線形性））}
+\item{\code{sigma}}{資源量指標値の分散の平方根}
+\item{\code{convergence}}{解が収束していれば1，そうでないと0}
+\item{\code{message}}{最適化に関する注意（あれば）}
+\item{\code{hessian}}{ヘッセ行列の値}
+\item{\code{Ft}}{最終年のFの平均値}
+\item{\code{Fc.at.age}}{Fcurrentで指定した年における平均のF}
+\item{\code{Fc.mean}}{Fc.at.ageを平均したもの}
+\item{\code{Fc.max}}{Fc.at.ageの最大値}
+\item{\code{last.year}}{vpaを計算する最終年を別に指定した場合}
+\item{\code{Pope}}{popeの近似式を用いたか否か}
+\item{\code{ssb.coef}}{産卵親魚量の計算時期（年始めなら0,年中央なら0.5,年最後なら1)}
+\item{\code{pred.index}}{推定された資源量指標値}
+\item{\code{wcaa}}{caa*waa.catch}
+\item{\code{naa}}{推定された年別年齢別資源尾数}
+\item{\code{faa}}{推定された年別年齢別漁獲係数}
+\item{\code{baa}}{推定された年別年齢別資源重量}
+\item{\code{sbb}}{推定された年別年齢別産卵親魚量}
+\item{\code{saa}}{推定された年別年齢別選択率}
+}
 }
 \description{
 VPAによる資源計算を実施する

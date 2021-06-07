@@ -15,9 +15,11 @@ fit.SRregime(
   use.fit.SR = TRUE,
   length = 10,
   p0 = NULL,
-  w = rep(1, length(SRdata$R)),
+  w = NULL,
   max.ssb.pred = 1.3,
-  hessian = FALSE
+  hessian = FALSE,
+  bio_par = NULL,
+  plus_group = TRUE
 )
 }
 \arguments{
@@ -36,6 +38,10 @@ fit.SRregime(
 \item{length}{初期値を決める際のgridの長さ}
 
 \item{p0}{\code{optim}で設定する初期値}
+
+\item{bio_par}{data.frame(waa=c(100,200,300),maa=c(0,1,1),M=c(0.3,0.3,0.3)) のような生物パラメータをあらわすデータフレーム。waaは資源量を計算するときのweight at age, maaはmaturity at age, Mは自然死亡係数。これを与えると、steepnessやR0も計算して返す}
+
+\item{plus_group}{hなどを計算するときに、プラスグループを考慮するか}
 }
 \value{
 以下の要素からなるリスト
@@ -54,6 +60,7 @@ fit.SRregime(
 \item{\code{pred}}{レジームごとの各親魚量に対する加入量の予測値}
 \item{\code{pred_to_obs}}{観測値に対する予測値}
 \item{\code{summary_tbl}}{観測値と予測値を合わせた表}
+\item{\code{steepness}}{bio_parを与えたときに、steepness (h) やR0(漁獲がない場合の平均加入尾数), SB0(漁獲がない場合の平均親魚量)なども追加的に返す}
 }
 }
 \description{

@@ -13,7 +13,8 @@ data.handler(
   M = 0.4,
   maa.tune = NULL,
   waa.catch = NULL,
-  catch.prop = NULL
+  catch.prop = NULL,
+  release.dat = NULL
 )
 }
 \arguments{
@@ -22,6 +23,10 @@ data.handler(
 \item{waa}{weight at age}
 
 \item{maa}{maturity at age}
+
+\item{maa.tune}{チューニングに使うmaturity at ageが異なる場合}
+
+\item{waa.catch}{abundanceとcatchでwaaが異なる場合}
 }
 \description{
 csvデータを読み込んでvpa用のデータを作成する関数

@@ -1,6 +1,6 @@
 # frasyr
-  [![Travis build status](https://travis-ci.com/ichimomo/frasyr.svg?branch=master)](https://travis-ci.com/ichimomo/frasyr)
-  [![Codecov test coverage](https://codecov.io/gh/ichimomo/frasyr/branch/master/graph/badge.svg)](https://codecov.io/gh/ichimomo/frasyr?branch=master)
+  [![Travis build status](https://travis-ci.com/ichimomo/frasyr.svg?branch=dev)](https://travis-ci.com/ichimomo/frasyr)
+  [![Codecov test coverage](https://codecov.io/gh/ichimomo/frasyr/branch/dev/graph/badge.svg)](https://codecov.io/gh/ichimomo/frasyr?branch=dev)
 - Fisheries Research Agency (FRA) provides the method for calculating sustainable yield (SY) with R
 - VPAを用いた資源量推定と，その推定結果をもとにしてMSYを基礎とした目標管理基準値を計算するためのRのパッケージです．開発途中のものであること，ご承知おきください．
 
@@ -45,6 +45,7 @@ library(frasyr)
 # マニュアル
 - VPAによる資源量推定　[vignette](https://ichimomo.github.io/frasyr/articles/vpa.html)
 - VPAモデル診断スクリプト　[vignette](https://ichimomo.github.io/frasyr/articles/Diagnostics-for-VPA.html)
+- fitSR関数による再生産関係推定　[vignette](https://ichimomo.github.io/frasyr/articles/fittingSR.html)
 
 これらはRコマンドで以下のようにしても見れます。
 ```
@@ -55,7 +56,7 @@ vignette("vpa",package="frasyr") # VPAの実施のしかた
 vignette("Diagnostics-for-VPA",package="frasyr") # VPAのモデル診断
 ```
 
-- 再生産関係のモデル診断スクリプト [wiki](https://ichimomo.github.io/frasyr/doc/SRR-guidline.html)
+- 再生産関係のモデル診断 [wiki](https://github.com/ichimomo/frasyr/wiki/Diagnostics-for-Stock-Recruitment-Relationships)
 - 将来予測関数の使い方：[wiki](https://github.com/ichimomo/frasyr/wiki/future_new)
 
 
