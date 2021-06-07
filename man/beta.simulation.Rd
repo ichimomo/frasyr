@@ -11,12 +11,23 @@ beta.simulation(
   year.lag = 0,
   type = "old",
   year_beta_change = NULL,
+  datainput_setting_extra = NULL,
+  datainput_setting_original = NULL,
+  label_name = NULL,
   output_type = "tidy",
   ncore = 1
 )
 }
 \arguments{
+\item{finput}{future_vpaの返り値の$input}
+
 \item{year_beta_change}{betaを変更する年の範囲。NULLの場合には全部の年を変える。}
+
+\item{datainput_setting_extra}{betaに加えて変えたい追加の設定}
+
+\item{datainput_setting_original}{make_future_dataに与えて引数を作り直す場合の make_future_dataの返り値}
+
+\item{label_name}{HCR_nameのラベルの名前. NULLの場合、beta_vectorが使われる}
 }
 \description{
 kobeII matrixの簡易版（Btarget, Blimitは決め打ちでβのみ変える)
