@@ -652,7 +652,13 @@ vpa <- function(
   eta = NULL,
   eta.age = 0,
   tmb.file = "rvpa_tmb",
-  remove.abund = NULL
+  remove.abund = NULL,
+  madara=FALSE, #マダラ太平洋系群で用いているチューニングのやり方
+  p_by_age = FALSE, #penalty="p"で選択率更新法のときに年齢別にペナルテイーを与えるか与えないか．
+  penalty_age=NULL, #penalty="p"でp_by_age = ＴＲＵＥで選択率更新法を採用しているときの年齢参照範囲．0歳から2歳までなら0：２とする．
+  no_eta_age = NULL, #etaがNULLでなく，penalty="p"で，選択率更新法を採用していて，年齢別にペナルテイーを与えたいときに，etaがかからないほうの年齢範囲
+  sdreport = FALSE,
+  use.equ = "new" #plus-groupが途中で変わる場合の計算方法の指定．従来の方法でないものを用いる場合は"new"を指定する
 )
 {
   #sigma.constで引数を指定してしまったときは，sigma.constraintで引数を指定しなおしてもらうようにする
@@ -1745,7 +1751,7 @@ boo.vpa <- function(res,B=5,method="p",mean.correction=FALSE){
 
   return(Res1)
 }
-c
+
 
 logit <- function(x) log(x/(1-x))
 

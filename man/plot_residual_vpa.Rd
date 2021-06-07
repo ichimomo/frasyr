@@ -9,7 +9,10 @@ plot_residual_vpa(
   res,
   index_name = NULL,
   plot_smooth = TRUE,
-  plot_year = FALSE
+  plot_year = FALSE,
+  plot_scale = FALSE,
+  resid_CI = TRUE,
+  plotAR = FALSE
 )
 }
 \arguments{
