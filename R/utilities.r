@@ -328,6 +328,7 @@ ref.F <- function(
   waa.catch=NULL,
   M.year=NULL,
   waa.year=NULL, # 年を指定して生物パラメータを仮定する場合．年の範囲の平均値が用いられる．NULLの場合，VPA最終年の値が使われる
+  waa.catch.year=NULL,
   maa.year=NULL,
   rps.year = NULL, # Fmedの計算に使うRPSの年の範囲．NULLの場合，全範囲が用いられる
   rps.vector = NULL,
@@ -366,10 +367,15 @@ ref.F <- function(
     if(is.null(waa.year)) waa.year <- rev(years)[1]
     if(is.null(maa.year)) maa.year <- rev(years)[1]
     if(is.null(M.year)) M.year <- rev(years)[1]
+    if(is.null(waa.catch.year)) waa.catch.year <- rev(years)[1]    
 
     if(is.null(waa))  waa <- apply_year_colum(res$input$dat$waa,waa.year)
     if(is.null(M))    M   <- apply_year_colum(res$input$dat$M,M.year)
     if(is.null(maa))  maa <- apply_year_colum(res$input$dat$maa,maa.year)
+    if(is.null(waa.catch)){
+        if(!is.null(res$input$dat$waa.catch)) waa.catch <- apply_year_colum(res$input$dat$waa.catch,waa.catch.year)
+        else waa.catch <- waa
+    }
 
     if(is.null(waa.catch)){
       if(is.null(res$input$dat$waa.catch)){
@@ -2635,7 +2641,7 @@ derive_biopar <- function(res_obj=NULL, derive_year=NULL, stat=mean){
 
   derive_year <- as.character(derive_year)
 
-  if(!is.null(res_obj$input$tune)){
+  if(!is.null(res_obj$input$Pope)){
     res_obj$input$dat$faa <- res_obj$faa
     bio_par <- purrr::map_dfc(res_obj$input$dat[c("M","waa","maa","faa")],
                    function(x) apply(x[,derive_year,drop=F],1,stat))
