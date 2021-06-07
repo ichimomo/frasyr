@@ -8,6 +8,7 @@
 calc_future_perSPR(
   fout = NULL,
   res_vpa = NULL,
+  biopar = NULL,
   Fvector,
   is_pope = NULL,
   plus_group = NULL,

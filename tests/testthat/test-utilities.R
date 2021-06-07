@@ -118,6 +118,40 @@ test_that("calc.rel.abund",{
   expect_equal(calc_rel_abund_popeT,calc_rel_abund_popeT_check)
   expect_equal(calc_rel_abund_popeF,calc_rel_abund_popeF_check)
 
+  # 2歳分しか年齢がない場合
+  age.test <- c(1:2)
+  Fc.test <- rep(1,length(age.test))
+  waa.test <- c(1:2)
+  maa.test <- c(0,1)
+  M.test <- rep(0.5,length(age.test))
+
+  calc_rel_abund_age2 <- calc.rel.abund(sel = Fc.test,Fr=1,na = length(age.test),M = M.test,waa = waa.test, maa = maa.test, Pope = TRUE)
+
+  calc_rel_abund_age2_noplus <- calc.rel.abund(sel = Fc.test,Fr=1,na = length(age.test),M = M.test,waa = waa.test, maa = maa.test, Pope = TRUE, max.age=2)
+
+  # 3歳分あるとき
+  age.test <- c(1:3)
+  Fc.test <- rep(1,length(age.test))
+  waa.test <- c(1:2,2)
+  maa.test <- c(0,1,1)
+  M.test <- rep(0.5,length(age.test))
+
+  calc_rel_abund_age3 <- calc.rel.abund(sel = Fc.test,Fr=1,na = length(age.test),M = M.test,waa = waa.test, maa = maa.test, Pope = TRUE)
+  
+  expect_equal(sapply(calc_rel_abund_age3,sum),
+               sapply(calc_rel_abund_age2,sum))
+
+  # 2歳分, F=0, M=0
+  age.test <- c(1:3)
+  Fc.test <- rep(0,length(age.test))
+  waa.test <- rep(1,length(age.test))
+  maa.test <- rep(1,length(age.test))
+  M.test <- rep(0.001,length(age.test))
+  calc_rel_abund_age2 <- calc.rel.abund(sel = Fc.test,Fr=1,na = length(age.test),M = M.test,waa = waa.test, maa = maa.test, Pope = TRUE)
+  calc_rel_abund_age2_noplus <- calc.rel.abund(sel = Fc.test,Fr=1,na = length(age.test),M = M.test,waa = waa.test, maa = maa.test, Pope = TRUE, max.age=length(age.test),min.age=1)
+  expect_equal(sum(calc_rel_abund_age2$rel.abund), 1000.5, tol=0.001)
+  expect_equal(calc_rel_abund_age2_noplus$rel.abund,c(1,1,1), tol=0.01)
+
 })
 
 test_that("catch_equation",{
@@ -265,13 +299,14 @@ test_that("get.stat4",{
 
 test_that("get.trace",{
     data("res_MSY_HSL2")
-    #get.trace(res_MSY_HSL2$trace)
-    #expect_false(is_null(get.trace(res_MSY_HSL1)))
+    get.trace(res_MSY_HSL2$trace) %>%
+        select(ssb.mean) %>% slice(1) %>% as.numeric() %>%
+        expect_equal(463754.3, tol=0.1)
 })
 
 test_that("make kobeII table", {
   test_that("beta.simulation() works", {
-    kobe_data <- beta.simulation(generate_dummy_future_new_object()$input,
+    kobe_data <- beta.simulation(generate_dummy_future_new_object(nsim=2)$input,
                                  beta_vector = seq(0, 1, 0.5),
                                  year.lag = 0,
                                  type = "new")
