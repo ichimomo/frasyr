@@ -2641,10 +2641,13 @@ derive_biopar <- function(res_obj=NULL, derive_year=NULL, stat=mean){
 
   derive_year <- as.character(derive_year)
 
-  if(!is.null(res_obj$input$Pope)){
+  if(!is.null(res_obj$input$dat$caa)){
     res_obj$input$dat$faa <- res_obj$faa
-    bio_par <- purrr::map_dfc(res_obj$input$dat[c("M","waa","maa","faa")],
-                   function(x) apply(x[,derive_year,drop=F],1,stat))
+    derive_char <- c("M","waa","maa","faa")
+    if(!is.null(res_obj$input$dat$waa.catch)) derive_char <- c(derive_char,"waa.catch")
+    bio_par <- purrr::map_dfc(res_obj$input$dat[derive_char],
+                              function(x) apply(x[,derive_year,drop=F],1,stat))
+    if(!is.null(res_obj$input$dat$waa.catch)) bio_par$waa.catch <- bio_par$waa
   }
 
   if(class(res_obj)=="future"|class(res_obj)=="future_new"){
@@ -2652,6 +2655,7 @@ derive_biopar <- function(res_obj=NULL, derive_year=NULL, stat=mean){
     if(is.null(res_obj$maa)) bio_list$maa <- res_obj$input$tmb_data$maa else bio_list$maa <- res_obj$maa
     bio_list$M <- res_obj$input$tmb_data$M
     if(is.null(bio_list$M)) bio_list$M <- res_obj$M
+    if(!is.null(res_obj$waa_catch_mat)) bio_list$waa.catch <- res_obj$waa_catch_mat else bio_list$waa.catch <- res_obj$waa.catch
     bio_par <- purrr::map_dfc(bio_list,
                    function(x) apply(x[,derive_year,,drop=F],1,stat))
   }

@@ -430,6 +430,7 @@ test_that("future_vpa function (with dummy vpa data) for regime shift (level 2-3
 
 
 res_vpa <- read.vpa(system.file("extdata","res_vpa_dummy_age2.csv",package="frasyr"))
+biopar_tmp <- derive_biopar(res_vpa, derive_year=2010)
 res_SR <- get.SRdata(res_vpa,weight.year = 1981:2018) %>% fit.SR()
 
 max_vpa_year <- max(as.numeric(colnames(res_vpa$naa)))
