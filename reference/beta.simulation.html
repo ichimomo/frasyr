@@ -138,6 +138,9 @@
   year.lag <span class='op'>=</span> <span class='fl'>0</span>,
   type <span class='op'>=</span> <span class='st'>"old"</span>,
   year_beta_change <span class='op'>=</span> <span class='cn'>NULL</span>,
+  datainput_setting_extra <span class='op'>=</span> <span class='cn'>NULL</span>,
+  datainput_setting_original <span class='op'>=</span> <span class='cn'>NULL</span>,
+  label_name <span class='op'>=</span> <span class='cn'>NULL</span>,
   output_type <span class='op'>=</span> <span class='st'>"tidy"</span>,
   ncore <span class='op'>=</span> <span class='fl'>1</span>
 <span class='op'>)</span></code></pre></div>
@@ -146,8 +149,24 @@
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
+      <th>finput</th>
+      <td><p>future_vpaの返り値の$input</p></td>
+    </tr>
+    <tr>
       <th>year_beta_change</th>
       <td><p>betaを変更する年の範囲。NULLの場合には全部の年を変える。</p></td>
+    </tr>
+    <tr>
+      <th>datainput_setting_extra</th>
+      <td><p>betaに加えて変えたい追加の設定</p></td>
+    </tr>
+    <tr>
+      <th>datainput_setting_original</th>
+      <td><p>make_future_dataに与えて引数を作り直す場合の make_future_dataの返り値</p></td>
+    </tr>
+    <tr>
+      <th>label_name</th>
+      <td><p>HCR_nameのラベルの名前. NULLの場合、beta_vectorが使われる</p></td>
     </tr>
     </table>
 
