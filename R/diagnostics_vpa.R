@@ -680,9 +680,9 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
   for(i in 1:length(unique(d_tidy$Index_Label))){
     calc.data <- d_tidy[d_tidy$Index_Label==unique(d_tidy$Index_Label)[i],]
     calc.data <- calc.data[!is.na(calc.data$resid),]
-    ar.res <-  ar(calc.data$resid,aic=FALSE,order.max=1,demean=FALSE,method = "mle")
-    rho.numeric[i] <- ar.res$ar %>% as.numeric()
-    acf.res <- acf(calc.data$resid, plot = FALSE)
+    #ar.res <-  ar(calc.data$resid,aic=FALSE,order.max=1,demean=FALSE,method = "mle")
+    acf.res <- acf(calc.data$resid, type = "correlation", plot = FALSE, demean = FALSE)
+    rho.numeric[i] <- acf.res$acf[,,1][2]
     signif.numeric[i] <- if((qnorm(0.025)/sqrt(acf.res$n.used) > acf.res$acf[,,1][2])|
                             (qnorm(0.975)/sqrt(acf.res$n.used) < acf.res$acf[,,1][2])) "*" else ""
   }
