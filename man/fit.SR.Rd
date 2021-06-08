@@ -18,13 +18,14 @@ fit.SR(
   out.AR = TRUE,
   bio_par = NULL,
   plus_group = TRUE,
-  is_jitter = FALSE
+  is_jitter = FALSE,
+  gamma = 0.01
 )
 }
 \arguments{
 \item{SRdata}{\code{get.SRdata}で作成した再生産関係データ}
 
-\item{SR}{再生産関係 (\code{"HS"}: Hockey-stick, \code{"BH"}: Beverton-Holt, \code{"RI"}: Ricker)}
+\item{SR}{再生産関係 (\code{"HS"}: Hockey-stick, \code{"BH"}: Beverton-Holt, \code{"RI"}: Ricker, \code{"Mesnil"}: Continuous HS)}
 
 \item{method}{最適化法（\code{"L2"}: 最小二乗法, \code{"L1"}: 最小絶対値法）}
 
@@ -38,7 +39,9 @@ fit.SR(
 
 \item{bio_par}{data.frame(waa=c(100,200,300),maa=c(0,1,1),M=c(0.3,0.3,0.3)) のような生物パラメータをあらわすデータフレーム。waaは資源量を計算するときのweight at age, maaはmaturity at age, Mは自然死亡係数。これを与えると、steepnessやR0も計算して返す}
 
-\item{plus_group}{hなどを計算するときに、プラスグループを考慮するか
+\item{plus_group}{hなどを計算するときに、プラスグループを考慮するか}
+
+\item{gamma}{\code{SR="Mesnil"}のときに使用するsmoothing parameter
 # @param do_check.SRfit 計算が終わったあとでdo_check.SRfitを実施し、収束していなかった場合に１回だけ再計算するか（余計に時間がかかる）。デフォルトはFALSE}
 }
 \value{

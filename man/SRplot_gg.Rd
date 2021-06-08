@@ -5,7 +5,19 @@
 \alias{SRplot_gg}
 \title{再生産関係をプロットする関数}
 \usage{
-SRplot_gg(...)
+SRplot_gg(
+  SR_result,
+  refs = NULL,
+  xscale = 1000,
+  xlabel = "\\u5343繝医Φ",
+  yscale = 1,
+  ylabel = "\\u5c3e",
+  labeling.year = NULL,
+  add.info = TRUE,
+  recruit_intercept = 0,
+  plot_CI = FALSE,
+  CI = 0.9
+)
 }
 \arguments{
 \item{SR_result}{fit.SRの結果のオブジェクト}
@@ -24,8 +36,8 @@ SRplot_gg(...)
 
   SRdata2 <- res_sr_HSL1$input$SRdata \%>\% as.data.frame()
   SRdata2$weight <- 1
-  SRdata2$release <- 100 # 放流データがある場合
-  SRdata2$weight[length(SRdata2$weight)] <- 0 # 最後の年をフィットに使わない設定
+  SRdata2$release <- 100 # 謾ｾ豬√ョ繝ｼ繧ｿ縺後≠繧句<a0>ｴ蜷<88>
+  SRdata2$weight[length(SRdata2$weight)] <- 0 # 譛蠕後<81>ｮ蟷ｴ繧偵ヵ繧｣繝<83>繝医↓菴ｿ繧上↑縺<84>險ｭ螳<9a>
   res_SR2 <- fit.SR(SRdata=SRdata2, method="L1", AR=0)
   plot_SR(res_SR2)
 }
