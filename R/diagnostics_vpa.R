@@ -676,10 +676,15 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
   }
 
   # 自己相関係数推定
-  rho.numeric <- numeric()
+  rho.numeric <- signif.numeric <- numeric()
   for(i in 1:length(unique(d_tidy$Index_Label))){
     calc.data <- d_tidy[d_tidy$Index_Label==unique(d_tidy$Index_Label)[i],]
-    rho.numeric[i] <- arima(calc.data$resid,order = c(1,0,0))$coef[1]
+    calc.data <- calc.data[!is.na(calc.data$resid),]
+    ar.res <-  ar(calc.data$resid,aic=FALSE,order.max=1,demean=FALSE,method = "mle")
+    rho.numeric[i] <- ar.res$ar %>% as.numeric()
+    acf.res <- acf(calc.data$resid, plot = FALSE)
+    signif.numeric[i] <- if((qnorm(0.025)/sqrt(acf.res$n.used) > acf.res$acf[,,1][2])|
+                            (qnorm(0.975)/sqrt(acf.res$n.used) < acf.res$acf[,,1][2])) "*" else ""
   }
 
   # 残差プロットのy軸の上下限
@@ -691,7 +696,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
   sd.y.posi_rho_data <- which(!range(d_tidy$sd.resid,na.rm = TRUE)==sd.thred_y)[1]
 
   # 残差プロットに追加する観測誤差と自己相関係数のtidy data
-  rho_data <- tibble(Index_Label = unique(d_tidy$Index_Label), sigma = res$sigma, ar1 = rho.numeric) %>%
+  rho_data <- tibble(Index_Label = unique(d_tidy$Index_Label), sigma = res$sigma, ar1 = rho.numeric, signif = signif.numeric) %>%
     mutate(y = thred_y[y.posi_rho_data], x = xlim_year[1], y.sd = sd.thred_y[sd.y.posi_rho_data])
 
   if(isTRUE(resid_CI)){
@@ -708,7 +713,8 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
       theme_SH(base_size = 14)+
       geom_label(data = rho_data,
                  mapping = aes(x = x, y = if(plot_scale)min(d_tidy$resid) else y,
-                               label = str_c("sigma=", round(sigma,2),", rho=", round(ar1,2))),
+                               label = str_c("sigma=", round(sigma,2),
+                                             ", rho=", round(ar1,2), signif)),
                  vjust="inward", hjust="inward")
     g1_sd <- ggplot(d_tidy) +
       geom_ribbon(aes(x = year, ymin = -qnorm(0.025), ymax = qnorm(0.025)), alpha=0.05)+
@@ -722,7 +728,9 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
       ylab("log(Residual)") +
       theme_SH(base_size = 14)+
       geom_label(data = rho_data,
-                 mapping = aes(x = x, y = if(plot_scale)min(d_tidy$sd.resid) else y.sd, label = str_c("sigma=", round(sigma,2),", rho=", round(ar1,2))),
+                 mapping = aes(x = x, y = if(plot_scale)min(d_tidy$sd.resid) else y.sd,
+                               label = str_c("sigma=", round(sigma,2),
+                                             ", rho=", round(ar1,2), signif)),
                  vjust="inward", hjust="inward")
   } else {
     g1 <- ggplot(d_tidy) +
@@ -736,7 +744,8 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
       theme_SH(base_size = 14)+
       geom_label(data = rho_data,
                  mapping = aes(x = x, y = if(plot_scale)min(d_tidy$resid) else y,
-                               label = str_c("sigma=", round(sigma,2),", rho=", round(ar1,2))),
+                               label = str_c("sigma=", round(sigma,2),
+                                             ", rho=", round(ar1,2), signif)),
                  vjust="inward", hjust="inward")
     g1_sd <- ggplot(d_tidy) +
       geom_point(aes(x=year, y=sd.resid, colour = Index_Label), size = 2) +
@@ -748,7 +757,9 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
       ylab("log(Residual)") +
       theme_SH(base_size = 14)+
       geom_label(data = rho_data,
-                 mapping = aes(x = x, y = if(plot_scale)min(d_tidy$sd.resid) else y.sd, label = str_c("sigma=", round(sigma,2),", rho=", round(ar1,2))),
+                 mapping = aes(x = x, y = if(plot_scale)min(d_tidy$sd.resid) else y.sd,
+                               label = str_c("sigma=", round(sigma,2),
+                                             ", rho=", round(ar1,2), signif)),
                  vjust="inward", hjust="inward")
   }
 
