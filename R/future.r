@@ -1708,6 +1708,8 @@ est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE,
         res_MSY$summary$RP.definition[select_Bban] <- "Bban0"
     }
 
-  return(lst(res_MSY, res_future_MSY, data_future_MSY = data_future))
+  res_MSY$res_future_MSY <- res_future_MSY
+  res_MSY$data_future_MSY <- data_future
+  return(res_MSY)
     
 }

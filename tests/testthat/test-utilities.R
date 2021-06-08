@@ -382,6 +382,7 @@ test_that("derive_biopar",{
     expect_equal(a1[,c(1,3,4)],a2[,c(1,3,4)])
     (a1$faa + a2$faa) %>% round(2) %>% as.numeric() %>%
         expect_equal(c(0.22, 0.53, 0.60, 0.60))
+    expect_equal(a1$waa, a1$waa.catch)
 
 })
 
