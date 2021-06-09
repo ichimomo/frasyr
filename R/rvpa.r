@@ -504,7 +504,7 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param add.p.est  追加で最高齢以外のfaaを推定する際．年齢を指定する．
 #' @param add.p.ini
 #' @param sel.update チューニングVPAにおいて，選択率を更新しながら推定
-#' @param sel.def   sel.update=TRUEで選択率を更新していく際に，選択率をどのように計算するか．最大値を1とするか，平均値を1にするか...
+#' @param sel.def   sel.update=TRUEで選択率を更新していく際に，選択率をどのように計算するか．"max"=選択率が一番大きい年齢の選択率を１とする，"maxage"=最高齢の選択率を１とする，"mean"=全体に対する割合として選択率を決める（saa=faa/sum(faa))
 #' @param max.dd  sel.updateの際の収束判定基準
 #' @param ti.scale  資源量の係数と切片のscaling
 #' @param tf.mat terminal Fの平均をとる年の設定．NA行列に平均をとる箇所に1を入れる．
