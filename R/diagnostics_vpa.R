@@ -633,7 +633,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
                                                      link = res$input$link, base = res$input$base, af = res$input$af,
                                                      sel.def = res$input$sel.def, p.m=res$input$p.m,
                                                      omega=res$input$omega, scale=1) #res$input$scale)
-                                                    # res$ssbはスケーリングしていない結果が出ている(2021/06/09@KoHMB)
+                                                    #res$ssbはスケーリングしていない結果が出ている(2021/06/09KoHMB)
 
 
     d_tmp[,(i+length(res$q)*2+4)] <- res$pred.index[i,] # q*N^B計算結果
