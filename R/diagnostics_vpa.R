@@ -627,8 +627,13 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
     sd_resid_tmp <- resid_tmp/sd(resid_tmp, na.rm = TRUE) # 対数残差の標準化残差
 
     #abund.extractor関数で書き換え #catch.prop引数は不要か
-    d_tmp[,(i+length(res$q)*1+4)] <- abund.extractor(abund = res$input$abund[i], naa = res$naa, faa = res$faa, dat = res$input$dat, min.age = res$input$min.age[i], max.age = res$input$max.age[i], link = res$input$link, base = res$input$base, af = res$input$af, sel.def = res$input$sel.def, p.m=res$input$p.m, omega=res$input$omega, scale=res$input$scale)
-
+    d_tmp[,(i+length(res$q)*1+4)] <- abund.extractor(abund = res$input$abund[i], naa = res$naa, faa = res$faa,
+                                                     dat = res$input$dat,
+                                                     min.age = res$input$min.age[i], max.age = res$input$max.age[i],
+                                                     link = res$input$link, base = res$input$base, af = res$input$af,
+                                                     sel.def = res$input$sel.def, p.m=res$input$p.m,
+                                                     omega=res$input$omega, scale=1) #res$input$scale)
+                                                    #res$ssbはスケーリングしていない結果が出ている(2021/06/09KoHMB)
 
     d_tmp[,(i+length(res$q)*2+4)] <- res$pred.index[i,] # q*N^B計算結果
     d_tmp[,(i+length(res$q)*3+4)] <- resid_tmp
@@ -783,9 +788,6 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
     predabund_g3[[i]] <- (as.numeric(predIndex_g3[[i]])/res$q[i])^(1/res$b[i])
     tmp <- str_split(res$input$abund[i], "") %>% unlist()
     if(sum(tmp == "N") == 0) predabund_g3[[i]] <- predabund_g3[[i]]*res$input$scale
-    #predabund_g3[[i]] <- with(tmp_data,
-    #                          seq(#min(tmp_data$predabund, na.rm = T),
-    #                              0, max(tmp_data$predabund, na.rm = T), length=100))
   }
   # 横軸に資源量（指数に合わせてSSBやNだったり）、縦軸に予測CPUEを
   # 線が描けるように、横軸100刻みほどでデータがある
