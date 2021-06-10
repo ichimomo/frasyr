@@ -627,7 +627,13 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
     sd_resid_tmp <- resid_tmp/sd(resid_tmp, na.rm = TRUE) # 対数残差の標準化残差
 
     #abund.extractor関数で書き換え #catch.prop引数は不要か
-    d_tmp[,(i+length(res$q)*1+4)] <- abund.extractor(abund = res$input$abund[i], naa = res$naa, faa = res$faa, dat = res$input$dat, min.age = res$input$min.age[i], max.age = res$input$max.age[i], link = res$input$link, base = res$input$base, af = res$input$af, sel.def = res$input$sel.def, p.m=res$input$p.m, omega=res$input$omega, scale=res$input$scale)
+    d_tmp[,(i+length(res$q)*1+4)] <- abund.extractor(abund = res$input$abund[i], naa = res$naa, faa = res$faa,
+                                                     dat = res$input$dat,
+                                                     min.age = res$input$min.age[i], max.age = res$input$max.age[i],
+                                                     link = res$input$link, base = res$input$base, af = res$input$af,
+                                                     sel.def = res$input$sel.def, p.m=res$input$p.m,
+                                                     omega=res$input$omega, scale=1) #res$input$scale)
+                                                    # res$ssbはスケーリングしていない結果が出ている(2021/06/09@KoHMB)
 
 
     d_tmp[,(i+length(res$q)*2+4)] <- res$pred.index[i,] # q*N^B計算結果
