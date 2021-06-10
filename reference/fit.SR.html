@@ -145,7 +145,8 @@
   out.AR <span class='op'>=</span> <span class='cn'>TRUE</span>,
   bio_par <span class='op'>=</span> <span class='cn'>NULL</span>,
   plus_group <span class='op'>=</span> <span class='cn'>TRUE</span>,
-  is_jitter <span class='op'>=</span> <span class='cn'>FALSE</span>
+  is_jitter <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  gamma <span class='op'>=</span> <span class='fl'>0.01</span>
 <span class='op'>)</span></code></pre></div>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -157,7 +158,7 @@
     </tr>
     <tr>
       <th>SR</th>
-      <td><p>再生産関係 (<code>"HS"</code>: Hockey-stick, <code>"BH"</code>: Beverton-Holt, <code>"RI"</code>: Ricker)</p></td>
+      <td><p>再生産関係 (<code>"HS"</code>: Hockey-stick, <code>"BH"</code>: Beverton-Holt, <code>"RI"</code>: Ricker, <code>"Mesnil"</code>: Continuous HS)</p></td>
     </tr>
     <tr>
       <th>method</th>
@@ -185,7 +186,11 @@
     </tr>
     <tr>
       <th>plus_group</th>
-      <td><p>hなどを計算するときに、プラスグループを考慮するか
+      <td><p>hなどを計算するときに、プラスグループを考慮するか</p></td>
+    </tr>
+    <tr>
+      <th>gamma</th>
+      <td><p><code>SR="Mesnil"</code>のときに使用するsmoothing parameter
 # @param do_check.SRfit 計算が終わったあとでdo_check.SRfitを実施し、収束していなかった場合に１回だけ再計算するか（余計に時間がかかる）。デフォルトはFALSE</p></td>
     </tr>
     </table>

@@ -140,7 +140,8 @@
   b.fix <span class='op'>=</span> <span class='cn'>TRUE</span>,
   remove.maxAgeF <span class='op'>=</span> <span class='cn'>FALSE</span>,
   ssb.forecast <span class='op'>=</span> <span class='cn'>FALSE</span>,
-  sel.mat <span class='op'>=</span> <span class='cn'>NULL</span>
+  sel.mat <span class='op'>=</span> <span class='cn'>NULL</span>,
+  remove.short.index <span class='op'>=</span> <span class='cn'>FALSE</span>
 <span class='op'>)</span></code></pre></div>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -165,6 +166,10 @@
     <tr>
       <th>ssb.forecast</th>
       <td><p>Mohn's rhoを計算する際にSSBは1年後を計算するか(last.catch.zero=TRUEのときのみ有効)</p></td>
+    </tr>
+    <tr>
+      <th>remove.short.index</th>
+      <td><p>年数が2年以下になった指標値を除いて計算する</p></td>
     </tr>
     </table>
 

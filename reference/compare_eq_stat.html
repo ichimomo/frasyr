@@ -174,11 +174,11 @@
 <span class='r-in'><span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='va'>res_MSY_HSL1</span><span class='op'>)</span></span>
 <span class='r-in'><span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='va'>res_MSY_HSL2</span><span class='op'>)</span></span>
 <span class='r-in'><span class='va'>MSY_list</span> <span class='op'>&lt;-</span> <span class='fu'>tibble</span><span class='fu'>::</span><span class='fu'><a href='https://tibble.tidyverse.org/reference/lst.html'>lst</a></span><span class='op'>(</span><span class='va'>res_MSY_HSL1</span>, <span class='va'>res_MSY_HSL2</span><span class='op'>)</span></span>
-<span class='r-in'><span class='co'># 縦軸を漁獲量、横軸をFの大きさ</span></span>
+<span class='r-in'><span class='co'># 邵ｦ霆ｸ繧呈ｼ∫佐驥上∵ｨｪ霆ｸ繧巽縺ｮ螟ｧ縺阪＆</span></span>
 <span class='r-in'><span class='va'>g1</span> <span class='op'>&lt;-</span> <span class='fu'>compare_eq_stat</span><span class='op'>(</span><span class='va'>MSY_list</span>,x_axis_name<span class='op'>=</span><span class='st'>"fmulti"</span>,y_axis_name<span class='op'>=</span><span class='st'>"catch.mean"</span><span class='op'>)</span></span>
-<span class='r-in'><span class='co'># 縦軸を親魚量にする</span></span>
+<span class='r-in'><span class='co'># 邵ｦ霆ｸ繧定ｦｪ鬲夐㍼縺ｫ縺吶ｋ</span></span>
 <span class='r-in'><span class='va'>g2</span> <span class='op'>&lt;-</span> <span class='fu'>compare_eq_stat</span><span class='op'>(</span><span class='va'>MSY_list</span>,x_axis_name<span class='op'>=</span><span class='st'>"fmulti"</span>,y_axis_name<span class='op'>=</span><span class='st'>"ssb.mean"</span><span class='op'>)</span></span>
-<span class='r-in'><span class='co'># 縦軸を加入量</span></span>
+<span class='r-in'><span class='co'># 邵ｦ霆ｸ繧貞刈蜈･驥&lt;8f&gt;</span></span>
 <span class='r-in'><span class='va'>g3</span> <span class='op'>&lt;-</span> <span class='fu'>compare_eq_stat</span><span class='op'>(</span><span class='va'>MSY_list</span>,x_axis_name<span class='op'>=</span><span class='st'>"fmulti"</span>,y_axis_name<span class='op'>=</span><span class='st'>"rec.mean"</span><span class='op'>)</span></span>
 <span class='r-in'><span class='fu'>gridExtra</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/pkg/gridExtra/man/arrangeGrob.html'>grid.arrange</a></span><span class='op'>(</span><span class='va'>g1</span>,<span class='va'>g2</span>,<span class='va'>g3</span>,ncol<span class='op'>=</span><span class='fl'>1</span><span class='op'>)</span></span>
 <span class='r-in'></span>

@@ -132,7 +132,19 @@
     <p>再生産関係をプロットする関数</p>
     </div>
 
-    <div class="ref-usage sourceCode"><pre class='sourceCode r'><code><span class='fu'>SRplot_gg</span><span class='op'>(</span><span class='va'>...</span><span class='op'>)</span></code></pre></div>
+    <div class="ref-usage sourceCode"><pre class='sourceCode r'><code><span class='fu'>SRplot_gg</span><span class='op'>(</span>
+  <span class='va'>SR_result</span>,
+  refs <span class='op'>=</span> <span class='cn'>NULL</span>,
+  xscale <span class='op'>=</span> <span class='fl'>1000</span>,
+  xlabel <span class='op'>=</span> <span class='st'>"\u5343繝医Φ"</span>,
+  yscale <span class='op'>=</span> <span class='fl'>1</span>,
+  ylabel <span class='op'>=</span> <span class='st'>"\u5c3e"</span>,
+  labeling.year <span class='op'>=</span> <span class='cn'>NULL</span>,
+  add.info <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  recruit_intercept <span class='op'>=</span> <span class='fl'>0</span>,
+  plot_CI <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  CI <span class='op'>=</span> <span class='fl'>0.9</span>
+<span class='op'>)</span></code></pre></div>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -157,8 +169,8 @@
 <span class='r-in'></span>
 <span class='r-in'>  <span class='va'>SRdata2</span> <span class='op'>&lt;-</span> <span class='va'>res_sr_HSL1</span><span class='op'>$</span><span class='va'>input</span><span class='op'>$</span><span class='va'>SRdata</span> <span class='op'>%&gt;%</span> <span class='fu'><a href='https://rdrr.io/r/base/as.data.frame.html'>as.data.frame</a></span><span class='op'>(</span><span class='op'>)</span></span>
 <span class='r-in'>  <span class='va'>SRdata2</span><span class='op'>$</span><span class='va'>weight</span> <span class='op'>&lt;-</span> <span class='fl'>1</span></span>
-<span class='r-in'>  <span class='va'>SRdata2</span><span class='op'>$</span><span class='va'>release</span> <span class='op'>&lt;-</span> <span class='fl'>100</span> <span class='co'># 放流データがある場合</span></span>
-<span class='r-in'>  <span class='va'>SRdata2</span><span class='op'>$</span><span class='va'>weight</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span><span class='op'>(</span><span class='va'>SRdata2</span><span class='op'>$</span><span class='va'>weight</span><span class='op'>)</span><span class='op'>]</span> <span class='op'>&lt;-</span> <span class='fl'>0</span> <span class='co'># 最後の年をフィットに使わない設定</span></span>
+<span class='r-in'>  <span class='va'>SRdata2</span><span class='op'>$</span><span class='va'>release</span> <span class='op'>&lt;-</span> <span class='fl'>100</span> <span class='co'># 謾ｾ豬√ョ繝ｼ繧ｿ縺後≠繧句&lt;a0&gt;ｴ蜷&lt;88&gt;</span></span>
+<span class='r-in'>  <span class='va'>SRdata2</span><span class='op'>$</span><span class='va'>weight</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span><span class='op'>(</span><span class='va'>SRdata2</span><span class='op'>$</span><span class='va'>weight</span><span class='op'>)</span><span class='op'>]</span> <span class='op'>&lt;-</span> <span class='fl'>0</span> <span class='co'># 譛蠕後&lt;81&gt;ｮ蟷ｴ繧偵ヵ繧｣繝&lt;83&gt;繝医↓菴ｿ繧上↑縺&lt;84&gt;險ｭ螳&lt;9a&gt;</span></span>
 <span class='r-in'>  <span class='va'>res_SR2</span> <span class='op'>&lt;-</span> <span class='fu'><a href='fit.SR.html'>fit.SR</a></span><span class='op'>(</span>SRdata<span class='op'>=</span><span class='va'>SRdata2</span>, method<span class='op'>=</span><span class='st'>"L1"</span>, AR<span class='op'>=</span><span class='fl'>0</span><span class='op'>)</span></span>
 <span class='r-in'>  <span class='fu'>plot_SR</span><span class='op'>(</span><span class='va'>res_SR2</span><span class='op'>)</span></span>
 <span class='r-in'><span class='op'>}</span></span>
