@@ -13,7 +13,8 @@ retro.est(
   b.fix = TRUE,
   remove.maxAgeF = FALSE,
   ssb.forecast = FALSE,
-  sel.mat = NULL
+  sel.mat = NULL,
+  remove.short.index = FALSE
 )
 }
 \arguments{
@@ -26,6 +27,8 @@ retro.est(
 \item{remove.maxAgeF}{Mohn's rhoを計算する際に最高齢のFを除くか（alphaを仮定して計算していることが多いから）}
 
 \item{ssb.forecast}{Mohn's rhoを計算する際にSSBは1年後を計算するか(last.catch.zero=TRUEのときのみ有効)}
+
+\item{remove.short.index}{年数が2年以下になった指標値を除いて計算する}
 }
 \description{
 レトロスペクティブ解析の実施
