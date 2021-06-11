@@ -1819,6 +1819,7 @@ beta.simulation <- function(finput,beta_vector,year.lag=0,type="old",year_beta_c
     year_column_beta_change <- TRUE
   }
 
+  Res <- list(1:length(beta_vector))
   if(ncore==1){
     for(i in 1:length(beta_vector)){
       if(type=="old"){
@@ -1830,7 +1831,7 @@ beta.simulation <- function(finput,beta_vector,year.lag=0,type="old",year_beta_c
         if(!is.null(datainput_setting_extra)){
           finput$tmb_data <- redo_future(datainput_setting_original, datainput_setting_extra[[i]], only_data=TRUE)$data
         }
-        fres_base <- do.call(future_vpa,finput)
+        fres_base <- Res[[i]] <- do.call(future_vpa,finput)
         fres_base <- format_to_old_future(fres_base)
       }
       tmp <- convert_future_table(fres_base,label=label_name[i]) %>%
@@ -1857,7 +1858,7 @@ beta.simulation <- function(finput,beta_vector,year.lag=0,type="old",year_beta_c
     }
     parallel::stopCluster(cl)
   }
-  return(tb)
+  if(output_type!="tidy") return(Res) else return(tb)
 }
 
 
