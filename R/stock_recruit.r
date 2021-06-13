@@ -2339,15 +2339,15 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
       #   message("Maximum percent bias of 'rho' is ", round(as.numeric(RES$percent_bias["rho"]),6),"%")
       # }
       if(class(resSR)!="fit.SRregime"){
-        par_list_checkall = t(sapply(1:n, function(i) unlist(resSR_list[[i]]$pars)[unlist(resSR$pars) != 0]))
-        par_list = par_list_checkall[which(loglik_diff<diff_threshold),]
-        bias_list_checkall = t(sapply(1:n, function(i) 100*(unlist(resSR_list[[i]]$pars)[unlist(resSR$pars) != 0]/unlist(resSR$pars)[unlist(resSR$pars)!=0]-1)))
-        bias_list = bias_list_checkall[which(loglik_diff<diff_threshold),]
+        par_list = t(sapply(1:n, function(i) unlist(resSR_list[[i]]$pars)[unlist(resSR$pars) != 0]))
+        par_list = par_list[which(loglik_diff<diff_threshold),]
+        bias_list = t(sapply(1:n, function(i) 100*(unlist(resSR_list[[i]]$pars)[unlist(resSR$pars) != 0]/unlist(resSR$pars)[unlist(resSR$pars)!=0]-1)))
+        bias_list = bias_list[which(loglik_diff<diff_threshold),]
       }else{
-        par_list_checkall = t(sapply(1:n, function(i) unlist(resSR_list[[i]]$regime_pars)[unlist(resSR$regime_pars) != 0]))
-        par_list = par_list_checkall[which(loglik_diff<diff_threshold),]
-        bias_list_checkall = t(sapply(1:n, function(i) 100*(unlist(resSR_list[[i]]$regime_pars)[unlist(resSR$regime_pars) != 0]/unlist(resSR$regime_pars)[unlist(resSR$regime_pars)!=0]-1)))
-        bias_list = bias_list_checkall[which(loglik_diff<diff_threshold),]
+        par_list = t(sapply(1:n, function(i) unlist(resSR_list[[i]]$regime_pars)[unlist(resSR$regime_pars) != 0]))
+        par_list = par_list[which(loglik_diff<diff_threshold),]
+        bias_list = t(sapply(1:n, function(i) 100*(unlist(resSR_list[[i]]$regime_pars)[unlist(resSR$regime_pars) != 0]/unlist(resSR$regime_pars)[unlist(resSR$regime_pars)!=0]-1)))
+        bias_list = bias_list[which(loglik_diff<diff_threshold),]
       }
       par_summary = apply(par_list,2,summary)
       percent_bias_summary = apply(bias_list,2,summary)
