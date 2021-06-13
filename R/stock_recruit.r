@@ -2295,17 +2295,18 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
     pars = rbind(pars,resSR2$opt$par)
   }
   max_loglik = max(loglik)
+  max_loglik_i = which.max(loglik)
   optimal = NULL
   if (resSR$loglik-max_loglik < -0.001) {
     message(RES$optim <- "4. NOT achieving the global optimum")
     diff_loglik = abs(resSR$loglik-max_loglik)
     message(paste0("Maximum difference of log-likelihood is ",round(diff_loglik,6)))
-    optimal = resSR_list[[which.max(loglik)]]
+    optimal = resSR_list[[max_loglik_i]]
     RES$loglik_diff = diff_loglik
   } else {
     cat(RES$optim <- "4. Successfully achieving the global optimum (OK)","\n")
     # global optimumに達している場合のみ
-    loglik_diff = purrr::map_dbl(loglik, function(x) abs(diff(c(x,max(loglik)))))
+    loglik_diff = purrr::map_dbl(loglik, function(x) abs(diff(c(x,max_loglik))))
     problem = NULL
     diff_threshold = 1.0e-6
     # a_diff = NULL; b_diff = NULL; sd_diff = NULL; rho_diff = NULL
@@ -2338,10 +2339,10 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
       #   RES$percent_bias = c(RES$percent_bias,"rho" = max(rho_diff))
       #   message("Maximum percent bias of 'rho' is ", round(as.numeric(RES$percent_bias["rho"]),6),"%")
       # }
-      par_list = t(sapply(1:n, function(i) unlist(resSR_list[[i]]$pars)[unlist(resSR$pars) != 0]))
-      par_list = par_list[loglik_diff<diff_threshold,]
-      bias_list = t(sapply(1:n, function(i) 100*(unlist(resSR_list[[i]]$pars)[unlist(resSR$pars) != 0]/unlist(resSR$pars)[unlist(resSR$pars)!=0]-1)))
-      bias_list = bias_list[loglik_diff<diff_threshold,]
+      par_list_checkall = t(sapply(1:n, function(i) unlist(resSR_list[[i]]$pars)[unlist(resSR$pars) != 0]))
+      par_list = par_list_checkall[loglik_diff<diff_threshold,]
+      bias_list_checkall = t(sapply(1:n, function(i) 100*(unlist(resSR_list[[i]]$pars)[unlist(resSR$pars) != 0]/unlist(resSR$pars)[unlist(resSR$pars)!=0]-1)))
+      bias_list = bias_list_checkall[loglik_diff<diff_threshold,]
       par_summary = apply(par_list,2,summary)
       percent_bias_summary = apply(bias_list,2,summary)
       RES$par_summary <- par_summary
