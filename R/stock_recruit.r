@@ -2295,13 +2295,12 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
     pars = rbind(pars,resSR2$opt$par)
   }
   max_loglik = max(loglik)
-  max_loglik_i = which.max(loglik)
   optimal = NULL
   if (resSR$loglik-max_loglik < -0.001) {
     message(RES$optim <- "4. NOT achieving the global optimum")
     diff_loglik = abs(resSR$loglik-max_loglik)
     message(paste0("Maximum difference of log-likelihood is ",round(diff_loglik,6)))
-    optimal = resSR_list[[max_loglik_i]]
+    optimal = resSR_list[[which.max(loglik)]]
     RES$loglik_diff = diff_loglik
   } else {
     cat(RES$optim <- "4. Successfully achieving the global optimum (OK)","\n")
@@ -2339,10 +2338,17 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
       #   RES$percent_bias = c(RES$percent_bias,"rho" = max(rho_diff))
       #   message("Maximum percent bias of 'rho' is ", round(as.numeric(RES$percent_bias["rho"]),6),"%")
       # }
-      par_list_checkall = t(sapply(1:n, function(i) unlist(resSR_list[[i]]$pars)[unlist(resSR$pars) != 0]))
-      par_list = par_list_checkall[loglik_diff<diff_threshold,]
-      bias_list_checkall = t(sapply(1:n, function(i) 100*(unlist(resSR_list[[i]]$pars)[unlist(resSR$pars) != 0]/unlist(resSR$pars)[unlist(resSR$pars)!=0]-1)))
-      bias_list = bias_list_checkall[loglik_diff<diff_threshold,]
+      if(class(resSR)!="fit.SRregime"){
+        par_list_checkall = t(sapply(1:n, function(i) unlist(resSR_list[[i]]$pars)[unlist(resSR$pars) != 0]))
+        par_list = par_list_checkall[which(loglik_diff<diff_threshold),]
+        bias_list_checkall = t(sapply(1:n, function(i) 100*(unlist(resSR_list[[i]]$pars)[unlist(resSR$pars) != 0]/unlist(resSR$pars)[unlist(resSR$pars)!=0]-1)))
+        bias_list = bias_list_checkall[which(loglik_diff<diff_threshold),]
+      }else{
+        par_list_checkall = t(sapply(1:n, function(i) unlist(resSR_list[[i]]$regime_pars)[unlist(resSR$regime_pars) != 0]))
+        par_list = par_list_checkall[which(loglik_diff<diff_threshold),]
+        bias_list_checkall = t(sapply(1:n, function(i) 100*(unlist(resSR_list[[i]]$regime_pars)[unlist(resSR$regime_pars) != 0]/unlist(resSR$regime_pars)[unlist(resSR$regime_pars)!=0]-1)))
+        bias_list = bias_list_checkall[which(loglik_diff<diff_threshold),]
+      }
       par_summary = apply(par_list,2,summary)
       percent_bias_summary = apply(bias_list,2,summary)
       RES$par_summary <- par_summary
