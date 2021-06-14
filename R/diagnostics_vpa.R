@@ -433,6 +433,8 @@ do_retrospective_vpa <- function(res,
 # author: Kohei Hamabe
 
 do_estcheck_vpa <- function(res, n_ite = 20, sd_jitter = 1, what_plot = NULL, TMB = FALSE){
+  res$input$plot <- FALSE # 繰り返しの度に残差プロットが生成されるのを防ぐため
+
   # resの中身の診断
   if(sum(diag(res$hessian))==sum(abs(diag(res$hessian)))){
     message(paste("In your VPA result, Hessian successfully having positive definite!!"))
@@ -538,6 +540,10 @@ do_estcheck_vpa <- function(res, n_ite = 20, sd_jitter = 1, what_plot = NULL, TM
     geom_point(aes(x = initial, y = likelihood), size = 5) +
     ylab("log Likelihood") + xlab("initial value of F of age Max") +
     theme_SH(base_size = 14)
+
+  if((range(d_tmp[d_tmp$age=="max","likelihood"], na.rm=TRUE) %>% diff) < 5){
+    g2 <- g2+ylim(res$logLik-5, res$logLik+5)
+  } #初期値で尤度がほとんど変わらない場合、y軸のスケールが狭すぎるので修正
 
   # Hessianの結果をメッセージで返す
   if(sum(Hes_check) == 0){
@@ -853,7 +859,7 @@ do_jackknife_vpa <- function(res,
                              scale_value = NULL
 ){
 
-  if(res$input$use.index == "all"){
+  if(res$input$use.index[1] == "all"){
     used_index <- res$input$dat$index
   } else {
     used_index <- res$input$dat$index[res$input$use.index,]
@@ -866,7 +872,7 @@ do_jackknife_vpa <- function(res,
   if(method == "index"){
     if(length(used_index[,1]) == 1) stop(paste0('The number of indicies is only 1 !!'))
 
-    if(res$input$use.index == "all"){
+    if(res$input$use.index[1] == "all"){
       name_tmp <- rep(NA, length = length(row.names(res$input$dat$index)))
       for(i in 1:length(name_tmp)){
         input0 <- res$input
@@ -922,7 +928,7 @@ do_jackknife_vpa <- function(res,
 
   } else if(method == "all"){ ####-----------------------------------------------------####
 
-    if(res$input$use.index == "all"){
+    if(res$input$use.index[1] == "all"){
       name_tmp <- rep(NA, length = length(res$input$dat$index[!is.na(res$input$dat$index)]))
       for(i in 1:(dim(res$input$dat$index)[1])){
         index_label <- which(is.na(res$input$dat$index[i,])==FALSE)
@@ -1077,18 +1083,20 @@ do_jackknife_vpa <- function(res,
   # 作図
   if(method == "all"){
     g4 <- ggplot(data = d_tidy_par) +
-      geom_point(aes(x = age, y = tf, col = JK, shape = JK)) +
+      geom_point(data = result_tf, aes(x = age, y = res$term.f), col="red", shape = "-", size=20) +
+      geom_point(aes(x = age, y = tf, col = JK, shape = JK),size=5) +
       facet_wrap(~ Removed_index) +
       theme_SH(legend.position = "top", base_size = 14) +
-      scale_shape_manual(values = scale_value[-1])
+      ylim(0, NA)
   } else {
     g4 <- ggplot(data = d_tidy_par) +
-      geom_point(aes(x = age, y = tf, col = JK, shape = JK)) +
+      geom_point(data = result_tf, aes(x = age, y = res$term.f), col="red", shape = "-", size=20) +
+      geom_point(aes(x = age, y = tf, col = JK, shape = JK),size=5) +
       theme_SH(legend.position = "top", base_size = 14) +
-      scale_shape_manual(values = scale_value[-1])
+      ylim(0, NA)
   }
+  if(!is.null(scale_value)) g4 <- g4 + scale_shape_manual(values = scale_value[-1])
   ## ----------------------------------------------------------------- ##
-
   return(list(JKplot_vpa = gg,
               JKplot_par = g4
               # 一応オブジェクト残しているが、JKplot_vpaで事足りるな...
@@ -1132,22 +1140,21 @@ plot_resboot_vpa <- function(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
   ssb_mat <- abund_mat <- biomass_mat <- matrix(NA, nrow = B_ite, ncol = length(year))
   cor_mat <- matrix(NA, nrow = B_ite,
                     ncol = length(res_boo[[1]]$Fc.at.age)+#length(res_boo[[1]]$q)+
-                      length(res_boo[[1]]$b)#+length(res_boo[[1]]$sigma
-                    +2)
+                      length(res_boo[[1]]$b)+2)
   for(i in  1:B_ite){
     tmp <- res_boo[[i]]
     ssb_mat[i,] <- colSums(tmp$ssb)
     abund_mat[i,] <- as.numeric(tmp$naa[1,])
     biomass_mat[i,] <- colSums(tmp$baa)
     cor_mat[i, 1:length(tmp$Fc.at.age)] <- tmp$Fc.at.age
-    #    cor_mat[i, (length(tmp$Fc.at.age)+1):
-    #              (length(tmp$Fc.at.age)+length(tmp$q))] <- tmp$q
     cor_mat[i, (length(tmp$Fc.at.age)+1):
               (length(tmp$Fc.at.age)+length(tmp$b))] <- tmp$b
-    #    cor_mat[i, (length(tmp$Fc.at.age)+length(tmp$q)+length(tmp$b)+1):
-    #              (length(tmp$Fc.at.age)+length(tmp$q)+length(tmp$b)+length(tmp$sigma))] <- tmp$sigma
     cor_mat[i, length(tmp$Fc.at.age)+length(tmp$b)+1] <- last(colSums(tmp$ssb))
     cor_mat[i, length(tmp$Fc.at.age)+length(tmp$b)+2] <- last(tmp$naa[1,])
+    if(res$input$last.catch.zero){
+      cor_mat[i, length(tmp$Fc.at.age)+length(tmp$b)+1] <- tail(colSums(tmp$ssb),2)[1] %>% as.numeric()
+      cor_mat[i, length(tmp$Fc.at.age)+length(tmp$b)+2] <- tail(tmp$naa[1,],2)[1] %>% as.numeric()
+    }
   }
 
   PB_value <- c((1-ci_range)/2, 0.5, 1-(1-ci_range)/2)
