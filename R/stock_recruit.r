@@ -2018,7 +2018,7 @@ jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename 
         use_data = dplyr::filter(obs_data,Regime == regime_unique[i])
         plot(use_data$R ~ use_data$SSB, cex=2, type = "p",pch=1,xlab="SSB",ylab="R",
              main=paste0("Jackknife SR for Regime ",regime_unique[i]),ylim=c(0,max(use_data$R)*1.3),xlim=c(0,max(obs_data$SSB)*1.3))
-        for (j in 1:nrow(obs_data)) {
+        for (j in 1:length(used_data)) {
           pred_data = jack.res[[j]]$pred %>% filter(Regime == regime_unique[i])
           points(pred_data$SSB,pred_data$R,type="l",lwd=2,col=rgb(0,0,1,alpha=0.1))
         }
