@@ -1575,11 +1575,14 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
       if(is.null(convert_SR_tibble(boot.res[[1]]))) print("Do fit.SR with argument(bio.par) to calculate steepness.")
       N <- boot.res$input$n
       res_boot_par_tibble <- purrr::map_dfr(boot.res[1:N], convert_SR_tibble) %>% dplyr::filter(type=="parameter"&name!="SPR0")
+      # AR=0のときrhoのプロットを除く
+      if(boot.res$input$Res$input$AR==0) res_boot_par_tibble <- res_boot_par_tibble %>% dplyr::filter(name!="rho")
 
       res_boot_par_tibble_summary <- res_boot_par_tibble %>%  group_by(name) %>% summarise(median=median(value),mean=mean(value),CI10=quantile(value,0.1),CI90=quantile(value,0.9)) %>% mutate(name_with_CI = str_c(name," (",round(CI10,2),"-",round(CI90,2),")")) %>% pivot_longer(cols=-c(name,name_with_CI), names_to="stats")
 
       res_boot_par_base <- res_boot_par_tibble_summary %>% filter(stats=="median") #推定結果のために中央値から形だけ持ってくる
       res_fitSRtibble <- convert_SR_tibble(boot.res[["input"]]$Res) %>% dplyr::filter(type=="parameter"&name!="SPR0")
+
 
       for(i in 1:length(res_boot_par_base)){
         for(j in 1:length(res_boot_par_base)){
