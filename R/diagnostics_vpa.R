@@ -1083,14 +1083,14 @@ do_jackknife_vpa <- function(res,
   # 作図
   if(method == "all"){
     g4 <- ggplot(data = d_tidy_par) +
-      geom_hline(aes(yintercept=res$term.f), col="red", linetype=2) +
+      geom_point(data = result_tf, aes(x = age, y = res$term.f), col="red", shape = "-", size=20) +
       geom_point(aes(x = age, y = tf, col = JK, shape = JK),size=5) +
       facet_wrap(~ Removed_index) +
       theme_SH(legend.position = "top", base_size = 14) +
       ylim(0, NA)
   } else {
     g4 <- ggplot(data = d_tidy_par) +
-      geom_hline(aes(yintercept=res$term.f), col="red", linetype=2) +
+      geom_point(data = result_tf, aes(x = age, y = res$term.f), col="red", shape = "-", size=20) +
       geom_point(aes(x = age, y = tf, col = JK, shape = JK),size=5) +
       theme_SH(legend.position = "top", base_size = 14) +
       ylim(0, NA)
