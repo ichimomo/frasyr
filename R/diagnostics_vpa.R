@@ -600,7 +600,7 @@ do_estcheck_vpa <- function(res, n_ite = 20, sd_jitter = 1, what_plot = NULL, TM
 
 # author: Kohei Hamabe
 
-plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_year = FALSE, plot_scale = FALSE, resid_CI=TRUE, plotAR=FALSE){
+plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_year = FALSE, plot_scale = FALSE, resid_CI=TRUE, plotAR=FALSE){
   if(is.numeric(res$input$use.index)){
     assertthat::assert_that(length(res$input$dat$index[,1]) >= length(res$input$use.index))
     used_index <- res$input$dat$index[res$input$use.index,]
