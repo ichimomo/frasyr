@@ -541,6 +541,7 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param p_by_age 選択率更新法でridgeVPAの際にpenalty="p"のときに年齢別にペナルテイーを与えるか与えないか．与えたい場合はTRUEとして,penalty_age（eta=NULLのとき）もしくはno_eta_age(etaがNULLでないとき）に年齢範囲を指定する．
 #' @param sdreport \code{TMB=TRUE}のときに\code{sdreport()}を実行するかどうか（naa, faa, 資源量, 親魚量, Fの平均, 漁獲割合のSDを計算する）
 #' @param use.equ plus groupが途中で変わる場合の計算式の選択 （old = 従来の方法（プラスグループが延長している年はプラスグループのＦが一歳若い年齢のＦと等しいという仮定は置かない），new= 新しい方法（プラスグループが延長している年はプラスグループのＦが一歳若い年齢のＦと等しいという仮定を置く)
+#' @param　ave_S 選択率更新法において，最終年の選択率の仮定が通常(TRUE)とは違い，ヒラメ瀬戸内のように，最終年の選択率がtf.yearで指定した年の平均のF（つまりSUM（F,a)/SUM(F,maxage))に等しいと仮定する場合はFALSEにする.この場合，sel.def="maxage"必須．
 #' @return list object:
 #' \describe{
 #' \item{\code{input}}{解析に用いたデータや仮定}
@@ -656,7 +657,8 @@ vpa <- function(
   penalty_age=NULL, #penalty="p"でp_by_age = ＴＲＵＥで選択率更新法を採用しているときの年齢参照範囲．0歳から2歳までなら0：２とする．
   no_eta_age = NULL, #etaがNULLでなく，penalty="p"で，選択率更新法を採用していて，年齢別にペナルテイーを与えたいときに，etaがかからないほうの年齢範囲
   sdreport = FALSE,
-  use.equ = "new" #plus-groupが途中で変わる場合の計算方法の指定．従来の方法でないものを用いる場合は"new"を指定する
+  use.equ = "new" ,#plus-groupが途中で変わる場合の計算方法の指定．従来の方法でないものを用いる場合は"new"を指定する
+  ave_S=TRUE #ヒラメ瀬戸内海のように，選択率更新法において，最終年の選択率がtf.yearで指定した年の平均のF（つまりSUM（F,a)/SUM(F,maxage))に等しいと仮定する場合．注意：tf.yearで指定した年の平均の選択率とは異なる
 )
 {
   #sigma.constで引数を指定してしまったときは，sigma.constraintで引数を指定しなおしてもらうようにする
@@ -833,10 +835,17 @@ vpa <- function(
      while(dd > max.dd & itt < max.iter){
       saa <- sel.func(faa, def=sel.def)   # sel.defに従って選択率を計算
       for (i in (na[ny]-1):1){
+	  if(isTRUE(ave_S)){
         saa[i, ny] <- get(stat.tf[i])(saa[i, years %in% tf.year])
+		}
+		else  saa[i, ny] <- get(stat.tf[i])(faa[i, years %in% tf.year])/get(stat.tf[i])(faa[na[ny], years %in% tf.year])
       }
 
+      if(isTRUE(ave_S)){
       saa[na[ny], ny] <- get(stat.tf[na[ny]-1])(saa[na[ny], years %in% tf.year])
+	  }
+	  else  saa[na[ny], ny] <- get(stat.tf[na[ny]-1])(faa[na[ny], years %in% tf.year])/get(stat.tf[na[ny]-1])(faa[na[ny], years %in% tf.year])
+	  
       if(length(p)==1) faa[1:na[ny], ny] <- p*sel.func(saa, def=sel.def)[1:na[ny],ny] else faa[1:na[ny], ny] <- p[length(p)]*sel.func(saa, def=sel.def)[1:na[ny],ny]
 
       if (isTRUE(Pope)) naa[ , ny] <- vpa.core.Pope(caa,faa,M,ny,p=p.pope)
@@ -868,9 +877,16 @@ vpa <- function(
      saa1 <- sel.func(faa1, def=sel.def)
 
      for (i in (na[ny]-1):1){
+	  if(isTRUE(ave_S)){
        saa1[i, ny] <- get(stat.tf[i])(saa1[i, years %in% tf.year])
+	   }
+	   else saa1[i, ny] <- get(stat.tf[i])(faa1[i, years %in% tf.year])/get(stat.tf[i])(faa1[na[ny], years %in% tf.year])
      }
+	   if(isTRUE(ave_S)){
      saa1[na[ny], ny] <- get(stat.tf[na[ny]-1])(saa1[na[ny], years %in% tf.year])
+	 }
+	 else saa1[na[ny], ny] <- get(stat.tf[na[ny]-1])(faa1[na[ny], years %in% tf.year])/get(stat.tf[na[ny]-1])(faa1[na[ny], years %in% tf.year])
+	 
      if(length(p)==1) faa1[1:na[ny], ny] <- p*sel.func(saa1, def=sel.def)[1:na[ny],ny] else  faa1[1:na[ny], ny] <- p[length(p)]*sel.func(saa1, def=sel.def)[1:na[ny],ny]
      faa1[na[ny], ny] <- alpha*faa1[na[ny]-1, ny]
 
