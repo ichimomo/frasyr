@@ -146,6 +146,7 @@
   bio_par <span class='op'>=</span> <span class='cn'>NULL</span>,
   plus_group <span class='op'>=</span> <span class='cn'>TRUE</span>,
   is_jitter <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  HS_fix_b <span class='op'>=</span> <span class='cn'>NULL</span>,
   gamma <span class='op'>=</span> <span class='fl'>0.01</span>
 <span class='op'>)</span></code></pre></div>
 
@@ -187,6 +188,10 @@
     <tr>
       <th>plus_group</th>
       <td><p>hなどを計算するときに、プラスグループを考慮するか</p></td>
+    </tr>
+    <tr>
+      <th>HS_fix_b</th>
+      <td><p>SR=HSのとき、折れ点bを固定して計算したい時に値を代入。デフォルットはNULL。ただし、min(SSB)/100より小さい値は入れないこと。</p></td>
     </tr>
     <tr>
       <th>gamma</th>
