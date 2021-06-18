@@ -19,6 +19,7 @@ fit.SR(
   bio_par = NULL,
   plus_group = TRUE,
   is_jitter = FALSE,
+  HS_fix_b = NULL,
   gamma = 0.01
 )
 }
@@ -40,6 +41,8 @@ fit.SR(
 \item{bio_par}{data.frame(waa=c(100,200,300),maa=c(0,1,1),M=c(0.3,0.3,0.3)) のような生物パラメータをあらわすデータフレーム。waaは資源量を計算するときのweight at age, maaはmaturity at age, Mは自然死亡係数。これを与えると、steepnessやR0も計算して返す}
 
 \item{plus_group}{hなどを計算するときに、プラスグループを考慮するか}
+
+\item{HS_fix_b}{SR=HSのとき、折れ点bを固定して計算したい時に値を代入。デフォルットはNULL。ただし、min(SSB)/100より小さい値は入れないこと。}
 
 \item{gamma}{\code{SR="Mesnil"}のときに使用するsmoothing parameter
 # @param do_check.SRfit 計算が終わったあとでdo_check.SRfitを実施し、収束していなかった場合に１回だけ再計算するか（余計に時間がかかる）。デフォルトはFALSE}

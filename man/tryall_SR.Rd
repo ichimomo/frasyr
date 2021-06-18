@@ -9,8 +9,3 @@ tryall_SR(data_SR, plus_group = TRUE, bio_par = NULL)
 \description{
 regimeなしのものだけに対応
 }
-
-\details{
-@export
-}
-
