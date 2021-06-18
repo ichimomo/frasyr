@@ -5,19 +5,7 @@
 \alias{SRplot_gg}
 \title{再生産関係をプロットする関数}
 \usage{
-SRplot_gg(
-  SR_result,
-  refs = NULL,
-  xscale = 1000,
-  xlabel = "\\u5343繝医Φ",
-  yscale = 1,
-  ylabel = "\\u5c3e",
-  labeling.year = NULL,
-  add.info = TRUE,
-  recruit_intercept = 0,
-  plot_CI = FALSE,
-  CI = 0.9
-)
+SRplot_gg(...)
 }
 \arguments{
 \item{SR_result}{fit.SRの結果のオブジェクト}
