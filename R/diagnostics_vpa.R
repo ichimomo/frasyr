@@ -469,7 +469,7 @@ do_estcheck_vpa <- function(res, n_ite = 10, sd_jitter = 1, what_plot = NULL, TM
   #)
   init_list <- list()
   for (i in 1:length(res$term.f)) {
-    init_list[[i]] <- seq(log(0.001), log(4), length = n_ite) %>%
+    init_list[[i]] <- seq(log(0.001), log(2), length = n_ite) %>%
       exp() %>% sample(n_ite)
   }
   value_tmp <- Finit <- Fest <- ite_tmp <- ll_tmp <- list()
