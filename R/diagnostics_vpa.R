@@ -885,7 +885,7 @@ do_jackknife_vpa <- function(res,
         abund_tmp[[i]] <- apply(res_tmp$naa,2,sum)
         ssb_tmp[[i]] <- apply(res_tmp$ssb,2,sum)
         biom_tmp[[i]] <- apply(res_tmp$baa,2,sum)
-        tf_tmp[[i]] <- res_tmp$term.f
+        tf_tmp[[i]] <- res_tmp$faa[,ncol(res_tmp$faa)]
 
         if(i <= 9){
           name_tmp[i] <- paste0('Removed index0',i)
@@ -914,7 +914,7 @@ do_jackknife_vpa <- function(res,
         abund_tmp[[i]] <- apply(res_tmp$naa,2,sum)
         ssb_tmp[[i]] <- apply(res_tmp$ssb,2,sum)
         biom_tmp[[i]] <- apply(res_tmp$baa,2,sum)
-        tf_tmp[[i]] <- res_tmp$term.f
+        tf_tmp[[i]] <- res_tmp$faa[,ncol(res_tmp$faa)]
 
         if(i <= 9){
           name_tmp[i] <- paste0('Removed index0',i)
@@ -948,7 +948,7 @@ do_jackknife_vpa <- function(res,
             name_tmp[j] <- paste0('Removed index0',i," ",year_tmp[j])
             #tmp <- length(year)*(j-1)+1
             #tf_mat[tmp:tmp+length(year),] <- res_tmp$term.f
-            tf_tmp[[j]] <- res_tmp$term.f
+            tf_tmp[[j]] <- res_tmp$faa[,ncol(res_tmp$faa)]
           } else if(i <= 9) {
             next_label <- which(is.na(name_tmp))[1]
             res_list[[next_label]] <- res_tmp
@@ -956,7 +956,7 @@ do_jackknife_vpa <- function(res,
             ssb_tmp[[next_label]] <- apply(res_tmp$ssb,2,sum)
             biom_tmp[[next_label]] <- apply(res_tmp$baa,2,sum)
             name_tmp[next_label] <- paste0('Removed index0',i,' ',year_tmp[j])
-            tf_tmp[[next_label]] <- res_tmp$term.f
+            tf_tmp[[next_label]] <- res_tmp$faa[,ncol(res_tmp$faa)]
           } else {
             next_label <- which(is.na(name_tmp))[1]
             res_list[[next_label]] <- res_tmp
@@ -964,7 +964,7 @@ do_jackknife_vpa <- function(res,
             ssb_tmp[[next_label]] <- apply(res_tmp$ssb,2,sum)
             biom_tmp[[next_label]] <- apply(res_tmp$baa,2,sum)
             name_tmp[next_label] <- paste0('Removed index',i,' ',year_tmp[j])
-            tf_tmp[[next_label]] <- res_tmp$term.f
+            tf_tmp[[next_label]] <- res_tmp$faa[,ncol(res_tmp$faa)]
           }
         } #for(j) 各データの時系列について
         #res_tmp2[[i]] <- res_tmp
@@ -997,7 +997,7 @@ do_jackknife_vpa <- function(res,
             name_tmp[j] <- paste0('Removed index0',i," ",year_tmp[j])
             #tmp <- length(year)*(j-1)+1
             #tf_mat[tmp:tmp+length(year),] <- res_tmp$term.f
-            tf_tmp[[j]] <- res_tmp$term.f
+            tf_tmp[[j]] <- res_tmp$faa[,ncol(res_tmp$faa)]
           } else if(i <= 9) {
             next_label <- which(is.na(name_tmp))[1]
             res_list[[next_label]] <- res_tmp
@@ -1005,7 +1005,7 @@ do_jackknife_vpa <- function(res,
             ssb_tmp[[next_label]] <- apply(res_tmp$ssb,2,sum)
             biom_tmp[[next_label]] <- apply(res_tmp$baa,2,sum)
             name_tmp[next_label] <- paste0('Removed index0',i,' ',year_tmp[j])
-            tf_tmp[[next_label]] <- res_tmp$term.f
+            tf_tmp[[next_label]] <- res_tmp$faa[,ncol(res_tmp$faa)]
           } else {
             next_label <- which(is.na(name_tmp))[1]
             res_list[[next_label]] <- res_tmp
@@ -1013,7 +1013,7 @@ do_jackknife_vpa <- function(res,
             ssb_tmp[[next_label]] <- apply(res_tmp$ssb,2,sum)
             biom_tmp[[next_label]] <- apply(res_tmp$baa,2,sum)
             name_tmp[next_label] <- paste0('Removed index',i,' ',year_tmp[j])
-            tf_tmp[[next_label]] <- res_tmp$term.f
+            tf_tmp[[next_label]] <- res_tmp$faa[,ncol(res_tmp$faa)]
           }
         } #for(j) 各データの時系列について
         #res_tmp2[[i]] <- res_tmp
@@ -1030,35 +1030,19 @@ do_jackknife_vpa <- function(res,
                  ncol = ncol, plot_year = plot_year, scale_value = scale_value)
 
   ## ----------------------------------------------------------------- ##
+
   ## 問題なさそうなら、この区間は消して問題ない
-  tf_name <- numeric()
-  age_tmp <- as.numeric(rownames(res$input$dat$caa))
-  if(length(res$term.f)==1){
-    tf_name <- paste0("tf_age", age_tmp[length(age_tmp)])
-  } else {
-    for(i in 1:length(res$term.f)){
-      if(i == length(res$term.f)){
-        tf_name[i] <- paste0("tf_age", age_tmp[length(age_tmp)])
-      } else {
-        tf_name[i] <- paste0("tf_age", age_tmp[i])
-      }
-    }
-  }# if(tf_name)
   tf_tmp2 <- #purrr::map(, function(x) rep(x, length(year))) %>%
-    unlist(tf_tmp) %>%
-    matrix(nrow = length(res$term.f)) %>%
-    t()
-  colnames(tf_tmp2) <- tf_name
+    matrix(unlist(tf_tmp), nrow = nrow(res$faa)) %>% t()
+  colnames(tf_tmp2) <- str_c("age", rownames(res$faa))
 
   if(method == "index"){
     d_tidy_par <- data.frame(tf_tmp2,
                              JK = name_tmp
                              #map(strsplit(name_tmp," "), ~ first(.)) %>%  unlist()
     ) %>%
-      pivot_longer(col = c(-JK),
-                   names_to = c(".value", "age"),
-                   names_sep = "_",
-                   values_drop_na = TRUE)
+      pivot_longer(col = c(-JK), names_to = c("age"), values_to = c("termF")) %>%
+      mutate(age = factor(age, levels = unique(age)))
   } else {
     d_tidy_par <- data.frame(tf_tmp2,
                              Removed_index = substr(name_tmp, 1, 15) ,
@@ -1071,29 +1055,26 @@ do_jackknife_vpa <- function(res,
   }
 
   #inputしたvpa結果のターミナルF推定値の作図用のtidy dataに成形
-  result_tf <- matrix(res$term.f, ncol = length(res$term.f)) %>% as.data.frame()
-  colnames(result_tf) <- tf_name
-  result_tf <- pivot_longer(result_tf,
-                            cols = tf_name,
-                            names_to = c(".value", "age"),
-                            names_sep = "_",
-                            values_drop_na = TRUE)
+  result_tf <- tibble(age = str_c("age", rownames(res$faa)),
+                      terminalF = matrix(res$faa[,ncol(res$faa)], ncol = nrow(res$faa)) %>% as.numeric()) %>%
+    mutate(age=factor(age, levels = unique(age)))
+
   # 作図
   if(method == "all"){
     g4 <- ggplot(data = d_tidy_par) +
-      geom_point(data = result_tf, aes(x = age, y = res$term.f), col="red", shape = "-", size=20) +
-      geom_point(aes(x = age, y = tf, col = JK, shape = JK),size=5) +
+      geom_point(data = result_tf, aes(x = age, y = terminalF), col="red", shape = "-", size=20) +
+      geom_point(aes(x = age, y = termF, col = JK, shape = JK),size=5) +
       facet_wrap(~ Removed_index) +
       theme_SH(legend.position = "top", base_size = 14) +
       ylim(0, NA)
   } else {
     g4 <- ggplot(data = d_tidy_par) +
-      geom_point(data = result_tf, aes(x = age, y = res$term.f), col="red", shape = "-", size=20) +
-      geom_point(aes(x = age, y = tf, col = JK, shape = JK),size=5) +
+      geom_point(data = result_tf, aes(x = age, y = terminalF), col="red", shape = "-", size=20) +
+      geom_point(aes(x = age, y = termF, col = JK, shape = JK),size=5) +
       theme_SH(legend.position = "top", base_size = 14) +
       ylim(0, NA)
   }
-  if(!is.null(scale_value)) g4 <- g4 + scale_shape_manual(values = scale_value[-1])
+  if(!is.null(scale_value)) g4 <- g4 + scale_shape_manual(values = scale_value)
   ## ----------------------------------------------------------------- ##
   return(list(JKplot_vpa = gg,
               JKplot_par = g4
