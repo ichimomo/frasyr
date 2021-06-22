@@ -1141,9 +1141,9 @@ plot_resboot_vpa <- function(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
                       length(res_boo[[1]]$b)+2)
   for(i in  1:B_ite){
     tmp <- res_boo[[i]]
-    ssb_mat[i,] <- colSums(tmp$ssb)
+    ssb_mat[i,] <- colSums(tmp$ssb, na.rm = TRUE)
     abund_mat[i,] <- as.numeric(tmp$naa[1,])
-    biomass_mat[i,] <- colSums(tmp$baa)
+    biomass_mat[i,] <- colSums(tmp$baa, na.rm = TRUE)
     cor_mat[i, 1:length(tmp$Fc.at.age)] <- tmp$Fc.at.age
     cor_mat[i, (length(tmp$Fc.at.age)+1):
               (length(tmp$Fc.at.age)+length(tmp$b))] <- tmp$b
@@ -1270,9 +1270,9 @@ do_caaboot_vpa <-  function(res, B_ite = 1000, B_cv = 0.2, ci_range = 0.95){
       abund_mat[i,] <- rep(NA, length(year))
       biomass_mat[i,] <- rep(NA, length(year))
     } else {
-      ssb_mat[i,] <- colSums(res_tmp$ssb)
+      ssb_mat[i,] <- colSums(res_tmp$ssb, na.rm = TRUE)
       abund_mat[i,] <- as.numeric(res_tmp$naa[1,])
-      biomass_mat[i,] <- colSums(res_tmp$baa)
+      biomass_mat[i,] <- colSums(res_tmp$baa, na.rm = TRUE)
       message(paste('Iteration',i,'has done ...', sep = " "))
     }
   }
