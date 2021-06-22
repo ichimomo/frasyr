@@ -432,7 +432,7 @@ do_retrospective_vpa <- function(res,
 
 # author: Kohei Hamabe
 
-do_estcheck_vpa <- function(res, n_ite = 20, sd_jitter = 1, what_plot = NULL, TMB = FALSE){
+do_estcheck_vpa <- function(res, n_ite = 10, sd_jitter = 1, what_plot = NULL, TMB = FALSE){
   res$input$plot <- FALSE # 繰り返しの度に残差プロットが生成されるのを防ぐため
 
   # resの中身の診断
