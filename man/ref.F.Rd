@@ -14,6 +14,7 @@ ref.F(
   waa.catch = NULL,
   M.year = NULL,
   waa.year = NULL,
+  waa.catch.year = NULL,
   maa.year = NULL,
   rps.year = NULL,
   rps.vector = NULL,

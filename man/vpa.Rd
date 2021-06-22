@@ -78,7 +78,13 @@ vpa(
   eta = NULL,
   eta.age = 0,
   tmb.file = "rvpa_tmb",
-  remove.abund = NULL
+  remove.abund = NULL,
+  madara = FALSE,
+  p_by_age = FALSE,
+  penalty_age = NULL,
+  no_eta_age = NULL,
+  sdreport = FALSE,
+  use.equ = "new"
 )
 }
 \arguments{
@@ -198,11 +204,11 @@ vpa(
 
 \item{madara}{マダラ太平洋系群で用いているチューニングのやり方}
 
+\item{p_by_age}{選択率更新法でridgeVPAの際にpenalty="p"のときに年齢別にペナルテイーを与えるか与えないか．与えたい場合はTRUEとして,penalty_age（eta=NULLのとき）もしくはno_eta_age(etaがNULLでないとき）に年齢範囲を指定する．}
+
 \item{penalty_age}{選択率更新法でridgeVPAをする際のpenalty="p"のときで，etaがNULLで，p_by_age=TRUE (年齢別にペナルテイーを与えたい）ときにペナルテイーを与える年齢範囲．0歳から2歳までなら0：２とする．}
 
 \item{no_eta_age}{選択率更新法でridgeVPAの際にpenalty="p"のときで，etaがNULLでなく，p_by_age=TRUE (年齢別にペナルテイーを与えたい）ときに，etaがかからないほうの年齢範囲}
-
-\item{p_by_age}{選択率更新法でridgeVPAの際にpenalty="p"のときに年齢別にペナルテイーを与えるか与えないか．与えたい場合はTRUEとして,penalty_age（eta=NULLのとき）もしくはno_eta_age(etaがNULLでないとき）に年齢範囲を指定する．}
 
 \item{sdreport}{\code{TMB=TRUE}のときに\code{sdreport()}を実行するかどうか（naa, faa, 資源量, 親魚量, Fの平均, 漁獲割合のSDを計算する）}
 

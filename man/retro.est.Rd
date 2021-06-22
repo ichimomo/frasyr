@@ -15,7 +15,8 @@ retro.est(
   ssb.forecast = FALSE,
   sel.mat = NULL,
   grid.add.ini = NULL,
-  grid.init = NULL
+  grid.init = NULL,
+  remove.short.index = FALSE
 )
 }
 \arguments{
@@ -32,6 +33,8 @@ retro.est(
 \item{grid.add.ini}{\code{add.p.ini}をgridで変えて初期値を事前に探索する}
 
 \item{grid.init}{\code{p.init}でgridを変えて初期値を事前に探索する}
+
+\item{remove.short.index}{年数が2年以下になった指標値を除いて計算する}
 }
 \description{
 レトロスペクティブ解析の実施

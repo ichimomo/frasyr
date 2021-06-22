@@ -437,6 +437,8 @@ do_retrospective_vpa <- function(res,
 # author: Kohei Hamabe
 
 do_estcheck_vpa <- function(res, n_ite = 20, sd_jitter = 1, what_plot = NULL, TMB = FALSE){
+  res$input$plot <- FALSE # 繰り返しの度に残差プロットが生成されるのを防ぐため
+
   # resの中身の診断
   if(sum(diag(res$hessian))==sum(abs(diag(res$hessian)))){
     message(paste("In your VPA result, Hessian successfully having positive definite!!"))
@@ -543,6 +545,10 @@ do_estcheck_vpa <- function(res, n_ite = 20, sd_jitter = 1, what_plot = NULL, TM
     ylab("log Likelihood") + xlab("initial value of F of age Max") +
     theme_SH(base_size = 14)
 
+  if((range(d_tmp[d_tmp$age=="max","likelihood"], na.rm=TRUE) %>% diff) < 5){
+    g2 <- g2+ylim(res$logLik-5, res$logLik+5)
+  } #初期値で尤度がほとんど変わらない場合、y軸のスケールが狭すぎるので修正
+
   # Hessianの結果をメッセージで返す
   if(sum(Hes_check) == 0){
     message(paste("Hessian successfully having positive definite for all iterations !!"))
@@ -598,7 +604,7 @@ do_estcheck_vpa <- function(res, n_ite = 20, sd_jitter = 1, what_plot = NULL, TM
 
 # author: Kohei Hamabe
 
-plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_year = FALSE, plot_scale = FALSE, resid_CI=TRUE, plotAR=FALSE){
+plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_year = FALSE, plot_scale = FALSE, resid_CI=TRUE, plotAR=FALSE){
   if(is.numeric(res$input$use.index)){
     assertthat::assert_that(length(res$input$dat$index[,1]) >= length(res$input$use.index))
     used_index <- res$input$dat$index[res$input$use.index,]
@@ -631,8 +637,13 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
     sd_resid_tmp <- resid_tmp/sd(resid_tmp, na.rm = TRUE) # 対数残差の標準化残差
 
     #abund.extractor関数で書き換え #catch.prop引数は不要か
-    d_tmp[,(i+length(res$q)*1+4)] <- abund.extractor(abund = res$input$abund[i], naa = res$naa, faa = res$faa, dat = res$input$dat, min.age = res$input$min.age[i], max.age = res$input$max.age[i], link = res$input$link, base = res$input$base, af = res$input$af, sel.def = res$input$sel.def, p.m=res$input$p.m, omega=res$input$omega, scale=res$input$scale)
-
+    d_tmp[,(i+length(res$q)*1+4)] <- abund.extractor(abund = res$input$abund[i], naa = res$naa, faa = res$faa,
+                                                     dat = res$input$dat,
+                                                     min.age = res$input$min.age[i], max.age = res$input$max.age[i],
+                                                     link = res$input$link, base = res$input$base, af = res$input$af,
+                                                     sel.def = res$input$sel.def, p.m=res$input$p.m,
+                                                     omega=res$input$omega, scale=1) #res$input$scale)
+                                                    #res$ssbはスケーリングしていない結果が出ている(2021/06/09KoHMB)
 
     d_tmp[,(i+length(res$q)*2+4)] <- res$pred.index[i,] # q*N^B計算結果
     d_tmp[,(i+length(res$q)*3+4)] <- resid_tmp
@@ -680,10 +691,15 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
   }
 
   # 自己相関係数推定
-  rho.numeric <- numeric()
+  rho.numeric <- signif.numeric <- numeric()
   for(i in 1:length(unique(d_tidy$Index_Label))){
     calc.data <- d_tidy[d_tidy$Index_Label==unique(d_tidy$Index_Label)[i],]
-    rho.numeric[i] <- arima(calc.data$resid,order = c(1,0,0))$coef[1]
+    calc.data <- calc.data[!is.na(calc.data$resid),]
+    #ar.res <-  ar(calc.data$resid,aic=FALSE,order.max=1,demean=FALSE,method = "mle")
+    acf.res <- acf(calc.data$resid, type = "correlation", plot = FALSE, demean = FALSE)
+    rho.numeric[i] <- acf.res$acf[,,1][2]
+    signif.numeric[i] <- if((qnorm(0.025)/sqrt(acf.res$n.used) > acf.res$acf[,,1][2])|
+                            (qnorm(0.975)/sqrt(acf.res$n.used) < acf.res$acf[,,1][2])) "*" else ""
   }
 
   # 残差プロットのy軸の上下限
@@ -695,7 +711,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
   sd.y.posi_rho_data <- which(!range(d_tidy$sd.resid,na.rm = TRUE)==sd.thred_y)[1]
 
   # 残差プロットに追加する観測誤差と自己相関係数のtidy data
-  rho_data <- tibble(Index_Label = unique(d_tidy$Index_Label), sigma = res$sigma, ar1 = rho.numeric) %>%
+  rho_data <- tibble(Index_Label = unique(d_tidy$Index_Label), sigma = res$sigma, ar1 = rho.numeric, signif = signif.numeric) %>%
     mutate(y = thred_y[y.posi_rho_data], x = xlim_year[1], y.sd = sd.thred_y[sd.y.posi_rho_data])
 
   if(isTRUE(resid_CI)){
@@ -703,7 +719,6 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
       geom_ribbon(aes(x = year, ymin = -qnorm(0.025)*sigma, ymax = qnorm(0.025)*sigma), alpha=0.05)+
       geom_ribbon(aes(x = year, ymin = -qnorm(0.1)*sigma, ymax = qnorm(0.1)*sigma), alpha=0.1)+
       geom_point(aes(x=year, y=resid, colour = Index_Label), size = 2) +
-      geom_smooth(aes(x=year, y=resid, colour = Index_Label), lwd = 0.5, se=FALSE, lty=2) +
       facet_wrap(~Index_Label, scale = if(plot_scale) "free" else "fixed")+
       geom_hline(yintercept = 0, size = 1)+
       xlab("Year") +
@@ -712,13 +727,13 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
       theme_SH(base_size = 14)+
       geom_label(data = rho_data,
                  mapping = aes(x = x, y = if(plot_scale)min(d_tidy$resid) else y,
-                               label = str_c("sigma=", round(sigma,2),", rho=", round(ar1,2))),
+                               label = str_c("sigma=", round(sigma,2),
+                                             ", rho=", round(ar1,2), signif)),
                  vjust="inward", hjust="inward")
     g1_sd <- ggplot(d_tidy) +
       geom_ribbon(aes(x = year, ymin = -qnorm(0.025), ymax = qnorm(0.025)), alpha=0.05)+
       geom_ribbon(aes(x = year, ymin = -qnorm(0.1), ymax = qnorm(0.1)), alpha=0.1)+
       geom_point(aes(x=year, y=sd.resid, colour = Index_Label), size = 2) +
-      geom_smooth(aes(x=year, y=sd.resid, colour = Index_Label), lwd = 0.5, se=FALSE, lty=2) +
       facet_wrap(~Index_Label, scale = if(plot_scale) "fixed" else "free")+
       geom_hline(yintercept = 0, size = 1)+
       xlab("Year") +
@@ -726,12 +741,13 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
       ylab("log(Residual)") +
       theme_SH(base_size = 14)+
       geom_label(data = rho_data,
-                 mapping = aes(x = x, y = if(plot_scale)min(d_tidy$sd.resid) else y.sd, label = str_c("sigma=", round(sigma,2),", rho=", round(ar1,2))),
+                 mapping = aes(x = x, y = if(plot_scale)min(d_tidy$sd.resid) else y.sd,
+                               label = str_c("sigma=", round(sigma,2),
+                                             ", rho=", round(ar1,2), signif)),
                  vjust="inward", hjust="inward")
   } else {
     g1 <- ggplot(d_tidy) +
       geom_point(aes(x=year, y=resid, colour = Index_Label), size = 2) +
-      geom_smooth(aes(x=year, y=resid, colour = Index_Label), lwd = 0.5, se=FALSE, lty=2) +
       facet_wrap(~Index_Label, scale = if(plot_scale) "free" else "fixed")+
       geom_hline(yintercept = 0, size = 1)+
       xlab("Year") +
@@ -740,11 +756,11 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
       theme_SH(base_size = 14)+
       geom_label(data = rho_data,
                  mapping = aes(x = x, y = if(plot_scale)min(d_tidy$resid) else y,
-                               label = str_c("sigma=", round(sigma,2),", rho=", round(ar1,2))),
+                               label = str_c("sigma=", round(sigma,2),
+                                             ", rho=", round(ar1,2), signif)),
                  vjust="inward", hjust="inward")
     g1_sd <- ggplot(d_tidy) +
       geom_point(aes(x=year, y=sd.resid, colour = Index_Label), size = 2) +
-      geom_smooth(aes(x=year, y=sd.resid, colour = Index_Label), lwd = 0.5, se=FALSE, lty=2) +
       facet_wrap(~Index_Label, scale = if(plot_scale) "fixed" else "free")+
       geom_hline(yintercept = 0, size = 1)+
       xlab("Year") +
@@ -752,9 +768,13 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
       ylab("log(Residual)") +
       theme_SH(base_size = 14)+
       geom_label(data = rho_data,
-                 mapping = aes(x = x, y = if(plot_scale)min(d_tidy$sd.resid) else y.sd, label = str_c("sigma=", round(sigma,2),", rho=", round(ar1,2))),
+                 mapping = aes(x = x, y = if(plot_scale)min(d_tidy$sd.resid) else y.sd,
+                               label = str_c("sigma=", round(sigma,2),
+                                             ", rho=", round(ar1,2), signif)),
                  vjust="inward", hjust="inward")
   }
+  if(plot_smooth) g1 <- g1 + geom_smooth(aes(x=year, y=resid, colour = Index_Label), lwd = 0.5, se=FALSE, lty=2)
+  if(plot_smooth) g1_sd <- g1_sd + geom_smooth(aes(x=year, y=sd.resid, colour = Index_Label), lwd = 0.5, se=FALSE, lty=2)
 
   g2 <- ggplot(d_tidy) +
     geom_point(aes(x=year, y=obs, colour = Index_Label), size = 2) +
@@ -776,9 +796,6 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = TRUE, plot_y
     predabund_g3[[i]] <- (as.numeric(predIndex_g3[[i]])/res$q[i])^(1/res$b[i])
     tmp <- str_split(res$input$abund[i], "") %>% unlist()
     if(sum(tmp == "N") == 0) predabund_g3[[i]] <- predabund_g3[[i]]*res$input$scale
-    #predabund_g3[[i]] <- with(tmp_data,
-    #                          seq(#min(tmp_data$predabund, na.rm = T),
-    #                              0, max(tmp_data$predabund, na.rm = T), length=100))
   }
   # 横軸に資源量（指数に合わせてSSBやNだったり）、縦軸に予測CPUEを
   # 線が描けるように、横軸100刻みほどでデータがある
@@ -844,7 +861,7 @@ do_jackknife_vpa <- function(res,
                              scale_value = NULL
 ){
 
-  if(res$input$use.index == "all"){
+  if(res$input$use.index[1] == "all"){
     used_index <- res$input$dat$index
   } else {
     used_index <- res$input$dat$index[res$input$use.index,]
@@ -857,7 +874,7 @@ do_jackknife_vpa <- function(res,
   if(method == "index"){
     if(length(used_index[,1]) == 1) stop(paste0('The number of indicies is only 1 !!'))
 
-    if(res$input$use.index == "all"){
+    if(res$input$use.index[1] == "all"){
       name_tmp <- rep(NA, length = length(row.names(res$input$dat$index)))
       for(i in 1:length(name_tmp)){
         input0 <- res$input
@@ -913,7 +930,7 @@ do_jackknife_vpa <- function(res,
 
   } else if(method == "all"){ ####-----------------------------------------------------####
 
-    if(res$input$use.index == "all"){
+    if(res$input$use.index[1] == "all"){
       name_tmp <- rep(NA, length = length(res$input$dat$index[!is.na(res$input$dat$index)]))
       for(i in 1:(dim(res$input$dat$index)[1])){
         index_label <- which(is.na(res$input$dat$index[i,])==FALSE)
@@ -1068,18 +1085,20 @@ do_jackknife_vpa <- function(res,
   # 作図
   if(method == "all"){
     g4 <- ggplot(data = d_tidy_par) +
-      geom_point(aes(x = age, y = tf, col = JK, shape = JK)) +
+      geom_point(data = result_tf, aes(x = age, y = res$term.f), col="red", shape = "-", size=20) +
+      geom_point(aes(x = age, y = tf, col = JK, shape = JK),size=5) +
       facet_wrap(~ Removed_index) +
       theme_SH(legend.position = "top", base_size = 14) +
-      scale_shape_manual(values = scale_value[-1])
+      ylim(0, NA)
   } else {
     g4 <- ggplot(data = d_tidy_par) +
-      geom_point(aes(x = age, y = tf, col = JK, shape = JK)) +
+      geom_point(data = result_tf, aes(x = age, y = res$term.f), col="red", shape = "-", size=20) +
+      geom_point(aes(x = age, y = tf, col = JK, shape = JK),size=5) +
       theme_SH(legend.position = "top", base_size = 14) +
-      scale_shape_manual(values = scale_value[-1])
+      ylim(0, NA)
   }
+  if(!is.null(scale_value)) g4 <- g4 + scale_shape_manual(values = scale_value[-1])
   ## ----------------------------------------------------------------- ##
-
   return(list(JKplot_vpa = gg,
               JKplot_par = g4
               # 一応オブジェクト残しているが、JKplot_vpaで事足りるな...
@@ -1123,22 +1142,21 @@ plot_resboot_vpa <- function(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
   ssb_mat <- abund_mat <- biomass_mat <- matrix(NA, nrow = B_ite, ncol = length(year))
   cor_mat <- matrix(NA, nrow = B_ite,
                     ncol = length(res_boo[[1]]$Fc.at.age)+#length(res_boo[[1]]$q)+
-                      length(res_boo[[1]]$b)#+length(res_boo[[1]]$sigma
-                    +2)
+                      length(res_boo[[1]]$b)+2)
   for(i in  1:B_ite){
     tmp <- res_boo[[i]]
     ssb_mat[i,] <- colSums(tmp$ssb)
     abund_mat[i,] <- as.numeric(tmp$naa[1,])
     biomass_mat[i,] <- colSums(tmp$baa)
     cor_mat[i, 1:length(tmp$Fc.at.age)] <- tmp$Fc.at.age
-    #    cor_mat[i, (length(tmp$Fc.at.age)+1):
-    #              (length(tmp$Fc.at.age)+length(tmp$q))] <- tmp$q
     cor_mat[i, (length(tmp$Fc.at.age)+1):
               (length(tmp$Fc.at.age)+length(tmp$b))] <- tmp$b
-    #    cor_mat[i, (length(tmp$Fc.at.age)+length(tmp$q)+length(tmp$b)+1):
-    #              (length(tmp$Fc.at.age)+length(tmp$q)+length(tmp$b)+length(tmp$sigma))] <- tmp$sigma
     cor_mat[i, length(tmp$Fc.at.age)+length(tmp$b)+1] <- last(colSums(tmp$ssb))
     cor_mat[i, length(tmp$Fc.at.age)+length(tmp$b)+2] <- last(tmp$naa[1,])
+    if(res$input$last.catch.zero){
+      cor_mat[i, length(tmp$Fc.at.age)+length(tmp$b)+1] <- tail(colSums(tmp$ssb),2)[1] %>% as.numeric()
+      cor_mat[i, length(tmp$Fc.at.age)+length(tmp$b)+2] <- tail(tmp$naa[1,],2)[1] %>% as.numeric()
+    }
   }
 
   PB_value <- c((1-ci_range)/2, 0.5, 1-(1-ci_range)/2)

@@ -72,7 +72,7 @@ test_that("out.AR", {
 context("stock-recruitment SRdata")
 
 test_that("output value check",{
-    
+
   load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
   SRdata_pma_check <- get.SRdata(res_vpa_pma)
 
@@ -321,6 +321,25 @@ test_that("output value check",{
     }
   }
 
+ # check HS_b_fix option
+ # HS_b_fixにmin(SSB)としてもその1/100としても切片(a*HS_b_fix)とほぼ一致するはず。
+  data(res_vpa)
+  SRdata <- get.SRdata(res_vpa)
+
+  minSSB_b <- min(SRdata$SSB)
+  res_fitSR_HS_b_fix_l1 <- fit.SR(SRdata=SRdata,SR="HS",method = "L1",AR=0,HS_fix_b = minSSB_b)
+  res_fitSR_HS_b_fix_l2 <- fit.SR(SRdata=SRdata,SR="HS",method = "L2",AR=0,HS_fix_b = minSSB_b)
+  res_fitSR_HS_b_fix_l2ar <- fit.SR(SRdata=SRdata,SR="HS",method = "L2",AR=1,HS_fix_b = minSSB_b)
+  smaller_minSSB_b <- minSSB_b/100
+  res_fitSR_near0_b_fix_l1 <- fit.SR(SRdata=SRdata,SR="HS",method = "L1",AR=0,HS_fix_b = smaller_minSSB_b)
+  res_fitSR_near0_b_fix_l2 <- fit.SR(SRdata=SRdata,SR="HS",method = "L2",AR=0,HS_fix_b = smaller_minSSB_b)
+  res_fitSR_near0_b_fix_l2ar <- fit.SR(SRdata=SRdata,SR="HS",method = "L2",AR=1,HS_fix_b = smaller_minSSB_b)
+
+  #切片
+  expect_equal(res_fitSR_HS_b_fix_l1$pars$a*minSSB_b,res_fitSR_near0_b_fix_l1$pars$a*smaller_minSSB_b,tolerance=0.001,scale=res_fitSR_HS_b_fix_l1$pars$a*minSSB_b)
+  expect_equal(res_fitSR_HS_b_fix_l2$pars$a*minSSB_b,res_fitSR_near0_b_fix_l2$pars$a*smaller_minSSB_b,tolerance=0.00001,scale=res_fitSR_HS_b_fix_l2$pars$a*minSSB_b)
+  expect_equal(res_fitSR_HS_b_fix_l2ar$pars$a*minSSB_b,res_fitSR_near0_b_fix_l2ar$pars$a*smaller_minSSB_b,tolerance=0.00001,scale=res_fitSR_HS_b_fix_l2ar$pars$a*minSSB_b)
+
 })
 
 test_that("tentative test for sd of L1 and L2",{
@@ -400,7 +419,7 @@ test_that("check matching of fit.SRregime and fit.SR",{
     resSR1 <- fit.SR(SRdata1, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],AR = 0, hessian = FALSE,length=20, bio_par=bio_par)
     resSR2 <- fit.SR(SRdata2, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],AR = 0, hessian = FALSE,length=20, bio_par=bio_par)
     resSRregime <- fit.SRregime(SRdata, SR = as.character(SRmodel.list$SR.rel[i]), method = as.character(SRmodel.list$L.type[i]), regime.year = regime_year, regime.key = 0:1, regime.par = c("a","b","sd"), use.fit.SR = TRUE,bio_par=bio_par)
-    
+
     expect_equal(c(resSR1$pars$a,resSR2$pars$a)/resSRregime$regime_pars$a,c(1,1),label=i,tol=1.0e-2)
     expect_equal(c(resSR1$pars$b,resSR2$pars$b)/resSRregime$regime_pars$b,c(1,1),label=i,tol=1.0e-2)
     expect_equal(c(resSR1$pars$sd,resSR2$pars$sd)/resSRregime$regime_pars$sd,c(1,1),label=i,tol=1.0e-2)

@@ -328,6 +328,7 @@ ref.F <- function(
   waa.catch=NULL,
   M.year=NULL,
   waa.year=NULL, # 年を指定して生物パラメータを仮定する場合．年の範囲の平均値が用いられる．NULLの場合，VPA最終年の値が使われる
+  waa.catch.year=NULL,
   maa.year=NULL,
   rps.year = NULL, # Fmedの計算に使うRPSの年の範囲．NULLの場合，全範囲が用いられる
   rps.vector = NULL,
@@ -366,10 +367,15 @@ ref.F <- function(
     if(is.null(waa.year)) waa.year <- rev(years)[1]
     if(is.null(maa.year)) maa.year <- rev(years)[1]
     if(is.null(M.year)) M.year <- rev(years)[1]
+    if(is.null(waa.catch.year)) waa.catch.year <- rev(years)[1]    
 
     if(is.null(waa))  waa <- apply_year_colum(res$input$dat$waa,waa.year)
     if(is.null(M))    M   <- apply_year_colum(res$input$dat$M,M.year)
     if(is.null(maa))  maa <- apply_year_colum(res$input$dat$maa,maa.year)
+    if(is.null(waa.catch)){
+        if(!is.null(res$input$dat$waa.catch)) waa.catch <- apply_year_colum(res$input$dat$waa.catch,waa.catch.year)
+        else waa.catch <- waa
+    }
 
     if(is.null(waa.catch)){
       if(is.null(res$input$dat$waa.catch)){
@@ -1364,7 +1370,11 @@ convert_vector <- function(vector,name){
 convert_vpa_tibble <- function(vpares,SPRtarget=NULL){
 
   if (is.null(vpares$input$dat$waa.catch)) {
-    total.catch <- colSums(vpares$input$dat$caa*vpares$input$dat$waa,na.rm=T)
+    if (class(vpares)=="sam") {
+      total.catch <- colSums(vpares$caa*vpares$input$dat$waa,na.rm=T)
+    } else {
+      total.catch <- colSums(vpares$input$dat$caa*vpares$input$dat$waa,na.rm=T)
+    }
   } else {
     total.catch <- colSums(vpares$input$dat$caa*vpares$input$dat$waa.catch,na.rm=T)
   }
@@ -1775,7 +1785,11 @@ make_kobeII_table <- function(kobeII_data,
 
 #' kobeII matrixの簡易版（Btarget, Blimitは決め打ちでβのみ変える)
 #'
+#' @param finput future_vpaの返り値の$input
 #' @param year_beta_change betaを変更する年の範囲。NULLの場合には全部の年を変える。
+#' @param datainput_setting_original make_future_dataに与えて引数を作り直す場合の make_future_dataの返り値
+#' @param datainput_setting_extra betaに加えて変えたい追加の設定
+#' @param label_name HCR_nameのラベルの名前. NULLの場合、beta_vectorが使われる
 #'
 #' @encoding UTF-8
 #' @export
@@ -1783,7 +1797,18 @@ make_kobeII_table <- function(kobeII_data,
 #'
 
 beta.simulation <- function(finput,beta_vector,year.lag=0,type="old",year_beta_change=NULL,
+                            datainput_setting_extra   =NULL,
+                            datainput_setting_original=NULL,
+                            label_name = NULL,
                             output_type="tidy", ncore = 1){
+
+  if(!is.null(datainput_setting_extra)) assertthat::assert_that(length(datainput_setting_extra)==length(beta_vector))
+  if(!is.null(label_name)){
+    assertthat::assert_that(length(label_name)==length(beta_vector))
+  }
+  else{
+    label_name <- beta_vector
+    }
 
   tb <- NULL
   future_year <- dimnames(finput$tmb_data$HCR_mat)[[1]]
@@ -1802,10 +1827,13 @@ beta.simulation <- function(finput,beta_vector,year.lag=0,type="old",year_beta_c
       else{
         finput$tmb_data$HCR_mat[year_column_beta_change,,"beta"] <- beta_vector[i]
         if(!is.null(finput$MSE_input_data)) finput$MSE_input_data$input$HCR_beta <- beta_vector[i]
+        if(!is.null(datainput_setting_extra)){
+          finput$tmb_data <- redo_future(datainput_setting_original, datainput_setting_extra[[i]], only_data=TRUE)$data
+        }
         fres_base <- do.call(future_vpa,finput)
         fres_base <- format_to_old_future(fres_base)
       }
-      tmp <- convert_future_table(fres_base,label=beta_vector[i]) %>%
+      tmp <- convert_future_table(fres_base,label=label_name[i]) %>%
         rename(HCR_name=label)  %>% mutate(beta=beta_vector[i])
       tb <- bind_rows(tb,tmp)
     }
@@ -1818,9 +1846,12 @@ beta.simulation <- function(finput,beta_vector,year.lag=0,type="old",year_beta_c
     tb <- foreach::foreach(i=1:length(beta_vector),.combine="rbind")%dopar%{
       finput$tmb_data$HCR_mat[year_column_beta_change,,"beta"] <- beta_vector[i]
       if(!is.null(finput$MSE_input_data)) finput$MSE_input_data$input$HCR_beta <- beta_vector[i]
+      if(!is.null(datainput_setting_extra)){
+        finput$tmb_data <- redo_future(datainput_setting_original, datainput_setting_extra[[i]], only_data=TRUE)$data
+      }      
       fres_base <- do.call(future_vpa,finput)
       fres_base <- format_to_old_future(fres_base)
-      tmp <- convert_future_table(fres_base,label=beta_vector[i]) %>%
+      tmp <- convert_future_table(fres_base,label=label_name[i]) %>%
         rename(HCR_name=label)  %>% mutate(beta=beta_vector[i])
       tmp
     }
@@ -2432,10 +2463,13 @@ source_lines <- function(file, lines, encoding="UTF-8",...){
 
 #' re-calculate projection with different arguments
 #'
+#' @param data_future make_future_dataの返り値。これ全体でなくて、$inputのみでもOK
 #'
 
 redo_future <- function(data_future, input_data_list, SR_sd=NULL, SR_b=NULL, only_data=FALSE,is_regime=(class(data_future$input$res_SR)=="fit.SRregime"), ...){
-  input_data <- data_future$input
+  
+  if("input" %in% names(data_future)) input_data <- data_future$input else input_data <- data_future
+  
   if(! all(names(input_data_list) %in% names(input_data))) stop("names of input_data_list is invalid!")
 
   input_data[names(input_data_list)] <- input_data_list
@@ -2611,10 +2645,13 @@ derive_biopar <- function(res_obj=NULL, derive_year=NULL, stat=mean){
 
   derive_year <- as.character(derive_year)
 
-  if(!is.null(res_obj$input$tune)){
+  if(!is.null(res_obj$input$dat$caa)){
     res_obj$input$dat$faa <- res_obj$faa
-    bio_par <- purrr::map_dfc(res_obj$input$dat[c("M","waa","maa","faa")],
-                   function(x) apply(x[,derive_year,drop=F],1,stat))
+    derive_char <- c("M","waa","maa","faa")
+    if(!is.null(res_obj$input$dat$waa.catch)) derive_char <- c(derive_char,"waa.catch")
+    bio_par <- purrr::map_dfc(res_obj$input$dat[derive_char],
+                              function(x) apply(x[,derive_year,drop=F],1,stat))
+    if(!is.null(res_obj$input$dat$waa.catch)) bio_par$waa.catch <- bio_par$waa
   }
 
   if(class(res_obj)=="future"|class(res_obj)=="future_new"){
@@ -2622,6 +2659,7 @@ derive_biopar <- function(res_obj=NULL, derive_year=NULL, stat=mean){
     if(is.null(res_obj$maa)) bio_list$maa <- res_obj$input$tmb_data$maa else bio_list$maa <- res_obj$maa
     bio_list$M <- res_obj$input$tmb_data$M
     if(is.null(bio_list$M)) bio_list$M <- res_obj$M
+    if(!is.null(res_obj$waa_catch_mat)) bio_list$waa.catch <- res_obj$waa_catch_mat else bio_list$waa.catch <- res_obj$waa.catch
     bio_par <- purrr::map_dfc(bio_list,
                    function(x) apply(x[,derive_year,,drop=F],1,stat))
   }
@@ -2759,3 +2797,42 @@ rowtapply2 <- function(a0,FUN.name){
     dimnames(res) <- list(unique(yname),colnames(a0))                                   
     res                                                                                 
 }    
+
+#'
+#' kobe.tableをさらにsummaryする
+#' 
+#' @export
+
+summary_kobe_table <- function(kobe_data){
+  tmpfunc_ <- function(x,header)  str_c(header,"_",x)
+  arrange_table <- function(kobedata){
+    kobedata <- kobedata[c("catch.mean","ssb.mean","prob.over.ssbtarget","catch.risk","overfishing.risk","redzone.risk","bban.risk","blimit.risk","bspecific.risk")]
+    kobedata <- purrr::map(1:length(kobedata),
+                           function(x) kobedata[[x]] %>% select(-stat_name) %>%
+                                         rename_all(tmpfunc_, header=names(kobedata)[x]))
+    bind_cols(kobedata)
+  }
+  
+  final_table1 <- arrange_table(kobe_data) %>% 
+    select(id:catch.mean_2031,ssb.mean_2023, ssb.mean_2026, ssb.mean_2031, prob.over.ssbtarget_2031, ends_with("risk_value")) # 必要な列を取り出す
+  final_table1 <- final_table1  %>%
+    mutate(catch21=final_table1$catch.mean_2021,
+           catch2223=apply(select(final_table1,catch.mean_2022:catch.mean_2023),1,mean), # 必要な漁獲量を平均する
+           catch2430=apply(select(final_table1,catch.mean_2024:catch.mean_2030),1,mean),
+           catch2131=apply(select(final_table1,catch.mean_2021:catch.mean_2030),1,mean),
+           HCR_name=catch.mean_HCR_name,
+           beta=catch.mean_beta) %>%
+    select(-starts_with("catch.mean")) # 平均しおわったcatchを削除する
+#  final_table1 <- bind_cols(filter(final_table1,id==1) %>% rename_all(tmpfunc_,header="M1"),
+#                            filter(final_table1,id==2) %>% rename_all(tmpfunc_,header="M2")) 
+  final_table1 <-final_table1 %>%
+    select(M1_HCR_name, M1_beta,              
+           ends_with("prob.over.ssbtarget_2031"),
+           ends_with("catch21"),ends_with("catch2223"),ends_with("catch2430"),ends_with("catch2131"),
+           ends_with("ssb.mean_2023"),ends_with("ssb.mean_2026"),ends_with("ssb.mean_2031"),
+           ends_with("bban.risk_value"),ends_with("blimit.risk_value"),ends_with("catch.risk_value"),
+           ends_with("redzone.risk_value"),ends_with("overfishing.risk_value")) %>%
+    arrange(desc(M1_catch21))
+  
+  return(final_table1)
+}

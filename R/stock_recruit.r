@@ -22,9 +22,9 @@ NULL
 #' @param release.dat VPAの結果オブジェクトでなく直接データを与えたい場合の放流尾数の値
 #' @param return.df データフレームとして結果を返すか。このオプション関係なくデータフレームとして返すように変更したので、近いうちに廃止予定
 #' @param weight.year fit.SRに渡すとき、フィットの対象とする年を指定する。特例として０を与えると、全部の年のデータが使われるようになる。返り値にweightという列が加わる。
-#' 
+#'
 #' @encoding UTF-8
-#' 
+#'
 #' @export
 get.SRdata <- function(vpares=NULL,
                        R.dat = NULL,
@@ -33,10 +33,10 @@ get.SRdata <- function(vpares=NULL,
                        years = NULL,
                        weight.year = NULL,
                        return.df = TRUE){
-    
+
     is.release <- !is.null(release.dat) | !is.null(vpares$input$dat$release.dat)
     if(is.null(years) && !is.null(vpares)) years <- as.numeric(colnames(vpares$naa))
-    
+
     # R.datとSSB.datだけが与えられた場合、それを使ってシンプルにフィットする
     if (!is.null(R.dat) & !is.null(SSB.dat)) {
         assertthat::assert_that(length(R.dat)==length(SSB.dat))
@@ -76,7 +76,7 @@ get.SRdata <- function(vpares=NULL,
                 dat$release <- release.dat
             }
         }
-        
+
     # 加入年齢分だけずらす
         dat$R    <- dat$R[(L+1):n]
         dat$SSB  <- dat$SSB[1:(n-L)]
@@ -90,7 +90,7 @@ get.SRdata <- function(vpares=NULL,
 
     assertthat::assert_that(all(dat[["R"]] > 0))
     class(dat) <- "SRdata"
-    
+
     #if (return.df == TRUE) return(data.frame(year = dat$year,
     #SSB  = dat$SSB,
     #                                         R    = dat$R,
@@ -110,7 +110,7 @@ get.SRdata <- function(vpares=NULL,
         }
     }
     return(dat.df)
-    
+
 }
 
 #' 再生産関係のパラメタが想定した形になっているかを確認
@@ -121,7 +121,7 @@ validate_sr <- function(SR = NULL, method = NULL, AR = NULL, out.AR = NULL, res_
   if (!is.null(SR)) {
     assertthat::assert_that(
       length(SR) == 1,
-      SR %in% c("HS", "BH", "RI")
+      SR %in% c("HS", "BH", "RI","Mesnil")
     )
   }
   if (!is.null(method)) {
@@ -149,7 +149,7 @@ validate_sr <- function(SR = NULL, method = NULL, AR = NULL, out.AR = NULL, res_
 #'
 #' 3種類の再生産関係の推定を、最小二乗法か最小絶対値法で、さらに加入の残差の自己相関を考慮して行うことができる
 #' @param SRdata \code{get.SRdata}で作成した再生産関係データ
-#' @param SR 再生産関係 (\code{"HS"}: Hockey-stick, \code{"BH"}: Beverton-Holt, \code{"RI"}: Ricker)
+#' @param SR 再生産関係 (\code{"HS"}: Hockey-stick, \code{"BH"}: Beverton-Holt, \code{"RI"}: Ricker, \code{"Mesnil"}: Continuous HS)
 #' @param method 最適化法（\code{"L2"}: 最小二乗法, \code{"L1"}: 最小絶対値法）
 #' @param AR 自己相関を推定するか(1), しないか(0)
 #' @param out.AR 自己相関係数を一度再生産関係を推定したのちに、外部から推定するか（1), 内部で推定するか(0)
@@ -157,6 +157,8 @@ validate_sr <- function(SR = NULL, method = NULL, AR = NULL, out.AR = NULL, res_
 #' @param p0 \code{optim}で設定する初期値
 #' @param bio_par data.frame(waa=c(100,200,300),maa=c(0,1,1),M=c(0.3,0.3,0.3)) のような生物パラメータをあらわすデータフレーム。waaは資源量を計算するときのweight at age, maaはmaturity at age, Mは自然死亡係数。これを与えると、steepnessやR0も計算して返す
 #' @param plus_group hなどを計算するときに、プラスグループを考慮するか
+#' @param HS_fix_b SR=HSのとき、折れ点bを固定して計算したい時に値を代入。デフォルットはNULL。ただし、min(SSB)/100より小さい値は入れないこと。
+#' @param gamma \code{SR="Mesnil"}のときに使用するsmoothing parameter
 #' # @param do_check.SRfit 計算が終わったあとでdo_check.SRfitを実施し、収束していなかった場合に１回だけ再計算するか（余計に時間がかかる）。デフォルトはFALSE
 #'
 #' @encoding UTF-8
@@ -209,7 +211,9 @@ fit.SR <- function(SRdata,
                    out.AR = TRUE, #自己相関係数rhoを外で推定するか
                    bio_par = NULL,
                    plus_group = TRUE,
-                   is_jitter = FALSE
+                   is_jitter = FALSE,
+                   HS_fix_b = NULL,
+                   gamma=0.01
 #                   do_check.SRfit = FALSE # 計算が終わったあとでdo_check.SRfitを実施し、収束していなかった場合に１回だけ再計算するか（余計に時間がかかる）
 ){
   validate_sr(SR = SR, method = method, AR = AR, out.AR = out.AR)
@@ -221,8 +225,8 @@ fit.SR <- function(SRdata,
   tmp <- check_consistent_w(w, SRdata)
   SRdata <- tmp$SRdata
   w <- arglist$w <- tmp$w
-  
-  
+
+
   if (AR==0) out.AR <- FALSE
   rec <- SRdata$R
   ssb <- SRdata$SSB
@@ -234,8 +238,12 @@ fit.SR <- function(SRdata,
   if (SR=="HS") SRF <- function(x,a,b) ifelse(x>b,b*a,x*a)
   if (SR=="BH") SRF <- function(x,a,b) a*x/(1+b*x)
   if (SR=="RI") SRF <- function(x,a,b) a*x*exp(-b*x)
+  if (SR=="Mesnil") SRF <- function(x,a,b) 0.5*a*(x+sqrt(b^2+gamma^2/4)-sqrt((x-b)^2+gamma^2/4))
 
   if (length(SRdata$R) != length(w)) stop("The length of 'w' is not appropriate!")
+
+  if (!is.null(HS_fix_b) && SR!="HS" ) stop("Set SR type as HS if you use HS_fix_b option!")
+  if (!is.null(HS_fix_b) && HS_fix_b < (min(ssb)/100) ) stop("Set larger HS_fix_b than min(SSB)/100 if you use HS_fix_b option!")
 
   one_max = max(SRdata$year[w>0])
   zero_min =ifelse(sum(w==0)>0, min(SRdata$year[w==0]),one_max)
@@ -317,38 +325,39 @@ fit.SR <- function(SRdata,
     }
     }
 
-  if (is.null(p0)) {
+    if(is.null(HS_fix_b)){
+      if (is.null(p0)) {
     a.range <- range(rec/ssb)
     b.range <- range(1/ssb)
-    if (SR == "HS") b.range <- range(ssb)
+    if (SR == "HS" | SR=="Mesnil") b.range <- range(ssb)
     grids <- as.matrix(expand.grid(
       seq(a.range[1],a.range[2],len=length),
       seq(b.range[1],b.range[2],len=length)
     ))
     init <- as.numeric(grids[which.min(sapply(1:nrow(grids),function(i) obj.f(grids[i,1],grids[i,2],0))),])
     init[1] <- log(init[1])
-    init[2] <- ifelse (SR == "HS",-log(max(0.000001,(max(ssb)-min(ssb))/max(init[2]-min(ssb),0.000001)-1)),log(init[2]))
+    init[2] <- ifelse (SR == "HS" | SR =="Mesnil",-log(max(0.000001,(max(ssb)-min(ssb))/max(init[2]-min(ssb),0.000001)-1)),log(init[2]))
     if (AR != 0 && !isTRUE(out.AR)) init[3] <- 0
   } else {
     init = p0
   }
 
-  if (SR == "HS") {
-    if (AR == 0 || out.AR) {
-      obj.f2 <- function(x) obj.f(exp(x[1]),min(ssb)+(max(ssb)-min(ssb))/(1+exp(-x[2])),0)
+  if (SR == "HS" | SR == "Mesnil") {
+      if (AR == 0 || out.AR) {
+        obj.f2 <- function(x) obj.f(exp(x[1]),min(ssb)+(max(ssb)-min(ssb))/(1+exp(-x[2])),0)
+      } else {
+        obj.f2 <-  function(x) obj.f(exp(x[1]),min(ssb)+(max(ssb)-min(ssb))/(1+exp(-x[2])),1/(1+exp(-x[3])))
+      }
     } else {
-      obj.f2 <-  function(x) obj.f(exp(x[1]),min(ssb)+(max(ssb)-min(ssb))/(1+exp(-x[2])),1/(1+exp(-x[3])))
+      if (AR == 0 || out.AR) {
+        obj.f2 <- function(x) obj.f(exp(x[1]),exp(x[2]),0)
+      } else {
+        obj.f2 <-  function(x) obj.f(exp(x[1]),exp(x[2]),1/(1+exp(-x[3])))
+      }
     }
-  } else {
-    if (AR == 0 || out.AR) {
-      obj.f2 <- function(x) obj.f(exp(x[1]),exp(x[2]),0)
-    } else {
-      obj.f2 <-  function(x) obj.f(exp(x[1]),exp(x[2]),1/(1+exp(-x[3])))
-    }
-  }
 
-  opt <- optim(init,obj.f2)
-  #if (rep.opt) {
+    opt <- optim(init,obj.f2)
+    #if (rep.opt) {
     for (i in 1:100) {
       if(is_jitter==FALSE) par2 <- opt$par
       if(is_jitter==TRUE)  par2 <- opt$par + rnorm(length(opt$par),0,5)
@@ -356,8 +365,45 @@ fit.SR <- function(SRdata,
       if (abs(opt$value-opt2$value)<1e-6) break
       opt <- opt2
     }
-  #}
-  opt <- optim(opt$par,obj.f2,method="BFGS",hessian=hessian)
+    #}
+    opt <- optim(opt$par,obj.f2,method="BFGS",hessian=hessian)
+
+  }
+  else{
+    if (is.null(p0)) {
+      a.range <- c(min(rec/ssb),max(rec)/(min(ssb)/100))
+      grids <- as.matrix(seq(a.range[1],a.range[2],len=length))
+      init <- as.numeric(grids[which.min(sapply(1:length(grids),function(i) obj.f(grids[i,1],HS_fix_b,0))),])
+      init[1] <- log(init[1])
+      if (AR != 0 && !isTRUE(out.AR)) init[2] <- 0
+    } else {
+      init = p0
+    }
+
+    if (AR == 0 || out.AR) {
+      obj.f2 <- function(x) obj.f(exp(x[1]),HS_fix_b,0)
+      opt <- optim(init,obj.f2,method ="Brent",upper = log(max(a.range)), lower = log(min(a.range)))
+      #if (rep.opt) {
+      #}
+
+    } else {
+      obj.f2 <-  function(x) obj.f(exp(x[1]),HS_fix_b,1/(1+exp(-x[2])))
+
+      opt <- optim(init,obj.f2)
+      #if (rep.opt) {
+      for (i in 1:100) {
+        if(is_jitter==FALSE) par2 <- opt$par
+        if(is_jitter==TRUE)  par2 <- opt$par + rnorm(length(opt$par),0,5)
+        opt2 <- optim(par2,obj.f2)
+        if (abs(opt$value-opt2$value)<1e-6) break
+        opt <- opt2
+      }
+      #}
+      opt <- optim(opt$par,obj.f2,method="BFGS",hessian=hessian)
+
+    }
+
+  }
 
   Res <- list()
   Res$input <- arglist
@@ -365,9 +411,15 @@ fit.SR <- function(SRdata,
   Res$obj.f2 <- obj.f2
   Res$opt <- opt
 
-  a <- exp(opt$par[1])
-  b <- ifelse(SR=="HS",min(ssb)+(max(ssb)-min(ssb))/(1+exp(-opt$par[2])),exp(opt$par[2]))
-  rho <- ifelse(AR==0,0,ifelse(out.AR,0,1/(1+exp(-opt$par[3]))))
+  if(is.null(HS_fix_b)){
+    a <- exp(opt$par[1])
+    b <- ifelse(SR=="HS"|SR=="Mesnil",min(ssb)+(max(ssb)-min(ssb))/(1+exp(-opt$par[2])),exp(opt$par[2]))
+    rho <- ifelse(AR==0,0,ifelse(out.AR,0,1/(1+exp(-opt$par[3]))))
+  } else{
+    a <- exp(opt$par[1])
+    b <- HS_fix_b
+    rho <- ifelse(AR==0,0,ifelse(out.AR,0,1/(1+exp(-opt$par[2]))))
+  }
 
   if (method == "L2" && AR==1 && out.AR==FALSE && zero_min<one_max) {
     resid = obj.f(a=a,b=b,rho=rho,out="resid")
@@ -959,8 +1011,8 @@ fit.SRregime <- function(
   #  if(is.null(w)) w <- rep(1,length(SRdata$R))
   tmp <- check_consistent_w(w, SRdata)
   SRdata <- tmp$SRdata
-  w <- arglist$w <- tmp$w  
-  
+  w <- arglist$w <- tmp$w
+
   rec <- SRdata$R
   ssb <- SRdata$SSB
   N <- length(rec)
@@ -1523,11 +1575,14 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
       if(is.null(convert_SR_tibble(boot.res[[1]]))) print("Do fit.SR with argument(bio.par) to calculate steepness.")
       N <- boot.res$input$n
       res_boot_par_tibble <- purrr::map_dfr(boot.res[1:N], convert_SR_tibble) %>% dplyr::filter(type=="parameter"&name!="SPR0")
+      # AR=0のときrhoのプロットを除く
+      if(boot.res$input$Res$input$AR==0) res_boot_par_tibble <- res_boot_par_tibble %>% dplyr::filter(name!="rho")
 
       res_boot_par_tibble_summary <- res_boot_par_tibble %>%  group_by(name) %>% summarise(median=median(value),mean=mean(value),CI10=quantile(value,0.1),CI90=quantile(value,0.9)) %>% mutate(name_with_CI = str_c(name," (",round(CI10,2),"-",round(CI90,2),")")) %>% pivot_longer(cols=-c(name,name_with_CI), names_to="stats")
 
       res_boot_par_base <- res_boot_par_tibble_summary %>% filter(stats=="median") #推定結果のために中央値から形だけ持ってくる
       res_fitSRtibble <- convert_SR_tibble(boot.res[["input"]]$Res) %>% dplyr::filter(type=="parameter"&name!="SPR0")
+
 
       for(i in 1:length(res_boot_par_base)){
         for(j in 1:length(res_boot_par_base)){
@@ -1819,7 +1874,7 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
 #' res_jackSR <- jackknife.SR(resSR,output = T)
 #' }
 #' @export
-#' 
+#'
 
 jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename = "jackknife",ylim.range = c(0,1.5),pch=19,cex=1.1,...) {
 
@@ -1963,7 +2018,7 @@ jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename 
         use_data = dplyr::filter(obs_data,Regime == regime_unique[i])
         plot(use_data$R ~ use_data$SSB, cex=2, type = "p",pch=1,xlab="SSB",ylab="R",
              main=paste0("Jackknife SR for Regime ",regime_unique[i]),ylim=c(0,max(use_data$R)*1.3),xlim=c(0,max(obs_data$SSB)*1.3))
-        for (j in 1:nrow(obs_data)) {
+        for (j in 1:length(used_data)) {
           pred_data = jack.res[[j]]$pred %>% filter(Regime == regime_unique[i])
           points(pred_data$SSB,pred_data$R,type="l",lwd=2,col=rgb(0,0,1,alpha=0.1))
         }
@@ -2410,48 +2465,95 @@ corSR = function(resSR) {
 #' }
 #' @encoding UTF-8
 #' @export
-calc_steepness = function(SR="HS",rec_pars,M,waa,maa,plus_group=TRUE) {
+calc_steepness = function(SR="HS",rec_pars,M,waa,maa,plus_group=TRUE,faa = NULL, Pope=TRUE) {
   if (length(M)==1) {
     M = rep(M,length(waa))
   }
   if (length(waa) != length(maa) || length(M) != length(maa)) {
     stop("The lengths of 'waa' and 'maa' must be equal")
   }
-  NAA0 = 1
-  for (i in 1:(length(waa)-1)) {
-    NAA0 = c(NAA0,rev(NAA0)[1]*exp(-M[i]))
+  is_MSY <- ifelse(is.null(faa),0,1)
+  if (is.null(faa)) {
+    faa <- rep(0,length(waa))
   }
-  if (plus_group) NAA0[length(NAA0)] = rev(NAA0)[1]/(1-exp(-1*rev(M)[1]))
-  BAA0 = NAA0*waa
-  SSB0 = BAA0*maa
-  SPR0 = sum(SSB0) #get.SRRと一致 (testに使える)
-
-  # 再生産関係とy=(1/SPR0)*xの交点を求める
-  rec_a = rec_pars$a
-  rec_b = rec_pars$b
-  validate_sr(SR = SR)
-  if (SR == "HS") {
-    R0 = rec_pars$a * rec_pars$b
-    SB0 = R0*SPR0
-    if (SB0<rec_b) {
-      warning("Virgin equilibrium does not exist!")
+  est_detMSY = function(x) {
+    NAA0 = 1
+    for (i in 1:(length(waa)-1)) {
+      NAA0 = c(NAA0,rev(NAA0)[1]*exp(-M[i]-x*faa[i]))
     }
-    h = (SB0-rec_b)/SB0
-  }
-  if (SR == "BH") {
-    SB0 = (rec_a*SPR0-1)/rec_b
-    R0 = SB0/SPR0
-    h = (rec_a*0.2*SB0/(1+rec_b*0.2*SB0))/R0
-  }
-  if (SR == "RI") {
-    SB0 = (1/rec_b)*log(rec_a*SPR0)
-    R0 = SB0/SPR0
-    h = (rec_a*0.2*SB0*exp(-rec_b*0.2*SB0))/R0
+    if (plus_group) {
+      NAA0[length(NAA0)] = rev(NAA0)[1]/(1-exp(-1*rev(M)[1]-x*rev(faa)[1]))
+    }
+    BAA0 = NAA0*waa
+    SSB0 = BAA0*maa
+    SPR0 = sum(SSB0) #get.SRRと一致 (testに使える)
+
+    # 再生産関係とy=(1/SPR0)*xの交点を求める
+    rec_a = rec_pars$a
+    rec_b = rec_pars$b
+    validate_sr(SR = SR)
+    if (SR == "HS") {
+      R0 = rec_pars$a*rec_pars$b
+      SB0 = R0*SPR0
+      if (SB0<rec_b) {
+        # warning("Virgin equilibrium does not exist!")
+        R0 <- 0
+        SB0 <- 0
+      }
+      h = (SB0-rec_b)/SB0
+    }
+    if (SR == "Mesnil") {
+      gamma <- rec_pars$gamma
+      K = sqrt(rec_b^2+gamma^2/4)
+      SB0 = (2*K/(SPR0*rec_a/2)-2*rec_b-2*K)/(1/(SPR0*rec_a/2)^2-2/(SPR0*rec_a/2)) #Mesnil and Rochet 2010 ICES JMSより
+      R0 = SB0/SPR0
+      if (1/SPR0>rec_a) {
+        # warning("Virgin equilibrium does not exist!")
+        R0 <- 0
+        SB0 <- 0
+      }
+      h = (SB0-rec_b)/SB0 # steepnessの定義はHSと同じでよい？
+    }
+    if (SR == "BH") {
+      SB0 = (rec_a*SPR0-1)/rec_b
+      R0 = SB0/SPR0
+      h = (rec_a*0.2*SB0/(1+rec_b*0.2*SB0))/R0
+    }
+    if (SR == "RI") {
+      SB0 = (1/rec_b)*log(rec_a*SPR0)
+      R0 = SB0/SPR0
+      h = (rec_a*0.2*SB0*exp(-rec_b*0.2*SB0))/R0
+    }
+    B0 = sum(R0*BAA0)
+    Res = data.frame(SPR0 = SPR0, SB0 = SB0, R0 = R0, B0 = B0, h = h)
+
+    if(is_MSY==1){
+      ypr.spr = ref.F(Fcurrent=x*faa,M=M,waa=waa,waa.catch = waa,maa =maa,
+                      Pope=Pope,pSPR=NULL,F.range=NULL,plot=FALSE)
+      ypr.spr <- ypr.spr$ypr.spr[1,]
+      Yield <- as.numeric(R0*ypr.spr["ypr"])
+      Res = cbind(Res,data.frame(Yield=Yield))
+    }
+    return(Res)
   }
 
-  B0 = sum(R0*BAA0)
-  Res = data.frame(SPR0 = SPR0, SB0 = SB0, R0 = R0, B0 = B0, h = h)
-  return(Res)
+  RES = est_detMSY(0)
+  if (is_MSY==1) RES = RES %>% dplyr::select(-Yield)
+  if(is_MSY==1){
+    obj_fun = function(x) {
+      RES = est_detMSY(x)
+      return(-RES$Yield)
+    }
+    x_grid = seq(0,10,length=101)
+    tmp = x_grid %>% purrr::map_dbl(.,obj_fun)
+    Opt = optimize(obj_fun,x_grid[c(max(1,which.min(tmp)-1),min(which.min(tmp)+1,length(x_grid)))])
+    Fmsy2F=Opt$minimum
+    RES2 = est_detMSY(Fmsy2F)
+    RES2 = RES2 %>% dplyr::select(-h) %>% dplyr::mutate(Fmsy2F=Fmsy2F)
+    colnames(RES2) <- c("SPRmsy","SBmsy","Rmsy","Bmsy","MSY","Fmsy2F")
+    RES = cbind(RES,RES2)
+  }
+  return(RES)
 }
 
 
@@ -2524,17 +2626,17 @@ tryall_SR <- function(data_SR, plus_group=TRUE, bio_par=NULL){
 
   SRmodel.list$pars <- purrr::map2(SRmodel.list$SR.rel, SRmodel.list$L.type,
                                    function(x,y){
-                                     res1 <- unlist(fit.SR(data_SR, SR = x, method = y, 
+                                     res1 <- unlist(fit.SR(data_SR, SR = x, method = y,
                                                            AR = 0, hessian = FALSE, out.AR=TRUE,
                                                            bio_par = bio_par, plus_group = plus_group)
                                                     [c("pars","AICc","steepness")])
-                                     tmp <- fit.SR(data_SR, SR = x, method = y, 
+                                     tmp <- fit.SR(data_SR, SR = x, method = y,
                                                    AR = 1, hessian = FALSE, out.AR=TRUE,
                                                    bio_par = bio_par, plus_group = plus_group)
                                      res2 <- unlist(tmp[c("pars","AICc","steepness")])
                                      res2 <- c(res2,"deltaAIC(AIC_AR-AIC_noAR)"=tmp$AIC.ar[2]-tmp$AIC.ar[1])
-                                     res3 <- unlist(fit.SR(data_SR, SR = x, method = y, 
-                                                           AR = 1, hessian = FALSE, out.AR=FALSE, 
+                                     res3 <- unlist(fit.SR(data_SR, SR = x, method = y,
+                                                           AR = 1, hessian = FALSE, out.AR=FALSE,
                                                            bio_par = bio_par, plus_group = plus_group)[c("pars","AICc","steepness")])
                                      bind_rows(res1,res2,res3,.id="id")
                                    })
@@ -2545,5 +2647,5 @@ tryall_SR <- function(data_SR, plus_group=TRUE, bio_par=NULL){
     arrange(AICc,AR.type)
 
   return(SRmodel.list)
-  
+
 }

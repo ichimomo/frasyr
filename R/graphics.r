@@ -331,6 +331,7 @@ plot_SRdata <- function(SRdata, type=c("classic","gg")[1]){
 #'   res_SR2 <- fit.SR(SRdata=SRdata2, method="L1", AR=0)
 #'   plot_SR(res_SR2)
 #' }
+#' 
 #' @export
 #'
 
@@ -350,7 +351,7 @@ SRplot_gg <- plot.SR <- plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlab
 
   SRdata <- as_tibble(SR_result$input$SRdata) %>%
       mutate(type="obs")
-  if(is.null(SRdata$weight)) SRdata$weight <- 1
+  if(is.null(SRdata$weight)) SRdata$weight <- SR_result$input$w
   SRdata <- SRdata %>% mutate(weight=factor(weight,levels=c("0","1")))
   SRdata.pred <- as_tibble(SR_result$pred) %>%
     mutate(type="pred", year=NA, R=R)
@@ -436,6 +437,13 @@ SRplot_gg <- plot.SR <- plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlab
                         col=c(col.SBtarget,col.SBlimit,col.SBban))
   }
   g1
+}
+
+#'
+#' @export
+
+SRplot_gg <- plot.SR <- function(...){
+    plot_SR(...)
 }
 
 #' 複数の再生産関係を比較する関数

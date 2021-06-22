@@ -14,6 +14,9 @@ redo_future(
   ...
 )
 }
+\arguments{
+\item{data_future}{make_future_dataの返り値。これ全体でなくて、$inputのみでもOK}
+}
 \description{
 re-calculate projection with different arguments
 }

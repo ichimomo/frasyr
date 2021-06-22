@@ -5,7 +5,16 @@
 \alias{calc_steepness}
 \title{Steepness (h) と関連するパラメータ (SB0,R0,B0)を計算する関数}
 \usage{
-calc_steepness(SR = "HS", rec_pars, M, waa, maa, plus_group = TRUE)
+calc_steepness(
+  SR = "HS",
+  rec_pars,
+  M,
+  waa,
+  maa,
+  plus_group = TRUE,
+  faa = NULL,
+  Pope = TRUE
+)
 }
 \arguments{
 \item{SR}{"HS", "BH", "RI"のいずれか}
