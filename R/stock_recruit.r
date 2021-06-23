@@ -1615,7 +1615,8 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
         geom_vline(data=res_boot_par_tibble_summary, mapping = aes(xintercept=value,color=stats),linetype="dashed") +
         scale_color_manual(name="stats",values = plot_col) #+
       #scale_linetype_manual(name="",values = plot_bootsr_linetype) #+ #scale_color_discrete(name="stats",breaks=legend.labels)
-      #boot_par_hist
+
+      print(boot_par_hist)
 
       if (output) ggsave(file = paste0(filename,"_pars.png"), plot=boot_par_hist, width=10, height=10,  units='in')
 
@@ -1717,7 +1718,7 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
       plot_bootsr_linetype <- rep(bootsr_linetype,length(levels(as.factor(res_boot_par_tibble$name))))
 
       regime.num <- length(levels(as.factor(res_boot_par_tibble$regime)))-1
-      boot_par_hist.regime<-list()
+
       for(k in 0:regime.num){
         if (boot.res$input$method=="d") {
           plot_bootsr_title<- paste0("Data Bootstrap regime",k)
@@ -1751,9 +1752,7 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
           geom_vline(data=res_boot_par_tibble_summary, mapping = aes(xintercept=value,color=stats),linetype="dashed") +
           scale_color_manual(name="stats",values = plot_col)
 
-        boot_par_hist.regime[[k+1]] <- boot_par_hist
-
-        #boot_par_hist
+        print(boot_par_hist)
 
         if (output) ggsave(file = paste0(filename,"_regime",k,"_pars.png"), plot=boot_par_hist, width=10, height=10,  units='in')
 
@@ -1851,17 +1850,6 @@ bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1
       points(pred_data$SSB,pred_data$R,col=2,type="l",lwd=3)
     }
     if (output) dev.off()
-  }
-
-  if (ggplt){
-    if (class(boot.res$input$Res)=="fit.SR"){
-      boot_par_hist
-    }
-    else{
-      for(k in 0:regime.num){
-        boot_par_hist.regime[[k+1]]
-      }
-    }
   }
 
 }
