@@ -5,7 +5,7 @@
 \alias{do_estcheck_vpa}
 \title{vpa結果の収束診断のための関数}
 \usage{
-do_estcheck_vpa(res, n_ite = 20, sd_jitter = 1, what_plot = NULL, TMB = FALSE)
+do_estcheck_vpa(res, n_ite = 10, sd_jitter = 1, what_plot = NULL, TMB = FALSE)
 }
 \arguments{
 \item{res}{VPAの結果のオブジェクト}
