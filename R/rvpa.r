@@ -51,13 +51,13 @@ data.handler <- function(
 
   if (!is.null(index)) colnames(index) <- years
 
-  if (!is.null(release.dat)) colnames(release.dat) <- years  
+  if (!is.null(release.dat)) colnames(release.dat) <- years
 
   if (is.null(dim(M))) M <- as.data.frame(matrix(M, nrow=nrow(caa), ncol=ncol(caa)))
 
   colnames(M) <- years
   rownames(M) <- rownames(caa)
-  
+
   assertthat::assert_that(
     all(
       rownames(caa) == purrr::flatten_chr(purrr::map(list(maa,
@@ -72,7 +72,7 @@ data.handler <- function(
                                                      colnames))
     )
   )
-  
+
   res <- list(caa=caa, maa=maa, waa=waa, index=index, M=M, maa.tune=maa.tune, waa.catch=waa.catch, catch.prop=catch.prop, release.dat=release.dat)
 
   invisible(res)
@@ -226,8 +226,8 @@ forward.calc <- function(faa,naa,M,na,k,plus.group=plus.group){
   {
     out[na[k]] <- sapply(na[k]-1, plus.group.eq, naa=naa, faa=faa, M=M, k=k)
   }
-  
-  
+
+
   return(out)
 }
 
@@ -249,7 +249,7 @@ f.at.age <- function(caa,naa,M,na,k,p=0.5,alpha=1,use.equ) {
  {
   out <- -log(1-caa[1:(na[k]-1),k]*exp(p*M[1:(na[k]-1),k])/naa[1:(na[k]-1),k])
   c(out, alpha*out[length(out)])
-  
+
   }
 }
 
@@ -857,9 +857,9 @@ vpa <- function(
            faa[na[i]-1, i] <- hira.est(caa,naa,M,na[i]-1,i,alpha=alpha,min.caa=min.caa,maxit=maxit,d=d)
          }
          else faa[na[i]-1, i] <- ik.est(caa,naa,M,na[i]-1,i,min.caa=min.caa,maxit=maxit,d=d)
-        
+
          faa[na[i], i] <- alpha*faa[na[i]-1, i]
-		 
+
          naa[1:na[i], i] <- vpa.core(caa,faa,M,i)
        }
      }
@@ -1014,7 +1014,7 @@ if (isTRUE(madara)){
 
     if (isTRUE(tune)){
       if (n.add==1 & !is.na(mean(index[,ny+n.add],na.rm=TRUE))){
-        
+
         new.naa <- forward.calc(faa,naa,M,na,ny+n.add,plus.group=plus.group)
 
         naa[,ny+n.add] <- new.naa
@@ -1363,7 +1363,7 @@ if (isTRUE(madara)){
 
     index2 <- as.matrix(t(apply(index,1,function(x) ifelse(is.na(x),0,x))))
 
-    Ab_type <- ifelse(abund=="SSB", 1, ifelse(abund=="N", 2, ifelse(abund=="SSB", 3, 4)))
+    Ab_type <- ifelse(abund=="SSB", 1, ifelse(abund=="N", 2, ifelse(abund=="B", 3, 4)))
     sel_def <- ifelse(sel.def=="max",0,ifelse(sel.def=="mean",1,2))
     Ab_type_age <- ifelse(is.na(min.age),0,min.age)
     Ab_type_max_age <- ifelse(is.na(max.age),0,max.age)+1
@@ -1769,7 +1769,7 @@ cv.est <- function(res,n=5){
 #'
 
 retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE,
-                      remove.maxAgeF=FALSE,ssb.forecast=FALSE,sel.mat=NULL, 
+                      remove.maxAgeF=FALSE,ssb.forecast=FALSE,sel.mat=NULL,
                       remove.short.index=FALSE){
    res.c <- res
    res.c$input$plot <- FALSE
@@ -1821,12 +1821,12 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE,
 
      # last.catch.zero = TRUE用に修正
      if (res.c$input$last.catch.zero) {res.c$input$dat$caa[,nc-1] <- 0; Y <- nc-2} else Y <- nc-1
-     
+
      if (isTRUE(remove.short.index)) {
          index_n = apply(res.c$input$dat$index,1,function(x) length(x)-sum(is.na(x)))
          use.index = 1:nrow(res.c$input$dat$index)
          if (res.c$input$use.index[1]=="all") {
-           use.index = use.index[index_n > 2] 
+           use.index = use.index[index_n > 2]
          } else {
            use.index = intersect(res.c$input$use.index,use.index[index_n > 2])
          }
