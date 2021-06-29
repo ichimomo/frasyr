@@ -813,7 +813,7 @@ boot.SR <- function(Res,method="p",n=100,seed=1){
             Year_r = sample(Year0,replace=TRUE)
             w_r = purrr::map_dbl(Year0, function(x) sum(Year_r==x))
             res.b <- Res
-            res.b$input$w <- w_r
+            res.b$input$w <- res.b$input$SRdata$weight <-w_r
           } else {
             if (method=="p") { # parametric bootstrap assuming a normal distribution
               resids <- rnorm(N,0,sd)
@@ -858,7 +858,7 @@ boot.SR <- function(Res,method="p",n=100,seed=1){
           Year_r = sample(Year0,replace=TRUE)
           w_r = purrr::map_dbl(Year0, function(x) sum(Year_r==x))
           res.b <- Res
-          res.b$input$w <- w_r
+          res.b$input$w <- res.b$input$SRdata$weight <- w_r
         } else {
           if (method=="p") { # parametric bootstrap assuming a normal distribution
             std.resids = rnorm(N,0,1)
