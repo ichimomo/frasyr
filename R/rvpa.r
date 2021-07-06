@@ -104,6 +104,7 @@ ik.est <- function(caa,naa,M,i,k,min.caa=0.01,maxit=5,d=0.0001){
     while(it < maxit & K > d){
       it <- it + 1
       f1 <- log(1+max(caa[i,k],min.caa)/naa[i+1,k+1]*exp(-M[i,k])*(f0+M[i,k])*(1-exp(-f0))/(f0*(1-exp(-f0-M[i,k]))))
+      if(f1==0) stop("Fの推定値が0になり計算不能です。初期値p.initを高めに設定して計算しなおしてみてください")
       K <- sqrt((f1-f0)^2)
       f0 <- f1
     }
