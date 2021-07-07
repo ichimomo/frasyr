@@ -319,6 +319,8 @@ do_sensitivity_vpa <- function(res,
 #' @param remove_maxAgeF Mohn's rhoを計算する際に最高齢のFを除くか（alphaを仮定して計算していることが多いから）
 #' @param ssb_forecast Mohn's rhoを計算する際にSSBは1年後を計算するか(last.catch.zero=TRUEのときのみ有効)
 #' @param res_step1 2段階法のレトロ解析をやる場合の1段階目の\code{vpa}オブジェクト
+#' @param grid_add_ini \code{add.p.ini}をgridで変えて初期値を事前に探索する
+#' @param grid_init \code{p.init}でgridを変えて初期値を事前に探索する
 #' @return 返ってくる値:
 #'     \code{result} 感度分析の結果が\code{list}型式で得られる。
 #'     \code{mohn_rho}
@@ -348,8 +350,10 @@ do_retrospective_vpa <- function(res,
                                  remove_maxAgeF = FALSE,
                                  ssb_forecast = FALSE,
                                  res_step1 = NULL,
-                                 scale_value = NULL
-){
+                                 scale_value = NULL,
+                                 grid_add_ini = NULL,
+                                 grid_init = NULL
+                                 ){
 
   if(b_reest == TRUE && res$input$b.est == FALSE)message(paste('b was not estimated in your vpa model'))
   # vpa内でbの推定をしていないにもかかわらず、b_reestがtrueで入力された場合
@@ -359,9 +363,9 @@ do_retrospective_vpa <- function(res,
     retro_step_one <- retro.est(res_step1, n = n_retro)
     yy <- ifelse(res$input$last.catch.zero,2,1)
     sel_mat <- sapply(1:n_retro, function(i) rev(retro_step_one$Res[[i]]$saa)[,yy])
-    res_retro <- retro.est(res, n = n_retro, b.fix = !b_reest, remove.maxAgeF=remove_maxAgeF, ssb.forecast=ssb_forecast,sel.mat=sel_mat)
-  } else {
-    res_retro <- retro.est(res, n = n_retro, b.fix = !b_reest, remove.maxAgeF=remove_maxAgeF, ssb.forecast=ssb_forecast)
+    res_retro <- retro.est(res, n = n_retro, b.fix = !b_reest, remove.maxAgeF=remove_maxAgeF, ssb.forecast=ssb_forecast,sel.mat=sel_mat,grid.init=grid_init)
+    } else {
+    res_retro <- retro.est(res, n = n_retro, b.fix = !b_reest, remove.maxAgeF=remove_maxAgeF, ssb.forecast=ssb_forecast, grid.add.ini=grid_add_ini,grid.init=grid_init)
   }
   dat_graph <- list()
   for(i in 1:n_retro) dat_graph[[i]] <- res_retro$Res[[i]]
