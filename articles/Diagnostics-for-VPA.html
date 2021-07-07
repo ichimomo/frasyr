@@ -471,7 +471,7 @@
 <p>を指定します。コマンドは以下の通りです。</p>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">res_vpa_jitter</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_estcheck_vpa.html">do_estcheck_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>, n_ite<span class="op">=</span><span class="fl">10</span><span class="op">)</span></code></pre></div>
-<pre><code>Maximum likelihood in jitter analysis is:  18.91587 
+<pre><code>Maximum likelihood in jitter analysis is:  23.60018 
 Likelihood with estimated parameters is:  23.60018 </code></pre>
 <p>最初に引数で与えたVPA結果について、</p>
 <ul>
@@ -630,7 +630,7 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 <span class="kw">for</span><span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span> <span class="va">res_tmp</span><span class="op">[</span><span class="va">i</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">res_vpa_bootstrap</span><span class="op">$</span><span class="va">res_boot</span><span class="op">[[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="va">Fc.at.age</span><span class="op">[</span><span class="fl">4</span><span class="op">]</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile</a></span><span class="op">(</span><span class="va">res_tmp</span>, probs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.025</span>,<span class="fl">0.5</span>,<span class="fl">0.975</span><span class="op">)</span><span class="op">)</span></code></pre></div>
 <pre><code>     2.5%       50%     97.5% 
-0.4779912 0.7573822 6.9222696 </code></pre>
+0.5553486 0.8131214 5.8618468 </code></pre>
 <p>この他、各パラメータの相関関係について、ブートストラップ標本を基にプロットが得られます。</p>
 <div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">res_vpa_bootstrap</span><span class="op">$</span><span class="va">plot_cor</span></code></pre></div>
