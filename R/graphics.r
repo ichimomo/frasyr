@@ -335,9 +335,9 @@ plot_SRdata <- function(SRdata, type=c("classic","gg")[1]){
 #' @export
 #'
 
-SRplot_gg <- plot.SR <- plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,ylabel="尾",
+plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,ylabel="尾",
                                  labeling.year=NULL,add.info=TRUE, recruit_intercept=0,
-                                 plot_CI=FALSE, CI=0.9){
+                                 plot_CI=FALSE, CI=0.9, shape_custom=c(3, 21)){
 
   if(is.null(refs$Blimit) && !is.null(refs$Blim)) refs$Blimit <- refs$Blim
 
@@ -399,7 +399,7 @@ SRplot_gg <- plot.SR <- plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlab
                        aes(y=R,x=SSB),color="black") +
     geom_point(data=dplyr::filter(alldata,type=="obs"),
                aes(y=R,x=SSB,shape=weight),fill="white") +
-    scale_shape_manual(values = c(3, 21)) +
+    scale_shape_manual(values = shape_custom) +
     ggrepel::geom_text_repel(data=dplyr::filter(alldata,type=="obs"),
                              segment.alpha=0.5,nudge_y=5,
                              aes(y=R,x=SSB,label=pick.year)) +
