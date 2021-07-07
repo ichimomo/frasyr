@@ -2465,6 +2465,7 @@ source_lines <- function(file, lines, encoding="UTF-8",...){
 #'
 #' @param data_future make_future_dataの返り値。これ全体でなくて、$inputのみでもOK
 #'
+#' @export
 
 redo_future <- function(data_future, input_data_list, SR_sd=NULL, SR_b=NULL, only_data=FALSE,is_regime=(class(data_future$input$res_SR)=="fit.SRregime"), ...){
 
