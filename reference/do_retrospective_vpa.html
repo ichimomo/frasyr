@@ -142,7 +142,9 @@
   remove_maxAgeF <span class='op'>=</span> <span class='cn'>FALSE</span>,
   ssb_forecast <span class='op'>=</span> <span class='cn'>FALSE</span>,
   res_step1 <span class='op'>=</span> <span class='cn'>NULL</span>,
-  scale_value <span class='op'>=</span> <span class='cn'>NULL</span>
+  scale_value <span class='op'>=</span> <span class='cn'>NULL</span>,
+  grid_add_ini <span class='op'>=</span> <span class='cn'>NULL</span>,
+  grid_init <span class='op'>=</span> <span class='cn'>NULL</span>
 <span class='op'>)</span></code></pre></div>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -179,6 +181,14 @@
     <tr>
       <th>res_step1</th>
       <td><p>2段階法のレトロ解析をやる場合の1段階目の<code>vpa</code>オブジェクト</p></td>
+    </tr>
+    <tr>
+      <th>grid_add_ini</th>
+      <td><p><code>add.p.ini</code>をgridで変えて初期値を事前に探索する</p></td>
+    </tr>
+    <tr>
+      <th>grid_init</th>
+      <td><p><code>p.init</code>でgridを変えて初期値を事前に探索する</p></td>
     </tr>
     </table>
 

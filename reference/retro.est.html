@@ -141,6 +141,8 @@
   remove.maxAgeF <span class='op'>=</span> <span class='cn'>FALSE</span>,
   ssb.forecast <span class='op'>=</span> <span class='cn'>FALSE</span>,
   sel.mat <span class='op'>=</span> <span class='cn'>NULL</span>,
+  grid.add.ini <span class='op'>=</span> <span class='cn'>NULL</span>,
+  grid.init <span class='op'>=</span> <span class='cn'>NULL</span>,
   remove.short.index <span class='op'>=</span> <span class='cn'>FALSE</span>
 <span class='op'>)</span></code></pre></div>
 
@@ -166,6 +168,14 @@
     <tr>
       <th>ssb.forecast</th>
       <td><p>Mohn's rhoを計算する際にSSBは1年後を計算するか(last.catch.zero=TRUEのときのみ有効)</p></td>
+    </tr>
+    <tr>
+      <th>grid.add.ini</th>
+      <td><p><code>add.p.ini</code>をgridで変えて初期値を事前に探索する</p></td>
+    </tr>
+    <tr>
+      <th>grid.init</th>
+      <td><p><code>p.init</code>でgridを変えて初期値を事前に探索する</p></td>
     </tr>
     <tr>
       <th>remove.short.index</th>
