@@ -124,6 +124,7 @@ hira.est <- function(caa,naa,M,i,k,alpha=1,min.caa=0.01,maxit=5,d=0.0001){
     while(it < maxit & K > d){
       it <- it + 1
       f1 <- log(1+(1-exp(-f0))*exp(-M[i,k])/(naa[i+1,k+1]*f0)*(max(caa[i+1,k],min.caa)*(alpha*f0+M[i+1,k])/(alpha*(1-exp(-alpha*f0-M[i+1,k])))*exp((1-alpha)*f0)+max(caa[i,k],min.caa)*(f0+M[i,k])/(1-exp(-f0-M[i,k]))))
+	   if(f1==0) stop("Fの推定値が0になり計算不能です。初期値p.initを高めに設定して計算しなおしてみてください")
       K <- sqrt((f1-f0)^2)
       f0 <- f1
     }
