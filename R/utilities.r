@@ -2837,3 +2837,41 @@ summary_kobe_table <- function(kobe_data){
   
   return(final_table1)
 }
+
+#'
+#' VPAデータが1年分追加されたダミーデータを生成する
+#' 
+#' @export
+#'
+
+create_dummy_vpa <- function(res_vpa){
+
+  res_vpa_updated <- res_vpa
+
+  add_1year <- function(naa){
+    nyear <- ncol(naa)
+    year_name <- colnames(naa) %>% as.numeric()
+    year_name <- c(year_name,max(year_name)+1)
+    nage  <- nrow(naa)    
+    empty_matrix <- matrix(0, nage, nyear+1)
+    dimnames(empty_matrix) <- list(rownames(naa), year_name)
+    
+    empty_matrix[,-nyear] <- as.matrix(naa)
+    empty_matrix[, nyear] <- naa[,nyear]
+    empty_matrix
+  }
+
+  res_vpa_updated$naa           <- add_1year(res_vpa$naa)
+  res_vpa_updated$faa           <- add_1year(res_vpa$faa)
+  res_vpa_updated$input$dat$waa <- add_1year(res_vpa$input$dat$waa)
+  res_vpa_updated$input$dat$maa <- add_1year(res_vpa$input$dat$maa)
+  res_vpa_updated$input$dat$M   <- add_1year(res_vpa$input$dat$M  )
+
+  if(!is.null(res_vpa_updated$input$dat$waa.catch))
+    res_vpa_updated$input$dat$waa.catch <- add_1year(res_vpa$input$dat$waa.catch)    
+
+  res_vpa_updated$baa <- res_vpa_updated$input$dat$waa * res_vpa_updated$naa
+  res_vpa_updated$ssb <- res_vpa_updated$input$dat$maa * res_vpa_updated$baa
+  
+  return(res_vpa_updated)
+}
