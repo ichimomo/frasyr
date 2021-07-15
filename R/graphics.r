@@ -336,8 +336,9 @@ plot_SRdata <- function(SRdata, type=c("classic","gg")[1]){
 #'
 
 plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,ylabel="尾",
-                                 labeling.year=NULL,add.info=TRUE, recruit_intercept=0,
-                                 plot_CI=FALSE, CI=0.9, shape_custom=c(3, 21)){
+                    labeling.year=NULL,add.info=TRUE, recruit_intercept=0,
+                    plot_CI=FALSE, CI=0.9, shape_custom=c(21,3),
+                    add_graph=NULL){
 
   if(is.null(refs$Blimit) && !is.null(refs$Blim)) refs$Blimit <- refs$Blim
 
@@ -352,7 +353,7 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
   SRdata <- as_tibble(SR_result$input$SRdata) %>%
       mutate(type="obs")
   if(is.null(SRdata$weight)) SRdata$weight <- SR_result$input$w
-  SRdata <- SRdata %>% mutate(weight=factor(weight,levels=c("0","1")))
+  SRdata <- SRdata %>% mutate(weight=factor(weight,levels=c("1","0")))
   SRdata.pred <- as_tibble(SR_result$pred) %>%
     mutate(type="pred", year=NA, R=R)
   
@@ -370,12 +371,14 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
   year.max <- max(alldata$year,na.rm=T)
   tmp <- 1950:2030
   if(is.null(labeling.year)) labeling.year <- c(tmp[tmp%%5==0],year.max)
-  alldata <- alldata %>% mutate(pick.year=ifelse(year%in%labeling.year,year,""))
+    alldata <- alldata %>% mutate(pick.year=ifelse(year%in%labeling.year,year,""))
 
   g1 <- ggplot(data=alldata,mapping=aes(x=SSB,y=R)) +
     stat_function(fun=SRF,args=list(a=SR_result$pars$a,
                                     b=SR_result$pars$b),color="deepskyblue3",lwd=1.3,
                   n=5000)
+
+  if(!is.null(add_graph)) g1 <- g1+add_graph  
 
   if(isTRUE(plot_CI)){
     g1 <- g1+
