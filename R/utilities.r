@@ -2858,7 +2858,7 @@ create_dummy_vpa <- function(res_vpa){
     
     empty_matrix[,-nyear] <- as.matrix(naa)
     empty_matrix[, nyear] <- naa[,nyear]
-    empty_matrix
+    as.data.frame(empty_matrix)
   }
 
   res_vpa_updated$naa           <- add_1year(res_vpa$naa)
@@ -2866,12 +2866,14 @@ create_dummy_vpa <- function(res_vpa){
   res_vpa_updated$input$dat$waa <- add_1year(res_vpa$input$dat$waa)
   res_vpa_updated$input$dat$maa <- add_1year(res_vpa$input$dat$maa)
   res_vpa_updated$input$dat$M   <- add_1year(res_vpa$input$dat$M  )
+  res_vpa_updated$input$dat$caa <- add_1year(res_vpa$input$dat$caa)  
 
   if(!is.null(res_vpa_updated$input$dat$waa.catch))
     res_vpa_updated$input$dat$waa.catch <- add_1year(res_vpa$input$dat$waa.catch)    
 
   res_vpa_updated$baa <- res_vpa_updated$input$dat$waa * res_vpa_updated$naa
   res_vpa_updated$ssb <- res_vpa_updated$input$dat$maa * res_vpa_updated$baa
+  res_vpa_updated$wcca <- res_vpa_updated$input$dat$caa * res_vpa_updated$input$dat$waa  
   
   return(res_vpa_updated)
 }
