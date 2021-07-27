@@ -142,6 +142,9 @@
     <loc>/reference/corSR.html</loc>
   </url>
   <url>
+    <loc>/reference/create_dummy_vpa.html</loc>
+  </url>
+  <url>
     <loc>/reference/data.handler.html</loc>
   </url>
   <url>
@@ -284,6 +287,9 @@
   </url>
   <url>
     <loc>/reference/plot_HCR_by_catch.html</loc>
+  </url>
+  <url>
+    <loc>/reference/plot_SR.html</loc>
   </url>
   <url>
     <loc>/reference/plot_SR_AReffect.html</loc>
