@@ -468,12 +468,9 @@ do_estcheck_vpa <- function(res, n_ite = 10, sd_jitter = 1, what_plot = NULL, TM
     stop(paste('what_plot was input age class in numeric, "max", or NULL'))
   }
 
-  #init_list <- purrr::map(res$term.f,
-  #                        function(x)exp(log(x) + rnorm(n_ite, 0, sd_jitter))
-  #)
   init_list <- list()
   for (i in 1:length(res$term.f)) {
-    init_list[[i]] <- seq(log(0.001), log(2), length = n_ite) %>%
+    init_list[[i]] <- seq(log(0.01), log(2), length = n_ite) %>%
       exp() %>% sample(n_ite)
   }
   value_tmp <- Finit <- Fest <- ite_tmp <- ll_tmp <- list()
@@ -486,18 +483,15 @@ do_estcheck_vpa <- function(res, n_ite = 10, sd_jitter = 1, what_plot = NULL, TM
 
   for (i in 1:n_ite) {
     input0 <- res$input
-    init_tmp <- numeric()
-    for(j in 1:length(res$term.f)){
-      init_tmp[j] <- init_list[[j]][i]
-    }  # for(j)
+    init_tmp <- purrr::map(init_list, function(x)x[i]) %>% unlist()
     input0$p.init <- init_tmp
     tmp <- try(safe_call(vpa, input0, force=TRUE))
     if(class(tmp) == "try-error"){
       value_tmp[[i]] <- NA
       ite_tmp[[i]] <- rep(i, length(res$term.f))
-      ll_tmp[[i]] <- NA#rep(res$logLik, length(res$logLik))
+      ll_tmp[[i]] <- rep(NA, length(res$term.f))
       Finit[[i]] <- init_tmp
-      Fest[[i]] <- NA
+      Fest[[i]] <- rep(NA, length(res$term.f))
     } else {
       value_tmp[[i]] <- list(p_est = tmp$term.f,
                              logLik = tmp$logLik,
@@ -531,11 +525,9 @@ do_estcheck_vpa <- function(res, n_ite = 10, sd_jitter = 1, what_plot = NULL, TM
   )
   #est_res <- data.frame(age = name_tmp, estimated = res$term.f)
 
-  yvalue <- max(res$term.f)*2
   g1 <- ggplot(data = d_tmp[d_tmp$age == plot_name,]) +
     geom_segment(aes(x=0, xend = 4, y = result_est, yend = result_est), color = "red", size = 1.3)+
     geom_point(aes(x = initial, y = estimated), size = 5) +
-    ylim(c(0, yvalue)) +
     facet_wrap( ~ age) +
     xlab("initial value") +
     theme_SH(base_size = 14)
