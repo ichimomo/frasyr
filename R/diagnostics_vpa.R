@@ -319,6 +319,8 @@ do_sensitivity_vpa <- function(res,
 #' @param remove_maxAgeF Mohn's rhoを計算する際に最高齢のFを除くか（alphaを仮定して計算していることが多いから）
 #' @param ssb_forecast Mohn's rhoを計算する際にSSBは1年後を計算するか(last.catch.zero=TRUEのときのみ有効)
 #' @param res_step1 2段階法のレトロ解析をやる場合の1段階目の\code{vpa}オブジェクト
+#' @param grid_add_ini \code{add.p.ini}をgridで変えて初期値を事前に探索する
+#' @param grid_init \code{p.init}でgridを変えて初期値を事前に探索する
 #' @return 返ってくる値:
 #'     \code{result} 感度分析の結果が\code{list}型式で得られる。
 #'     \code{mohn_rho}
@@ -348,8 +350,10 @@ do_retrospective_vpa <- function(res,
                                  remove_maxAgeF = FALSE,
                                  ssb_forecast = FALSE,
                                  res_step1 = NULL,
-                                 scale_value = NULL
-){
+                                 scale_value = NULL,
+                                 grid_add_ini = NULL,
+                                 grid_init = NULL
+                                 ){
 
   if(b_reest == TRUE && res$input$b.est == FALSE)message(paste('b was not estimated in your vpa model'))
   # vpa内でbの推定をしていないにもかかわらず、b_reestがtrueで入力された場合
@@ -359,9 +363,9 @@ do_retrospective_vpa <- function(res,
     retro_step_one <- retro.est(res_step1, n = n_retro)
     yy <- ifelse(res$input$last.catch.zero,2,1)
     sel_mat <- sapply(1:n_retro, function(i) rev(retro_step_one$Res[[i]]$saa)[,yy])
-    res_retro <- retro.est(res, n = n_retro, b.fix = !b_reest, remove.maxAgeF=remove_maxAgeF, ssb.forecast=ssb_forecast,sel.mat=sel_mat)
-  } else {
-    res_retro <- retro.est(res, n = n_retro, b.fix = !b_reest, remove.maxAgeF=remove_maxAgeF, ssb.forecast=ssb_forecast)
+    res_retro <- retro.est(res, n = n_retro, b.fix = !b_reest, remove.maxAgeF=remove_maxAgeF, ssb.forecast=ssb_forecast,sel.mat=sel_mat,grid.init=grid_init)
+    } else {
+    res_retro <- retro.est(res, n = n_retro, b.fix = !b_reest, remove.maxAgeF=remove_maxAgeF, ssb.forecast=ssb_forecast, grid.add.ini=grid_add_ini,grid.init=grid_init)
   }
   dat_graph <- list()
   for(i in 1:n_retro) dat_graph[[i]] <- res_retro$Res[[i]]
@@ -464,12 +468,9 @@ do_estcheck_vpa <- function(res, n_ite = 10, sd_jitter = 1, what_plot = NULL, TM
     stop(paste('what_plot was input age class in numeric, "max", or NULL'))
   }
 
-  #init_list <- purrr::map(res$term.f,
-  #                        function(x)exp(log(x) + rnorm(n_ite, 0, sd_jitter))
-  #)
   init_list <- list()
   for (i in 1:length(res$term.f)) {
-    init_list[[i]] <- seq(log(0.001), log(2), length = n_ite) %>%
+    init_list[[i]] <- seq(log(0.01), log(2), length = n_ite) %>%
       exp() %>% sample(n_ite)
   }
   value_tmp <- Finit <- Fest <- ite_tmp <- ll_tmp <- list()
@@ -482,18 +483,15 @@ do_estcheck_vpa <- function(res, n_ite = 10, sd_jitter = 1, what_plot = NULL, TM
 
   for (i in 1:n_ite) {
     input0 <- res$input
-    init_tmp <- numeric()
-    for(j in 1:length(res$term.f)){
-      init_tmp[j] <- init_list[[j]][i]
-    }  # for(j)
+    init_tmp <- purrr::map(init_list, function(x)x[i]) %>% unlist()
     input0$p.init <- init_tmp
     tmp <- try(safe_call(vpa, input0, force=TRUE))
     if(class(tmp) == "try-error"){
       value_tmp[[i]] <- NA
       ite_tmp[[i]] <- rep(i, length(res$term.f))
-      ll_tmp[[i]] <- NA#rep(res$logLik, length(res$logLik))
+      ll_tmp[[i]] <- rep(NA, length(res$term.f))
       Finit[[i]] <- init_tmp
-      Fest[[i]] <- NA
+      Fest[[i]] <- rep(NA, length(res$term.f))
     } else {
       value_tmp[[i]] <- list(p_est = tmp$term.f,
                              logLik = tmp$logLik,
@@ -527,11 +525,9 @@ do_estcheck_vpa <- function(res, n_ite = 10, sd_jitter = 1, what_plot = NULL, TM
   )
   #est_res <- data.frame(age = name_tmp, estimated = res$term.f)
 
-  yvalue <- max(res$term.f)*2
   g1 <- ggplot(data = d_tmp[d_tmp$age == plot_name,]) +
     geom_segment(aes(x=0, xend = 4, y = result_est, yend = result_est), color = "red", size = 1.3)+
     geom_point(aes(x = initial, y = estimated), size = 5) +
-    ylim(c(0, yvalue)) +
     facet_wrap( ~ age) +
     xlab("initial value") +
     theme_SH(base_size = 14)

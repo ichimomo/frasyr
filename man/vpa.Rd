@@ -78,6 +78,7 @@ vpa(
   eta = NULL,
   eta.age = 0,
   tmb.file = "rvpa_tmb",
+  remove.abund = NULL,
   madara = FALSE,
   p_by_age = FALSE,
   penalty_age = NULL,
@@ -199,6 +200,8 @@ vpa(
 \item{eta.age}{Fのpenaltyを分けるときにetaを与える年齢(0 = 0歳（加入）,0:1 = 0~1歳)}
 
 \item{tmb.file}{TMB=TRUEのとき使用するcppファイルの名前}
+
+\item{remove.abund}{ある値を引いた値に対してチューニングに使用する（トラフグ伊勢・三河湾系群で放流魚を引いて天然魚のみに対してチューニングするため）.}
 
 \item{madara}{マダラ太平洋系群で用いているチューニングのやり方}
 
