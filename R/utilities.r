@@ -362,7 +362,6 @@ ref.F <- function(
       Fcurrent <- res$Fc.at.age
     }
     sel <- Fcurrent/max(Fcurrent,na.rm=TRUE)
-    na <- sum(!is.na(Fcurrent))
 
     if(is.null(waa.year)) waa.year <- rev(years)[1]
     if(is.null(maa.year)) maa.year <- rev(years)[1]
@@ -386,6 +385,7 @@ ref.F <- function(
       }
     }
 
+    na <- sum(!is.na(Fcurrent))
     ssb.coef <- ifelse(is.null(res$ssb.coef),0,res$ssb.coef)
 
     min.age <- min(as.numeric(rownames(res$naa)))
@@ -1961,7 +1961,7 @@ calc_future_perSPR <- function(fout=NULL,
     else{
       waa.tmp       <- res_vpa$input$dat$waa      [as.character(target.year$waa)      ] %>% apply(1,mean)
       maa.tmp       <- res_vpa$input$dat$maa      [as.character(target.year$maa)      ] %>% apply(1,mean)
-      M.tmp         <- res_vpa$input$dat$M        [as.character(target.year$M.tmp)    ] %>% apply(1,mean)
+      M.tmp         <- res_vpa$input$dat$M        [as.character(target.year$M)    ] %>% apply(1,mean)
       if(!is.null(res_vpa$input$dat$waa.catch)){
         waa.catch.tmp <- res_vpa$input$dat$waa.catch[as.character(target.year$waa.catch)] %>% apply(1,mean)
       }
