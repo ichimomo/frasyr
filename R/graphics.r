@@ -1334,13 +1334,14 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
   if(ylab.type=="F") UBdata <- UBdata %>% mutate(Uratio=Fratio)
 
   if(plot.year[1]!="all") {
-    # diff.year <- plot.year[which(diff(plot.year)>1)+1]
-    UBdata <- UBdata %>% filter(year %in% plot.year)
+    diff.year <- plot.year[which(diff(plot.year)>1)+1]
+    UBdata <- UBdata %>% filter(year %in% plot.year) %>%
+        mutate(year_group=1)
 
-    # for(i in 1:length(diff.year)){
-    #   UBdata <- UBdata %>%
-    #     mutate(year_group = ifelse(year >= diff.year[i], year_group+1, year_group))
-    # }
+     for(i in 1:length(diff.year)){
+       UBdata <- UBdata %>%
+         mutate(year_group = ifelse(year >= diff.year[i], year_group+1, year_group))
+     }
   }
 
   if(is.null(labeling.year)){
@@ -1349,8 +1350,7 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
   }
 
   UBdata <- UBdata %>%
-    mutate(year.label=ifelse(year%in%labeling.year,year,""),
-           year_group=1)
+    mutate(year.label=ifelse(year%in%labeling.year,year,""))
 
   max.B <- max(c(UBdata$Bratio,xscale),na.rm=T)
   max.U <- max(c(UBdata$Uratio,yscale),na.rm=T)
