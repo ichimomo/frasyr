@@ -485,13 +485,17 @@ do_estcheck_vpa <- function(res, n_ite = 10, sd_jitter = 1, what_plot = NULL, TM
     input0 <- res$input
     init_tmp <- purrr::map(init_list, function(x)x[i]) %>% unlist()
     input0$p.init <- init_tmp
-    tmp <- try(safe_call(vpa, input0, force=TRUE))
+    tmp <- try(safe_call(vpa, input0, force=TRUE), silent = TRUE)
     if(class(tmp) == "try-error"){
       value_tmp[[i]] <- NA
       ite_tmp[[i]] <- rep(i, length(res$term.f))
       ll_tmp[[i]] <- rep(NA, length(res$term.f))
       Finit[[i]] <- init_tmp
       Fest[[i]] <- rep(NA, length(res$term.f))
+      Hes_check[i] <- 1
+      Conv_check[i] <- NA
+      message(paste('Iteration',i,'has done ...', sep = " "))
+      next
     } else {
       value_tmp[[i]] <- list(p_est = tmp$term.f,
                              logLik = tmp$logLik,
@@ -504,7 +508,7 @@ do_estcheck_vpa <- function(res, n_ite = 10, sd_jitter = 1, what_plot = NULL, TM
       Finit[[i]] <- init_tmp
       Fest[[i]] <- tmp$term.f
     }
-    if(sum(diag(res$hessian)) == sum(abs(diag(res$hessian)))){
+    if(sum(diag(tmp$hessian)) == sum(abs(diag(res$hessian)))){
       Hes_check[i] <- 0
     } else {
       Hes_check[i] <- 1
@@ -523,7 +527,6 @@ do_estcheck_vpa <- function(res, n_ite = 10, sd_jitter = 1, what_plot = NULL, TM
                       result_est = rep(res$term.f, n_ite),
                       result_lk = rep(res$logLik, length(unlist(ll_tmp)))
   )
-  #est_res <- data.frame(age = name_tmp, estimated = res$term.f)
 
   g1 <- ggplot(data = d_tmp[d_tmp$age == plot_name,]) +
     geom_segment(aes(x=0, xend = 4, y = result_est, yend = result_est), color = "red", size = 1.3)+
@@ -548,15 +551,23 @@ do_estcheck_vpa <- function(res, n_ite = 10, sd_jitter = 1, what_plot = NULL, TM
     message(paste("All Hessian are not positive ..."))
   }
   # 収束結果をメッセージで返す
-  if(sum(Conv_check) == length(Conv_check)){
+  if(sum(as.numeric(Conv_check),na.rm = TRUE) == length(Conv_check)){
     message(paste("Successful convergence for all iterations !!"))
-  } else {
-    lab_tmp <- which(!Conv_check == 1)
-    message(paste('Iterations in ', lab_tmp, ' were not convergence ...'))
+  } #else {
+  #  lab_tmp <- which(!Conv_check == 1)
+  #  message(paste('Iterations in ', lab_tmp, ' were not convergence ...'))
+  #}
+
+  maxlike_numeric <- numeric(n_ite)
+  for(i in 1:n_ite){
+    if(is.na(value_tmp[[i]][1])){
+      maxlike_numeric[i] <- NA
+    } else {
+      maxlike_numeric[i] <- value_tmp[[i]]$logLik
+    }
   }
 
-  maxlike <- max(sapply(value_tmp, function(x) x$logLik))
-  cat("Maximum likelihood in jitter analysis is: ",maxlike ,"\n")
+  cat("Maximum likelihood in jitter analysis is: ",max(maxlike_numeric, na.rm = TRUE) ,"\n")
   cat("Likelihood with estimated parameters is: ", res$logLik, "\n")
 
   return(list(initial_value = init_list, #初期値の乱数
