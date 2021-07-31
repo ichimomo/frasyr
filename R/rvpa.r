@@ -51,13 +51,13 @@ data.handler <- function(
 
   if (!is.null(index)) colnames(index) <- years
 
-  if (!is.null(release.dat)) colnames(release.dat) <- years  
+  if (!is.null(release.dat)) colnames(release.dat) <- years
 
   if (is.null(dim(M))) M <- as.data.frame(matrix(M, nrow=nrow(caa), ncol=ncol(caa)))
 
   colnames(M) <- years
   rownames(M) <- rownames(caa)
-  
+
   assertthat::assert_that(
     all(
       rownames(caa) == purrr::flatten_chr(purrr::map(list(maa,
@@ -72,7 +72,7 @@ data.handler <- function(
                                                      colnames))
     )
   )
-  
+
   res <- list(caa=caa, maa=maa, waa=waa, index=index, M=M, maa.tune=maa.tune, waa.catch=waa.catch, catch.prop=catch.prop, release.dat=release.dat)
 
   invisible(res)
@@ -104,6 +104,7 @@ ik.est <- function(caa,naa,M,i,k,min.caa=0.01,maxit=5,d=0.0001){
     while(it < maxit & K > d){
       it <- it + 1
       f1 <- log(1+max(caa[i,k],min.caa)/naa[i+1,k+1]*exp(-M[i,k])*(f0+M[i,k])*(1-exp(-f0))/(f0*(1-exp(-f0-M[i,k]))))
+      if(f1==0) stop("Fの推定値が0になり計算不能です。初期値p.initを高めに設定して計算しなおしてみてください")
       K <- sqrt((f1-f0)^2)
       f0 <- f1
     }
@@ -123,6 +124,7 @@ hira.est <- function(caa,naa,M,i,k,alpha=1,min.caa=0.01,maxit=5,d=0.0001){
     while(it < maxit & K > d){
       it <- it + 1
       f1 <- log(1+(1-exp(-f0))*exp(-M[i,k])/(naa[i+1,k+1]*f0)*(max(caa[i+1,k],min.caa)*(alpha*f0+M[i+1,k])/(alpha*(1-exp(-alpha*f0-M[i+1,k])))*exp((1-alpha)*f0)+max(caa[i,k],min.caa)*(f0+M[i,k])/(1-exp(-f0-M[i,k]))))
+	   if(f1==0) stop("Fの推定値が0になり計算不能です。初期値p.initを高めに設定して計算しなおしてみてください")
       K <- sqrt((f1-f0)^2)
       f0 <- f1
     }
@@ -226,8 +228,8 @@ forward.calc <- function(faa,naa,M,na,k,plus.group=plus.group){
   {
     out[na[k]] <- sapply(na[k]-1, plus.group.eq, naa=naa, faa=faa, M=M, k=k)
   }
-  
-  
+
+
   return(out)
 }
 
@@ -249,7 +251,7 @@ f.at.age <- function(caa,naa,M,na,k,p=0.5,alpha=1,use.equ) {
  {
   out <- -log(1-caa[1:(na[k]-1),k]*exp(p*M[1:(na[k]-1),k])/naa[1:(na[k]-1),k])
   c(out, alpha*out[length(out)])
-  
+
   }
 }
 
@@ -535,6 +537,7 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param eta  Fのpenaltyを分けて与えるときにeta.ageで指定した年齢への相対的なpenalty (0~1)
 #' @param eta.age  Fのpenaltyを分けるときにetaを与える年齢(0 = 0歳（加入）,0:1 = 0~1歳)
 #' @param tmb.file  TMB=TRUEのとき使用するcppファイルの名前
+#' @param remove.abund ある値を引いた値に対してチューニングに使用する（トラフグ伊勢・三河湾系群で放流魚を引いて天然魚のみに対してチューニングするため）.
 #' @param madara  マダラ太平洋系群で用いているチューニングのやり方
 #' @param penalty_age  選択率更新法でridgeVPAをする際のpenalty="p"のときで，etaがNULLで，p_by_age=TRUE (年齢別にペナルテイーを与えたい）ときにペナルテイーを与える年齢範囲．0歳から2歳までなら0：２とする．
 #' @param no_eta_age 選択率更新法でridgeVPAの際にpenalty="p"のときで，etaがNULLでなく，p_by_age=TRUE (年齢別にペナルテイーを与えたい）ときに，etaがかからないほうの年齢範囲
@@ -652,6 +655,7 @@ vpa <- function(
   eta = NULL,
   eta.age = 0,
   tmb.file = "rvpa_tmb",
+  remove.abund = NULL,
   madara=FALSE, #マダラ太平洋系群で用いているチューニングのやり方
   p_by_age = FALSE, #penalty="p"で選択率更新法のときに年齢別にペナルテイーを与えるか与えないか．
   penalty_age=NULL, #penalty="p"でp_by_age = ＴＲＵＥで選択率更新法を採用しているときの年齢参照範囲．0歳から2歳までなら0：２とする．
@@ -866,9 +870,9 @@ vpa <- function(
            faa[na[i]-1, i] <- hira.est(caa,naa,M,na[i]-1,i,alpha=alpha,min.caa=min.caa,maxit=maxit,d=d)
          }
          else faa[na[i]-1, i] <- ik.est(caa,naa,M,na[i]-1,i,min.caa=min.caa,maxit=maxit,d=d)
-        
+
          faa[na[i], i] <- alpha*faa[na[i]-1, i]
-		 
+
          naa[1:na[i], i] <- vpa.core(caa,faa,M,i)
        }
      }
@@ -1030,7 +1034,7 @@ if (isTRUE(madara)){
 
     if (isTRUE(tune)){
       if (n.add==1 & !is.na(mean(index[,ny+n.add],na.rm=TRUE))){
-        
+
         new.naa <- forward.calc(faa,naa,M,na,ny+n.add,plus.group=plus.group)
 
         naa[,ny+n.add] <- new.naa
@@ -1064,6 +1068,13 @@ if (isTRUE(madara)){
 
        for (i in 1:nindex){
          abundance <- abund.extractor(abund=abund[i], naa, faa, dat, min.age=min.age[i], max.age=max.age[i], link=link[i], base=base[i], af=af[i], catch.prop=catch.prop, sel.def=sel.def, p.m=p.m, omega=omega, scale=scale)
+         if (!is.null(remove.abund)) {
+           if (nrow(remove.abund)!=nindex || ncol(remove.abund)!=ncol(dat$caa)) {
+             stop("The dimension of 'remove.abund' must be the same as that of 'caa'")
+           }
+           abundance <- abundance - as.numeric(remove.abund[i,])
+           abundance[abundance<1e-6] <- 1e-6
+           }
          Abund <- rbind(Abund, abundance)
        }
 
@@ -1089,6 +1100,10 @@ if (isTRUE(madara)){
         for (i in 1:nindex)
         {
             abundance <- abund.extractor(abund=abund[i], naa, faa, dat, min.age=min.age[i], max.age=max.age[i], link=link[i], base=base[i], af=af[i], catch.prop=catch.prop, sel.def=sel.def, p.m=p.m, omega=omega, scale=scale)
+            if (!is.null(remove.abund)) {
+              abundance <- abundance - as.numeric(remove.abund[i,])
+              abundance[abundance<1e-6] <- 1e-6
+            }
             Abund <- rbind(Abund, abundance)
             avail <- which(!is.na(as.numeric(index[i,])))
 
@@ -1161,6 +1176,10 @@ if (isTRUE(madara)){
         for (i in 1:nindex)
         {
             abundance <- abund.extractor(abund=abund[i], naa, faa, dat, min.age=min.age[i], max.age=max.age[i], link=link[i], base=base[i], af=af[i], catch.prop=catch.prop, sel.def=sel.def, p.m=p.m, omega=omega, scale=scale)
+            if (!is.null(remove.abund)) {
+              abundance <- abundance - as.numeric(remove.abund[i,])
+              abundance[abundance<1e-6] <- 1e-6
+            }
             Abund <- rbind(Abund, abundance)
             avail <- which(!is.na(as.numeric(index[i,])))
             nn[i] <- length(avail)
@@ -1207,6 +1226,10 @@ if (isTRUE(madara)){
             for(j in index.num)
             {
                 abundance <- abund.extractor(abund=abund[j], naa, faa, dat, min.age=min.age[j], max.age=max.age[j], link=link[j], base=base[j], af=af[j], catch.prop=catch.prop, sel.def=sel.def, p.m=p.m, omega=omega, scale=scale)
+                if (!is.null(remove.abund)) {
+                  abundance <- abundance - as.numeric(remove.abund[i,])
+                  abundance[abundance<1e-6] <- 1e-6
+                }
                 avail <- which(!is.na(as.numeric(index[j,])))
                 sq.error <- sq.error + sum((log(as.numeric(index[j,avail]))-log(q[j])-b[j]*log(as.numeric(abundance[avail])))^2)
             }
@@ -1215,6 +1238,10 @@ if (isTRUE(madara)){
         for (i in 1:nindex)
         {
             abundance <- abund.extractor(abund=abund[i], naa, faa, dat, min.age=min.age[i], max.age=max.age[i], link=link[i], base=base[i], af=af[i], catch.prop=catch.prop, sel.def=sel.def, p.m=p.m, omega=omega, scale=scale)
+            if (!is.null(remove.abund)) {
+              abundance <- abundance - as.numeric(remove.abund[i,])
+              abundance[abundance<1e-6] <- 1e-6
+            }
             avail <- which(!is.na(as.numeric(index[i,])))
             obj <- c(obj,index.w[i]*(-as.numeric(na.omit(dnorm(log(as.numeric(index[i,avail])),log(q[i])+b[i]*log(as.numeric(abundance[avail])),sigma[i],log=TRUE)))))
         }
@@ -1379,7 +1406,7 @@ if (isTRUE(madara)){
 
     index2 <- as.matrix(t(apply(index,1,function(x) ifelse(is.na(x),0,x))))
 
-    Ab_type <- ifelse(abund=="SSB", 1, ifelse(abund=="N", 2, ifelse(abund=="SSB", 3, 4)))
+    Ab_type <- ifelse(abund=="SSB", 1, ifelse(abund=="N", 2, ifelse(abund=="B", 3, 4)))
     sel_def <- ifelse(sel.def=="max",0,ifelse(sel.def=="mean",1,2))
     Ab_type_age <- ifelse(is.na(min.age),0,min.age)
     Ab_type_max_age <- ifelse(is.na(max.age),0,max.age)+1
@@ -1779,13 +1806,16 @@ cv.est <- function(res,n=5){
 #' @param b.fix b推定してる場合にbを固定するかどうか
 #' @param remove.maxAgeF Mohn's rhoを計算する際に最高齢のFを除くか（alphaを仮定して計算していることが多いから）
 #' @param ssb.forecast Mohn's rhoを計算する際にSSBは1年後を計算するか(last.catch.zero=TRUEのときのみ有効)
+#' @param grid.add.ini \code{add.p.ini}をgridで変えて初期値を事前に探索する
+#' @param grid.init \code{p.init}でgridを変えて初期値を事前に探索する
 #' @param remove.short.index 年数が2年以下になった指標値を除いて計算する
 #' @encoding UTF-8
 #' @export
 #'
 
 retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE,
-                      remove.maxAgeF=FALSE,ssb.forecast=FALSE,sel.mat=NULL, 
+                      remove.maxAgeF=FALSE,ssb.forecast=FALSE,sel.mat=NULL,
+                      grid.add.ini = NULL,grid.init = NULL,
                       remove.short.index=FALSE){
    res.c <- res
    res.c$input$plot <- FALSE
@@ -1825,6 +1855,7 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE,
      res.c$input$tf.year <- res.c$input$tf.year-1
      res.c$input$fc.year <- res.c$input$fc.year-1
      if (!is.null(res.c$input$tf.mat)) res.c$input$tf.mat <- res.c$input$tf.mat[,-1]
+     if (!is.null(res.c$input$remove.abund)) res.c$input$remove.abund <- res.c$input$remove.abund[,-nc]
 
      if (!is.null(sel.mat)) {
        if (any(dim(sel.mat) != c(nrow(res$saa),n))) {
@@ -1837,16 +1868,44 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE,
 
      # last.catch.zero = TRUE用に修正
      if (res.c$input$last.catch.zero) {res.c$input$dat$caa[,nc-1] <- 0; Y <- nc-2} else Y <- nc-1
-     
+
      if (isTRUE(remove.short.index)) {
          index_n = apply(res.c$input$dat$index,1,function(x) length(x)-sum(is.na(x)))
          use.index = 1:nrow(res.c$input$dat$index)
          if (res.c$input$use.index[1]=="all") {
-           use.index = use.index[index_n > 2] 
+           use.index = use.index[index_n > 2]
          } else {
            use.index = intersect(res.c$input$use.index,use.index[index_n > 2])
          }
          res.c$input$use.index <- use.index
+     }
+
+     # res1 <- do.call(vpa,res.c$input) # do.callからsafe_callに変更(浜辺'20/06/30)
+
+     if (!is.null(grid.add.ini)) {
+       input_tmp = res.c$input
+       res_list = grid.add.ini %>% map(function(x) {
+         input_tmp$no.est = TRUE
+         input_tmp$add.p.ini <- x
+         RES = do.call(vpa,input_tmp)
+       })
+       nan_v = sapply(1:10, function(i) sum(is.nan(res_list[[i]]$sigma)))
+       loglik_v = sapply(1:10, function(i) res_list[[i]]$logLik)
+       pos = which(loglik_v == max(loglik_v[nan_v==0]))
+       res.c$input$add.p.ini <- grid.add.ini[pos]
+     }
+
+     if (!is.null(grid.init)) {
+       input_tmp = res.c$input
+       res_list = grid.init %>% map(function(x) {
+         input_tmp$no.est = TRUE
+         input_tmp$p.init <- x
+         RES = do.call(vpa,input_tmp)
+       })
+       nan_v = sapply(1:10, function(i) sum(is.nan(res_list[[i]]$sigma)))
+       loglik_v = sapply(1:10, function(i) res_list[[i]]$logLik)
+       pos = which(loglik_v == max(loglik_v[nan_v==0]))
+       res.c$input$p.init <- grid.init[pos]
      }
 
      res1 <- safe_call(vpa,res.c$input, force=TRUE) # do.callからsafe_callに変更(浜辺'20/06/30)
