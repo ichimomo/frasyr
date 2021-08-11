@@ -1333,12 +1333,12 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
     arrange(year)
   if(ylab.type=="F") UBdata <- UBdata %>% mutate(Uratio=Fratio)
 
+  UBdata <- UBdata %>% mutate(year_group=1)  
   if(plot.year[1]!="all") {
     diff.year <- plot.year[which(diff(plot.year)>1)+1]
-    UBdata <- UBdata %>% filter(year %in% plot.year) %>%
-        mutate(year_group=1)
+    UBdata <- UBdata %>% filter(year %in% plot.year) 
 
-     for(i in 1:length(diff.year)){
+    for(i in 1:length(diff.year)){
        UBdata <- UBdata %>%
          mutate(year_group = ifelse(year >= diff.year[i], year_group+1, year_group))
      }
