@@ -15,7 +15,8 @@ beta.simulation(
   datainput_setting_original = NULL,
   label_name = NULL,
   output_type = "tidy",
-  ncore = 1
+  ncore = 1,
+  save_detail = rep(0, length(beta_vector))
 )
 }
 \arguments{
