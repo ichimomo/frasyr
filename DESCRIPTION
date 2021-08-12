@@ -36,7 +36,8 @@ Imports:
     doParallel,
     testthat,
     covr,    
-    GGally
+    GGally,
+    patchwork,
 Suggests:
     knitr,
     rmarkdown,

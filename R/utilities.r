@@ -8,6 +8,7 @@
 #' @import forcats
 #' @import stringr
 #' @import assertthat
+#' @import patchwork
 #' @importFrom magrittr %>%
 #' @importFrom magrittr %T>%
 #' @importFrom dplyr filter
