@@ -8,6 +8,7 @@
 #' @import forcats
 #' @import stringr
 #' @import assertthat
+#' @import patchwork
 #' @importFrom magrittr %>%
 #' @importFrom magrittr %T>%
 #' @importFrom dplyr filter
@@ -1796,11 +1797,13 @@ make_kobeII_table <- function(kobeII_data,
 #'
 #'
 
-beta.simulation <- function(finput,beta_vector,year.lag=0,type="old",year_beta_change=NULL,
+beta.simulation <- function(finput,beta_vector,
+                            year.lag=0,type="old",year_beta_change=NULL,
                             datainput_setting_extra   =NULL,
                             datainput_setting_original=NULL,
                             label_name = NULL,
-                            output_type="tidy", ncore = 1){
+                            output_type="tidy", ncore = 1,
+                            save_detail=rep(0,length(beta_vector))){
 
   if(!is.null(datainput_setting_extra)) assertthat::assert_that(length(datainput_setting_extra)==length(beta_vector))
   if(!is.null(label_name)){
@@ -1808,7 +1811,8 @@ beta.simulation <- function(finput,beta_vector,year.lag=0,type="old",year_beta_c
   }
   else{
     label_name <- beta_vector
-    }
+  }
+  assertthat::assert_that(length(beta_vector)==length(save_detail))    
 
   tb <- NULL
   future_year <- dimnames(finput$tmb_data$HCR_mat)[[1]]
@@ -1819,6 +1823,8 @@ beta.simulation <- function(finput,beta_vector,year.lag=0,type="old",year_beta_c
     year_column_beta_change <- TRUE
   }
 
+  res_list <- purrr::map(rep(NA, length(beta_vector)), function(x) x)
+  
   if(ncore==1){
     for(i in 1:length(beta_vector)){
       if(type=="old"){
@@ -1831,6 +1837,7 @@ beta.simulation <- function(finput,beta_vector,year.lag=0,type="old",year_beta_c
           finput$tmb_data <- redo_future(datainput_setting_original, datainput_setting_extra[[i]], only_data=TRUE)$data
         }
         fres_base <- do.call(future_vpa,finput)
+        if(save_detail[i]==1) res_list[[i]] <- fres_base
         fres_base <- format_to_old_future(fres_base)
       }
       tmp <- convert_future_table(fres_base,label=label_name[i]) %>%
@@ -1843,21 +1850,33 @@ beta.simulation <- function(finput,beta_vector,year.lag=0,type="old",year_beta_c
     cl <- parallel::makeCluster(ncore, type="FORK")
     doParallel::registerDoParallel(cl)
 
-    tb <- foreach::foreach(i=1:length(beta_vector),.combine="rbind")%dopar%{
+    tb <- foreach::foreach(i=1:length(beta_vector))%dopar%{
       finput$tmb_data$HCR_mat[year_column_beta_change,,"beta"] <- beta_vector[i]
       if(!is.null(finput$MSE_input_data)) finput$MSE_input_data$input$HCR_beta <- beta_vector[i]
       if(!is.null(datainput_setting_extra)){
         finput$tmb_data <- redo_future(datainput_setting_original, datainput_setting_extra[[i]], only_data=TRUE)$data
       }
-      fres_base <- do.call(future_vpa,finput)
-      fres_base <- format_to_old_future(fres_base)
-      tmp <- convert_future_table(fres_base,label=label_name[i]) %>%
-        rename(HCR_name=label)  %>% mutate(beta=beta_vector[i])
-      tmp
+      do.call(future_vpa,finput)      
+#  fres_base <- do.call(future_vpa,finput)
+#      fres_base <- format_to_old_future(fres_base)
+#      tmp <- convert_future_table(fres_base,label=label_name[i]) %>%
+#        rename(HCR_name=label)  %>% mutate(beta=beta_vector[i])
+#      tmp
     }
     parallel::stopCluster(cl)
+    
+    res_list <- tb
+    res_list[save_detail==0] <- NULL
+
+    tb <- purrr::map_dfr(seq_len(length(tb)), function(i){
+      format_to_old_future(tb[[i]]) %>% 
+        convert_future_table(label=label_name[i]) %>%
+        rename(HCR_name=label)  %>% mutate(beta=beta_vector[i])
+    })
   }
-  return(tb)
+  
+  if(sum(save_detail)==0) return(tb)
+  else return(list(tb=tb, res_list=res_list))
 }
 
 
@@ -2877,3 +2896,4 @@ create_dummy_vpa <- function(res_vpa){
   
   return(res_vpa_updated)
 }
+
