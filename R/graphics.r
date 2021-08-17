@@ -1901,6 +1901,9 @@ plot_SR_AReffect <- function(res){
     return(g)
 }
 
+#' @encoding UTF-8
+#' @export
+
 
 plot_worm <- function(kobe_data){
     
