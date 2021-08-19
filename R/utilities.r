@@ -727,9 +727,12 @@ make_summary_table <- function(mat_data,side=1,probs=c(0.1,0.5,0.8)){
 #' @param fres_current future_vpaの結果(Fcurrent)
 #' @param fres_HCR future_vpaの結果(F with HCR)
 #' @param kobeII kobeII.matrixの結果
+#' @param other_tables その他の表
 #' @param filename csvファイルとpdfファイルの両方のファイル名を指定する場合（拡張子なしで指定）
 #' @param csvname csvファイルのファイル名
 #' @param pdfname pdfファイルのファイル名
+#' @param
+#' 
 #' @encoding UTF-8
 #' @export
 
@@ -740,6 +743,7 @@ out.vpa <- function(res=NULL,    # VPA result
                     fres_HCR=NULL,   # future projection result
                     kobeII=NULL, # kobeII result
                     kobe.ratio=NULL, # kobe.ratio
+                    other_tables=NULL, # other table
                     filename="vpa", # filename without extension
                     csvname=NULL,
                     pdfname=NULL,
@@ -788,17 +792,17 @@ out.vpa <- function(res=NULL,    # VPA result
   if(!is.null(res)){
     write("# VPA results",file=csvname, append=T)
 
-    write("\n# catch at age",file=csvname,append=T)
+    write("\n# catch at age", file=csvname,append=T)
     write.table2(res$input$dat$caa,title.tmp="Catch at age")
 
-    write("\n# maturity at age",file=csvname,append=T)
+    write("\n# maturity at age", file=csvname,append=T)
     write.table2(res$input$dat$maa,title.tmp="Maturity at age")
 
-    write("\n# weight at age for biomass calculation",file=csvname,append=T)
+    write("\n# weight at age for biomass calculation", file=csvname,append=T)
     write.table2(res$input$dat$waa,title.tmp="Weight at age (for biomass)")
 
     if(!is.null(res$input$dat$waa.catch)){
-      write("\n# weight at age for catch calculation",file=csvname,append=T)
+      write("\n# weight at age for catch calculation", file=csvname,append=T)
       write.table2(res$input$dat$waa.catch,title.tmp="Weight at age (for catch)")
     }
 
@@ -807,9 +811,6 @@ out.vpa <- function(res=NULL,    # VPA result
 
     write("\n# fishing mortality at age",file=csvname,append=T)
     write.table2(res$faa,title.tmp="F at age")
-
-    write("\n# Current F",file=csvname,append=T)
-    write.table2(res$Fc.at.age,title.tmp="Current F")
 
     write("\n# numbers at age",file=csvname,append=T)
     write.table2(res$naa,title.tmp="Numbers at age")
@@ -820,29 +821,38 @@ out.vpa <- function(res=NULL,    # VPA result
     write.table2(x,title.tmp="Total and spawning biomass")
 
     write("\n# YPR & SPR history ",file=csvname,append=T)
-    get.SPR(res)$ysdata %>% as_tibble() %>% select(-"F/Ftarget") %>%
-      write_csv(path=csvname,append=T, col_names=TRUE)
+    get.SPR(res)$ysdata %>% rownames_to_column(var="year") %>%
+                   as_tibble() %>% select(-"F/Ftarget") %>%
+                   write_csv(path=csvname,append=T, col_names=TRUE)
   }
 
   if(!is.null(srres)){
 
-    write("\n# SR fit data",file=csvname,append=T)
-    srres$input$SRdata %>% as_tibble() %>%  mutate(weight=srres$input$w) %>%
-      write_csv(path=csvname,append=T,col_names=TRUE)
-
-    write("\n# SR fit resutls",file=csvname,append=T)
-    if(class(srres)=="fit.SR"){
-      sr_summary <-
+    get_summary_ <- function(srres){
         as_tibble(srres$pars) %>% mutate(AICc   = srres$AICc,
                                          AIC    = srres$AIC,
                                          method = srres$input$method,
                                          type   = srres$input$SR,
                                          AR     = srres$input$AR,
-                                         out.AR = srres$input$out.AR)
+                                         out.AR = srres$input$out.AR)      
+    }
+    
+    if(class(srres)=="fit.SR"){
+      write("\n# SR fit data",file=csvname,append=T)
+      srres$input$SRdata %>% as_tibble() %>%  mutate(weight=srres$input$w) %>%
+        write_csv(path=csvname,append=T,col_names=TRUE)
+      
+      write("\n# SR fit resutls",file=csvname,append=T)      
+      sr_summary <- get_summary_(srres)
       write_csv(sr_summary,path=csvname,append=T,
                 col_names=TRUE)
     }
     if(class(srres)=="fit.SRregime"){
+      write("\n# SR fit data",file=csvname,append=T)
+      srres$input$SRdata %>% as_tibble() %>%  mutate(weight=srres$input$w) %>%
+        write_csv(path=csvname,append=T,col_names=TRUE)
+      
+      write("\n# SR fit resutls",file=csvname,append=T)            
       tibble(AICc   =srres$AICc,
              AIC    =srres$AIC,
              method=srres$input$method,
@@ -855,6 +865,16 @@ out.vpa <- function(res=NULL,    # VPA result
       write_csv(partable, path=csvname,append=T,col_names=TRUE)
 
     }
+    if(class(srres)=="SRfit.average"){
+      write("\n# SR fit data",file=csvname,append=T)
+      srres[[1]]$input$SRdata %>% as_tibble() %>%  mutate(weight=srres$input$w) %>%
+        write_csv(path=csvname, append=T, col_names=TRUE)
+
+      write("\n# SR fit resutls",file=csvname,append=T)            
+      sr_summary <- purrr::map_dfr(srres, function(x) get_summary_(x), .id="id")
+      write_csv(sr_summary,path=csvname,append=T,
+                col_names=TRUE)      
+    }      
   }
 
   if(!is.null(msyres)){
@@ -863,44 +883,36 @@ out.vpa <- function(res=NULL,    # VPA result
               col_names=TRUE)
   }
 
-  tmpfunc <- function(fres){
+  tmpfunc <- function(fres, label=""){
     if(class(fres)=="future_new"){
       fres <- format_to_old_future(fres)
     }
 
-    write("\n# future F at age",file=csvname,append=T)
+    write(str_c("\n# future F at age",label), file=csvname,append=T)
     write.table2(apply(fres$faa,c(1,2),mean),title.tmp="Average future F at age")
 
-    write("\n# future numbers at age",file=csvname,append=T)
+    write(str_c("\n# future numbers at age",label), file=csvname,append=T)
     write.table2(apply(fres$naa,c(1,2),mean),title.tmp="Average future numbers at age")
 
-    write("\n# future maturity at age",file=csvname,append=T)
-    write.table2(apply(fres$maa,c(1,2),mean),title.tmp="Average future numbers at age")
-
-    write("\n# future weight at age",file=csvname,append=T)
-    write.table2(apply(fres$waa,c(1,2),mean),title.tmp="Average future numbers at age")
-
-    write("\n# future total spawning biomass",file=csvname,append=T)
-    make_summary_table(fres$vssb,1,probs=ci.future) %>%
-      write_csv(path=csvname,append=TRUE, col_names = TRUE)
-
-    write("\n# future total biomass",file=csvname,append=T)
+    write(str_c("\n# future total biomass",label), file=csvname,append=T)
     make_summary_table(fres$vbiom,1,probs=ci.future) %>%
+      rownames_to_column(var="year") %>%       
       write_csv(path=csvname,append=TRUE, col_names = TRUE)
 
-    write("\n# future total catch",file=csvname,append=T)
+    write(str_c("\n# future total catch",label), file=csvname,append=T)
     make_summary_table(fres$vwcaa,1,probs=ci.future) %>%
+      rownames_to_column(var="year") %>%       
       write_csv(path=csvname,append=TRUE, col_names = TRUE)
   }
 
   if(!is.null(fres_current)){
     write("\n# future projection under F current",file=csvname,append=T)
-    tmpfunc(fres_current)
+    tmpfunc(fres_current, label="- Fcurrent")
   }
 
   if(!is.null(fres_HCR)){
     write("\n# future projection under HCR",file=csvname,append=T)
-    tmpfunc(fres_HCR)
+    tmpfunc(fres_HCR, label="- HCR")
   }
 
   if(!is.null(kobeII)){
@@ -922,6 +934,13 @@ out.vpa <- function(res=NULL,    # VPA result
         write_csv(path=csvname,append=T, col_names=TRUE)
   }
 
+  if(!is.null(other_tables)){
+    for(i in seq_len(length(other_tables))){
+      write(str_c("\n# ", names(other_tables)[i]), file=csvname,append=T)
+      other_tables[[i]] %>%
+        write_csv(path=csvname,append=T, col_names=TRUE)      
+    }
+  }
 }
 
 #' csvファイルとしてまとめられた資源計算結果を読み込んでRのオブジェクトにする
