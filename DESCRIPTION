@@ -38,6 +38,7 @@ Imports:
     covr,    
     GGally,
     patchwork,
+    splus2R,
 Suggests:
     knitr,
     rmarkdown,
