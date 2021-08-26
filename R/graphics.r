@@ -1333,14 +1333,15 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
     arrange(year)
   if(ylab.type=="F") UBdata <- UBdata %>% mutate(Uratio=Fratio)
 
+  UBdata <- UBdata %>% mutate(year_group=1)  
   if(plot.year[1]!="all") {
-    # diff.year <- plot.year[which(diff(plot.year)>1)+1]
-    UBdata <- UBdata %>% filter(year %in% plot.year)
+    diff.year <- plot.year[which(diff(plot.year)>1)+1]
+    UBdata <- UBdata %>% filter(year %in% plot.year) 
 
-    # for(i in 1:length(diff.year)){
-    #   UBdata <- UBdata %>%
-    #     mutate(year_group = ifelse(year >= diff.year[i], year_group+1, year_group))
-    # }
+    for(i in 1:length(diff.year)){
+       UBdata <- UBdata %>%
+         mutate(year_group = ifelse(year >= diff.year[i], year_group+1, year_group))
+     }
   }
 
   if(is.null(labeling.year)){
@@ -1349,8 +1350,7 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
   }
 
   UBdata <- UBdata %>%
-    mutate(year.label=ifelse(year%in%labeling.year,year,""),
-           year_group=1)
+    mutate(year.label=ifelse(year%in%labeling.year,year,""))
 
   max.B <- max(c(UBdata$Bratio,xscale),na.rm=T)
   max.U <- max(c(UBdata$Uratio,yscale),na.rm=T)
@@ -1901,3 +1901,44 @@ plot_SR_AReffect <- function(res){
     return(g)
 }
 
+#' @encoding UTF-8
+#' @export
+
+
+plot_worm <- function(kobe_data){
+    
+#  HCR_selection <- read_csv("HCR_selection.csv") %>%
+#    rename(HCR_category="HCR category",
+#           num=`Serial number`,
+#           stock=`Appied stock`) %>%
+#    dplyr::filter(!is.na(HCR_category)) %>%
+#    mutate(size=ifelse(Type=="B"|Type=="SS", 3, 1)) %>%
+#    mutate(size=factor(size))
+
+    mean_data <- bind_rows(kobe_data$catch.mean,
+                           kobe_data$ssb.mean  ,
+                           kobe_data$ssb.lower10percent) %>%
+      pivot_longer(cols=c(-HCR_name,-beta,-stat_name)) %>%
+      rename(Year=name) %>%
+      mutate(Year=as.numeric(Year), MT=value/1000) #%>%
+#      left_join(HCR_selection) %>%
+#      left_join(tibble(stat_name =c("catch.mean","ssb.mean","ssb.ci10"),
+#                       stat_name2=c("Catch (average)",     "SB (average)", "SB (L10%)"))) %>%
+#      mutate(Type=factor(Type, levels=c("B","S","SS","A"))) %>%
+#      dplyr::filter(use==1)
+
+    g_worm <- mean_data %>% 
+      ggplot() +
+      geom_line(aes(x=Year, y=MT, color=HCR_name, group=HCR_name),
+                alpha=0.8) +
+      ylim(0,NA) +
+      facet_wrap(.~stat_name, scale="free_y") + theme_SH(base_size=14) +
+      coord_cartesian(ylim=c(0,NA)) +
+      ylab("1000 MT") +
+#      scale_color_manual(values=c(1,gray(0.2),2,3)) +      
+#      scale_size_manual(values=c(1,0.5,1,0.5)) +
+        theme(legend.position="bottom")
+
+    g_worm
+    
+}

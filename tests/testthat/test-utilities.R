@@ -315,8 +315,23 @@ test_that("make kobeII table", {
     expect_setequal(colnames(kobe_data),
                     c("year", "sim", "value", "stat", "HCR_name", "beta"))
 
+    kobe_data <- beta.simulation(generate_dummy_future_new_object(nsim=2)$input,
+                                 beta_vector = seq(0, 1, 0.5),
+                                 year.lag = 0,
+                                 type = "new", save_detail=c(1,0,1))
+    expect_equal(names(kobe_data),c("tb","res_list"))
+
+    # multi-core
+    if(0){
+    kobe_data <- beta.simulation(generate_dummy_future_new_object(nsim=2)$input,
+                                 beta_vector = seq(0, 1, 0.5),
+                                 year.lag = 0,ncore=2,
+                                 type = "new", save_detail=c(1,0,1))
+    expect_equal(names(kobe_data),c("tb","res_list"))
+    }
+
     test_that("make_kobeII_table() works", {
-      kobe_table <- make_kobeII_table(kobe_data,
+      kobe_table <- make_kobeII_table(kobe_data[[1]],
                         load_data("../../inst/extdata/res_vpa_pma.rda"))
 
       expect_is(kobe_table, "list")
