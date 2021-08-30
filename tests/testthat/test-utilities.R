@@ -407,3 +407,9 @@ test_that("calc_forward",{
   naa2 %>% expect_equal(res_vpa$naa[,2])
 })
 
+
+test_that("out.vpa", {
+
+  out.vpa(res=res_vpa, fres_HCR=res_future_0.8HCR)
+
+})
