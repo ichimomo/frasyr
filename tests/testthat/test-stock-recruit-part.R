@@ -432,3 +432,19 @@ test_that("check matching of fit.SRregime and fit.SR",{
   }
 })
 
+
+test_that("check fit_SR",{
+  
+  SRdata <- get.SRdata(res_vpa)
+  res1 <- fit.SR_tol(SRdata=SRdata, SR="HS", method="L1")
+  
+  # 時間かかる
+  #res2 <- fit.SR_tol(SRdata=SRdata, SR="HS", method = "L2",
+  #                   regime.year = c(1998), regime.key = 0:1,
+  #                   regime.par = c("a"), use.fit.SR = TRUE, is_regime=TRUE, n=2)
+
+  res3 <- load_data("res_vpa_no_global_minimum_example.rda") %>% get.SRdata(weight.year=1977:2018) %>%
+    fit.SR_tol(SR="HS", method="L2", n_check=100, AR=1, out.SR=FALSE)  
+
+
+})
