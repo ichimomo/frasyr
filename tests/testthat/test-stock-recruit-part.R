@@ -443,8 +443,8 @@ test_that("check fit_SR",{
   #                   regime.year = c(1998), regime.key = 0:1,
   #                   regime.par = c("a"), use.fit.SR = TRUE, is_regime=TRUE, n=2)
 
-  res3 <- load_data("res_vpa_no_global_minimum_example.rda") %>% get.SRdata(weight.year=1977:2018) %>%
-    fit.SR_tol(SR="HS", method="L2", n_check=100, AR=1, out.SR=FALSE)  
+  res3_data <- load_data("res_vpa_no_global_minimum_example.rda") %>% get.SRdata(weight.year=1977:2018) 
+  res3 <- fit.SR_tol(res3_data, SR="HS", method="L2", n_check=100, AR=1, out.AR=FALSE, length=20)  
 
 
 })
