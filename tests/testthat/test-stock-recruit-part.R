@@ -433,7 +433,7 @@ test_that("check matching of fit.SRregime and fit.SR",{
 })
 
 
-test_that("check fit_SR",{
+test_that("fit.SR_tolのテスト",{
   
   SRdata <- get.SRdata(res_vpa)
   res1 <- fit.SR_tol(SRdata=SRdata, SR="HS", method="L1")

@@ -13,6 +13,7 @@ out.vpa(
   fres_HCR = NULL,
   kobeII = NULL,
   kobe.ratio = NULL,
+  other_tables = NULL,
   filename = "vpa",
   csvname = NULL,
   pdfname = NULL,
@@ -31,6 +32,8 @@ out.vpa(
 \item{fres_HCR}{future_vpaの結果(F with HCR)}
 
 \item{kobeII}{kobeII.matrixの結果}
+
+\item{other_tables}{その他の表}
 
 \item{filename}{csvファイルとpdfファイルの両方のファイル名を指定する場合（拡張子なしで指定）}
 
