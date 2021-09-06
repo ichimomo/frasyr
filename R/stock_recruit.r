@@ -2328,7 +2328,7 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
     }
     if (sum(problem)>0) {
       flag[5] <- 1        
-      message(RES$pars <- "5. 同じ最大尤度を持つ複数のパラメータが見つかりました（L1かつHSでよく見られます）。")
+      message(RES$pars <- str_c("5. 同じ最大尤度(",diff_threshold,"よりも小さい違い)を持つ複数のパラメータが見つかりました（L1かつHSでよく見られます）。"))
       # RES$percent_bias = c("a"=max(a_diff),"b"=max(b_diff),"sd" = max(sd_diff))
       # message("Maximum percent bias of 'a' is ", round(as.numeric(RES$percent_bias["a"]),6),"%")
       # message("Maximum percent bias of 'b' is ", round(as.numeric(RES$percent_bias["b"]),6),"%")
@@ -2337,16 +2337,17 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
       #   RES$percent_bias = c(RES$percent_bias,"rho" = max(rho_diff))
       #   message("Maximum percent bias of 'rho' is ", round(as.numeric(RES$percent_bias["rho"]),6),"%")
       # }
+      selected_set <- which(loglik_diff<diff_threshold)      
       if(class(resSR)!="fit.SRregime"){
         par_list = t(sapply(1:n, function(i) unlist(resSR_list[[i]]$pars)[unlist(resSR$pars) != 0]))
-        par_list = par_list[which(loglik_diff<diff_threshold),]
+        par_list = par_list[selected_set,]
         bias_list = t(sapply(1:n, function(i) 100*(unlist(resSR_list[[i]]$pars)[unlist(resSR$pars) != 0]/unlist(resSR$pars)[unlist(resSR$pars)!=0]-1)))
-        bias_list = bias_list[which(loglik_diff<diff_threshold),]
+        bias_list = bias_list[selected_set,]
       }else{
         par_list = t(sapply(1:n, function(i) unlist(resSR_list[[i]]$regime_pars)[unlist(resSR$regime_pars) != 0]))
-        par_list = par_list[which(loglik_diff<diff_threshold),]
+        par_list = par_list[selected_set,]
         bias_list = t(sapply(1:n, function(i) 100*(unlist(resSR_list[[i]]$regime_pars)[unlist(resSR$regime_pars) != 0]/unlist(resSR$regime_pars)[unlist(resSR$regime_pars)!=0]-1)))
-        bias_list = bias_list[which(loglik_diff<diff_threshold),]
+        bias_list = bias_list[selected_set,]
       }
       par_summary = apply(par_list,2,summary)
       percent_bias_summary = apply(bias_list,2,summary)
@@ -2359,7 +2360,7 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
       selected <- which.min(abs(x-1))
       cat("同じ尤度を持つパラメータの範囲 (",n,"回試行),\n")
       print(apply(par_list,2,summary))
-      optimal <- resSR_list[[selected]]
+      optimal <- resSR_list[selected_set][[selected]]
       cat("中央値に最も近いパラメータセットを持つ推定結果をoptimumに出力します(そのときの初期値は",str_c(optimal$input$p0,collapse="-"),"です)\n")      
     } else {
       cat(RES$pars <- "5. パラメータが唯一の解として推定されているのでOKです (OK)","\n")
