@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>再生産関係を網羅的にフィットする — tryall_SR • frasyr</title>
+<title>再生産関係のフィット（頑健版） — fit.SR_tol • frasyr</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,8 @@
 
 
 
-<meta property="og:title" content="再生産関係を網羅的にフィットする — tryall_SR" />
-<meta property="og:description" content="regimeなしのものだけに対応" />
+<meta property="og:title" content="再生産関係のフィット（頑健版） — fit.SR_tol" />
+<meta property="og:description" content="fit.SRのwrapper。与えられたinputはそのままfit.SRに渡すが、計算したあとにcheck.SRfitを回し、大域解に達していない場合や同じ尤度を持つ複数の大域解がある場合、その中央値をとるres_SRを返す" />
 
 
 
@@ -123,17 +123,33 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>再生産関係を網羅的にフィットする</h1>
+    <h1>再生産関係のフィット（頑健版）</h1>
     
-    <div class="hidden name"><code>tryall_SR.Rd</code></div>
+    <div class="hidden name"><code>fit.SR_tol.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>regimeなしのものだけに対応</p>
+    <p>fit.SRのwrapper。与えられたinputはそのままfit.SRに渡すが、計算したあとにcheck.SRfitを回し、大域解に達していない場合や同じ尤度を持つ複数の大域解がある場合、その中央値をとるres_SRを返す</p>
     </div>
 
-    <div class="ref-usage sourceCode"><pre class='sourceCode r'><code><span class='fu'>tryall_SR</span><span class='op'>(</span><span class='va'>data_SR</span>, plus_group <span class='op'>=</span> <span class='cn'>TRUE</span>, bio_par <span class='op'>=</span> <span class='cn'>NULL</span>, tol <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span></code></pre></div>
+    <div class="ref-usage sourceCode"><pre class='sourceCode r'><code><span class='fu'>fit.SR_tol</span><span class='op'>(</span><span class='va'>...</span>, n_check <span class='op'>=</span> <span class='fl'>100</span>, is_regime <span class='op'>=</span> <span class='cn'>FALSE</span>, seed <span class='op'>=</span> <span class='fl'>12345</span><span class='op'>)</span></code></pre></div>
 
+    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
+    <table class="ref-arguments">
+    <colgroup><col class="name" /><col class="desc" /></colgroup>
+    <tr>
+      <th>...</th>
+      <td><p>fit.SRへの引数</p></td>
+    </tr>
+    <tr>
+      <th>n_check</th>
+      <td><p>check.SRfitに渡す引数n</p></td>
+    </tr>
+    <tr>
+      <th>seed</th>
+      <td><p>check.SRfitに渡す引数seed。toolのほうで最初に12345にしていた関係で、デフォルトの引数は12345にしている</p></td>
+    </tr>
+    </table>
 
 
   </div>
