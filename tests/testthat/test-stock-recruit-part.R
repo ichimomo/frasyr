@@ -437,12 +437,41 @@ test_that("fit.SR_tolのテスト",{
   
   SRdata <- get.SRdata(res_vpa)
   res1 <- fit.SR_tol(SRdata=SRdata, SR="HS", method="L1")
-  
+
+ 
   # reimeありでのテスト。時間かかるのでコメントアウト
   #res2 <- fit.SR_tol(SRdata=SRdata, SR="HS", method = "L2",
   #                   regime.year = c(1998), regime.key = 0:1,
   #                   regime.par = c("a"), use.fit.SR = TRUE, is_regime=TRUE, n=2)
 
   res3_data <- load_data("res_vpa_no_global_minimum_example.rda") %>% get.SRdata(weight.year=1977:2018) 
-  res3 <- fit.SR_tol(res3_data, SR="HS", method="L2", n_check=100, AR=1, out.AR=FALSE, length=20)  
+  res3 <- fit.SR_tol(res3_data, SR="HS", method="L2", n_check=100, AR=1, out.AR=FALSE, length=20)
+
+  # 以下、technical documentのR4の図1用のコード
+  if(0){
+      res4 <- get.SRdata(res_vpa) %>%
+          dplyr::filter(year%in%1988:2000) %>%
+          fit.SR(SR="HS", method="L1", AR=0) %>%
+          check.SRfit(n=400, seed=10)
+
+      res5 <- get.SRdata(res_vpa) %>%
+          dplyr::filter(year%in%1988:2000) %>%
+          fit.SR(SR="HS", method="L1", AR=0) %>%
+          check.SRfit(n=400, seed=1)
+
+      par(mfrow=c(1,2))
+      plot(res4$par_list0[,2],res4$loglik,col=1,pch=20,xlab="b in HS", ylab="log likelihood)")
+      points(res5$par_list0[,2],res5$loglik,col=2,pch=3)
+      
+      plot(res4$par_list0[,2],log10(res4$loglik_diff),col=1,pch=20,xlab="b in HS", ylab="log10(abs(loglik-max(loglik)))")
+      points(res5$par_list0[,2],log10(res5$loglik_diff),col=2,pch=3)
+      
+      
+      res5$par_list0[which.min(res5$loglik_diff),]
+      res4$par_list0[which.min(res4$loglik_diff),]
+      
+      rbind(res5$optimum$pars,
+            res4$optimum$pars)
+  }
+  
 })
