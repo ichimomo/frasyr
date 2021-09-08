@@ -2327,7 +2327,8 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
       }
     }
     if (sum(problem)>0) {
-      flag[5] <- 1        
+      flag[5] <- 1
+      RES$loglik_diff <- loglik_diff
       message(RES$pars <- str_c("5. 同じ最大尤度(",diff_threshold,"よりも小さい違い)を持つ複数のパラメータが見つかりました（L1かつHSでよく見られます）。"))
       # RES$percent_bias = c("a"=max(a_diff),"b"=max(b_diff),"sd" = max(sd_diff))
       # message("Maximum percent bias of 'a' is ", round(as.numeric(RES$percent_bias["a"]),6),"%")
@@ -2340,11 +2341,13 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
       selected_set <- which(loglik_diff<diff_threshold)      
       if(class(resSR)!="fit.SRregime"){
         par_list = t(sapply(1:n, function(i) unlist(resSR_list[[i]]$pars)[unlist(resSR$pars) != 0]))
+        par_list0 <- par_list
         par_list = par_list[selected_set,]
         bias_list = t(sapply(1:n, function(i) 100*(unlist(resSR_list[[i]]$pars)[unlist(resSR$pars) != 0]/unlist(resSR$pars)[unlist(resSR$pars)!=0]-1)))
         bias_list = bias_list[selected_set,]
       }else{
         par_list = t(sapply(1:n, function(i) unlist(resSR_list[[i]]$regime_pars)[unlist(resSR$regime_pars) != 0]))
+        par_list0 <- par_list          
         par_list = par_list[selected_set,]
         bias_list = t(sapply(1:n, function(i) 100*(unlist(resSR_list[[i]]$regime_pars)[unlist(resSR$regime_pars) != 0]/unlist(resSR$regime_pars)[unlist(resSR$regime_pars)!=0]-1)))
         bias_list = bias_list[selected_set,]
@@ -2354,11 +2357,11 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
       RES$par_summary <- par_summary
       RES$percent_bias_summary <- percent_bias_summary
       RES$par_list <- par_list
-      
+      RES$par_list0 <- par_list0      
       # すべてのパラメータのmedianに最も近いパラメータセットを持つものを選んでoptimalに入れちゃう
       x <- sweep(par_list,2,apply(par_list,2,median),FUN="/") %>% apply(1,mean)
       selected <- which.min(abs(x-1))
-      cat("同じ尤度を持つパラメータの範囲 (",n,"回試行),\n")
+      cat("ほとんど同じ尤度を持つパラメータの範囲 (",n,"回試行のうち",nrow(par_list),"回分),\n")
       print(apply(par_list,2,summary))
       optimal <- resSR_list[selected_set][[selected]]
       cat("中央値に最も近いパラメータセットを持つ推定結果をoptimumに出力します(そのときの初期値は",str_c(optimal$input$p0,collapse="-"),"です)\n")      
@@ -2374,6 +2377,7 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
   # RES$par_list = par_list
   # RES$percent_bias_list = bias_list
   RES$flag <- flag
+  RES$loglik <- loglik
   return(RES)
 }
 
@@ -2674,8 +2678,10 @@ tryall_SR <- function(data_SR, plus_group=TRUE, bio_par=NULL, tol=FALSE){
 #' fit.SRのwrapper。与えられたinputはそのままfit.SRに渡すが、計算したあとにcheck.SRfitを回し、大域解に達していない場合や同じ尤度を持つ複数の大域解がある場合、その中央値をとるres_SRを返す
 #'
 #' @param ... fit.SRへの引数
-#' @param n_check check.SRfitに渡す引数n
-#' @param seed check.SRfitに渡す引数seed。toolのほうで最初に12345にしていた関係で、デフォルトの引数は12345にしている
+#' @param n_check check.SRfitに渡す引数n（初期値を変えて計算を繰り返す回数）
+#' @param seed check.SRfitに渡す引数seed。初期値を変えるときに使う乱数。toolのスクリプトではずっと12345を利用していた関係で、デフォルトの引数は12345にしている。
+#'
+#' @details fit.SR_tolの動作は以下の通りです。1) fit.SRを実施 2) fit.SRの結果(便宜的にres0とする)にcheck.SRfitをあてはめる。check.SRfitでは以下のことが実施されます。2-1) 初期値を変えてn回パラメータ推定を繰り返す。2-2) res0から得られている対数尤度と、n回パラメータ推定を繰り返したときに得られた対数尤度を比較し、res0の対数尤度よりも大きいものが見つかったらres0は「4. 大域解ではない」という判定をする。また、帰り値$optimumの中に、最大の対数尤度を得たときの推定結果を返す。2-3) 4.がOKの場合、n回分の対数尤度の中で最大値との差が1-06以下だけど、パラメータの推定値が異なる（0.001以上）場合には、「5. 同じ対数尤度を持つ複数のパラメータが見つかりました」というメッセージが出る。この場合、対数尤度の差が1-06以下を示すパラメータの範囲（最小、最大、平均など）が出力される。また、中央値に最も近いパラメータのセットを$optimumに返す。3) check.SRfitの返り値を見て、4のフラグが立っている場合、res0をcheck.SRfitの返り値$optimumに置き換える。そうなった場合、もう一度check.SRfitを実行する（これによって4のフラグは立たなくなることが想定）。4) check.SRfitの返り値を見て、5のフラグが立っている場合、res0をcheck.SRfitの返り値$optimumに置き換える。5) res0を返す。
 #'
 #' @export
 #'
