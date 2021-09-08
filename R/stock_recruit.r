@@ -159,7 +159,6 @@ validate_sr <- function(SR = NULL, method = NULL, AR = NULL, out.AR = NULL, res_
 #' @param plus_group hなどを計算するときに、プラスグループを考慮するか
 #' @param HS_fix_b SR=HSのとき、折れ点bを固定して計算したい時に値を代入。デフォルットはNULL。ただし、min(SSB)/100より小さい値は入れないこと。
 #' @param gamma \code{SR="Mesnil"}のときに使用するsmoothing parameter
-#' # @param do_check.SRfit 計算が終わったあとでdo_check.SRfitを実施し、収束していなかった場合に１回だけ再計算するか（余計に時間がかかる）。デフォルトはFALSE
 #'
 #' @encoding UTF-8
 #' @examples
@@ -214,7 +213,6 @@ fit.SR <- function(SRdata,
                    is_jitter = FALSE,
                    HS_fix_b = NULL,
                    gamma=0.01
-#                   do_check.SRfit = FALSE # 計算が終わったあとでdo_check.SRfitを実施し、収束していなかった場合に１回だけ再計算するか（余計に時間がかかる）
 ){
   validate_sr(SR = SR, method = method, AR = AR, out.AR = out.AR)
 
@@ -494,17 +492,6 @@ fit.SR <- function(SRdata,
   }
 
   class(Res) <- "fit.SR"
-
-# pending
-#  if(do_check.SRfit==TRUE){
-#    Res2 <- Res
-#    Res2$input$do_check.SRfit <- FALSE
-#    check <- check.SRfit(Res2, output=FALSE)
-#    if (!is.null(check$optimum)) {
-#      cat(" ")
-#      Res2 <- check$optimum
-#      check <- check.SRfit(Res2,output=FALSE)
-#    }}
 
   return(Res)
 }
@@ -2208,13 +2195,15 @@ out.SR = function(resSR,filename = "resSR") {
 check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="checkSRfit") {
   opt = resSR$opt
   SRdata = resSR$input$SRdata
+  flag = rep(0,5)
 
   RES = list()
   # check convergence
   if (opt$convergence==0) {
-    cat(RES$convergence <- "1. Successful convergence (OK)","\n")
+    cat(RES$convergence <- "1. 収束しています (OK)","\n")
   } else {
-    message(RES$convergence <- "1. False convergencen")
+    flag[1] <- 1
+    stop(RES$convergence <- "1. 収束していないので初期値(引数p0)を変えて計算しなおしてください")
   }
   # hessian
   resSR2 = resSR
@@ -2236,9 +2225,10 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
     }
   }
   if (all(diag(resSR2$opt$hessian) > 0)) {
-    cat(RES$hessian <- "2. Hessian successfully having positive definite (OK)","\n")
+    cat(RES$hessian <- "2. Hessian行列の対角成分が正定値になっています (OK)","\n")
   } else {
-    message(RES$hessian <- "2. Hessian NOT having positive definite")
+    flag[2] <- 1    
+    message(RES$hessian <- "2. Hessian行列の対角成分が正定値になっていません (HSかつ3以降のチェックがOKであれば問題ありません)")
   }
 
   # check boundary
@@ -2268,10 +2258,11 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
     }
   }
   if (is.null(RES$boundary)) {
-    cat(RES$boundary <- "3. Parameters not reaching boundaries (successful, OK)","\n")
+    cat(RES$boundary <- "3. どの推定パラメータも壁(boundaries)にあたっていないのでOKです (OK)","\n")
   } else {
+    flag[3] <- 1        
     for (i in 1:length(RES$boundary)) {
-      message(RES$boundary[i])
+      message("3. パラメータは壁にあたっています(HSで折れ点が過去最小・最大親魚量になっているときにそうなります。HSでない場合は推定の不安定性を示唆します。)", RES$boundary[i])
     }
   }
 
@@ -2303,13 +2294,14 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
   max_loglik = max(loglik)
   optimal = NULL
   if (resSR$loglik-max_loglik < -0.001) {
-    message(RES$optim <- "4. NOT achieving the global optimum")
+    flag[4] <- 1            
     diff_loglik = abs(resSR$loglik-max_loglik)
     message(paste0("Maximum difference of log-likelihood is ",round(diff_loglik,6)))
     optimal = resSR_list[[which.max(loglik)]]
+    message(RES$optim <- str_c("4. パラメータが大域解に達していません (fit.SRtolで再計算をおこなうか、本関数の返り値のoptimumに結果を置き換えてください。大域解を得るための初期値は,",str_c(optimal$input$p0,collapse=", "),"です)"))    
     RES$loglik_diff = diff_loglik
   } else {
-    cat(RES$optim <- "4. Successfully achieving the global optimum (OK)","\n")
+    cat(RES$optim <- "4. パラメータが大域解に達しているのでOKです (OK)","\n")
     # global optimumに達している場合のみ
     loglik_diff = purrr::map_dbl(loglik, function(x) abs(diff(c(x,max_loglik))))
     problem = NULL
@@ -2335,7 +2327,9 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
       }
     }
     if (sum(problem)>0) {
-      message(RES$pars <- "Different parameter values achieving the global optimum")
+      flag[5] <- 1
+      RES$loglik_diff <- loglik_diff
+      message(RES$pars <- str_c("5. 同じ最大尤度(",diff_threshold,"よりも小さい違い)を持つ複数のパラメータが見つかりました（L1かつHSでよく見られます）。"))
       # RES$percent_bias = c("a"=max(a_diff),"b"=max(b_diff),"sd" = max(sd_diff))
       # message("Maximum percent bias of 'a' is ", round(as.numeric(RES$percent_bias["a"]),6),"%")
       # message("Maximum percent bias of 'b' is ", round(as.numeric(RES$percent_bias["b"]),6),"%")
@@ -2344,23 +2338,35 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
       #   RES$percent_bias = c(RES$percent_bias,"rho" = max(rho_diff))
       #   message("Maximum percent bias of 'rho' is ", round(as.numeric(RES$percent_bias["rho"]),6),"%")
       # }
+      selected_set <- which(loglik_diff<diff_threshold)      
       if(class(resSR)!="fit.SRregime"){
         par_list = t(sapply(1:n, function(i) unlist(resSR_list[[i]]$pars)[unlist(resSR$pars) != 0]))
-        par_list = par_list[which(loglik_diff<diff_threshold),]
+        par_list0 <- par_list
+        par_list = par_list[selected_set,]
         bias_list = t(sapply(1:n, function(i) 100*(unlist(resSR_list[[i]]$pars)[unlist(resSR$pars) != 0]/unlist(resSR$pars)[unlist(resSR$pars)!=0]-1)))
-        bias_list = bias_list[which(loglik_diff<diff_threshold),]
+        bias_list = bias_list[selected_set,]
       }else{
         par_list = t(sapply(1:n, function(i) unlist(resSR_list[[i]]$regime_pars)[unlist(resSR$regime_pars) != 0]))
-        par_list = par_list[which(loglik_diff<diff_threshold),]
+        par_list0 <- par_list          
+        par_list = par_list[selected_set,]
         bias_list = t(sapply(1:n, function(i) 100*(unlist(resSR_list[[i]]$regime_pars)[unlist(resSR$regime_pars) != 0]/unlist(resSR$regime_pars)[unlist(resSR$regime_pars)!=0]-1)))
-        bias_list = bias_list[which(loglik_diff<diff_threshold),]
+        bias_list = bias_list[selected_set,]
       }
       par_summary = apply(par_list,2,summary)
       percent_bias_summary = apply(bias_list,2,summary)
       RES$par_summary <- par_summary
       RES$percent_bias_summary <- percent_bias_summary
+      RES$par_list <- par_list
+      RES$par_list0 <- par_list0      
+      # すべてのパラメータのmedianに最も近いパラメータセットを持つものを選んでoptimalに入れちゃう
+      x <- sweep(par_list,2,apply(par_list,2,median),FUN="/") %>% apply(1,mean)
+      selected <- which.min(abs(x-1))
+      cat("ほとんど同じ尤度を持つパラメータの範囲 (",n,"回試行のうち",nrow(par_list),"回分),\n")
+      print(apply(par_list,2,summary))
+      optimal <- resSR_list[selected_set][[selected]]
+      cat("中央値に最も近いパラメータセットを持つ推定結果をoptimumに出力します(そのときの初期値は",str_c(optimal$input$p0,collapse="-"),"です)\n")      
     } else {
-      cat(RES$pars <- "5. Parameters successfully achieving the single solution (OK)","\n")
+      cat(RES$pars <- "5. パラメータが唯一の解として推定されているのでOKです (OK)","\n")
     }
   }
   if (output) {
@@ -2370,6 +2376,8 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
   # RES$loglik = loglik
   # RES$par_list = par_list
   # RES$percent_bias_list = bias_list
+  RES$flag <- flag
+  RES$loglik <- loglik
   return(RES)
 }
 
@@ -2632,11 +2640,12 @@ check_consistent_w <- function(w, SRdata){
 #' @export
 #'
 
-tryall_SR <- function(data_SR, plus_group=TRUE, bio_par=NULL){
+tryall_SR <- function(data_SR, plus_group=TRUE, bio_par=NULL, tol=FALSE){
 
   SRmodel.list <- expand.grid(SR.rel = c("HS","BH","RI"), L.type = c("L1", "L2")) %>%
     as_tibble()
 
+  if(tol==TRUE) fit.SR <- fit.SR_tol
   SRmodel.list$pars <- purrr::map2(SRmodel.list$SR.rel, SRmodel.list$L.type,
                                    function(x,y){
                                      res1 <- unlist(fit.SR(data_SR, SR = x, method = y,
@@ -2662,3 +2671,45 @@ tryall_SR <- function(data_SR, plus_group=TRUE, bio_par=NULL){
   return(SRmodel.list)
 
 }
+
+#'
+#' 再生産関係のフィット（頑健版）
+#'
+#' fit.SRのwrapper。与えられたinputはそのままfit.SRに渡すが、計算したあとにcheck.SRfitを回し、大域解に達していない場合や同じ尤度を持つ複数の大域解がある場合、その中央値をとるres_SRを返す
+#'
+#' @param ... fit.SRへの引数
+#' @param n_check check.SRfitに渡す引数n（初期値を変えて計算を繰り返す回数）
+#' @param seed check.SRfitに渡す引数seed。初期値を変えるときに使う乱数。toolのスクリプトではずっと12345を利用していた関係で、デフォルトの引数は12345にしている。
+#'
+#' @details fit.SR_tolの動作は以下の通りです。1) fit.SRを実施 2) fit.SRの結果(便宜的にres0とする)にcheck.SRfitをあてはめる。check.SRfitでは以下のことが実施されます。2-1) 初期値を変えてn回パラメータ推定を繰り返す。2-2) res0から得られている対数尤度と、n回パラメータ推定を繰り返したときに得られた対数尤度を比較し、res0の対数尤度よりも大きいものが見つかったらres0は「4. 大域解ではない」という判定をする。また、帰り値$optimumの中に、最大の対数尤度を得たときの推定結果を返す。2-3) 4.がOKの場合、n回分の対数尤度の中で最大値との差が1-06以下だけど、パラメータの推定値が異なる（0.001以上）場合には、「5. 同じ対数尤度を持つ複数のパラメータが見つかりました」というメッセージが出る。この場合、対数尤度の差が1-06以下を示すパラメータの範囲（最小、最大、平均など）が出力される。また、中央値に最も近いパラメータのセットを$optimumに返す。3) check.SRfitの返り値を見て、4のフラグが立っている場合、res0をcheck.SRfitの返り値$optimumに置き換える。そうなった場合、もう一度check.SRfitを実行する（これによって4のフラグは立たなくなることが想定）。4) check.SRfitの返り値を見て、5のフラグが立っている場合、res0をcheck.SRfitの返り値$optimumに置き換える。5) res0を返す。
+#'
+#' @export
+#'
+
+fit.SR_tol <- function(...,n_check=100,is_regime=FALSE,seed=12345){
+
+  if(is_regime==FALSE)  res_SR <- fit.SR(...)
+  if(is_regime==TRUE )  res_SR <- fit.SRregime(...)
+
+  cat("...check.SRfit 1 回目....\n")
+  check <- check.SRfit(res_SR, output=FALSE, n=n_check)
+  # まず大域解に達しているかどうかのflagを確認し、flagが立っている場合には$optimと置き換える
+  if(check$flag[4]==1) {
+    res_SR <- check$optimum
+    cat("大域解を得るための初期値に変えたres_SRの結果に置き換えます\n")
+
+    # 再度check.SRfit
+    cat("...check.SRfit 2回目....\n")    
+    check <- check.SRfit(res_SR,output=FALSE)
+  }
+
+  # 5番目のflag(尤度が同じパラメータの範囲が存在する)が立っているかどうかも確認し、flagが立っていればoptimumと置き換える
+  if(check$flag[5]==1){
+    res_SR <- check$optimum
+    cat("尤度が同じパラメータの範囲で中央値をとる結果に置き換えます\n")
+  }
+  return(res_SR)
+}
+
+
+
