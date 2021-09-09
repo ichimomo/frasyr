@@ -8,6 +8,7 @@
 #' @import forcats
 #' @import stringr
 #' @import assertthat
+#' @import patchwork
 #' @importFrom magrittr %>%
 #' @importFrom magrittr %T>%
 #' @importFrom dplyr filter
@@ -32,7 +33,7 @@ calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=
   if(is.null(waa.catch)) waa.catch <- waa
   rel.abund <- rep(NA, na)
   rel.abund[1] <- 1
-    
+
   for (i in seq_len(na-1)) {
     rel.abund[i+1] <- rel.abund[i]*exp(-M[i]-sel[i]*Fr)
   }
@@ -90,7 +91,7 @@ caa.est.mat <- function(naa,saa,waa,M,catch.obs,Pope,set_max1=TRUE,max_exploitat
   tmp <- optimize(tmpfunc,c(-10,log(max_F)),catch.obs=catch.obs,naa=naa,saa=saa,waa=waa,M=M,Pope=Pope,out=FALSE)#,tol=.Machine$double.eps)
   tmp2 <- tmpfunc(logx=tmp$minimum,catch.obs=catch.obs,naa=naa,saa=saa,waa=waa,M=M,Pope=Pope,out=TRUE)
   realized.catch <- sum(tmp2*waa)
-  if(abs(realized.catch/catch.obs-1)>0.1) warning("expected catch:",catch.obs,", realized catch:",realized.catch)
+  if(!is.nan(realized.catch/catch.obs) & abs(realized.catch/catch.obs-1)>0.1) warning("expected catch:",catch.obs,", realized catch:",realized.catch)
   return(list(x=exp(tmp$minimum),caa=tmp2,realized.catch=realized.catch, expected.catch=catch.obs))
 }
 
@@ -362,12 +363,11 @@ ref.F <- function(
       Fcurrent <- res$Fc.at.age
     }
     sel <- Fcurrent/max(Fcurrent,na.rm=TRUE)
-    na <- sum(!is.na(Fcurrent))
 
     if(is.null(waa.year)) waa.year <- rev(years)[1]
     if(is.null(maa.year)) maa.year <- rev(years)[1]
     if(is.null(M.year)) M.year <- rev(years)[1]
-    if(is.null(waa.catch.year)) waa.catch.year <- rev(years)[1]    
+    if(is.null(waa.catch.year)) waa.catch.year <- rev(years)[1]
 
     if(is.null(waa))  waa <- apply_year_colum(res$input$dat$waa,waa.year)
     if(is.null(M))    M   <- apply_year_colum(res$input$dat$M,M.year)
@@ -386,6 +386,7 @@ ref.F <- function(
       }
     }
 
+    na <- sum(!is.na(Fcurrent))
     ssb.coef <- ifelse(is.null(res$ssb.coef),0,res$ssb.coef)
 
     min.age <- min(as.numeric(rownames(res$naa)))
@@ -726,9 +727,12 @@ make_summary_table <- function(mat_data,side=1,probs=c(0.1,0.5,0.8)){
 #' @param fres_current future_vpaの結果(Fcurrent)
 #' @param fres_HCR future_vpaの結果(F with HCR)
 #' @param kobeII kobeII.matrixの結果
+#' @param other_tables その他の表
 #' @param filename csvファイルとpdfファイルの両方のファイル名を指定する場合（拡張子なしで指定）
 #' @param csvname csvファイルのファイル名
 #' @param pdfname pdfファイルのファイル名
+#' @param
+#' 
 #' @encoding UTF-8
 #' @export
 
@@ -739,6 +743,7 @@ out.vpa <- function(res=NULL,    # VPA result
                     fres_HCR=NULL,   # future projection result
                     kobeII=NULL, # kobeII result
                     kobe.ratio=NULL, # kobe.ratio
+                    other_tables=NULL, # other table
                     filename="vpa", # filename without extension
                     csvname=NULL,
                     pdfname=NULL,
@@ -787,17 +792,17 @@ out.vpa <- function(res=NULL,    # VPA result
   if(!is.null(res)){
     write("# VPA results",file=csvname, append=T)
 
-    write("\n# catch at age",file=csvname,append=T)
+    write("\n# catch at age", file=csvname,append=T)
     write.table2(res$input$dat$caa,title.tmp="Catch at age")
 
-    write("\n# maturity at age",file=csvname,append=T)
+    write("\n# maturity at age", file=csvname,append=T)
     write.table2(res$input$dat$maa,title.tmp="Maturity at age")
 
-    write("\n# weight at age for biomass calculation",file=csvname,append=T)
+    write("\n# weight at age for biomass calculation", file=csvname,append=T)
     write.table2(res$input$dat$waa,title.tmp="Weight at age (for biomass)")
 
     if(!is.null(res$input$dat$waa.catch)){
-      write("\n# weight at age for catch calculation",file=csvname,append=T)
+      write("\n# weight at age for catch calculation", file=csvname,append=T)
       write.table2(res$input$dat$waa.catch,title.tmp="Weight at age (for catch)")
     }
 
@@ -806,9 +811,6 @@ out.vpa <- function(res=NULL,    # VPA result
 
     write("\n# fishing mortality at age",file=csvname,append=T)
     write.table2(res$faa,title.tmp="F at age")
-
-    write("\n# Current F",file=csvname,append=T)
-    write.table2(res$Fc.at.age,title.tmp="Current F")
 
     write("\n# numbers at age",file=csvname,append=T)
     write.table2(res$naa,title.tmp="Numbers at age")
@@ -819,41 +821,60 @@ out.vpa <- function(res=NULL,    # VPA result
     write.table2(x,title.tmp="Total and spawning biomass")
 
     write("\n# YPR & SPR history ",file=csvname,append=T)
-    get.SPR(res)$ysdata %>% as_tibble() %>% select(-"F/Ftarget") %>%
-      write_csv(path=csvname,append=T, col_names=TRUE)
+    get.SPR(res)$ysdata %>% rownames_to_column(var="year") %>%
+                   as_tibble() %>% select(-"F/Ftarget") %>%
+                   write_csv(path=csvname,append=T, col_names=TRUE)
   }
 
   if(!is.null(srres)){
 
-    write("\n# SR fit data",file=csvname,append=T)
-    srres$input$SRdata %>% as_tibble() %>%  mutate(weight=srres$input$w) %>%
-      write_csv(path=csvname,append=T,col_names=TRUE)
-
-    write("\n# SR fit resutls",file=csvname,append=T)
-    if(class(srres)=="fit.SR"){
-      sr_summary <-
+    get_summary_ <- function(srres){
         as_tibble(srres$pars) %>% mutate(AICc   = srres$AICc,
                                          AIC    = srres$AIC,
                                          method = srres$input$method,
                                          type   = srres$input$SR,
                                          AR     = srres$input$AR,
-                                         out.AR = srres$input$out.AR)
+                                         out.AR = srres$input$out.AR)      
+    }
+    
+    if(class(srres)=="fit.SR"){
+      write("\n# SR fit data",file=csvname,append=T)
+      srres$input$SRdata %>% as_tibble() %>%  mutate(weight=srres$input$w) %>%
+        write_csv(path=csvname,append=T,col_names=TRUE)
+      
+      write("\n# SR fit resutls",file=csvname,append=T)      
+      sr_summary <- get_summary_(srres)
       write_csv(sr_summary,path=csvname,append=T,
                 col_names=TRUE)
     }
     if(class(srres)=="fit.SRregime"){
+      write("\n# SR fit data",file=csvname,append=T)
+      srres$input$SRdata %>% as_tibble() %>%  mutate(weight=srres$input$w) %>%
+        write_csv(path=csvname,append=T,col_names=TRUE)
+      
+      write("\n# SR fit resutls",file=csvname,append=T)            
       tibble(AICc   =srres$AICc,
              AIC    =srres$AIC,
              method=srres$input$method,
              type  =srres$input$SR) %>%
         write_csv(path=csvname,append=T,col_names=TRUE)
 
-      partable <- srres$regime_pars 
+      partable <- srres$regime_pars
       if(!is.null(srres$steepness)) partable <- partable %>% left_join(srres$steepness)
-      # tentative 
+      # tentative
       write_csv(partable, path=csvname,append=T,col_names=TRUE)
 
     }
+    if(class(srres)=="SRfit.average"){
+      write("\n# SR fit data",file=csvname,append=T)
+      srres[[1]]$input$SRdata %>% as_tibble() %>%  mutate(weight=srres$input$w) %>%
+        write_csv(path=csvname, append=T, col_names=TRUE)
+
+      write("\n# SR fit resutls",file=csvname,append=T)            
+      sr_summary <- purrr::map_dfr(srres, function(x) get_summary_(x), .id="id")
+      write_csv(sr_summary,path=csvname,append=T,
+                col_names=TRUE)      
+    }      
   }
 
   if(!is.null(msyres)){
@@ -862,44 +883,36 @@ out.vpa <- function(res=NULL,    # VPA result
               col_names=TRUE)
   }
 
-  tmpfunc <- function(fres){
+  tmpfunc <- function(fres, label=""){
     if(class(fres)=="future_new"){
       fres <- format_to_old_future(fres)
     }
 
-    write("\n# future F at age",file=csvname,append=T)
+    write(str_c("\n# future F at age",label), file=csvname,append=T)
     write.table2(apply(fres$faa,c(1,2),mean),title.tmp="Average future F at age")
 
-    write("\n# future numbers at age",file=csvname,append=T)
+    write(str_c("\n# future numbers at age",label), file=csvname,append=T)
     write.table2(apply(fres$naa,c(1,2),mean),title.tmp="Average future numbers at age")
 
-    write("\n# future maturity at age",file=csvname,append=T)
-    write.table2(apply(fres$maa,c(1,2),mean),title.tmp="Average future numbers at age")
-
-    write("\n# future weight at age",file=csvname,append=T)
-    write.table2(apply(fres$waa,c(1,2),mean),title.tmp="Average future numbers at age")
-
-    write("\n# future total spawning biomass",file=csvname,append=T)
-    make_summary_table(fres$vssb,1,probs=ci.future) %>%
-      write_csv(path=csvname,append=TRUE, col_names = TRUE)
-
-    write("\n# future total biomass",file=csvname,append=T)
+    write(str_c("\n# future total biomass",label), file=csvname,append=T)
     make_summary_table(fres$vbiom,1,probs=ci.future) %>%
+      rownames_to_column(var="year") %>%       
       write_csv(path=csvname,append=TRUE, col_names = TRUE)
 
-    write("\n# future total catch",file=csvname,append=T)
+    write(str_c("\n# future total catch",label), file=csvname,append=T)
     make_summary_table(fres$vwcaa,1,probs=ci.future) %>%
+      rownames_to_column(var="year") %>%       
       write_csv(path=csvname,append=TRUE, col_names = TRUE)
   }
 
   if(!is.null(fres_current)){
     write("\n# future projection under F current",file=csvname,append=T)
-    tmpfunc(fres_current)
+    tmpfunc(fres_current, label="- Fcurrent")
   }
 
   if(!is.null(fres_HCR)){
     write("\n# future projection under HCR",file=csvname,append=T)
-    tmpfunc(fres_HCR)
+    tmpfunc(fres_HCR, label="- HCR")
   }
 
   if(!is.null(kobeII)){
@@ -921,6 +934,13 @@ out.vpa <- function(res=NULL,    # VPA result
         write_csv(path=csvname,append=T, col_names=TRUE)
   }
 
+  if(!is.null(other_tables)){
+    for(i in seq_len(length(other_tables))){
+      write(str_c("\n# ", names(other_tables)[i]), file=csvname,append=T)
+      other_tables[[i]] %>%
+        write_csv(path=csvname,append=T, col_names=TRUE)      
+    }
+  }
 }
 
 #' csvファイルとしてまとめられた資源計算結果を読み込んでRのオブジェクトにする
@@ -976,7 +996,7 @@ read.vpa <- function(tfile,
         tdat <- sapply((tdat[-1,-1]),as.numeric)
         tmp.names <- lapply(tmp.names,function(x) x[x!=""])
         tmp.names <- lapply(tmp.names,function(x) x[!is.na(x)])
-        if(is.null(dim(tdat))) dim(tdat) <- sapply(tmp.names,length)        
+        if(is.null(dim(tdat))) dim(tdat) <- sapply(tmp.names,length)
         dimnames(tdat) <- tmp.names
         tdat <- as.data.frame(tdat)
       }
@@ -1294,7 +1314,7 @@ convert_2d_future <- function(df, name, label="tmp"){
 
 
 convert_future_list_table <- function(fout_list,name_vector=NULL,beta_vector=NULL,label="tmp"){
-  
+
 
   if(is.null(name_vector)){
     if(!is.null(names(fout_list))) name_vector <- names(fout_list)
@@ -1303,8 +1323,8 @@ convert_future_list_table <- function(fout_list,name_vector=NULL,beta_vector=NUL
 
   if(is.null(beta_vector)){
     beta_vector <- name_vector
-  }    
-  
+  }
+
   res <- purrr::map_dfr(1:length(fout_list),
                  function(i){
                    convert_future_table(fout_list[[i]],label=name_vector[i]) %>%
@@ -1519,11 +1539,11 @@ derive_RP_value <- function(refs_base,RP_name){
 
 #' @details
 #' tidy形式になっているkobeII_dataにおいて、HCR_name, betaの列のラベルの組み合わせを一つの管理方式として、その管理方式ごとに少尉予測の結果を集計する
-#' 
+#'
 
 #' @export
 #'
-#' 
+#'
 #'
 #' @encoding UTF-8
 
@@ -1796,11 +1816,13 @@ make_kobeII_table <- function(kobeII_data,
 #'
 #'
 
-beta.simulation <- function(finput,beta_vector,year.lag=0,type="old",year_beta_change=NULL,
+beta.simulation <- function(finput,beta_vector,
+                            year.lag=0,type="old",year_beta_change=NULL,
                             datainput_setting_extra   =NULL,
                             datainput_setting_original=NULL,
                             label_name = NULL,
-                            output_type="tidy", ncore = 1){
+                            output_type="tidy", ncore = 1,
+                            save_detail=rep(0,length(beta_vector))){
 
   if(!is.null(datainput_setting_extra)) assertthat::assert_that(length(datainput_setting_extra)==length(beta_vector))
   if(!is.null(label_name)){
@@ -1808,7 +1830,8 @@ beta.simulation <- function(finput,beta_vector,year.lag=0,type="old",year_beta_c
   }
   else{
     label_name <- beta_vector
-    }
+  }
+  assertthat::assert_that(length(beta_vector)==length(save_detail))    
 
   tb <- NULL
   future_year <- dimnames(finput$tmb_data$HCR_mat)[[1]]
@@ -1819,6 +1842,8 @@ beta.simulation <- function(finput,beta_vector,year.lag=0,type="old",year_beta_c
     year_column_beta_change <- TRUE
   }
 
+  res_list <- purrr::map(rep(NA, length(beta_vector)), function(x) x)
+  
   if(ncore==1){
     for(i in 1:length(beta_vector)){
       if(type=="old"){
@@ -1831,6 +1856,7 @@ beta.simulation <- function(finput,beta_vector,year.lag=0,type="old",year_beta_c
           finput$tmb_data <- redo_future(datainput_setting_original, datainput_setting_extra[[i]], only_data=TRUE)$data
         }
         fres_base <- do.call(future_vpa,finput)
+        if(save_detail[i]==1) res_list[[i]] <- fres_base
         fres_base <- format_to_old_future(fres_base)
       }
       tmp <- convert_future_table(fres_base,label=label_name[i]) %>%
@@ -1843,21 +1869,33 @@ beta.simulation <- function(finput,beta_vector,year.lag=0,type="old",year_beta_c
     cl <- parallel::makeCluster(ncore, type="FORK")
     doParallel::registerDoParallel(cl)
 
-    tb <- foreach::foreach(i=1:length(beta_vector),.combine="rbind")%dopar%{
+    tb <- foreach::foreach(i=1:length(beta_vector))%dopar%{
       finput$tmb_data$HCR_mat[year_column_beta_change,,"beta"] <- beta_vector[i]
       if(!is.null(finput$MSE_input_data)) finput$MSE_input_data$input$HCR_beta <- beta_vector[i]
       if(!is.null(datainput_setting_extra)){
         finput$tmb_data <- redo_future(datainput_setting_original, datainput_setting_extra[[i]], only_data=TRUE)$data
-      }      
-      fres_base <- do.call(future_vpa,finput)
-      fres_base <- format_to_old_future(fres_base)
-      tmp <- convert_future_table(fres_base,label=label_name[i]) %>%
-        rename(HCR_name=label)  %>% mutate(beta=beta_vector[i])
-      tmp
+      }
+      do.call(future_vpa,finput)      
+#  fres_base <- do.call(future_vpa,finput)
+#      fres_base <- format_to_old_future(fres_base)
+#      tmp <- convert_future_table(fres_base,label=label_name[i]) %>%
+#        rename(HCR_name=label)  %>% mutate(beta=beta_vector[i])
+#      tmp
     }
     parallel::stopCluster(cl)
+    
+    res_list <- tb
+    res_list[save_detail==0] <- NULL
+
+    tb <- purrr::map_dfr(seq_len(length(tb)), function(i){
+      format_to_old_future(tb[[i]]) %>% 
+        convert_future_table(label=label_name[i]) %>%
+        rename(HCR_name=label)  %>% mutate(beta=beta_vector[i])
+    })
   }
-  return(tb)
+  
+  if(sum(save_detail)==0) return(tb)
+  else return(list(tb=tb, res_list=res_list))
 }
 
 
@@ -1906,7 +1944,7 @@ calc_future_perSPR <- function(fout=NULL,
   }
   if(!is.null(fout))  info_source  <- "future"
   if(!is.null(biopar))  info_source  <- "bio" # bioが優先される
-  
+
   fout.tmp <- fout
 
   SPR_multi <- ifelse(SPR_unit=="%", 100, 1)
@@ -1947,7 +1985,7 @@ calc_future_perSPR <- function(fout=NULL,
 
   if(info_source=="vpa"){ # 将来予測結果が与えられない場合にはVPA結果からもってくる
     if(!is.list(target.year)){
-      target.year.char <- as.character(target.year)        
+      target.year.char <- as.character(target.year)
       waa.tmp       <- res_vpa$input$dat$waa      [target.year.char] %>% apply(1,mean)
       maa.tmp       <- res_vpa$input$dat$maa      [target.year.char] %>% apply(1,mean)
       M.tmp         <- res_vpa$input$dat$M        [target.year.char] %>% apply(1,mean)
@@ -1961,13 +1999,13 @@ calc_future_perSPR <- function(fout=NULL,
     else{
       waa.tmp       <- res_vpa$input$dat$waa      [as.character(target.year$waa)      ] %>% apply(1,mean)
       maa.tmp       <- res_vpa$input$dat$maa      [as.character(target.year$maa)      ] %>% apply(1,mean)
-      M.tmp         <- res_vpa$input$dat$M        [as.character(target.year$M.tmp)    ] %>% apply(1,mean)
+      M.tmp         <- res_vpa$input$dat$M        [as.character(target.year$M)    ] %>% apply(1,mean)
       if(!is.null(res_vpa$input$dat$waa.catch)){
         waa.catch.tmp <- res_vpa$input$dat$waa.catch[as.character(target.year$waa.catch)] %>% apply(1,mean)
       }
       else{
         waa.catch.tmp <- waa.tmp
-      }        
+      }
     }}
 
   if(info_source=="bio"){
@@ -2465,11 +2503,12 @@ source_lines <- function(file, lines, encoding="UTF-8",...){
 #'
 #' @param data_future make_future_dataの返り値。これ全体でなくて、$inputのみでもOK
 #'
+#' @export
 
 redo_future <- function(data_future, input_data_list, SR_sd=NULL, SR_b=NULL, only_data=FALSE,is_regime=(class(data_future$input$res_SR)=="fit.SRregime"), ...){
-  
+
   if("input" %in% names(data_future)) input_data <- data_future$input else input_data <- data_future
-  
+
   if(! all(names(input_data_list) %in% names(input_data))) stop("names of input_data_list is invalid!")
 
   input_data[names(input_data_list)] <- input_data_list
@@ -2691,22 +2730,22 @@ detect_plus_group <- function(dres){
 #' @param target 指定するとtargetで指定した列の値のみが抽出される。NULLの場合は全シミュレーションの平均値
 #'
 #' @export
-#' 
+#'
 
 derive_future_summary <- function(res_future, target=NULL){
 
   assertthat::assert_that(class(res_future) == "future_new")
-  
+
   if(is.null(target)){
     tmpfunc <- function(x, fun=mean) apply(x,1,fun)
   }
   if(!is.null(target)){
     tmpfunc <- function(x) x[,target]
-  }  
+  }
 
   biomass <- apply(res_future$naa*res_future$waa,c(2,3),sum)
   Fmean <- apply(res_future$faa,c(2,3),sum)
-    
+
   tibble(
     year    = as.numeric(dimnames(res_future$SR_mat[,,"ssb"])[[1]]),
     SSB     = tmpfunc(res_future$SR_mat[,,"ssb"]),
@@ -2714,11 +2753,11 @@ derive_future_summary <- function(res_future, target=NULL){
     recruit = tmpfunc(res_future$SR_mat[,,"recruit"]),
     intercept = tmpfunc(res_future$SR_mat[,,"intercept"]),
     deviance = tmpfunc(res_future$SR_mat[,,"deviance"]),
-    deviance_sd = tmpfunc(res_future$SR_mat[,,"deviance"],fun=sd),            
+    deviance_sd = tmpfunc(res_future$SR_mat[,,"deviance"],fun=sd),
     catch   = tmpfunc(res_future$HCR_realized[,,"wcatch"]),
     beta    = tmpfunc(res_future$HCR_mat[,,"beta"]),
     Blimit  = tmpfunc(res_future$HCR_mat[,,"Blimit"]),
-    Bban    = tmpfunc(res_future$HCR_mat[,,"Bban"]),        
+    Bban    = tmpfunc(res_future$HCR_mat[,,"Bban"]),
     beta_gamma = tmpfunc(res_future$HCR_realized[,,"beta_gamma"]),
     Fmean      = tmpfunc(Fmean),
     Fratio     = tmpfunc(res_future$HCR_realized[,,"Fratio"]))
@@ -2727,7 +2766,7 @@ derive_future_summary <- function(res_future, target=NULL){
 
 #'
 #' F at ageをVPAの結果から\%SPRで変換したりするための関数
-#' 
+#'
 #' @param res_vpa VPAの結果オブジェクト(Popeの設定やF at ageをこちらからとってくる)
 #' @param data_future 将来予測のためのデータ(生物パラメータを将来予測期間から撮ってくる場合に必要)
 #' @param faa_vector 漁獲圧を代表するベクトル
@@ -2738,17 +2777,17 @@ derive_future_summary <- function(res_future, target=NULL){
 #' @param saa_vector_year 選択率を取り出すときの年の範囲(VPA期間限定)
 #' @param saa_bio_year 選択率をSPRに換算するときに生物パラメータを取り出す年の範囲(data_futureがある場合将来予測年も指定可能。生物パラメータが密度によって変わる場合)
 #' @param saa_bio 選択率をSPRに換算するとき用いる生物パラメータそのものtibble(waa=waa, maa=maa, M=M)として指定する
-#' 
+#'
 #' @export
 #'
-#' 
+#'
 
 convert_Fvector <- function(res_vpa=NULL,
                             res_future = NULL,
                             faa_vector=NULL,
                             faa_vector_year=NULL,
                             faa_bio_year=NULL,
-                            faa_bio=NULL,                            
+                            faa_bio=NULL,
                             saa_vector=NULL,
                             saa_vector_year=NULL,
                             saa_bio_year=NULL,
@@ -2760,10 +2799,10 @@ convert_Fvector <- function(res_vpa=NULL,
     (is.null(saa_bio_year) | is.null(saa_bio)),
     (is.null(faa_bio_year) | is.null(faa_bio))
   )
-  
+
   if(is.null(faa_vector)) faa_vector <- apply_year_colum(res_vpa$faa,target_year=faa_vector_year)
-  if(is.null(saa_vector)) saa_vector <- apply_year_colum(res_vpa$faa,target_year=saa_vector_year)    
-    
+  if(is.null(saa_vector)) saa_vector <- apply_year_colum(res_vpa$faa,target_year=saa_vector_year)
+
   # faa_vectorが何％のSPRにあたるか
   faa_perSPR <- calc_future_perSPR(fout    = res_future,
                                    res_vpa = res_vpa,
@@ -2775,11 +2814,11 @@ convert_Fvector <- function(res_vpa=NULL,
   saa_multiplier <- calc_future_perSPR(fout=res_future,
                                        res_vpa=res_vpa,
                                        Fvector=saa_vector,
-                                       target.year=saa_bio_year, 
+                                       target.year=saa_bio_year,
                                        SPRtarget=faa_perSPR,
                                        biopar=saa_bio)
   # faaの漁獲圧の大きさに相当するsaaの選択率を持ったF at age
-  Fvector <- saa_vector/saa_multiplier$Fratio      
+  Fvector <- saa_vector/saa_multiplier$Fratio
   return(lst(Fvector, faa_perSPR))
 }
 
@@ -2787,20 +2826,20 @@ convert_Fvector <- function(res_vpa=NULL,
 # 縦の行列の年によって足し算する; 関数の汎用版
 #' @export
 
-rowtapply2 <- function(a0,FUN.name){                                                  
+rowtapply2 <- function(a0,FUN.name){
     FUN <- get(FUN.name)
-    yname <- floor(as.numeric(rownames(a0))) 
+    yname <- floor(as.numeric(rownames(a0)))
     res <- matrix(0,length(unique(yname)),ncol(a0))
-    for(i in 1:ncol(a0)){                                                               
-        res[,i] <- tapply(a0[,i],yname,FUN)                                               
+    for(i in 1:ncol(a0)){
+        res[,i] <- tapply(a0[,i],yname,FUN)
     }
-    dimnames(res) <- list(unique(yname),colnames(a0))                                   
-    res                                                                                 
-}    
+    dimnames(res) <- list(unique(yname),colnames(a0))
+    res
+}
 
 #'
 #' kobe.tableをさらにsummaryする
-#' 
+#'
 #' @export
 
 summary_kobe_table <- function(kobe_data){
@@ -2812,8 +2851,8 @@ summary_kobe_table <- function(kobe_data){
                                          rename_all(tmpfunc_, header=names(kobedata)[x]))
     bind_cols(kobedata)
   }
-  
-  final_table1 <- arrange_table(kobe_data) %>% 
+
+  final_table1 <- arrange_table(kobe_data) %>%
     select(id:catch.mean_2031,ssb.mean_2023, ssb.mean_2026, ssb.mean_2031, prob.over.ssbtarget_2031, ends_with("risk_value")) # 必要な列を取り出す
   final_table1 <- final_table1  %>%
     mutate(catch21=final_table1$catch.mean_2021,
@@ -2824,15 +2863,56 @@ summary_kobe_table <- function(kobe_data){
            beta=catch.mean_beta) %>%
     select(-starts_with("catch.mean")) # 平均しおわったcatchを削除する
 #  final_table1 <- bind_cols(filter(final_table1,id==1) %>% rename_all(tmpfunc_,header="M1"),
-#                            filter(final_table1,id==2) %>% rename_all(tmpfunc_,header="M2")) 
+#                            filter(final_table1,id==2) %>% rename_all(tmpfunc_,header="M2"))
   final_table1 <-final_table1 %>%
-    select(M1_HCR_name, M1_beta,              
+    select(M1_HCR_name, M1_beta,
            ends_with("prob.over.ssbtarget_2031"),
            ends_with("catch21"),ends_with("catch2223"),ends_with("catch2430"),ends_with("catch2131"),
            ends_with("ssb.mean_2023"),ends_with("ssb.mean_2026"),ends_with("ssb.mean_2031"),
            ends_with("bban.risk_value"),ends_with("blimit.risk_value"),ends_with("catch.risk_value"),
            ends_with("redzone.risk_value"),ends_with("overfishing.risk_value")) %>%
     arrange(desc(M1_catch21))
-  
+
   return(final_table1)
 }
+
+#'
+#' VPAデータが1年分追加されたダミーデータを生成する
+#' 
+#' @export
+#'
+
+create_dummy_vpa <- function(res_vpa){
+
+  res_vpa_updated <- res_vpa
+
+  add_1year <- function(naa){
+    nyear <- ncol(naa)
+    year_name <- colnames(naa) %>% as.numeric()
+    year_name <- c(year_name,max(year_name)+1)
+    nage  <- nrow(naa)    
+    empty_matrix <- matrix(0, nage, nyear+1)
+    dimnames(empty_matrix) <- list(rownames(naa), year_name)
+    
+    empty_matrix[,-nyear] <- as.matrix(naa)
+    empty_matrix[, nyear] <- naa[,nyear]
+    as.data.frame(empty_matrix)
+  }
+
+  res_vpa_updated$naa           <- add_1year(res_vpa$naa)
+  res_vpa_updated$faa           <- add_1year(res_vpa$faa)
+  res_vpa_updated$input$dat$waa <- add_1year(res_vpa$input$dat$waa)
+  res_vpa_updated$input$dat$maa <- add_1year(res_vpa$input$dat$maa)
+  res_vpa_updated$input$dat$M   <- add_1year(res_vpa$input$dat$M  )
+  res_vpa_updated$input$dat$caa <- add_1year(res_vpa$input$dat$caa)  
+
+  if(!is.null(res_vpa_updated$input$dat$waa.catch))
+    res_vpa_updated$input$dat$waa.catch <- add_1year(res_vpa$input$dat$waa.catch)    
+
+  res_vpa_updated$baa <- res_vpa_updated$input$dat$waa * res_vpa_updated$naa
+  res_vpa_updated$ssb <- res_vpa_updated$input$dat$maa * res_vpa_updated$baa
+  res_vpa_updated$wcca <- res_vpa_updated$input$dat$caa * res_vpa_updated$input$dat$waa  
+  
+  return(res_vpa_updated)
+}
+

@@ -233,21 +233,29 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
 
   #1-2: 選択率更新法によるtuning ----
   
-  #選択率更新法：選択率の計算方法は，最高齢を１とする．最小二乗法
+  #選択率更新法：選択率の計算方法は，一番高いFを１とする．最小二乗法
   res_vpa_base0_tune2l <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
                               Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.def="max",sel.update=TRUE, est.method="ls", b.est=FALSE,abund=c("B","B"))
   expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune2l$naa),2)),true_number,tol=0.0001)
   expect_equal(as.numeric(round(res_vpa_base0_tune2l$sigma,2)),true_sd,tol=0.01)
   expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune2l$saa),2)),c(0.42,0.58,1.00,1.00))
   
-  #選択率更新法：選択率の計算方法は，最高齢を１とする．最尤法
+  #選択率更新法：選択率の計算方法は，最高齢を１とする．最小二乗法
+  res_vpa_base0_tune2l_mxa <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
+                              Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.def="maxage",sel.update=TRUE, est.method="ls", b.est=FALSE,abund=c("B","B"))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune2l_mxa $naa),2)),true_number,tol=0.0001)
+  expect_equal(as.numeric(round(res_vpa_base0_tune2l_mxa $sigma,2)),true_sd,tol=0.01)
+  expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune2l_mxa $saa),2)),c(0.42,0.58,1.00,1.00))
+  
+  
+  #選択率更新法：選択率の計算方法は，一番高いFを１とする．最尤法
   res_vpa_base0_tune2m <- vpa(vpadat_base0, tf.year=2015:2016, last.catch.zero = FALSE, 
                               Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.def="max",sel.update=TRUE, est.method="ml", b.est=FALSE,abund=c("B","B"))
   expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune2m$naa),2)),true_number,tol=0.0001)
   expect_equal(as.numeric(round(res_vpa_base0_tune2m$sigma,2)),rep(true_sd,2), tol=0.01)
   expect_equal(as.numeric(round(rowMeans(res_vpa_base0_tune2m$saa),2)),c(0.42,0.58,1.00,1.00))
   
-  #選択率更新法：選択率の計算方法は，最高齢を１とする．最小二乗法．b推定する
+  #選択率更新法：選択率の計算方法は，一番高いFを１とする．最小二乗法．b推定する
   res_vpa_estb_tune2l_b <- vpa(vpadat_estb, tf.year=1997:1999, last.catch.zero = FALSE, 
                                 Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.def="max",sel.update=TRUE, est.method="ls", b.est=TRUE,abund=c("N","N","N","N","N","N"),fc.year=1998:2000,min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3))
   expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune2l_b$naa),2)),c(705.34,343.43,145.06,63.21))
@@ -255,7 +263,24 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
   expect_equal(as.numeric(round(res_vpa_estb_tune2l_b$sigma,2)),0.18)
   expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune2l_b$saa),2)),c(0.46,0.65,1.00,1.00))
   
-  #選択率更新法：選択率の計算方法は，最高齢を１とする．最尤法．b推定する
+  #選択率更新法：選択率の計算方法は，最高齢のFを１とする．最小二乗法．b推定する
+  res_vpa_estb_tune2l_b_mxa <- vpa(vpadat_estb, tf.year=1997:1999, last.catch.zero = FALSE, 
+                               Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.def="maxage",sel.update=TRUE, est.method="ls", b.est=TRUE,abund=c("N","N","N","N","N","N"),fc.year=1998:2000,min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune2l_b_mxa$naa),2)),c(705.34,343.43,145.06,63.21))
+  expect_equal(as.numeric(round(res_vpa_estb_tune2l_b_mxa$b,2)),c(0.97,0.51,0.71,0.50,0.64,1.11))
+  expect_equal(as.numeric(round(res_vpa_estb_tune2l_b_mxa$sigma,2)),0.18)
+  expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune2l_b_mxa$saa),2)),c(0.46,0.65,1.00,1.00))
+  
+  #選択率更新法：選択率の計算方法は，最高齢のFを１とする．最小二乗法．b推定する.aveS=FALSE
+  res_vpa_estb_tune2l_b_mxa_aveS <- vpa(vpadat_estb, tf.year=1997:1999, last.catch.zero = FALSE, 
+                                   Pope = TRUE,  p.init = 0.5, tune=TRUE, term.F="max",sel.def="maxage",sel.update=TRUE, est.method="ls", b.est=TRUE,abund=c("N","N","N","N","N","N"),fc.year=1998:2000,min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),ave_S=FALSE)
+  expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune2l_b_mxa_aveS$naa),2)),c(705.26,343.41,145.03,63.19))
+  expect_equal(as.numeric(round(res_vpa_estb_tune2l_b_mxa_aveS$b,2)),c(0.97,0.51,0.71,0.50,0.64,1.11))
+  expect_equal(as.numeric(round(res_vpa_estb_tune2l_b_mxa_aveS$sigma,2)),0.18)
+  expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune2l_b_mxa_aveS$saa),2)),c(0.46,0.65,1.00,1.00))
+  
+  
+  #選択率更新法：選択率の計算方法は，一番高いFを１とする．最尤法．b推定する
   res_vpa_estb_tune2m_b <- vpa(vpadat_estb, tf.year=1997:1999, last.catch.zero = FALSE, 
                                 Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.def="max",sel.update=TRUE, est.method="ml", b.est=TRUE,abund=c("N","N","N","N","N","N"),fc.year=1998:2000,min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3))
   expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune2m_b$naa),2)),c(711.09,345.43,145.83,63.58))
@@ -263,7 +288,16 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
   expect_equal(as.numeric(round(res_vpa_estb_tune2m_b$sigma,2)),c(0.18,0.16,0.11,0.13,0.17,0.28))
   expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune2m_b$saa),2)),c(0.46,0.65,1.00,1.00))
   
-  #選択率更新法：選択率の計算方法は，最高齢を１とする．最尤法．b推定する,alphaを与える
+  #選択率更新法：選択率の計算方法は，最高齢のFを１とする．最尤法．b推定する
+  res_vpa_estb_tune2m_b_mxa <- vpa(vpadat_estb, tf.year=1997:1999, last.catch.zero = FALSE, 
+                               Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.def="maxage",sel.update=TRUE, est.method="ml", b.est=TRUE,abund=c("N","N","N","N","N","N"),fc.year=1998:2000,min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune2m_b$naa),2)),c(711.09,345.43,145.83,63.58))
+  expect_equal(as.numeric(round(res_vpa_estb_tune2m_b$b,2)),c(1.02,0.54,0.73,0.52,0.67,1.16))
+  expect_equal(as.numeric(round(res_vpa_estb_tune2m_b$sigma,2)),c(0.18,0.16,0.11,0.13,0.17,0.28))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune2m_b$saa),2)),c(0.46,0.65,1.00,1.00))
+  
+
+  #選択率更新法：選択率の計算方法は，一番高いFを１とする．最尤法．b推定する,alphaを与える
   res_vpa_estb_tune2m_b_alpha <- vpa(vpadat_estb, tf.year=1997:1999, last.catch.zero = FALSE, 
                                Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.def="max",sel.update=TRUE, est.method="ml", b.est=TRUE,abund=c("N","N","N","N","N","N"),fc.year=1998:2000,min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),alpha=0.3)
   expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune2m_b_alpha $naa),2)),c(935.10,501.99,257.51,291.44))
@@ -272,13 +306,13 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
   expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune2m_b_alpha $saa),2)),c(0.72,0.86,0.98,0.30))
   expect_equal(as.numeric(res_vpa_estb_tune2m_b_alpha $faa[3,]*0.3),as.numeric(res_vpa_estb_tune2m_b_alpha $faa[4,]))
   
-  #選択率更新法：選択率の計算方法は，最高齢を１とする．最尤法．b推定する.指標の2番目と3番目のシグマは同じ
+  #選択率更新法：選択率の計算方法は，一番高いFを１とする．最尤法．b推定する.指標の2番目と3番目のシグマは同じ
   res_vpa_estb_tune2m_b_sigma <- vpa(vpadat_estb, tf.year=1997:1999, last.catch.zero = FALSE, 
                                Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.def="max",sel.update=TRUE, est.method="ml", b.est=TRUE,abund=c("N","N","N","N","N","N"),fc.year=1998:2000,min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),sigma.constraint=c(1,2,2,3,4,5))
   expect_equal(res_vpa_estb_tune2m_b_sigma$sigma[[2]],res_vpa_estb_tune2m_b_sigma$sigma[[3]])
   
   
-  #選択率更新法：選択率の計算方法は，最高齢を１とする．最尤法．b推定する．1部のｂは固定
+  #選択率更新法：選択率の計算方法は，一番高いFを１とする．最尤法．b推定する．1部のｂは固定
   res_vpa_estb_tune2m_b_fix <- vpa(vpadat_estb, tf.year=1997:1999, last.catch.zero = FALSE, 
                                 Pope = TRUE, p.init = 0.5, tune=TRUE, term.F="max",sel.def="max",sel.update=TRUE, est.method="ml", b.est=TRUE,abund=c("N","N","N","N","N","N"),fc.year=1998:2000,min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),b.fix=c(NA,0.7,NA,NA,NA,1))
   expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune2m_b_fix$naa),2)),c(714.73,346.69,146.31,63.81))
@@ -324,7 +358,7 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
   expect_equal(as.numeric(round(res_vpa_estb_tune3mb_fix $sigma,2)),c(0.18,0.17,0.11,0.13,0.17,0.29))
   expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune3mb_fix $saa),2)),c(0.15,0.21,0.32,0.32))
   
-  #選択率更新法：Baranov. 選択率の計算方法は，最高齢を１とする．最小二乗法．b推定する
+  #選択率更新法：Baranov. 選択率の計算方法は，一番高いFを１とする．最小二乗法．b推定する
   res_vpa_estb_tune2l_b_baranov <- vpa(vpadat_estb, tf.year=1997:1999, last.catch.zero = FALSE, 
                                Pope = FALSE, p.init = 0.5, tune=TRUE, term.F="max",sel.def="max",sel.update=TRUE, est.method="ls", b.est=TRUE,abund=c("N","N","N","N","N","N"),fc.year=1998:2000,min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3))
   expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune2l_b_baranov$naa),2)),c(687.09,333.39,140.30,61.13))

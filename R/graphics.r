@@ -335,9 +335,10 @@ plot_SRdata <- function(SRdata, type=c("classic","gg")[1]){
 #' @export
 #'
 
-SRplot_gg <- plot.SR <- plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,ylabel="尾",
-                                 labeling.year=NULL,add.info=TRUE, recruit_intercept=0,
-                                 plot_CI=FALSE, CI=0.9){
+plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,ylabel="尾",
+                    labeling.year=NULL,add.info=TRUE, recruit_intercept=0,
+                    plot_CI=FALSE, CI=0.9, shape_custom=c(21,3),
+                    add_graph=NULL){
 
   if(is.null(refs$Blimit) && !is.null(refs$Blim)) refs$Blimit <- refs$Blim
 
@@ -352,7 +353,7 @@ SRplot_gg <- plot.SR <- plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlab
   SRdata <- as_tibble(SR_result$input$SRdata) %>%
       mutate(type="obs")
   if(is.null(SRdata$weight)) SRdata$weight <- SR_result$input$w
-  SRdata <- SRdata %>% mutate(weight=factor(weight,levels=c("0","1")))
+  SRdata <- SRdata %>% mutate(weight=factor(weight,levels=c("1","0")))
   SRdata.pred <- as_tibble(SR_result$pred) %>%
     mutate(type="pred", year=NA, R=R)
   
@@ -370,12 +371,14 @@ SRplot_gg <- plot.SR <- plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlab
   year.max <- max(alldata$year,na.rm=T)
   tmp <- 1950:2030
   if(is.null(labeling.year)) labeling.year <- c(tmp[tmp%%5==0],year.max)
-  alldata <- alldata %>% mutate(pick.year=ifelse(year%in%labeling.year,year,""))
+    alldata <- alldata %>% mutate(pick.year=ifelse(year%in%labeling.year,year,""))
 
   g1 <- ggplot(data=alldata,mapping=aes(x=SSB,y=R)) +
     stat_function(fun=SRF,args=list(a=SR_result$pars$a,
                                     b=SR_result$pars$b),color="deepskyblue3",lwd=1.3,
                   n=5000)
+
+  if(!is.null(add_graph)) g1 <- g1+add_graph  
 
   if(isTRUE(plot_CI)){
     g1 <- g1+
@@ -399,7 +402,7 @@ SRplot_gg <- plot.SR <- plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlab
                        aes(y=R,x=SSB),color="black") +
     geom_point(data=dplyr::filter(alldata,type=="obs"),
                aes(y=R,x=SSB,shape=weight),fill="white") +
-    scale_shape_manual(values = c(3, 21)) +
+    scale_shape_manual(values = shape_custom) +
     ggrepel::geom_text_repel(data=dplyr::filter(alldata,type=="obs"),
                              segment.alpha=0.5,nudge_y=5,
                              aes(y=R,x=SSB,label=pick.year)) +
@@ -655,6 +658,7 @@ SRregime_plot <- plot_SRregime <- function (SRregime_result,xscale=1000,xlabel="
 #' @param font.size フォントの大きさ
 #' @param ncol 図を並べるときの列数
 #' @param legend.position 凡例の位置。top, right, left, bottomなど
+#' @param average_lwd 将来予測の平均値の線の太さ. 基本は1.
 #'
 #' @encoding UTF-8
 #' @export
@@ -677,6 +681,7 @@ plot_futures <- function(vpares=NULL,
                          MSY=0,Umsy=0,
                          SPRtarget=NULL,
                          exclude.japanese.font=FALSE, # english version
+                         average_lwd=1,
                          n_example=3, # number of examples
                          example_width=0.7, # line width of examples
                          future.replicate=NULL,
@@ -836,6 +841,10 @@ plot_futures <- function(vpares=NULL,
 
   options(warn=org.warn)
 
+  if (average_lwd == example_width) {
+      warning("average_lwd と example_width が同じ太さです. 図の脚注との整合を確認してください.")
+  }
+
   g1 <- future_tibble.qt %>% dplyr::filter(!is.na(stat)) %>%
     ggplot()
 
@@ -851,7 +860,7 @@ plot_futures <- function(vpares=NULL,
       geom_ribbon(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario!="VPA" & year %in% minyear:maxyear),
                   mapping=aes(x=year,ymin=low,ymax=high,fill=scenario),alpha=0.4)+
       geom_line(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario!="VPA" & year %in% minyear:maxyear),
-                mapping=aes(x=year,y=mean,color=scenario),lwd=1)
+                mapping=aes(x=year,y=mean,color=scenario),lwd=average_lwd)
   }
   #    else{
   #        g1 <- g1+
@@ -902,18 +911,24 @@ plot_futures <- function(vpares=NULL,
                                        color=scenario),
                            lwd=example_width)
     }
-    g1 <- g1+scale_alpha_discrete(guide=FALSE)
+    g1 <- g1+scale_alpha_discrete(guide="none")
   }
+
+  caption_string <- str_c("(塗り:", CI_range[1]*100,"-",CI_range[2]*100,
+                         "%予測区間, ",
+                         ifelse(average_lwd < example_width, "細い", "太い"),
+                         "実線: 平均値",
+                         dplyr::case_when(n_example>0 & example_width < average_lwd ~ ", 細い実線: シミュレーションの1例)",
+                                          n_example>0 & example_width > average_lwd ~ ", 太い実線: シミュレーションの1例)",
+                                          n_example>0 & example_width == average_lwd ~ ", 薄い実線: シミュレーションの1例)",
+                                          TRUE ~ ")"))
 
   g1 <- g1 + guides(lty=guide_legend(ncol=3),
                     fill=guide_legend(ncol=3),
                     col=guide_legend(ncol=3))+
     theme_SH(base_size=font.size,legend.position=legend.position)+
     scale_color_hue(l=40)+
-    labs(caption = str_c("(塗り:", CI_range[1]*100,"-",CI_range[2]*100,
-                         "%予測区間, 太い実線: 平均値",
-                         ifelse(n_example>0,", 細い実線: シミュレーションの1例)",")")
-    ))
+    labs(caption = caption_string)
 
   g1 <- g1 +
     geom_line(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario=="VPA"),
@@ -1330,14 +1345,15 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
     arrange(year)
   if(ylab.type=="F") UBdata <- UBdata %>% mutate(Uratio=Fratio)
 
+  UBdata <- UBdata %>% mutate(year_group=1)  
   if(plot.year[1]!="all") {
-    # diff.year <- plot.year[which(diff(plot.year)>1)+1]
-    UBdata <- UBdata %>% filter(year %in% plot.year)
+    diff.year <- plot.year[which(diff(plot.year)>1)+1]
+    UBdata <- UBdata %>% filter(year %in% plot.year) 
 
-    # for(i in 1:length(diff.year)){
-    #   UBdata <- UBdata %>%
-    #     mutate(year_group = ifelse(year >= diff.year[i], year_group+1, year_group))
-    # }
+    for(i in 1:length(diff.year)){
+       UBdata <- UBdata %>%
+         mutate(year_group = ifelse(year >= diff.year[i], year_group+1, year_group))
+     }
   }
 
   if(is.null(labeling.year)){
@@ -1346,8 +1362,7 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
   }
 
   UBdata <- UBdata %>%
-    mutate(year.label=ifelse(year%in%labeling.year,year,""),
-           year_group=1)
+    mutate(year.label=ifelse(year%in%labeling.year,year,""))
 
   max.B <- max(c(UBdata$Bratio,xscale),na.rm=T)
   max.U <- max(c(UBdata$Uratio,yscale),na.rm=T)
@@ -1898,3 +1913,44 @@ plot_SR_AReffect <- function(res){
     return(g)
 }
 
+#' @encoding UTF-8
+#' @export
+
+
+plot_worm <- function(kobe_data){
+    
+#  HCR_selection <- read_csv("HCR_selection.csv") %>%
+#    rename(HCR_category="HCR category",
+#           num=`Serial number`,
+#           stock=`Appied stock`) %>%
+#    dplyr::filter(!is.na(HCR_category)) %>%
+#    mutate(size=ifelse(Type=="B"|Type=="SS", 3, 1)) %>%
+#    mutate(size=factor(size))
+
+    mean_data <- bind_rows(kobe_data$catch.mean,
+                           kobe_data$ssb.mean  ,
+                           kobe_data$ssb.lower10percent) %>%
+      pivot_longer(cols=c(-HCR_name,-beta,-stat_name)) %>%
+      rename(Year=name) %>%
+      mutate(Year=as.numeric(Year), MT=value/1000) #%>%
+#      left_join(HCR_selection) %>%
+#      left_join(tibble(stat_name =c("catch.mean","ssb.mean","ssb.ci10"),
+#                       stat_name2=c("Catch (average)",     "SB (average)", "SB (L10%)"))) %>%
+#      mutate(Type=factor(Type, levels=c("B","S","SS","A"))) %>%
+#      dplyr::filter(use==1)
+
+    g_worm <- mean_data %>% 
+      ggplot() +
+      geom_line(aes(x=Year, y=MT, color=HCR_name, group=HCR_name),
+                alpha=0.8) +
+      ylim(0,NA) +
+      facet_wrap(.~stat_name, scale="free_y") + theme_SH(base_size=14) +
+      coord_cartesian(ylim=c(0,NA)) +
+      ylab("1000 MT") +
+#      scale_color_manual(values=c(1,gray(0.2),2,3)) +      
+#      scale_size_manual(values=c(1,0.5,1,0.5)) +
+        theme(legend.position="bottom")
+
+    g_worm
+    
+}

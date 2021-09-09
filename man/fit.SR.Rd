@@ -44,8 +44,7 @@ fit.SR(
 
 \item{HS_fix_b}{SR=HSのとき、折れ点bを固定して計算したい時に値を代入。デフォルットはNULL。ただし、min(SSB)/100より小さい値は入れないこと。}
 
-\item{gamma}{\code{SR="Mesnil"}のときに使用するsmoothing parameter
-# @param do_check.SRfit 計算が終わったあとでdo_check.SRfitを実施し、収束していなかった場合に１回だけ再計算するか（余計に時間がかかる）。デフォルトはFALSE}
+\item{gamma}{\code{SR="Mesnil"}のときに使用するsmoothing parameter}
 }
 \value{
 以下の要素からなるリスト
