@@ -658,6 +658,7 @@ SRregime_plot <- plot_SRregime <- function (SRregime_result,xscale=1000,xlabel="
 #' @param font.size フォントの大きさ
 #' @param ncol 図を並べるときの列数
 #' @param legend.position 凡例の位置。top, right, left, bottomなど
+#' @param average_lwd 将来予測の平均値の線の太さ. 基本は1.
 #'
 #' @encoding UTF-8
 #' @export
@@ -680,6 +681,7 @@ plot_futures <- function(vpares=NULL,
                          MSY=0,Umsy=0,
                          SPRtarget=NULL,
                          exclude.japanese.font=FALSE, # english version
+                         average_lwd=1,
                          n_example=3, # number of examples
                          example_width=0.7, # line width of examples
                          future.replicate=NULL,
@@ -839,6 +841,10 @@ plot_futures <- function(vpares=NULL,
 
   options(warn=org.warn)
 
+  if (average_lwd == example_width) {
+      warning("average_lwd と example_width が同じ太さです. 図の脚注との整合を確認してください.")
+  }
+
   g1 <- future_tibble.qt %>% dplyr::filter(!is.na(stat)) %>%
     ggplot()
 
@@ -854,7 +860,7 @@ plot_futures <- function(vpares=NULL,
       geom_ribbon(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario!="VPA" & year %in% minyear:maxyear),
                   mapping=aes(x=year,ymin=low,ymax=high,fill=scenario),alpha=0.4)+
       geom_line(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario!="VPA" & year %in% minyear:maxyear),
-                mapping=aes(x=year,y=mean,color=scenario),lwd=1)
+                mapping=aes(x=year,y=mean,color=scenario),lwd=average_lwd)
   }
   #    else{
   #        g1 <- g1+
@@ -905,18 +911,24 @@ plot_futures <- function(vpares=NULL,
                                        color=scenario),
                            lwd=example_width)
     }
-    g1 <- g1+scale_alpha_discrete(guide=FALSE)
+    g1 <- g1+scale_alpha_discrete(guide="none")
   }
+
+  caption_string <- str_c("(塗り:", CI_range[1]*100,"-",CI_range[2]*100,
+                         "%予測区間, ",
+                         ifelse(average_lwd < example_width, "細い", "太い"),
+                         "実線: 平均値",
+                         dplyr::case_when(n_example>0 & example_width < average_lwd ~ ", 細い実線: シミュレーションの1例)",
+                                          n_example>0 & example_width > average_lwd ~ ", 太い実線: シミュレーションの1例)",
+                                          n_example>0 & example_width == average_lwd ~ ", 薄い実線: シミュレーションの1例)",
+                                          TRUE ~ ")"))
 
   g1 <- g1 + guides(lty=guide_legend(ncol=3),
                     fill=guide_legend(ncol=3),
                     col=guide_legend(ncol=3))+
     theme_SH(base_size=font.size,legend.position=legend.position)+
     scale_color_hue(l=40)+
-    labs(caption = str_c("(塗り:", CI_range[1]*100,"-",CI_range[2]*100,
-                         "%予測区間, 太い実線: 平均値",
-                         ifelse(n_example>0,", 細い実線: シミュレーションの1例)",")")
-    ))
+    labs(caption = caption_string)
 
   g1 <- g1 +
     geom_line(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario=="VPA"),
