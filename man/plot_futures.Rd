@@ -27,6 +27,7 @@ plot_futures(
   Umsy = 0,
   SPRtarget = NULL,
   exclude.japanese.font = FALSE,
+  average_lwd = 1,
   n_example = 3,
   example_width = 0.7,
   future.replicate = NULL,
@@ -76,6 +77,8 @@ plot_futures(
 \item{SPRtarget}{MSYのときのSPRの値}
 
 \item{exclude.japanese.font}{日本語を図中に表示しない}
+
+\item{average_lwd}{将来予測の平均値の線の太さ. 基本は1.}
 
 \item{n_example}{個々のシミュレーションの例を示す数}
 
