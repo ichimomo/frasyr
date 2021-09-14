@@ -841,7 +841,6 @@ out.vpa <- function(res=NULL,    # VPA result
       write("\n# SR fit data",file=csvname,append=T)
       srres$input$SRdata %>% as_tibble() %>%  mutate(weight=srres$input$w) %>%
         write_csv(path=csvname,append=T,col_names=TRUE)
-      
       write("\n# SR fit resutls",file=csvname,append=T)      
       sr_summary <- get_summary_(srres)
       write_csv(sr_summary,path=csvname,append=T,
@@ -863,7 +862,6 @@ out.vpa <- function(res=NULL,    # VPA result
       if(!is.null(srres$steepness)) partable <- partable %>% left_join(srres$steepness)
       # tentative
       write_csv(partable, path=csvname,append=T,col_names=TRUE)
-
     }
     if(class(srres)=="SRfit.average"){
       write("\n# SR fit data",file=csvname,append=T)
@@ -893,6 +891,12 @@ out.vpa <- function(res=NULL,    # VPA result
 
     write(str_c("\n# future numbers at age",label), file=csvname,append=T)
     write.table2(apply(fres$naa,c(1,2),mean),title.tmp="Average future numbers at age")
+
+    write(str_c("\n# future maturity at age",label), file=csvname,append=T)
+    write.table2(apply(fres$maa,c(1,2),mean),title.tmp="Average maturity numbers at age")
+
+    write(str_c("\n# future weight at age",label), file=csvname,append=T)
+    write.table2(apply(fres$waa,c(1,2),mean),title.tmp="Average weight numbers at age")    
 
     write(str_c("\n# future total biomass",label), file=csvname,append=T)
     make_summary_table(fres$vbiom,1,probs=ci.future) %>%
