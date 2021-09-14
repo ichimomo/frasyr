@@ -895,8 +895,11 @@ out.vpa <- function(res=NULL,    # VPA result
     write(str_c("\n# future maturity at age",label), file=csvname,append=T)
     write.table2(apply(fres$maa,c(1,2),mean),title.tmp="Average maturity numbers at age")
 
-    write(str_c("\n# future weight at age",label), file=csvname,append=T)
-    write.table2(apply(fres$waa,c(1,2),mean),title.tmp="Average weight numbers at age")    
+    write(str_c("\n# future weight (for biomass) at age",label), file=csvname,append=T)
+    write.table2(apply(fres$waa,c(1,2),mean),title.tmp="Average weight numbers at age")
+
+    write(str_c("\n# future weight (for catch) at age",label), file=csvname,append=T)
+    write.table2(apply(fres$waa.catch,c(1,2),mean),title.tmp="Average weight numbers at age")        
 
     write(str_c("\n# future total biomass",label), file=csvname,append=T)
     make_summary_table(fres$vbiom,1,probs=ci.future) %>%
