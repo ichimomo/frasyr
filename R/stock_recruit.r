@@ -473,11 +473,10 @@ fit.SR <- function(SRdata,
 
   Res$loglik <- loglik <- -opt$value
 
-  if(SR=="Mesnil") Res$pars[5] <- gamma
 
-  if(SR!="Mesnil") names(Res$pars) <- c("a","b","sd","rho") else names(Res$pars) <- c("a","b","sd","rho","gamma")
+  names(Res$pars) <- c("a","b","sd","rho")
   Res$pars <- data.frame(t(Res$pars))
-  #  Res$gamma <- gamma
+  #Res$gamma <- gamma
 
   ssb.tmp <- seq(from=0,to=max(ssb)*max.ssb.pred,length=100)
   R.tmp <- sapply(1:length(ssb.tmp), function(i) SRF(ssb.tmp[i],a,b))
@@ -490,7 +489,10 @@ fit.SR <- function(SRdata,
   Res$BIC <- -2*loglik+k*log(NN)
 
   if(!is.null(bio_par)){
-    Res$steepness <- calc_steepness(SR=SR,Res$pars,bio_par$M,bio_par$waa,bio_par$maa,plus_group=plus_group)
+    if(SR!="Mesnil") Res$steepness <- calc_steepness(SR=SR,Res$pars,bio_par$M,bio_par$waa,bio_par$maa,plus_group=plus_group) else{ #add gamma to Res$pars if SR=Mesnil
+      pars_and_gamma <- data.frame(Res$pars,gamma)
+      Res$steepness <- calc_steepness(SR=SR,pars_and_gamma,bio_par$M,bio_par$waa,bio_par$maa,plus_group=plus_group)
+    }
   }
 
   class(Res) <- "fit.SR"
