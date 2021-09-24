@@ -992,7 +992,8 @@ fit.SRregime <- function(
   max.ssb.pred = 1.3,
   hessian = FALSE,
   bio_par = NULL,
-  plus_group = TRUE
+  plus_group = TRUE,
+  gamma = 0.001
 ) {
   argname <- ls()
   arglist <- lapply(argname,function(xx) eval(parse(text=xx)))
@@ -1027,6 +1028,7 @@ fit.SRregime <- function(
   if (SR=="HS") SRF <- function(x,a,b) ifelse(x>b,b*a,x*a)
   if (SR=="BH") SRF <- function(x,a,b) a*x/(1+b*x)
   if (SR=="RI") SRF <- function(x,a,b) a*x*exp(-b*x)
+  if (SR=="Mesnil") SRF <- function(x,a,b) 0.5*a*(x+sqrt(b^2+gamma^2/4)-sqrt((x-b)^2+gamma^2/4))
 
   obj.f <- function(a,b,out="nll"){ #a,bはベクトル
     resid <- NULL
@@ -1065,7 +1067,7 @@ fit.SRregime <- function(
   }
   b_grid <- NULL
   for(i in unique(b_key)){
-    if (SR=="HS") {
+    if (SR=="HS" | SR=="Mesnil") {
       b_range <- range(ssb[b_key==i])
     } else {b_range <- range(1/ssb[b_key==i])}
     b_grid <- cbind(b_grid,seq(b_range[1],b_range[2],length=length))
@@ -1084,7 +1086,7 @@ fit.SRregime <- function(
 
       ab_init <- as.numeric(ab_grid[which.min(init_list),])
       init <- log(ab_init[1:max(a_key)])
-      if (SR=="HS") {
+      if (SR=="HS" | SR=="Mesnil") {
         for(i in unique(b_key)) {
           init <- c(init,-log(max(0.000001,(max(ssb[b_key==i])-min(ssb[b_key==i]))/max(0.000001,(ab_init[max(a_key)+i]-min(ssb[b_key==i])))-1)))
         }
@@ -1096,7 +1098,7 @@ fit.SRregime <- function(
     init <- p0
   }
 
-  if (SR=="HS") {
+  if (SR=="HS" | SR=="Mesnil") {
     obj.f2 <- function(x) {
       a <- exp(x[1:max(a_key)])
       b <- b_range[1,]+(b_range[2,]-b_range[1,])/(1+exp(-x[(max(a_key)+1):(max(a_key)+max(b_key))]))
@@ -1119,7 +1121,7 @@ fit.SRregime <- function(
   Res$opt <- opt
 
   a <- exp(opt$par[1:max(a_key)])
-  if (SR=="HS") {
+  if (SR=="HS" | SR=="Mesnil") {
     b <- b_range[1,]+(b_range[2,]-b_range[1,])/(1+exp(-opt$par[(1+max(a_key)):(max(a_key)+max(b_key))]))
   } else {
     b <- exp(opt$par[(1+max(a_key)):(max(a_key)+max(b_key))])
@@ -1184,7 +1186,8 @@ fit.SRregime <- function(
   class(Res) <- "fit.SRregime"
 
   if(!is.null(bio_par)){
-      par.matrix <- Res$regime_pars[c("a","b")]
+    if(SR!="Mesnil") par.matrix <- Res$regime_pars[c("a","b")]
+    else par.matrix <- tibble(Res$regime_pars[c("a","b")],gamma=gamma)
       Res$steepness <- purrr::map_dfr(seq_len(nrow(par.matrix)),
                                 function(i){
                                     calc_steepness(SR=SR,rec_pars=par.matrix[i,],M=bio_par$M,waa=bio_par$waa,maa=bio_par$maa,
