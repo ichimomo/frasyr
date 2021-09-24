@@ -436,9 +436,23 @@ test_that("check matching of fit.SRregime and fit.SR",{
 test_that("fit.SR_tolのテスト",{
   
   SRdata <- get.SRdata(res_vpa)
-  res1 <- fit.SR_tol(SRdata=SRdata, SR="HS", method="L1")
 
- 
+  # fit.SR_tol
+  res1 <- fit.SR_tol(SRdata=SRdata, SR="HS", method="L1", AR=0)
+  # fit.SR original
+  res1_org <- fit.SR(SRdata=SRdata, SR="HS", method="L1", AR=0)
+  # chec.SRfit
+  res1_check <- check.SRfit(res1_org)
+
+  # check.SRfitのflagで5番目にflagがたつ（同じ尤度で複数のパラメータ）
+  expect_equal(res1_check$flag,c(0,0,0,0,1))
+  # check.SRfitのoptimumとres1の$parsは同じ
+  expect_equal(res1_check$optimum$pars,res1$pars)
+  # res1_orgのパラメータとの比較; 相対値で見るとそこまで違わないが...
+  expect_equal(as.numeric(round(res1$pars/res1_org$pars,4))==c(1,1,1,NaN),
+               c(FALSE,FALSE,FALSE,NA))
+    
+  
   # reimeありでのテスト。時間かかるのでコメントアウト
   #res2 <- fit.SR_tol(SRdata=SRdata, SR="HS", method = "L2",
   #                   regime.year = c(1998), regime.key = 0:1,
