@@ -277,7 +277,7 @@ plot_SRdata <- function(SRdata, type=c("classic","gg")[1]){
   }
   else{
     allR <- SRdata$R
-  }  
+  }
   if(type=="classic"){
     plot(SRdata$SSB,SRdata$R,xlab="SSB",ylab="R",xlim=c(0,max(SRdata$SSB)),ylim=c(0,max(allR)))
     if(is_release_data)  points(SRdata$SSB,allR,col=2,pch=3)
@@ -314,7 +314,7 @@ plot_SRdata <- function(SRdata, type=c("classic","gg")[1]){
 #' @param
 #' @param
 #' @param
-#' 
+#'
 #' @encoding UTF-8
 #'
 #' @examples
@@ -331,7 +331,7 @@ plot_SRdata <- function(SRdata, type=c("classic","gg")[1]){
 #'   res_SR2 <- fit.SR(SRdata=SRdata2, method="L1", AR=0)
 #'   plot_SR(res_SR2)
 #' }
-#' 
+#'
 #' @export
 #'
 
@@ -345,6 +345,8 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
   if (SR_result$input$SR=="HS") SRF <- function(SSB,a,b,recruit_intercept=0) (ifelse(SSB*xscale>b,b*a,SSB*xscale*a)+recruit_intercept)/yscale
   if (SR_result$input$SR=="BH") SRF <- function(SSB,a,b,recruit_intercept=0) (a*SSB*xscale/(1+b*SSB*xscale)+recruit_intercept)/yscale
   if (SR_result$input$SR=="RI") SRF <- function(SSB,a,b,recruit_intercept=0) (a*SSB*xscale*exp(-b*SSB*xscale)+recruit_intercept)/yscale
+  if (SR_result$input$SR=="Mesnil") SRF <- function(SSB,a,b,gamma) (0.5*a*(SSB*xscale+sqrt(b^2+gamma^2/4)-sqrt((SSB*xscale-b)^2+gamma^2/4))+recruit_intercept)/yscale
+
 
   SRF_CI <- function(CI,sigma,sign,...){
     exp(log(SRF(...))+qnorm(1-(1-CI)/2)*sigma*sign)
@@ -356,7 +358,7 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
   SRdata <- SRdata %>% mutate(weight=factor(weight,levels=c("1","0")))
   SRdata.pred <- as_tibble(SR_result$pred) %>%
     mutate(type="pred", year=NA, R=R)
-  
+
   is_release_data <- "release" %in% names(SR_result$input$SRdata)
   if(is_release_data){
     SRdata.release <- SR_result$input$SRdata %>% mutate(allR=release+R) %>%
@@ -373,29 +375,57 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
   if(is.null(labeling.year)) labeling.year <- c(tmp[tmp%%5==0],year.max)
     alldata <- alldata %>% mutate(pick.year=ifelse(year%in%labeling.year,year,""))
 
-  g1 <- ggplot(data=alldata,mapping=aes(x=SSB,y=R)) +
-    stat_function(fun=SRF,args=list(a=SR_result$pars$a,
-                                    b=SR_result$pars$b),color="deepskyblue3",lwd=1.3,
-                  n=5000)
+  if(SR_result$input$SR!="Mesnil"){
+    g1 <- ggplot(data=alldata,mapping=aes(x=SSB,y=R)) +
+      stat_function(fun=SRF,args=list(a=SR_result$pars$a,
+                                      b=SR_result$pars$b),color="deepskyblue3",lwd=1.3,
+                    n=5000)
+  }else{
+    g1 <- ggplot(data=alldata,mapping=aes(x=SSB,y=R)) +
+      stat_function(fun=SRF,args=list(a=SR_result$pars$a,
+                                      b=SR_result$pars$b,
+                                      gamma=SR_result$input$gamma),color="deepskyblue3",lwd=1.3,
+                    n=5000)
+  }
 
-  if(!is.null(add_graph)) g1 <- g1+add_graph  
+  if(!is.null(add_graph)) g1 <- g1+add_graph
 
   if(isTRUE(plot_CI)){
-    g1 <- g1+
-      stat_function(fun=SRF_CI,
-                    args=list(a=SR_result$pars$a,
-                              b=SR_result$pars$b,
-                              sigma=SR_result$pars$sd,
-                              sign=-1,
-                              CI=CI),
-                    color="deepskyblue3",lty=3,n=5000)+
-      stat_function(fun=SRF_CI,
-                    args=list(a=SR_result$pars$a,
-                              b=SR_result$pars$b,
-                              sigma=SR_result$pars$sd,
-                              sign=1,
-                              CI=CI),
-                    color="deepskyblue3",lty=3,n=5000)
+    if(SR_result$input$SR!="Mesnil"){
+      g1 <- g1+
+        stat_function(fun=SRF_CI,
+                      args=list(a=SR_result$pars$a,
+                                b=SR_result$pars$b,
+                                sigma=SR_result$pars$sd,
+                                sign=-1,
+                                CI=CI),
+                      color="deepskyblue3",lty=3,n=5000)+
+        stat_function(fun=SRF_CI,
+                      args=list(a=SR_result$pars$a,
+                                b=SR_result$pars$b,
+                                sigma=SR_result$pars$sd,
+                                sign=1,
+                                CI=CI),
+                      color="deepskyblue3",lty=3,n=5000)
+    }else{
+      g1 <- g1+
+        stat_function(fun=SRF_CI,
+                      args=list(a=SR_result$pars$a,
+                                b=SR_result$pars$b,
+                                gamma=SR_result$input$gamma,
+                                sigma=SR_result$pars$sd,
+                                sign=-1,
+                                CI=CI),
+                      color="deepskyblue3",lty=3,n=5000)+
+        stat_function(fun=SRF_CI,
+                      args=list(a=SR_result$pars$a,
+                                b=SR_result$pars$b,
+                                gamma=SR_result$input$gamma,
+                                sigma=SR_result$pars$sd,
+                                sign=1,
+                                CI=CI),
+                      color="deepskyblue3",lty=3,n=5000)
+    }
   }
 
   g1 <- g1+  geom_path(data=dplyr::filter(alldata,type=="obs"),
@@ -419,11 +449,21 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
   }
 
   if(recruit_intercept>0){
-    g1 <- g1+stat_function(fun=SRF,
-                           args=list(a=SR_result$pars$a,
-                                     b=SR_result$pars$b,
-                                     recruit_intercept=recruit_intercept),
-                           color="deepskyblue3",lwd=1.3,lty=2)
+    if(SR_result$input$SR!="Mesnil"){
+      g1 <- g1+stat_function(fun=SRF,
+                             args=list(a=SR_result$pars$a,
+                                       b=SR_result$pars$b,
+                                       recruit_intercept=recruit_intercept),
+                             color="deepskyblue3",lwd=1.3,lty=2)
+    }else{
+      g1 <- g1+stat_function(fun=SRF,
+                             args=list(a=SR_result$pars$a,
+                                       b=SR_result$pars$b,
+                                       gamma=SR_result$input$gamma,
+                                       recruit_intercept=recruit_intercept),
+                             color="deepskyblue3",lwd=1.3,lty=2)
+    }
+
   }
 
   if(add.info){
@@ -856,7 +896,7 @@ plot_futures <- function(vpares=NULL,
         geom_line(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario!="VPA" & year %in% minyear:maxyear),
                   mapping=aes(x=year,y=low,lty=scenario,color=scenario))
     }
-    g1 <- g1 + 
+    g1 <- g1 +
       geom_ribbon(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario!="VPA" & year %in% minyear:maxyear),
                   mapping=aes(x=year,ymin=low,ymax=high,fill=scenario),alpha=0.4)+
       geom_line(data=dplyr::filter(future_tibble.qt,!is.na(stat) & scenario!="VPA" & year %in% minyear:maxyear),
@@ -975,14 +1015,14 @@ plot_futures_simple <- function(fres.list,conf=c(0.1,0.5,0.9),target="SSB",legen
 }
 
 #' @export
-#' 
+#'
 
 plot.future <- function(...){
     plot_future_simple(...)
 }
 
 #' @export
-#' 
+#'
 
 plot.futures <- function(...){
     plot_futures_simple(...)
@@ -1345,10 +1385,10 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
     arrange(year)
   if(ylab.type=="F") UBdata <- UBdata %>% mutate(Uratio=Fratio)
 
-  UBdata <- UBdata %>% mutate(year_group=1)  
+  UBdata <- UBdata %>% mutate(year_group=1)
   if(plot.year[1]!="all") {
     diff.year <- plot.year[which(diff(plot.year)>1)+1]
-    UBdata <- UBdata %>% filter(year %in% plot.year) 
+    UBdata <- UBdata %>% filter(year %in% plot.year)
 
     for(i in 1:length(diff.year)){
        UBdata <- UBdata %>%
@@ -1918,7 +1958,7 @@ plot_SR_AReffect <- function(res){
 
 
 plot_worm <- function(kobe_data){
-    
+
 #  HCR_selection <- read_csv("HCR_selection.csv") %>%
 #    rename(HCR_category="HCR category",
 #           num=`Serial number`,
@@ -1939,7 +1979,7 @@ plot_worm <- function(kobe_data){
 #      mutate(Type=factor(Type, levels=c("B","S","SS","A"))) %>%
 #      dplyr::filter(use==1)
 
-    g_worm <- mean_data %>% 
+    g_worm <- mean_data %>%
       ggplot() +
       geom_line(aes(x=Year, y=MT, color=HCR_name, group=HCR_name),
                 alpha=0.8) +
@@ -1947,10 +1987,10 @@ plot_worm <- function(kobe_data){
       facet_wrap(.~stat_name, scale="free_y") + theme_SH(base_size=14) +
       coord_cartesian(ylim=c(0,NA)) +
       ylab("1000 MT") +
-#      scale_color_manual(values=c(1,gray(0.2),2,3)) +      
+#      scale_color_manual(values=c(1,gray(0.2),2,3)) +
 #      scale_size_manual(values=c(1,0.5,1,0.5)) +
         theme(legend.position="bottom")
 
     g_worm
-    
+
 }
