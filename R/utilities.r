@@ -226,7 +226,7 @@ Generation.Time <- function(vpares,
     M <- M[!is.na(M)]
   }
 
-  if(is.null(age)) age <- as.numeric(names(maa))
+  if(is.null(age)) age <- as.numeric(rownames(vpares$naa))
   if(Plus>0){
     maa <- c(maa, rep(1,Plus))
     M <- c(M, rep(M[length(M)],Plus))
