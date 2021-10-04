@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">frasyr</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.2.0.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.2.0.1</span>
       </span>
     </div>
 
@@ -77,7 +77,7 @@
       <h1 data-toc-skip>VPAモデル診断スクリプト</h1>
                         <h4 data-toc-skip class="author">濵邉昂平・市野川桃子</h4>
             
-            <h4 data-toc-skip class="date">2021-09-29</h4>
+            <h4 data-toc-skip class="date">2021-10-04</h4>
       
       
       <div class="hidden name"><code>Diagnostics-for-VPA.Rmd</code></div>
@@ -421,15 +421,15 @@
                                               b_reest <span class="op">=</span> <span class="cn">TRUE</span> <span class="co"># ここをTRUEにしてください!!</span>
                                               <span class="op">)</span>
 <span class="va">res_vpa_retrospective</span><span class="op">$</span><span class="va">b_res</span></code></pre></div>
-<pre><code># A tibble: 6 × 4
+<pre><code> [38;5;246m# A tibble: 6 × 4 [39m
   `2000` `1999` `1998` `1997`
-   &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
-1  1.11   1.04   0.792  0.603
-2  0.564  0.736  0.826  0.612
-3  0.854  0.679  0.356  0.257
-4  0.578  0.523  0.603  0.383
-5  0.657  0.892  0.628  0.480
-6  1.14   1.33   1.47   1.11 </code></pre>
+    [3m [38;5;246m&lt;dbl&gt; [39m [23m   [3m [38;5;246m&lt;dbl&gt; [39m [23m   [3m [38;5;246m&lt;dbl&gt; [39m [23m   [3m [38;5;246m&lt;dbl&gt; [39m [23m
+ [38;5;250m1 [39m  1.11   1.04   0.792  0.603
+ [38;5;250m2 [39m  0.564  0.736  0.826  0.612
+ [38;5;250m3 [39m  0.854  0.679  0.356  0.257
+ [38;5;250m4 [39m  0.578  0.523  0.603  0.383
+ [38;5;250m5 [39m  0.657  0.892  0.628  0.480
+ [38;5;250m6 [39m  1.14   1.33   1.47   1.11 </code></pre>
 <p>このように各レトロスペクティブ解析ごとに、bを推定していることが確認できました。（<strong>ダミーデータなので変な値となっています</strong>）</p>
 </div>
 <div id="段階法の場合" class="section level4">
@@ -629,8 +629,8 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 <code class="sourceCode R"><span class="va">res_tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">numeric</a></span><span class="op">(</span><span class="op">)</span>
 <span class="kw">for</span><span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span> <span class="va">res_tmp</span><span class="op">[</span><span class="va">i</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">res_vpa_bootstrap</span><span class="op">$</span><span class="va">res_boot</span><span class="op">[[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="va">Fc.at.age</span><span class="op">[</span><span class="fl">4</span><span class="op">]</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile</a></span><span class="op">(</span><span class="va">res_tmp</span>, probs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.025</span>,<span class="fl">0.5</span>,<span class="fl">0.975</span><span class="op">)</span><span class="op">)</span></code></pre></div>
-<pre><code>     2.5%       50%     97.5% 
-0.4529314 0.7602047 7.7540630 </code></pre>
+<pre><code>      2.5%        50%      97.5% 
+ 0.5344828  0.7291960 10.1680181 </code></pre>
 <p>この他、各パラメータの相関関係について、ブートストラップ標本を基にプロットが得られます。</p>
 <div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">res_vpa_bootstrap</span><span class="op">$</span><span class="va">plot_cor</span></code></pre></div>
@@ -681,7 +681,7 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link external-link">pkgdown</a> 1.6.1.9001.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link external-link">pkgdown</a> 1.9000.9000.9000.</p>
 </div>
 
       </footer>

@@ -40,7 +40,6 @@
 
 
 <meta property="og:title" content="kobe.tableをさらにsummaryする — summary_kobe_table" />
-<meta property="og:description" content="kobe.tableをさらにsummaryする" />
 
 
 
@@ -80,7 +79,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">frasyr</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.2.0.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.2.0.1</span>
       </span>
     </div>
 
@@ -129,11 +128,33 @@
     </div>
 
     <div class="ref-description">
-    <p>kobe.tableをさらにsummaryする</p>
     </div>
 
-    <div class="ref-usage sourceCode"><pre class='sourceCode r'><code><span class='fu'>summary_kobe_table</span><span class='op'>(</span><span class='va'>kobe_data</span><span class='op'>)</span></code></pre></div>
+    <div class="ref-usage sourceCode"><pre class='sourceCode r'><code><span class='fu'>summary_kobe_table</span><span class='op'>(</span>
+  <span class='va'>kobeII.table</span>,
+  <span class='va'>target_threshold</span>,
+  <span class='va'>risk_threshold</span>,
+  ssbpercent_summary_year <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>2031</span><span class='op'>)</span>,
+  ssb_summary_year <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>2025</span>, <span class='fl'>2031</span><span class='op'>)</span>,
+  catch_summary_year <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>2021</span>, <span class='fl'>2026</span>, <span class='fl'>2031</span><span class='op'>)</span>,
+  SBmsy <span class='op'>=</span> <span class='fl'>1</span>,
+  MSY <span class='op'>=</span> <span class='fl'>1</span>,
+  Bthreshold_label <span class='op'>=</span> <span class='st'>"blimit.risk"</span>,
+  sort_result_table <span class='op'>=</span> <span class='cn'>FALSE</span>
+<span class='op'>)</span></code></pre></div>
 
+    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
+    <table class="ref-arguments">
+    <colgroup><col class="name" /><col class="desc" /></colgroup>
+    <tr>
+      <th>target_threshold</th>
+      <td><p>c(60, 50)みたいな２つの長さのベクトル。一番目はbeta=0.8のときのtargetを上回る確率、２番めは50<!-- %のときの。資源状態が良い場合には１番目の値は２番めの値よりも大きいが、資源状態が悪いと１番目の値は２番めよりも小さくなる。その場合には自動的にc(100,50)となるように置き換わる（つまりランク３は出現しない）} --></p>
+<p>risk_thresholdc(0.2,15) みたいな2つの長さのベクトル。一番目はbeta=0.8のときに10年間でずっとthresholdを上回る確率、２番めは50<!-- %のとき。資源状態が良い場合には１番目の値は２番めの値よりも小さくなる。} -->ssbpercent_summary_year目標管理基準値を上回るかどうかを判断する年ssb_summary_yearパフォーマンス指標として取り出すSSBの年catch_summary_yearパフォーマンス指標として取り出すCatchの年SBmsyここで与えた相対値としてSBのパフォーマンス指標を示すMSYここで与えた相対値としてMSYのパフォーマンス指標を示すBthreshold_labelランクづけに利用するリスクをkobe.tableから持ってくるときのkobe.tableのリストの名前
+
+
+kobe.tableをさらにsummaryする</p></td>
+    </tr>
+    </table>
 
 
   </div>
@@ -151,7 +172,7 @@
 </div>
 
 <div class="pkgdown">
-  <p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 1.6.1.9001.</p></p>
+  <p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 1.9000.9000.9000.</p></p>
 </div>
 
       </footer>
