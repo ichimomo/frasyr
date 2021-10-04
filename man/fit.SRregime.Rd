@@ -19,7 +19,8 @@ fit.SRregime(
   max.ssb.pred = 1.3,
   hessian = FALSE,
   bio_par = NULL,
-  plus_group = TRUE
+  plus_group = TRUE,
+  gamma = 0.001
 )
 }
 \arguments{
@@ -42,6 +43,8 @@ fit.SRregime(
 \item{bio_par}{data.frame(waa=c(100,200,300),maa=c(0,1,1),M=c(0.3,0.3,0.3)) のような生物パラメータをあらわすデータフレーム。waaは資源量を計算するときのweight at age, maaはmaturity at age, Mは自然死亡係数。これを与えると、steepnessやR0も計算して返す}
 
 \item{plus_group}{hなどを計算するときに、プラスグループを考慮するか}
+
+\item{gamma}{\code{SR="Mesnil"}のときに使用するsmoothing parameter}
 }
 \value{
 以下の要素からなるリスト
