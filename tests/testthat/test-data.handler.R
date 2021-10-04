@@ -510,7 +510,7 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
                                Pope = TRUE,  tune=TRUE, term.F="all", est.method="ml" ,b.est=TRUE, p.init=c(0.2,0.3,0.6,0.6),abund=c("N","N","N","N","N","N"), lambda=0.02, fc.year=1998:2000,sigma.constraint=c(1,2,2,3,4,5))
   expect_equal(res_vpa_estb_tune5m_b_sigma$sigma[[2]],res_vpa_estb_tune5m_b_sigma$sigma[[3]])
   
-  # TMB true + set lambda + 全F推定法．最尤法．b推定あり
+  # TMB true + set lambda + 全F推定法．最尤法．b推定あり----
   library(TMB)
   use_rvpa_tmb()
   res_vpa_estb_tune6m_b <- vpa(vpadat_estb, last.catch.zero = FALSE, min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
@@ -533,6 +533,69 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
   res_vpa_estb_tune6m_b_sigma <- vpa(vpadat_estb, last.catch.zero = FALSE, min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
                                Pope = TRUE,  tune=TRUE, term.F="all",est.method="ml" ,b.est=TRUE,p.init=c(0.2,0.3,0.6,0.6),abund=c("N","N","N","N","N","N"), lambda=0.02, TMB=TRUE,fc.year=1998:2000,sigma.constraint=c(1,2,2,3,4,5))
   expect_equal(res_vpa_estb_tune6m_b_sigma$sigma[[2]],res_vpa_estb_tune6m_b_sigma$sigma[[3]])
+  
+  # 最小二乗法，set lambda + 全F推定法．b推定あり,penalty="p", eta=0.3, eta.age=0, TMB=TRUE (追加:2021/09/16)
+  res_vpa_estb_tune6m_b_maiwashi1 <- vpa(vpadat_estb, last.catch.zero = FALSE,  min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
+                                 Pope = TRUE,  tune=TRUE, term.F="all", est.method="ls" ,b.est=TRUE, p.init=c(0.2,0.3,0.6,0.6),abund=c("N","N","N","N","N","N"), lambda=0.02, fc.year=1998:2000,penalty="p", eta=0.3, eta.age=0, TMB=TRUE)
+  expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune6m_b_maiwashi1$naa),2)),c(728.36,356.15,153.39,67.22))
+  expect_equal(as.numeric(round(res_vpa_estb_tune6m_b_maiwashi1$b,2)),c(1.17,0.63,0.75,0.54,0.76,1.36))
+  expect_equal(as.numeric(round(res_vpa_estb_tune6m_b_maiwashi1$sigma,2)),c(0.18))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune6m_b_maiwashi1$saa),2)),c(0.49,0.68,0.99,0.99))
+  expect_equal(as.numeric(round(res_vpa_estb_tune6m_b_maiwashi1$logLik,3)),c(18.41))
+  
+  # b.fix, 最小二乗法，set lambda + 全F推定法,penalty="p", eta=0.3, eta.age=0, TMB=TRUE (追加:2021/09/16)
+  res_vpa_estb_tune6m_b_maiwashi2 <- vpa(vpadat_estb, last.catch.zero = FALSE,  min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
+                                         Pope = TRUE,  tune=TRUE, term.F="all", est.method="ls" ,b.est=TRUE, p.init=c(0.2,0.3,0.6,0.6),abund=c("N","N","N","N","N","N"), lambda=0.02, fc.year=1998:2000,penalty="p", eta=0.3, eta.age=0, TMB=TRUE, b.fix=c(1,NA,1,NA,1,1))
+  expect_equal(as.numeric(round(rowMeans( res_vpa_estb_tune6m_b_maiwashi2$naa),2)),c(723.72,352.64,149.99,65.58))
+  expect_equal(as.numeric(round( res_vpa_estb_tune6m_b_maiwashi2$b,2)),c(1.00,0.61,1.00,0.56,1.00,1.00))
+  expect_equal(as.numeric(round( res_vpa_estb_tune6m_b_maiwashi2$sigma,2)),c(0.19))
+  expect_equal(as.numeric(round(rowMeans( res_vpa_estb_tune6m_b_maiwashi2$saa),2)),c(0.47,0.66,1.00,1.00))
+  expect_equal(as.numeric(round( res_vpa_estb_tune6m_b_maiwashi2$logLik,3)),c(15.336))
+  
+  # abund=B, b.fix, 最小二乗法，set lambda + 全F推定法,penalty="p", eta=0.3, eta.age=0, TMB=TRUE (追加:2021/09/16)
+  res_vpa_estb_tune6m_b_maiwashi3 <- vpa(vpadat_estb, last.catch.zero = FALSE,  min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
+                                         Pope = TRUE,  tune=TRUE, term.F="all", est.method="ls" ,b.est=TRUE, p.init=c(0.2,0.3,0.6,0.6),abund=c("B","B","B","B","B","B"), lambda=0.02, fc.year=1998:2000,penalty="p", eta=0.3, eta.age=0, TMB=TRUE, b.fix=c(1,NA,1,NA,1,1))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune6m_b_maiwashi3$naa),2)),c(718.52,346.02,145.28,63.31))
+  expect_equal(as.numeric(round(res_vpa_estb_tune6m_b_maiwashi3$b,2)),c(1.00,0.51,1.00,0.56,1.00,1.00))
+  expect_equal(as.numeric(round(res_vpa_estb_tune6m_b_maiwashi3$sigma,2)),c(0.22))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune6m_b_maiwashi3$saa),2)),c(0.45,0.64,1.00,1.00))
+  expect_equal(as.numeric(round(res_vpa_estb_tune6m_b_maiwashi3$logLik,3)),c(6.252))
+  
+  res_vpa_estb_tune6m_b_maiwashi3notmb <- vpa(vpadat_estb, last.catch.zero = FALSE,  min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
+                                         Pope = TRUE,  tune=TRUE, term.F="all", est.method="ls" ,b.est=TRUE, p.init=c(0.2,0.3,0.6,0.6),abund=c("B","B","B","B","B","B"), lambda=0.02, fc.year=1998:2000,penalty="p", eta=0.3, eta.age=0, TMB=FALSE, b.fix=c(1,NA,1,NA,1,1))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune6m_b_maiwashi3notmb$naa),2)),c(718.52,346.02,145.28,63.31))
+  expect_equal(as.numeric(round(res_vpa_estb_tune6m_b_maiwashi3notmb$b,2)),c(1.00,0.51,1.00,0.56,1.00,1.00))
+  expect_equal(as.numeric(round(res_vpa_estb_tune6m_b_maiwashi3notmb$sigma,2)),c(0.22))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune6m_b_maiwashi3notmb$saa),2)),c(0.45,0.64,1.00,1.00))
+  expect_equal(as.numeric(round(res_vpa_estb_tune6m_b_maiwashi3notmb$logLik,3)),c(6.252))
+  
+  # abund=SSB, b.fix, 最小二乗法，set lambda + 全F推定法,penalty="p", eta=0.3, eta.age=0, TMB=TRUE (追加:2021/09/16)
+  res_vpa_estb_tune6m_b_maiwashi4 <- vpa(vpadat_estb, last.catch.zero = FALSE,  min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
+                                         Pope = TRUE,  tune=TRUE, term.F="all", est.method="ls" ,b.est=TRUE, p.init=c(0.2,0.3,0.6,0.6),abund=c("SSB","SSB","SSB","SSB","SSB","SSB"), lambda=0.02, fc.year=1998:2000,penalty="p", eta=0.3, eta.age=0, TMB=TRUE, b.fix=c(1,NA,1,NA,1,1))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune6m_b_maiwashi4$naa),2)),c(39378.10,366.83,141.08,61.29))
+  expect_equal(as.numeric(round(res_vpa_estb_tune6m_b_maiwashi4$b,2)),c(1.00,0.44,1.00,0.51,1.00,1.00))
+  expect_equal(as.numeric(round(res_vpa_estb_tune6m_b_maiwashi4$sigma,2)),c(0.25))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune6m_b_maiwashi4$saa),2)),c(0.39,0.60,1.00,1.00))
+  expect_equal(as.numeric(round(res_vpa_estb_tune6m_b_maiwashi4$logLik,3)),c(-1.276))
+  
+  #上記ケースでtmb=FALSEのもの
+  res_vpa_estb_tune6m_b_maiwashi4notmb <- vpa(vpadat_estb, last.catch.zero = FALSE,  min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
+                                         Pope = TRUE,  tune=TRUE, term.F="all", est.method="ls" ,b.est=TRUE, p.init=c(0.0002435034, 0.1034841302,0.7182079244),abund=c("SSB","SSB","SSB","SSB","SSB","SSB"), lambda=0.02, fc.year=1998:2000,penalty="p", eta=0.3, eta.age=0, TMB=FALSE, b.fix=c(1,NA,1,NA,1,1),no.est=TRUE)
+
+  
+  # abund=Bs, b.fix, 最小二乗法，set lambda + 全F推定法,penalty="p", eta=0.3, eta.age=0, TMB=TRUE (追加:2021/09/16)
+  res_vpa_estb_tune6m_b_maiwashi5 <- vpa(vpadat_estb, last.catch.zero = FALSE,  min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
+                                         Pope = TRUE,  tune=TRUE, term.F="all", est.method="ls" ,b.est=TRUE, p.init=c(0.2,0.3,0.6),abund=c("Bs","Bs","Bs","Bs","Bs","Bs"), lambda=0.02, fc.year=1998:2000,penalty="p", eta=0.3, eta.age=0, TMB=TRUE, b.fix=c(1,NA,1,NA,1,1))
+  expect_equal(as.numeric(round(rowMeans( res_vpa_estb_tune6m_b_maiwashi5$naa),2)),c(677.58,338.93,145.18,63.26))
+  expect_equal(as.numeric(round(res_vpa_estb_tune6m_b_maiwashi5$b,2)),c(1.00,0.49,1.00,0.58,1.00,1.00))
+  expect_equal(as.numeric(round(res_vpa_estb_tune6m_b_maiwashi5$sigma,2)),c(0.23))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune6m_b_maiwashi5$saa),2)),c(0.53,0.68,1.00,1.00))
+  expect_equal(as.numeric(round(res_vpa_estb_tune6m_b_maiwashi5$logLik,3)),c(3.608))
+  
+  #上記ケースでtmb=FALSEのもの
+  res_vpa_estb_tune6m_b_maiwashi5notmb <- vpa(vpadat_estb, last.catch.zero = FALSE,  min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
+                                         Pope = TRUE,  tune=TRUE, term.F="all", est.method="ls" ,b.est=TRUE, p.init=c(0.2,0.3,0.6),abund=c("Bs","Bs","Bs","Bs","Bs","Bs"), lambda=0.02, fc.year=1998:2000,penalty="p", eta=0.3, eta.age=0, TMB=FALSE, b.fix=c(1,NA,1,NA,1,1))
+
   
   #1-5: test abund.extractor function----
   naa_base0<-res_vpa_base0_nontune$naa
