@@ -591,17 +591,22 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
 
   # abund=Bs, b.fix, 最小二乗法，set lambda + 全F推定法,penalty="p", eta=0.3, eta.age=0, TMB=TRUE (追加:2021/09/16)
   res_vpa_estb_tune6m_b_maiwashi5 <- vpa(vpadat_estb, last.catch.zero = FALSE,  min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
-                                         Pope = TRUE,  tune=TRUE, term.F="all", est.method="ls" ,b.est=TRUE, p.init=c(0.2,0.3,0.6),abund=c("Bs","Bs","Bs","Bs","Bs","Bs"), lambda=0.02, fc.year=1998:2000,penalty="p", eta=0.3, eta.age=0, TMB=TRUE, b.fix=c(1,NA,1,NA,1,1))
-  expect_equal(as.numeric(round(rowMeans( res_vpa_estb_tune6m_b_maiwashi5$naa),2)),c(677.58,338.93,145.18,63.26))
+                                         Pope = TRUE,  tune=TRUE, term.F="all", est.method="ls" ,b.est=TRUE, p.init=c(0.2,0.3,0.6),abund=c("Bs","Bs","N","N","Bs","Bs"), lambda=0.02, fc.year=1998:2000,penalty="p", eta=0.3, eta.age=0, TMB=TRUE, b.fix=c(1,NA,1,NA,1,1),
+                                         sdreport=FALSE)
+
+  expect_equal(as.numeric(round(rowMeans( res_vpa_estb_tune6m_b_maiwashi5$naa),2)),c(721.88, 347.66, 145.54, 63.44))
   expect_equal(as.numeric(round(res_vpa_estb_tune6m_b_maiwashi5$b,2)),c(1.00,0.49,1.00,0.58,1.00,1.00))
   expect_equal(as.numeric(round(res_vpa_estb_tune6m_b_maiwashi5$sigma,2)),c(0.23))
-  expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune6m_b_maiwashi5$saa),2)),c(0.53,0.68,1.00,1.00))
-  expect_equal(as.numeric(round(res_vpa_estb_tune6m_b_maiwashi5$logLik,3)),c(3.608))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune6m_b_maiwashi5$saa),2)),c(0.45,0.64,1.00,1.00))
+  expect_equal(as.numeric(round(res_vpa_estb_tune6m_b_maiwashi5$logLik,3)),c(3.603))
 
   #上記ケースでtmb=FALSEのもの
   res_vpa_estb_tune6m_b_maiwashi5notmb <- vpa(vpadat_estb, last.catch.zero = FALSE,  min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
-                                         Pope = TRUE,  tune=TRUE, term.F="all", est.method="ls" ,b.est=TRUE, p.init=c(0.2,0.3,0.6),abund=c("Bs","Bs","Bs","Bs","Bs","Bs"), lambda=0.02, fc.year=1998:2000,penalty="p", eta=0.3, eta.age=0, TMB=FALSE, b.fix=c(1,NA,1,NA,1,1))
+                                         Pope = TRUE,  tune=TRUE, term.F="all", est.method="ls" ,b.est=TRUE, p.init=c(0.2,0.3,0.6),abund=c("Bs","Bs","N","N","Bs","Bs"), lambda=0.02, fc.year=1998:2000,penalty="p", eta=0.3, eta.age=0, TMB=FALSE, b.fix=c(1,NA,1,NA,1,1))
 
+  # tmb = TRUE/FALSEで結果が一致するか
+  expect_equal(as.numeric(res_vpa_estb_tune6m_b_maiwashi5$term.f),as.numeric(res_vpa_estb_tune6m_b_maiwashi5notmb$term.f))
+  expect_equal(as.numeric(res_vpa_estb_tune6m_b_maiwashi5$logLik),as.numeric(res_vpa_estb_tune6m_b_maiwashi5notmb$logLik))
 
   #1-5: test abund.extractor function----
   naa_base0<-res_vpa_base0_nontune$naa
