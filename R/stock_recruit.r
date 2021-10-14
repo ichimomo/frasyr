@@ -2369,7 +2369,7 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
       if(class(resSR)!="fit.SRregime"){
         x <- sweep(par_list[,1:2],2,apply(par_list[,1:2],2,median),FUN="/") %>% apply(1,mean)
       }else{
-        x <- sweep(par_list[,1:4],2,apply(par_list[,1:4],2,median),FUN="/") %>% apply(1,mean)
+        x <- sweep(par_list[,2:5],2,apply(par_list[,2:5],2,median),FUN="/") %>% apply(1,mean)
       }
       selected <- which.min(abs(x-1))
       cat("ほとんど同じ尤度を持つパラメータの範囲 (",n,"回試行のうち",nrow(par_list),"回分),\n")
