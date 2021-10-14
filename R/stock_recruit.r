@@ -2366,11 +2366,7 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
       RES$par_list <- par_list
       RES$par_list0 <- par_list0
       # すべてのパラメータのmedianに最も近いパラメータセットを持つものを選んでoptimalに入れちゃう
-      if(class(resSR)!="fit.SRregime"){
-        x <- sweep(par_list[,1:2],2,apply(par_list[,1:2],2,median),FUN="/") %>% apply(1,mean)
-      }else{
-        x <- sweep(par_list[,2:5],2,apply(par_list[,2:5],2,median),FUN="/") %>% apply(1,mean)
-      }
+      x <- sweep(par_list,2,apply(par_list,2,median),FUN="/") %>% apply(1,mean)
       selected <- which.min(abs(x-1))
       cat("ほとんど同じ尤度を持つパラメータの範囲 (",n,"回試行のうち",nrow(par_list),"回分),\n")
       print(apply(par_list,2,summary))
