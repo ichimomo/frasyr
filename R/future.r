@@ -1552,7 +1552,7 @@ set_lower_limit_catch <- function(catch_previous_year, catch_current_year, lower
 
 est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE, candidate_PGY=c(0.1,0.6),
                       only_lowerPGY="lower", candidate_B0=-1, candidate_Babs=-1, calc_yieldcurve=TRUE,
-                      trace_multi=c(0.9,0.925,0.95,0.975,1.025,1.05,1.075)
+                      trace_multi=c(0.9,0.925,0.95,0.975,1.025,1.05,1.075),
                       select_Btarget=0, select_Blimit=0, select_Bban=0){
 
   res_vpa_MSY <- data_future$input$res_vpa
