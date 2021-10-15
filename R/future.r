@@ -1544,6 +1544,7 @@ set_lower_limit_catch <- function(catch_previous_year, catch_current_year, lower
 #' @param candidate_PGY PGYの計算候補
 #' @param candidate_B0 b0の計算候補
 #' @param candidate_Babs Babsの計算候補
+#' @param trace_multi （このベクトル）×（管理基準値として計算されるF）の平行状態の資源状態などを計算する。HCR_catchのプロットするときに、この値をもっと細かく設定することが必要になってくるかも
 #'
 #' @export
 #' @encoding UTF-8
@@ -1551,6 +1552,7 @@ set_lower_limit_catch <- function(catch_previous_year, catch_current_year, lower
 
 est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE, candidate_PGY=c(0.1,0.6),
                       only_lowerPGY="lower", candidate_B0=-1, candidate_Babs=-1, calc_yieldcurve=TRUE,
+                      trace_multi=c(0.9,0.925,0.95,0.975,1.025,1.05,1.075)
                       select_Btarget=0, select_Blimit=0, select_Bban=0){
 
   res_vpa_MSY <- data_future$input$res_vpa
@@ -1652,7 +1654,7 @@ est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE,
         # update trace
         trace.multi2 <- c(res_MSY$summary$"Fref/Fcur",trace.multi2)
         trace.multi2 <- trace.multi2[trace.multi2>0] %>%
-            purrr::map(function(x) x * c(0.9,0.925,0.95,0.975,1.025,1.05,1.075)) %>%
+            purrr::map(function(x) x * trace_multi) %>%
             unlist() %>% sort() %>% unique()
         diff.trace <- diff(log(trace.multi2))
         trace.multi2[which(mean(diff.trace)<diff.trace)]
