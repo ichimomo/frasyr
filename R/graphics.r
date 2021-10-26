@@ -439,7 +439,7 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
     theme_bw(base_size=14)+
     theme(legend.position = 'none') +
     theme(panel.grid = element_blank()) +
-    xlab(str_c("親資量 (",xlabel,")"))+
+    xlab(str_c("親魚量 (",xlabel,")"))+
     ylab(str_c("加入量 (",ylabel,")"))+
     coord_cartesian(ylim=c(0,ymax*1.05),expand=0)
 
