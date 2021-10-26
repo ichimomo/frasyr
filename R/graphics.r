@@ -439,8 +439,8 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
     theme_bw(base_size=14)+
     theme(legend.position = 'none') +
     theme(panel.grid = element_blank()) +
-    xlab(str_c("親魚資源量 (",xlabel,")"))+
-    ylab(str_c("加入尾数 (",ylabel,")"))+
+    xlab(str_c("親魚量 (",xlabel,")"))+
+    ylab(str_c("加入量 (",ylabel,")"))+
     coord_cartesian(ylim=c(0,ymax*1.05),expand=0)
 
   if(is_release_data){
@@ -727,6 +727,7 @@ plot_futures <- function(vpares=NULL,
                          future.replicate=NULL,
                          seed=1, # seed for selecting the above example
                          legend.position="top",
+                         type="detail",
                          font.size=18,
                          ncol=3
 ){
@@ -747,14 +748,26 @@ plot_futures <- function(vpares=NULL,
   if(!isTRUE(exclude.japanese.font)){
     junit <- c("","十","百","千","万")[log10(biomass.unit)+1]
 
-    rename_list <- tibble(stat=c("Recruitment","SSB","biomass","catch","beta_gamma","U","Fratio"),
-                          jstat=c(str_c("加入尾数(",number.name,")"),
-                                  str_c("親魚量 (",junit,"トン)"),
-                                  str_c("資源量 (",junit,"トン)"),
-                                  str_c("漁獲量 (",junit,"トン)"),
-                                  "beta_gamma(F/Fmsy)",
-                                  "漁獲割合(%)",
-                                  "漁獲圧の比(F/Fmsy)"))
+    if(type=="detail"){
+        rename_list <- tibble(stat=c("Recruitment","SSB","biomass","catch","beta_gamma","U","Fratio"),
+                              jstat=c(str_c("加入尾数(",number.name,")"),
+                                      str_c("親魚量 (",junit,"トン)"),
+                                      str_c("資源量 (",junit,"トン)"),
+                                      str_c("漁獲量 (",junit,"トン)"),
+                                      "beta_gamma(F/Fmsy)",
+                                      "漁獲割合(%)",
+                                      "漁獲圧の比(F/Fmsy)"))
+    }
+    if(type=="simple"){
+        rename_list <- tibble(stat=c("Recruitment","SSB","biomass","catch","beta_gamma","U","Fratio"),
+                              jstat=c(str_c("加入尾数(",number.name,")"),
+                                      str_c("将来の親魚量 (",junit,"トン)"),
+                                      str_c("資源量 (",junit,"トン)"),
+                                      str_c("将来の漁獲量 (",junit,"トン)"),
+                                      "beta_gamma(F/Fmsy)",
+                                      "漁獲割合(%)",
+                                      "漁獲圧の比(F/Fmsy)"))        
+    }
   }
   else{
     junit <- c("","10","100","1000","10,000")[log10(biomass.unit)+1]
