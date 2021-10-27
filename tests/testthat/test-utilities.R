@@ -411,5 +411,6 @@ test_that("calc_forward",{
 test_that("out.vpa", {
 
   out.vpa(res=res_vpa, fres_HCR=res_future_0.8HCR)
-
+  expect_equal(file.exists("vpa.csv"), TRUE)
+  
 })

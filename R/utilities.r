@@ -787,7 +787,9 @@ out.vpa <- function(res=NULL,    # VPA result
     write.table(tmp,append=T,sep=",",quote=FALSE,file=csvname,col.names=F,row.names=F,...)
   }
 
-  write(paste("# frasyr outputs at ",date()," & ",getwd()),file=csvname)
+  pd <- packageDescription("frasyr")
+  if(is.null(pd$GithubSHA1)) pd$GithubSHA1 <- "local" # fraysrをload_allした場合コミット番号が記録されないため
+  write(paste("# frasyr(@",pd$GithubSHA1,") outputs at ",date()," & ",getwd(), sep=""),file=csvname)
 
   if(!is.null(res)){
     write("# VPA results",file=csvname, append=T)
