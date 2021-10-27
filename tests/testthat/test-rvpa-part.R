@@ -45,7 +45,17 @@ test_that("bootstrap using use.index options", {
   testinput_use.index$use.index <- 1:5
   testvpa <- do.call(vpa, testinput_use.index) # ここは必ず動きそうなのでdo.call使ってます
   expect_equal("list", boo.vpa(testvpa, B = 2) %>% class)
-                                               # 時間削減でB=2（目的はエラーが出ないことのテスト）
+  # 時間削減でB=2（目的はエラーが出ないことのテスト）
+})
+
+
+context("test_check")
+
+test_that("data class of ggplot", {
+  data("res_vpa_estb")
+  gg_class <- plot_residual_vpa(res_vpa_estb)[[1]] %>% class
+  expect_equal("list", gg_class[1])
+  # must be error!!
 })
 
 
