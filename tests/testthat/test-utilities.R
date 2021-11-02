@@ -414,3 +414,25 @@ test_that("out.vpa", {
   expect_equal(file.exists("vpa.csv"), TRUE)
   
 })
+
+
+test_that("fit.SR_pen", {
+
+    data_SR = get.SRdata(res_vpa)
+    waa = rowMeans(res_vpa$input$dat$waa)
+    maa = rowMeans(res_vpa$input$dat$maa)
+    M = rowMeans(res_vpa$input$dat$M)
+
+    ri1 = fit.SR(data_SR,SR="RI",method="L2",AR=0,
+                 plus_group=TRUE,bio_par=data.frame(waa=waa,maa=maa,M=M))
+    ri1$pars
+    ri1$steepness
+
+    ri2 = fit.SR_pen(SRdata=data_SR,SR="RI",method="L2",AR=0,
+                     plus_group=TRUE,bio_par=data.frame(waa=waa,maa=maa,M=M), h_upper=1)
+    expect_equal(ri2$h,1, tol=0.0001)
+
+    ri3 = fit.SR_pen(SRdata=data_SR,SR="RI",method="L2",AR=0,
+                 plus_group=TRUE,bio_par=data.frame(waa=waa,maa=maa,M=M), h_upper=0.7, h_lower=0.7)    
+    expect_equal(ri3$h,0.7, tol=0.0001)    
+})

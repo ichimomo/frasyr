@@ -2725,4 +2725,34 @@ fit.SR_tol <- function(...,n_check=100,is_regime=FALSE,seed=12345){
 }
 
 
+#'
+#' fit.SRのwrapper関数でhに制約を置いたもの
+#'
+#' 現状は推定されたパラメータのみが出力される
+#' 
+#' @export
+#'
+#' 
 
+fit.SR_pen <- function(h_upper=Inf, h_lower=0.2, ...){
+    res1 = fit.SR(...)
+#    ri1$pars
+#    ri1$steepness    
+#    h_upper = 1
+    init = res1$opt$par
+
+    obj_pen = function(x,out=FALSE) {
+        a = exp(x[1]); b= exp(x[2]);
+        h0 = calc_steepness(SR="RI",rec_pars=data.frame("a"=a,"b"=b),waa=waa,maa=maa,M=M,plus_group=TRUE)
+        h <- h0[1,"h"]
+        if(out==FALSE) {
+            res1$obj.f2(x)+1000*max(0,h-h_upper) + 1000*max(0,h_lower-h) 
+        } else{
+            bind_cols(data.frame("a"=a,"b"=b),h0)
+        }
+    }
+
+    opt = optim(init,obj_pen)
+    obj_pen(opt$par,out=TRUE)
+    
+}
