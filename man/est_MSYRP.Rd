@@ -15,6 +15,7 @@ est_MSYRP(
   candidate_B0 = -1,
   candidate_Babs = -1,
   calc_yieldcurve = TRUE,
+  trace_multi = c(0.9, 0.925, 0.95, 0.975, 1.025, 1.05, 1.075),
   select_Btarget = 0,
   select_Blimit = 0,
   select_Bban = 0
@@ -28,6 +29,8 @@ est_MSYRP(
 \item{candidate_B0}{b0の計算候補}
 
 \item{candidate_Babs}{Babsの計算候補}
+
+\item{trace_multi}{（このベクトル）×（管理基準値として計算されるF）の平行状態の資源状態などを計算する。HCR_catchのプロットするときに、この値をもっと細かく設定することが必要になってくるかも}
 }
 \description{
 future_vpaを使ってMSY管理基準値などを計算するwrapper関数
