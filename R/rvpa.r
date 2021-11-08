@@ -681,6 +681,8 @@ vpa <- function(
   arglist <- lapply(argname,function(xx) eval(parse(text=xx)))
   names(arglist) <- argname
 
+  if (isTRUE(TMB) & isTRUE(no.est) ) TMB <- FALSE
+
   # data handling
 
   caa <- dat$caa    # catch-at-age
@@ -849,7 +851,7 @@ vpa <- function(
       saa[na[ny], ny] <- get(stat.tf[na[ny]-1])(saa[na[ny], years %in% tf.year])
 	  }
 	  else  saa[na[ny], ny] <- get(stat.tf[na[ny]-1])(faa[na[ny], years %in% tf.year])/get(stat.tf[na[ny]-1])(faa[na[ny], years %in% tf.year])
-	  
+
       if(length(p)==1) faa[1:na[ny], ny] <- p*sel.func(saa, def=sel.def)[1:na[ny],ny] else faa[1:na[ny], ny] <- p[length(p)]*sel.func(saa, def=sel.def)[1:na[ny],ny]
 
       if (isTRUE(Pope)) naa[ , ny] <- vpa.core.Pope(caa,faa,M,ny,p=p.pope)
@@ -890,7 +892,7 @@ vpa <- function(
      saa1[na[ny], ny] <- get(stat.tf[na[ny]-1])(saa1[na[ny], years %in% tf.year])
 	 }
 	 else saa1[na[ny], ny] <- get(stat.tf[na[ny]-1])(faa1[na[ny], years %in% tf.year])/get(stat.tf[na[ny]-1])(faa1[na[ny], years %in% tf.year])
-	 
+
      if(length(p)==1) faa1[1:na[ny], ny] <- p*sel.func(saa1, def=sel.def)[1:na[ny],ny] else  faa1[1:na[ny], ny] <- p[length(p)]*sel.func(saa1, def=sel.def)[1:na[ny],ny]
      faa1[na[ny], ny] <- alpha*faa1[na[ny]-1, ny]
 
