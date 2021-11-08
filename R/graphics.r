@@ -766,7 +766,7 @@ plot_futures <- function(vpares=NULL,
                                       str_c("将来の漁獲量 (",junit,"トン)"),
                                       "beta_gamma(F/Fmsy)",
                                       "漁獲割合(%)",
-                                      "漁獲圧の比(F/Fmsy)"))        
+                                      "漁獲圧の比(F/Fmsy)"))
     }
   }
   else{
@@ -1403,10 +1403,12 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
     diff.year <- plot.year[which(diff(plot.year)>1)+1]
     UBdata <- UBdata %>% filter(year %in% plot.year)
 
-    for(i in 1:length(diff.year)){
-       UBdata <- UBdata %>%
-         mutate(year_group = ifelse(year >= diff.year[i], year_group+1, year_group))
-     }
+    if (length(diff.year)>0) {
+      for(i in 1:length(diff.year)){
+        UBdata <- UBdata %>%
+          mutate(year_group = ifelse(year >= diff.year[i], year_group+1, year_group))
+      }
+    }
   }
 
   if(is.null(labeling.year)){
