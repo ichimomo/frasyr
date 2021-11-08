@@ -226,7 +226,7 @@ Generation.Time <- function(vpares,
     M <- M[!is.na(M)]
   }
 
-  if(is.null(age)) age <- as.numeric(names(maa))
+  if(is.null(age)) age <- as.numeric(rownames(vpares$naa))
   if(Plus>0){
     maa <- c(maa, rep(1,Plus))
     M <- c(M, rep(M[length(M)],Plus))
@@ -787,7 +787,9 @@ out.vpa <- function(res=NULL,    # VPA result
     write.table(tmp,append=T,sep=",",quote=FALSE,file=csvname,col.names=F,row.names=F,...)
   }
 
-  write(paste("# frasyr outputs at ",date()," & ",getwd()),file=csvname)
+  pd <- packageDescription("frasyr")
+  if(is.null(pd$GithubSHA1)) pd$GithubSHA1 <- "local" # fraysrをload_allした場合コミット番号が記録されないため
+  write(paste("# frasyr(@",pd$GithubSHA1,") outputs at ",date()," & ",getwd(), sep=""),file=csvname)
 
   if(!is.null(res)){
     write("# VPA results",file=csvname, append=T)
@@ -841,7 +843,6 @@ out.vpa <- function(res=NULL,    # VPA result
       write("\n# SR fit data",file=csvname,append=T)
       srres$input$SRdata %>% as_tibble() %>%  mutate(weight=srres$input$w) %>%
         write_csv(path=csvname,append=T,col_names=TRUE)
-      
       write("\n# SR fit resutls",file=csvname,append=T)      
       sr_summary <- get_summary_(srres)
       write_csv(sr_summary,path=csvname,append=T,
@@ -863,7 +864,6 @@ out.vpa <- function(res=NULL,    # VPA result
       if(!is.null(srres$steepness)) partable <- partable %>% left_join(srres$steepness)
       # tentative
       write_csv(partable, path=csvname,append=T,col_names=TRUE)
-
     }
     if(class(srres)=="SRfit.average"){
       write("\n# SR fit data",file=csvname,append=T)
@@ -893,6 +893,15 @@ out.vpa <- function(res=NULL,    # VPA result
 
     write(str_c("\n# future numbers at age",label), file=csvname,append=T)
     write.table2(apply(fres$naa,c(1,2),mean),title.tmp="Average future numbers at age")
+
+    write(str_c("\n# future maturity at age",label), file=csvname,append=T)
+    write.table2(apply(fres$maa,c(1,2),mean),title.tmp="Average maturity numbers at age")
+
+    write(str_c("\n# future weight (for biomass) at age",label), file=csvname,append=T)
+    write.table2(apply(fres$waa,c(1,2),mean),title.tmp="Average weight numbers at age")
+
+    write(str_c("\n# future weight (for catch) at age",label), file=csvname,append=T)
+    write.table2(apply(fres$waa.catch,c(1,2),mean),title.tmp="Average weight numbers at age")        
 
     write(str_c("\n# future total biomass",label), file=csvname,append=T)
     make_summary_table(fres$vbiom,1,probs=ci.future) %>%
@@ -2840,40 +2849,72 @@ rowtapply2 <- function(a0,FUN.name){
 #'
 #' kobe.tableをさらにsummaryする
 #'
+#' @param target_threshold c(60, 50)みたいな２つの長さのベクトル。一番目はbeta=0.8のときのtargetを上回る確率、２番めは50%のときの。資源状態が良い場合には１番目の値は２番めの値よりも大きいが、資源状態が悪いと１番目の値は２番めよりも小さくなる。その場合には自動的にc(100,50)となるように置き換わる（つまりランク３は出現しない）
+#' @param risk_threshold c(0.2,15) みたいな2つの長さのベクトル。一番目はbeta=0.8のときに10年間でずっとthresholdを上回る確率、２番めは50%のとき。資源状態が良い場合には１番目の値は２番めの値よりも小さくなる。
+#' @param ssbpercent_summary_year 目標管理基準値を上回るかどうかを判断する年
+#' @param ssb_summary_year パフォーマンス指標として取り出すSSBの年
+#' @param catch_summary_year パフォーマンス指標として取り出すCatchの年
+#' @param SBmsy ここで与えた相対値としてSBのパフォーマンス指標を示す
+#' @param MSY ここで与えた相対値としてMSYのパフォーマンス指標を示す
+#' @param Bthreshold_label ランクづけに利用するリスクをkobe.tableから持ってくるときのkobe.tableのリストの名前
+#' 
 #' @export
 
-summary_kobe_table <- function(kobe_data){
+summary_kobe_table <- function(kobeII.table,
+                               target_threshold,
+                               risk_threshold,
+                               ssbpercent_summary_year=c(2031),
+                               ssb_summary_year=c(2025,2031),
+                               catch_summary_year=c(2021,2026,2031),
+                               SBmsy=1, MSY=1,
+                               Bthreshold_label="blimit.risk",
+                               sort_result_table=FALSE){
   tmpfunc_ <- function(x,header)  str_c(header,"_",x)
-  arrange_table <- function(kobedata){
-    kobedata <- kobedata[c("catch.mean","ssb.mean","prob.over.ssbtarget","catch.risk","overfishing.risk","redzone.risk","bban.risk","blimit.risk","bspecific.risk")]
-    kobedata <- purrr::map(1:length(kobedata),
-                           function(x) kobedata[[x]] %>% select(-stat_name) %>%
-                                         rename_all(tmpfunc_, header=names(kobedata)[x]))
-    bind_cols(kobedata)
+
+  # riskのしきい値をどうするか？の設定が必要
+  ssb_table <-  kobeII.table$ssb.mean %>% select(as.character(ssb_summary_year))/SBmsy
+  ssb_table <-  ssb_table  %>% as_tibble() %>% rename_all(tmpfunc_, header="SSB")
+  catch_table <- kobeII.table$catch.mean %>% select(as.character(catch_summary_year))/MSY
+  catch_table <- catch_table %>% as_tibble() %>% rename_all(tmpfunc_, header="Catch")
+  
+  summary_HCR <- 
+      bind_cols(
+          kobeII.table$ssb.mean %>% select("HCR_name","beta"),
+          kobeII.table$prob.over.ssbtarget %>% select(as.character(ssbpercent_summary_year)) %>% rename_all(tmpfunc_, header="SSB_prob"),
+         ssb_table,
+         catch_table,
+          kobeII.table[Bthreshold_label][[1]] %>% ungroup %>% select(value) %>% dplyr::rename(risk_Bthreshold=value),
+          kobeII.table$bban.risk %>% ungroup %>% select(value) %>% dplyr::rename(risk_Bban=value),
+          kobeII.table$catch.risk %>% ungroup %>% select(value) %>% dplyr::rename(risk_catch=value)
+      )
+
+  if(target_threshold[1]<target_threshold[2]){ target_threshold[1] <- 100; risk_threshold[1] <- 0}
+  summary_HCR$SSB_prob_XXXX <- summary_HCR[str_c("SSB_prob_", ssbpercent_summary_year)]
+  summary_HCR$Catch_XXXX <- summary_HCR[str_c("Catch_", catch_summary_year[1])]  
+  summary_HCR <- summary_HCR %>%
+      mutate(category_target = case_when((SSB_prob_XXXX >= target_threshold[1]) ~ 2,
+                                         (SSB_prob_XXXX <  target_threshold[1] & SSB_prob_XXXX >= (target_threshold[2]-0.5)) ~ 1,
+                                         (SSB_prob_XXXX < (target_threshold[2]-0.5)) ~ 0),
+             category_risk   = case_when((risk_Bthreshold <= risk_threshold[1]) ~ 2,
+                                         (risk_Bthreshold >  risk_threshold[1] & risk_Bthreshold <= risk_threshold[2]) ~ 1,
+                                         (risk_Bthreshold >  risk_threshold[2]) ~ 0)) %>%
+      mutate(category_risk = ifelse(sum(risk_threshold)==0, 2, category_risk)) %>% 
+      mutate(category_combine = str_c(category_target,category_risk)) %>%
+      mutate(category         = case_when(category_combine=="10" ~ 1,
+                                          category_combine=="20" ~ 1.5,
+                                          category_combine=="11" ~ 2,
+                                          category_combine=="12" ~ 2.5,
+                                          category_combine=="21" ~ 2.5,
+                                          category_combine=="22" ~ 3,
+                                          category_target==0     ~ 0)) %>%
+      select(category, HCR_name:risk_catch, category_risk, category_target)      
+      
+
+  if(sort_result_table==TRUE){
+    summary_HCR <- summary_HCR %>%      
+        arrange(desc(category), desc(Catch_XXXX))
   }
-
-  final_table1 <- arrange_table(kobe_data) %>%
-    select(id:catch.mean_2031,ssb.mean_2023, ssb.mean_2026, ssb.mean_2031, prob.over.ssbtarget_2031, ends_with("risk_value")) # 必要な列を取り出す
-  final_table1 <- final_table1  %>%
-    mutate(catch21=final_table1$catch.mean_2021,
-           catch2223=apply(select(final_table1,catch.mean_2022:catch.mean_2023),1,mean), # 必要な漁獲量を平均する
-           catch2430=apply(select(final_table1,catch.mean_2024:catch.mean_2030),1,mean),
-           catch2131=apply(select(final_table1,catch.mean_2021:catch.mean_2030),1,mean),
-           HCR_name=catch.mean_HCR_name,
-           beta=catch.mean_beta) %>%
-    select(-starts_with("catch.mean")) # 平均しおわったcatchを削除する
-#  final_table1 <- bind_cols(filter(final_table1,id==1) %>% rename_all(tmpfunc_,header="M1"),
-#                            filter(final_table1,id==2) %>% rename_all(tmpfunc_,header="M2"))
-  final_table1 <-final_table1 %>%
-    select(M1_HCR_name, M1_beta,
-           ends_with("prob.over.ssbtarget_2031"),
-           ends_with("catch21"),ends_with("catch2223"),ends_with("catch2430"),ends_with("catch2131"),
-           ends_with("ssb.mean_2023"),ends_with("ssb.mean_2026"),ends_with("ssb.mean_2031"),
-           ends_with("bban.risk_value"),ends_with("blimit.risk_value"),ends_with("catch.risk_value"),
-           ends_with("redzone.risk_value"),ends_with("overfishing.risk_value")) %>%
-    arrange(desc(M1_catch21))
-
-  return(final_table1)
+  return(summary_HCR)
 }
 
 #'

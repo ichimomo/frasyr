@@ -33,6 +33,7 @@ plot_futures(
   future.replicate = NULL,
   seed = 1,
   legend.position = "top",
+  type = "detail",
   font.size = 18,
   ncol = 3
 )

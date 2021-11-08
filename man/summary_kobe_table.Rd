@@ -4,7 +4,35 @@
 \alias{summary_kobe_table}
 \title{kobe.tableをさらにsummaryする}
 \usage{
-summary_kobe_table(kobe_data)
+summary_kobe_table(
+  kobeII.table,
+  target_threshold,
+  risk_threshold,
+  ssbpercent_summary_year = c(2031),
+  ssb_summary_year = c(2025, 2031),
+  catch_summary_year = c(2021, 2026, 2031),
+  SBmsy = 1,
+  MSY = 1,
+  Bthreshold_label = "blimit.risk",
+  sort_result_table = FALSE
+)
+}
+\arguments{
+\item{target_threshold}{c(60, 50)みたいな２つの長さのベクトル。一番目はbeta=0.8のときのtargetを上回る確率、２番めは50%のときの。資源状態が良い場合には１番目の値は２番めの値よりも大きいが、資源状態が悪いと１番目の値は２番めよりも小さくなる。その場合には自動的にc(100,50)となるように置き換わる（つまりランク３は出現しない）}
+
+\item{risk_threshold}{c(0.2,15) みたいな2つの長さのベクトル。一番目はbeta=0.8のときに10年間でずっとthresholdを上回る確率、２番めは50%のとき。資源状態が良い場合には１番目の値は２番めの値よりも小さくなる。}
+
+\item{ssbpercent_summary_year}{目標管理基準値を上回るかどうかを判断する年}
+
+\item{ssb_summary_year}{パフォーマンス指標として取り出すSSBの年}
+
+\item{catch_summary_year}{パフォーマンス指標として取り出すCatchの年}
+
+\item{SBmsy}{ここで与えた相対値としてSBのパフォーマンス指標を示す}
+
+\item{MSY}{ここで与えた相対値としてMSYのパフォーマンス指標を示す}
+
+\item{Bthreshold_label}{ランクづけに利用するリスクをkobe.tableから持ってくるときのkobe.tableのリストの名前}
 }
 \description{
 kobe.tableをさらにsummaryする

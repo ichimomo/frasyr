@@ -473,9 +473,10 @@ fit.SR <- function(SRdata,
 
   Res$loglik <- loglik <- -opt$value
 
+
   names(Res$pars) <- c("a","b","sd","rho")
   Res$pars <- data.frame(t(Res$pars))
-  #  Res$gamma <- gamma
+  #Res$gamma <- gamma
 
   ssb.tmp <- seq(from=0,to=max(ssb)*max.ssb.pred,length=100)
   R.tmp <- sapply(1:length(ssb.tmp), function(i) SRF(ssb.tmp[i],a,b))
@@ -488,7 +489,10 @@ fit.SR <- function(SRdata,
   Res$BIC <- -2*loglik+k*log(NN)
 
   if(!is.null(bio_par)){
-    Res$steepness <- calc_steepness(SR=SR,Res$pars,bio_par$M,bio_par$waa,bio_par$maa,plus_group=plus_group)
+    if(SR!="Mesnil") Res$steepness <- calc_steepness(SR=SR,Res$pars,bio_par$M,bio_par$waa,bio_par$maa,plus_group=plus_group) else{ #add gamma to Res$pars if SR=Mesnil
+      pars_and_gamma <- data.frame(Res$pars,gamma)
+      Res$steepness <- calc_steepness(SR=SR,pars_and_gamma,bio_par$M,bio_par$waa,bio_par$maa,plus_group=plus_group)
+    }
   }
 
   class(Res) <- "fit.SR"
@@ -988,7 +992,8 @@ fit.SRregime <- function(
   max.ssb.pred = 1.3,
   hessian = FALSE,
   bio_par = NULL,
-  plus_group = TRUE
+  plus_group = TRUE,
+  gamma = 0.001
 ) {
   argname <- ls()
   arglist <- lapply(argname,function(xx) eval(parse(text=xx)))
@@ -1023,6 +1028,7 @@ fit.SRregime <- function(
   if (SR=="HS") SRF <- function(x,a,b) ifelse(x>b,b*a,x*a)
   if (SR=="BH") SRF <- function(x,a,b) a*x/(1+b*x)
   if (SR=="RI") SRF <- function(x,a,b) a*x*exp(-b*x)
+  if (SR=="Mesnil") SRF <- function(x,a,b) 0.5*a*(x+sqrt(b^2+gamma^2/4)-sqrt((x-b)^2+gamma^2/4))
 
   obj.f <- function(a,b,out="nll"){ #a,bはベクトル
     resid <- NULL
@@ -1061,7 +1067,7 @@ fit.SRregime <- function(
   }
   b_grid <- NULL
   for(i in unique(b_key)){
-    if (SR=="HS") {
+    if (SR=="HS" | SR=="Mesnil") {
       b_range <- range(ssb[b_key==i])
     } else {b_range <- range(1/ssb[b_key==i])}
     b_grid <- cbind(b_grid,seq(b_range[1],b_range[2],length=length))
@@ -1080,7 +1086,7 @@ fit.SRregime <- function(
 
       ab_init <- as.numeric(ab_grid[which.min(init_list),])
       init <- log(ab_init[1:max(a_key)])
-      if (SR=="HS") {
+      if (SR=="HS" | SR=="Mesnil") {
         for(i in unique(b_key)) {
           init <- c(init,-log(max(0.000001,(max(ssb[b_key==i])-min(ssb[b_key==i]))/max(0.000001,(ab_init[max(a_key)+i]-min(ssb[b_key==i])))-1)))
         }
@@ -1092,7 +1098,7 @@ fit.SRregime <- function(
     init <- p0
   }
 
-  if (SR=="HS") {
+  if (SR=="HS" | SR=="Mesnil") {
     obj.f2 <- function(x) {
       a <- exp(x[1:max(a_key)])
       b <- b_range[1,]+(b_range[2,]-b_range[1,])/(1+exp(-x[(max(a_key)+1):(max(a_key)+max(b_key))]))
@@ -1115,7 +1121,7 @@ fit.SRregime <- function(
   Res$opt <- opt
 
   a <- exp(opt$par[1:max(a_key)])
-  if (SR=="HS") {
+  if (SR=="HS" | SR=="Mesnil") {
     b <- b_range[1,]+(b_range[2,]-b_range[1,])/(1+exp(-opt$par[(1+max(a_key)):(max(a_key)+max(b_key))]))
   } else {
     b <- exp(opt$par[(1+max(a_key)):(max(a_key)+max(b_key))])
@@ -1180,7 +1186,8 @@ fit.SRregime <- function(
   class(Res) <- "fit.SRregime"
 
   if(!is.null(bio_par)){
-      par.matrix <- Res$regime_pars[c("a","b")]
+    if(SR!="Mesnil") par.matrix <- Res$regime_pars[c("a","b")]
+    else par.matrix <- tibble(Res$regime_pars[c("a","b")],gamma=gamma)
       Res$steepness <- purrr::map_dfr(seq_len(nrow(par.matrix)),
                                 function(i){
                                     calc_steepness(SR=SR,rec_pars=par.matrix[i,],M=bio_par$M,waa=bio_par$waa,maa=bio_par$maa,
@@ -2227,7 +2234,7 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
   if (all(diag(resSR2$opt$hessian) > 0)) {
     cat(RES$hessian <- "2. Hessian行列の対角成分が正定値になっています (OK)","\n")
   } else {
-    flag[2] <- 1    
+    flag[2] <- 1
     message(RES$hessian <- "2. Hessian行列の対角成分が正定値になっていません (HSかつ3以降のチェックがOKであれば問題ありません)")
   }
 
@@ -2260,7 +2267,7 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
   if (is.null(RES$boundary)) {
     cat(RES$boundary <- "3. どの推定パラメータも壁(boundaries)にあたっていないのでOKです (OK)","\n")
   } else {
-    flag[3] <- 1        
+    flag[3] <- 1
     for (i in 1:length(RES$boundary)) {
       message("3. パラメータは壁にあたっています(HSで折れ点が過去最小・最大親魚量になっているときにそうなります。HSでない場合は推定の不安定性を示唆します。)", RES$boundary[i])
     }
@@ -2294,11 +2301,11 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
   max_loglik = max(loglik)
   optimal = NULL
   if (resSR$loglik-max_loglik < -0.001) {
-    flag[4] <- 1            
+    flag[4] <- 1
     diff_loglik = abs(resSR$loglik-max_loglik)
     message(paste0("Maximum difference of log-likelihood is ",round(diff_loglik,6)))
     optimal = resSR_list[[which.max(loglik)]]
-    message(RES$optim <- str_c("4. パラメータが大域解に達していません (fit.SRtolで再計算をおこなうか、本関数の返り値のoptimumに結果を置き換えてください。大域解を得るための初期値は,",str_c(optimal$input$p0,collapse=", "),"です)"))    
+    message(RES$optim <- str_c("4. パラメータが大域解に達していません (fit.SRtolで再計算をおこなうか、本関数の返り値のoptimumに結果を置き換えてください。大域解を得るための初期値は,",str_c(optimal$input$p0,collapse=", "),"です)"))
     RES$loglik_diff = diff_loglik
   } else {
     cat(RES$optim <- "4. パラメータが大域解に達しているのでOKです (OK)","\n")
@@ -2338,7 +2345,7 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
       #   RES$percent_bias = c(RES$percent_bias,"rho" = max(rho_diff))
       #   message("Maximum percent bias of 'rho' is ", round(as.numeric(RES$percent_bias["rho"]),6),"%")
       # }
-      selected_set <- which(loglik_diff<diff_threshold)      
+      selected_set <- which(loglik_diff<diff_threshold)
       if(class(resSR)!="fit.SRregime"){
         par_list = t(sapply(1:n, function(i) unlist(resSR_list[[i]]$pars)[unlist(resSR$pars) != 0]))
         par_list0 <- par_list
@@ -2347,7 +2354,7 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
         bias_list = bias_list[selected_set,]
       }else{
         par_list = t(sapply(1:n, function(i) unlist(resSR_list[[i]]$regime_pars)[unlist(resSR$regime_pars) != 0]))
-        par_list0 <- par_list          
+        par_list0 <- par_list
         par_list = par_list[selected_set,]
         bias_list = t(sapply(1:n, function(i) 100*(unlist(resSR_list[[i]]$regime_pars)[unlist(resSR$regime_pars) != 0]/unlist(resSR$regime_pars)[unlist(resSR$regime_pars)!=0]-1)))
         bias_list = bias_list[selected_set,]
@@ -2357,14 +2364,20 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
       RES$par_summary <- par_summary
       RES$percent_bias_summary <- percent_bias_summary
       RES$par_list <- par_list
-      RES$par_list0 <- par_list0      
+      RES$par_list0 <- par_list0
       # すべてのパラメータのmedianに最も近いパラメータセットを持つものを選んでoptimalに入れちゃう
-      x <- sweep(par_list,2,apply(par_list,2,median),FUN="/") %>% apply(1,mean)
+      #      x <- sweep(par_list,2,apply(par_list,2,median),FUN="/") %>% apply(1,mean)
+     if(class(resSR)!="fit.SRregime"){
+        x <- sweep(par_list[,c("a","b")],2,apply(par_list[,c("a","b")],2,median),FUN="/") %>% apply(1,mean)
+     }else{
+        tmp <- 2:(1+2*length(unique(resSR$input$regime.key))) 
+        x <- sweep(par_list[,tmp],2,apply(par_list[,tmp],2,median),FUN="/") %>% apply(1,mean)
+      }      
       selected <- which.min(abs(x-1))
       cat("ほとんど同じ尤度を持つパラメータの範囲 (",n,"回試行のうち",nrow(par_list),"回分),\n")
       print(apply(par_list,2,summary))
       optimal <- resSR_list[selected_set][[selected]]
-      cat("中央値に最も近いパラメータセットを持つ推定結果をoptimumに出力します(そのときの初期値は",str_c(optimal$input$p0,collapse="-"),"です)\n")      
+      cat("中央値に最も近いパラメータセットを持つ推定結果をoptimumに出力します(そのときの初期値は",str_c(optimal$input$p0,collapse="-"),"です)\n")
     } else {
       cat(RES$pars <- "5. パラメータが唯一の解として推定されているのでOKです (OK)","\n")
     }
@@ -2699,7 +2712,7 @@ fit.SR_tol <- function(...,n_check=100,is_regime=FALSE,seed=12345){
     cat("大域解を得るための初期値に変えたres_SRの結果に置き換えます\n")
 
     # 再度check.SRfit
-    cat("...check.SRfit 2回目....\n")    
+    cat("...check.SRfit 2回目....\n")
     check <- check.SRfit(res_SR,output=FALSE)
   }
 
