@@ -502,7 +502,7 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param plot.year  上のプロットの参照年
 #' @param term.F  terminal Fの何を推定するか: "max" or "all"
 #' @param plus.group
-#' @param stat.tf  最終年のFを推定する統計量（年齢別に与えること可）
+#' @param stat.tf  最終年のFを推定する統計量（年齢で同じとする：changed on Nov/2021）
 #' @param add.p.est  追加で最高齢以外のfaaを推定する際．年齢を指定する．
 #' @param add.p.ini
 #' @param sel.update チューニングVPAにおいて，選択率を更新しながら推定
@@ -618,7 +618,7 @@ vpa <- function(
   plot.year = 1998:2015,   # 上のプロットの参照年
   term.F = "max",   # terminal Fの何を推定するか: "max" or "all"
   plus.group = TRUE,
-  stat.tf = "mean",  # 最終年のFを推定する統計量（年齢別に与えること可）
+  stat.tf = "mean",  # 最終年のFを推定する統計量（年齢で同じとする）
   add.p.est = NULL,  # 追加で最高齢以外のfaaを推定する際．年齢を指定する．
   add.p.ini = NULL,
   sel.update=FALSE,  # チューニングVPAにおいて，選択率を更新しながら推定
@@ -747,8 +747,8 @@ vpa <- function(
     if(length(p.init) >= na[ny]-1) p.init <- p.init[1:na[ny]-1]  # 初期値の成分数が年齢数-1以上であれば，年齢数以上の値は使用しない
   }
 
-  if (length(stat.tf)==1) stat.tf <- rep(stat.tf, na[ny]-1)  # stat.tfが1個だけ指定されているときは，全年齢その統計量を使う
-
+  #if (length(stat.tf)==1) stat.tf <- rep(stat.tf, na[ny]-1)  # stat.tfが1個だけ指定されているときは，全年齢その統計量を使う(delete)
+  
   # tuningの際のパラメータが1個だけ指定されている場合は，nindexの数だけ増やす
   if (isTRUE(tune)){
 
@@ -840,15 +840,15 @@ vpa <- function(
       saa <- sel.func(faa, def=sel.def)   # sel.defに従って選択率を計算
       for (i in (na[ny]-1):1){
 	  if(isTRUE(ave_S)){
-        saa[i, ny] <- get(stat.tf[i])(saa[i, years %in% tf.year])
+        saa[i, ny] <- get(stat.tf)(saa[i, years %in% tf.year])
 		}
-		else  saa[i, ny] <- get(stat.tf[i])(faa[i, years %in% tf.year])/get(stat.tf[i])(faa[na[ny], years %in% tf.year])
+		else  saa[i, ny] <- get(stat.tf)(faa[i, years %in% tf.year])/get(stat.tf)(faa[na[ny], years %in% tf.year])
       }
 
       if(isTRUE(ave_S)){
-      saa[na[ny], ny] <- get(stat.tf[na[ny]-1])(saa[na[ny], years %in% tf.year])
+      saa[na[ny], ny] <- get(stat.tf)(saa[na[ny], years %in% tf.year])
 	  }
-	  else  saa[na[ny], ny] <- get(stat.tf[na[ny]-1])(faa[na[ny], years %in% tf.year])/get(stat.tf[na[ny]-1])(faa[na[ny], years %in% tf.year])
+	  else  saa[na[ny], ny] <- get(stat.tf)(faa[na[ny], years %in% tf.year])/get(stat.tf)(faa[na[ny], years %in% tf.year])
 	  
       if(length(p)==1) faa[1:na[ny], ny] <- p*sel.func(saa, def=sel.def)[1:na[ny],ny] else faa[1:na[ny], ny] <- p[length(p)]*sel.func(saa, def=sel.def)[1:na[ny],ny]
 
@@ -882,14 +882,14 @@ vpa <- function(
 
      for (i in (na[ny]-1):1){
 	  if(isTRUE(ave_S)){
-       saa1[i, ny] <- get(stat.tf[i])(saa1[i, years %in% tf.year])
+       saa1[i, ny] <- get(stat.tf)(saa1[i, years %in% tf.year])
 	   }
-	   else saa1[i, ny] <- get(stat.tf[i])(faa1[i, years %in% tf.year])/get(stat.tf[i])(faa1[na[ny], years %in% tf.year])
+	   else saa1[i, ny] <- get(stat.tf)(faa1[i, years %in% tf.year])/get(stat.tf)(faa1[na[ny], years %in% tf.year])
      }
 	   if(isTRUE(ave_S)){
-     saa1[na[ny], ny] <- get(stat.tf[na[ny]-1])(saa1[na[ny], years %in% tf.year])
+     saa1[na[ny], ny] <- get(stat.tf)(saa1[na[ny], years %in% tf.year])
 	 }
-	 else saa1[na[ny], ny] <- get(stat.tf[na[ny]-1])(faa1[na[ny], years %in% tf.year])/get(stat.tf[na[ny]-1])(faa1[na[ny], years %in% tf.year])
+	 else saa1[na[ny], ny] <- get(stat.tf)(faa1[na[ny], years %in% tf.year])/get(stat.tf)(faa1[na[ny], years %in% tf.year])
 	 
      if(length(p)==1) faa1[1:na[ny], ny] <- p*sel.func(saa1, def=sel.def)[1:na[ny],ny] else  faa1[1:na[ny], ny] <- p[length(p)]*sel.func(saa1, def=sel.def)[1:na[ny],ny]
      faa1[na[ny], ny] <- alpha*faa1[na[ny]-1, ny]
@@ -905,7 +905,7 @@ vpa <- function(
      # 平均する年齢・年に1を入れた行列tf.matを使用（それ以外はNA）
      if (!is.null(tf.mat)) {
        for (i in 1:nrow(faa)) {
-         if (sum(!is.na(tf.mat[i,]))) faa[i, ny] <- get(stat.tf[1])(faa[i, !is.na(tf.mat[i,])])
+         if (sum(!is.na(tf.mat[i,]))) faa[i, ny] <- get(stat.tf)(faa[i, !is.na(tf.mat[i,])])
        }
        naa[, ny] <- vpa.core.Pope(caa,faa,M,ny,p=p.pope)
        for (i in (ny-1):(ny-na[ny]+1)){
@@ -947,9 +947,9 @@ vpa <- function(
    }
 
 if (isTRUE(madara)){
-     denom <- get(stat.tf[na[ny]-1])(faa[na[ny], years %in% tf.year])
+     denom <- get(stat.tf)(faa[na[ny], years %in% tf.year])
      for (i in (na[ny]-1):1){
-          faa[i,ny] <- get(stat.tf[i])(faa[i, years %in% tf.year])/denom*faa[na[ny],ny]
+          faa[i,ny] <- get(stat.tf)(faa[i, years %in% tf.year])/denom*faa[na[ny],ny]
           naa[i, ny] <- caa[i, ny]*exp(M[i, ny]/2)/(1-exp(-faa[i, ny]))
           k <- 0
           for (j in (i-1):1){
@@ -966,9 +966,9 @@ if (isTRUE(madara)){
 
     if (is.na(naa[na[ny]-1,ny])){
       if(isTRUE(Pope)){
-        for (i in (na[ny]-1):1){
-          if (is.null(tf.mat)) faa[i, ny] <- get(stat.tf[i])(faa[i, years %in% tf.year])
-          else faa[i, ny] <- get(stat.tf[i])(faa[i, !is.na(tf.mat[i,])])
+        for (i in (na[ny]-1):1){		 
+          if (is.null(tf.mat)) faa[i, ny] <- get(stat.tf)(faa[i, years %in% tf.year])
+          else faa[i, ny] <- get(stat.tf)(faa[i, !is.na(tf.mat[i,])])
           naa[i, ny] <- caa[i, ny]*exp(M[i, ny]/2)/(1-exp(-faa[i, ny]))
           k <- 0
           for (j in (i-1):1){
@@ -982,7 +982,7 @@ if (isTRUE(madara)){
       }
       else{
         for (i in (na[ny]-1):1){
-          faa[i, ny] <- get(stat.tf[i])(faa[i, years %in% tf.year])
+          faa[i, ny] <- get(stat.tf)(faa[i, years %in% tf.year])
           naa[i, ny] <- caa[i, ny]/(1-exp(-faa[i, ny]-M[i, ny]))*(faa[i, ny]+M[i, ny])/faa[i, ny]
           k <- 0
           for (j in (i-1):1){
@@ -1277,7 +1277,7 @@ if (isTRUE(madara)){
         }
 
       if (penalty=="f") obj <- (1-lambda)*obj + lambda*sum((abs(faa[1:(na[ny]-1),ny]-apply(faa[1:(na[ny]-1), years %in% tf.year],1,get(stat.tf))))^beta)
-
+      
       if (penalty=="s") obj <- (1-lambda)*obj + lambda*sum((abs(saa[1:(na[ny]-1),ny]-apply(saa[1:(na[ny]-1), years %in% tf.year],1,get(stat.tf))))^beta)
 
       if (!is.null(sel.rank)) obj <- obj+1000000*sum((rank(saa[,ny])-sel.rank)^2)
@@ -1403,7 +1403,9 @@ if (isTRUE(madara)){
   if(isTRUE(TMB) & isTRUE(sel.update)){print("TMB is not supported for sel.update method");stop()}
   if(isTRUE(TMB) & alpha!=1){print("TMB is not supported for alpha!=1");stop()}
   if(isTRUE(TMB) & isFALSE(Pope)){print("TMB is not supported for baranov equation option. only for Pope");stop()}
-
+  if(isTRUE(TMB) & penalty=="f"){print("TMB is not supported for penalty=f. only for penalty=p");stop()}
+  if(isTRUE(TMB) & penalty=="s"){print("TMB is not supported for penalty=s. only for penalty=p");stop()}
+  
     index2 <- as.matrix(t(apply(index,1,function(x) ifelse(is.na(x),0,x))))
 
     Ab_type <- ifelse(abund=="SSB", 1, ifelse(abund=="N", 2, ifelse(abund=="B", 3, 4)))
