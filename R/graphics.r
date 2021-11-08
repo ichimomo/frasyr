@@ -699,6 +699,7 @@ SRregime_plot <- plot_SRregime <- function (SRregime_result,xscale=1000,xlabel="
 #' @param ncol 図を並べるときの列数
 #' @param legend.position 凡例の位置。top, right, left, bottomなど
 #' @param average_lwd 将来予測の平均値の線の太さ. 基本は1.
+#' @param remove.last.vpa.year VPAの最終年のデータのプロットを除くかどうか（last.catch.zero用オプション）
 #'
 #' @encoding UTF-8
 #' @export
@@ -729,7 +730,8 @@ plot_futures <- function(vpares=NULL,
                          legend.position="top",
                          type="detail",
                          font.size=18,
-                         ncol=3
+                         ncol=3,
+                         remove.last.vpa.year = FALSE
 ){
 
   col.SBtarget <- "#00533E"
@@ -829,6 +831,8 @@ plot_futures <- function(vpares=NULL,
       dplyr::filter(stat%in%rename_list$stat) %>%
       left_join(rename_list) %>%
       mutate(value=value/unit,mean=mean/unit)
+
+    if ( isTRUE(remove.last.vpa.year) ) vpa_tb = vpa_tb %>% filter(year<max(year))
 
     # 将来と過去をつなげるためのダミーデータ
     tmp <- vpa_tb %>% group_by(stat) %>%
