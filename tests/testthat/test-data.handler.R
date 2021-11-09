@@ -464,6 +464,25 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
   expect_equal(as.numeric(round(res_vpa_estb_tune5m_b$sigma,2)),c(0.18,0.16,0.10,0.13,0.17,0.28))
   expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune5m_b$saa),2)),c(0.46,0.66,1.00,1.00))
   expect_equal(as.numeric(round(res_vpa_estb_tune5m_b$logLik,3)),c(23.116))
+  
+  # set lambda + 全F推定法．最尤法．b推定あり,penalty="f", eta=NULL(add:2021/11)
+  res_vpa_estb_tune5m_bf <- vpa(vpadat_estb, last.catch.zero = FALSE,  min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
+                               Pope = TRUE,  tune=TRUE, term.F="all", est.method="ml" ,b.est=TRUE, p.init=c(0.2,0.3,0.6,0.6),abund=c("N","N","N","N","N","N"), lambda=0.02, fc.year=1998:2000,penalty="f",tf.year=1998:2000)
+  expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune5m_bf$naa),2)),c(694.79,335.59,142.36,61.91))
+  expect_equal(as.numeric(round(res_vpa_estb_tune5m_bf$b,2)),c(0.88,0.45,0.64,0.45,0.57,0.99))
+  expect_equal(as.numeric(round(res_vpa_estb_tune5m_bf$sigma,2)),c(0.18,0.16,0.10,0.13,0.17,0.29))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune5m_bf$saa),2)),c(0.46,0.66,1.00,1.00))
+  expect_equal(as.numeric(round(res_vpa_estb_tune5m_bf$logLik,3)),c(23.127))
+  
+  # set lambda + 全F推定法．最尤法．b推定あり,penalty="s", eta=NULL(add:2021/11)
+  res_vpa_estb_tune5m_bs <- vpa(vpadat_estb, last.catch.zero = FALSE,  min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
+                                Pope = TRUE,  tune=TRUE, term.F="all", est.method="ml" ,b.est=TRUE, p.init=c(0.2,0.3,0.6,0.6),abund=c("N","N","N","N","N","N"), lambda=0.02, fc.year=1998:2000,penalty="s",tf.year=1998:2000)
+  expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune5m_bs$naa),2)),c(694.86,335.62,142.38,61.91))
+  expect_equal(as.numeric(round(res_vpa_estb_tune5m_bs$b,2)),c(0.88,0.45,0.64,0.45,0.57,0.99))
+  expect_equal(as.numeric(round(res_vpa_estb_tune5m_bs$sigma,2)),c(0.18,0.16,0.10,0.13,0.17,0.29))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_estb_tune5m_bs$saa),2)),c(0.46,0.66,1.00,1.00))
+  expect_equal(as.numeric(round(res_vpa_estb_tune5m_bs$logLik,3)),c(23.128))
+  
 
   # set lambda + 全F推定法．最尤法．b推定あり,penalty="p", eta=0.3, eta.age=0
   res_vpa_estb_tune5m_b_e <- vpa(vpadat_estb, last.catch.zero = FALSE,  min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
@@ -858,6 +877,30 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
   expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune5m_b$b,2)),c(0.60,0.29,0.48,0.33,0.38,0.65))
   expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune5m_b$sigma,2)),c(0.20,0.18,0.11,0.14,0.18,0.31))
   expect_equal(as.numeric(round(rowMeans(res_vpa_pgc0_estb_tune5m_b$saa),2)),c(0.56,0.89,1.00,NA))
+  
+  # set lambda + 全F推定法．最尤法．b推定あり_penalty=p
+  res_vpa_pgc0_estb_tune5m_bp <- vpa(vpadat_pgc0_estb, last.catch.zero = FALSE,  min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
+                                    Pope = TRUE,  tune=TRUE, term.F="all", est.method="ml" ,b.est=TRUE, p.init=c(0.2,0.3,0.6,0.6),abund=c("N","N","N","N","N","N"), lambda=0.02, fc.year=1998:2000,penalty="p")
+  expect_equal(as.numeric(round(rowMeans(res_vpa_pgc0_estb_tune5m_bp$naa),2)),c(638.85,299.71,152.02,NA))
+  expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune5m_bp$b,2)),c(0.60,0.29,0.48,0.33,0.38,0.65))
+  expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune5m_bp$sigma,2)),c(0.20,0.18,0.11,0.14,0.18,0.31))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_pgc0_estb_tune5m_bp$saa),2)),c(0.56,0.89,1.00,NA))
+  
+  # set lambda + 全F推定法．最尤法．b推定あり_penalty=f
+  res_vpa_pgc0_estb_tune5m_bf <- vpa(vpadat_pgc0_estb, last.catch.zero = FALSE,  min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
+                                    Pope = TRUE,  tune=TRUE, term.F="all", est.method="ml" ,b.est=TRUE, p.init=c(0.2,0.3,0.6,0.6),abund=c("N","N","N","N","N","N"), lambda=0.02, fc.year=1998:2000,penalty="f",tf.year=1998:2000)
+  expect_equal(as.numeric(round(rowMeans(res_vpa_pgc0_estb_tune5m_bf$naa),2)),c(636.09,298.29,151.14,NA))
+  expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune5m_bf$b,2)),c(0.58,0.28,0.47,0.32,0.37,0.63))
+  expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune5m_bf$sigma,2)),c(0.20,0.18,0.11,0.14,0.18,0.31))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_pgc0_estb_tune5m_bf$saa),2)),c(0.56,0.89,1.00,NA))
+  
+  # set lambda + 全F推定法．最尤法．b推定あり_penalty=s
+  res_vpa_pgc0_estb_tune5m_bs <- vpa(vpadat_pgc0_estb, last.catch.zero = FALSE,  min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
+                                     Pope = TRUE,  tune=TRUE, term.F="all", est.method="ml" ,b.est=TRUE, p.init=c(0.2,0.3,0.6,0.6),abund=c("N","N","N","N","N","N"), lambda=0.02, fc.year=1998:2000,penalty="s",tf.year=1998:2000)
+  expect_equal(as.numeric(round(rowMeans(res_vpa_pgc0_estb_tune5m_bs$naa),2)),c(633.63,297.02,150.36,NA))
+  expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune5m_bs$b,2)),c(0.57,0.27,0.46,0.31,0.36,0.62))
+  expect_equal(as.numeric(round(res_vpa_pgc0_estb_tune5m_bs$sigma,2)),c(0.20,0.18,0.11,0.14,0.18,0.31))
+  expect_equal(as.numeric(round(rowMeans(res_vpa_pgc0_estb_tune5m_bs$saa),2)),c(0.55,0.89,1.00,NA))
 
   # set lambda + 全F推定法．最尤法．b推定あり, 指標２と３のシグマは同じ
   res_vpa_pgc0_estb_tune5m_b_sigma <- vpa(vpadat_pgc0_estb, last.catch.zero = FALSE,  min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
