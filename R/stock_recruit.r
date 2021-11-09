@@ -2394,6 +2394,148 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
   return(RES)
 }
 
+#' 再生産関係推定でSR＝HSにおいて同一尤度を持つ複数のパラメータセットがえられたとき、SR＝Mesnilとしてcheck.SRfitを呼び出し、gammaを変えながら尤度が一意に定まる値を探す関数
+#'
+#' @param resSR \code{fit.SR}か\code{fit.SRregime}のオブジェクトで、かつSR=Mesnilのもの
+#' @param n 初期値を変えてパラメータ推定する回数 (check.SRfitの引数)
+#' @param sigma 初期値を変えるときの生起乱数の標準偏差(check.SRfitの引数)
+#' @param seed \code{set.seed}で使用するseed(check.SRfitの引数)
+#' @param gamma_ini SR=Mesnilの曲がり具合を決めるパラメータ デフォルトは10で、9,8,…,2,1,0.9,0.8,…と複数のパラメータが得られるまで探していく。
+#' @encoding UTF-8
+#' @export
+specify.Mesnil.gamma <- function(resSR,n=100,seed = 1,sigma=5,gamma_ini=10){
+  opt = resSR$opt
+  SRdata = resSR$input$SRdata
+  resSR2 = resSR
+  RES = list()
+
+  if (resSR$input$SR!="Mesnil") stop("This function checks convergence of the fitting SR function if SR=Mesnil.")
+
+  identical.likely<-TRUE
+  gamma_post <- gamma_ini
+  while(identical.likely){
+    set.seed(seed)
+    loglik = NULL
+    pars = NULL
+    resSR_list = list()
+    for (i in 1:n) {
+      input = resSR$input
+      input$gamma = gamma_post
+
+      for (j in 1:100) {
+        input$p0 <- opt$par + rnorm(length(opt$par),0,sigma)
+        if (class(resSR) == "fit.SR") {
+          #input$rep.opt = TRUE
+          resSR2 = try(do.call(fit.SR, input),silent=TRUE)
+        } else {
+          if (class(resSR) == "fit.SRregime") {
+            resSR2 = try(do.call(fit.SRregime, input),silent=TRUE)
+          } else {
+            input$rep.opt = TRUE
+            resSR2 = try(do.call(fit.SRalpha, input),silent=TRUE)
+          }
+        }
+        if (class(resSR2) != "try-error") break
+      }
+      resSR_list[[i]] = resSR2
+      loglik = c(loglik, resSR2$loglik)
+      pars = rbind(pars,resSR2$opt$par)
+    }
+    max_loglik = max(loglik)
+    optimal = NULL
+    if (resSR$loglik-max_loglik < -0.001) {
+      diff_loglik = abs(resSR$loglik-max_loglik)
+      message(paste0("Maximum difference of log-likelihood is ",round(diff_loglik,6)))
+      optimal = resSR_list[[which.max(loglik)]]
+      RES$loglik_diff = diff_loglik
+    } else {
+      # global optimumに達している場合のみ
+      loglik_diff = purrr::map_dbl(loglik, function(x) abs(diff(c(x,max_loglik))))
+      problem = NULL
+      diff_threshold = 1.0e-6
+      # a_diff = NULL; b_diff = NULL; sd_diff = NULL; rho_diff = NULL
+      for (i in 1:n) {
+        if (loglik_diff[i] < diff_threshold) {
+          if (all(abs(pars[i,] - resSR$opt$par) < 0.001)) {
+            problem = c(problem,FALSE)
+          } else {
+            problem = c(problem,TRUE)
+          }
+        } else {
+          problem = c(problem,FALSE)
+        }
+      }
+      if (sum(problem)>0) {
+        RES$loglik_diff <- loglik_diff
+        message(RES$pars <- str_c("同じ最大尤度(",diff_threshold,"よりも小さい違い)を持つ複数のパラメータが見つかりました（L1かつHSでよく見られます）。"))
+        selected_set <- which(loglik_diff<diff_threshold)
+        if(class(resSR)!="fit.SRregime"){
+          par_list = t(sapply(1:n, function(i) unlist(resSR_list[[i]]$pars)[unlist(resSR$pars) != 0]))
+          par_list0 <- par_list
+          par_list = par_list[selected_set,]
+          bias_list = t(sapply(1:n, function(i) 100*(unlist(resSR_list[[i]]$pars)[unlist(resSR$pars) != 0]/unlist(resSR$pars)[unlist(resSR$pars)!=0]-1)))
+          bias_list = bias_list[selected_set,]
+        }else{
+          par_list = t(sapply(1:n, function(i) unlist(resSR_list[[i]]$regime_pars)[unlist(resSR$regime_pars) != 0]))
+          par_list0 <- par_list
+          par_list = par_list[selected_set,]
+          bias_list = t(sapply(1:n, function(i) 100*(unlist(resSR_list[[i]]$regime_pars)[unlist(resSR$regime_pars) != 0]/unlist(resSR$regime_pars)[unlist(resSR$regime_pars)!=0]-1)))
+          bias_list = bias_list[selected_set,]
+        }
+        par_summary = apply(par_list,2,summary)
+        percent_bias_summary = apply(bias_list,2,summary)
+        RES$par_summary <- par_summary
+        RES$percent_bias_summary <- percent_bias_summary
+        RES$par_list <- par_list
+        RES$par_list0 <- par_list0
+        # すべてのパラメータのmedianに最も近いパラメータセットを持つものを選んでoptimalに入れちゃう
+        #      x <- sweep(par_list,2,apply(par_list,2,median),FUN="/") %>% apply(1,mean)
+        if(class(resSR)!="fit.SRregime"){
+          x <- sweep(par_list[,c("a","b")],2,apply(par_list[,c("a","b")],2,median),FUN="/") %>% apply(1,mean)
+        }else{
+          tmp <- 2:(1+2*length(unique(resSR$input$regime.key)))
+          x <- sweep(par_list[,tmp],2,apply(par_list[,tmp],2,median),FUN="/") %>% apply(1,mean)
+        }
+        selected <- which.min(abs(x-1))
+        optimal <- resSR_list[selected_set][[selected]]
+
+        identical.likely<-FALSE
+      }else{
+        gamma_pre <- input$gamma
+        degit_n <- floor(log10(gamma_pre))
+        ssd <- gamma_pre %/% 10^(degit_n)
+        if(ssd!=1){
+          gamma_post <- gamma_pre - 10^(degit_n)
+        }else{
+          gamma_post <- gamma_pre - 10^(degit_n-1)
+        }
+        input$gamma <- gamma_post
+      }
+    }
+
+  }
+
+  if(gamma_pre==gamma_ini)stop("Mesnil with gamma_ini has multi-identical likelyhood. Set gamma_ini larger than current value.")
+  input$gamma = gamma_pre
+  if (class(resSR) == "fit.SR") {
+    #input$rep.opt = TRUE
+    optimal = try(do.call(fit.SR, input),silent=TRUE)
+  } else {
+    if (class(resSR) == "fit.SRregime") {
+      optimal = try(do.call(fit.SRregime, input),silent=TRUE)
+    } else {
+      input$rep.opt = TRUE
+      optimal = try(do.call(fit.SRalpha, input),silent=TRUE)
+    }
+  }
+  print(paste0("unique SR parameter was given where gamma = ",gamma_pre,"."))
+  RES$optimum = optimal
+  RES$loglik <- loglik
+  RES$gamma <- gamma_pre
+  return(RES)
+}
+
+
 #' 再生産関係のブートストラップの結果をggplotで生成する関数する関数
 #'
 #' @param boot.res \code{boot.SR}のオブジェクト
