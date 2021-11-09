@@ -68,7 +68,7 @@ test_that("oututput value check",{
 
   #上記条件での結果の読み込み
   load(system.file("extdata","boot_res_pma_median_pars.rda",package = "frasyr"))
-  
+
   #結果の照合
   expect_equal(boot_res_pma_median_pars_check/as.numeric(boot_res_pma_median_pars[,-4]),rep(1,3),tolerance=0.01,
                scale=0.01)
@@ -80,19 +80,19 @@ test_that("output value check",{
   load(system.file("extdata","SRdata_pma.rda",package = "frasyr"))
   SRdata = SRdata_pma
   SRmodel.list <- expand.grid(SR.rel = c("HS","BH","RI"), L.type = c("L1", "L2"))
-  
+
   # regime_year = ceiling(mean(SRdata$year))
   regime_year = 1999
   regime1 = min(SRdata$year):(regime_year-1); regime2 = regime_year:max(SRdata$year);
   SRdata1 = list(year=regime1, R=SRdata$R[SRdata$year %in% regime1],SSB=SRdata$SSB[SRdata$year %in% regime1])
   SRdata2 = list(year=regime2, R=SRdata$R[SRdata$year %in% regime2],SSB=SRdata$SSB[SRdata$year %in% regime2])
-  
+
 #  for (i in 1:nrow(SRmodel.list)) {
-  for (i in 1) {  
+  for (i in 1) {
     resSR1 <- fit.SR(SRdata1, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],AR = 0, hessian = FALSE,length=20)
     resSR2 <- fit.SR(SRdata2, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],AR = 0, hessian = FALSE,length=20)
     resSRregime <- fit.SRregime(SRdata, SR = as.character(SRmodel.list$SR.rel[i]), method = as.character(SRmodel.list$L.type[i]), regime.year = regime_year, regime.key = 0:1, regime.par = c("a","b","sd"), use.fit.SR = TRUE)
-    
+
     # boot strap ----
     nboot <- 3
     boot_resSR1_check <- boot.SR(resSR1,n=nboot)
@@ -101,11 +101,11 @@ test_that("output value check",{
     bootSR.plot(boot_resSRregime_check)
 
     x1 <- purrr::map_dfr(boot_resSR1_check,function(x) x$pars) %>% summarise(median.a=median(a),median.b=median(b),median.sd=median(sd))
-    x2 <- purrr::map_dfr(boot_resSR2_check,function(x) x$pars) %>% summarise(median.a=median(a),median.b=median(b),median.sd=median(sd))    
+    x2 <- purrr::map_dfr(boot_resSR2_check,function(x) x$pars) %>% summarise(median.a=median(a),median.b=median(b),median.sd=median(sd))
     x3 <- purrr::map_dfr(boot_resSRregime_check,function(x) x$regime_pars) %>%
         group_by(regime) %>%
         summarise(median.a=median(a),median.b=median(b),median.sd=median(sd))
-    
+
     # ブートストラップするときに乱数がちがうので一致するわけがないような気がする、、
     #expect_equal(as.numeric(x1/x3[1,-1]),rep(1,3),tolerance=0.5,scale=0.01)
     #expect_equal(as.numeric(x2/x3[2,-1]),rep(1,3),tolerance=0.5,scale=0.01)
@@ -124,10 +124,19 @@ test_that("output value check",{
                  M  =res_vpa_pma$input$dat$M  [,"2011"],
                  waa=res_vpa_pma$input$dat$waa[,"2011"],
                  maa=res_vpa_pma$input$dat$maa[,"2011"],n=nboot)
-  
+
 })
 
 
+context("specify gamma in SR=Mesnil")
 
+test_that("output value check",{
 
+  data("res_vpa")
+  SRdata=get.SRdata(res_vpa)
+  res_sr_MesnilL1 <- fit.SR(SRdata,SR="Mesnil",method = "L1",AR=0,out.AR = F)
+  res_spec_Mesnil<-specify.Mesnil.gamma(res_sr_MesnilL1)
+  expect_equal(res_spec_Mesnil$gamma,2)
+  }
+)
 
