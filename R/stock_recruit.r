@@ -2494,7 +2494,7 @@ corSR = function(resSR) {
 #' M = res_vpa$input$dat$M[,year]
 #' waa = res_vpa$input$dat$waa[,year]
 #' maa = res_vpa$input$dat$maa[,year]
-#' Res_h = calc_steepness(SR=SR,rec_pars=rec_pars,M=M,waa=waa,maa=maa,plus_group=TRUE)
+#' Res_h = calc_steepness(SR="HS",rec_pars=rec_pars,M=M,waa=waa,maa=maa,plus_group=TRUE)
 #' Res_h
 #' }
 #' @encoding UTF-8

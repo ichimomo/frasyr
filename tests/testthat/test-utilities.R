@@ -75,7 +75,7 @@ test_that("test caa.est.mat", {
   expect_equal(round(sum(res$caa),3),round(expect_catch,3))
 
   res <- caa.est.mat(c(1,1,1,1),c(1,1,1,1),c(1,1,1,1),c(0,0,0,0),catch.obs=expect_catch,Pope=FALSE)
-  expect_equal(round(sum(res$caa),3),round(expect_catch,3))  
+  expect_equal(round(sum(res$caa),3),round(expect_catch,3))
 
   # set very small F => OK
   res <- caa.est.mat(c(1,1,1,1),c(0.00001,0.00001,0.00001,0.00001),c(1,1,1,1),c(0,0,0,0),
@@ -84,13 +84,13 @@ test_that("test caa.est.mat", {
 
   res <- caa.est.mat(c(1,1,1,1),c(0.00001,0.00001,0.00001,0.00001),c(1,1,1,1),c(0,0,0,0),
                      catch.obs=expect_catch,Pope=FALSE)
-  expect_equal(round(sum(res$caa),3),round(expect_catch,3))  
+  expect_equal(round(sum(res$caa),3),round(expect_catch,3))
 
   # naa is very small => warning
   expect_warning(caa.est.mat(c(0.01,0.01,0.01,0.01),c(1,1,1,1),c(1,1,1,1),c(0,0,0,0),
                              catch.obs=expect_catch,Pope=TRUE))
   expect_warning(caa.est.mat(c(0.01,0.01,0.01,0.01),c(1,1,1,1),c(1,1,1,1),c(0,0,0,0),
-                             catch.obs=expect_catch,Pope=FALSE))  
+                             catch.obs=expect_catch,Pope=FALSE))
 })
 
 test_that("calc.rel.abund",{
@@ -137,7 +137,7 @@ test_that("calc.rel.abund",{
   M.test <- rep(0.5,length(age.test))
 
   calc_rel_abund_age3 <- calc.rel.abund(sel = Fc.test,Fr=1,na = length(age.test),M = M.test,waa = waa.test, maa = maa.test, Pope = TRUE)
-  
+
   expect_equal(sapply(calc_rel_abund_age3,sum),
                sapply(calc_rel_abund_age2,sum))
 
@@ -172,7 +172,7 @@ test_that("solv.Feq",{
   # Baranov eqをもちいてfaa,M,naaをつかってcaaを求める
   caa.test <- faa.test/(faa.test+M.test) *(1-exp(-faa.test- M.test)) *naa.test
 
-  # tolerance=1e-4　でチェック
+  # tolerance=1e-4でチェック
   expect_equal(faa.test, solv.Feq(cvec = caa.test,nvec = naa.test,mvec = M.test),tolerance=1e-4)
 
 })
@@ -185,7 +185,7 @@ test_that("Generation.Time",{
     Generation.Time(maa=c(1,1,1),M=c(0,0,0),age=0:2,Plus=0)%>%
         expect_equal(mean(0:2))
     Generation.Time(maa=c(1,1,1),M=c(0,0,0),age=0:2)%>%
-        expect_equal(mean(0:(2+19)))    
+        expect_equal(mean(0:(2+19)))
 
 })
 
@@ -335,7 +335,7 @@ test_that("make kobeII table", {
                         load_data("../../inst/extdata/res_vpa_pma.rda"))
 
       expect_is(kobe_table, "list")
-#     ここの出力はフレキシブルに変わるのでテスト対象からとりあえずはずす      
+#     ここの出力はフレキシブルに変わるのでテスト対象からとりあえずはずす
 #      expect_setequal(names(kobe_table),
 #                      c("catch.mean", "ssb.mean", "ssb.lower10percent",
 #                        "ssb.upper90percent", "prob.over.ssbtarget",
@@ -384,7 +384,7 @@ test_that("convert_2d_future",{
 })
 
 test_that("derive_biopar",{
-    
+
     a1 <- derive_biopar(res_vpa, derive_year=2000)
     a2 <- derive_biopar(res_vpa, derive_year=2000:2003)
     expect_equal(a1[,1:3],a2[,1:3])
@@ -411,5 +411,6 @@ test_that("calc_forward",{
 test_that("out.vpa", {
 
   out.vpa(res=res_vpa, fres_HCR=res_future_0.8HCR)
+  expect_equal(file.exists("vpa.csv"), TRUE)
 
 })

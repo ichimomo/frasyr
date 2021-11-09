@@ -699,6 +699,7 @@ SRregime_plot <- plot_SRregime <- function (SRregime_result,xscale=1000,xlabel="
 #' @param ncol 図を並べるときの列数
 #' @param legend.position 凡例の位置。top, right, left, bottomなど
 #' @param average_lwd 将来予測の平均値の線の太さ. 基本は1.
+#' @param remove.last.vpa.year VPAの最終年のデータのプロットを除くかどうか（last.catch.zero用オプション）
 #'
 #' @encoding UTF-8
 #' @export
@@ -729,7 +730,8 @@ plot_futures <- function(vpares=NULL,
                          legend.position="top",
                          type="detail",
                          font.size=18,
-                         ncol=3
+                         ncol=3,
+                         remove.last.vpa.year = FALSE
 ){
 
   col.SBtarget <- "#00533E"
@@ -766,7 +768,7 @@ plot_futures <- function(vpares=NULL,
                                       str_c("将来の漁獲量 (",junit,"トン)"),
                                       "beta_gamma(F/Fmsy)",
                                       "漁獲割合(%)",
-                                      "漁獲圧の比(F/Fmsy)"))        
+                                      "漁獲圧の比(F/Fmsy)"))
     }
   }
   else{
@@ -829,6 +831,8 @@ plot_futures <- function(vpares=NULL,
       dplyr::filter(stat%in%rename_list$stat) %>%
       left_join(rename_list) %>%
       mutate(value=value/unit,mean=mean/unit)
+
+    if ( isTRUE(remove.last.vpa.year) ) vpa_tb = vpa_tb %>% filter(year<max(year))
 
     # 将来と過去をつなげるためのダミーデータ
     tmp <- vpa_tb %>% group_by(stat) %>%
@@ -1403,10 +1407,12 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
     diff.year <- plot.year[which(diff(plot.year)>1)+1]
     UBdata <- UBdata %>% filter(year %in% plot.year)
 
-    for(i in 1:length(diff.year)){
-       UBdata <- UBdata %>%
-         mutate(year_group = ifelse(year >= diff.year[i], year_group+1, year_group))
-     }
+    if (length(diff.year)>0) {
+      for(i in 1:length(diff.year)){
+        UBdata <- UBdata %>%
+          mutate(year_group = ifelse(year >= diff.year[i], year_group+1, year_group))
+      }
+    }
   }
 
   if(is.null(labeling.year)){

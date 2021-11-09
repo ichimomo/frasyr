@@ -433,8 +433,8 @@ test_that("check matching of fit.SRregime and fit.SR",{
 })
 
 
-test_that("fit.SR_tolのテスト",{
-  
+test_that("test for fit.SR_tol",{
+
   SRdata <- get.SRdata(res_vpa)
 
   # fit.SR_tol
@@ -451,14 +451,14 @@ test_that("fit.SR_tolのテスト",{
   # res1_orgのパラメータとの比較; 相対値で見るとそこまで違わないが...
   expect_equal(as.numeric(round(res1$pars/res1_org$pars,4))==c(1,1,1,NaN),
                c(FALSE,FALSE,FALSE,NA))
-    
-  
+
+
   # reimeありでのテスト。時間かかるのでコメントアウト
   #res2 <- fit.SR_tol(SRdata=SRdata, SR="HS", method = "L2",
   #                   regime.year = c(1998), regime.key = 0:1,
   #                   regime.par = c("a"), use.fit.SR = TRUE, is_regime=TRUE, n=2)
 
-  res3_data <- load_data("res_vpa_no_global_minimum_example.rda") %>% get.SRdata(weight.year=1977:2018) 
+  res3_data <- load_data("res_vpa_no_global_minimum_example.rda") %>% get.SRdata(weight.year=1977:2018)
   res3 <- fit.SR_tol(res3_data, SR="HS", method="L2", n_check=100, AR=1, out.AR=FALSE, length=20)
 
   # 以下、technical documentのR4の図1用のコード
@@ -476,16 +476,16 @@ test_that("fit.SR_tolのテスト",{
       par(mfrow=c(1,2))
       plot(res4$par_list0[,2],res4$loglik,col=1,pch=20,xlab="b in HS", ylab="log likelihood)")
       points(res5$par_list0[,2],res5$loglik,col=2,pch=3)
-      
+
       plot(res4$par_list0[,2],log10(res4$loglik_diff),col=1,pch=20,xlab="b in HS", ylab="log10(abs(loglik-max(loglik)))")
       points(res5$par_list0[,2],log10(res5$loglik_diff),col=2,pch=3)
-      
-      
+
+
       res5$par_list0[which.min(res5$loglik_diff),]
       res4$par_list0[which.min(res4$loglik_diff),]
-      
+
       rbind(res5$optimum$pars,
             res4$optimum$pars)
   }
-  
+
 })
