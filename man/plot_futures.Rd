@@ -35,7 +35,8 @@ plot_futures(
   legend.position = "top",
   type = "detail",
   font.size = 18,
-  ncol = 3
+  ncol = 3,
+  remove.last.vpa.year = FALSE
 )
 }
 \arguments{
@@ -90,6 +91,8 @@ plot_futures(
 \item{font.size}{フォントの大きさ}
 
 \item{ncol}{図を並べるときの列数}
+
+\item{remove.last.vpa.year}{VPAの最終年のデータのプロットを除くかどうか（last.catch.zero用オプション）}
 
 \item{width_example}{個々のシミュレーションをプロットする場合の線の太さ (default=0.7)}
 }
