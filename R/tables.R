@@ -5,6 +5,7 @@
 #' @param result_future Object returnd from \code{future_vpa()}
 #' @param yr_future_start Year when future projection starts
 #' @export
+
 make_stock_table <- function(result_vpa, result_msy, result_future,
                              yr_future_start, yr_abc, faa_pre_abc, unit = "百トン") {
   return_ <- function() {
@@ -78,6 +79,37 @@ make_stock_table <- function(result_vpa, result_msy, result_future,
 
 
   return_()
+}
+
+#' Make table for stock assessment result 2
+#'
+#' @param result_future0.8 Object returnd from adopted future projection
+#' @param yr_future_ABC Year when ABC is calculated
+#' @param Fcurrent_per_Fmsy Fcurrent/Fmsy
+#' @param Fcurrent_year_range
+#' 
+#' @export
+
+make_stock_table2 <- function(result_future0.8,
+                              yr_future_ABC,
+                              Fcurrent_per_Fmsy,
+                              Fcurrent_year_range) {
+
+  years_to_display  <- (yr_future_ABC-5):yr_future_ABC
+  stock_table <- result_future0.8$summary %>%
+    dplyr::filter(year %in% years_to_display) %>%
+    select(year, biomass, SSB, catch, Fratio) %>%
+    mutate(harvest_rate=catch/biomass) %>%
+    rename("F_year/F_msy"=Fratio) %>%
+    mutate(year_label=case_when(year==yr_future_ABC ~ "ABC year",
+                                year%in%Fcurrent_year_range ~ "Fcurrent year")) %>%
+    mutate(year=as.character(year)) 
+
+  stock_table <- bind_rows(stock_table,
+                           tibble(year=str_c(range(Fcurrent_year_range), collapse="-"),
+                                  "F_year/F_msy"=Fcurrent_per_Fmsy))
+
+  return(stock_table)
 }
 
 #' Make table depending on the class of given object
@@ -305,7 +337,7 @@ make_abctable <- function(kobe_table, result_future, beta, year, faa_pre, faa_af
                      harvest_rate_())
     colnames(df) <- c(paste0(year, "年漁期のABC(千トン)"),
                       paste0(year, "年漁期の親魚量予測平均値(千トン)"),
-                      paste0("現状の漁獲圧に対する比(F/F", yr_preabc[1], "--", yr_preabc[length(yr_preabc)], ")"),
+                      paste0("現状の漁獲圧に対する比(F",year,"/F", yr_preabc[1], "--", yr_preabc[length(yr_preabc)], ")"),
                       paste0(year, "年漁期の漁獲割合（%）"))
     force(df)
   }
