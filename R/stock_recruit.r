@@ -1031,6 +1031,8 @@ fit.SRregime <- function(
   if (SR=="BH") SRF <- function(x,a,b) a*x/(1+b*x)
   if (SR=="RI") SRF <- function(x,a,b) a*x*exp(-b*x)
   if (SR=="Mesnil") SRF <- function(x,a,b) 0.5*a*(x+sqrt(b^2+gamma^2/4)-sqrt((x-b)^2+gamma^2/4))
+  if (SR=="Shepherd") SRF <- function(x,a,b) a*x/(1+(b*x)^gamma)
+  if (SR=="Cushing") SRF <- function(x,a,b) a*x^b
 
   obj.f <- function(a,b,out="nll"){ #a,bはベクトル
     resid <- NULL
