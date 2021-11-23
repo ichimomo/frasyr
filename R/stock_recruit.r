@@ -237,7 +237,7 @@ fit.SR <- function(SRdata,
   if (SR=="BH") SRF <- function(x,a,b) a*x/(1+b*x)
   if (SR=="RI") SRF <- function(x,a,b) a*x*exp(-b*x)
   if (SR=="Mesnil") SRF <- function(x,a,b) 0.5*a*(x+sqrt(b^2+gamma^2/4)-sqrt((x-b)^2+gamma^2/4))
-  if (SR=="Shepherd") SRF <- function(x,a,b,g) a*x/(1+(b*x)^g)
+  if (SR=="Shepherd") SRF <- function(x,a,b) a*x/(1+(b*x)^gamma)
   if (SR=="Cushing") SRF <- function(x,a,b) a*x^b
 
   if (length(SRdata$R) != length(w)) stop("The length of 'w' is not appropriate!")
