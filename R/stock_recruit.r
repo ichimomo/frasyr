@@ -2622,7 +2622,7 @@ corSR = function(resSR) {
 #' \item{\code{SB0}}{F=0のときの親魚量}
 #' \item{\code{R0}}{F=0のときの加入量}
 #' \item{\code{B0}}{F=0のときの資源量}
-#' \item{\code{h}}{steepness: BHかRIのときは0.2×SB0のときの加入量がh×R0, HSのときはh=1-b/SB0}}
+#' \item{\code{h}}{steepness: BHかRIのときは0.2×SB0のときの加入量がh×R0, HSのときはh=1-b/SB0}
 #' }
 #' @examples
 #' \dontrun{

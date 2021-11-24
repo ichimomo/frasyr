@@ -30,7 +30,14 @@ calc_steepness(
 \item{plus_group}{最高齢がプラスグループかどうか}
 }
 \value{
-
+以下の要素からなるデータフレーム
+\describe{
+\item{\code{SPR0}}{F=0のときのSPR(この逆数がreplacement lineの傾き)}
+\item{\code{SB0}}{F=0のときの親魚量}
+\item{\code{R0}}{F=0のときの加入量}
+\item{\code{B0}}{F=0のときの資源量}
+\item{\code{h}}{steepness: BHかRIのときは0.2×SB0のときの加入量がh×R0, HSのときはh=1-b/SB0}
+}
 }
 \description{
 Steepness (h) と関連するパラメータ (SB0,R0,B0)を計算する関数
