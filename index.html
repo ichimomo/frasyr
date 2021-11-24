@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">frasyr</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.2.0.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.2.0.2</span>
       </span>
     </div>
 
@@ -74,91 +74,90 @@
       </header><div class="row">
   <div class="contents col-md-9">
 
-<div id="frasyr" class="section level1">
-<div class="page-header"><h1 class="hasAnchor">
-<a href="#frasyr" class="anchor" aria-hidden="true"></a>frasyr</h1></div>
-<p><a href="https://travis-ci.com/ichimomo/frasyr" class="external-link"><img src="https://travis-ci.com/ichimomo/frasyr.svg?branch=dev" alt="Travis build status"></a> <a href="https://codecov.io/gh/ichimomo/frasyr?branch=dev" class="external-link"><img src="https://codecov.io/gh/ichimomo/frasyr/branch/dev/graph/badge.svg" alt="Codecov test coverage"></a> - Fisheries Research Agency (FRA) provides the method for calculating sustainable yield (SY) with R - VPAãç¨ããè³æºéæ¨å®ã¨ï¼ãã®æ¨å®çµæããã¨ã«ãã¦MSYãåºç¤ã¨ããç®æ¨ç®¡çåºæºå¤ãè¨ç®ããããã®Rã®ããã±ã¼ã¸ã§ãï¼éçºéä¸­ã®ãã®ã§ãããã¨ï¼ãæ¿ç¥ãããã ããï¼</p>
+<div class="section level1">
+<div class="page-header"><h1 id="frasyr">frasyr<a class="anchor" aria-label="anchor" href="#frasyr"></a>
+</h1></div>
+<p><a href="https://github.com/ichimomo/frasyr/actions/workflows/R-CMD-check.yml" class="external-link"><img src="https://github.com/ichimomo/frasyr/actions/workflows/R-CMD-check.yml/badge.svg" alt="R-CMD-check"></a> <a href="https://codecov.io/gh/ichimomo/frasyr?branch=dev" class="external-link"><img src="https://codecov.io/gh/ichimomo/frasyr/branch/dev/graph/badge.svg" alt="Codecov test coverage"></a> - Fisheries Research Agency (FRA) provides the method for calculating sustainable yield (SY) with R - VPAを用いた資源量推定と，その推定結果をもとにしてMSYを基礎とした目標管理基準値を計算するためのRのパッケージです．開発途中のものであること，ご承知おきください．</p>
 </div>
-<div id="ä½¿ãæ¹ãªã©" class="section level1">
-<h1 class="hasAnchor">
-<a href="#%C3%A4%C2%BD%C2%BF%C3%A3%C2%81%C2%84%C3%A6%C2%96%C2%B9%C3%A3%C2%81%C2%AA%C3%A3%C2%81%C2%A9" class="anchor" aria-hidden="true"></a>ä½¿ãæ¹ãªã©</h1>
-<p><a href="https://ichimomo.github.io/main/" class="external-link uri">https://ichimomo.github.io/main/</a> ã«ä¸æ¬ããæå ±ã¸ã®ãªã³ã¯ãããã¾ã</p>
+<div class="section level1">
+<h1 id="使い方など">使い方など<a class="anchor" aria-label="anchor" href="#%E4%BD%BF%E3%81%84%E6%96%B9%E3%81%AA%E3%81%A9"></a>
+</h1>
+<p><a href="https://ichimomo.github.io/main/" class="external-link uri">https://ichimomo.github.io/main/</a> に一括した情報へのリンクがあります</p>
 </div>
-<div id="ã¤ã³ã¹ãã¼ã«æ¹æ³" class="section level1">
-<h1 class="hasAnchor">
-<a href="#%C3%A3%C2%82%C2%A4%C3%A3%C2%83%C2%B3%C3%A3%C2%82%C2%B9%C3%A3%C2%83%C2%88%C3%A3%C2%83%C2%BC%C3%A3%C2%83%C2%AB%C3%A6%C2%96%C2%B9%C3%A6%C2%B3%C2%95" class="anchor" aria-hidden="true"></a>ã¤ã³ã¹ãã¼ã«æ¹æ³</h1>
-<pre><code># devtoolsãã¤ã³ã¹ãã¼ã«ãã¦ããªãäººã¯ã¤ã³ã¹ãã¼ã«ãã
-install.packages("devtools")
+<div class="section level1">
+<h1 id="インストール方法">インストール方法<a class="anchor" aria-label="anchor" href="#%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB%E6%96%B9%E6%B3%95"></a>
+</h1>
+<pre><code><span class="co"># devtoolsをインストールしていない人はインストールする</span>
+<span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"devtools"</span><span class="op">)</span>
 
-# ãã¹ã¿ã¼çï¼ææ°ã»å®å®çï¼ãã¤ã³ã¹ãã¼ã«ããå ´å
-devtools::install_github("ichimomo/frasyr")
+<span class="co"># マスター版（最新・安定版）をインストールする場合</span>
+<span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"ichimomo/frasyr"</span><span class="op">)</span>
 
-# éçºä¸­ã®ææ°çãã¤ã³ã¹ãã¼ã«ããå ´åï¼ãã°å¯è½æ§ããï¼ï¼
-# ref=""ã§éçºä¸­ã®ãã©ã³ããæå®ãã¾ããã ãããã"dev"ãã©ã³ãã«éçºä¸­ã®ãã®ãããã¾ã
-devtools::install_github("ichimomo/frasyr", ref="dev")
+<span class="co"># 開発中の最新版をインストールする場合（バグ可能性あり！）</span>
+<span class="co"># ref=""で開発中のブランチを指定します。だいたい、"dev"ブランチに開発中のものがあります</span>
+<span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"ichimomo/frasyr"</span>, ref<span class="op">=</span><span class="st">"dev"</span><span class="op">)</span>
 
-# éå»ã®å®å®çãæå®ãã¦ã¤ã³ã¹ãã¼ã«ããå ´å
-# @ä»¥ä¸ã«ãªãªã¼ã¹ãã¼ã¸ã§ã³ãæå®ãã¾ã
-devtools::install_github("ichimomo/frasyr@v1.00")
+<span class="co"># 過去の安定版を指定してインストールする場合</span>
+<span class="co"># @以下にリリースバージョンを指定します</span>
+<span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"ichimomo/frasyr@v1.00"</span><span class="op">)</span>
 
-# ä»¥ä¸ã®æä½ããã¦frasyrãã¤ã³ã¹ãã¼ã«ãã¦ãããä»¥ä¸ã®ã³ãã³ãã§å¼ã³åºãã¾ã
-library(frasyr)
-</code></pre>
+<span class="co"># 以上の操作をしてfrasyrをインストールしてから、以下のコマンドで呼び出します</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">frasyr</span><span class="op">)</span></code></pre>
 </div>
-<div id="ãªãªã¼ã¹ãã¼ã¸ã§ã³" class="section level1">
-<h1 class="hasAnchor">
-<a href="#%C3%A3%C2%83%C2%AA%C3%A3%C2%83%C2%AA%C3%A3%C2%83%C2%BC%C3%A3%C2%82%C2%B9%C3%A3%C2%83%C2%90%C3%A3%C2%83%C2%BC%C3%A3%C2%82%C2%B8%C3%A3%C2%83%C2%A7%C3%A3%C2%83%C2%B3" class="anchor" aria-hidden="true"></a>ãªãªã¼ã¹ãã¼ã¸ã§ã³</h1>
+<div class="section level1">
+<h1 id="リリースバージョン">リリースバージョン<a class="anchor" aria-label="anchor" href="#%E3%83%AA%E3%83%AA%E3%83%BC%E3%82%B9%E3%83%90%E3%83%BC%E3%82%B8%E3%83%A7%E3%83%B3"></a>
+</h1>
 <ul>
-<li>v1.00 : future-rvpaããç§»åãã¦ããã»ã¼ãã®ã¾ã¾ã®ãã¼ã¸ã§ã³</li>
-<li>v1.10 : future.vpaã«use.MSEãªãã·ã§ã³ãè¿½å </li>
-<li>v1.20 : 2019å¹´ã¢ã¸ã»ã¤ã¯ã·äºåæ¤è¨ä¼ç¨</li>
-<li>v2.00 : 2020å¹´ã¢ã¸ã»ã¤ã¯ã·ç ç©¶æ©é¢ä¼è­°ç¨(äºåéå¸ç)
+<li>v1.00 : future-rvpaから移動してきたほぼそのままのバージョン</li>
+<li>v1.10 : future.vpaにuse.MSEオプションを追加</li>
+<li>v1.20 : 2019年アジ・イワシ事前検討会用</li>
+<li>v2.00 : 2020年アジ・イワシ研究機関会議用(事前配布版)
 <ul>
-<li>å°æ¥äºæ¸¬ã®ã¡ã¤ã³é¢æ°ãfuture.vpaããfuture_vpaã«ç§»è¡ãåºæ¬çãªä½¿ãæ¹ã¯ä»¥ä¸ã®ããã¥ã¢ã«ã®ãªã³ã¯åãåç§ã®ãã¨</li>
+<li>将来予測のメイン関数をfuture.vpaからfuture_vpaに移行。基本的な使い方は以下のマニュアルのリンク先を参照のこと</li>
 </ul>
 </li>
-<li>v2.01 : 2020å¹´ã¢ã¸ã»ã¤ã¯ã·ç ç©¶æ©é¢ä¼è­°ç¨(æçµç)
+<li>v2.01 : 2020年アジ・イワシ研究機関会議用(最終版)
 <ul>
-<li>fit.parã§L1ã®å ´åã®SDãRMSEã«çµ±ä¸</li>
+<li>fit.parでL1の場合のSDをRMSEに統一</li>
 </ul>
 </li>
-<li>v2.1.0.0 : 2020å¹´åº¦è³æºè©ä¾¡ä¼è­°ç¨ãã­ãã¿ã¤ããã¼ã¸ã§ã³
+<li>v2.1.0.0 : 2020年度資源評価会議用プロトタイプバージョン
 <ul>
-<li>VPAãç¨ããã¢ãã«è¨ºæ­ã¹ã¯ãªãããvignetteã«è¿½å </li>
-<li>éä¸­ã§ãã©ã¹ã°ã«ã¼ããå¤ããï¼å¯¾é¦¬ãã¤ã¯ã·ï¼VPAã®è¨ç®ãä¿®æ­£</li>
-<li>ã»ããé¢æ°ã®ãã¹ããåå®ã</li>
+<li>VPAを用いたモデル診断スクリプトをvignetteに追加</li>
+<li>途中でプラスグループが変わる（対馬マイワシ）VPAの計算を修正</li>
+<li>ほか、関数のテストを充実。</li>
 </ul>
 </li>
 </ul>
 </div>
-<div id="ããã¥ã¢ã«" class="section level1">
-<h1 class="hasAnchor">
-<a href="#%C3%A3%C2%83%C2%9E%C3%A3%C2%83%C2%8B%C3%A3%C2%83%C2%A5%C3%A3%C2%82%C2%A2%C3%A3%C2%83%C2%AB" class="anchor" aria-hidden="true"></a>ããã¥ã¢ã«</h1>
+<div class="section level1">
+<h1 id="マニュアル">マニュアル<a class="anchor" aria-label="anchor" href="#%E3%83%9E%E3%83%8B%E3%83%A5%E3%82%A2%E3%83%AB"></a>
+</h1>
 <ul>
-<li>VPAã«ããè³æºéæ¨å®ã<a href="https://ichimomo.github.io/frasyr/articles/vpa.html" class="external-link">vignette</a>
+<li>VPAによる資源量推定　<a href="https://ichimomo.github.io/frasyr/articles/vpa.html" class="external-link">vignette</a>
 </li>
-<li>VPAã¢ãã«è¨ºæ­ã¹ã¯ãªããã<a href="https://ichimomo.github.io/frasyr/articles/Diagnostics-for-VPA.html" class="external-link">vignette</a>
+<li>VPAモデル診断スクリプト　<a href="https://ichimomo.github.io/frasyr/articles/Diagnostics-for-VPA.html" class="external-link">vignette</a>
 </li>
-<li>fitSRé¢æ°ã«ããåçç£é¢ä¿æ¨å®ã<a href="https://ichimomo.github.io/frasyr/articles/fittingSR.html" class="external-link">vignette</a>
+<li>fitSR関数による再生産関係推定　<a href="https://ichimomo.github.io/frasyr/articles/fittingSR.html" class="external-link">vignette</a>
 </li>
 </ul>
-<p>ãããã¯Rã³ãã³ãã§ä»¥ä¸ã®ããã«ãã¦ãè¦ãã¾ãã</p>
-<pre><code>devtools::install_github("ichimomo/frasyr", ref="dev", build_vignettes=TRUE) # ã¤ã³ã¹ãã¼ã«ããã¨ãã«vignetteãä½ãï¼æéãããã¾ãï¼
-library(frasyr)
-vignette(package="frasyr") # å©ç¨å¯è½ãªvignetteãèª¿ã¹ã
-vignette("vpa",package="frasyr") # VPAã®å®æ½ã®ããã
-vignette("Diagnostics-for-VPA",package="frasyr") # VPAã®ã¢ãã«è¨ºæ­</code></pre>
+<p>これらはRコマンドで以下のようにしても見れます。</p>
+<pre><code><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"ichimomo/frasyr"</span>, ref<span class="op">=</span><span class="st">"dev"</span>, build_vignettes<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span> <span class="co"># インストールするときにvignetteを作る（時間かかります）</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">frasyr</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/utils/vignette.html" class="external-link">vignette</a></span><span class="op">(</span>package<span class="op">=</span><span class="st">"frasyr"</span><span class="op">)</span> <span class="co"># 利用可能なvignetteを調べる</span>
+<span class="fu"><a href="https://rdrr.io/r/utils/vignette.html" class="external-link">vignette</a></span><span class="op">(</span><span class="st">"vpa"</span>,package<span class="op">=</span><span class="st">"frasyr"</span><span class="op">)</span> <span class="co"># VPAの実施のしかた</span>
+<span class="fu"><a href="https://rdrr.io/r/utils/vignette.html" class="external-link">vignette</a></span><span class="op">(</span><span class="st">"Diagnostics-for-VPA"</span>,package<span class="op">=</span><span class="st">"frasyr"</span><span class="op">)</span> <span class="co"># VPAのモデル診断</span></code></pre>
 <ul>
-<li>åçç£é¢ä¿ã®ã¢ãã«è¨ºæ­ <a href="https://github.com/ichimomo/frasyr/wiki/Diagnostics-for-Stock-Recruitment-Relationships" class="external-link">wiki</a>
+<li>再生産関係のモデル診断 <a href="https://github.com/ichimomo/frasyr/wiki/Diagnostics-for-Stock-Recruitment-Relationships" class="external-link">wiki</a>
 </li>
-<li>å°æ¥äºæ¸¬é¢æ°ã®ä½¿ãæ¹ï¼<a href="https://github.com/ichimomo/frasyr/wiki/future_new" class="external-link">wiki</a>
+<li>将来予測関数の使い方：<a href="https://github.com/ichimomo/frasyr/wiki/future_new" class="external-link">wiki</a>
 </li>
 </ul>
 <!--
-- æ°ã«ã¼ã«ã®ãã¨ã§ã®å°æ¥äºæ¸¬è¨ç® https://ichimomo.github.io/frasyr/doc/future.html
-- ç®¡çåºæºå¤ã®è¨ç® https://ichimomo.github.io/frasyr/doc/estMSY.html
+- 新ルールのもとでの将来予測計算 https://ichimomo.github.io/frasyr/doc/future.html
+- 管理基準値の計算 https://ichimomo.github.io/frasyr/doc/estMSY.html
 --><p>=======</p>
-<p>frasyr_toolç¾¤ã®å¨ä½èª¬æã¯<a href="https://ichimomo.github.io/main/" class="external-link">ãã¡ã</a></p>
+<p>frasyr_tool群の全体説明は<a href="https://ichimomo.github.io/main/" class="external-link">こちら</a></p>
 </div>
 
   </div>

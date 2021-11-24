@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">frasyr</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.2.0.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.2.0.2</span>
       </span>
     </div>
 
@@ -77,7 +77,7 @@
       <h1 data-toc-skip>VPAモデル診断スクリプト</h1>
                         <h4 data-toc-skip class="author">濵邉昂平・市野川桃子</h4>
             
-            <h4 data-toc-skip class="date">2021-10-05</h4>
+            <h4 data-toc-skip class="date">2021-11-24</h4>
       
       
       <div class="hidden name"><code>Diagnostics-for-VPA.Rmd</code></div>
@@ -86,9 +86,9 @@
 
     
     
-<div id="年度変更点" class="section level2">
-<h2 class="hasAnchor">
-<a href="#%E5%B9%B4%E5%BA%A6%E5%A4%89%E6%9B%B4%E7%82%B9" class="anchor" aria-hidden="true"></a>2021年度変更点</h2>
+<div class="section level2">
+<h2 id="年度変更点">2021年度変更点<a class="anchor" aria-label="anchor" href="#%E5%B9%B4%E5%BA%A6%E5%A4%89%E6%9B%B4%E7%82%B9"></a>
+</h2>
 <p><font color="red"></font></p>
 <ul>
 <li>残差プロット
@@ -116,21 +116,21 @@
 </ul>
 <p></p>
 </div>
-<div id="vpaモデル診断用スクリプト" class="section level2">
-<h2 class="hasAnchor">
-<a href="#vpa%E3%83%A2%E3%83%87%E3%83%AB%E8%A8%BA%E6%96%AD%E7%94%A8%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%97%E3%83%88" class="anchor" aria-hidden="true"></a>VPAモデル診断用スクリプト</h2>
+<div class="section level2">
+<h2 id="vpaモデル診断用スクリプト">VPAモデル診断用スクリプト<a class="anchor" aria-label="anchor" href="#vpa%E3%83%A2%E3%83%87%E3%83%AB%E8%A8%BA%E6%96%AD%E7%94%A8%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%97%E3%83%88"></a>
+</h2>
 <ul>
 <li>VPAのモデル診断を網羅的に実施できる関数と、使用例のスクリプトを配布します</li>
 <li>基本的には「チューニングあり」VPAが対象ですが、「感度分析」と「レトロスペクティブ解析」はチューニングなしVPAでも実施できまするので、実施してください</li>
 </ul>
 </div>
-<div id="事前準備" class="section level2">
-<h2 class="hasAnchor">
-<a href="#%E4%BA%8B%E5%89%8D%E6%BA%96%E5%82%99" class="anchor" aria-hidden="true"></a>0. 事前準備</h2>
+<div class="section level2">
+<h2 id="事前準備">0. 事前準備<a class="anchor" aria-label="anchor" href="#%E4%BA%8B%E5%89%8D%E6%BA%96%E5%82%99"></a>
+</h2>
 <ul>
 <li>frasyrやggplot2などをインストールして呼び出しておいてください</li>
 </ul>
-<p><strong>※ tidyr, dplyr, purrr, ggplot2, stringerの5つは“tidyverse”というパッケージの中にまとめてあるので<code><a href="https://rdrr.io/r/base/library.html" class="external-link">library(tidyverse)</a></code>だけでも大丈夫です</strong></p>
+<p><strong>※ tidyr, dplyr, purrr, ggplot2, stringerの5つは“tidyverse”というパッケージの中にまとめてあるので<code><a href="https://tidyverse.tidyverse.org" class="external-link">library(tidyverse)</a></code>だけでも大丈夫です</strong></p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># frasyrの最新版（dev）をインストールする</span>
 <span class="co">#devtools::install_github("ichimomo/frasyr@dev")</span>
@@ -142,9 +142,9 @@
 <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span>
 <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://stringr.tidyverse.org" class="external-link">stringr</a></span><span class="op">)</span></code></pre></div>
 </div>
-<div id="感度分析チューニングありなし" class="section level2">
-<h2 class="hasAnchor">
-<a href="#%E6%84%9F%E5%BA%A6%E5%88%86%E6%9E%90%E3%83%81%E3%83%A5%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0%E3%81%82%E3%82%8A%E3%81%AA%E3%81%97" class="anchor" aria-hidden="true"></a>1. 感度分析(チューニングあり・なし）</h2>
+<div class="section level2">
+<h2 id="感度分析チューニングありなし">1. 感度分析(チューニングあり・なし）<a class="anchor" aria-label="anchor" href="#%E6%84%9F%E5%BA%A6%E5%88%86%E6%9E%90%E3%83%81%E3%83%A5%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0%E3%81%82%E3%82%8A%E3%81%AA%E3%81%97"></a>
+</h2>
 <ul>
 <li>資源評価モデルにおけるさまざまな仮定の変化が、推定資源量などにどのような影響を与えるか確認するために実施するものです</li>
 <li>理想的には再生産関係・管理基準値・将来予測などへの影響も見たほうが良いですが、どこまでやるかは難しいところです</li>
@@ -169,12 +169,12 @@
 <p>関数の引数について（<strong>特に<code>value</code>に与える<font color="red">データの型</font>について</strong>）、不明点等ありましたら、以下のように<code>help</code>を使って確認してみてください。</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/help.html" class="external-link">help</a></span><span class="op">(</span><span class="va">do_sensitivity_vpa</span><span class="op">)</span></code></pre></div>
-<div id="生物パラメータ各種" class="section level3">
-<h3 class="hasAnchor">
-<a href="#%E7%94%9F%E7%89%A9%E3%83%91%E3%83%A9%E3%83%A1%E3%83%BC%E3%82%BF%E5%90%84%E7%A8%AE" class="anchor" aria-hidden="true"></a>生物パラメータ各種</h3>
-<div id="自然死亡係数" class="section level4">
-<h4 class="hasAnchor">
-<a href="#%E8%87%AA%E7%84%B6%E6%AD%BB%E4%BA%A1%E4%BF%82%E6%95%B0" class="anchor" aria-hidden="true"></a>自然死亡係数</h4>
+<div class="section level3">
+<h3 id="生物パラメータ各種">生物パラメータ各種<a class="anchor" aria-label="anchor" href="#%E7%94%9F%E7%89%A9%E3%83%91%E3%83%A9%E3%83%A1%E3%83%BC%E3%82%BF%E5%90%84%E7%A8%AE"></a>
+</h3>
+<div class="section level4">
+<h4 id="自然死亡係数">自然死亡係数<a class="anchor" aria-label="anchor" href="#%E8%87%AA%E7%84%B6%E6%AD%BB%E4%BA%A1%E4%BF%82%E6%95%B0"></a>
+</h4>
 <p><code>what_replace="M"</code>にすると自然死亡係数について感度分析を行えます。<code>value</code>には、感度分析を行いたい割合を<code>numeric</code>型で入れてください。（以下の例では、もとの自然死亡係数を0.5倍、1.5倍、2倍にした感度分析結果を返す）</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">res_vpa_sensitivity</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>,
@@ -196,9 +196,9 @@
 <p>自然死亡係数を大きくすると、資源量のスケールも併せて大きくなっています。</p>
 <p>直接Mの行列を入力しても実行できます。 最近年のMの仮定について見たい、掛け算ではなく足し算で実行したい、等の場合は行列を与えてください</p>
 </div>
-<div id="年齢別体重" class="section level4">
-<h4 class="hasAnchor">
-<a href="#%E5%B9%B4%E9%BD%A2%E5%88%A5%E4%BD%93%E9%87%8D" class="anchor" aria-hidden="true"></a>年齢別体重</h4>
+<div class="section level4">
+<h4 id="年齢別体重">年齢別体重<a class="anchor" aria-label="anchor" href="#%E5%B9%B4%E9%BD%A2%E5%88%A5%E4%BD%93%E9%87%8D"></a>
+</h4>
 <p>年齢別体重を置き換える場合は、<code>what_replace = "waa"</code>とします。 自然死亡係数の場合と同様に、<code>value</code>に入れた値がもとの年齢別体重にかけられます。</p>
 <p>また、<code>what_plot</code>に作図で出力したい結果を指定することができます。</p>
 <p><strong>この他、<code>plot_year</code>に作図したい年（x軸の範囲）を指定することもできます</strong></p>
@@ -227,9 +227,9 @@
 <span class="va">res_vpa_sensitivity</span><span class="op">$</span><span class="va">graph</span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-8-1.png" width="672"></p>
 </div>
-<div id="漁獲物中の年齢別体重" class="section level4">
-<h4 class="hasAnchor">
-<a href="#%E6%BC%81%E7%8D%B2%E7%89%A9%E4%B8%AD%E3%81%AE%E5%B9%B4%E9%BD%A2%E5%88%A5%E4%BD%93%E9%87%8D" class="anchor" aria-hidden="true"></a>漁獲物中の年齢別体重</h4>
+<div class="section level4">
+<h4 id="漁獲物中の年齢別体重">漁獲物中の年齢別体重<a class="anchor" aria-label="anchor" href="#%E6%BC%81%E7%8D%B2%E7%89%A9%E4%B8%AD%E3%81%AE%E5%B9%B4%E9%BD%A2%E5%88%A5%E4%BD%93%E9%87%8D"></a>
+</h4>
 <p>漁獲量計算と資源量計算で異なる年齢別体重を用いている場合には、漁獲物中の年齢別体重の設定についても感度分析ができます。この場合は、<code>what_replace = "waa.catch"</code>とします。 <code>value</code>に入れる値の型は<code>index = waa</code>の場合と同じく、<code>numeric</code>または<code>list</code>型です。 （この例の場合には、漁獲量用の年齢別体重が設定されていないため、エラーとなります。）</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">res_vpa_sensitivity</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>,
@@ -239,9 +239,9 @@
                                                       <span class="st">"fish_number"</span>,<span class="st">"fishing_mortality"</span><span class="op">)</span>, 
                                           ncol<span class="op">=</span><span class="fl">3</span><span class="op">)</span></code></pre></div>
 </div>
-<div id="成熟率" class="section level4">
-<h4 class="hasAnchor">
-<a href="#%E6%88%90%E7%86%9F%E7%8E%87" class="anchor" aria-hidden="true"></a>成熟率</h4>
+<div class="section level4">
+<h4 id="成熟率">成熟率<a class="anchor" aria-label="anchor" href="#%E6%88%90%E7%86%9F%E7%8E%87"></a>
+</h4>
 <p>成熟率を置き換える場合は、<code>what_replace = "maa"</code>とします。 年齢別体重の場合と同様<code>value</code>には、<code>list</code>に格納した行列を与えてください。</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">res_vpa_sensitivity</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>, 
@@ -257,9 +257,9 @@
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-10-1.png" width="672"></p>
 </div>
 </div>
-<div id="α" class="section level3">
-<h3 class="hasAnchor">
-<a href="#%CE%B1" class="anchor" aria-hidden="true"></a>α</h3>
+<div class="section level3">
+<h3 id="α">α<a class="anchor" aria-label="anchor" href="#%CE%B1"></a>
+</h3>
 <p>αを置き換えたい場合は、<code>what_replace = "alpha"</code>とします。 <code>value</code>には直接仮定したい値を入れてください。</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">res_vpa_sensitivity</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>, 
@@ -275,9 +275,9 @@
 <code class="sourceCode R"><span class="va">res_vpa_sensitivity</span><span class="op">$</span><span class="va">graph</span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-11-1.png" width="672"></p>
 </div>
-<div id="チューニング方法について" class="section level3">
-<h3 class="hasAnchor">
-<a href="#%E3%83%81%E3%83%A5%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0%E6%96%B9%E6%B3%95%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6" class="anchor" aria-hidden="true"></a>チューニング方法について</h3>
+<div class="section level3">
+<h3 id="チューニング方法について">チューニング方法について<a class="anchor" aria-label="anchor" href="#%E3%83%81%E3%83%A5%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0%E6%96%B9%E6%B3%95%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6"></a>
+</h3>
 <p><strong>チューニングの有無で行える感度分析が大きく変わります。</strong></p>
 <ul>
 <li>チューニングなしVPA(<code>tune=FALSE</code>で解析している) : <code>tf.year</code>について感度分析を行います</li>
@@ -288,9 +288,9 @@
 </ul>
 </li>
 </ul>
-<div id="チューニングなしvpaの場合" class="section level4">
-<h4 class="hasAnchor">
-<a href="#%E3%83%81%E3%83%A5%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0%E3%81%AA%E3%81%97vpa%E3%81%AE%E5%A0%B4%E5%90%88" class="anchor" aria-hidden="true"></a>チューニングなしVPAの場合</h4>
+<div class="section level4">
+<h4 id="チューニングなしvpaの場合">チューニングなしVPAの場合<a class="anchor" aria-label="anchor" href="#%E3%83%81%E3%83%A5%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0%E3%81%AA%E3%81%97vpa%E3%81%AE%E5%A0%B4%E5%90%88"></a>
+</h4>
 <p>チューニングなしVPAの場合、最終年のFが過去何年分の平均になるかという仮定の部分の値を変えて感度分析を行います。</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># チューニングなしVPAの場合</span>
@@ -299,9 +299,9 @@
 <span class="va">tmp</span> <span class="op">&lt;-</span>   <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_tmp</span>,what_replace <span class="op">=</span> <span class="st">"tuning"</span>, value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fl">1995</span><span class="op">:</span><span class="fl">1999</span>, <span class="fl">1998</span><span class="op">:</span><span class="fl">1999</span><span class="op">)</span><span class="op">)</span>
                                                       <span class="co"># 2つの数列をlist型にしてvalueを与えています</span></code></pre></div>
 </div>
-<div id="選択率更新法の場合" class="section level4">
-<h4 class="hasAnchor">
-<a href="#%E9%81%B8%E6%8A%9E%E7%8E%87%E6%9B%B4%E6%96%B0%E6%B3%95%E3%81%AE%E5%A0%B4%E5%90%88" class="anchor" aria-hidden="true"></a>選択率更新法の場合</h4>
+<div class="section level4">
+<h4 id="選択率更新法の場合">選択率更新法の場合<a class="anchor" aria-label="anchor" href="#%E9%81%B8%E6%8A%9E%E7%8E%87%E6%9B%B4%E6%96%B0%E6%B3%95%E3%81%AE%E5%A0%B4%E5%90%88"></a>
+</h4>
 <p>今回の例では選択率更新法で推定されているため、全F推定で感度分析が行われます。 これまでと同様に、<code>what_replace = "tuning"</code>といれれば大丈夫です。 <strong>選択率更新法の代わりに感度分析で全F推定を行う場合、<code>value</code>に値を入れる必要はありません</strong></p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">res_tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">vpadat_estb</span>, tf.year<span class="op">=</span><span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span>, last.catch.zero <span class="op">=</span> <span class="cn">FALSE</span>, 
@@ -315,9 +315,9 @@
 <span class="va">res_vpa_sensitivity</span><span class="op">$</span><span class="va">graph</span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-13-1.png" width="672"></p>
 </div>
-<div id="全f推定の場合" class="section level4">
-<h4 class="hasAnchor">
-<a href="#%E5%85%A8f%E6%8E%A8%E5%AE%9A%E3%81%AE%E5%A0%B4%E5%90%88" class="anchor" aria-hidden="true"></a>全F推定の場合</h4>
+<div class="section level4">
+<h4 id="全f推定の場合">全F推定の場合<a class="anchor" aria-label="anchor" href="#%E5%85%A8f%E6%8E%A8%E5%AE%9A%E3%81%AE%E5%A0%B4%E5%90%88"></a>
+</h4>
 <p>全F推定の場合は、代わりに選択率更新法で感度分析が行われます。 また先のチューニングなしVPAのように、最終年Fの仮定についても値を変えて、感度分析することができます。</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># 全F推定法の場合</span>
@@ -328,9 +328,9 @@
                                                       <span class="co"># チューニングなしVPAと同じです</span></code></pre></div>
 </div>
 </div>
-<div id="リッジペナルティλについて" class="section level3">
-<h3 class="hasAnchor">
-<a href="#%E3%83%AA%E3%83%83%E3%82%B8%E3%83%9A%E3%83%8A%E3%83%AB%E3%83%86%E3%82%A3%CE%BB%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6" class="anchor" aria-hidden="true"></a>リッジペナルティλについて</h3>
+<div class="section level3">
+<h3 id="リッジペナルティλについて">リッジペナルティλについて<a class="anchor" aria-label="anchor" href="#%E3%83%AA%E3%83%83%E3%82%B8%E3%83%9A%E3%83%8A%E3%83%AB%E3%83%86%E3%82%A3%CE%BB%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6"></a>
+</h3>
 <p>全F推定でリッジVPAを行っている場合（λ＞0）にはλの値についての感度分析も実施してみてください。</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># リッジVPAの場合</span>
@@ -343,9 +343,9 @@
                                     <span class="co"># lambdaの値を"numeric型"で与えています</span>
                                     <span class="co"># list型ではないので気を付けてください</span></code></pre></div>
 </div>
-<div id="b-hyperstabilitydepletion" class="section level3">
-<h3 class="hasAnchor">
-<a href="#b-hyperstabilitydepletion" class="anchor" aria-hidden="true"></a>b (hyperstability/depletion)</h3>
+<div class="section level3">
+<h3 id="b-hyperstabilitydepletion">b (hyperstability/depletion)<a class="anchor" aria-label="anchor" href="#b-hyperstabilitydepletion"></a>
+</h3>
 <p>bを推定した場合、bを推定しない(b=1)場合について、感度分析を実施してください。<code>what_replace = "b"</code>とするとbについて感度分析できます。また、bを推定していない場合も適宜bを推定（あるいは固定）してみて、感度分析を行ってみてください。</p>
 <ul>
 <li>bの値を与えたい場合、<code>numeric</code>型、または<code>list</code>型（複数与えたい場合）で値を入れる（ベースケースでbを推定しているが、bを推定しない感度分析を実施する場合は<code>value=1</code>を与える）</li>
@@ -358,9 +358,9 @@
 <span class="va">tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>, what_replace <span class="op">=</span> <span class="st">"b"</span>, value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"b.est"</span><span class="op">)</span><span class="op">)</span></code></pre></div>
 </div>
 </div>
-<div id="レトロスペクティブ解析" class="section level2">
-<h2 class="hasAnchor">
-<a href="#%E3%83%AC%E3%83%88%E3%83%AD%E3%82%B9%E3%83%9A%E3%82%AF%E3%83%86%E3%82%A3%E3%83%96%E8%A7%A3%E6%9E%90" class="anchor" aria-hidden="true"></a>2. レトロスペクティブ解析</h2>
+<div class="section level2">
+<h2 id="レトロスペクティブ解析">2. レトロスペクティブ解析<a class="anchor" aria-label="anchor" href="#%E3%83%AC%E3%83%88%E3%83%AD%E3%82%B9%E3%83%9A%E3%82%AF%E3%83%86%E3%82%A3%E3%83%96%E8%A7%A3%E6%9E%90"></a>
+</h2>
 <ul>
 <li>過去～7年分くらいのデータを削除して資源計算をしなおした場合に、資源量やFの推定値が傾向を持って変化するようなレトロスペクティブパターンが見られるかどうかを調べます。その際には
 <ul>
@@ -407,9 +407,9 @@
 <div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">res_vpa_retrospective</span><span class="op">$</span><span class="va">graph</span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-18-1.png" width="672"></p>
-<div id="レトロスペクティブ解析中でbの再推定を行う場合" class="section level4">
-<h4 class="hasAnchor">
-<a href="#%E3%83%AC%E3%83%88%E3%83%AD%E3%82%B9%E3%83%9A%E3%82%AF%E3%83%86%E3%82%A3%E3%83%96%E8%A7%A3%E6%9E%90%E4%B8%AD%E3%81%A7b%E3%81%AE%E5%86%8D%E6%8E%A8%E5%AE%9A%E3%82%92%E8%A1%8C%E3%81%86%E5%A0%B4%E5%90%88" class="anchor" aria-hidden="true"></a>レトロスペクティブ解析中でbの再推定を行う場合</h4>
+<div class="section level4">
+<h4 id="レトロスペクティブ解析中でbの再推定を行う場合">レトロスペクティブ解析中でbの再推定を行う場合<a class="anchor" aria-label="anchor" href="#%E3%83%AC%E3%83%88%E3%83%AD%E3%82%B9%E3%83%9A%E3%82%AF%E3%83%86%E3%82%A3%E3%83%96%E8%A7%A3%E6%9E%90%E4%B8%AD%E3%81%A7b%E3%81%AE%E5%86%8D%E6%8E%A8%E5%AE%9A%E3%82%92%E8%A1%8C%E3%81%86%E5%A0%B4%E5%90%88"></a>
+</h4>
 <p>また、bをレトロスペクティブ解析内で再推定したい場合は以下のようにコードしてください。</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">res_tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">vpadat_estb</span>, tf.year<span class="op">=</span><span class="fl">1997</span><span class="op">:</span><span class="fl">1999</span>, last.catch.zero <span class="op">=</span> <span class="cn">FALSE</span>, Pope <span class="op">=</span> <span class="cn">TRUE</span>, 
@@ -432,9 +432,9 @@
  [38;5;250m6 [39m  1.14   1.33   1.47   1.11 </code></pre>
 <p>このように各レトロスペクティブ解析ごとに、bを推定していることが確認できました。（<strong>ダミーデータなので変な値となっています</strong>）</p>
 </div>
-<div id="段階法の場合" class="section level4">
-<h4 class="hasAnchor">
-<a href="#%E6%AE%B5%E9%9A%8E%E6%B3%95%E3%81%AE%E5%A0%B4%E5%90%88" class="anchor" aria-hidden="true"></a>2段階法の場合</h4>
+<div class="section level4">
+<h4 id="段階法の場合">2段階法の場合<a class="anchor" aria-label="anchor" href="#%E6%AE%B5%E9%9A%8E%E6%B3%95%E3%81%AE%E5%A0%B4%E5%90%88"></a>
+</h4>
 <p>VPAを2段階法で行っている場合は、<code>res_step1</code>引数に1段階目のVPA結果のオブジェクトを与えてください。</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">res_tmp1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">vpadat_estb</span>, tf.year<span class="op">=</span><span class="fl">1997</span><span class="op">:</span><span class="fl">1999</span>, last.catch.zero <span class="op">=</span> <span class="cn">FALSE</span>, Pope <span class="op">=</span> <span class="cn">TRUE</span>, 
@@ -454,9 +454,9 @@
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-20-1.png" width="672"></p>
 </div>
 </div>
-<div id="パラメータの収束の確認-jitter-analysis" class="section level2">
-<h2 class="hasAnchor">
-<a href="#%E3%83%91%E3%83%A9%E3%83%A1%E3%83%BC%E3%82%BF%E3%81%AE%E5%8F%8E%E6%9D%9F%E3%81%AE%E7%A2%BA%E8%AA%8D-jitter-analysis" class="anchor" aria-hidden="true"></a>3. パラメータの収束の確認 (jitter analysis)</h2>
+<div class="section level2">
+<h2 id="パラメータの収束の確認-jitter-analysis">3. パラメータの収束の確認 (jitter analysis)<a class="anchor" aria-label="anchor" href="#%E3%83%91%E3%83%A9%E3%83%A1%E3%83%BC%E3%82%BF%E3%81%AE%E5%8F%8E%E6%9D%9F%E3%81%AE%E7%A2%BA%E8%AA%8D-jitter-analysis"></a>
+</h2>
 <p>Fの推定結果が初期値に依存せずに、安定した結果となっているかを診断するために、jitter analysis（初期値を乱数で生成し、vpa計算を繰り返し実施する）をおこないます。<code>vpa</code>関数では推定パラメータの初期値は引数<code>p.init</code>で与えられますが、全F推定法の場合、最終年の各年齢のFの初期値になります。</p>
 <p>Fの結果が初期値に依存する場合、初期値に応じて推定結果も変わることが考えられます。このような場合、パラメータの初期値への依存が高く、局所的な最適解に引っ張られている可能性などが考えられます。すなわち、データの持つ情報量が低いことが考えられるため注意が必要です。jitter analysisはこのようなことがおこっていないか確認するための解析です。</p>
 <p>初期値は対数を取った0.001から2の間を10刻みにした後、指数を取ってます。刻みの数は<code>n_ite</code>で指定できます。</p>
@@ -502,9 +502,9 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 <p>またVPAは、最終年のFでしか指標値とのフィットをコントロールできないことから、FがInfなどの大きな値になることもあります。このような場合に、推定結果の最大対数尤度より、Fが発散した場合の最大対数尤度の方が大きくなることがあります。これはFが収束していないだけですので、こういった場合は推定と初期値の関係に問題ありません。 <strong>（逆にこういったFが大きく発散しないFを探すという方が実際の資源に適用する場合には多いかと思います）</strong></p>
 <p>関数を実施したとき、“Maximum likelihood in jitter analysis is: , Likelihood with estimated parameters is :” という表示が出ますので、上下の値が一致している、または上の値よりも下の値のほうが大きければOKです。逆に、上の値（Maximum likelihood in jitter analysis）のほうが大きい場合には、上述のように<strong>Fが発散している</strong>ため問題ないか、<strong>最尤推定値は他にある可能性</strong>がある場合の2通り考えられます。後者の場合は初期値を変えて計算しなおしてください。</p>
 </div>
-<div id="残差プロット" class="section level2">
-<h2 class="hasAnchor">
-<a href="#%E6%AE%8B%E5%B7%AE%E3%83%97%E3%83%AD%E3%83%83%E3%83%88" class="anchor" aria-hidden="true"></a>4. 残差プロット</h2>
+<div class="section level2">
+<h2 id="残差プロット">4. 残差プロット<a class="anchor" aria-label="anchor" href="#%E6%AE%8B%E5%B7%AE%E3%83%97%E3%83%AD%E3%83%83%E3%83%88"></a>
+</h2>
 <p>残差プロットはモデル診断の中でも、最も重要なパートの1つです。残差とは、CPUEとその予測値(qN^b)の差のことを指し、これが小さいほうがよりフィッティングの良いモデルとなります。残差の対数（対数残差）プロットは0を平均とした分布になります。また、 <strong>残差プロットが時系列的に一貫して増える（または減る）傾向（自己相関）</strong>がみられる場合、モデルとデータの間に何らかの齟齬がある可能性があり、注意が必要です。この他、 <strong>他の残差に比べて著しく大きい残差は、そのデータ（CPUE）が外れ値</strong>である場合があります。外れ値はパラメータ推定に大きな影響を及ぼすので、外れ値と思われるデータを解析に含めるか再考する必要があります。 ただし、いずれも時系列データを扱っていると往々に起こりうることですので、外れ値がある、あるいは自己相関係数が有意であっても、結果が妥当そうであれば問題ありません。 残差プロットを行うことでこれらの傾向を一目にして把握することができます。</p>
 <p>残差プロットは<code>plot_residual_vpa</code>関数で実行できます。大きく3種類のプロットを書くことができます。</p>
 <ul>
@@ -529,9 +529,9 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 <span class="va">plot_example</span><span class="op">$</span><span class="va">fitting_Index</span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-24-1.png" width="672"></p>
 <p>これらの残差プロットは今回のバージョンから、<code>vpa</code>関数実行時に引数<code>plot = T</code>にすると自動生成されるようになっています。モデル診断の最も基本パートとなるので、是非活用ください。</p>
-<div id="年度変更点-1" class="section level3">
-<h3 class="hasAnchor">
-<a href="#%E5%B9%B4%E5%BA%A6%E5%A4%89%E6%9B%B4%E7%82%B9-1" class="anchor" aria-hidden="true"></a>2021年度変更点</h3>
+<div class="section level3">
+<h3 id="年度変更点-1">2021年度変更点<a class="anchor" aria-label="anchor" href="#%E5%B9%B4%E5%BA%A6%E5%A4%89%E6%9B%B4%E7%82%B9-1"></a>
+</h3>
 <p>先程の図の通り、残差プロットに信頼区間が明記されるようになりました。 <strong>信頼区間は濃い色が80%、薄い色が95%</strong>のそれぞれ信頼区間となっております。</p>
 <p>これによって、外れ値の検出ができます。 特に、最近年に外れ値がある場合、その値が資源量推定結果に与える影響は大きいことが想定されるので、後述のジャックナイフ法などを通して結果の妥当性を評価してください。</p>
 <div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
@@ -551,9 +551,9 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 <p>こういった妥当性の検証のプロセスを説明することが大切だと考えます。</p>
 </div>
 </div>
-<div id="ジャックナイフ法" class="section level2">
-<h2 class="hasAnchor">
-<a href="#%E3%82%B8%E3%83%A3%E3%83%83%E3%82%AF%E3%83%8A%E3%82%A4%E3%83%95%E6%B3%95" class="anchor" aria-hidden="true"></a>5. ジャックナイフ法</h2>
+<div class="section level2">
+<h2 id="ジャックナイフ法">5. ジャックナイフ法<a class="anchor" aria-label="anchor" href="#%E3%82%B8%E3%83%A3%E3%83%83%E3%82%AF%E3%83%8A%E3%82%A4%E3%83%95%E6%B3%95"></a>
+</h2>
 <p>観測値（資源量指数）を1つずつ抜いて解析を行うことで、影響力の強いデータや外れ値を検出する方法です。 <code>do_jackknife_vpa</code>関数で自動で観測値を抜いて再解析を行います。</p>
 <ul>
 <li><p><code>plot_year</code>に作図したい年（x軸の範囲）を指定することもできます</p></li>
@@ -573,9 +573,9 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 <code class="sourceCode R"><span class="va">res_vpa_jackknife</span><span class="op">$</span><span class="va">JKplot_par</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/lims.html" class="external-link">ylim</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">1</span><span class="op">)</span> <span class="co"># 最終年のFの比較 (ここではylimで縦軸を調整しています)</span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-27-2.png" width="672"></p>
 </div>
-<div id="ブートストラップによる信頼区間推定" class="section level2">
-<h2 class="hasAnchor">
-<a href="#%E3%83%96%E3%83%BC%E3%83%88%E3%82%B9%E3%83%88%E3%83%A9%E3%83%83%E3%83%97%E3%81%AB%E3%82%88%E3%82%8B%E4%BF%A1%E9%A0%BC%E5%8C%BA%E9%96%93%E6%8E%A8%E5%AE%9A" class="anchor" aria-hidden="true"></a>6. ブートストラップによる信頼区間推定</h2>
+<div class="section level2">
+<h2 id="ブートストラップによる信頼区間推定">6. ブートストラップによる信頼区間推定<a class="anchor" aria-label="anchor" href="#%E3%83%96%E3%83%BC%E3%83%88%E3%82%B9%E3%83%88%E3%83%A9%E3%83%83%E3%83%97%E3%81%AB%E3%82%88%E3%82%8B%E4%BF%A1%E9%A0%BC%E5%8C%BA%E9%96%93%E6%8E%A8%E5%AE%9A"></a>
+</h2>
 <p>ブートストラップ法は乱数でデータを再生成し、信頼区間等を推定する方法です。 ここでは</p>
 <ul>
 <li>CPUEについて乱数生成する方法</li>
@@ -584,9 +584,9 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 <p>それぞれについて、新規関数とともに紹介します。 また<strong>パッケージの更新速度の都合上、ブートストラップ標本数は10個</strong>としていますが、<font color="blue">95%信頼区間などを正確に計算したい場合は<strong>1000回（デフォルト）</strong></font>ほど必要です。 ただし、データの特性や推定された<code>sigma</code>の大きさにも依存するので、<font color="blue">200回や500回でも、1000回と信頼区間がそれほど変わらない場合は、少なくても構いません。</font></p>
 <p>一方で<font color="blue">大まかな幅や各パラメータの相関関係だけを知りたい場合には、<strong>100回ほど</strong></font>でも問題ありません。</p>
 <p>ブートストラップ法ではVPA計算を繰り返し行うことから時間がかかるので、TMBの仕様を推奨します。最初にvpa計算する時に<code>TMB=T</code>にしておくと、以下のブートストラップ計算もTMBで行われます。</p>
-<div id="cpueのブートストラップ法について" class="section level3">
-<h3 class="hasAnchor">
-<a href="#cpue%E3%81%AE%E3%83%96%E3%83%BC%E3%83%88%E3%82%B9%E3%83%88%E3%83%A9%E3%83%83%E3%83%97%E6%B3%95%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6" class="anchor" aria-hidden="true"></a>1. CPUEのブートストラップ法について</h3>
+<div class="section level3">
+<h3 id="cpueのブートストラップ法について">1. CPUEのブートストラップ法について<a class="anchor" aria-label="anchor" href="#cpue%E3%81%AE%E3%83%96%E3%83%BC%E3%83%88%E3%82%B9%E3%83%88%E3%83%A9%E3%83%83%E3%83%97%E6%B3%95%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6"></a>
+</h3>
 <p>先述の通り、ブートストラップ法はデータをリサンプリングする方法ですが、VPAでは残差をリサンプリングすることで、データ（CPUE）を再生成します。 frasyrの中にはブートストラップ法を自動で行う<code>boo.vpa</code>関数がありますが、今回作成した<code>plot_resboot_vpa</code>関数内でも<code>boo.vpa</code>関数を使っています。したがって、<code>plot_resboot_vpa</code>関数に直接vpa計算結果のオブジェクトを入れてください。</p>
 <ul>
 <li>
@@ -630,15 +630,15 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 <span class="kw">for</span><span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span> <span class="va">res_tmp</span><span class="op">[</span><span class="va">i</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">res_vpa_bootstrap</span><span class="op">$</span><span class="va">res_boot</span><span class="op">[[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="va">Fc.at.age</span><span class="op">[</span><span class="fl">4</span><span class="op">]</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile</a></span><span class="op">(</span><span class="va">res_tmp</span>, probs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.025</span>,<span class="fl">0.5</span>,<span class="fl">0.975</span><span class="op">)</span><span class="op">)</span></code></pre></div>
 <pre><code>     2.5%       50%     97.5% 
-0.5446445 0.8087088 4.8460260 </code></pre>
+0.4319570 0.5987116 7.7350698 </code></pre>
 <p>この他、各パラメータの相関関係について、ブートストラップ標本を基にプロットが得られます。</p>
 <div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">res_vpa_bootstrap</span><span class="op">$</span><span class="va">plot_cor</span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-30-1.png" width="1152"></p>
 </div>
-<div id="年齢別漁獲尾数について乱数生成する方法" class="section level3">
-<h3 class="hasAnchor">
-<a href="#%E5%B9%B4%E9%BD%A2%E5%88%A5%E6%BC%81%E7%8D%B2%E5%B0%BE%E6%95%B0%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6%E4%B9%B1%E6%95%B0%E7%94%9F%E6%88%90%E3%81%99%E3%82%8B%E6%96%B9%E6%B3%95" class="anchor" aria-hidden="true"></a>2. 年齢別漁獲尾数について乱数生成する方法</h3>
+<div class="section level3">
+<h3 id="年齢別漁獲尾数について乱数生成する方法">2. 年齢別漁獲尾数について乱数生成する方法<a class="anchor" aria-label="anchor" href="#%E5%B9%B4%E9%BD%A2%E5%88%A5%E6%BC%81%E7%8D%B2%E5%B0%BE%E6%95%B0%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6%E4%B9%B1%E6%95%B0%E7%94%9F%E6%88%90%E3%81%99%E3%82%8B%E6%96%B9%E6%B3%95"></a>
+</h3>
 <p>VPAは年齢別漁獲尾数（catch at age）が真であると仮定して推定するため、catch at ageの不確実性を評価することが出来ないモデルです。 ここで紹介する<code>do_caaboot_vpa</code>関数は、引数として与えている年齢別漁獲尾数(<code>$input$dat$caa</code>)の対数を取った後、正規分布乱数で生成した年齢別漁獲尾数を用いて、再度VPA計算を行います。</p>
 <p>引数<code>B_cv</code>で乱数生成の変動係数を決めることができます。デフォルトで0.2となっていますが、年齢別漁獲尾数データの不確実性が大きいことが想定される場合、この値を適宜大きくして検討してみてください。</p>
 <div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
@@ -655,9 +655,9 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 <p>これは決して過去の推定結果が正しいからではなく、確率変数として考えている資源量指数の不確実性を考慮しただけでは、最近の資源量の不確実性しか考慮できず、それより過去は正しいと仮定されている年齢別漁獲尾数データによって、決定的に求まっているだけなのです。 年齢別漁獲尾数の不確実性を考慮すると、時系列に関係なく資源量推定結果に不確実性があることが明らかになるかと思います。</p>
 </div>
 </div>
-<div id="おわりに" class="section level2">
-<h2 class="hasAnchor">
-<a href="#%E3%81%8A%E3%82%8F%E3%82%8A%E3%81%AB" class="anchor" aria-hidden="true"></a>7. おわりに</h2>
+<div class="section level2">
+<h2 id="おわりに">7. おわりに<a class="anchor" aria-label="anchor" href="#%E3%81%8A%E3%82%8F%E3%82%8A%E3%81%AB"></a>
+</h2>
 <p>以上が、現在開発配布されている、VPAのモデル診断関数です。</p>
 <p>VPAのモデル診断結果が芳しくない場合、そこから推定される再生産関係、管理基準値の推定、更には将来予測などに、大きな影響を及ぼします。</p>
 <p>VPA関数が無事に動くと一安心してしまう所ではありますが、併せてモデル診断も行って結果の妥当性を評価してください。</p>
@@ -681,7 +681,7 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link external-link">pkgdown</a> 1.9000.9000.9000.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 1.9000.9000.9000.</p>
 </div>
 
       </footer>
