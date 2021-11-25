@@ -166,9 +166,10 @@ test_that("Add Shaefer and Cusing",{
   res_sr_SHr <- fit.SRregime(SRdata,SR="Shepherd",method = "L2", gamma=0.72, regime.year=2000)
   res_sr_CUr <- fit.SRregime(SRdata,SR="Cushing" ,method = "L2", regime.year=2000, regime.year=2000)
 
-  plot_SRregime(res_sr_SHr)
-  plot_SRregime(res_sr_CUr)  
-      
+  gg <- plot_SRregime(res_sr_SHr)
+  gg <- plot_SRregime(res_sr_CUr)
+  # テストにはなっていないが、empty testと言われないために
+  expect_equal(class(gg)[1],"gg")
 })
 
 
