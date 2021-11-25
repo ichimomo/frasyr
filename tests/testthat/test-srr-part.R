@@ -164,7 +164,7 @@ test_that("Add Shaefer and Cusing",{
 
   # regime
   res_sr_SHr <- fit.SRregime(SRdata,SR="Shepherd",method = "L2", gamma=0.72, regime.year=2000)
-  res_sr_CUr <- fit.SRregime(SRdata,SR="Cushing" ,method = "L2", regime.year=2000, regime.year=2000)
+  res_sr_CUr <- fit.SRregime(SRdata,SR="Cushing" ,method = "L2", regime.year=2000)
 
   gg <- plot_SRregime(res_sr_SHr)
   gg <- plot_SRregime(res_sr_CUr)
