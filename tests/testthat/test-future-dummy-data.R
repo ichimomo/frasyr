@@ -430,6 +430,7 @@ test_that("future_vpa function (with dummy vpa data) for regime shift (level 2-3
 
 test_that("future_vpa function (with dummy vpa data) for regime shift & shepherd ",{
 
+  res_sr_list <- list()
   data(res_vpa)
   res_sr_list[[1]] <- fit.SRregime(get.SRdata(res_vpa),
                                    SR="Shepherd",method="L2",regime.key=c(0,1),

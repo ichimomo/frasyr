@@ -1055,7 +1055,7 @@ set_SR_mat <- function(res_vpa=NULL,
     }
 
     # set gamma parameter (暫定. regimeありでもなしでも同じgammaがinput$gammaで与えられている場合の特殊ケース)
-    SR_mat[,,"gamma"] <- res_SR$input$gamma
+    SR_mat[,,"gamma"] <- ifelse(!is.null(res_SR$input$gamma), res_SR$input$gamma, NA)
     if(res_SR$input$SR!="Shepherd"&&res_SR$input$SR!="SH") SR_mat[,,"gamma"] <- NA
       
     SR_mat[,,"rho"] <- res_SR$pars$rho
