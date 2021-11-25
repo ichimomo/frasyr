@@ -434,7 +434,26 @@ test_that("future_vpa function (with dummy vpa data) for regime shift & shepherd
   res_sr_list[[1]] <- fit.SRregime(get.SRdata(res_vpa),
                                    SR="Shepherd",method="L2",regime.key=c(0,1),
                                    regime.par=c("a","b","sd"),regime.year=2005,gamma=0.5)
-  res_sr_list[[1]]$regime_pars$sd[2] <- 0.3 # 本当は両方ゼロだがテストのために0.3を入れる
+  res_sr_list[[1]]$regime_pars$sd[2] <- 0
+  
+  res_sr_list[[2]] <- fit.SRregime(get.SRdata(res_vpa),
+                                   SR="Cushing",method="L2",regime.key=c(0,1),
+                                   regime.par=c("a","b","sd"),regime.year=2005)
+  res_sr_list[[2]]$regime_pars$sd[2] <- 0
+
+  res_sr_list[[4]] <- fit.SRregime(get.SRdata(res_vpa),
+                                   SR="Shepherd",method="L2",regime.key=c(0,1),
+                                   regime.par=c("a","b","sd"),regime.year=2005,gamma=1,
+                                   p0=as.numeric(unlist(t(res_sr_list[[3]]$regime_pars[c("a","b")]))))
+  
+  res_sr_list[[3]] <- fit.SRregime(get.SRdata(res_vpa),
+                                   SR="BH",method="L2",regime.key=c(0,1),
+                                   regime.par=c("a","b","sd"),regime.year=2005)
+
+  expect_equal(mean(unlist(res_sr_list[[3]]$regime_pars[c("a","b","sd")]/res_sr_list[[4]]$regime_pars[c("a","b","sd")])),
+               1,tol=0.0001)
+  res_sr_list[[3]]$regime_pars$sd[2] <- 0  
+  res_sr_list[[4]]$regime_pars$sd[2] <- 0  
   
   # future projection with dummy data ----
   max_vpa_year <- max(as.numeric(colnames(res_vpa$naa)))
@@ -480,57 +499,35 @@ test_that("future_vpa function (with dummy vpa data) for regime shift & shepherd
   res_future_F0.1 <- future_vpa(tmb_data=data_future_test$data,
                                 optim_method="none",
                                 multi_init = 1)
-  # 平衡状態ではtarget_eq_naaと一致する（そのようなFを使っているので）
-  expect_equal(mean(colSums(res_future_F0.1$naa[,"2035",])),
-               target_eq_naa, tol=0.0001)
+  pars <- res_sr_list[[1]]$regime_pars
+  # SSB -> SRF_SH -> recruitment
+  pred_rec <- res_future_F0.1$summary %>% dplyr::filter(year>max_vpa_year) %>% select(SSB) %>%
+      SRF_SH(a=pars$a[2], b=pars$b[2], gamma=res_sr_list[[1]]$input$gamma) %>% unlist() %>%
+      as.numeric()
+  # calculated recruitment
+  cacl_rec <- res_future_F0.1$summary %>% dplyr::filter(year>max_vpa_year) %>% select(recruit) %>% unlist() %>% as.numeric()
+  expect_equal(cacl_rec, pred_rec)  
 
-  # simple (different SD)
+  # Cushing
   data_future_test2 <- data_future_test
   data_future_test2 <- safe_call(make_future_data,
                                  list_modify(data_future_test2$input,res_SR=res_sr_list[[2]]))
   res_future_F2 <- future_vpa(tmb_data=data_future_test2$data,
                               optim_method="none",
                               multi_init = 1)
-
-  data_future_test3 <- data_future_test2
-  data_future_test3 <- safe_call(make_future_data,
-                                 list_modify(data_future_test2$input,
-                                             regime_shift_option=list(future_regime=0)))
-  res_future_F2 <- future_vpa(tmb_data=data_future_test3$data,
-                              optim_method="none",
-                              multi_init = 1)
-
-
-
+  pars <- res_sr_list[[2]]$regime_pars
+  # SSB -> SRF_SH -> recruitment
+  pred_rec <- res_future_F2$summary %>% dplyr::filter(year>max_vpa_year) %>% select(SSB) %>%
+      SRF_CU(a=pars$a[2], b=pars$b[2]) %>% unlist() %>%
+      as.numeric()
+  # calculated recruitment
+  calc_rec <- res_future_F2$summary %>% dplyr::filter(year>max_vpa_year) %>% select(recruit) %>% unlist() %>% as.numeric()
+  expect_equal(calc_rec, pred_rec)  
+  
   # simple, MSY
   res_future_MSY <- future_vpa(tmb_data=data_future_test$data,
                                optim_method="R", objective ="MSY",
                                multi_init = 2, multi_lower=0.01)
-
-  # F=0
-  res_future_F0 <- data_future_test$input %>%
-    list_modify(currentF=rep(0,4),
-                futureF =rep(0,4)) %>%
-    safe_call(make_future_data,.) %>%
-    future_vpa(tmb_data=.$data, optim_method="none", multi_init = 1)
-  # 平衡状態ではすべて４匹づつになる
-  expect_equal(mean(res_future_F0$naa[,as.character(2025:2030),]),4, tol=0.0001)
-
-  # specific weight at age, F=0.1
-  res_future_F0.1_wcatch <- data_future_test$input %>%
-    list_modify(res_vpa = res_vpa_base1_nontune) %>%
-    safe_call(make_future_data,.) %>%
-    future_vpa(tmb_data=.$data, optim_method="none", multi_init=1)
-
-  # waa.catchを別に与えた場合の総漁獲量は倍になっているはず
-  expect_equal(sum(res_future_F0.1$wcaa[,,1])*2,
-               sum(res_future_F0.1_wcatch$wcaa[,,1]))
-
-  # change plus group (途中でプラスグループが変わるVPA結果でもエラーなく計算できることだけ確認（レベル１）
-  res_future_pgc <- data_future_test$input %>%
-    list_modify(res_vpa = res_vpa_pgc0_nontune) %>%
-    safe_call(make_future_data,.) %>%
-    future_vpa(tmb_data=.$data, optim_method="none", multi_init=1)
 
   # backward resampling
   res_future_backward <- data_future_test$input %>%
@@ -540,9 +537,13 @@ test_that("future_vpa function (with dummy vpa data) for regime shift & shepherd
     safe_call(make_future_data,.) %>%
       future_vpa(tmb_data=.$data, optim_method="none", multi_init=1)
 
-  # 残差がゼロのVPA結果なので、バックワードでも対数正規でも結果は同じ
-  expect_equal(res_future_backward$naa[,as.character(2025:2030),],
-               res_future_F0.1$naa[,as.character(2025:2030),])
+  # 結果の数値チェックはまだない
+
+  MSY_BH <- redo_future(data_future_test, list(res_SR=res_sr_list[[3]]), only_data=TRUE) %>%
+      est_MSYRP()
+  MSY_SH <- redo_future(data_future_test, list(res_SR=res_sr_list[[4]]), only_data=TRUE) %>%
+      est_MSYRP()  
+  expect_equal(MSY_BH$summary$SSB/MSY_SH$summary$SSB, c(1,1,1,1),tol=0.001)
 
 
 })
