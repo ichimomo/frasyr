@@ -442,14 +442,15 @@ test_that("future_vpa function (with dummy vpa data) for regime shift & shepherd
                                    regime.par=c("a","b","sd"),regime.year=2005)
   res_sr_list[[2]]$regime_pars$sd[2] <- 0
 
-  res_sr_list[[4]] <- fit.SRregime(get.SRdata(res_vpa),
-                                   SR="Shepherd",method="L2",regime.key=c(0,1),
-                                   regime.par=c("a","b","sd"),regime.year=2005,gamma=1,
-                                   p0=as.numeric(unlist(t(res_sr_list[[3]]$regime_pars[c("a","b")]))))
-  
+ 
   res_sr_list[[3]] <- fit.SRregime(get.SRdata(res_vpa),
                                    SR="BH",method="L2",regime.key=c(0,1),
                                    regime.par=c("a","b","sd"),regime.year=2005)
+
+  res_sr_list[[4]] <- fit.SRregime(get.SRdata(res_vpa),
+                                   SR="Shepherd",method="L2",regime.key=c(0,1),
+                                   regime.par=c("a","b","sd"),regime.year=2005,gamma=1,
+                                   p0=as.numeric(unlist(t(res_sr_list[[3]]$regime_pars[c("a","b")]))))  
 
   expect_equal(mean(unlist(res_sr_list[[3]]$regime_pars[c("a","b","sd")]/res_sr_list[[4]]$regime_pars[c("a","b","sd")])),
                1,tol=0.0001)
