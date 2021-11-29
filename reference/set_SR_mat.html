@@ -59,7 +59,7 @@
     <p>再生産関係をres_SRで与えると、res_vpaを見ながら残差を再計算したのち、start_random_rec_year_name以降の加入のdeviationを計算しSR_mat[,,"deviance"]に入れる。</p>
     </div>
 
-    <div class="ref-usage sourceCode"><pre class="sourceCode r"><code><span class="fu">set_SR_mat</span><span class="op">(</span>
+    <div id="ref-usage">Usage,<div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">set_SR_mat</span><span class="op">(</span>
   res_vpa <span class="op">=</span> <span class="cn">NULL</span>,
   <span class="va">start_random_rec_year_name</span>,
   <span class="va">SR_mat</span>,
@@ -74,9 +74,8 @@
   model_average_option <span class="op">=</span> <span class="cn">NULL</span>,
   regime_shift_option <span class="op">=</span> <span class="cn">NULL</span>,
   fix_recruit <span class="op">=</span> <span class="cn">NULL</span>
-<span class="op">)</span></code></pre></div>
+<span class="op">)</span></code></pre></div></div>
 
-    <div id="ref-sections">
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>res_vpa</dt>
@@ -100,7 +99,6 @@
 <dt>regime_shift_option</dt>
 <dd><p>レジームシフトを仮定する場合のオプション. この場合, res_SRにはfit.SRregimeの結果オブジェクトを入れる. オプションの設定は list(future_regime=将来のregimeの仮定。keyで指定された番号を入れる)</p></dd>
 </dl></div>
-    </div>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

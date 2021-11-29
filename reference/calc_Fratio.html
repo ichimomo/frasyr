@@ -59,7 +59,7 @@
     <p>calculate F/Ftarget based on F_%SPR multiplier</p>
     </div>
 
-    <div class="ref-usage sourceCode"><pre class="sourceCode r"><code><span class="fu">calc_Fratio</span><span class="op">(</span>
+    <div id="ref-usage">Usage,<div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">calc_Fratio</span><span class="op">(</span>
   <span class="va">faa</span>,
   <span class="va">waa</span>,
   <span class="va">maa</span>,
@@ -70,9 +70,8 @@
   return_SPR <span class="op">=</span> <span class="cn">FALSE</span>,
   plus_group <span class="op">=</span> <span class="cn">TRUE</span>,
   max.age <span class="op">=</span> <span class="cn">Inf</span>
-<span class="op">)</span></code></pre></div>
+<span class="op">)</span></code></pre></div></div>
 
-    <div id="ref-sections">
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>faa</dt>
@@ -93,7 +92,6 @@
 <dd><p>SPR計算を打ち切る最大の年。デフォルトはInf</p>
 <p>もともとのF at ageの最大がexp(-7)よりも小さい場合にはFratio=0となる。一方で、F at ageをすごく大きくしても指定されたSPRを実現できないような場合のFratioの上限値を50とする。</p></dd>
 </dl></div>
-    </div>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

@@ -59,7 +59,7 @@
     <p>beta.simluationの結果などを読んで、kobeII talbeに整形する関数</p>
     </div>
 
-    <div class="ref-usage sourceCode"><pre class="sourceCode r"><code><span class="fu">make_kobeII_table</span><span class="op">(</span>
+    <div id="ref-usage">Usage,<div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">make_kobeII_table</span><span class="op">(</span>
   <span class="va">kobeII_data</span>,
   <span class="va">res_vpa</span>,
   year.catch <span class="op">=</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">res_vpa</span><span class="op">$</span><span class="va">naa</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> <span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span>,
@@ -77,9 +77,8 @@
   Blimit <span class="op">=</span> <span class="fl">0</span>,
   Bban <span class="op">=</span> <span class="fl">0</span>,
   Bspecific <span class="op">=</span> <span class="cn">NULL</span>
-<span class="op">)</span></code></pre></div>
+<span class="op">)</span></code></pre></div></div>
 
-    <div id="ref-sections">
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>kobeII_data</dt>
@@ -92,7 +91,6 @@
     <div id="details">
     <h2>Details</h2>
     <p>tidy形式になっているkobeII_dataにおいて、HCR_name, betaの列のラベルの組み合わせを一つの管理方式として、その管理方式ごとに少尉予測の結果を集計する</p>
-    </div>
     </div>
 
   </div>

@@ -59,7 +59,7 @@
     <p>3種類の再生産関係の推定を、最小二乗法か最小絶対値法で、さらに加入の残差の自己相関を考慮して行うことができる</p>
     </div>
 
-    <div class="ref-usage sourceCode"><pre class="sourceCode r"><code><span class="fu">fit.SR</span><span class="op">(</span>
+    <div id="ref-usage">Usage,<div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">fit.SR</span><span class="op">(</span>
   <span class="va">SRdata</span>,
   SR <span class="op">=</span> <span class="st">"HS"</span>,
   method <span class="op">=</span> <span class="st">"L2"</span>,
@@ -75,9 +75,8 @@
   is_jitter <span class="op">=</span> <span class="cn">FALSE</span>,
   HS_fix_b <span class="op">=</span> <span class="cn">NULL</span>,
   gamma <span class="op">=</span> <span class="fl">0.01</span>
-<span class="op">)</span></code></pre></div>
+<span class="op">)</span></code></pre></div></div>
 
-    <div id="ref-sections">
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>SRdata</dt>
@@ -146,11 +145,10 @@
 
 
 </dl></div>
-    </div>
 
-    <div id="examples">
+    <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="ref-examples sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
 <span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">res_vpa</span><span class="op">)</span></span>
 <span class="r-in"><span class="va">SRdata</span> <span class="op">&lt;-</span> <span class="fu"><a href="get.SRdata.html">get.SRdata</a></span><span class="op">(</span><span class="va">res_vpa</span><span class="op">)</span></span>
 <span class="r-in"><span class="va">resSR</span> <span class="op">&lt;-</span> <span class="fu">fit.SR</span><span class="op">(</span><span class="va">SRdata</span>, SR <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"HS"</span>,<span class="st">"BH"</span>,<span class="st">"RI"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>,</span>

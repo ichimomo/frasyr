@@ -59,7 +59,7 @@
     <p>再生産関係を仮定しない管理基準値計算(SPR,YPR,F0.1,Fmax)のための関数</p>
     </div>
 
-    <div class="ref-usage sourceCode"><pre class="sourceCode r"><code><span class="fu">ref.F</span><span class="op">(</span>
+    <div id="ref-usage">Usage,<div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">ref.F</span><span class="op">(</span>
   res <span class="op">=</span> <span class="cn">NULL</span>,
   Fcurrent <span class="op">=</span> <span class="cn">NULL</span>,
   waa <span class="op">=</span> <span class="cn">NULL</span>,
@@ -83,9 +83,8 @@
   plot <span class="op">=</span> <span class="cn">TRUE</span>,
   Pope <span class="op">=</span> <span class="cn">NULL</span>,
   F.range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span>from <span class="op">=</span> <span class="fl">0</span>, to <span class="op">=</span> <span class="fl">2</span>, length <span class="op">=</span> <span class="fl">101</span><span class="op">)</span>
-<span class="op">)</span></code></pre></div>
+<span class="op">)</span></code></pre></div></div>
 
-    <div id="ref-sections">
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>res</dt>
@@ -137,11 +136,10 @@
     <h2>Note</h2>
     <p>F_SPRのF管理基準値の初期値は　与えられたFのもとでのSPR/目的のSPR　を初期値とするように調整されるので不要。プラスグループを考慮するかどうかはVPAの結果のinput$plus.groupから自動判別される。</p>
     </div>
-    </div>
 
-    <div id="examples">
+    <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="ref-examples sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">res_vpa</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">res_vpa</span><span class="op">)</span></span>
 <span class="r-in"><span class="co"># VPA繝&lt;87&gt;繝ｼ繧ｿ繧剃ｽｿ縺&lt;86&gt;蝣ｴ蜷&lt;88&gt;</span></span>
 <span class="r-in"><span class="va">res_refF1</span> <span class="op">&lt;-</span> <span class="fu">ref.F</span><span class="op">(</span>res<span class="op">=</span><span class="va">res_vpa</span>,Fcurrent<span class="op">=</span><span class="fu">frasyr</span><span class="fu">::</span><span class="fu"><a href="apply_year_colum.html">apply_year_colum</a></span><span class="op">(</span><span class="va">res_vpa</span><span class="op">$</span><span class="va">faa</span>,<span class="fl">2015</span><span class="op">:</span><span class="fl">2017</span><span class="op">)</span>,</span>
 <span class="r-in">                waa.year<span class="op">=</span><span class="fl">2015</span><span class="op">:</span><span class="fl">2017</span>,maa.year<span class="op">=</span><span class="fl">2015</span><span class="op">:</span><span class="fl">2017</span>,M.year<span class="op">=</span><span class="fl">2015</span><span class="op">:</span><span class="fl">2017</span><span class="op">)</span></span>

@@ -59,9 +59,8 @@
     <p>VPA計算結果を使って毎年のF at ageがどのくらいのSPR, YPRに相当するかを計算する。また、各年のFが、目標としたSPR（target.SPR）を達成するためのF(Ftarget)の何倍(F/Ftarget)に相当するかも計算する。F/Ftargetは数値的に探索するが、そのときのF/Ftargetの上限をFmaxにて指定する。十分大きい値（デフォルトは１０）を与えておけば大丈夫だが、Ftargetが非常に小さい数字になりそうな場合にはこの値をもっと大きくとるなどする。また、SPRの計算は、デフォルトでは等比級数の和の公式を使って、無限大の年齢までSPRを足しているが、max.ageを指定することで、有限の年齢までの和も計算できる。</p>
     </div>
 
-    <div class="ref-usage sourceCode"><pre class="sourceCode r"><code><span class="fu">get.SPR</span><span class="op">(</span><span class="va">dres</span>, target.SPR <span class="op">=</span> <span class="fl">30</span>, Fmax <span class="op">=</span> <span class="fl">10</span>, max.age <span class="op">=</span> <span class="cn">Inf</span><span class="op">)</span></code></pre></div>
+    <div id="ref-usage">Usage,<div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">get.SPR</span><span class="op">(</span><span class="va">dres</span>, target.SPR <span class="op">=</span> <span class="fl">30</span>, Fmax <span class="op">=</span> <span class="fl">10</span>, max.age <span class="op">=</span> <span class="cn">Inf</span><span class="op">)</span></code></pre></div></div>
 
-    <div id="ref-sections">
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>dres</dt>
@@ -73,11 +72,10 @@
 <dt>max.age</dt>
 <dd><p>SPRやYPRの計算をするときに最大何歳まで考慮するか（年齢のラベルではなく、ベクトルの長さ。デフォルトは無限大)。VPA計算でプラスグループを考慮していない（dres$input$plus.group==FALSE)場合には自動的に設定される。</p></dd>
 </dl></div>
-    </div>
 
-    <div id="examples">
+    <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="ref-examples sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">res_vpa</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">res_vpa</span><span class="op">)</span></span>
 <span class="r-in"><span class="va">Fratio</span> <span class="op">&lt;-</span> <span class="fu">get.SPR</span><span class="op">(</span><span class="va">res_vpa</span>,target.SPR<span class="op">=</span><span class="fl">12</span><span class="op">)</span><span class="op">$</span><span class="va">ysdata</span><span class="op">$</span><span class="st">"F/Ftarget"</span></span>
 <span class="r-in"><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">res_vpa</span><span class="op">$</span><span class="va">naa</span><span class="op">)</span>,<span class="va">Fratio</span>,type<span class="op">=</span><span class="st">"b"</span><span class="op">)</span></span>
 <span class="r-plt img"><img src="get.SPR-1.png" alt="" width="700" height="433"></span>
