@@ -777,8 +777,29 @@ fit.SR2 <- function(SRdata,
 #' ①残差のパラメトリックブートストラップ、②残差のノンパラメトリックブートストラップ（リサンプリング）、③データのブートストラップ（リサンプリング）が行える
 #' @import purrr
 #' @param Res \code{fit.SR}か\code{fit.SRregime}のオブジェクト
-#' @param method パラメトリック ("p") かノンパラメトリック ("n")
-#' @encoding UTF-8
+#' @param method 残差ブートストラップ(パラメトリック ("p") かノンパラメトリック ("n")) もしくはデータブートストラップ("d")
+#' @param n ブートストラップの回数（例では100回だが500回あるいは1000回を推奨）
+#' @encoding UTF-8@encoding UTF-8
+#' @examples
+#' \dontrun{
+#' data(res_vpa)
+#' SRdata <- get.SRdata(res_vpa)
+#' bio_par <- derive_biopar(res_obj=res_vpa,derive_year = 2010)
+#' resL1outer = fit.SR(SRdata, SR = "HS", method = "L1", out.AR = TRUE, AR = 1,bio_par=bio_par)
+#'
+#' # example if parametric bootstrap
+#' boot.res1 = boot.SR(resL1outer, n = 100, method = "p")
+#' bootSR.plot(boot.res1)
+#'
+#' # example if non-parametric bootstrap
+#' boot.res2 = boot.SR(resL1outer, n = 100, method = "n")
+#' bootSR.plot(boot.res2)
+#'
+#' #' # example if data bootstrap (optional method)
+#' boot.res3 = boot.SR(resL1outer, n = 100, method = "d")
+#' bootSR.plot(boot.res3)
+
+#' }
 #' @export
 #'
 boot.SR <- function(Res,method="p",n=100,seed=1){
@@ -2871,15 +2892,15 @@ fit.SR_tol <- function(...,n_check=100,is_regime=FALSE,seed=12345){
 #' fit.SRのwrapper関数でhに制約を置いたもの
 #'
 #' 現状は推定されたパラメータのみが出力される
-#' 
+#'
 #' @export
 #'
-#' 
+#'
 
 fit.SR_pen <- function(bio_par, h_upper=Inf, h_lower=0.2, plus_group=TRUE, ...){
     res1 = fit.SR(...)
 #    ri1$pars
-#    ri1$steepness    
+#    ri1$steepness
 #    h_upper = 1
     init = res1$opt$par
 
@@ -2888,7 +2909,7 @@ fit.SR_pen <- function(bio_par, h_upper=Inf, h_lower=0.2, plus_group=TRUE, ...){
         h0 = calc_steepness(SR="RI",rec_pars=data.frame("a"=a,"b"=b),waa=bio_par$waa,maa=bio_par$maa,M=bio_par$M,plus_group=plus_group)
         h <- h0[1,"h"]
         if(out==FALSE) {
-            res1$obj.f2(x)+1000*max(0,h-h_upper) + 1000*max(0,h_lower-h) 
+            res1$obj.f2(x)+1000*max(0,h-h_upper) + 1000*max(0,h_lower-h)
         } else{
             bind_cols(data.frame("a"=a,"b"=b),h0)
         }
@@ -2896,5 +2917,5 @@ fit.SR_pen <- function(bio_par, h_upper=Inf, h_lower=0.2, plus_group=TRUE, ...){
 
     opt = optim(init,obj_pen)
     obj_pen(opt$par,out=TRUE)
-    
+
 }
