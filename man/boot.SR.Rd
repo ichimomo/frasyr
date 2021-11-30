@@ -33,11 +33,10 @@ boot.SR(Res, method = "p", n = 100, seed = 1)
 図のプロットにはbootSR.plotを使用する
 
 自己相関を推定していない場合は最後のrhoの図は表示されない
+
 fit.SRの引数にbio_parを入れてスティープネスを計算した場合、SB0、R0、B0、hの図もされる
 
 図の出力bootSR.plotのオプションoutput=Tとすると、各パラメータのヒストグラムが出力される
-
-また、図の出力bootSR.plotのオプションggplt=Tとすると、ヒストグラムはggplotで描画される
 }
 \examples{
 \dontrun{
