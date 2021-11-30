@@ -12,7 +12,7 @@ bootSR.plot(
   filename = "boot",
   lwd = 1.2,
   pch = 1,
-  ggplt = FALSE,
+  ggplt = TRUE,
   ...
 )
 }
@@ -26,5 +26,12 @@ bootSR.plot(
 \item{filename}{ファイル名}
 }
 \description{
-再生産関係の残差ブートストラップをプロットする関数
+ブートストラップによる各パラメータのヒストグラムと、それらパラメータをつかった再生産関係が描画される
+}
+\details{
+ヒストグラムの描画ではとその中央値、上側・下側CIが（デフォルトのggplt=Tでは加えて平均値が）推定値とともに表示される
+
+ヒストグラムのプロットにはggplotをつかうオプションggplt=TRUEをデフォルトにしているが、ggplotを使わない作図もggplt=Fで実行可能
+　
+ggplotで描画する場合でRstudio利用時にはplotをZoomで表示にしないと描画されないことがあるので注意
 }

@@ -791,6 +791,7 @@ fit.SR2 <- function(SRdata,
 #' 図のプロットにはbootSR.plotを使用する
 #'
 #' 自己相関を推定していない場合は最後のrhoの図は表示されない
+#'
 #' fit.SRの引数にbio_parを入れてスティープネスを計算した場合、SB0、R0、B0、hの図もされる
 #'
 #' 図の出力bootSR.plotのオプションoutput=Tとすると、各パラメータのヒストグラムが出力される
@@ -1595,13 +1596,20 @@ autocor.plot = function(resSR,use.resid=1,lag.max=NULL,output = FALSE,filename =
 
 #' 再生産関係の残差ブートストラップをプロットする関数
 #'
+#' ブートストラップによる各パラメータのヒストグラムと、それらパラメータをつかった再生産関係が描画される
+#'
+#' ヒストグラムの描画ではとその中央値、上側・下側CIが（デフォルトのggplt=Tでは加えて平均値が）推定値とともに表示される
+#'
+#' ヒストグラムのプロットにはggplotをつかうオプションggplt=TRUEをデフォルトにしているが、ggplotを使わない作図もggplt=Fで実行可能
+#'　
+#' ggplotで描画する場合でRstudio利用時にはplotをZoomで表示にしないと描画されないことがあるので注意
 #' @param boot.res \code{boot.SR}のオブジェクト
 #' @param CI プロットする信頼区間
 #' @param output pngファイルに出力するか否か
 #' @param filename ファイル名
 #' @encoding UTF-8
 #' @export
-bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1.2,pch=1,ggplt=FALSE,...) {
+bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1.2,pch=1,ggplt=TRUE,...) {
   res_base = boot.res$input$Res
   if (class(boot.res$input$Res)=="fit.SR") {
     validate_sr(res_sr = boot.res$input$Res)
