@@ -796,7 +796,6 @@ fit.SR2 <- function(SRdata,
 #'
 #' 図の出力bootSR.plotのオプションoutput=Tとすると、各パラメータのヒストグラムが出力される
 #'
-#' また、図の出力bootSR.plotのオプションggplt=Tとすると、ヒストグラムはggplotで描画される
 #' @import purrr
 #' @param Res \code{fit.SR}か\code{fit.SRregime}のオブジェクト
 #' @param method 残差ブートストラップ(パラメトリック ("p") かノンパラメトリック ("n")) もしくはデータブートストラップ("d")
