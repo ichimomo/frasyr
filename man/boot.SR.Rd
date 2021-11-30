@@ -10,8 +10,41 @@ boot.SR(Res, method = "p", n = 100, seed = 1)
 \arguments{
 \item{Res}{\code{fit.SR}か\code{fit.SRregime}のオブジェクト}
 
-\item{method}{パラメトリック ("p") かノンパラメトリック ("n")}
+\item{method}{残差ブートストラップ(パラメトリック ("p") かノンパラメトリック ("n")) もしくはデータブートストラップ("d")}
+
+\item{n}{ブートストラップの回数（例では100回だが500回あるいは1000回を推奨）}
 }
 \description{
 ①残差のパラメトリックブートストラップ、②残差のノンパラメトリックブートストラップ（リサンプリング）、③データのブートストラップ（リサンプリング）が行える
+残差のパラメトリックブートストラップはmethod="p"で実行可能で、自己相関なしの場合、fit.SRのpars$sdを標準偏差とする正規分布からランダムに乱数を発生させ、予測値からのずれを加えて加入量のブートストラップデータを生成し、再推定している
+自己相関ありの場合、fit.SRのpars$sdを1から自己相関係数rho^2を引き2乗根をとって除したもの(pars$sd/sqrt(1-pars$rho^2))を標準偏差とする正規分布からランダムに乱数を発生させる
+自己相関ありの場合はノンパラメトリックブートストラップは使わずにパラメトリックブートストラップを用いること
+残差のノンパラメトリックブートストラップははmethod="n"で実行可能で、残差の確率分布を仮定せず、残差を重複ありでリサンプリングして、加入量のブートストラップデータを生成する
+データのブートストラップはmethod="d"で実行可能で、データを重複ありでリサンプリングしたデータを使用して、再生産関係の再推定を行う
+親魚量データもリサンプリングにより変化するため、親魚量の不確実性も考慮されることになることから、親魚量データに偏りがあったり、データ数が少なかったり、あるデータ点に推定値が大きく依存している場合はバイアスや不確実性が大きくなりやすい
+図のプロットにはbootSR.plotを使用する
+自己相関を推定していない場合は最後のrhoの図は表示されない
+fit.SRの引数にbio_parを入れてスティープネスを計算した場合、SB0、R0、B0、hの図もされる
+図の出力bootSR.plotのオプションoutput=Tとすると、各パラメータのヒストグラムが出力される
+また、図の出力bootSR.plotのオプションggplt=Tとすると、ヒストグラムはggplotで描画される
+}
+\examples{
+\dontrun{
+data(res_vpa)
+SRdata <- get.SRdata(res_vpa)
+bio_par <- derive_biopar(res_obj=res_vpa,derive_year = 2010)
+resL1outer = fit.SR(SRdata, SR = "HS", method = "L1", out.AR = TRUE, AR = 1,bio_par=bio_par)
+
+# example if parametric bootstrap
+boot.res1 = boot.SR(resL1outer, n = 100, method = "p")
+bootSR.plot(boot.res1)
+
+# example if non-parametric bootstrap
+boot.res2 = boot.SR(resL1outer, n = 100, method = "n")
+bootSR.plot(boot.res2)
+
+#' # example if data bootstrap (optional method)
+boot.res3 = boot.SR(resL1outer, n = 100, method = "d")
+bootSR.plot(boot.res3)
+}
 }
