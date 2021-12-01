@@ -2957,3 +2957,124 @@ create_dummy_vpa <- function(res_vpa){
   return(res_vpa_updated)
 }
 
+
+#'
+#' res_futureから考えられるほぼすべてのパフォーマンス指標をとりだし、2行のtibbleで返す
+#'
+#' @param res_future future_vpaの返り値
+#' @param SBtarget それを上回る・下回る確率を計算する。目標管理基準値
+#' @param SBlimit それを上回る・下回る確率を計算する。限界管理基準値
+#' @param SBban それを上回る・下回る確率を計算する。禁漁水準
+#' @param SBmin それを上回る・下回る確率を計算する。過去最低親魚量
+#' 
+#' @examples
+#' \dontrun{
+#'   data(res_future_HSL2)
+#'   calculate_all_pm(res_future_HSL2, 0, 0, 0, 0)
+#' }
+#'
+#' @export
+#'
+
+calculate_all_pm <- function(res_future, SBtarget, SBlimit, SBban, SBmin){
+    # by year performance (start_future_year:last_year)
+    # mean, median, ci5%, ci10%, ci90%, ci95%, CV, 
+    # ssb, biomass, number by age, catch weight
+    # probability > SBtarget, SBmin, SBlimit, SBban, SBmax
+    
+    get_annual_pm <- function(mat,fun,label){
+        x <- apply(mat,1,fun)
+        tibble(stat=str_c(label,"_",names(x)),value=x)
+    }
+
+    fun_list <- list(ci0.05=function(x) quantile(x,0.05),
+                     ci0.10 = function(x) quantile(x,0.1),
+                     ci0.95 = function(x) quantile(x,0.95),
+                     ci0.90 = function(x) quantile(x,0.90),
+                     cv = function(x) sqrt(var(x))/mean(x),
+                     prob_target = function(x) mean(x>SBtarget),
+                     prob_limit  = function(x) mean(x>SBlimit),
+                     prob_ban    = function(x) mean(x>SBban),
+                     prob_min    = function(x) mean(x>SBmin))
+
+  year_future <- dimnames(res_future$naa)[[2]][res_future$input$tmb_data$future_initial_year:dim(res_future$naa)[[2]]]
+  age_label <- str_c("A",dimnames(res_future$naa)[[1]])
+  year_label <- dimnames(res_future$naa)[[2]]
+
+  ssb_mat <- res_future$SR_mat[year_future,,"ssb"]
+  catch_mat <- res_future$HCR_realized[year_future,,"wcatch"]
+  biom_mat <- apply(res_future$naa * res_future$waa,c(2,3),sum)
+
+  stat_data <- NULL
+  for(i in 1:length(fun_list)){
+    fun <- fun_list[[i]]
+        funname <- names(fun_list)[i]
+        tmp <- bind_rows(
+            purrr::map_dfr(seq_len(length(age_label)),
+                           function(x) get_annual_pm(res_future$naa [x,year_future,],
+                                                     fun,str_c(funname,"_naa_", age_label[x]))),
+            purrr::map_dfr(seq_len(length(age_label)),
+                           function(x) get_annual_pm(res_future$wcaa[x,year_future,],
+                                                     fun,str_c(funname,"_wcaa_",age_label[x]))),
+            purrr::map_dfr(seq_len(length(age_label)),
+                           function(x) get_annual_pm(res_future$faa [x,year_future,],
+                                                     fun,str_c(funname,"_faa_", age_label[x]))),
+            get_annual_pm(ssb_mat,  fun  ,str_c(funname,"_ssb_")),
+            get_annual_pm(catch_mat,fun  ,str_c(funname,"_catch_")),
+            get_annual_pm(biom_mat, fun  ,str_c(funname,"_biom_"))        
+        )
+        stat_data <- bind_rows(stat_data, tmp)
+    }
+
+    # temporal scale
+    # by term performance
+    # - management term1, ABC_year + 0:9  
+    # - management term2, ABC_year + 0:4  
+    # - management term3, ABC_year + 5:9  
+    # - management term4, ABC_year + 1:10 
+    # - management term5, ABC_year + 1:4  
+    # - management term6, ABC_year + 6:10
+    #
+    # mean(ssb), mean(biomass), mean(catch), mean(AAV), mean(CV), Pr(SBany>SBtarget), Pr(SBany>SBlimit),Pr(SBany>SBban),Pr(SBany>SBmin), AAV_min (査読コメントを参照), max_AAV_min, mean(min_catch)
+
+  get_period_pm <- function(mat, fun_name, year_period, sum_fun_name){
+    tmp <- rownames(mat)%in%year_period
+    if(sum(tmp)!=length(year_period)){
+      cat("year_period does not match future projection year\n"); return(NA)
+    }
+    else{
+      mat1 <- mat[tmp,]
+      res <- apply(mat1,1,fun_name) %>% sum_fun_name()
+      return(res)
+    }
+  }
+
+  ABC_year     <- year_label[res_future$input$tmb_data$start_ABC_year] %>% as.numeric()
+  period_list <- list(ABC_year + 0:9 , ABC_year + 0:4, ABC_year + 5:9,
+                      ABC_year + 1:10, ABC_year + 1:4, ABC_year + 6:10)
+  names(period_list) <- purrr::map_chr(period_list, function(x) str_c(range(x),collapse="-"))
+
+  fun_list2 <- list(cv     = function(x) sd(x)/mean(x),
+                    aav    = function(x) mean(abs(x[-1]-x[-length(x)])/x[-length(x)]),
+                    aav_lower = function(x){ x0 <- (x[-1]-x[-length(x)])/x[-length(x)]; mean(x0[x0<0]) },
+                    max_depl_catch = function(x) min(x[-1]/x[-length(x)]),
+                    min_value = function(x) min(x),
+                    max_value = function(x) max(x),
+                    prob_target_any  = function(x) ifelse(sum(x<SBtarget)>1,1,0),                    
+                    prob_limit_any  = function(x) ifelse(sum(x<SBlimit)>1,1,0),
+                    prob_ban_any    = function(x) ifelse(sum(x<SBban)>1,1,0),
+                    prob_min_any    = function(x) ifelse(sum(x<SBmin)>1,1,0))  
+
+  mat_list <- lst(ssb_mat, biom_mat, catch_mat)
+  for(j in seq_len(length(fun_list2))){
+    for(i in seq_len(length(period_list))){
+      stat_data <- bind_rows(
+        stat_data,
+        purrr::map_dfr(1:length(mat_list),
+                       function(x)
+                         tibble(stat=str_c(names(fun_list2),c("ssb","catch","biom")[x],names(period_list)[x],sep="_"),
+                                value=get_period_pm(mat_list[[x]], fun_list2[[j]], period_list[[i]], mean)))
+        )
+    }}
+  return(stat_data)
+}
