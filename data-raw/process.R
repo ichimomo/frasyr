@@ -62,6 +62,8 @@ res_MSY_HSL2 <- est_MSYRP(data_future=data_future_HSL2, candidate_PGY=c(0.1,0.6)
                           candidate_B0=c(0.2), candidate_Babs=20000)
 
 data_future_HSL1 <- redo_future(data_future_HSL2, list(res_SR=res_sr_HSL1), only_data=TRUE)
+res_future_HSL1  <- future_vpa(tmb_data=data_future_HSL1$data,
+                              optim_method="none")
 res_MSY_HSL1 <- est_MSYRP(data_future=data_future_HSL1, candidate_PGY=c(0.1,0.6),
                           candidate_B0=c(0.2), candidate_Babs=20000)
 

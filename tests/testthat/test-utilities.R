@@ -1,12 +1,13 @@
 context("Utilities")
 
-result_vpa  <- load_data("../../inst/extdata/res_vpa_pma.rda")
-result_msy  <- load_data("../../inst/extdata/res_MSY_pma_pre.rda")
-data(res_vpa)
+#result_vpa  <- load_data("../../inst/extdata/res_vpa_pma.rda")
+#result_msy  <- load_data("../../inst/extdata/res_MSY_pma_pre.rda")
+data(res_vpa_example)
 data(res_sr_HSL2)
+data(res_MSY_HSL2)
 
 test_that("make_kobe_ratio", {
-  kobe_ratio <- make_kobe_ratio(result_vpa, result_msy)
+  kobe_ratio <- make_kobe_ratio(res_vpa_example, res_MSY_HSL2)
 
   expect_is(kobe_ratio, "data.frame")
   expect_equal(colnames(kobe_ratio), c("year", "Fratio", "Bratio"))
@@ -346,19 +347,19 @@ test_that("make kobeII table", {
   })
 })
 
-test_that("load_folder() loads 'rda's in the given directory", {
-  expect_is(load_folder("../../inst/extdata"), "list")
-  test_that("each object exists", {
-    expect_true(exists("res_MSY"))
-    expect_true(exists("res_future_0.8HCR"))
+## test_that("load_folder() loads 'rda's in the given directory", {
+##   expect_is(load_folder("../../inst/extdata"), "list")
+##   test_that("each object exists", {
+##     expect_true(exists("res_MSY"))
+##     expect_true(exists("res_future_0.8HCR"))
 
-    # これらのオブジェクトはロードされているかのように見えるが、実際はされていない
-      # 原因: これらの名前が関数内にハードコードされているため
-    expect_failure(expect_true(exists("res_SR")))
-    expect_failure(expect_true(exists("kobeII.table")))
-    expect_failure(expect_true(exists("model_selection")))
-  })
-})
+##     # これらのオブジェクトはロードされているかのように見えるが、実際はされていない
+##       # 原因: これらの名前が関数内にハードコードされているため
+##     expect_failure(expect_true(exists("res_SR")))
+##     expect_failure(expect_true(exists("kobeII.table")))
+##     expect_failure(expect_true(exists("model_selection")))
+##   })
+## })
 
 test_that("apply_year_colum",{
 
@@ -435,4 +436,11 @@ test_that("fit.SR_pen", {
     ri3 = fit.SR_pen(SRdata=data_SR,SR="RI",method="L2",AR=0,
                  plus_group=TRUE,bio_par=data.frame(waa=waa,maa=maa,M=M), h_upper=0.7, h_lower=0.7)    
     expect_equal(ri3$h,0.7, tol=0.0001)    
+})
+
+test_that("calculate_all_pm", {
+  data(data_future_test)
+  res_future <- data_future_test$data %>% future_vpa()
+  all_pm <- calculate_all_pm(res_future)
+  expect_equal(is_tibble(all_pm),TRUE)
 })

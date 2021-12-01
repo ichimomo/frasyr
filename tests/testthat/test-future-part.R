@@ -41,7 +41,7 @@ data_future_test <- make_future_data(res_vpa, # VPAの結果
                                      fix_recruit=list(year=c(2020,2021),rec=c(1000,2000)),
                                      fix_wcatch=list(year=c(2020,2021),wcatch=c(1000,2000))
                                      )
-
+ 
 test_that("future_vpa function (with sample vpa data) (level 2)",{
     
   # check SD0
@@ -561,7 +561,7 @@ test_that("HCR_default",{
 context("get_wcatch") # ----
 
 test_that("get_wcatch",{
-  expect_equal(get_wcatch(res_future_0.8HCR), apply(res_future_0.8HCR$wcaa,c(2,3),sum))
+  expect_equal(get_wcatch(res_future_HSL2), apply(res_future_HSL2$wcaa,c(2,3),sum))
 })
 
 test_that("density dependent maturity option",{

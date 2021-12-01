@@ -1,20 +1,20 @@
 context("test for graphic functions (level 0)")
 
 test_that("plot_futures",{
-  g1 <- plot_futures(vpares=res_vpa,future.list=list(res_future_0.8HCR,res_future_current))
-  g2 <- plot_futures(vpares=NULL,future.list=list(res_future_0.8HCR,res_future_current))
+  g1 <- plot_futures(vpares=res_vpa,future.list=list(res_future_HSL2,res_future_HSL1))
+  g2 <- plot_futures(vpares=NULL,future.list=list(res_future_HSL2,res_future_HSL1))
   expect_equal(class(g1)[1],"gg")
   expect_equal(class(g2)[1],"gg")
 })
 
 test_that("plot.futures",{
-  g1 <- plot.futures(fres.list=list(res_future_0.8HCR,res_future_current))
+  g1 <- plot.futures(fres.list=list(res_future_HSL2,res_future_HSL1))
   expect_equal(class(g1)[1],"list")
 })
 
 test_that("plot.future",{
-  g1 <- plot.future(res_future_0.8HCR)
-  g2 <- plot.future(res_future_current)
+  g1 <- plot.future(res_future_HSL2)
+  g2 <- plot.future(res_future_HSL1)
   expect_equal(class(g1)[1],"list")
   expect_equal(class(g2)[1],"list")
 })
@@ -95,7 +95,7 @@ test_that("plot_yield", {
                      plot_yield(res_MSY$trace,
                                 refs.plot,
                                 refs.label=NULL,
-                                future=list(res_future_0.8HCR),
+                                future=list(res_future_HSL2),
                                 past=res_vpa,label=FALSE,
                                 refs.color=rep("black",3),
                                 biomass.unit=1000,
@@ -143,12 +143,12 @@ test_that("compare_MSY",{
 })
 
 #test_that("plot_bias_in_MSE",{
-#  g1 <- plot_bias_in_MSE(fout=res_future_0.8HCR)
+#  g1 <- plot_bias_in_MSE(fout=res_future_HSL2)
 #  expect_equal(class(g1)[1],"gg")
 #})
 
 #test_that("plot_bias_in_MSE",{
-#  fout <- format_to_old_future(res_future_0.8HCR)
+#  fout <- format_to_old_future(res_future_HSL2)
 #  g1 <- plot_bias_in_MSE(fout=fout)
 #  expect_equal(class(g1)[1],"gg")
 #})
