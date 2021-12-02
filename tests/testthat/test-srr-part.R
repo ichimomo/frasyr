@@ -136,7 +136,7 @@ test_that("output value check",{
   SRdata=get.SRdata(res_vpa)
   res_sr_MesnilL1 <- fit.SR(SRdata,SR="Mesnil",method = "L1",AR=0,out.AR = F)
   res_spec_Mesnil<-specify.Mesnil.gamma(res_sr_MesnilL1)
-  expect_equal(res_spec_Mesnil$gamma,2)
+  expect_equal(res_spec_Mesnil,2)
   }
 )
 
