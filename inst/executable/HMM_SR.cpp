@@ -2,15 +2,43 @@
 #include <TMB.hpp>
 #include <iostream>
 
+// SR function (prediction of log(RPS))
 template<class Type>
-vector<Type> segment_1(vector<Type> yt, vector<Type> st, matrix<Type> qij,vector<Type> pi1,vector<Type> alpha,vector<Type> beta,vector<Type> sigma,int t){
+Type srf(Type alpha, Type beta, Type gamma, Type x, int SRcode){
+  Type res=0.0;
+  if (SRcode==1) { //Ricker
+    res += alpha-beta*x;
+  } else {
+    if (SRcode==2) { //BH
+      res += alpha-log(1+beta*x);
+    } else {
+      if (SRcode==3) { //HS
+        res += CppAD::CondExpLt(beta,x,alpha+log(beta/x),alpha);
+      } else {
+        if (SRcode==4) { //Mesnil
+          res += x+pow(pow(x,Type(2.0))+pow(gamma,Type(2.0))/Type(4.0),Type(0.5))-pow(pow(x-beta,Type(2.0))+pow(gamma,Type(2.0))/Type(4.0),Type(0.5));
+          res *= Type(0.5);
+          res = log(res); //transformation to log(R)
+          res += alpha-log(x); //transformation to log(RPS)
+        } else {
+          error("SR model code not recognized");
+        }
+      }
+    }
+  }
+  return res;
+}
+
+template<class Type>
+vector<Type> segment_1(vector<Type> yt, vector<Type> st, matrix<Type> qij,vector<Type> pi1,vector<Type> alpha,vector<Type> beta,vector<Type> sigma,int t, Type gamma, int SRcode){
   int k_regime = beta.size();
   Type small = pow(10,-300);
 
   // t = 0
       vector<Type> sr = log(pi1 + small); //log-likelihood of observation
   for(int j = 0;j < k_regime;++j){
-     Type f_now = alpha(j) - log( 1 + beta(j)*st(0) );
+     Type f_now = srf(alpha(j), beta(j),gamma,st(0),SRcode);
+     // Type f_now = alpha(j) - log( 1 + beta(j)*st(0) );
      sr(j) += dnorm(yt(0), f_now, sigma(j),true);
   }
 
@@ -29,7 +57,8 @@ vector<Type> segment_1(vector<Type> yt, vector<Type> st, matrix<Type> qij,vector
      sr = sr_new;
 
      for(int j = 0;j < k_regime;++j){
-        Type f_now = alpha(j) - log( 1 + beta(j)*st(i) );
+        Type f_now = srf(alpha(j), beta(j),gamma,st(i),SRcode);
+        // Type f_now = alpha(j) - log( 1 + beta(j)*st(i) );
         sr(j) += dnorm(yt(i), f_now, sigma(j),true); //log-likelihood of regime j
      }
 
@@ -39,13 +68,14 @@ vector<Type> segment_1(vector<Type> yt, vector<Type> st, matrix<Type> qij,vector
 }
 
 template<class Type>
-Type segment_2(vector<Type> yt, vector<Type> st, matrix<Type> qij,vector<Type> pi1,vector<Type> alpha,vector<Type> beta,vector<Type> sigma,int rt,int t){
+Type segment_2(vector<Type> yt, vector<Type> st, matrix<Type> qij,vector<Type> pi1,vector<Type> alpha,vector<Type> beta,vector<Type> sigma,int rt,int t, Type gamma, int SRcode){
   int k_regime = beta.size();
   int n = yt.size();
 
   vector<Type> sr = qij.row(rt); // rt: regime ID, log transition probability
   for(int j = 0;j < k_regime;++j){
-     Type f_now = alpha(j) - log( 1 + beta(j)*st(t+1) ); //t+1
+     Type f_now = srf(alpha(j), beta(j),gamma,st(t+1),SRcode);
+     // Type f_now = alpha(j) - log( 1 + beta(j)*st(t+1) ); //t+1
      sr(j) += dnorm(yt(t+1), f_now, sigma(j),true);
   }
 
@@ -63,7 +93,8 @@ Type segment_2(vector<Type> yt, vector<Type> st, matrix<Type> qij,vector<Type> p
      sr = sr_new;
 
      for(int j = 0;j < k_regime;++j){
-        Type f_now = alpha(j) - log( 1+ beta(j)*st(i) );
+        Type f_now = srf(alpha(j), beta(j),gamma,st(i),SRcode);
+        // Type f_now = alpha(j) - log( 1+ beta(j)*st(i) );
         sr(j) += dnorm(yt(i), f_now, sigma(j),true);
      }
 
@@ -144,7 +175,7 @@ template<class Type>
 
   int n = yt.size();
 
-  vector<Type> sr = segment_1(yt, st, qij,pi1,alpha,beta,sigma,n-1);
+  vector<Type> sr = segment_1(yt, st, qij,pi1,alpha,beta,sigma,n-1,gamma,SRcode);
 
   Type nll = sr(0);
   for(int j = 1;j < k_regime;++j){
@@ -160,14 +191,14 @@ template<class Type>
   matrix<Type> r_pred(k_regime,n);
 
   for(int i = 0;i < n-1;++i){
-     sr = segment_1(yt, st, qij,pi1,alpha,beta,sigma,i);
+     sr = segment_1(yt, st, qij,pi1,alpha,beta,sigma,i,gamma,SRcode);
      for(int j = 0;j < k_regime;++j){
-         Type tempt = sr(j) + segment_2(yt, st, qij,pi1,alpha,beta,sigma,j,i) + nll;
+         Type tempt = sr(j) + segment_2(yt, st, qij,pi1,alpha,beta,sigma,j,i,gamma,SRcode) + nll;
          r_pred(j,i) = exp(tempt);
      }
   }
 
-  sr = segment_1(yt, st, qij,pi1,alpha,beta,sigma,n-1); //for the last year
+  sr = segment_1(yt, st, qij,pi1,alpha,beta,sigma,n-1,gamma,SRcode); //for the last year
   for(int j = 0;j < k_regime;++j){
       Type tempt = sr(j) + nll;
       r_pred(j,n-1) = exp(tempt);
