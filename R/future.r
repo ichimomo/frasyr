@@ -1308,20 +1308,23 @@ SRF_RI <- function(x,a,b) a*x*exp(-b*x)
 make_array <- function(d3_mat, pars, pars.year, year_replace_future){
   if(length(dim(pars))==3){
     return(pars)
-  }
-  else{
+  } else {
     years <- dimnames(d3_mat)[[2]]
-    if(is.null(pars)){
+    if(is.null(pars)) {
       pars.future <- rowMeans(d3_mat[,years%in%pars.year,1])
-    }
-    else{
-      if(length(pars)==dim(d3_mat)[[1]]) pars.future <- pars
+    } else {
+      if(length(pars) == dim(d3_mat)[[1]] || dim(pars)[[1]]==dim(d3_mat)[[1]]) pars.future <- pars
       else stop("length of parameter is different from what is expected.")
     }
-    d3_mat[,which(year_replace_future==years):length(years),] <- pars.future
-    if(sum(year_replace_future==years)==0) stop("year_replace_future is invalid.")
 
-    return(d3_mat)
+    if(sum(year_replace_future==years)==0) stop("year_replace_future is invalid.")
+    if(is.null(dim(pars.future))) {
+        d3_mat[, which(year_replace_future==years):length(years), ] <- pars.future
+    } else {
+        d3_mat[, which(year_replace_future==years):length(years), ] <- 
+            pars.future[, which(year_replace_future==years):length(years)]
+    }
+    d3_mat
   }
 }
 
