@@ -151,7 +151,7 @@ vpa(
 
 \item{term.F}{terminal Fの何を推定するか: "max" or "all"}
 
-\item{stat.tf}{最終年のFを推定する統計量（年齢別に与えること可）}
+\item{stat.tf}{最終年のFを推定する統計量（年齢で同じとする：changed on Nov/2021）}
 
 \item{add.p.est}{追加で最高齢以外のfaaを推定する際．年齢を指定する．}
 
