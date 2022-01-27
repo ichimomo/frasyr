@@ -861,8 +861,19 @@ vpa <- function(
       if (isTRUE(Pope)){
         for (i in (ny-1):1){
          naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update,alpha=alpha, use.equ=use.equ)
-         faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha, use.equ=use.equ)
-       }
+         if(na[1]>na[ny]){ 
+		 if(is.na(naa[na[ny]+1, i])){
+ naa[na[ny]+1, i]<-NA} else if(naa[na[ny]+1, i]==1.00000){
+ naa[na[ny]+1, i]<-NA} else{
+ naa[na[ny]+1, i]<-naa[na[ny]+1, i]}}#adjustment for sawara
+		 
+		 faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha, use.equ=use.equ)
+         if(na[1]>na[ny]){ 
+		if(is.na(faa[na[ny]+1, i])){
+ faa[na[ny]+1, i]<-NA} else if(faa[na[ny]+1, i]==1.00000){
+ faa[na[ny]+1, i]<-NA} else{
+ faa[na[ny]+1, i]<-faa[na[ny]+1, i]}}#adjustment for sawara
+	   }
      }
      else{
        for (i in (ny-1):1){
@@ -879,8 +890,11 @@ vpa <- function(
          naa[1:na[i], i] <- vpa.core(caa,faa,M,i)
        }
      }
-
-     faa1 <- faa
+ 
+ if(na[1]>na[ny]){ 
+ if(is.na(faa[na[ny]+1, ny-1]))faa[na[ny]+1, ny]<-NA else faa[na[ny]+1, ny-1]<-faa[na[ny]+1, ny-1]} #adjustment for sawara
+     
+	 faa1 <- faa
      saa1 <- sel.func(faa1, def=sel.def)
 
      for (i in (na[ny]-1):1){
@@ -898,7 +912,7 @@ vpa <- function(
      if(length(p)==1) faa1[1:na[ny], ny] <- p*sel.func(saa1, def=sel.def)[1:na[ny],ny] else  faa1[1:na[ny], ny] <- p[length(p)]*sel.func(saa1, def=sel.def)[1:na[ny],ny]
      faa1[na[ny], ny] <- alpha*faa1[na[ny]-1, ny]
 
-     dd <- max(sqrt((saa1[,ny] - saa[,ny])^2))
+     dd <- max(sqrt((saa1[,ny] - saa[,ny])^2),na.rm=TRUE)
      itt <- itt + 1
 
      faa <- faa1
