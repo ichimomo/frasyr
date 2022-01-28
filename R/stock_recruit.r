@@ -2992,7 +2992,7 @@ hmm_SR = function(SRdata,SR="BH",k_regime=2,gamma=0.01,b_range=NULL,p0=NULL,over
                   beta_u=max(b_range),beta_l=min(b_range),
                   sigma_u=sd(yt),SRcode=SRcode,gamma=gamma)
 
-  if (is.null(p0)) {
+  if (!is.null(p0)) {
     parameters = p0
   } else {
     parameters = list(
@@ -3011,7 +3011,7 @@ hmm_SR = function(SRdata,SR="BH",k_regime=2,gamma=0.01,b_range=NULL,p0=NULL,over
     use_rvpa_tmb("HMM_SR")
   }
 
-  obj = TMB::MakeADFun(tmb_data,parameters,DLL="HMM_SR",inner.control=list(maxit=50000,trace=F))
+  obj = TMB::MakeADFun(tmb_data,parameters,DLL="HMM_SR",inner.control=list(maxit=50000,trace=F),silent=TRUE)
   opt = nlminb(obj$par,obj$fn,obj$gr,control = list(trace=10,iter.max=10000,eval.max=10000,sing.tol=1e-20))
 
   Res = list()
@@ -3028,14 +3028,15 @@ hmm_SR = function(SRdata,SR="BH",k_regime=2,gamma=0.01,b_range=NULL,p0=NULL,over
   a = exp(alpha)
   b = rep[["beta"]]
   sigma = rep[["sigma"]]
-  pars=data.frame(a=a,b=b,sigma=sigma)
+  pars=data.frame(regime=1:length(a)-1,a=a,b=b,sd=sigma)
   Res$pars=pars
   regime_prob = (rep[["r_pred"]])
   colnames(regime_prob) = data$year
-  Res$regime_prob=t(regime_prob)
+  Res$regime_prob=round(t(regime_prob),3)
   regime=Rfast::colMaxs(regime_prob)
   names(regime) = data$year
   Res$regime = regime
+  Res$trans_prob = rep[["qij"]]
 
   Res$loglik <- loglik <- -opt$objective
   Res$k <- k <- length(opt$par)
