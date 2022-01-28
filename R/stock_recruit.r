@@ -2947,3 +2947,103 @@ fit.SR_pen <- function(bio_par, h_upper=Inf, h_lower=0.2, plus_group=TRUE, ...){
     obj_pen(opt$par,out=TRUE)
 
 }
+
+
+#'
+#' 再生産関係のレジームシフトを隠れマルコフモデルで推定する
+#'
+#' Tang et al. (2021) ICESJMSの論文を改変
+#'
+#' @inheritParams fit.SR
+#' @params k_regime 推定するレジームの数（2以上の整数）
+#' @params b_range パラメータbの範囲
+#' @params p0 パラメータの初期値（リスト）
+#' @params overwrite cppファイルのコンパイルを上書きして行うか
+#' @encoding UTF-8
+#' @export
+#'
+#
+hmm_SR = function(SRdata,SR="BH",k_regime=2,gamma=0.01,b_range=NULL,p0=NULL,overwrite=FALSE) {
+  argname <- ls()
+  arglist <- lapply(argname,function(xx) eval(parse(text=xx)))
+  names(arglist) <- argname
+
+  k_regime<-round(k_regime)
+
+  if(k_regime<2) stop("Incorrect 'k_regime'")
+
+  data = SRdata
+  st = data$SSB
+  # st = st/(10^4)
+  yt = log(data$R/data$SSB)
+
+  SRcode = case_when(SR=="RI" ~ 1,SR=="BH" ~ 2,SR=="HS"~3,SR=="Mesnil"~4,TRUE~5)
+  if (SRcode==5) stop("SR not recognized")
+  if (is.null(b_range)) {
+    if (SRcode<3) { # Ricker or BH
+      b_range = range(1/st)
+    } else {
+      b_range = range(st)
+    }
+  }
+
+  tmb_data = list(st=st,yt=yt,
+                  alpha_u=max(yt),alpha_l=min(yt),
+                  beta_u=max(b_range),beta_l=min(b_range),
+                  sigma_u=sd(yt),SRcode=SRcode,gamma=gamma)
+
+  if (!is.null(p0)) {
+    parameters = p0
+  } else {
+    parameters = list(
+      lalpha = -log(k_regime+1-1:k_regime),
+      lbeta = rep(0,k_regime),
+      lsigma = rep(0,k_regime),
+      pi1_tran = rep(0,k_regime-1),
+      qij_tran = matrix(0,nrow=k_regime,ncol=k_regime-1)
+    )
+  }
+
+  if (overwrite==TRUE){
+    use_rvpa_tmb("HMM_SR",overwrite=TRUE)
+  }
+  if (!file.exists("HMM_SR.dll")) {
+    use_rvpa_tmb("HMM_SR")
+  }
+
+  obj = TMB::MakeADFun(tmb_data,parameters,DLL="HMM_SR",inner.control=list(maxit=50000,trace=F),silent=TRUE)
+  opt = nlminb(obj$par,obj$fn,obj$gr,control = list(trace=10,iter.max=10000,eval.max=10000,sing.tol=1e-20))
+
+  Res = list()
+
+  Res$tmb_data = tmb_data
+  Res$p0 = parameters
+  Res$obj = obj
+  Res$opt = opt
+
+  rep = obj$report(opt$par)
+  Res$rep = rep
+
+  alpha = rep[["alpha"]]
+  a = exp(alpha)
+  b = rep[["beta"]]
+  sigma = rep[["sigma"]]
+  pars=data.frame(regime=1:length(a)-1,a=a,b=b,sd=sigma)
+  Res$pars=pars
+  regime_prob = (rep[["r_pred"]])
+  colnames(regime_prob) = data$year
+  Res$regime_prob=round(t(regime_prob),3)
+  regime=Rfast::colMaxs(regime_prob)
+  names(regime) = data$year
+  Res$regime = regime
+  Res$trans_prob = rep[["qij"]]
+
+  Res$loglik <- loglik <- -opt$objective
+  Res$k <- k <- length(opt$par)
+  Res$AIC <- -2*loglik+2*k
+  Res$AICc <- Res$AIC+2*k*(k+1)/(length(data$year)-k-1)
+  Res$BIC <- -2*loglik+k*log(length(data$year))
+  Res$input <- arglist
+
+  return( Res )
+}
