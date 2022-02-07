@@ -325,14 +325,12 @@ abund.extractor <- function(
    res <- colSums(ssb,na.rm=TRUE)
  }
  if (abund=="SSBmsj"){
-   if (is.null(maa.tune)) ssb <- naa*waa*maa*exp(-p.m*dat$M) else ssb <- naa*waa*maa.tune*exp(-p.m*dat$M) #スケトウ日本海北部用
+   if (is.null(maa.tune)) ssb <- naa*waa*maa*exp(-p.m*dat$M) else ssb <- naa*waa*maa.tune*exp(-p.m*dat$M) 
    res <- colSums(ssb,na.rm=TRUE)
  }
 
-# if (abund=="N1sj") res <- colSums(cbind(naa[1,-1]*exp(dat$M[1,-1]),NA), na.rm=TRUE)
- if (abund=="N1sj") res <- colSums(naa[1,]*exp(dat$M[1,]), na.rm=TRUE) #スケトウ日本海北部用
-# if (abund=="N0sj") res <- colSums(cbind(naa[1,-1]*exp(dat$M[1,-1]*2)), na.rm=TRUE)
- if (abund=="N0sj") res <- colSums(naa[1,]*exp(dat$M[1,]*2), na.rm=TRUE) #スケトウ日本海北部用
+ if (abund=="N1sj") res <- colSums(naa[1,]*exp(dat$M[1,]), na.rm=TRUE) 
+ if (abund=="N0sj") res <- colSums(naa[1,]*exp(dat$M[1,]*2), na.rm=TRUE) 
 
  if (abund=="F") if (is.null(catch.prop)) res <- colMeans(faa[min.age:max.age,], na.rm=TRUE) else res <- colMeans(catch.prop[min.age:max.age, ]*faa[min.age:max.age,], na.rm=TRUE)
 
