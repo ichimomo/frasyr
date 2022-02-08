@@ -645,8 +645,9 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
   true_abun_Bo<-rep(0.0025,length(naa_base0))
   true_abun_Ns<-rep(7.415,length(naa_base0))
   true_abun_SSBm<-rep(0.0053,length(naa_base0))
-  true_abun_N1sj<-c(3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,0)
-  true_abun_N0sj<-c(3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,0)
+  true_abun_SSBmsj<-rep(0.0070,length(naa_base0))
+  true_abun_N1sj<-c(3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3)
+  true_abun_N0sj<-c(3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3)
 
   # when abund="N" :abundance
   abund_vpadat_base0_N <- abund.extractor(dat=vpadat_base0,abund="N", naa=naa_base0, faa=faa_base0, min.age=0, max.age=3)
@@ -679,10 +680,14 @@ test_that("vpa function (with dummy data) (level 2-3?)",{
   # when abund="Ns":number multipled by normal selectivity
   abund_vpadat_base0_Ns<- abund.extractor(dat=vpadat_base0,abund="Ns", naa=naa_base0, faa=faa_base0, min.age=0, max.age=3)
   expect_equal(as.numeric(round(abund_vpadat_base0_Ns,4)),true_abun_Ns,tol=0.0001)
-
+  
   # when abund="SSBm":SSB at the middle of the year
   abund_vpadat_base0_SSBm<- abund.extractor(dat=vpadat_base0,abund="SSBm", naa=naa_base0, faa=faa_base0, min.age=0, max.age=3)
   expect_equal(as.numeric(round(abund_vpadat_base0_SSBm,4)),true_abun_SSBm,tol=0.0001)
+  
+  # when abund="SSBmsj"
+  abund_vpadat_base0_SSBmsj<- abund.extractor(dat=vpadat_base0,abund="SSBmsj", naa=naa_base0, faa=faa_base0, min.age=0, max.age=3)
+  expect_equal(as.numeric(round(abund_vpadat_base0_SSBmsj,4)),true_abun_SSBmsj,tol=0.0001)
 
   # when abund="N1sj": This is a special case for Sukesoudara-Japan Sea stock. Enter fishery from 2years old, but the abundance index is for 0 and 1 year olds. So here estimates the number of age 1
   abund_vpadat_rec2_N1sj<- abund.extractor(dat=vpadat_rec2,abund="N1sj", naa=naa_base2, faa=faa_base2, min.age=2, max.age=4)
