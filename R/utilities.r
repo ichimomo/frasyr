@@ -2702,7 +2702,7 @@ derive_biopar <- function(res_obj=NULL, derive_year=NULL, stat=mean){
     if(!is.null(res_obj$input$dat$waa.catch)) bio_par$waa.catch <- bio_par$waa
   }
 
-  if(class(res_obj)=="future"|class(res_obj)=="future_new"){
+  if(class(res_obj)[[1]]=="future"||class(res_obj)[[1]]=="future_new"){
     bio_list <- res_obj[c("waa","faa")]
     if(is.null(res_obj$maa)) bio_list$maa <- res_obj$input$tmb_data$maa else bio_list$maa <- res_obj$maa
     bio_list$M <- res_obj$input$tmb_data$M
@@ -2976,7 +2976,7 @@ create_dummy_vpa <- function(res_vpa){
 #' @export
 #'
 
-calculate_all_pm <- function(res_future, SBtarget, SBlimit, SBban, SBmin){
+calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmin=-1, MSY=-1, is_scale=FALSE, unit=1){
     # by year performance (start_future_year:last_year)
     # mean, median, ci5%, ci10%, ci90%, ci95%, CV, 
     # ssb, biomass, number by age, catch weight
@@ -2992,17 +2992,32 @@ calculate_all_pm <- function(res_future, SBtarget, SBlimit, SBban, SBmin){
                      ci0.95 = function(x) quantile(x,0.95),
                      ci0.90 = function(x) quantile(x,0.90),
                      cv = function(x) sqrt(var(x))/mean(x),
-                     prob_target = function(x) mean(x>SBtarget),
-                     prob_limit  = function(x) mean(x>SBlimit),
-                     prob_ban    = function(x) mean(x>SBban),
-                     prob_min    = function(x) mean(x>SBmin))
+                     mean = function(x) mean(x),
+                     median = function(x) median(x),                                          
+                     prob_target = function(x) mean(x>SBtarget)*unit,
+                     prob_limit  = function(x) mean(x>SBlimit)*unit,
+                     prob_ban    = function(x) mean(x>SBban)*unit,
+                     prob_min    = function(x) mean(x>SBmin)*unit)
+
+  if(is_scale){
+    scale_ssb <- SBtarget
+    scale_catch <- MSY
+    SBlimit     <- SBlimit/SBtarget
+    SBban       <- SBban/SBtarget
+    SBmin       <- SBmin/SBtarget
+    SBtarget    <- SBtarget/SBtarget    
+  }
+  else{
+    scale_ssb <- 1
+    scale_catch <- 1
+  }
 
   year_future <- dimnames(res_future$naa)[[2]][res_future$input$tmb_data$future_initial_year:dim(res_future$naa)[[2]]]
   age_label <- str_c("A",dimnames(res_future$naa)[[1]])
   year_label <- dimnames(res_future$naa)[[2]]
 
-  ssb_mat <- res_future$SR_mat[year_future,,"ssb"]
-  catch_mat <- res_future$HCR_realized[year_future,,"wcatch"]
+  ssb_mat <- res_future$SR_mat[year_future,,"ssb"] / scale_ssb 
+  catch_mat <- res_future$HCR_realized[year_future,,"wcatch"] / scale_catch 
   biom_mat <- apply(res_future$naa * res_future$waa,c(2,3),sum)
 
   stat_data <- NULL
@@ -3019,9 +3034,9 @@ calculate_all_pm <- function(res_future, SBtarget, SBlimit, SBban, SBmin){
             purrr::map_dfr(seq_len(length(age_label)),
                            function(x) get_annual_pm(res_future$faa [x,year_future,],
                                                      fun,str_c(funname,"_faa_", age_label[x]))),
-            get_annual_pm(ssb_mat,  fun  ,str_c(funname,"_ssb_")),
-            get_annual_pm(catch_mat,fun  ,str_c(funname,"_catch_")),
-            get_annual_pm(biom_mat, fun  ,str_c(funname,"_biom_"))        
+            get_annual_pm(ssb_mat,  fun  ,str_c(funname,"_ssb")),
+            get_annual_pm(catch_mat,fun  ,str_c(funname,"_catch")),
+            get_annual_pm(biom_mat, fun  ,str_c(funname,"_biom"))        
         )
         stat_data <- bind_rows(stat_data, tmp)
     }
@@ -3044,7 +3059,8 @@ calculate_all_pm <- function(res_future, SBtarget, SBlimit, SBban, SBmin){
     }
     else{
       mat1 <- mat[tmp,]
-      res <- apply(mat1,1,fun_name) %>% sum_fun_name()
+      res <- apply(mat1,2,fun_name) %>% sum_fun_name()
+      if(res==Inf) browser()
       return(res)
     }
   }
@@ -3052,29 +3068,90 @@ calculate_all_pm <- function(res_future, SBtarget, SBlimit, SBban, SBmin){
   ABC_year     <- year_label[res_future$input$tmb_data$start_ABC_year] %>% as.numeric()
   period_list <- list(ABC_year + 0:9 , ABC_year + 0:4, ABC_year + 5:9,
                       ABC_year + 1:10, ABC_year + 1:4, ABC_year + 6:10)
-  names(period_list) <- purrr::map_chr(period_list, function(x) str_c(range(x),collapse="-"))
+  names(period_list) <- purrr::map_chr(period_list, function(x) str_c(range(x),collapse="."))
 
-  fun_list2 <- list(cv     = function(x) sd(x)/mean(x),
-                    aav    = function(x) mean(abs(x[-1]-x[-length(x)])/x[-length(x)]),
-                    aav_lower = function(x){ x0 <- (x[-1]-x[-length(x)])/x[-length(x)]; mean(x0[x0<0]) },
-                    max_depl_catch = function(x) min(x[-1]/x[-length(x)]),
-                    min_value = function(x) min(x),
-                    max_value = function(x) max(x),
-                    prob_target_any  = function(x) ifelse(sum(x<SBtarget)>1,1,0),                    
-                    prob_limit_any  = function(x) ifelse(sum(x<SBlimit)>1,1,0),
-                    prob_ban_any    = function(x) ifelse(sum(x<SBban)>1,1,0),
-                    prob_min_any    = function(x) ifelse(sum(x<SBmin)>1,1,0))  
+  av <- function(x){
+    av_value <- (x[-1]-x[-length(x)])/x[-length(x)]
+    av_value <- av_value[!is.nan(av_value) & av_value<Inf]
+    if(length(av_value)==0) return(NA) else av_value
+  }
+  
+  mean2 <- function(x) mean(x,na.rm=TRUE)
+  fun_list2 <- list(cv     = function(x) sd(x)/mean(x,rm.na=TRUE),
+                    mean   = function(x) mean(x,rm.na=TRUE),
+                    median   = function(x) mean(x,rm.na=TRUE),                      
+                    aav   = function(x) mean(abs(av(x)),na.rm=TRUE),
+                    adr = function(x){ x0 <- av(x) ;
+                                       x0[x0>0] <- NA ;
+                                       mean(x0,na.rm=TRUE)    },
+                    mdr = function(x) if(!is.na(av(x)[1])) min(av(x), na.rm=TRUE) else NA,
+                    min_value = function(x) min(x, na.rm=TRUE),
+                    max_value = function(x) max(x, na.rm=TRUE),
+                    prob_target_any  = function(x) ifelse(sum(x<SBtarget)>0,1,0),                    
+                    prob_limit_any  = function(x) ifelse(sum(x<SBlimit)>0,1,0),
+                    prob_half_any  = function(x) ifelse(sum(x[-1]<0.5*x[-length(x)])>0,1,0),                      
+                    prob_ban_any    = function(x) ifelse(sum(x<SBban)>0,1,0),
+                    prob_min_any    = function(x) ifelse(sum(x<SBmin)>0,1,0))  
 
-  mat_list <- lst(ssb_mat, biom_mat, catch_mat)
+  mat_list <- lst(ssb=ssb_mat, biom=biom_mat, catch=catch_mat)
   for(j in seq_len(length(fun_list2))){
     for(i in seq_len(length(period_list))){
       stat_data <- bind_rows(
         stat_data,
         purrr::map_dfr(1:length(mat_list),
                        function(x)
-                         tibble(stat=str_c(names(fun_list2),c("ssb","catch","biom")[x],names(period_list)[x],sep="_"),
-                                value=get_period_pm(mat_list[[x]], fun_list2[[j]], period_list[[i]], mean)))
+                         tibble(stat=str_c(names(fun_list2)[j],names(mat_list)[x],names(period_list)[i],sep="_"),
+                                value=get_period_pm(mat_list[[x]], fun_list2[[j]], period_list[[i]], mean2)))
         )
     }}
   return(stat_data)
+}
+
+#'
+#' @export
+#'
+
+
+derive_all_stat <- function(res, word_vector){
+  for(i in 1:length(word_vector)){
+    res <- res %>% dplyr::filter(str_detect(stat,word_vector[i]))
+  }
+  if(nrow(res)==0) stop("no match")
+  else res
+}
+
+
+#' @export
+#'
+
+rank_HCR <- function(summary_HCR,
+                     target_threshold,
+                     risk_threshold,
+                     target_prob_name="SBtar_prob",
+                     risk_prob_name="SBlim_prob"){
+
+  SSB_prob_XXXX <- summary_HCR[target_prob_name] %>% unlist %>% as.numeric
+  risk_Bthreshold <- summary_HCR[risk_prob_name]  %>% unlist %>% as.numeric  
+  
+  summary_HCR <- summary_HCR %>%
+      mutate(category_target = case_when((SSB_prob_XXXX >= target_threshold[1]) ~ 2,
+                                         (SSB_prob_XXXX <  target_threshold[1] & SSB_prob_XXXX >= (target_threshold[2]-0.5)) ~ 1,
+                                         (SSB_prob_XXXX < (target_threshold[2]-0.5)) ~ 0),
+             category_risk   = case_when((risk_Bthreshold <= risk_threshold[1]) ~ 2,
+                                         (risk_Bthreshold >  risk_threshold[1] & risk_Bthreshold <= risk_threshold[2]) ~ 1,
+                                         (risk_Bthreshold >  risk_threshold[2]) ~ 0)) 
+
+  if(sum(risk_threshold)==0) summary_HCR$category_risk[] <- 2
+    
+  summary_HCR <- summary_HCR %>%        
+      mutate(category_combine = str_c(category_target,category_risk)) %>%
+      mutate(category         = case_when(category_combine=="10" ~ 1,
+                                          category_combine=="20" ~ 1.5,
+                                          category_combine=="11" ~ 2,
+                                          category_combine=="12" ~ 2.5,
+                                          category_combine=="21" ~ 2.5,
+                                          category_combine=="22" ~ 3,
+                                          category_target==0     ~ 0))
+  return(summary_HCR)
+
 }

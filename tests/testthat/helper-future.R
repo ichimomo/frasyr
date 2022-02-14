@@ -34,7 +34,7 @@ generate_dummy_future_data <- function(result_vpa, nsim=1000, nyear=50) {
 }
 
 generate_dummy_future_new_object <- function(nsim=1000, nyear=50) {
-  data(res_vpa)
+  data(res_vpa_example)
   data(res_sr_HSL2)
   dummy_yr    <- 2015:2017
   future_data <- make_future_data(res_vpa,
