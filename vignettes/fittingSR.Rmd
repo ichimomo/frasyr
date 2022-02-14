@@ -7,7 +7,7 @@ output:
   highlight: kate
 toc: yes
 toc_float: yes
-vignette: 
+vignette: >
   %\VignetteIndexEntry{fittingSR}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
