@@ -4,7 +4,16 @@
 \alias{calculate_all_pm}
 \title{res_futureから考えられるほぼすべてのパフォーマンス指標をとりだし、2行のtibbleで返す}
 \usage{
-calculate_all_pm(res_future, SBtarget, SBlimit, SBban, SBmin)
+calculate_all_pm(
+  res_future,
+  SBtarget = -1,
+  SBlimit = -1,
+  SBban = -1,
+  SBmin = -1,
+  MSY = -1,
+  is_scale = FALSE,
+  unit = 1
+)
 }
 \arguments{
 \item{res_future}{future_vpaの返り値}
@@ -22,7 +31,8 @@ res_futureから考えられるほぼすべてのパフォーマンス指標を�
 }
 \examples{
 \dontrun{
-  calculate_all_pm(res_future_0.8HCR, 0, 0, 0, 0)
+  data(res_future_HSL2)
+  calculate_all_pm(res_future_HSL2, 0, 0, 0, 0)
 }
 
 }

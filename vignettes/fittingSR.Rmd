@@ -7,7 +7,7 @@ output:
   highlight: kate
 toc: yes
 toc_float: yes
-vignette: >
+vignette: 
   %\VignetteIndexEntry{fittingSR}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
@@ -27,8 +27,8 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(frasyr)
-data(res_vpa)
-SRdata <- get.SRdata(res_vpa)
+data(res_vpa_example)
+SRdata <- get.SRdata(res_vpa_example)
 names(SRdata)
 ```
 オブジェクトSRdataには、データの年year、親魚量SSB、加入量Rが入ります。

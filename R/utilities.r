@@ -1951,7 +1951,10 @@ calc_future_perSPR <- function(fout=NULL,
     is_pope <- res_vpa$input$Pope
     plus_group <- res_vpa$input$plus.group
   }
-  if(!is.null(fout))  info_source  <- "future"
+  if(!is.null(fout)){
+    info_source  <- "future"
+    if(class(fout)=="future_new") fout <- format_to_old_future(fout)
+  }
   if(!is.null(biopar))  info_source  <- "bio" # bioが優先される
 
   fout.tmp <- fout
