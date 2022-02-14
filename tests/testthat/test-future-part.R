@@ -3,11 +3,11 @@
 context("check future_vpa with sample data") # マアジデータでの将来予測 ----
 
 options(warn=-1)
-data(res_vpa)
+data(res_vpa_org)
 data(res_sr_HSL2)
 
 # normal lognormal ----
-data_future_test <- make_future_data(res_vpa, # VPAの結果
+data_future_test <- make_future_data(res_vpa_org, # VPAの結果
                                      nsim = 100, # シミュレーション回数
                                      nyear = 20, # 将来予測の年数
                                      future_initial_year_name = 2017, 
@@ -37,7 +37,7 @@ data_future_test <- make_future_data(res_vpa, # VPAの結果
                                      bias_correction=TRUE, # バイアス補正をするかどうか
                                      recruit_intercept=0, # 移入や放流などで一定の加入がある場合に足す加入尾数
                                      # Other
-                                     Pope=res_vpa$input$Pope,
+                                     Pope=res_vpa_org$input$Pope,
                                      fix_recruit=list(year=c(2020,2021),rec=c(1000,2000)),
                                      fix_wcatch=list(year=c(2020,2021),wcatch=c(1000,2000))
                                      )
@@ -480,15 +480,15 @@ context("check set_SR_mat") # ----
 
 test_that("set_SR_mat with sample data", {
   # サンプルデータ、パラメータとして以下を与える
-  data(res_vpa)
+  data(res_vpa_org)
   data(res_sr_HSL2)
 
   nsim = 10
   nyear = 50 # number of future year
   future_initial_year_name = 2017
-  future_initial_year <- which(colnames(res_vpa$naa)==future_initial_year_name)
+  future_initial_year <- which(colnames(res_vpa_org$naa)==future_initial_year_name)
   total_nyear <- future_initial_year + nyear
-  allyear_name <- min(as.numeric(colnames(res_vpa$naa))) + c(0:(total_nyear - 1))
+  allyear_name <- min(as.numeric(colnames(res_vpa_org$naa))) + c(0:(total_nyear - 1))
   start_random_rec_year_name = 2018
 
   # 空のSR_matを作成
@@ -505,7 +505,7 @@ test_that("set_SR_mat with sample data", {
   SR_mat[, , "deviance"]
 
   # set_SR_matを用いて、加入のdeviationを計算しSR_matに格納する。
-  SR_mat <- set_SR_mat(res_vpa = res_vpa,
+  SR_mat <- set_SR_mat(res_vpa = res_vpa_org,
                        start_random_rec_year_name = start_random_rec_year_name,
                        SR_mat = SR_mat, res_SR = res_sr_HSL2, seed_number = 1,
                        resid_type = "lognormal", bias_correction = TRUE,
@@ -564,6 +564,8 @@ test_that("get_wcatch",{
   expect_equal(get_wcatch(res_future_HSL2), apply(res_future_HSL2$wcaa,c(2,3),sum))
 })
 
+context("density dependent maturity option") # ----
+
 test_that("density dependent maturity option",{
     
     aa <- safe_call(make_future_data, data_future_test$input)
@@ -574,16 +576,17 @@ test_that("density dependent maturity option",{
     round(mean(data_future_maa$data$maa_rand_mat[,,1]),5) %>% 
         expect_equal(0)
     data_future_maa$data$maa_par_mat[,1,"b0"] %>%
-        expect_equal(apply(res_vpa$input$dat$maa,1,mean))
+        expect_equal(apply(res_vpa_org$input$dat$maa,1,mean))
     data_future_maa$data$maa_par_mat[,1,"sd"] %>% round(5) %>% as.numeric %>%
         expect_equal(rep(0,4))
     data_future_maa$data$maa_par_mat[,1,"b1"] %>% round(5) %>% as.numeric %>%
         expect_equal(rep(0,4))
 
     # maa&waaを置き換えてwaa_fun, maa_funをやる
-    res_vpa2 <- res_vpa
-    res_vpa2$input$dat$maa[2,] <- 1-res_vpa$naa[2,]/max(res_vpa$naa[2,]) + 0.1
-    res_vpa2$input$dat$waa[] <- res_vpa2$input$dat$waa[] * exp(rnorm(length(unlist(res_vpa$input$dat$waa)), 0, 0.1))
+    set.seed(1)
+    res_vpa2 <- res_vpa_org
+    res_vpa2$input$dat$maa[2,] <- 1-res_vpa2$naa[2,]/max(res_vpa2$naa[2,]) + 0.1
+    res_vpa2$input$dat$waa[] <- res_vpa2$input$dat$waa[] * exp(rnorm(length(unlist(res_vpa_org$input$dat$waa)), 0, 0.1))
 
     data_future_maa <- redo_future(data_future_test,list(maa_fun=TRUE, waa_fun=TRUE,
                                                          res_vpa=res_vpa2, fix_recruit = NULL), only_data=TRUE)

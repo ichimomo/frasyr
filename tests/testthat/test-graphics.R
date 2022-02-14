@@ -88,11 +88,11 @@ test_that("plot_waa", {
 })
 
 test_that("plot_yield", {
-  refs.plot <- dplyr::filter(res_MSY$summary, RP.definition%in%c("Btarget0", "Blimit0", "Bban0"))
+  refs.plot <- dplyr::filter(res_MSY_HSL2$summary, RP.definition%in%c("Btarget0", "Blimit0", "Bban0"))
 
   g1 <- purrr::map(c(TRUE,FALSE),
                    function(x)
-                     plot_yield(res_MSY$trace,
+                     plot_yield(res_MSY_HSL2$trace,
                                 refs.plot,
                                 refs.label=NULL,
                                 future=list(res_future_HSL2),
@@ -136,7 +136,7 @@ test_that("compare_eq_stat", {
 })
 
 test_that("compare_MSY",{
-  data(res_MSY)
+  data(res_MSY_HSL1); data(res_MSY_HSL2)
   MSY_list <- tibble::lst(res_MSY_HSL1, res_MSY_HSL2)
   g1 <- compare_MSY(MSY_list)
   expect_equal(class(g1)[1],"gg")

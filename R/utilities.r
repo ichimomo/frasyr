@@ -628,10 +628,11 @@ ref.F <- function(
 #' @encoding UTF-8
 #'
 #' @examples
+#' \dontrun{
 #' data(res_vpa_example)
 #' Fratio <- get.SPR(res_vpa_example,target.SPR=12)$ysdata$"F/Ftarget"
 #' plot(colnames(res_vpa$naa),Fratio,type="b")
-#'
+#' }
 #'
 #' @export
 #' @encoding UTF-8

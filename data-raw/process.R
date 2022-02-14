@@ -106,3 +106,5 @@ res_vpa_estb_tune4l_b <- vpa(vpadat_estb,last.catch.zero = FALSE, min.age=c(0,0,
 res_vpa_estb <- res_vpa_estb_tune4l_b
 use_data(vpadat_estb, overwrite=TRUE)
 use_data(res_vpa_estb, overwrite=TRUE)
+
+# 2022/02/14 res_vpaはバグを多く誘発するためdataから削除。そのかわりに昔のres_vpaをres_vpa_orgとして、dataフォルダにおいたができるだけ使わないこと

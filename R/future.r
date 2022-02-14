@@ -1652,7 +1652,7 @@ est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE,
 
     if(calc_yieldcurve==TRUE){
         # update trace
-        trace.multi2 <- c(res_MSY$summary$"Fref/Fcur",trace.multi2)
+        trace.multi2 <- c(sum.stat$sumvalue$"Fref/Fcur",trace.multi2)
         trace.multi2 <- trace.multi2[trace.multi2>0] %>%
             purrr::map(function(x) x * trace_multi) %>%
             unlist() %>% sort() %>% unique()
