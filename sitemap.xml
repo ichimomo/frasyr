@@ -91,6 +91,9 @@
     <loc>/reference/calc_steepness.html</loc>
   </url>
   <url>
+    <loc>/reference/calculate_all_pm.html</loc>
+  </url>
+  <url>
     <loc>/reference/check.SRdist.html</loc>
   </url>
   <url>
@@ -199,6 +202,9 @@
     <loc>/reference/fit.SR.html</loc>
   </url>
   <url>
+    <loc>/reference/fit.SR_pen.html</loc>
+  </url>
+  <url>
     <loc>/reference/fit.SR_tol.html</loc>
   </url>
   <url>
@@ -269,6 +275,9 @@
   </url>
   <url>
     <loc>/reference/make_stock_table.html</loc>
+  </url>
+  <url>
+    <loc>/reference/make_stock_table2.html</loc>
   </url>
   <url>
     <loc>/reference/make_table.html</loc>
@@ -368,6 +377,9 @@
   </url>
   <url>
     <loc>/reference/source_lines.html</loc>
+  </url>
+  <url>
+    <loc>/reference/specify.Mesnil.gamma.html</loc>
   </url>
   <url>
     <loc>/reference/summary_kobe_table.html</loc>

@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">frasyr</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.2.0.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.2.0.3</span>
       </span>
     </div>
 
@@ -141,18 +141,18 @@
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">res_vpa</span><span class="op">)</span></span>
-<span class="r-in"><span class="co"># VPA繝&lt;87&gt;繝ｼ繧ｿ繧剃ｽｿ縺&lt;86&gt;蝣ｴ蜷&lt;88&gt;</span></span>
-<span class="r-in"><span class="va">res_refF1</span> <span class="op">&lt;-</span> <span class="fu">ref.F</span><span class="op">(</span>res<span class="op">=</span><span class="va">res_vpa</span>,Fcurrent<span class="op">=</span><span class="fu">frasyr</span><span class="fu">::</span><span class="fu"><a href="apply_year_colum.html">apply_year_colum</a></span><span class="op">(</span><span class="va">res_vpa</span><span class="op">$</span><span class="va">faa</span>,<span class="fl">2015</span><span class="op">:</span><span class="fl">2017</span><span class="op">)</span>,</span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
+<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">res_vpa_example</span><span class="op">)</span></span>
+<span class="r-in"><span class="co"># VPAデータを使う場合</span></span>
+<span class="r-in"><span class="va">res_refF1</span> <span class="op">&lt;-</span> <span class="fu">ref.F</span><span class="op">(</span>res<span class="op">=</span><span class="va">res_vpa_example</span>,Fcurrent<span class="op">=</span><span class="fu">frasyr</span><span class="fu">::</span><span class="fu"><a href="apply_year_colum.html">apply_year_colum</a></span><span class="op">(</span><span class="va">res_vpa_example</span><span class="op">$</span><span class="va">faa</span>,<span class="fl">2015</span><span class="op">:</span><span class="fl">2017</span><span class="op">)</span>,</span>
 <span class="r-in">                waa.year<span class="op">=</span><span class="fl">2015</span><span class="op">:</span><span class="fl">2017</span>,maa.year<span class="op">=</span><span class="fl">2015</span><span class="op">:</span><span class="fl">2017</span>,M.year<span class="op">=</span><span class="fl">2015</span><span class="op">:</span><span class="fl">2017</span><span class="op">)</span></span>
-<span class="r-plt img"><img src="ref.F-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"></span>
-<span class="r-in"><span class="co"># 逕溽黄繝代Λ繝｡繝ｼ繧ｿ繧偵ョ繝ｼ繧ｿ縺ｨ縺励※荳弱∴繧句&lt;a0&gt;ｴ蜷&lt;88&gt;</span></span>
+<span class="r-in"><span class="co"># 生物パラメータをデータとして与える場合</span></span>
 <span class="r-in"><span class="va">res_refF2</span> <span class="op">&lt;-</span> <span class="fu">ref.F</span><span class="op">(</span>res<span class="op">=</span><span class="cn">NULL</span>,Fcurrent<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0.1</span>,<span class="fl">5</span><span class="op">)</span>,</span>
 <span class="r-in">                   waa<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">100</span>,<span class="fl">5</span><span class="op">)</span>,maa<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">0</span>,<span class="fl">1</span>,<span class="fl">1</span>,<span class="fl">1</span><span class="op">)</span>,M<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0.3</span>,<span class="fl">5</span><span class="op">)</span>,waa.catch<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">100</span>,<span class="fl">5</span><span class="op">)</span>,</span>
-<span class="r-in">                   rps.vector<span class="op">=</span><span class="cn">NULL</span>, <span class="co"># Fmed繧定ｨ育ｮ励＠縺溘ｊ縺吶ｋ蝣ｴ蜷医&lt;81&gt;ｮRPS縺ｮ繝吶け繝医Ν.NULL縺ｧ繧０K</span></span>
+<span class="r-in">                   rps.vector<span class="op">=</span><span class="cn">NULL</span>, <span class="co"># Fmedを計算したりする場合のRPSのベクトル.NULLでもOK</span></span>
 <span class="r-in">                   Pope<span class="op">=</span><span class="cn">TRUE</span>,min.age<span class="op">=</span><span class="fl">0</span>,pSPR<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">30</span>,<span class="fl">40</span><span class="op">)</span><span class="op">)</span></span>
-<span class="r-plt img"><img src="ref.F-2.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span class="op">}</span></span>
 <span class="r-in"></span>
 <span class="r-in"></span>
 </code></pre></div>
