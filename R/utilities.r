@@ -302,9 +302,10 @@ dyn.msy <- function(naa.past,naa.init=NULL,fmsy,a,b,resid,resid.year,waa,maa,M,S
 #' @note F_SPRのF管理基準値の初期値は　与えられたFのもとでのSPR/目的のSPR　を初期値とするように調整されるので不要。プラスグループを考慮するかどうかはVPAの結果のinput$plus.groupから自動判別される。
 #'
 #' @examples
-#' data(res_vpa)
+#' \dontrun{
+#' data(res_vpa_example)
 #' # VPAデータを使う場合
-#' res_refF1 <- ref.F(res=res_vpa,Fcurrent=frasyr::apply_year_colum(res_vpa$faa,2015:2017),
+#' res_refF1 <- ref.F(res=res_vpa_example,Fcurrent=frasyr::apply_year_colum(res_vpa_example$faa,2015:2017),
 #'                 waa.year=2015:2017,maa.year=2015:2017,M.year=2015:2017)
 #'
 #' # 生物パラメータをデータとして与える場合
@@ -312,6 +313,7 @@ dyn.msy <- function(naa.past,naa.init=NULL,fmsy,a,b,resid,resid.year,waa,maa,M,S
 #'                    waa=rep(100,5),maa=c(0,0,1,1,1),M=rep(0.3,5),waa.catch=rep(100,5),
 #'                    rps.vector=NULL, # Fmedを計算したりする場合のRPSのベクトル.NULLでもOK
 #'                    Pope=TRUE,min.age=0,pSPR=c(30,40))
+#' }
 #'
 #'
 #' @export
@@ -616,22 +618,24 @@ ref.F <- function(
   return(Res)
 }
 
-#' 毎年のFの\%SPRやターゲットした\%SPRに相当するFの大きさを計算する
+#' 毎年のFの\%SPRやターゲットした\%SPRに相当するFの相対的な大きさを計算する
 #'
-#' VPA計算結果を使って毎年のF at ageがどのくらいのSPR, YPRに相当するかを計算する。また、各年のFが、目標としたSPR（target.SPR）を達成するためのF(Ftarget)の何倍(F/Ftarget)に相当するかも計算する。F/Ftargetは数値的に探索するが、そのときのF/Ftargetの上限をFmaxにて指定する。十分大きい値（デフォルトは１０）を与えておけば大丈夫だが、Ftargetが非常に小さい数字になりそうな場合にはこの値をもっと大きくとるなどする。また、SPRの計算は、デフォルトでは等比級数の和の公式を使って、無限大の年齢までSPRを足しているが、max.ageを指定することで、有限の年齢までの和も計算できる。
+#' VPA計算結果を使って毎年のF at ageがどのくらいのSPR, YPRに相当するかを計算する。また、各年のFが、目標としたSPR（target.SPR）を達成するためのF(Ftarget)の何倍(F/Ftarget)に相当するかも計算する。F/Ftargetは数値的に探索するが、そのときのF/Ftargetの上限をFmaxにて指定する。十分大きい値（デフォルトは10）を与えておけば大丈夫だが、Ftargetが非常に小さい数字になりそうな場合にはこの値をもっと大きくとるなどする。また、SPRの計算は、デフォルトでは等比級数の和の公式を使って、無限大の年齢までSPRを足しているが、max.ageを指定することで、有限の年齢までの和も計算できる。
 #'
 #' @param dres vpa関数の返り値
 #' @param target.SPR 目標とするSPR。この値を入れると、結果の$ysdata$"F/Ftarget"で、その年のFが目標としたSPR(％)を達成するためのF（Ftarget）の何倍になっているかを返す。デフォルトは30が入っている。このとき、SPRを計算するための生物パラメータ（年齢別体重・成熟率・死亡率）はそれぞれの年で仮定されているものを用いる。
 #' @param Fmax F/Ftargetを推定するときに探索するFの乗数の最大値
 #' @param max.age SPRやYPRの計算をするときに最大何歳まで考慮するか（年齢のラベルではなく、ベクトルの長さ。デフォルトは無限大)。VPA計算でプラスグループを考慮していない（dres$input$plus.group==FALSE)場合には自動的に設定される。
+#' 
 #'
 #' @encoding UTF-8
 #'
-#' @examples
-#' data(res_vpa)
-#' Fratio <- get.SPR(res_vpa,target.SPR=12)$ysdata$"F/Ftarget"
-#' plot(colnames(res_vpa$naa),Fratio,type="b")
-#'
+# #' @examples
+# #' \dontrun{
+# #'  data(res_vpa_example)
+# #'  Fratio <- get.SPR(res_vpa_example,target.SPR=12)$ysdata$"F/Ftarget"
+# #'  plot(colnames(res_vpa_example$naa),Fratio,type="b")
+# #' }
 #'
 #' @export
 #' @encoding UTF-8
@@ -1951,7 +1955,10 @@ calc_future_perSPR <- function(fout=NULL,
     is_pope <- res_vpa$input$Pope
     plus_group <- res_vpa$input$plus.group
   }
-  if(!is.null(fout))  info_source  <- "future"
+  if(!is.null(fout)){
+    info_source  <- "future"
+    if(class(fout)=="future_new") fout <- format_to_old_future(fout)
+  }
   if(!is.null(biopar))  info_source  <- "bio" # bioが優先される
 
   fout.tmp <- fout
@@ -2702,7 +2709,7 @@ derive_biopar <- function(res_obj=NULL, derive_year=NULL, stat=mean){
     if(!is.null(res_obj$input$dat$waa.catch)) bio_par$waa.catch <- bio_par$waa
   }
 
-  if(class(res_obj)=="future"|class(res_obj)=="future_new"){
+  if(class(res_obj)[[1]]=="future"||class(res_obj)[[1]]=="future_new"){
     bio_list <- res_obj[c("waa","faa")]
     if(is.null(res_obj$maa)) bio_list$maa <- res_obj$input$tmb_data$maa else bio_list$maa <- res_obj$maa
     bio_list$M <- res_obj$input$tmb_data$M
@@ -2957,3 +2964,204 @@ create_dummy_vpa <- function(res_vpa){
   return(res_vpa_updated)
 }
 
+
+#'
+#' res_futureから考えられるほぼすべてのパフォーマンス指標をとりだし、2行のtibbleで返す
+#'
+#' @param res_future future_vpaの返り値
+#' @param SBtarget それを上回る・下回る確率を計算する。目標管理基準値
+#' @param SBlimit それを上回る・下回る確率を計算する。限界管理基準値
+#' @param SBban それを上回る・下回る確率を計算する。禁漁水準
+#' @param SBmin それを上回る・下回る確率を計算する。過去最低親魚量
+#' @param MSY それを上回る・下回る確率を計算する。MSY
+#' @param is_scale TRUEの場合、親魚量はSBtargetで、漁獲量はMSYで割った相対値が出力される。それ以外はそのまま
+#' @param unit 確率を出力するときの単位。100を入れると％単位で結果が返される
+#' 
+# #' @examples
+# #' \dontrun{
+# #'   data(res_future_HSL2)
+# #'   calculate_all_pm(res_future_HSL2, 0, 0, 0, 0)
+# #' }
+#'
+#' @export
+#'
+
+calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmin=-1, MSY=-1, is_scale=FALSE, unit=1){
+    # by year performance (start_future_year:last_year)
+    # mean, median, ci5%, ci10%, ci90%, ci95%, CV, 
+    # ssb, biomass, number by age, catch weight
+    # probability > SBtarget, SBmin, SBlimit, SBban, SBmax
+    
+    get_annual_pm <- function(mat,fun,label){
+        x <- apply(mat,1,fun)
+        tibble(stat=str_c(label,"_",names(x)),value=x)
+    }
+
+    fun_list <- list(ci0.05=function(x) quantile(x,0.05),
+                     ci0.10 = function(x) quantile(x,0.1),
+                     ci0.95 = function(x) quantile(x,0.95),
+                     ci0.90 = function(x) quantile(x,0.90),
+                     cv = function(x) sqrt(var(x))/mean(x),
+                     mean = function(x) mean(x),
+                     median = function(x) median(x),                                          
+                     prob_target = function(x) mean(x>SBtarget)*unit,
+                     prob_limit  = function(x) mean(x>SBlimit)*unit,
+                     prob_ban    = function(x) mean(x>SBban)*unit,
+                     prob_min    = function(x) mean(x>SBmin)*unit)
+
+  if(is_scale){
+    scale_ssb <- SBtarget
+    scale_catch <- MSY
+    SBlimit     <- SBlimit/SBtarget
+    SBban       <- SBban/SBtarget
+    SBmin       <- SBmin/SBtarget
+    SBtarget    <- SBtarget/SBtarget    
+  }
+  else{
+    scale_ssb <- 1
+    scale_catch <- 1
+  }
+
+  year_future <- dimnames(res_future$naa)[[2]][res_future$input$tmb_data$future_initial_year:dim(res_future$naa)[[2]]]
+  age_label <- str_c("A",dimnames(res_future$naa)[[1]])
+  year_label <- dimnames(res_future$naa)[[2]]
+
+  ssb_mat <- res_future$SR_mat[year_future,,"ssb"] / scale_ssb 
+  catch_mat <- res_future$HCR_realized[year_future,,"wcatch"] / scale_catch 
+  biom_mat <- apply(res_future$naa * res_future$waa,c(2,3),sum)
+
+  stat_data <- NULL
+  for(i in 1:length(fun_list)){
+    fun <- fun_list[[i]]
+        funname <- names(fun_list)[i]
+        tmp <- bind_rows(
+            purrr::map_dfr(seq_len(length(age_label)),
+                           function(x) get_annual_pm(res_future$naa [x,year_future,],
+                                                     fun,str_c(funname,"_naa_", age_label[x]))),
+            purrr::map_dfr(seq_len(length(age_label)),
+                           function(x) get_annual_pm(res_future$wcaa[x,year_future,],
+                                                     fun,str_c(funname,"_wcaa_",age_label[x]))),
+            purrr::map_dfr(seq_len(length(age_label)),
+                           function(x) get_annual_pm(res_future$faa [x,year_future,],
+                                                     fun,str_c(funname,"_faa_", age_label[x]))),
+            get_annual_pm(ssb_mat,  fun  ,str_c(funname,"_ssb")),
+            get_annual_pm(catch_mat,fun  ,str_c(funname,"_catch")),
+            get_annual_pm(biom_mat, fun  ,str_c(funname,"_biom"))        
+        )
+        stat_data <- bind_rows(stat_data, tmp)
+    }
+
+    # temporal scale
+    # by term performance
+    # - management term1, ABC_year + 0:9  
+    # - management term2, ABC_year + 0:4  
+    # - management term3, ABC_year + 5:9  
+    # - management term4, ABC_year + 1:10 
+    # - management term5, ABC_year + 1:4  
+    # - management term6, ABC_year + 6:10
+    #
+    # mean(ssb), mean(biomass), mean(catch), mean(AAV), mean(CV), Pr(SBany>SBtarget), Pr(SBany>SBlimit),Pr(SBany>SBban),Pr(SBany>SBmin), AAV_min (査読コメントを参照), max_AAV_min, mean(min_catch)
+
+  get_period_pm <- function(mat, fun_name, year_period, sum_fun_name){
+    tmp <- rownames(mat)%in%year_period
+    if(sum(tmp)!=length(year_period)){
+      cat("year_period does not match future projection year\n"); return(NA)
+    }
+    else{
+      mat1 <- mat[tmp,]
+      res <- apply(mat1,2,fun_name) %>% sum_fun_name()
+      if(res==Inf) browser()
+      return(res)
+    }
+  }
+
+  ABC_year     <- year_label[res_future$input$tmb_data$start_ABC_year] %>% as.numeric()
+  period_list <- list(ABC_year + 0:9 , ABC_year + 0:4, ABC_year + 5:9,
+                      ABC_year + 1:10, ABC_year + 1:4, ABC_year + 6:10)
+  names(period_list) <- purrr::map_chr(period_list, function(x) str_c(range(x),collapse="."))
+
+  av <- function(x){
+    av_value <- (x[-1]-x[-length(x)])/x[-length(x)]
+    av_value <- av_value[!is.nan(av_value) & av_value<Inf]
+    if(length(av_value)==0) return(NA) else av_value
+  }
+  
+  mean2 <- function(x) mean(x,na.rm=TRUE)
+  fun_list2 <- list(cv     = function(x) sd(x)/mean(x,rm.na=TRUE),
+                    mean   = function(x) mean(x,rm.na=TRUE),
+                    median   = function(x) mean(x,rm.na=TRUE),                      
+                    aav   = function(x) mean(abs(av(x)),na.rm=TRUE),
+                    adr = function(x){ x0 <- av(x) ;
+                                       x0[x0>0] <- NA ;
+                                       mean(x0,na.rm=TRUE)    },
+                    mdr = function(x) if(!is.na(av(x)[1])) min(av(x), na.rm=TRUE) else NA,
+                    min_value = function(x) min(x, na.rm=TRUE),
+                    max_value = function(x) max(x, na.rm=TRUE),
+                    prob_target_any  = function(x) ifelse(sum(x<SBtarget)>0,1,0),                    
+                    prob_limit_any  = function(x) ifelse(sum(x<SBlimit)>0,1,0),
+                    prob_half_any  = function(x) ifelse(sum(x[-1]<0.5*x[-length(x)])>0,1,0),                      
+                    prob_ban_any    = function(x) ifelse(sum(x<SBban)>0,1,0),
+                    prob_min_any    = function(x) ifelse(sum(x<SBmin)>0,1,0))  
+
+  mat_list <- lst(ssb=ssb_mat, biom=biom_mat, catch=catch_mat)
+  for(j in seq_len(length(fun_list2))){
+    for(i in seq_len(length(period_list))){
+      stat_data <- bind_rows(
+        stat_data,
+        purrr::map_dfr(1:length(mat_list),
+                       function(x)
+                         tibble(stat=str_c(names(fun_list2)[j],names(mat_list)[x],names(period_list)[i],sep="_"),
+                                value=get_period_pm(mat_list[[x]], fun_list2[[j]], period_list[[i]], mean2)))
+        )
+    }}
+  return(stat_data)
+}
+
+#'
+#' @export
+#'
+
+
+derive_all_stat <- function(res, word_vector){
+  for(i in 1:length(word_vector)){
+    res <- res %>% dplyr::filter(str_detect(stat,word_vector[i]))
+  }
+  if(nrow(res)==0) stop("no match")
+  else res
+}
+
+
+#' @export
+#'
+
+rank_HCR <- function(summary_HCR,
+                     target_threshold,
+                     risk_threshold,
+                     target_prob_name="SBtar_prob",
+                     risk_prob_name="SBlim_prob"){
+
+  SSB_prob_XXXX <- summary_HCR[target_prob_name] %>% unlist %>% as.numeric
+  risk_Bthreshold <- summary_HCR[risk_prob_name]  %>% unlist %>% as.numeric  
+  
+  summary_HCR <- summary_HCR %>%
+      mutate(category_target = case_when((SSB_prob_XXXX >= target_threshold[1]) ~ 2,
+                                         (SSB_prob_XXXX <  target_threshold[1] & SSB_prob_XXXX >= (target_threshold[2]-0.5)) ~ 1,
+                                         (SSB_prob_XXXX < (target_threshold[2]-0.5)) ~ 0),
+             category_risk   = case_when((risk_Bthreshold <= risk_threshold[1]) ~ 2,
+                                         (risk_Bthreshold >  risk_threshold[1] & risk_Bthreshold <= risk_threshold[2]) ~ 1,
+                                         (risk_Bthreshold >  risk_threshold[2]) ~ 0)) 
+
+  if(sum(risk_threshold)==0) summary_HCR$category_risk[] <- 2
+    
+  summary_HCR <- summary_HCR %>%        
+      mutate(category_combine = str_c(category_target,category_risk)) %>%
+      mutate(category         = case_when(category_combine=="10" ~ 1,
+                                          category_combine=="20" ~ 1.5,
+                                          category_combine=="11" ~ 2,
+                                          category_combine=="12" ~ 2.5,
+                                          category_combine=="21" ~ 2.5,
+                                          category_combine=="22" ~ 3,
+                                          category_target==0     ~ 0))
+  return(summary_HCR)
+
+}
