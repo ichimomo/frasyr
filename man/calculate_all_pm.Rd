@@ -25,14 +25,13 @@ calculate_all_pm(
 \item{SBban}{それを上回る・下回る確率を計算する。禁漁水準}
 
 \item{SBmin}{それを上回る・下回る確率を計算する。過去最低親魚量}
+
+\item{MSY}{それを上回る・下回る確率を計算する。MSY}
+
+\item{is_scale}{TRUEの場合、親魚量はSBtargetで、漁獲量はMSYで割った相対値が出力される。それ以外はそのまま}
+
+\item{unit}{確率を出力するときの単位。100を入れると％単位で結果が返される}
 }
 \description{
 res_futureから考えられるほぼすべてのパフォーマンス指標をとりだし、2行のtibbleで返す
-}
-\examples{
-\dontrun{
-  data(res_future_HSL2)
-  calculate_all_pm(res_future_HSL2, 0, 0, 0, 0)
-}
-
 }

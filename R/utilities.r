@@ -618,23 +618,24 @@ ref.F <- function(
   return(Res)
 }
 
-#' 毎年のFの\%SPRやターゲットした\%SPRに相当するFの大きさを計算する
+#' 毎年のFの\%SPRやターゲットした\%SPRに相当するFの相対的な大きさを計算する
 #'
-#' VPA計算結果を使って毎年のF at ageがどのくらいのSPR, YPRに相当するかを計算する。また、各年のFが、目標としたSPR（target.SPR）を達成するためのF(Ftarget)の何倍(F/Ftarget)に相当するかも計算する。F/Ftargetは数値的に探索するが、そのときのF/Ftargetの上限をFmaxにて指定する。十分大きい値（デフォルトは１０）を与えておけば大丈夫だが、Ftargetが非常に小さい数字になりそうな場合にはこの値をもっと大きくとるなどする。また、SPRの計算は、デフォルトでは等比級数の和の公式を使って、無限大の年齢までSPRを足しているが、max.ageを指定することで、有限の年齢までの和も計算できる。
+#' VPA計算結果を使って毎年のF at ageがどのくらいのSPR, YPRに相当するかを計算する。また、各年のFが、目標としたSPR（target.SPR）を達成するためのF(Ftarget)の何倍(F/Ftarget)に相当するかも計算する。F/Ftargetは数値的に探索するが、そのときのF/Ftargetの上限をFmaxにて指定する。十分大きい値（デフォルトは10）を与えておけば大丈夫だが、Ftargetが非常に小さい数字になりそうな場合にはこの値をもっと大きくとるなどする。また、SPRの計算は、デフォルトでは等比級数の和の公式を使って、無限大の年齢までSPRを足しているが、max.ageを指定することで、有限の年齢までの和も計算できる。
 #'
 #' @param dres vpa関数の返り値
 #' @param target.SPR 目標とするSPR。この値を入れると、結果の$ysdata$"F/Ftarget"で、その年のFが目標としたSPR(％)を達成するためのF（Ftarget）の何倍になっているかを返す。デフォルトは30が入っている。このとき、SPRを計算するための生物パラメータ（年齢別体重・成熟率・死亡率）はそれぞれの年で仮定されているものを用いる。
 #' @param Fmax F/Ftargetを推定するときに探索するFの乗数の最大値
 #' @param max.age SPRやYPRの計算をするときに最大何歳まで考慮するか（年齢のラベルではなく、ベクトルの長さ。デフォルトは無限大)。VPA計算でプラスグループを考慮していない（dres$input$plus.group==FALSE)場合には自動的に設定される。
+#' 
 #'
 #' @encoding UTF-8
 #'
-#' @examples
-#' \dontrun{
-#' data(res_vpa_example)
-#' Fratio <- get.SPR(res_vpa_example,target.SPR=12)$ysdata$"F/Ftarget"
-#' plot(colnames(res_vpa_example$naa),Fratio,type="b")
-#' }
+# #' @examples
+# #' \dontrun{
+# #'  data(res_vpa_example)
+# #'  Fratio <- get.SPR(res_vpa_example,target.SPR=12)$ysdata$"F/Ftarget"
+# #'  plot(colnames(res_vpa_example$naa),Fratio,type="b")
+# #' }
 #'
 #' @export
 #' @encoding UTF-8
@@ -2972,12 +2973,15 @@ create_dummy_vpa <- function(res_vpa){
 #' @param SBlimit それを上回る・下回る確率を計算する。限界管理基準値
 #' @param SBban それを上回る・下回る確率を計算する。禁漁水準
 #' @param SBmin それを上回る・下回る確率を計算する。過去最低親魚量
+#' @param MSY それを上回る・下回る確率を計算する。MSY
+#' @param is_scale TRUEの場合、親魚量はSBtargetで、漁獲量はMSYで割った相対値が出力される。それ以外はそのまま
+#' @param unit 確率を出力するときの単位。100を入れると％単位で結果が返される
 #' 
-#' @examples
-#' \dontrun{
-#'   data(res_future_HSL2)
-#'   calculate_all_pm(res_future_HSL2, 0, 0, 0, 0)
-#' }
+# #' @examples
+# #' \dontrun{
+# #'   data(res_future_HSL2)
+# #'   calculate_all_pm(res_future_HSL2, 0, 0, 0, 0)
+# #' }
 #'
 #' @export
 #'
