@@ -37,6 +37,7 @@ Imports:
     testthat,
     covr,    
     patchwork,
+    GGally, 
     splus2R,
 Suggests:
     knitr,
