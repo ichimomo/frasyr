@@ -36,7 +36,6 @@ Imports:
     doParallel,
     testthat,
     covr,    
-    GGally,
     patchwork,
     splus2R,
 Suggests:
