@@ -191,7 +191,9 @@ plot_Fcurrent <- function(vpares,
     group_by(year) %>%
     dplyr::filter(!is.na(F)) %>%
     mutate(Year=as.numeric(year)) %>%
-    mutate(age_name=ifelse(max(age)==age,str_c(age,"+"),age))
+    arrange(age) %>%
+    mutate(age_name=ifelse(max(age)==age,str_c(age,"+"),age)) %>%
+    mutate(age_name=fct_inorder(age_name))
 
   if(is.null(Fcurrent)){
     fc_at_age_current <- vpares$Fc.at.age
@@ -199,10 +201,12 @@ plot_Fcurrent <- function(vpares,
   else{
     fc_at_age_current <- Fcurrent
   }
-  fc_at_age_current <- tibble(F=fc_at_age_current,age=as.numeric(rownames(vpares$naa)),
+  fc_at_age_current <- tibble(F=fc_at_age_current,age=as.numeric(rownames(vpares$faa)),
                               year="0",type="currentF") %>%
-    dplyr::filter(!is.na(F)) %>%
-    mutate(age_name=ifelse(max(age)==age,str_c(age,"+"),age))
+      dplyr::filter(!is.na(F)) %>%
+      arrange(age) %>%      
+      mutate(age_name=ifelse(max(age)==age,str_c(age,"+"),age))%>%
+      mutate(age_name=fct_inorder(age_name))
 
   pal <- c("#3B9AB2", "#56A6BA", "#71B3C2", "#9EBE91", "#D1C74C",
            "#E8C520", "#E4B80E", "#E29E00", "#EA5C00", "#F21A00")

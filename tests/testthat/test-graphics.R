@@ -169,3 +169,16 @@ test_that("plot_SR_AReffect", {
   (g <- plot_SR_AReffect(res_SR))
 
 })
+
+test_that("plot_Fcurrent", {
+
+  g <- plot_Fcurrent(res_vpa_example)
+  expect_equal(class(g)[1],"gg")
+
+  res_vpa_tmp <- res_vpa_example
+  res_vpa_tmp$faa <- rbind(res_vpa_example$faa,res_vpa_example$faa,res_vpa_example$faa,res_vpa_example$faa,res_vpa_example$faa)
+  rownames(res_vpa_tmp$faa) <- 0:(nrow(res_vpa_tmp$faa)-1)
+  g <- plot_Fcurrent(res_vpa_tmp, Fcurrent=seq(from=0,to=2,length=nrow(res_vpa_tmp$faa)))
+  expect_equal(class(g)[1],"gg")
+  
+})
