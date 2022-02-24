@@ -323,8 +323,8 @@ test_that("output value check",{
 
  # check HS_b_fix option
  # HS_b_fixにmin(SSB)としてもその1/100としても切片(a*HS_b_fix)とほぼ一致するはず。
-  data(res_vpa)
-  SRdata <- get.SRdata(res_vpa)
+  data(res_vpa_org)
+  SRdata <- get.SRdata(res_vpa_org)
 
   minSSB_b <- min(SRdata$SSB)
   res_fitSR_HS_b_fix_l1 <- fit.SR(SRdata=SRdata,SR="HS",method = "L1",AR=0,HS_fix_b = minSSB_b)
@@ -415,7 +415,7 @@ test_that("check matching of fit.SRregime and fit.SR",{
   SRdata2 = list(year=regime2, R=SRdata$R[SRdata$year %in% regime2],SSB=SRdata$SSB[SRdata$year %in% regime2])
   # レジームを完全に分けたときのfit.SRregimeの結果とfit.SRの結果が一致するかのテスト
   for (i in 1:nrow(SRmodel.list)) {
-    bio_par <- derive_biopar(res_vpa, derive_year=2017)
+    bio_par <- derive_biopar(res_vpa_org, derive_year=2017)
     resSR1 <- fit.SR(SRdata1, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],AR = 0, hessian = FALSE,length=20, bio_par=bio_par)
     resSR2 <- fit.SR(SRdata2, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],AR = 0, hessian = FALSE,length=20, bio_par=bio_par)
     resSRregime <- fit.SRregime(SRdata, SR = as.character(SRmodel.list$SR.rel[i]), method = as.character(SRmodel.list$L.type[i]), regime.year = regime_year, regime.key = 0:1, regime.par = c("a","b","sd"), use.fit.SR = TRUE,bio_par=bio_par)
@@ -435,7 +435,7 @@ test_that("check matching of fit.SRregime and fit.SR",{
 
 test_that("test for fit.SR_tol",{
 
-  SRdata <- get.SRdata(res_vpa)
+  SRdata <- get.SRdata(res_vpa_org)
 
   # fit.SR_tol
   res1 <- fit.SR_tol(SRdata=SRdata, SR="HS", method="L1", AR=0)
@@ -463,12 +463,12 @@ test_that("test for fit.SR_tol",{
 
   # 以下、technical documentのR4の図1用のコード
   if(0){
-      res4 <- get.SRdata(res_vpa) %>%
+      res4 <- get.SRdata(res_vpa_org) %>%
           dplyr::filter(year%in%1988:2000) %>%
           fit.SR(SR="HS", method="L1", AR=0) %>%
           check.SRfit(n=400, seed=10)
 
-      res5 <- get.SRdata(res_vpa) %>%
+      res5 <- get.SRdata(res_vpa_org) %>%
           dplyr::filter(year%in%1988:2000) %>%
           fit.SR(SR="HS", method="L1", AR=0) %>%
           check.SRfit(n=400, seed=1)

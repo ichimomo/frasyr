@@ -1,16 +1,17 @@
 context("Utilities")
 
 result_vpa  <- load_data("../../inst/extdata/res_vpa_pma.rda")
-result_msy  <- load_data("../../inst/extdata/res_MSY_pma_pre.rda")
-data(res_vpa)
+#result_msy  <- load_data("../../inst/extdata/res_MSY_pma_pre.rda")
+data(res_vpa_example)
 data(res_sr_HSL2)
+data(res_MSY_HSL2)
 
 test_that("make_kobe_ratio", {
-  kobe_ratio <- make_kobe_ratio(result_vpa, result_msy)
+  kobe_ratio <- make_kobe_ratio(res_vpa_example, res_MSY_HSL2)
 
   expect_is(kobe_ratio, "data.frame")
   expect_equal(colnames(kobe_ratio), c("year", "Fratio", "Bratio"))
-  expect_equal(kobe_ratio$year, as.character(1982:2011))
+  expect_equal(kobe_ratio$year, as.character(1988:2017))
   expect_is(kobe_ratio$Fratio, "numeric")
   expect_is(kobe_ratio$Bratio, "numeric")
 })
@@ -51,14 +52,14 @@ test_that("test for HCR function", {
 })
 
 test_that("calc_future_perSPR accepts list with different length vectors", {
-  future_data <- generate_dummy_future_data(result_vpa)
+  future_data <- generate_dummy_future_data(res_vpa_example)
 
   perspr <- calc_future_perSPR(fout = list(waa       = future_data$data$waa_mat,
                                            maa       = future_data$data$maa_mat,
                                            M         = future_data$data$M_mat,
                                            waa.catch = future_data$data$waa_catch_mat),
-                               res_vpa=result_vpa,
-                               Fvector = apply_year_colum(result_vpa$faa, 2007:2011),
+                               res_vpa=res_vpa_example,
+                               Fvector = apply_year_colum(res_vpa_example$faa, 2007:2011),
                                target.year = list(waa       = 2014:2018,
                                                   waa.catch = 2014:2018,
                                                   maa       = 2016:2018,
@@ -178,9 +179,9 @@ test_that("solv.Feq",{
 })
 
 test_that("Generation.Time",{
-    Generation.Time(vpares=res_vpa) %>% round(3) %>%
+    Generation.Time(vpares=res_vpa_example) %>% round(3) %>%
         expect_equal(2.919)
-    Generation.Time(vpares=res_vpa, Plus=0) %>% round(3) %>%
+    Generation.Time(vpares=res_vpa_example, Plus=0) %>% round(3) %>%
         expect_equal(1.91)
     Generation.Time(maa=c(1,1,1),M=c(0,0,0),age=0:2,Plus=0)%>%
         expect_equal(mean(0:2))
@@ -238,21 +239,8 @@ test_that("make_summary_table", {
 
 })
 
-test_that("outvpa", {
 
-})
-
-test_that("readvpa", {
-
-})
-
-test_that("to_vpa_data", {
-
-})
-
-test_that("get.stat", {
-
-  data_future_test <- make_future_data(res_vpa, # VPAの結果
+data_future_test <- make_future_data(res_vpa_example, # VPAの結果
                                        nsim = 1000, # シミュレーション回数
                                        nyear = 50, # 将来予測の年数
                                        future_initial_year_name = 2017, # 年齢別資源尾数を参照して将来予測をスタートする年
@@ -281,21 +269,19 @@ test_that("get.stat", {
                                        bias_correction=TRUE, # バイアス補正をするかどうか
                                        recruit_intercept=0, # 移入や放流などで一定の加入がある場合に足す加入尾数
                                        # Other
-                                       Pope=res_vpa$input$Pope,
+                                       Pope=res_vpa_example$input$Pope,
                                        fix_recruit=list(year=c(2020,2021),rec=c(1000,2000)),
                                        fix_wcatch=list(year=c(2020,2021),wcatch=c(1000,2000))
   )
   res_future_test <- future_vpa(tmb_data=data_future_test$data,
                                                       optim_method="none",
                                                       multi_init = 1)
-
-  # 計算結果が入っているかだけ
-  expect_false(is_null(get.stat(res_future_test,use_new_output = TRUE)))
+test_that("get.stat", {
+    # 計算結果が入っているかだけ
+    a <- get.stat(res_future_test,use_new_output = TRUE)
+  expect_equal(is_tibble(a), TRUE)
 })
 
-test_that("get.stat4",{
-  # 使われていない。
-  })
 
 test_that("get.trace",{
     data("res_MSY_HSL2")
@@ -304,8 +290,7 @@ test_that("get.trace",{
         expect_equal(463754.3, tol=0.1)
 })
 
-test_that("make kobeII table", {
-  test_that("beta.simulation() works", {
+test_that("beta.simulation() works", {
     kobe_data <- beta.simulation(generate_dummy_future_new_object(nsim=2)$input,
                                  beta_vector = seq(0, 1, 0.5),
                                  year.lag = 0,
@@ -344,21 +329,21 @@ test_that("make kobeII table", {
 #                        "kobe.stat", "catch.risk", "bban.risk", "blimit.risk"))
     })
   })
-})
 
-test_that("load_folder() loads 'rda's in the given directory", {
-  expect_is(load_folder("../../inst/extdata"), "list")
-  test_that("each object exists", {
-    expect_true(exists("res_MSY"))
-    expect_true(exists("res_future_0.8HCR"))
 
-    # これらのオブジェクトはロードされているかのように見えるが、実際はされていない
-      # 原因: これらの名前が関数内にハードコードされているため
-    expect_failure(expect_true(exists("res_SR")))
-    expect_failure(expect_true(exists("kobeII.table")))
-    expect_failure(expect_true(exists("model_selection")))
-  })
-})
+## test_that("load_folder() loads 'rda's in the given directory", {
+##   expect_is(load_folder("../../inst/extdata"), "list")
+##   test_that("each object exists", {
+##     expect_true(exists("res_MSY"))
+##     expect_true(exists("res_future_0.8HCR"))
+
+##     # これらのオブジェクトはロードされているかのように見えるが、実際はされていない
+##       # 原因: これらの名前が関数内にハードコードされているため
+##     expect_failure(expect_true(exists("res_SR")))
+##     expect_failure(expect_true(exists("kobeII.table")))
+##     expect_failure(expect_true(exists("model_selection")))
+##   })
+## })
 
 test_that("apply_year_colum",{
 
@@ -376,41 +361,43 @@ test_that("apply_year_colum",{
 })
 
 test_that("convert_df",{
-  # 一旦スキップ
+  res <- convert_df(res_vpa_example$input$dat$waa,"weight")
+  expect_equal(is_tibble(res), TRUE)  
 })
 
 test_that("convert_2d_future",{
-  # 一旦スキップ
+  res <- convert_2d_future(res_future_HSL1$HCR_realized[,,"wcatch"], "wcatch")
+  expect_equal(is_tibble(res), TRUE)  
 })
 
 test_that("derive_biopar",{
 
-    a1 <- derive_biopar(res_vpa, derive_year=2000)
-    a2 <- derive_biopar(res_vpa, derive_year=2000:2003)
+    a1 <- derive_biopar(res_vpa_example, derive_year=2000)
+    a2 <- derive_biopar(res_vpa_example, derive_year=2000:2003)
     expect_equal(a1[,1:3],a2[,1:3])
     (a1$faa + a2$faa) %>% round(2) %>% as.numeric() %>%
         expect_equal(c(1.12,3.47,3.82,3.82))
 
     rm(list=ls())
-    a1 <- derive_biopar(res_future_0.8HCR, derive_year=2030)
-    a2 <- derive_biopar(res_future_0.8HCR, derive_year=2031:2032)
+    a1 <- derive_biopar(res_future_test, derive_year=2030)
+    a2 <- derive_biopar(res_future_test, derive_year=2031:2032)
     expect_equal(a1[,c(1,3,4)],a2[,c(1,3,4)])
     (a1$faa + a2$faa) %>% round(2) %>% as.numeric() %>%
-        expect_equal(c(0.22, 0.53, 0.60, 0.60))
+        expect_equal(c(0.98, 2.30, 2.63, 2.63))
     expect_equal(a1$waa, a1$waa.catch)
 
 })
 
 
 test_that("calc_forward",{
-  naa2 <- calc_forward(naa=res_vpa$naa,faa=res_vpa$faa,M=res_vpa$input$dat$M,t=1,plus_age=4,plus_group=TRUE)[,2]
-  naa2 %>% expect_equal(res_vpa$naa[,2])
+  naa2 <- calc_forward(naa=res_vpa_example$naa,faa=res_vpa_example$faa,M=res_vpa_example$input$dat$M,t=1,plus_age=4,plus_group=TRUE)[,2]
+  naa2 %>% expect_equal(res_vpa_example$naa[,2])
 })
 
 
 test_that("out.vpa", {
 
-  out.vpa(res=res_vpa, fres_HCR=res_future_0.8HCR)
+  out.vpa(res=res_vpa_example, fres_HCR=res_future_test)
   expect_equal(file.exists("vpa.csv"), TRUE)
 
 })
@@ -418,10 +405,10 @@ test_that("out.vpa", {
 
 test_that("fit.SR_pen", {
 
-    data_SR = get.SRdata(res_vpa)
-    waa = rowMeans(res_vpa$input$dat$waa)
-    maa = rowMeans(res_vpa$input$dat$maa)
-    M = rowMeans(res_vpa$input$dat$M)
+    data_SR = get.SRdata(res_vpa_example)
+    waa = rowMeans(res_vpa_example$input$dat$waa)
+    maa = rowMeans(res_vpa_example$input$dat$maa)
+    M = rowMeans(res_vpa_example$input$dat$M)
 
     ri1 = fit.SR(data_SR,SR="RI",method="L2",AR=0,
                  plus_group=TRUE,bio_par=data.frame(waa=waa,maa=maa,M=M))
@@ -435,4 +422,10 @@ test_that("fit.SR_pen", {
     ri3 = fit.SR_pen(SRdata=data_SR,SR="RI",method="L2",AR=0,
                  plus_group=TRUE,bio_par=data.frame(waa=waa,maa=maa,M=M), h_upper=0.7, h_lower=0.7)    
     expect_equal(ri3$h,0.7, tol=0.0001)    
+})
+
+test_that("calculate_all_pm", {
+  res_future <- data_future_test$data %>% future_vpa()
+  all_pm <- calculate_all_pm(res_future)
+  expect_equal(is_tibble(all_pm),TRUE)
 })
