@@ -156,15 +156,15 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
                select_Btarget="F%spr30",
                select_Blimit="Bmin",
                select_Bban="0.1Blimit")
-  expect_equal(all(c("Blimit0","Btarget0","Bban0") %in%  est_MSY3$summary$RP.definition), TRUE)
-  expect_equal(est_MSY3$summary$perSPR[c(8,9)], spr_value/100, tol=0.0001)
-  est_MSY3$summary %>% dplyr::filter(RP_name=="Bmin") %>% select(SSB) %>% as.numeric() %>%
+  expect_equal(all(c("Blimit0","Btarget0","Bban0") %in%  res_MSY3$summary$RP.definition), TRUE)
+  expect_equal(res_MSY3$summary$perSPR[c(8,9)], spr_value/100, tol=0.0001)
+  res_MSY3$summary %>% dplyr::filter(RP_name=="Bmin") %>% select(SSB) %>% as.numeric() %>%
       expect_equal(min(colSums(res_vpa_org$ssb)), tol=0.0001)
-  est_MSY3$summary %>% dplyr::filter(RP_name=="10%B0") %>% select(SSB) %>% as.numeric() %>%
-      expect_equal(0.1*est_MSY3$summary$SSB[2], tol=0.0001)
-  est_MSY3$summary %>% dplyr::filter(RP_name=="Babs1") %>% select(SSB) %>% as.numeric() %>%
+  res_MSY3$summary %>% dplyr::filter(RP_name=="10%B0") %>% select(SSB) %>% as.numeric() %>%
+      expect_equal(0.1*res_MSY3$summary$SSB[2], tol=0.0001)
+  res_MSY3$summary %>% dplyr::filter(RP_name=="Babs1") %>% select(SSB) %>% as.numeric() %>%
       expect_equal(20000, tol=0.001)
-  est_MSY3$summary %>% dplyr::filter(RP_name=="0.1Blimit") %>% select(SSB) %>% as.numeric() %>%
+  res_MSY3$summary %>% dplyr::filter(RP_name=="0.1Blimit") %>% select(SSB) %>% as.numeric() %>%
       expect_equal(0.1*derive_RP_value(res_MSY3$summary, "Blimit0")$SSB, tol=0.001)
 
   tmp <- ref.F(res_vpa_org,
@@ -175,9 +175,9 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
                M.year  =2015:2017)
   tmp <- tmp$summary[c("Fmax","F0.1")][3,]
 
-  est_MSY3$summary %>% dplyr::filter(RP_name=="Fmax") %>% select(Fref2Fcurrent) %>% as.numeric() %>%
+  res_MSY3$summary %>% dplyr::filter(RP_name=="Fmax") %>% select(Fref2Fcurrent) %>% as.numeric() %>%
       expect_equal(as.numeric(tmp[1]))
-  est_MSY3$summary %>% dplyr::filter(RP_name=="F0.1") %>% select(Fref2Fcurrent) %>% as.numeric() %>%
+  res_MSY3$summary %>% dplyr::filter(RP_name=="F0.1") %>% select(Fref2Fcurrent) %>% as.numeric() %>%
       expect_equal(as.numeric(tmp[2]))
 
 })
