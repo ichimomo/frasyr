@@ -1768,13 +1768,17 @@ est_MSYRP_proxy <- function(data_future,
 
   lastyear <- dim(data_future$data$waa_mat[,,1])[[2]]
   waa <- data_future$data$waa_mat[,lastyear,1]
-  maa <- data_future$data$maa_mat[,lastyear,1]
-  M   <- data_future$data$M_mat  [,lastyear,1]
-  waa.catch <- data_future$data$waa_catch_mat[,lastyear,1]
-  futureF <- data_future$data$faa_mat[,lastyear,1]  
+  tmp <- waa!=0
+  waa <- waa[tmp]
+  maa <- data_future$data$maa_mat[tmp,lastyear,1]
+  M   <- data_future$data$M_mat  [tmp,lastyear,1]
+  waa.catch <- data_future$data$waa_catch_mat[tmp,lastyear,1]
+  futureF <- data_future$data$faa_mat[tmp,lastyear,1]  
 
   # Fmsy proxyを計算
   age_name <- as.numeric(rownames(data_future$input$res_vpa$naa))
+  age_name <- age_name[tmp]
+  
   res_refF <- ref.F(res      = NULL,
                     Fcurrent = futureF,
                     waa      = waa,
@@ -1784,7 +1788,7 @@ est_MSYRP_proxy <- function(data_future,
                     rps.vector = NULL, 
                     Pope     = data_future$input$Pope,
                     min.age  = min(age_name),
-                    max.age  = ifelse(data_future$input$res_vpa$input$plus_group==FALSE, max(age_name), Inf),
+                    max.age  = ifelse(data_future$input$res_vpa$input$plus.group==FALSE, max(age_name), Inf),
                     pSPR     = msy_SPR_candidate,plot=FALSE)
 
   f_proxy_vector <- numeric()
