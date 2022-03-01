@@ -240,7 +240,15 @@ Generation.Time <- function(vpares,
 }
 
 ### dynamics MSYを計算してみる
-dyn.msy <- function(naa.past,naa.init=NULL,fmsy,a,b,resid,resid.year,waa,maa,M,SR=TRUE){
+dyn.msy <- function(naa.past,naa.init=NULL,fmsy,a,b,resid,resid.year,waa,maa,M,assume_SR=TRUE, SR="HS"){
+
+  if(assume_SR==TRUE){
+    if (SR=="HS") SRF <- function(x,a,b) ifelse(x>b,b*a,x*a)
+    if (SR=="BH") SRF <- function(x,a,b) a*x/(1+b*x)
+    if (SR=="RI") SRF <- function(x,a,b) a*x*exp(-b*x)
+    if (SR=="Mesnil") SRF <- function(x,a,b) 0.5*a*(x+sqrt(b^2+gamma^2/4)-sqrt((x-b)^2+gamma^2/4))
+  }
+    
   nyear <- length(resid)
   if(is.null(naa.init)) nage <- nrow(naa.past) else nage <- length(naa.init)
   naa <- matrix(0,nage,nyear)
@@ -255,8 +263,8 @@ dyn.msy <- function(naa.past,naa.init=NULL,fmsy,a,b,resid,resid.year,waa,maa,M,S
   }
   for(i in 2:nyear){
     ssb[i-1] <- sum(naa[,i-1]*waa[,i-1]*maa[,i-1],na.rm=T)
-    if(SR==TRUE){
-      naa[1,i] <- HS(ssb[i-1],a,b)*exp(resid[i])
+    if(assume_SR==TRUE){
+      naa[1,i] <- SRF(ssb[i-1],a,b)*exp(resid[i])
     }
     else{
       naa[1,i] <- naa.past[1,i]
@@ -3085,6 +3093,25 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
     av_value <- av_value[!is.nan(av_value) & av_value<Inf]
     if(length(av_value)==0) return(NA) else av_value
   }
+
+  calc_mdr_ <- function(x){
+    if(!is.na(av(x)[1])){
+#      if(min(av(x))>0) cat(min(av(x)),"\n")
+      return(min(c(av(x),0), na.rm=TRUE))
+    }
+    else{
+      return(NA)
+    }
+  }
+
+  calc_mdr0_ <- function(x){
+    if(!is.na(av(x)[1])){
+      return(min(av(x), na.rm=TRUE))
+    }
+    else{
+      return(NA)
+    }
+  }  
   
   mean2 <- function(x) mean(x,na.rm=TRUE)
   fun_list2 <- list(cv     = function(x) sd(x)/mean(x,rm.na=TRUE),
@@ -3094,7 +3121,8 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
                     adr = function(x){ x0 <- av(x) ;
                                        x0[x0>0] <- NA ;
                                        mean(x0,na.rm=TRUE)    },
-                    mdr = function(x) if(!is.na(av(x)[1])) min(av(x), na.rm=TRUE) else NA,
+                    mdr = calc_mdr_,
+                    mdr0 = calc_mdr0_,                    
                     min_value = function(x) min(x, na.rm=TRUE),
                     max_value = function(x) max(x, na.rm=TRUE),
                     prob_target_any  = function(x) ifelse(sum(x<SBtarget)>0,1,0),                    
@@ -3165,3 +3193,4 @@ rank_HCR <- function(summary_HCR,
   return(summary_HCR)
 
 }
+
