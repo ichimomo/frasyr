@@ -3012,6 +3012,9 @@ hmm_SR = function(SRdata,SR="BH",k_regime=2,gamma=0.01,b_range=NULL,p0=NULL,over
   }
 
   obj = TMB::MakeADFun(tmb_data,parameters,DLL="HMM_SR",inner.control=list(maxit=50000,trace=F),silent=TRUE)
+  if (length(obj$par)>length(st)) {
+    stop("NOT estimable because k > n (k: parameter number, n: sample size")
+  }
   opt = nlminb(obj$par,obj$fn,obj$gr,control = list(trace=10,iter.max=10000,eval.max=10000,sing.tol=1e-20))
 
   Res = list()
