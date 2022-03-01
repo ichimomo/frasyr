@@ -1551,7 +1551,8 @@ set_lower_limit_catch <- function(catch_previous_year, catch_current_year, lower
 #'
 
 est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE, candidate_PGY=c(0.1,0.6),
-                      only_lowerPGY="lower", candidate_B0=-1, candidate_Babs=-1, calc_yieldcurve=TRUE,
+                      only_lowerPGY="lower", candidate_B0=-1, candidate_Babs=-1, candidate_Fbase=-1,
+                      calc_yieldcurve=TRUE,
                       trace_multi=c(0.9,0.925,0.95,0.975,1.025,1.05,1.075),
                       select_Btarget=0, select_Blimit=0, select_Bban=0){
 
@@ -1584,6 +1585,7 @@ est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE,
         obj_mat <- bind_rows(obj_mat,
                              tibble(RP_name    = str_c("PGY",candidate_PGY,"lower",sep="_"),
                                     obj_value  = candidate_PGY * MSYstat$catch.mean,
+                                    optim_method=optim_method,
                                     multi_init = res_future_MSY$multi*1.2,
                                     multi_lower= res_future_MSY$multi,
                                     multi_upper= 10,
@@ -1593,6 +1595,7 @@ est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE,
         if(only_lowerPGY=="both"){
             obj_mat2 <- tibble(RP_name    = str_c("PGY",candidate_PGY,"upper",sep="_"),
                                obj_value  = candidate_PGY * MSYstat$catch.mean,
+                               optim_method=optim_method,
                                multi_init = res_future_MSY$multi*0.5,
                                multi_upper= res_future_MSY$multi,
                                multi_lower= 0.001,
@@ -1606,6 +1609,7 @@ est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE,
         obj_mat <- bind_rows(obj_mat,
                              tibble(RP_name    = str_c("B0-",candidate_B0*100,"%"),
                                     obj_value  = candidate_B0 * B0stat$ssb.mean,
+                                    optim_method=optim_method,
                                     multi_init = mean(fssb.range),
                                     multi_upper= max (fssb.range),
                                     multi_lower= 0.001,
@@ -1618,10 +1622,23 @@ est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE,
         obj_mat <- bind_rows(obj_mat,
                              tibble(RP_name    = str_c("Ben-",candidate_Babs,""),
                                     obj_value  = candidate_Babs,
+                                    optim_method=optim_method,
                                     multi_init = mean(fssb.range),
                                     multi_upper= max (fssb.range),
                                     multi_lower= 0.001,
                                     objective="SSB"
+                                    ))
+    }
+
+    if(candidate_Fbase[1]>0){
+        obj_mat <- bind_rows(obj_mat,
+                             tibble(RP_name    = str_c("Fbase-",round(candidate_Fbase,3),""),
+                                    obj_value  = 0,
+                                    multi_init = candidate_Fbase,
+                                    multi_upper= candidate_Fbase,
+                                    multi_lower= candidate_Fbase,
+                                    objective="MSY",
+                                    optim_method="none"
                                     ))
     }
 
@@ -1633,7 +1650,7 @@ est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE,
             purrr::map_dfr(1:nrow(obj_mat),
                            function(x){
                                res <- future_vpa(tmb_data     = data_future$data,
-                                                 optim_method = optim_method,
+                                                 optim_method = obj_mat$optim_method[x],
                                                  multi_init   = obj_mat$multi_init[x],
                                                  multi_lower  = obj_mat$multi_lower[x],
                                                  multi_upper  = obj_mat$multi_upper[x],
@@ -1698,6 +1715,7 @@ est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE,
         }
         res_MSY$summary$RP.definition[which(res_MSY$summary$RP.definition=="Blimit0")] <- NA
         res_MSY$summary$RP.definition[select_Blimit] <- "Blimit0"
+        
     }
     # define RP.definition for Bban
     if(select_Bban!=0){
@@ -1714,4 +1732,109 @@ est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE,
   res_MSY$data_future_MSY <- data_future
   return(res_MSY)
 
+}
+
+est_MSYRP_proxy <- function(data_future,
+                            Fmsy_proxy_candidate=c("Fmax","F0.1","F%spr"),
+                            msy_SPR_candidate=c(30,40),
+                            Blimit_candidate=c("Bmin","10%B0","Babs"),
+                            Babs_value = 1000,
+                            Bban_candidate=c("0","0.1Blimit","0.2Blimit"), # not calculate all statistics
+                            select_Btarget="F%spr30",
+                            select_Blimit="Bmin",
+                            select_Bban="0"){
+
+  # waa_fun, maa_fun=TRUEの場合にはFbaseの管理基準値は計算できない
+  assertthat::assert_that(data_future$input$waa_fun==FALSE)
+  assertthat::assert_that(data_future$input$maa_fun==FALSE)
+
+  # candidateとして受け付けるもの以外ははねる
+  assertthat::assert_that(all(Fmsy_proxy_candidate %in% c("Fmax","F0.1","F%spr")))
+  assertthat::assert_that(all(Blimit_candidate     %in% c("Bmin","10%B0","Babs")))
+  assertthat::assert_that(all(Bban_candidate       %in% c("0","0.1Blimit","0.2Blimit")))
+  
+  Babs_vector <- numeric()
+  if("Bmin" %in% Blimit_candidate) Babs_vector <- c(Babs_vector, "Bmin" = min(colSums(data_future$input$res_vpa$ssb, na.rm=TRUE)))
+  if("Babs" %in% Blimit_candidate){
+    names(Babs_value) <- str_c("Babs",1:length(Babs_value))
+    Babs_vector <- c(Babs_vector, Babs_value)
+  }
+  if("10%B0" %in% Blimit_candidate){
+    candidate_B0 <- c("10%B0"=0.1)
+  }
+  else{
+    candidate_B0 <- -1
+  }
+
+  lastyear <- dim(data_future$data$waa_mat[,,1])[[2]]
+  waa <- data_future$data$waa_mat[,lastyear,1]
+  maa <- data_future$data$maa_mat[,lastyear,1]
+  M   <- data_future$data$M_mat  [,lastyear,1]
+  waa.catch <- data_future$data$waa_catch_mat[,lastyear,1]
+  futureF <- data_future$data$faa_mat[,lastyear,1]  
+
+  # Fmsy proxyを計算
+  age_name <- as.numeric(rownames(data_future$input$res_vpa$naa))
+  res_refF <- ref.F(res      = NULL,
+                    Fcurrent = futureF,
+                    waa      = waa,
+                    maa      = maa,
+                    M        = M,
+                    waa.catch  = waa.catch,
+                    rps.vector = NULL, 
+                    Pope     = data_future$input$Pope,
+                    min.age  = min(age_name),
+                    max.age  = ifelse(data_future$input$res_vpa$input$plus_group==FALSE, max(age_name), Inf),
+                    pSPR     = msy_SPR_candidate,plot=FALSE)
+
+  f_proxy_vector <- numeric()
+
+  if("Fmax" %in% Fmsy_proxy_candidate) f_proxy_vector <- c(f_proxy_vector, Fmax=res_refF$summary$Fmax[3])
+  if("F0.1" %in% Fmsy_proxy_candidate) f_proxy_vector <- c(f_proxy_vector, F0.1=res_refF$summary$F0.1[3])  
+  if("F%spr" %in% Fmsy_proxy_candidate){
+    label <- str_c("FpSPR.",msy_SPR_candidate,".SPR")
+    tmp <- res_refF$summary[3,label]
+    names(tmp) <- str_c("F%spr", msy_SPR_candidate)
+    f_proxy_vector <- c(f_proxy_vector, tmp)  
+  }    
+
+  f_proxy_vector <- f_proxy_vector %>% unlist()
+  
+  #一気にest_MSYRPで計算
+  res_MSY <- est_MSYRP(data_future=data_future, ncore=0, optim_method="R",
+                       candidate_PGY=-1,
+                       candidate_Babs=Babs_vector, candidate_B0=candidate_B0,
+                       candidate_Fbase=f_proxy_vector,
+                       calc_yieldcurve=FALSE, trace_multi=1)
+
+  allRP <- c(candidate_B0, Babs_vector,f_proxy_vector)
+  allRP <- allRP[allRP!=0]
+
+  # dynamic Bmsyを計算
+  # res_MSY$dynamic_Bmsy <- calc_dmsy()
+  res_MSY$summary$RP_name[-1:-2] <- names(allRP)
+
+  # selct reference points
+  assertthat::assert_that(select_Btarget %in% res_MSY$summary$RP_name)
+  assertthat::assert_that(select_Blimit  %in% res_MSY$summary$RP_name)
+
+  res_MSY$summary$RP.definition[] <- NA
+  res_MSY$summary$RP.definition[res_MSY$summary$RP_name==select_Btarget] <- "Btarget0"
+  res_MSY$summary$RP.definition[res_MSY$summary$RP_name==select_Blimit]  <- "Blimit0"
+
+  Blimit <- derive_RP_value(res_MSY$summary, "Blimit0")$SSB
+  # Bbanは数値のみ入れる
+  for(i in 1:length(Bban_candidate)){
+    bban_summary <- tibble(RP_name = Bban_candidate[i],
+                           SSB     = case_when(
+                             Bban_candidate[i]=="0.1Blimit" ~ 0.1*Blimit,
+                             Bban_candidate[i]=="0.2Blimit" ~ 0.2*Blimit,
+                             Bban_candidate[i]=="0"          ~ 0)) %>%
+      mutate(SSB2SSB0=SSB/res_MSY$summary$SSB[2])
+    res_MSY$summary <-bind_rows(res_MSY$summary,bban_summary)
+  }
+  assertthat::assert_that(select_Bban    %in% res_MSY$summary$RP_name)  
+  res_MSY$summary$RP.definition[res_MSY$summary$RP_name==select_Bban]    <- "Bban0"  
+
+  return(res_MSY)
 }

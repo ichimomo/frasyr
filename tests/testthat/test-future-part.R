@@ -116,10 +116,11 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
   expect_equal(round(res_future_test_R$multi,3),0.537)
 
   res_MSY1 <- est_MSYRP(data_future=data_future_test, candidate_PGY=c(0.1,0.6),
-                        candidate_B0=c(0.2), candidate_Babs=20000)
+                        candidate_B0=c(0.2), candidate_Babs=20000, candidate_Fbase=c(res_future_test_R$multi, 1.3410926))
   expect_equal(res_MSY1$summary$"Fref/Fcur"[1], res_future_test_R$multi, tol=0.00001)
   expect_equal(tail(res_future_test_R$summary$SSB,n=1) %>% as.numeric(),
                res_MSY1$summary$SSB[1] %>% as.numeric(), tol=1)
+  expect_equal(res_MSY1$summary$SSB[c(1,3)],res_MSY1$summary$SSB[c(7,8)], tol=0.001) # test Fbase value
 
   # MSY計算の場合 (バックワード)
   res_future_test_backward <- future_vpa(tmb_data=data_future_backward$data,
@@ -131,6 +132,9 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
   #expect_equal(round(res_future_test_backward$multi,3),0.525)
   expect_equal(round(res_future_test_backward$multi,3),0.519)
 
+  res_MSY2 <- est_MSYRP(data_future=data_future_backward, candidate_PGY=-1,
+                        candidate_B0=-1, candidate_Babs=-1)
+  expect_equal(round(res_MSY2$summary$"Fref/Fcur"[1],3),0.519)
 
   if(sum(installed.packages()[,1]=="TMB")){
       # res_future_test_tmb <- future_vpa(tmb_data=data_future_test$data,
@@ -140,6 +144,41 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
       #                                  objective="MSY")
       # expect_equal(round(res_future_test_tmb$multi,3),0.527)
   }
+
+  # Fmsy proxy
+  spr_value <- c(30,40)
+  res_MSY3 <- est_MSYRP_proxy(data_future=data_future_test,
+               Fmsy_proxy_candidate=c("Fmax","F0.1","F%spr"),
+               msy_SPR_candidate=spr_value,
+               Blimit_candidate=c("Bmin","10%B0","Babs"),
+               Babs_value=20000,
+               Bban_candidate=c("0","0.1Blimit"),
+               select_Btarget="F%spr30",
+               select_Blimit="Bmin",
+               select_Bban="0.1Blimit")
+  expect_equal(all(c("Blimit0","Btarget0","Bban0") %in%  res_MSY3$summary$RP.definition), TRUE)
+  expect_equal(res_MSY3$summary$perSPR[c(8,9)], spr_value/100, tol=0.0001)
+  res_MSY3$summary %>% dplyr::filter(RP_name=="Bmin") %>% select(SSB) %>% as.numeric() %>%
+      expect_equal(min(colSums(res_vpa_org$ssb)), tol=0.0001)
+  res_MSY3$summary %>% dplyr::filter(RP_name=="10%B0") %>% select(SSB) %>% as.numeric() %>%
+      expect_equal(0.1*res_MSY3$summary$SSB[2], tol=0.0001)
+  res_MSY3$summary %>% dplyr::filter(RP_name=="Babs1") %>% select(SSB) %>% as.numeric() %>%
+      expect_equal(20000, tol=0.001)
+  res_MSY3$summary %>% dplyr::filter(RP_name=="0.1Blimit") %>% select(SSB) %>% as.numeric() %>%
+      expect_equal(0.1*derive_RP_value(res_MSY3$summary, "Blimit0")$SSB, tol=0.001)
+
+  tmp <- ref.F(res_vpa_org,
+               Fcurrent = as.numeric(rowMeans(res_vpa_org$faa[as.character(2015:2017)])),
+               waa.catch.year=2015:2017,
+               waa.year=2015:2017,
+               maa.year=2015:2017,
+               M.year  =2015:2017)
+  tmp <- tmp$summary[c("Fmax","F0.1")][3,]
+
+  res_MSY3$summary %>% dplyr::filter(RP_name=="Fmax") %>% select(Fref2Fcurrent) %>% as.numeric() %>%
+      expect_equal(as.numeric(tmp[1]))
+  res_MSY3$summary %>% dplyr::filter(RP_name=="F0.1") %>% select(Fref2Fcurrent) %>% as.numeric() %>%
+      expect_equal(as.numeric(tmp[2]))
 
 })
 
