@@ -1498,7 +1498,13 @@ update_maa_mat <- function(maa,rand,naa,pars_b0,pars_b1,min_value,max_value){
 #' @encoding UTF-8
 
 get_wcatch <- function(res_future){
-    apply(res_future$wcaa,c(2,3),sum)
+    if(class(res_future)=="future_new")  return(apply(res_future$wcaa,c(2,3),sum))
+}
+
+#' @export
+get_ssb <- function(res){
+    if(class(res)=="future_new")  return(apply(res$wcaa,c(2,3),sum))
+    if("tune" %in% names(res$input))  return(colSums(res$ssb, na.rm=TRUE))
 }
 
 
