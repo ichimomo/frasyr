@@ -1497,15 +1497,27 @@ update_maa_mat <- function(maa,rand,naa,pars_b0,pars_b1,min_value,max_value){
 #' @export
 #' @encoding UTF-8
 
-get_wcatch <- function(res_future){
-    if(class(res_future)=="future_new")  return(apply(res_future$wcaa,c(2,3),sum))
+get_wcatch <- function(res){
+    if(class(res)=="future_new")  return(apply(res$wcaa,c(2,3),sum))
+    if("tune" %in% names(res$input))  return(colSums(res$input$dat$caa * res$input$dat$waa,na.rm=T))
 }
 
 #' @export
 get_ssb <- function(res){
-    if(class(res)=="future_new")  return(apply(res$wcaa,c(2,3),sum))
+    if(class(res)=="future_new")  return(res$SR_mat[,,"ssb"])
     if("tune" %in% names(res$input))  return(colSums(res$ssb, na.rm=TRUE))
 }
+
+#' @export
+get_U <- function(res){
+    if(class(res)=="future_new")  return(res$HCR_realized[,,"wcatch"]/apply(res$naa * res$waa,c(2,3),sum))
+    if("tune" %in% names(res$input)){
+        wcatch <- get_wcatch(res)
+        biomass <- colSums(res$naa * res$input$dat$waa,na.rm=T)
+        return(wcatch/biomass)
+    }
+}
+
 
 
 #' @export
@@ -1748,7 +1760,9 @@ est_MSYRP_proxy <- function(data_future,
                             Bban_candidate=c("0","0.1Blimit","0.2Blimit"), # not calculate all statistics
                             select_Btarget="F%spr30",
                             select_Blimit="Bmin",
-                            select_Bban="0"){
+                            select_Bban="0",
+                            F.range = seq(from=0,to=2,length=101)
+                            ){
 
   # waa_fun, maa_fun=TRUEの場合にはFbaseの管理基準値は計算できない
   assertthat::assert_that(data_future$input$waa_fun==FALSE)
@@ -1784,7 +1798,7 @@ est_MSYRP_proxy <- function(data_future,
   # Fmsy proxyを計算
   age_name <- as.numeric(rownames(data_future$input$res_vpa$naa))
   age_name <- age_name[tmp]
-  
+
   res_refF <- ref.F(res      = NULL,
                     Fcurrent = futureF,
                     waa      = waa,
@@ -1795,7 +1809,8 @@ est_MSYRP_proxy <- function(data_future,
                     Pope     = data_future$input$Pope,
                     min.age  = min(age_name),
                     max.age  = ifelse(data_future$input$res_vpa$input$plus.group==FALSE, max(age_name), Inf),
-                    pSPR     = msy_SPR_candidate,plot=FALSE)
+                    pSPR     = msy_SPR_candidate,plot=FALSE,
+                    F.range = F.range)
 
   f_proxy_vector <- numeric()
 
@@ -1815,7 +1830,7 @@ est_MSYRP_proxy <- function(data_future,
                        candidate_PGY=-1,
                        candidate_Babs=Babs_vector, candidate_B0=candidate_B0,
                        candidate_Fbase=f_proxy_vector,
-                       calc_yieldcurve=FALSE, trace_multi=1)
+                       calc_yieldcurve=FALSE)
 
   allRP <- c(candidate_B0, Babs_vector,f_proxy_vector)
   allRP <- allRP[allRP!=0]
@@ -1844,7 +1859,9 @@ est_MSYRP_proxy <- function(data_future,
     res_MSY$summary <-bind_rows(res_MSY$summary,bban_summary)
   }
   assertthat::assert_that(select_Bban    %in% res_MSY$summary$RP_name)  
-  res_MSY$summary$RP.definition[res_MSY$summary$RP_name==select_Bban]    <- "Bban0"  
+  res_MSY$summary$RP.definition[res_MSY$summary$RP_name==select_Bban]    <- "Bban0"
+
+  res_MSY$res_refF <- res_refF
 
   return(res_MSY)
 }
