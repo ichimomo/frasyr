@@ -1365,21 +1365,32 @@ plot_yield <- function(MSY_obj,refs_base,
 
 #' Kobe plotを書く
 #'
-#' @param vpares VPAの結果のオブジェクト
-#' @param refs_base est.MSYから得られる管理基準値の表
+#' @param FBdata tibble(year=, Bratio=, Fratio=, Uratio=, DBratio= )の形式のデータ。UratioはU/Umsy、DBratioはB/(dynamic Bmsy)
+#' @param xcol_name x軸に利用するデータの列名
+#' @param ycol_name y軸に利用するデータの列名
+#' @param refs_base est_MSYRPから得られる管理基準値の表
+#' @param vpares 上記のdataを与えずにVPAの結果のオブジェクトなどからBratioを計算する場合のVPAの結果
+#' @param Fratio 上記のdataを与えずにVPAの結果のオブジェクトなどからFratioを計算する場合、かつylab.type="F"の場合のFratioの値
+#' @param Btarget est_MSYRPから得られる管理基準値の表の中のRP.definitionの列でtargetとする行のラベル
+#' @param Blimit est_MSYRPから得られる管理基準値の表の中のRP.definitionの列でlimitとする行のラベル
+#' @param Bban est_MSYRPから得られる管理基準値の表の中のRP.definitionの列でbanとする行のラベル
+#' 
 #' @encoding UTF-8
 #'
 #' @export
 #'
 
-plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
-                                      category=4,# 削除予定オプション
+plot_kobe_gg <- plot_kobe <- function(FBdata=NULL,
+                                      vpares=NULL,
+                                      refs_base=NULL,
+                                      roll_mean=1,
+                                      ylab_name="Fratio",
+                                      xlab_name="Bratio",                                      
                                       Btarget=c("Btarget0"),
                                       Blimit=c("Blimit0"),
-                                      Blow=c("Blow0"), # 削除予定オプション
                                       Bban=c("Bban0"),
                                       write.vline=TRUE,
-                                      ylab.type="U", # or "U"
+#                                      ylab.type="F", # or "U"
                                       labeling.year=NULL,
                                       RP.label=c("目標管理基準値","限界管理基準値","禁漁水準"),
                                       refs.color=c("#00533E","#edb918","#C73C2E"),
@@ -1389,52 +1400,59 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
                                       beta=NULL,
                                       plot.year="all"){
 
+  if(!is.null(FBdata)) assertthat::assert_that(all(c(ylab_name, xlab_name) %in% colnames(FBdata)), TRUE)
+  
   target.RP <- derive_RP_value(refs_base,Btarget)
   limit.RP <- derive_RP_value(refs_base,Blimit)
-  low.RP <- derive_RP_value(refs_base,Blow)
+#  low.RP <- derive_RP_value(refs_base,Blow)
   ban.RP <- derive_RP_value(refs_base,Bban)
 
-  low.ratio <- low.RP$SSB/target.RP$SSB
+#  low.ratio <- low.RP$SSB/target.RP$SSB
   limit.ratio <- limit.RP$SSB/target.RP$SSB
   ban.ratio <- ban.RP$SSB/target.RP$SSB
 
-  vpa_tb <- convert_vpa_tibble(vpares)
-  UBdata <- vpa_tb %>% dplyr::filter(stat=="U" | stat=="SSB") %>%
-    spread(key=stat,value=value) %>%
-    mutate(Uratio=RcppRoll::roll_mean(U/target.RP$U,n=roll_mean,fill=NA,align="right"),
-           Bratio=RcppRoll::roll_mean(SSB/target.RP$SSB,n=roll_mean,fill=NA,align="right")) %>%
-    arrange(year)
-  if(ylab.type=="F") UBdata <- UBdata %>% mutate(Uratio=Fratio)
+  if(is.null(FBdata)){
+    vpa_tb <- convert_vpa_tibble(vpares)
+    FBdata <- vpa_tb %>% dplyr::filter(stat=="U" | stat=="SSB") %>%
+      spread(key=stat,value=value) %>%
+      mutate(Uratio=RcppRoll::roll_mean(U/target.RP$U,n=roll_mean,fill=NA,align="right"),
+             Bratio=RcppRoll::roll_mean(SSB/target.RP$SSB,n=roll_mean,fill=NA,align="right")) %>%
+      arrange(year)
+    if(!is.null(Fratio)) FBdata <- FBdata %>% mutate(Fratio=Fratio)
+  }
 
-  UBdata <- UBdata %>% mutate(year_group=1)
+  FBdata <- FBdata %>% mutate(year_group=1)
   if(plot.year[1]!="all") {
     diff.year <- plot.year[which(diff(plot.year)>1)+1]
-    UBdata <- UBdata %>% filter(year %in% plot.year)
+    FBdata <- FBdata %>% filter(year %in% plot.year)
 
     if (length(diff.year)>0) {
       for(i in 1:length(diff.year)){
-        UBdata <- UBdata %>%
+        FBdata <- FBdata %>%
           mutate(year_group = ifelse(year >= diff.year[i], year_group+1, year_group))
       }
     }
   }
 
   if(is.null(labeling.year)){
-    years <- unique(UBdata$year)
+    years <- unique(FBdata$year)
     labeling.year <- c(years[years%%5==0],max(years))
   }
 
-  UBdata <- UBdata %>%
+  FBdata$Bratio <- FBdata[xlab_name][[1]] %>% as.numeric()
+  FBdata$Fratio <- FBdata[ylab_name][[1]] %>% as.numeric()
+
+  FBdata <- FBdata %>%
     mutate(year.label=ifelse(year%in%labeling.year,year,""))
 
-  max.B <- max(c(UBdata$Bratio,xscale),na.rm=T)
-  max.U <- max(c(UBdata$Uratio,yscale),na.rm=T)
+  max.B <- max(c(FBdata$Bratio,xscale),na.rm=T)
+  max.F <- max(c(FBdata$Fratio,yscale),na.rm=T)
 
   red.color <- "indianred1" # rgb(238/255,121/255,72/255)
   yellow.color <- "khaki1" # rgb(245/255,229/255,107/255)
   green.color <- "olivedrab2" # rgb(175/255,209/255,71/255) #"olivedrab2"#rgb(58/255,180/255,131/255)
 
-  g4 <- ggplot(data=UBdata) +theme(legend.position="none")+
+  g4 <- ggplot(data=FBdata) +theme(legend.position="none")+
     geom_polygon(data=tibble(x=c(-1,1,1,-1),
                              y=c(-1,-1,1,1)),
                  aes(x=x,y=y),fill=yellow.color)+
@@ -1453,10 +1471,10 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
   if(write.vline){
     g4 <- g4 + geom_vline(xintercept=c(1,limit.ratio,ban.ratio),color=refs.color,lty="41",lwd=0.7)+
       ggrepel::geom_label_repel(data=tibble(x=c(1,limit.ratio,ban.ratio),
-                                            y=max.U*0.85,
+                                            y=max.F*0.85,
                                             label=RP.label),
                                 aes(x=x,y=y,label=label),
-                                direction="x",nudge_y=max.U*0.9,size=11*0.282)
+                                direction="x",nudge_y=max.F*0.9,size=11*0.282)
   }
 
   if(!is.null(beta)){
@@ -1480,15 +1498,15 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
   }
 
   g4 <- g4 +
-    geom_path(mapping=aes(x=Bratio,y=Uratio,group=year_group)) +
-    geom_point(mapping=aes(x=Bratio,y=Uratio,group=year_group),shape=21,fill="white") +
-    coord_cartesian(xlim=c(0,max.B*1.1),ylim=c(0,max.U*1.15),expand=0) +
+    geom_path(mapping=aes(x=Bratio,y=Fratio,group=year_group)) +
+    geom_point(mapping=aes(x=Bratio,y=Fratio,group=year_group),shape=21,fill="white") +
+    coord_cartesian(xlim=c(0,max.B*1.1),ylim=c(0,max.F*1.15),expand=0) +
     ylab("漁獲割合の比 (U/Umsy)") + xlab("親魚量の比 (SB/SBmsy)")  +
-    ggrepel::geom_text_repel(#data=dplyr::filter(UBdata,year%in%labeling.year),
-      aes(x=Bratio,y=Uratio,label=year.label),
+    ggrepel::geom_text_repel(#data=dplyr::filter(FBdata,year%in%labeling.year),
+      aes(x=Bratio,y=Fratio,label=year.label),
       size=4,box.padding=0.5,segment.color="gray")
 
-  if(ylab.type=="F"){
+  if(ylab_name=="Fratio"){
     g4 <- g4 + ylab("漁獲圧の比 (F/Fmsy)")
   }
 
