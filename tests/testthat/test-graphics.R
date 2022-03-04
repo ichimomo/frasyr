@@ -110,9 +110,17 @@ test_that("plot_yield", {
 })
 
 test_that("plot_kobe_gg", {
-  load(system.file("extdata","refs_base_pma.rda",package = "frasyr"))
-  g1 <- plot_kobe_gg(vpares=res_vpa_example, refs_base=refs_base_pma)
+#  load(system.file("extdata","refs_base_pma.rda",package = "frasyr"))
+  g1 <- plot_kobe_gg(vpares=res_vpa_example, refs_base=res_MSY_HSL1$summary, ylab_name="Uratio")
   expect_equal(class(g1)[1],"gg")
+
+  FBdata <- tibble(year=1:10, Fratio=exp(rnorm(10,sd=0.1)), Uratio=exp(rnorm(10,sd=0.1)),
+                   Bratio=exp(rnorm(10,sd=0.1)), DBratio=exp(rnorm(10,sd=0.1)))
+  g1 <- plot_kobe_gg(FBdata=FBdata, refs_base=res_MSY_HSL1$summary)
+  expect_equal(class(g1)[1],"gg")
+  g1 <- plot_kobe_gg(FBdata=FBdata, refs_base=res_MSY_HSL1$summary, xlab_name="DBratio", ylab_name="Uratio")
+  expect_equal(class(g1)[1],"gg")    
+  
 })
 
 test_that("plot_HCR", {
