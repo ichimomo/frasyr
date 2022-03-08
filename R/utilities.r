@@ -1097,6 +1097,7 @@ read.vpa <- function(tfile,
 
   # その他、他関数で必要になるVPAへのインプット
   dres$input$last.catch.zero <- FALSE
+  class(dres) <- "vpa"
 
   return(dres)
 }

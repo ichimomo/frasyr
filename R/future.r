@@ -1505,7 +1505,7 @@ get_wcatch <- function(res){
 #' @export
 get_ssb <- function(res){
     if(class(res)=="future_new")  return(res$SR_mat[,,"ssb"])
-    if("tune" %in% names(res$input))  return(colSums(res$ssb, na.rm=TRUE))
+    if(class(res)=="vpa" || "tune" %in% names(res$input))  return(colSums(res$ssb, na.rm=TRUE))
 }
 
 #' @export
@@ -1817,7 +1817,8 @@ est_MSYRP_proxy <- function(data_future,
   if("Fmax" %in% Fmsy_proxy_candidate) f_proxy_vector <- c(f_proxy_vector, Fmax=res_refF$summary$Fmax[3])
   if("F0.1" %in% Fmsy_proxy_candidate) f_proxy_vector <- c(f_proxy_vector, F0.1=res_refF$summary$F0.1[3])  
   if("F%spr" %in% Fmsy_proxy_candidate){
-    label <- str_c("FpSPR.",msy_SPR_candidate,".SPR")
+    if(length(msy_SPR_candidate)>1) label <- str_c("FpSPR.",msy_SPR_candidate,".SPR")
+    if(length(msy_SPR_candidate)==1) label <- str_c("X",msy_SPR_candidate,".SPR")
     tmp <- res_refF$summary[3,label]
     names(tmp) <- str_c("F%spr", msy_SPR_candidate)
     f_proxy_vector <- c(f_proxy_vector, tmp)  
