@@ -272,7 +272,7 @@ dyn.msy <- function(naa.past,naa.init=NULL,fmsy,a,b,resid,resid.year,waa,maa,M,a
     for(j in 2:(nage-1)) naa[j,i] <- naa[j-1,i-1] * exp(-fmsy[j-1]-M[j-1,i-1])
     naa[nage,i] <- naa[nage-1,i-1] * exp(-fmsy[j-1]-M[j-1,i-1]) + naa[nage,i-1] * exp(-fmsy[nage]-M[nage,i-1])
   }
-  i <- nyear ; ssb[i] <- sum(naa[,i]*waa[,i]*maa[,i])
+  i <- nyear ; ssb[i] <- sum(naa[,i]*waa[,i]*maa[,i], na.rm=TRUE)
   list(naa=naa,ssb=ssb)
 }
 
@@ -476,9 +476,12 @@ ref.F <- function(
   spr0 <- sum(original.spr0$spr,na.rm=T)
   tmp <- lapply(F.range, function(x) calc.rel.abund2_(sel,x))
   ypr <- sapply(tmp,function(x) sum(x$ypr,na.rm=T))
+  ypr_by_age <- purrr::map_dfr(tmp,function(x) x$ypr)
+  colnames(ypr_by_age) <- str_c("TC-mean-A",colnames(ypr_by_age))
   pspr <- sapply(tmp,function(x) sum(x$spr,na.rm=T))/spr0*100
   ypr.spr <- data.frame(F.range=F.range,ypr=ypr,pspr=pspr)
   ypr.spr$Frange2Fcurrent  <- ypr.spr$F.range/Fcurrent_max
+  ypr.spr <- cbind(ypr.spr, ypr_by_age)
 
   # F.spr
 
@@ -1094,6 +1097,7 @@ read.vpa <- function(tfile,
 
   # その他、他関数で必要になるVPAへのインプット
   dres$input$last.catch.zero <- FALSE
+  class(dres) <- "vpa"
 
   return(dres)
 }

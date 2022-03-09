@@ -31,7 +31,8 @@ test_that("ref.F (level 2)",{
   load(system.file("extdata","res_ref_f_pma.rda",package = "frasyr"))
 
   #照合内容
-  testcontents <-c("sel","max.age","min.age","rps.q","spr.q","Fcurrent","Fmed","Flow","Fhigh","Fmax","F0.1","Fmean","rps.data","FpSPR","summary","ypr.spr","waa","waa.catch","maa","spr0")
+  testcontents <-c("sel","max.age","min.age","rps.q","spr.q","Fcurrent","Fmed","Flow","Fhigh","Fmax","F0.1","Fmean","rps.data","FpSPR","summary", #"ypr.spr",
+                   "waa","waa.catch","maa","spr0")
 
   for(i in 1:length(testcontents)){
       tmp1 <- eval(parse(text=paste("res_ref_f_pma$",testcontents[i])))
