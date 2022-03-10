@@ -61,16 +61,16 @@
 
     <div id="ref-usage">
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">plot_kobe_gg</span><span class="op">(</span>
-  <span class="va">vpares</span>,
-  <span class="va">refs_base</span>,
+  FBdata <span class="op">=</span> <span class="cn">NULL</span>,
+  vpares <span class="op">=</span> <span class="cn">NULL</span>,
+  refs_base <span class="op">=</span> <span class="cn">NULL</span>,
   roll_mean <span class="op">=</span> <span class="fl">1</span>,
-  category <span class="op">=</span> <span class="fl">4</span>,
+  ylab_name <span class="op">=</span> <span class="st">"Fratio"</span>,
+  xlab_name <span class="op">=</span> <span class="st">"Bratio"</span>,
   Btarget <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Btarget0"</span><span class="op">)</span>,
   Blimit <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Blimit0"</span><span class="op">)</span>,
-  Blow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Blow0"</span><span class="op">)</span>,
   Bban <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Bban0"</span><span class="op">)</span>,
   write.vline <span class="op">=</span> <span class="cn">TRUE</span>,
-  ylab.type <span class="op">=</span> <span class="st">"U"</span>,
   labeling.year <span class="op">=</span> <span class="cn">NULL</span>,
   RP.label <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"目標管理基準値"</span>, <span class="st">"限界管理基準値"</span>, <span class="st">"禁漁水準"</span><span class="op">)</span>,
   refs.color <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"#00533E"</span>, <span class="st">"#edb918"</span>, <span class="st">"#C73C2E"</span><span class="op">)</span>,
@@ -85,10 +85,24 @@
 
     <div id="arguments">
     <h2>Arguments</h2>
-    <dl><dt>vpares</dt>
-<dd><p>VPAの結果のオブジェクト</p></dd>
+    <dl><dt>FBdata</dt>
+<dd><p>tibble(year=, Bratio=, Fratio=, Uratio=, DBratio= )の形式のデータ。UratioはU/Umsy、DBratioはB/(dynamic Bmsy)</p></dd>
+<dt>vpares</dt>
+<dd><p>上記のdataを与えずにVPAの結果のオブジェクトなどからBratioを計算する場合のVPAの結果</p></dd>
 <dt>refs_base</dt>
-<dd><p>est.MSYから得られる管理基準値の表</p></dd>
+<dd><p>est_MSYRPから得られる管理基準値の表</p></dd>
+<dt>Btarget</dt>
+<dd><p>est_MSYRPから得られる管理基準値の表の中のRP.definitionの列でtargetとする行のラベル</p></dd>
+<dt>Blimit</dt>
+<dd><p>est_MSYRPから得られる管理基準値の表の中のRP.definitionの列でlimitとする行のラベル</p></dd>
+<dt>Bban</dt>
+<dd><p>est_MSYRPから得られる管理基準値の表の中のRP.definitionの列でbanとする行のラベル</p></dd>
+<dt>Fratio</dt>
+<dd><p>上記のdataを与えずにVPAの結果のオブジェクトなどからFratioを計算する場合、かつylab.type="F"の場合のFratioの値</p></dd>
+<dt>xcol_name</dt>
+<dd><p>x軸に利用するデータの列名</p></dd>
+<dt>ycol_name</dt>
+<dd><p>y軸に利用するデータの列名</p></dd>
 </dl></div>
 
   </div>
