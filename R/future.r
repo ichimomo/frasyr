@@ -1752,6 +1752,9 @@ est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE,
 
 }
 
+#' @export
+#' 
+
 est_MSYRP_proxy <- function(data_future,
                             Fmsy_proxy_candidate=c("Fmax","F0.1","F%spr"),
                             msy_SPR_candidate=c(30,40),
