@@ -14,6 +14,7 @@ est_MSYRP(
   only_lowerPGY = "lower",
   candidate_B0 = -1,
   candidate_Babs = -1,
+  candidate_Fbase = -1,
   calc_yieldcurve = TRUE,
   trace_multi = c(0.9, 0.925, 0.95, 0.975, 1.025, 1.05, 1.075),
   select_Btarget = 0,

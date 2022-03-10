@@ -6,16 +6,16 @@
 \title{Kobe plotを書く}
 \usage{
 plot_kobe_gg(
-  vpares,
-  refs_base,
+  FBdata = NULL,
+  vpares = NULL,
+  refs_base = NULL,
   roll_mean = 1,
-  category = 4,
+  ylab_name = "Fratio",
+  xlab_name = "Bratio",
   Btarget = c("Btarget0"),
   Blimit = c("Blimit0"),
-  Blow = c("Blow0"),
   Bban = c("Bban0"),
   write.vline = TRUE,
-  ylab.type = "U",
   labeling.year = NULL,
   RP.label = c("目標管理基準値", "限界管理基準値", "禁漁水準"),
   refs.color = c("#00533E", "#edb918", "#C73C2E"),
@@ -28,9 +28,23 @@ plot_kobe_gg(
 )
 }
 \arguments{
-\item{vpares}{VPAの結果のオブジェクト}
+\item{FBdata}{tibble(year=, Bratio=, Fratio=, Uratio=, DBratio= )の形式のデータ。UratioはU/Umsy、DBratioはB/(dynamic Bmsy)}
 
-\item{refs_base}{est.MSYから得られる管理基準値の表}
+\item{vpares}{上記のdataを与えずにVPAの結果のオブジェクトなどからBratioを計算する場合のVPAの結果}
+
+\item{refs_base}{est_MSYRPから得られる管理基準値の表}
+
+\item{Btarget}{est_MSYRPから得られる管理基準値の表の中のRP.definitionの列でtargetとする行のラベル}
+
+\item{Blimit}{est_MSYRPから得られる管理基準値の表の中のRP.definitionの列でlimitとする行のラベル}
+
+\item{Bban}{est_MSYRPから得られる管理基準値の表の中のRP.definitionの列でbanとする行のラベル}
+
+\item{Fratio}{上記のdataを与えずにVPAの結果のオブジェクトなどからFratioを計算する場合、かつylab.type="F"の場合のFratioの値}
+
+\item{xcol_name}{x軸に利用するデータの列名}
+
+\item{ycol_name}{y軸に利用するデータの列名}
 }
 \description{
 Kobe plotを書く

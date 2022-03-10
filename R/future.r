@@ -1499,7 +1499,7 @@ update_maa_mat <- function(maa,rand,naa,pars_b0,pars_b1,min_value,max_value){
 
 get_wcatch <- function(res){
     if(class(res)=="future_new")  return(apply(res$wcaa,c(2,3),sum))
-    if("tune" %in% names(res$input))  return(colSums(res$input$dat$caa * res$input$dat$waa,na.rm=T))
+    if(class(res)=="vpa" || "tune" %in% names(res$input))  return(colSums(res$input$dat$caa * res$input$dat$waa,na.rm=T))
 }
 
 #' @export
@@ -1511,7 +1511,7 @@ get_ssb <- function(res){
 #' @export
 get_U <- function(res){
     if(class(res)=="future_new")  return(res$HCR_realized[,,"wcatch"]/apply(res$naa * res$waa,c(2,3),sum))
-    if("tune" %in% names(res$input)){
+    if(class(res)=="vpa" || "tune" %in% names(res$input)){
         wcatch <- get_wcatch(res)
         biomass <- colSums(res$naa * res$input$dat$waa,na.rm=T)
         return(wcatch/biomass)
@@ -1834,7 +1834,7 @@ est_MSYRP_proxy <- function(data_future,
                        calc_yieldcurve=FALSE)
 
   allRP <- c(candidate_B0, Babs_vector,f_proxy_vector)
-  allRP <- allRP[allRP!=0]
+  allRP <- allRP[allRP>0]
 
   # dynamic Bmsyを計算
   # res_MSY$dynamic_Bmsy <- calc_dmsy()

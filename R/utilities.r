@@ -3198,3 +3198,29 @@ rank_HCR <- function(summary_HCR,
 
 }
 
+#'
+#' beverton-holtのh,R0とbioparsを与えるとa,bを返す関数
+#'
+#' @export
+
+get.ab.bh <- function(h,R0,biopars){
+
+    get.SPR0 <- function(M,maa,waa,output="simple"){
+        nage <- length(M)
+        S <- exp(-M)
+        N <- numeric()
+        N[1] <- 1
+        for(i in 2:(nage-1)) N[i] <- N[i-1]*S[i-1]
+        N[nage] <- N[nage-1] * S[nage]/(1-S[nage])
+        SPR0 <- sum(N * maa * waa)
+        if(output=="simple") return(SPR0) else return(listN2(N,SPR0))
+    }    
+    SPR0 <- get.SPR0(biopars$M,biopars$maa,biopars$waa)
+    S0 <- R0*SPR0    
+    beta <- (5*h-1)/(4*h*R0)
+    alpha <- SPR0*(1-h)/(4*h)
+    a <- 1/alpha
+    b <- beta/alpha
+    return(tibble::lst(SPR0,R0,h,S0,a,b))
+}
+
