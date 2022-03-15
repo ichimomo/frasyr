@@ -240,6 +240,9 @@ Generation.Time <- function(vpares,
 }
 
 ### dynamics MSYを計算してみる
+#' @export
+#' 
+
 dyn.msy <- function(naa.past,naa.init=NULL,fmsy,a,b,resid,resid.year,waa,maa,M,assume_SR=TRUE, SR="HS"){
 
   if(assume_SR==TRUE){
