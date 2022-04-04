@@ -3227,3 +3227,12 @@ get.ab.bh <- function(h,R0,biopars){
     return(tibble::lst(SPR0,R0,h,S0,a,b))
 }
 
+#' 漁獲量の上限設定をしたときの設定がちゃんと生きているかどうかを確かめる
+#' 
+#' @export
+#' 
+
+check_fix_CVoption <- function(res_future){
+  wcatch <- res_future$HCR_realized[,,"wcatch"]      
+  wcatch[-1,]/wcatch[-nrow(wcatch),]
+}
