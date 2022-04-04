@@ -77,7 +77,7 @@
       <h1 data-toc-skip>VPAモデル診断スクリプト</h1>
                         <h4 data-toc-skip class="author">濵邉昂平・市野川桃子</h4>
             
-            <h4 data-toc-skip class="date">2022-03-16</h4>
+            <h4 data-toc-skip class="date">2022-04-04</h4>
       
       
       <div class="hidden name"><code>Diagnostics-for-VPA.Rmd</code></div>
@@ -630,7 +630,7 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 <span class="kw">for</span><span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span> <span class="va">res_tmp</span><span class="op">[</span><span class="va">i</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">res_vpa_bootstrap</span><span class="op">$</span><span class="va">res_boot</span><span class="op">[[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="va">Fc.at.age</span><span class="op">[</span><span class="fl">4</span><span class="op">]</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile</a></span><span class="op">(</span><span class="va">res_tmp</span>, probs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.025</span>,<span class="fl">0.5</span>,<span class="fl">0.975</span><span class="op">)</span><span class="op">)</span></code></pre></div>
 <pre><code>     2.5%       50%     97.5% 
-0.4618412 0.8091494 9.1234026 </code></pre>
+0.3937436 0.5697902 1.2885797 </code></pre>
 <p>この他、各パラメータの相関関係について、ブートストラップ標本を基にプロットが得られます。</p>
 <div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">res_vpa_bootstrap</span><span class="op">$</span><span class="va">plot_cor</span></code></pre></div>

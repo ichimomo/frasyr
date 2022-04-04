@@ -106,6 +106,9 @@
     <loc>/reference/check_consistent_w.html</loc>
   </url>
   <url>
+    <loc>/reference/check_fix_CVoption.html</loc>
+  </url>
+  <url>
     <loc>/reference/colorize_table.html</loc>
   </url>
   <url>
@@ -227,6 +230,9 @@
   </url>
   <url>
     <loc>/reference/get.SRdata.html</loc>
+  </url>
+  <url>
+    <loc>/reference/get.ab.bh.html</loc>
   </url>
   <url>
     <loc>/reference/get_performance.html</loc>
