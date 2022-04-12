@@ -1374,13 +1374,14 @@ convert_future_table <- function(fout,label="tmp"){
 
   if(class(fout)=="future_new") fout <- format_to_old_future(fout)
 
-  U_table <- fout$vwcaa/fout$vbiom
+  U_table <- fout$vwcaa/fout$vbiom_catch
   if(is.null(fout$Fsakugen)) fout$Fsakugen <- -(1-fout$faa[1,,]/fout$currentF[1])
   if(is.null(fout$recruit))  fout$recruit <- fout$naa[1,,]
 
   ssb      <- convert_2d_future(df=fout$vssb,   name="SSB",     label=label)
   catch    <- convert_2d_future(df=fout$vwcaa,  name="catch",   label=label)
-  biomass  <- convert_2d_future(df=fout$vbiom,  name="biomass", label=label)
+  biomass_catch  <- convert_2d_future(df=fout$vbiom_catch,  name="biomass_catch", label=label)
+  biomass  <- convert_2d_future(df=fout$vbiom,  name="biomass", label=label)    
   U_table  <- convert_2d_future(df=U_table,     name="U",       label=label)
   beta_gamma    <- convert_2d_future(df=fout$alpha,  name="beta_gamma",   label=label)
   Fsakugen <- convert_2d_future(df=fout$Fsakugen, name="Fsakugen",   label=label)
@@ -1396,7 +1397,7 @@ convert_future_table <- function(fout,label="tmp"){
     mutate(value=value+1)
   Fsakugen_ratio$stat <- "Fsakugen_ratio"
 
-  bind_rows(ssb,catch,biomass,beta_gamma,Fsakugen,Fsakugen_ratio,recruit, U_table, Fratio)
+  bind_rows(ssb,catch,biomass,biomass_catch,beta_gamma,Fsakugen,Fsakugen_ratio,recruit, U_table, Fratio)
 }
 
 

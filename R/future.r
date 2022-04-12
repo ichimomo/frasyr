@@ -1437,8 +1437,8 @@ format_to_old_future <- function(fout){
   }
   fout_old$M         <- fout$input$tmb_data$M_mat
   fout_old$vssb      <- apply(fout$naa * fout_old$waa * fout_old$maa, c(2,3), sum, na.rm=T)
-  fout_old$vbiom     <- apply(fout$naa * fout_old$waa.catch, c(2,3),sum, na.rm=T)  
-#  fout_old$vbiom     <- apply(fout$naa * fout_old$waa, c(2,3),sum, na.rm=T)
+  fout_old$vbiom_catch <- apply(fout$naa * fout_old$waa.catch, c(2,3),sum, na.rm=T)  
+  fout_old$vbiom     <- apply(fout$naa * fout_old$waa, c(2,3),sum, na.rm=T)
   fout_old$vwcaa     <- apply(fout$wcaa,c(2,3),sum, na.rm=T)
   fout_old$currentF  <- fout$faa[,fout$input$tmb_data$start_ABC_year-1,1]
   fout_old$futureF   <- fout$faa[,fout$input$tmb_data$start_ABC_year,1]
@@ -1538,7 +1538,7 @@ update_maa_mat <- function(maa,rand,naa,pars_b0,pars_b1,min_value,max_value){
 
 get_wcatch <- function(res){
     if(class(res)=="future_new")  return(apply(res$wcaa,c(2,3),sum))
-    if(class(res)=="vpa" || "tune" %in% names(res$input))  return(colSums(res$input$dat$caa * res$input$dat$waa,na.rm=T))
+    if(class(res)=="vpa" || "tune" %in% names(res$input))  return(colSums(res$input$dat$caa * res$input$dat$waa.catch,na.rm=T))
 }
 
 #' @export
@@ -1549,7 +1549,7 @@ get_ssb <- function(res){
 
 #' @export
 get_U <- function(res){
-    if(class(res)=="future_new")  return(res$HCR_realized[,,"wcatch"]/apply(res$naa * res$waa,c(2,3),sum))
+    if(class(res)=="future_new")  return(res$HCR_realized[,,"wcatch"]/apply(res$naa * res$waa_catch,c(2,3),sum))
     if(class(res)=="vpa" || "tune" %in% names(res$input)){
         wcatch <- get_wcatch(res)
         biomass <- colSums(res$naa * res$input$dat$waa,na.rm=T)
