@@ -626,9 +626,14 @@ test_that("density dependent maturity option",{
     res_vpa2 <- res_vpa_org
     res_vpa2$input$dat$maa[2,] <- 1-res_vpa2$naa[2,]/max(res_vpa2$naa[2,]) + 0.1
     res_vpa2$input$dat$waa[] <- res_vpa2$input$dat$waa[] * exp(rnorm(length(unlist(res_vpa_org$input$dat$waa)), 0, 0.1))
+    res_vpa2$input$dat$waa_catch[] <- res_vpa2$input$dat$waa_catch[] *
+        exp(rnorm(length(unlist(res_vpa_org$input$dat$waa_catch)), 0, 0.1))    
 
-    data_future_maa <- redo_future(data_future_test,list(maa_fun=TRUE, waa_fun=TRUE,
-                                                         res_vpa=res_vpa2, fix_recruit = NULL), only_data=TRUE)
+    data_future_maa <- redo_future(data_future_test,
+                                   list(maa_fun=TRUE, waa_fun=TRUE, waa_catch_fun=TRUE,
+                                        res_vpa=res_vpa2, fix_recruit = NULL), only_data=TRUE)
+
+    # check for maa
     mean(data_future_maa$data$maa_rand_mat[,,1]) %>% round(3) %>% 
         expect_equal(0)
     data_future_maa$data$maa_par_mat[,1,"b0"] %>% round(2) %>% as.numeric %>%
@@ -642,8 +647,24 @@ test_that("density dependent maturity option",{
 
     # 十分なテストではないがとりあえず
     res_future_maa <- future_vpa(data_future_maa$data,multi_init=1.5)
-    expect_equal(sum(apply(res_future_maa$waa[1,,],1,sd)==0),30)
-    expect_equal(sum(apply(res_future_maa$maa[2,,],1,sd)==0),30)
+
+    # check for waa
+    tmp <- apply(res_future_maa$waa[1,,],1,sd)
+    expect_equal(sum(tmp==0),30)
+    # assert parameter
+    est_par <- purrr::map_dfc(1:4,function(x) lm(as.numeric(log(res_future_maa$waa[x,tmp!=0,]))~as.numeric(log(res_future_maa$naa[x,tmp!=0,])))$coef%>% unlist %>% as.data.frame) %>% t()
+    expect_equal(mean(abs(est_par-data_future_maa$data$waa_par_mat[,1,-1])),0.001, tol=0.01)
+
+    # check for waa catch
+    tmp <- apply(res_future_maa$waa_catch[1,,],1,sd)
+    expect_equal(sum(tmp==0),30)
+    # assert parameter
+    est_par2 <- purrr::map_dfc(1:4,function(x) lm(as.numeric(log(res_future_maa$waa_catch[x,tmp!=0,]))~as.numeric(log(res_future_maa$naa[x,tmp!=0,])))$coef%>% unlist %>% as.data.frame) %>% t()
+    expect_equal(mean(abs(est_par2-data_future_maa$data$waa_catch_par_mat[,1,-1])),0.001, tol=0.01)    
+
+    # check for maa
+    tmp <- apply(res_future_maa$maa[1,,],1,sd)    
+    expect_equal(sum(tmp==0),30)
 
     # 最小・最大値で足切りできているかを確認
     expect_equal(range(res_future_maa$maa[2,as.character(2017:2030),]),
