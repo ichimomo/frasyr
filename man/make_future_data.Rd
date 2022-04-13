@@ -21,6 +21,8 @@ make_future_data(
   waa_catch = NULL,
   waa_fun = FALSE,
   start_waafun_year_name = start_biopar_year_name,
+  waa_catch_fun = FALSE,
+  start_waacatchfun_year_name = start_biopar_year_name,
   maa_year,
   maa = NULL,
   maa_fun = FALSE,
@@ -70,7 +72,7 @@ make_future_data(
 
 \item{nyear}{将来予測の実施年数}
 
-\item{plus_age}{プラスグループとして計算する行（年齢ではないことに注意）。デフォルト値（NULL）ならfuture_initial_year_name年にNA以外の数値が入っている一番大きい行をプラスグループの行とする。plus_ageという名前だが、plus_group=FALSEの場合には、たんに最大年齢になる。}
+\item{plus_age}{プラスグループとして計算する行（年齢ではないことに注意）。デフォルト値（NULL）ならfuture_initial_year_name年にNA以外の数値が入っている一番大きい行をプラスグループの行とする。plus_ageという名前だが、plus_group=FALSEの場合には、たんに最大年齢になる。年齢の行数よりもプラスグループが小さいような場合（対馬マイワシなど）に対応。}
 
 \item{plus_group}{プラスグループを考慮するかどうか。与えない場合、res_vpa$input$plus.groupの設定を引き継ぐ。ただし、inputを使ってdo.callする場合などにはうまく調整できないことがあるので、明示的に与えたほうがよいかも。}
 
@@ -86,9 +88,11 @@ make_future_data(
 
 \item{waa}{将来の年齢別体重を直接与える場合, maa, M_yearも同様}
 
-\item{waa_fun}{log(weight)~log(number)の回帰式から将来のweightを予測する}
+\item{waa_fun}{FALSE: 使わない、TRUE: log(weight)~log(number)の回帰式から将来のweightを予測する,}
 
 \item{start_waafun_year_name}{上記の設定がスタートする最初の年。それ以外の年は上で設定されたパラメータが使われる}
+
+\item{waa_catch_fun}{FALSE: 使わない、TRUE: log(weight)~log(number)の回帰式から将来のweightを予測する}
 
 \item{maa_fun}{maturity ~ number の回帰式から将来のmaturityを予測する(暫定的、太平洋マダラでのみ利用)}
 
