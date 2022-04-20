@@ -630,7 +630,7 @@ test_that("density dependent maturity option",{
         exp(rnorm(length(unlist(res_vpa_org$input$dat$waa_catch)), 0, 0.1))    
 
     data_future_maa <- redo_future(data_future_test,
-                                   list(maa_fun=TRUE, waa_fun=TRUE, waa_catch_fun=TRUE,
+                                   list(maa_fun=TRUE, waa_fun=TRUE, waa_catch_fun=TRUE,nsim=100,
                                         res_vpa=res_vpa2, fix_recruit = NULL), only_data=TRUE)
 
     # check for maa
@@ -663,12 +663,31 @@ test_that("density dependent maturity option",{
     expect_equal(mean(abs(est_par2-data_future_maa$data$waa_catch_par_mat[,1,-1])),0.001, tol=0.01)    
 
     # check for maa
-    tmp <- apply(res_future_maa$maa[1,,],1,sd)    
+    tmp <- apply(res_future_maa$maa[2,,],1,sd)    
     expect_equal(sum(tmp==0),30)
 
     # 最小・最大値で足切りできているかを確認
     expect_equal(range(res_future_maa$maa[2,as.character(2017:2030),]),
                  range(res_vpa2$input$dat$maa[2,]))
+
+    # specific function for waa
+    data_future_maa2 <- redo_future(data_future_test,
+                                   list(maa_fun=FALSE, waa_fun=TRUE, waa_catch_fun=TRUE,nsim=100,
+                                        waa_fun_name="waafun1", waa_catch_fun_name="waafun2", 
+                                        res_vpa=res_vpa2, fix_recruit = NULL), only_data=TRUE)
+    expect_equal(data_future_maa2$data$waa_par_mat[1,1,1], "waafun1")
+    expect_equal(data_future_maa2$data$waa_catch_par_mat[1,1,1], "waafun2")
+
+    waafun1 <- function(t, waa, rand, naa, pars_b0, pars_b1){
+        waa[,1,] * 2
+    }
+    waafun2 <- function(t, waa, rand, naa, pars_b0, pars_b1){
+        waa[,1,] * 3
+    }
+
+    res_future_maa2 <- future_vpa(data_future_maa2$data,multi_init=1.5)
+    expect_equal(res_future_maa2$waa[,1,]*2, res_future_maa2$waa[,"2037",])
+    expect_equal(res_future_maa2$waa_catch[,1,]*3, res_future_maa2$waa_catch[,"2037",])    
     
 })
 
