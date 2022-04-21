@@ -712,13 +712,13 @@ future_vpa_R <- function(naa_mat,
   ## この時点でもwaa_funを入れる必要がある
 
   for(t in future_initial_year:total_nyear){
-    # 再生産関係から加入を推定するため、０歳以外の体重と成熟率を更新
+    # 再生産関係から加入を推定するため、０歳以外のSSB計算用の体重と成熟率を更新
     if(is_waa_fun)
       waa_mat[,t,]       <- update_waa_mat(t=t,waa=waa_mat,rand=waa_rand_mat,naa=N_mat,
                                      pars_b0=waa_par_mat[,,"b0"],pars_b1=waa_par_mat[,,"b1"])
-    if(is_waa_catch_fun)
-      waa_catch_mat[,t,] <- update_waa_catch_mat(t=t,waa=waa_catch_mat,rand=waa_catch_rand_mat,naa=N_mat,
-                                                 pars_b0=waa_catch_par_mat[,,"b0"],pars_b1=waa_catch_par_mat[,,"b1"])    
+#    if(is_waa_catch_fun)
+#      waa_catch_mat[,t,] <- update_waa_catch_mat(t=t,waa=waa_catch_mat,rand=waa_catch_rand_mat,naa=N_mat,
+#                                                 pars_b0=waa_catch_par_mat[,,"b0"],pars_b1=waa_catch_par_mat[,,"b1"])    
     if(is_maa_fun) maa_mat[,t,] <- update_maa_mat(maa=maa_mat[,t,],rand=maa_rand_mat[,t,],naa=N_mat[,t,],
                                                   pars_b0=maa_par_mat[,,"b0"],pars_b1=maa_par_mat[,,"b1"],
                                                   min_value=maa_par_mat[,,"min"],max_value=maa_par_mat[,,"max"])
@@ -764,14 +764,14 @@ future_vpa_R <- function(naa_mat,
       } # close else in [all(N_mat[1,t,]==0)]
 
       if(is.na(N_mat[1,t,1])) stop("Error: Recruitment cannot be estimated correctly...")
-      # 加入が入力されたあとで０歳の体重を更新する
+      # 加入が入力されたあとで０歳のSSB計算用の体重と漁獲量計算用の体重を更新する
       if(is_waa_fun)
         waa_mat[1,t,]       <- update_waa_mat(t=t,waa=waa_mat,rand=waa_rand_mat,naa=N_mat,
                                              pars_b0=waa_par_mat[,,"b0"],pars_b1=waa_par_mat[,,"b1"])[1,]
       if(is_waa_catch_fun)
-        waa_catch_mat[1,t,] <- update_waa_catch_mat(t=t,waa=waa_catch_mat,rand=waa_catch_rand_mat,naa=N_mat,
-                                                    pars_b0=waa_catch_par_mat[,,"b0"],pars_b1=waa_catch_par_mat[,,"b1"])[1,]      }
-
+        waa_catch_mat[,t,] <- update_waa_catch_mat(t=t,waa=waa_catch_mat,rand=waa_catch_rand_mat,naa=N_mat,
+                                                   pars_b0=waa_catch_par_mat[,,"b0"],pars_b1=waa_catch_par_mat[,,"b1"])
+    }
 
     if(t>=start_ABC_year){
       # harvest control rule
@@ -944,16 +944,16 @@ future_vpa_R <- function(naa_mat,
         N_mat[iage+1,t+1,] <- N_mat[iage,t,]*exp(-M_mat[iage,t,]-F_mat[iage,t,])
       }
       if(plus_group == TRUE) N_mat[plus_age,t+1,] <- N_mat[plus_age,t+1,] + N_mat[plus_age,t,]*exp(-M_mat[plus_age,t,]-F_mat[plus_age,t,])
-      # waaとmaaの更新
-      if(is_waa_fun)
-        waa_mat[,t,]       <- update_waa_mat(t=t,waa=waa_mat,rand=waa_rand_mat,naa=N_mat,
-                                             pars_b0=waa_par_mat[,,"b0"],pars_b1=waa_par_mat[,,"b1"])
-      if(is_waa_catch_fun)
-        waa_catch_mat[,t,] <- update_waa_catch_mat(t=t,waa=waa_catch_mat,rand=waa_catch_rand_mat,naa=N_mat,
-                                                   pars_b0=waa_catch_par_mat[,,"b0"],pars_b1=waa_catch_par_mat[,,"b1"])    
-      if(is_maa_fun) maa_mat[,t,] <- update_maa_mat(maa=maa_mat[,t,],rand=maa_rand_mat[,t,],naa=N_mat[,t,],
-                                                    pars_b0=maa_par_mat[,,"b0"],pars_b1=maa_par_mat[,,"b1"],
-                                                    min_value=maa_par_mat[,,"min"],max_value=maa_par_mat[,,"max"])
+      # waaとmaaの更新(ここ、不要では？)
+      ## if(is_waa_fun)
+      ##   waa_mat[,t,]       <- update_waa_mat(t=t,waa=waa_mat,rand=waa_rand_mat,naa=N_mat,
+      ##                                        pars_b0=waa_par_mat[,,"b0"],pars_b1=waa_par_mat[,,"b1"])
+      ## if(is_waa_catch_fun)
+      ##   waa_catch_mat[,t,] <- update_waa_catch_mat(t=t,waa=waa_catch_mat,rand=waa_catch_rand_mat,naa=N_mat,
+      ##                                              pars_b0=waa_catch_par_mat[,,"b0"],pars_b1=waa_catch_par_mat[,,"b1"])    
+      ## if(is_maa_fun) maa_mat[,t,] <- update_maa_mat(maa=maa_mat[,t,],rand=maa_rand_mat[,t,],naa=N_mat[,t,],
+      ##                                               pars_b0=maa_par_mat[,,"b0"],pars_b1=maa_par_mat[,,"b1"],
+      ##                                               min_value=maa_par_mat[,,"min"],max_value=maa_par_mat[,,"max"])
     }
     HCR_realized[t,,"wcatch"] <- catch_equation(N_mat[,t,],F_mat[,t,],waa_catch_mat[,t,],M_mat[,t,],Pope=Pope) %>% colSums()
   }
