@@ -671,19 +671,18 @@ test_that("density dependent maturity option",{
                  range(res_vpa2$input$dat$maa[2,]))
 
     # specific function for waa
+    waafun1 <- function(t, waa, rand, naa, pars_b0, pars_b1){
+        waa[,1,] * 2
+    }
+    waafun2 <- function(t, waa, rand, naa, pars_b0, pars_b1){
+        waa[,1,] * 3
+    }    
     data_future_maa2 <- redo_future(data_future_test,
                                    list(maa_fun=FALSE, waa_fun=TRUE, waa_catch_fun=TRUE,nsim=100,
                                         waa_fun_name="waafun1", waa_catch_fun_name="waafun2", 
                                         res_vpa=res_vpa2, fix_recruit = NULL), only_data=TRUE)
     expect_equal(data_future_maa2$data$waa_par_mat[1,1,1], "waafun1")
     expect_equal(data_future_maa2$data$waa_catch_par_mat[1,1,1], "waafun2")
-
-    waafun1 <- function(t, waa, rand, naa, pars_b0, pars_b1){
-        waa[,1,] * 2
-    }
-    waafun2 <- function(t, waa, rand, naa, pars_b0, pars_b1){
-        waa[,1,] * 3
-    }
 
     res_future_maa2 <- future_vpa(data_future_maa2$data,multi_init=1.5)
     expect_equal(res_future_maa2$waa[,1,]*2, res_future_maa2$waa[,"2037",])
