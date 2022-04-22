@@ -21,8 +21,10 @@ make_future_data(
   waa_catch = NULL,
   waa_fun = FALSE,
   start_waafun_year_name = start_biopar_year_name,
+  waa_fun_name = NA,
   waa_catch_fun = FALSE,
   start_waacatchfun_year_name = start_biopar_year_name,
+  waa_catch_fun_name = NA,
   maa_year,
   maa = NULL,
   maa_fun = FALSE,
@@ -92,7 +94,11 @@ make_future_data(
 
 \item{start_waafun_year_name}{上記の設定がスタートする最初の年。それ以外の年は上で設定されたパラメータが使われる}
 
+\item{waa_fun_name}{カスタマイズされたwaa_funを使う場合、その関数のオブジェクトの名前}
+
 \item{waa_catch_fun}{FALSE: 使わない、TRUE: log(weight)~log(number)の回帰式から将来のweightを予測する}
+
+\item{waa_catch_fun_name}{カスタマイズされたwaa_funを使う場合、その関数のオブジェクトの名前}
 
 \item{maa_fun}{maturity ~ number の回帰式から将来のmaturityを予測する(暫定的、太平洋マダラでのみ利用)}
 
