@@ -1435,8 +1435,15 @@ safe_call <- function(func,args,force=FALSE,...){
 
   # make_future_dataでの引数追加への対応
   is_make_future_data <- sum("start_random_rec_year_name"==names(args))
-  if(is_make_future_data){ # あとから追加された引数maa_funがなくても動くようにする
-    if(sum("maa_fun"==names(args))==0) args$maa_fun <- FALSE
+  if(is_make_future_data){ # あとから追加された引数のリスト
+    non_defined_arg <- names(args)[check_argument==FALSE]
+    if("maa_fun" %in% non_defined_arg) args$maa_fun <- FALSE
+    if("waa_catch_fun" %in% non_defined_arg) args$waa_catch_fun <- FALSE    
+    if("start_waacatchfun_year_name" %in% non_defined_arg) args$start_waacatchfun_year_name <- args$start_biopar_year
+    if("waa_fun_name" %in% non_defined_arg) args$waa_fun_name <- NA
+    if("waa_catch_fun_name" %in% non_defined_arg) args$waa_catch_fun_name <- NA
+    check_argument <- names(args) %in% argname
+    force <- TRUE
   }
 
   if(sum(check_argument==FALSE)>0){

@@ -1,17 +1,29 @@
 test_that("read_vpa with release data",{
 
   # read.vpaによる放流データ利用
-  # vpa with relase data
-  res_SRdat_R1 <- read.vpa(system.file("extdata","res_vpa_dummy_release_fish.csv",package="frasyr")) %>%
-      get.SRdata(weight.year = 1981:2018)
+  # vpa with relase data (only with alived relased fish; old version)
+  res_vpa_R1 <- read.vpa(system.file("extdata","res_vpa_dummy_release_fish.csv",package="frasyr"))
+  expect_equal(res_vpa_R1$input$dat$release.alive %>% as.numeric(), rep(1000, length(1973:2019)))
+  res_SRdat_R1 <- res_vpa_R1 %>% get.SRdata(weight.year = 1981:2018)
   expect_equal(names(res_SRdat_R1),
-               c("year","SSB","R","release","weight"))
+               c("year","SSB","R","weight","release_alive"))
+
+  # vpa with relase data (with alive rate and  relased fish)
+  res_vpa_R2 <- read.vpa(system.file("extdata","res_vpa_dummy_release_fish_new.csv",package="frasyr"))
+  
+  expect_equal(res_vpa_R2$input$dat$release.all %>% as.numeric(), rep(10000, length(1973:2019)))
+  expect_equal(res_vpa_R2$input$dat$release.alive %>% as.numeric(), rep(1000, length(1973:2019)))
+  expect_equal(res_vpa_R2$input$dat$release.ratealive %>% as.numeric(), rep(0.1, length(1973:2019)))
+  
+  res_SRdat_R2 <- res_vpa_R2 %>% get.SRdata(weight.year = 1981:2018)
+  expect_equal(names(res_SRdat_R2),
+               c("year","SSB","R","weight","release_alive","release_all","release_ratealive"))  
+  expect_equal(res_SRdat_R1$R,res_SRdat_R2$R)
   
   # normal vpa
   res_SRdat_R0 <- read.vpa(system.file("extdata","res_vpa_dummy.csv",package="frasyr")) %>%
       get.SRdata()
-  expect_equal(names(res_SRdat_R0),
-               c("year","SSB","R"))
+  expect_equal(names(res_SRdat_R0), c("year","SSB","R","weight"))
 
   # normal vpa with weight data
   res_SRdat_R0_8118 <- read.vpa(system.file("extdata","res_vpa_dummy.csv",package="frasyr")) %>%
@@ -31,7 +43,7 @@ test_that("read_vpa with release data",{
   res_SR <- fit.SR(SRdata=data_SR, AR=0)  
 
   expect_equal(names(data_SR_release),
-               c("year","SSB","R","release","weight"))
+               c("year","SSB","R","weight","release_alive"))
   expect_equal(res_SR_release$pars$a*res_SR_release$pars$b,2,tol=0.001)
 
   # 過去・将来に放流がある場合の将来予測
