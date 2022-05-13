@@ -1168,6 +1168,12 @@ get.stat <- function(fout,eyear=0,tmp.year=NULL, use_new_output=FALSE){
                   "biom.median"=median(fout$vbiom[tmp.year,col.target],na.rm=T),
                   "biom.L10"=quantile(fout$vbiom[tmp.year,col.target],na.rm=T,probs=0.1),
                   "biom.H10"=quantile(fout$vbiom[tmp.year,col.target],na.rm=T,probs=0.9),
+                  "cbiom.mean"  = mean   (fout$vbiom_catch[tmp.year,col.target]),
+                  "cbiom.sd"     =sd     (fout$vbiom_catch[tmp.year,col.target]),
+                  "cbiom.geomean"=geomean(fout$vbiom_catch[tmp.year,col.target]),
+                  "cbiom.median" =median (fout$vbiom_catch[tmp.year,col.target],na.rm=T),
+                  "cbiom.L10"   =quantile(fout$vbiom_catch[tmp.year,col.target],na.rm=T,probs=0.1),
+                  "cbiom.H10"   =quantile(fout$vbiom_catch[tmp.year,col.target],na.rm=T,probs=0.9),
                   "rec.mean"=mean(unlist(fout$naa[1,,])[tmp.year,col.target]),
                   "rec.sd"=sd(unlist(fout$naa[1,,])[tmp.year,col.target]),
                   "rec.geomean"=geomean(unlist(fout$naa[1,,])[tmp.year,col.target]),
@@ -1178,9 +1184,9 @@ get.stat <- function(fout,eyear=0,tmp.year=NULL, use_new_output=FALSE){
                   "Fref2Fcurrent"=fout$multi,
                   fmulti=fout$multi
   )
-  a$U.mean <- a$catch.mean/a$biom.mean
-  a$U.median <- a$catch.median/a$biom.median
-  a$U.geomean <- a$catch.geomean/a$biom.geomean
+  a$U.mean <- a$catch.mean/a$cbiom.mean
+  a$U.median <- a$catch.median/a$cbiom.median
+  a$U.geomean <- a$catch.geomean/a$cbiom.geomean
 
   a$catch.CV <- a$catch.sd/a$catch.mean
   a$ssb.CV <- a$ssb.sd/a$ssb.mean
@@ -1380,7 +1386,7 @@ convert_future_table <- function(fout,label="tmp"){
 
   ssb      <- convert_2d_future(df=fout$vssb,   name="SSB",     label=label)
   catch    <- convert_2d_future(df=fout$vwcaa,  name="catch",   label=label)
-  biomass_catch  <- convert_2d_future(df=fout$vbiom_catch,  name="biomass_catch", label=label)
+  cbiomass  <- convert_2d_future(df=fout$vbiom_catch,  name="cbiomass", label=label)
   biomass  <- convert_2d_future(df=fout$vbiom,  name="biomass", label=label)    
   U_table  <- convert_2d_future(df=U_table,     name="U",       label=label)
   beta_gamma    <- convert_2d_future(df=fout$alpha,  name="beta_gamma",   label=label)
@@ -1397,7 +1403,7 @@ convert_future_table <- function(fout,label="tmp"){
     mutate(value=value+1)
   Fsakugen_ratio$stat <- "Fsakugen_ratio"
 
-  bind_rows(ssb,catch,biomass,biomass_catch,beta_gamma,Fsakugen,Fsakugen_ratio,recruit, U_table, Fratio)
+  bind_rows(ssb,catch,biomass,cbiomass,beta_gamma,Fsakugen,Fsakugen_ratio,recruit, U_table, Fratio)
 }
 
 
@@ -1419,6 +1425,7 @@ convert_vector <- function(vector,name){
 convert_vpa_tibble <- function(vpares,SPRtarget=NULL){
 
   if (is.null(vpares$input$dat$waa.catch)) {
+    vpares$input$dat$waa.catch <- vpares$input$dat$waa
     if (class(vpares)=="sam") {
       total.catch <- colSums(vpares$caa*vpares$input$dat$waa,na.rm=T)
     } else {
@@ -1427,12 +1434,18 @@ convert_vpa_tibble <- function(vpares,SPRtarget=NULL){
   } else {
     total.catch <- colSums(vpares$input$dat$caa*vpares$input$dat$waa.catch,na.rm=T)
   }
-  U <- total.catch/colSums(vpares$baa, na.rm=T)
 
-  SSB <- convert_vector(colSums(vpares$ssb,na.rm=T),"SSB") %>%
+  # ここでcbiomassを定義する(今後もbioamss, ssbを計算するときは極力ssb, biomを使わないようにする)
+  ssb <- vpares$naa * vpares$input$dat$maa * vpares$input$dat$waa
+  biomass <- vpares$naa * vpares$input$dat$waa
+  cbiomass <- vpares$naa * vpares$input$dat$waa.catch
+  U <- total.catch/colSums(cbiomass, na.rm=T)  
+  SSB <- convert_vector(colSums(ssb,na.rm=T),"SSB") %>%
     dplyr::filter(value>0&!is.na(value))
-  Biomass <- convert_vector(colSums(vpares$baa,na.rm=T),"biomass") %>%
+  Biomass <- convert_vector(colSums(biomass,na.rm=T),"biomass") %>%
     dplyr::filter(value>0&!is.na(value))
+  cBiomass <- convert_vector(colSums(cbiomass,na.rm=T),"cbiomass") %>%
+    dplyr::filter(value>0&!is.na(value))  
   FAA <- convert_df(vpares$faa,"fishing_mortality") %>%
     dplyr::filter(value>0&!is.na(value))
   Recruitment <- convert_vector(colSums(vpares$naa[1,,drop=F]),"Recruitment") %>%
@@ -1461,6 +1474,7 @@ convert_vpa_tibble <- function(vpares,SPRtarget=NULL){
 
   all_table <- bind_rows(SSB,
                          Biomass,
+                         cBiomass,                         
                          convert_vector(U[U>0],"U"),
                          convert_vector(total.catch[total.catch>0],"catch"),
                          convert_df(vpares$naa,"fish_number"),
@@ -2775,13 +2789,13 @@ derive_future_summary <- function(res_future, target=NULL){
     tmpfunc <- function(x) x[,target]
   }
 
-  biomass <- apply(res_future$naa*res_future$waa,c(2,3),sum)
   Fmean <- apply(res_future$faa,c(2,3),sum)
 
   tibble(
     year    = as.numeric(dimnames(res_future$SR_mat[,,"ssb"])[[1]]),
     SSB     = tmpfunc(res_future$SR_mat[,,"ssb"]),
-    biomass = tmpfunc(biomass),
+    biomass = tmpfunc(res_future$SR_mat[,,"biomass"]),
+    cbiomass = tmpfunc(res_future$SR_mat[,,"cbiomass"]),    
     recruit = tmpfunc(res_future$SR_mat[,,"recruit"]),
     intercept = tmpfunc(res_future$SR_mat[,,"intercept"]),
     deviance = tmpfunc(res_future$SR_mat[,,"deviance"]),

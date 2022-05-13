@@ -186,7 +186,8 @@ make_future_data <- function(res_vpa,
                                       "recruit","ssb",
                                       "intercept","sd",#9-10
                                       "bias_factor", #11
-                                      "blank2","blank3","blank4","blank5")))
+                                      "biomass","cbiomass", # add biomass statistics
+                                      "blank4","blank5")))
   #HCR_mat <- array(0, dim=c(total_nyear, nsim, 7),
   HCR_mat <- array(0, dim=c(total_nyear, nsim, 11),
                    dimnames=list(year=allyear_name, nsim=1:nsim,
@@ -1006,7 +1007,9 @@ future_vpa_R <- function(naa_mat,
   if(what_return=="obj")  return(obj)
   if(what_return=="stat"){
     tmb_data$SR_mat[,,"ssb"]  <- spawner_mat
-    tmb_data$SR_mat[,,"recruit"]  <- N_mat[1,,]
+    tmb_data$SR_mat[,,"recruit"]   <- N_mat[1,,]
+    tmb_data$SR_mat[,,"biomass"]   <- apply(N_mat*waa_mat,c(2,3),sum)
+    tmb_data$SR_mat[,,"cbiomass"]  <- apply(N_mat*waa_catch_mat,c(2,3),sum)  
     res <- list(naa=N_mat, wcaa=wcaa_mat, faa=F_mat, SR_mat=tmb_data$SR_mat,maa=maa_mat,
                 HCR_mat=HCR_mat,HCR_realized=HCR_realized,multi=exp(x),waa=waa_mat, waa_catch_mat=waa_catch_mat)
     if(isTRUE(do_MSE)) res$SR_MSE <- SR_MSE
@@ -1442,8 +1445,8 @@ get_summary_stat <- function(all.stat){
 
   sumvalue <- all.stat %>% as_tibble %>%
     mutate(SSB2SSB0=all.stat$ssb.mean/all.stat$ssb.mean[2]) %>%
-    select(RP_name,ssb.mean,SSB2SSB0,biom.mean,U.mean,catch.mean,catch.CV,Fref2Fcurrent)
-  colnames(sumvalue) <- c("RP_name","SSB","SSB2SSB0","B","U","Catch","Catch.CV","Fref/Fcur")
+    select(RP_name,ssb.mean,SSB2SSB0,biom.mean,cbiom.mean, U.mean,catch.mean,catch.CV,Fref2Fcurrent)
+  colnames(sumvalue) <- c("RP_name","SSB","SSB2SSB0","B","cB","U","Catch","Catch.CV","Fref/Fcur")
 
   sumvalue <- bind_cols(sumvalue,all.stat[,substr(colnames(all.stat),1,1)=="F"])
 
