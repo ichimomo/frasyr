@@ -104,10 +104,18 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
   res_future_F0.1_wcatch <- redo_future(data_future_test,
                                         list(res_vpa=res_vpa_base1_nontune),
                                         optim_method="none", multi_init = 1)
-
   # waa.catchを別に与えた場合の総漁獲量は倍になっているはず
   expect_equal(sum(res_future_F0.1$wcaa[,,1])*2,
                sum(res_future_F0.1_wcatch$wcaa[,,1]))
+
+  #plot_futures(res_vpa_base1_nontune, list(res_future_F0.1_wcatch))
+
+  data_future_F0.1_wcatch <- redo_future(data_future_test,
+                                         list(res_vpa=res_vpa_base1_nontune),
+                                         only_data=TRUE)
+  aa <- est_MSYRP(data_future_F0.1_wcatch)
+  expect_equal(aa$summary$cB,aa$summary$B*2)
+  expect_equal(aa$summary$U,aa$summary$Catch/aa$summary$cB)  
 
   # change plus group (途中でプラスグループが変わるVPA結果でもエラーなく計算できることだけ確認（レベル１）
   res_future_pgc <- redo_future(data_future_test,

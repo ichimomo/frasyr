@@ -11,7 +11,8 @@ check.SRfit(
   sigma = 5,
   seed = 1,
   output = FALSE,
-  filename = "checkSRfit"
+  filename = "checkSRfit",
+  fun_when_check5_replace = median
 )
 }
 \arguments{
@@ -26,6 +27,8 @@ check.SRfit(
 \item{output}{テキストファイルに結果を出力するか}
 
 \item{filename}{ファイル名('.txt')がつく}
+
+\item{fun_when_check5_replace}{check5にひっかかったとき、候補となるパラメータの中からどのパラメータを代表としてとってくるか。median, max, minなどの関数を入れる。デフォルト（今までの実装）はmedian。保守的な結果を出すならmaxのほうがよいかも（エクセルではmaxに近い値が出力されるみたい）}
 }
 \description{
 再生産関係推定が収束しているかや最適解を得られているかを診断する関数

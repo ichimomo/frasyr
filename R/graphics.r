@@ -717,7 +717,7 @@ plot_futures <- function(vpares=NULL,
                          minyear=NULL,
                          is.plot.CIrange=TRUE,
                          is.plot.CIline = TRUE,
-                         what.plot=c("Recruitment","SSB","biomass","catch","beta_gamma","U","Fratio"),
+                         what.plot=c("Recruitment","SSB","biomass","cbiomass","catch","beta_gamma","U","Fratio"),
                          biomass.unit=1,
                          number.unit=1,
                          number.name="",
@@ -755,20 +755,22 @@ plot_futures <- function(vpares=NULL,
     junit <- c("","十","百","千","万")[log10(biomass.unit)+1]
 
     if(type=="detail"){
-        rename_list <- tibble(stat=c("Recruitment","SSB","biomass","catch","beta_gamma","U","Fratio"),
+        rename_list <- tibble(stat=c("Recruitment","SSB","biomass","cbiomass","catch","beta_gamma","U","Fratio"),
                               jstat=c(str_c("加入尾数(",number.name,")"),
                                       str_c("親魚量 (",junit,"トン)"),
                                       str_c("資源量 (",junit,"トン)"),
+                                      str_c("漁獲資源量 (",junit,"トン)"),                                      
                                       str_c("漁獲量 (",junit,"トン)"),
                                       "beta_gamma(F/Fmsy)",
                                       "漁獲割合(%)",
                                       "漁獲圧の比(F/Fmsy)"))
     }
     if(type=="simple"){
-        rename_list <- tibble(stat=c("Recruitment","SSB","biomass","catch","beta_gamma","U","Fratio"),
+        rename_list <- tibble(stat=c("Recruitment","SSB","biomass","cbiomass","catch","beta_gamma","U","Fratio"),
                               jstat=c(str_c("加入尾数(",number.name,")"),
                                       str_c("将来の親魚量 (",junit,"トン)"),
                                       str_c("資源量 (",junit,"トン)"),
+                                      str_c("漁獲資源量 (",junit,"トン)"),                                      
                                       str_c("将来の漁獲量 (",junit,"トン)"),
                                       "beta_gamma(F/Fmsy)",
                                       "漁獲割合(%)",
@@ -779,10 +781,11 @@ plot_futures <- function(vpares=NULL,
     junit <- c("","10","100","1000","10,000")[log10(biomass.unit)+1]
     #    require(tidyverse,quietly=TRUE)
 
-    rename_list <- tibble(stat=c("Recruitment","SSB","biomass","catch","beta_gamma","U","Fratio"),
+    rename_list <- tibble(stat=c("Recruitment","SSB","biomass","cbiomass","catch","beta_gamma","U","Fratio"),
                           jstat=c(str_c("Recruits(",number_name,"fish)"),
                                   str_c("SB (",junit,"MT)"),
                                   str_c("Biomass (",junit,"MT)"),
+                                  str_c("cBiomass (",junit,"MT)"),                                  
                                   str_c("Catch (",junit,"MT)"),
                                   "multiplier to Fmsy",
                                   "Catch/Biomass (U)",
@@ -791,7 +794,7 @@ plot_futures <- function(vpares=NULL,
 
   # define unit of value
   rename_list <- rename_list %>%
-    mutate(unit=dplyr::case_when(stat%in%c("SSB","biomass","catch") ~ biomass.unit,
+    mutate(unit=dplyr::case_when(stat%in%c("SSB","biomass","cbiomass","catch") ~ biomass.unit,
                                  stat%in%c("Recruitment")           ~ number.unit,
                                  stat%in%c("U")                     ~ 0.01,
                                  TRUE                               ~ 1))

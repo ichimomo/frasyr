@@ -142,6 +142,7 @@ extract_value <- function(...) {
 extract_value.future_new <- function(from, what, year = NULL, unit = "千トン") {
   name <- switch(what,
                  "biomass" = "vbiom",
+                 "cbiomass" = "vbiom_catch",
                  "ssb"     = "vssb",
                  "catch"   = "vwcaa",
                  stop("Not implemented"))
