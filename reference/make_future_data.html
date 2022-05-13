@@ -76,6 +76,10 @@
   waa_catch <span class="op">=</span> <span class="cn">NULL</span>,
   waa_fun <span class="op">=</span> <span class="cn">FALSE</span>,
   start_waafun_year_name <span class="op">=</span> <span class="va">start_biopar_year_name</span>,
+  waa_fun_name <span class="op">=</span> <span class="cn">NA</span>,
+  waa_catch_fun <span class="op">=</span> <span class="cn">FALSE</span>,
+  start_waacatchfun_year_name <span class="op">=</span> <span class="va">start_biopar_year_name</span>,
+  waa_catch_fun_name <span class="op">=</span> <span class="cn">NA</span>,
   <span class="va">maa_year</span>,
   maa <span class="op">=</span> <span class="cn">NULL</span>,
   maa_fun <span class="op">=</span> <span class="cn">FALSE</span>,
@@ -128,7 +132,7 @@
 <dt>nyear</dt>
 <dd><p>将来予測の実施年数</p></dd>
 <dt>plus_age</dt>
-<dd><p>プラスグループとして計算する行（年齢ではないことに注意）。デフォルト値（NULL）ならfuture_initial_year_name年にNA以外の数値が入っている一番大きい行をプラスグループの行とする。plus_ageという名前だが、plus_group=FALSEの場合には、たんに最大年齢になる。</p></dd>
+<dd><p>プラスグループとして計算する行（年齢ではないことに注意）。デフォルト値（NULL）ならfuture_initial_year_name年にNA以外の数値が入っている一番大きい行をプラスグループの行とする。plus_ageという名前だが、plus_group=FALSEの場合には、たんに最大年齢になる。年齢の行数よりもプラスグループが小さいような場合（対馬マイワシなど）に対応。</p></dd>
 <dt>plus_group</dt>
 <dd><p>プラスグループを考慮するかどうか。与えない場合、res_vpa$input$plus.groupの設定を引き継ぐ。ただし、inputを使ってdo.callする場合などにはうまく調整できないことがあるので、明示的に与えたほうがよいかも。</p></dd>
 <dt>future_initial_year_name</dt>
@@ -144,9 +148,15 @@
 <dt>waa</dt>
 <dd><p>将来の年齢別体重を直接与える場合, maa, M_yearも同様</p></dd>
 <dt>waa_fun</dt>
-<dd><p>log(weight)~log(number)の回帰式から将来のweightを予測する</p></dd>
+<dd><p>FALSE: 使わない、TRUE: log(weight)~log(number)の回帰式から将来のweightを予測する,</p></dd>
 <dt>start_waafun_year_name</dt>
 <dd><p>上記の設定がスタートする最初の年。それ以外の年は上で設定されたパラメータが使われる</p></dd>
+<dt>waa_fun_name</dt>
+<dd><p>カスタマイズされたwaa_funを使う場合、その関数のオブジェクトの名前</p></dd>
+<dt>waa_catch_fun</dt>
+<dd><p>FALSE: 使わない、TRUE: log(weight)~log(number)の回帰式から将来のweightを予測する</p></dd>
+<dt>waa_catch_fun_name</dt>
+<dd><p>カスタマイズされたwaa_funを使う場合、その関数のオブジェクトの名前</p></dd>
 <dt>maa_fun</dt>
 <dd><p>maturity ~ number の回帰式から将来のmaturityを予測する(暫定的、太平洋マダラでのみ利用)</p></dd>
 <dt>faa_year</dt>
@@ -243,7 +253,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.9000.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.9000.</p>
 </div>
 
       </footer></div>
