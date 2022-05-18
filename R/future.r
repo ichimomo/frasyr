@@ -1500,7 +1500,8 @@ format_to_old_future <- function(fout){
     fout_old$beta_gamma     <- fout$HCR_mat[,,"beta_gamma"]
       fout_old$alpha     <- fout$HCR_mat[,,"beta_gamma"]
       fout_old$Fratio     <- fout$HCR_mat[,,"Fratio"]
-      }
+  }
+  fout_old$wcaa <- fout$wcaa
   return(fout_old)
 }
 
