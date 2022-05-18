@@ -1147,7 +1147,8 @@ get.stat <- function(fout,eyear=0,tmp.year=NULL, use_new_output=FALSE){
   else{
     col.target <- ifelse(fout$input$N==0,1,-1)
   }
-  tc <- fout$caa * fout$waa.catch
+
+  
   tmp <- as.numeric(fout$vssb[(nrow(fout$vssb)-eyear):nrow(fout$vssb),col.target])
   if(is.null(tmp.year)) tmp.year <- (nrow(fout$vwcaa)-eyear):nrow(fout$vwcaa)
   a <- data.frame("catch.mean"=mean(fout$vwcaa[tmp.year,col.target]),
@@ -1199,47 +1200,38 @@ get.stat <- function(fout,eyear=0,tmp.year=NULL, use_new_output=FALSE){
   colnames(Faa) <- paste("F",dimnames(fout$naa)[[1]],sep="")
   res.stat1 <- cbind(a,Faa) # ここまで、get.stat
 
-  agename <- dimnames(fout$naa)[[1]]
-  nage <- dim(fout$naa)[[1]]
-  tb <- fout$naa * fout$waa
-  if(is.null(fout$waa.catch)) fout$waa.catch <- fout$waa
-  ssb <- fout$naa * fout$waa *fout$maa
-  tb.mat <- tc.mat <- ssb.mat <- matrix(0,nage,6)
-  for(i in 1:nage){
-    tb.mat[i,1] <- mean(tb[i,tmp.year,col.target])
-    tb.mat[i,2] <- median(tb[i,tmp.year,col.target])
-    tb.mat[i,3] <- geomean(tb[i,tmp.year,col.target])
-    tb.mat[i,4] <- mean(tb[i,tmp.year,1])
-    tb.mat[i,5:6] <- quantile(tb[i,tmp.year,col.target],probs=c(0.1,0.9),na.rm=T)
-
-    tc.mat[i,1] <- mean(tc[i,tmp.year,col.target])
-    tc.mat[i,2] <- median(tc[i,tmp.year,col.target])
-    tc.mat[i,3] <- geomean(tc[i,tmp.year,col.target])
-    tc.mat[i,4] <- mean(tc[i,tmp.year,1])
-    tc.mat[i,5:6] <- quantile(tc[i,tmp.year,col.target],probs=c(0.1,0.9),na.rm=T)
-
-    ssb.mat[i,1] <- mean(ssb[i,tmp.year,col.target])
-    ssb.mat[i,2] <- median(ssb[i,tmp.year,col.target])
-    ssb.mat[i,3] <- geomean(ssb[i,tmp.year,col.target])
-    ssb.mat[i,4] <- mean(ssb[i,tmp.year,1])
-    ssb.mat[i,5:6] <- quantile(ssb[i,tmp.year,col.target],probs=c(0.1,0.9),na.rm=T)
+  tmpfunc_ <- function(x, nage, agename, label){
+    x.mat <- matrix(0,nage,5)
+    for(i in 1:nage){    
+      x.mat[i,1] <- mean   (x[i,tmp.year,col.target])
+      x.mat[i,2] <- median (x[i,tmp.year,col.target])
+      x.mat[i,3] <- geomean(x[i,tmp.year,col.target])
+      x.mat[i,4:5] <- quantile(x[i,tmp.year,col.target],probs=c(0.1,0.9),na.rm=T)
+    }
+    x.mat <- as.numeric(x.mat)
+    names(x.mat) <- c(paste(label,"-mean-A",agename,sep=""),
+                       paste(label,"-median-A",agename,sep=""),
+                       paste(label,"-geomean-A",agename,sep=""),
+                       paste(label,"-L10-A",agename,sep=""),
+                       paste(label,"-H10-A",agename,sep=""))
+    x.mat
   }
-  tc.mat <- as.numeric(tc.mat)
-  tb.mat <- as.numeric(tb.mat)
-  ssb.mat <- as.numeric(ssb.mat)
 
-  # mean, ME; median, geomean; geometric mean
-  names(tc.mat) <- c(paste("TC-mean-A",agename,sep=""),paste("TC-median-A",agename,sep=""),
-                     paste("TC-geomean-A",agename,sep=""),paste("TC-det-A",agename,sep=""),
-                     paste("TC-L10-A",agename,sep=""),paste("TC-H10-A",agename,sep=""))
-  names(tb.mat) <- c(paste("TB-mean-A",agename,sep=""),paste("TB-median-A",agename,sep=""),
-                     paste("TB-geomean-A",agename,sep=""),paste("TB-det-A",agename,sep=""),
-                     paste("TB-L10-A",agename,sep=""),paste("TB-H10-A",agename,sep=""))
-  names(ssb.mat) <- c(paste("SSB-GA-A",agename,sep=""),paste("SSB-median-A",agename,sep=""),
-                      paste("SSB-geomean-A",agename,sep=""),paste("SSB-det-A",agename,sep=""),
-                      paste("SSB-L10-A",agename,sep=""),paste("SSB-H10-A",agename,sep=""))
-  res.stat2 <- as.data.frame(t(c(tb.mat,tc.mat,ssb.mat)))
-  res.stat <- cbind(res.stat1,res.stat2) %>% as_tibble()
+  nage <- dim(fout$naa)[[1]]
+  agename <- dimnames(fout$naa)[[1]]
+  
+  tb  <- fout$naa * fout$waa
+  ctb <- fout$naa * fout$waa.catch
+  ssb <- fout$naa * fout$waa *fout$maa
+  tc  <- fout$wcaa
+
+  tb.mat  <- tmpfunc_(tb,  nage, agename, "TB")
+  ctb.mat <- tmpfunc_(ctb, nage, agename, "CTB")      
+  ssb.mat <- tmpfunc_(ssb, nage, agename, "SSB")      
+  tc.mat  <- tmpfunc_(tc,  nage, agename, "TC")
+
+  res.stat2 <- as.data.frame(t(c(tb.mat,ctb.mat,tc.mat,ssb.mat)))
+  res.stat  <- cbind(res.stat1,res.stat2) %>% as_tibble()
   return(res.stat)
 }
 

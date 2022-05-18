@@ -121,6 +121,7 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
   expect_equal(tail(res_future_test_R$summary$SSB,n=1) %>% as.numeric(),
                res_MSY1$summary$SSB[1] %>% as.numeric(), tol=1)
   expect_equal(res_MSY1$summary$SSB[c(1,3)],res_MSY1$summary$SSB[c(7,8)], tol=0.001) # test Fbase value
+  expect_equal(res_MSY1$summary$cB,res_MSY1$summary$B)
 
   # MSY計算の場合 (バックワード)
   res_future_test_backward <- future_vpa(tmb_data=data_future_backward$data,
