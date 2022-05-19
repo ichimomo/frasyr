@@ -113,7 +113,7 @@ get.SRdata <- function(vpares=NULL,
 
     if(!is.null(weight.data)){
         assertthat::assert_that(all(dat.df$year==weight.data$year))
-        if("weight" %in% names(dat.df)) dat.df <- select(-weight)
+        if("weight" %in% names(dat.df)) dat.df <- dat.df %>% select(-weight)
         dat.df <- dat.df %>% left_join(weight.data)
     }
     return(dat.df)
