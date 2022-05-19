@@ -359,13 +359,16 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
   SRdata <- as_tibble(SR_result$input$SRdata) %>%
       mutate(type="obs")
   if(is.null(SRdata$weight)) SRdata$weight <- SR_result$input$w
-  SRdata <- SRdata %>% mutate(weight=factor(weight,levels=c("1","0")))
+  SRdata <- SRdata %>%
+    mutate(weight=ifelse(weight>0, 1, 0)) %>%
+    mutate(weight=factor(weight,levels=c("1","0")))
   SRdata.pred <- as_tibble(SR_result$pred) %>%
     mutate(type="pred", year=NA, R=R)
 
   is_release_data <- "release" %in% names(SR_result$input$SRdata)
   if(is_release_data){
     SRdata.release <- SR_result$input$SRdata %>% mutate(allR=release+R) %>%
+      mutate(weight=ifelse(weight>0, 1, 0)) %>%
       select(-R, -release) %>% rename(R=allR) %>% mutate(type="release", weight=factor(weight, levels=c("0","1")))
   }
   else{
