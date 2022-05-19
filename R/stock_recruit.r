@@ -32,6 +32,7 @@ get.SRdata <- function(vpares=NULL,
                        release.dat=NULL,
                        years = NULL,
                        weight.year = NULL,
+                       weight.data = NULL,
                        return.df = TRUE){
 
     is.release <- !is.null(release.dat) | !is.null(vpares$input$dat$release.dat)
@@ -108,6 +109,12 @@ get.SRdata <- function(vpares=NULL,
         if(length(weight.year)==1 && weight.year==0){
             dat.df$weight[]  <- 1
         }
+    }
+
+    if(!is.null(weight.data)){
+        assertthat::assert_that(all(dat.df$year==weight.data$year))
+        if("weight" %in% names(dat.df)) dat.df <- dat.df %>% select(-weight)
+        dat.df <- dat.df %>% left_join(weight.data)
     }
     return(dat.df)
 
