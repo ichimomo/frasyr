@@ -104,7 +104,10 @@ test_that("check weight.year option",{
     fit.SR(SR="HS", AR=0, method="L2")
 
   res_SR3 <- SRdata_pma_check_weight %>% mutate(weight=ifelse(year<1997, 0, 1)) %>%
-    fit.SR(SR="HS", AR=0, method="L2")  
+    fit.SR(SR="HS", AR=0, method="L2")
+
+  expect_equal(res_SR2$pars$a==res_SR1$pars$a,FALSE)
+  expect_equal(res_SR2$pars$a, res_SR3$pars$a, col=1e-5)
   
 })
 

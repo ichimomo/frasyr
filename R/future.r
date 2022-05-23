@@ -1585,7 +1585,10 @@ update_maa_mat <- function(maa,rand,naa,pars_b0,pars_b1,min_value,max_value){
 
 get_wcatch <- function(res){
     if(class(res)=="future_new")  return(apply(res$wcaa,c(2,3),sum))
-    if(class(res)=="vpa" || "tune" %in% names(res$input))  return(colSums(res$input$dat$caa * res$input$dat$waa.catch,na.rm=T))
+    if(class(res)=="vpa" || "tune" %in% names(res$input)){
+        if(!is.null(res$input$dat$waa.catch)) return(colSums(res$input$dat$caa * res$input$dat$waa.catch,na.rm=T))
+        if(is.null(res$input$dat$waa.catch)) return(colSums(res$input$dat$caa * res$input$dat$waa,na.rm=T))
+    }
 }
 
 #' @export
