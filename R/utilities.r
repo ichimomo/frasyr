@@ -1168,7 +1168,8 @@ get.stat <- function(fout,eyear=0,tmp.year=NULL, use_new_output=FALSE){
   else{
     col.target <- ifelse(fout$input$N==0,1,-1)
   }
-  tc <- fout$caa * fout$waa.catch
+
+  
   tmp <- as.numeric(fout$vssb[(nrow(fout$vssb)-eyear):nrow(fout$vssb),col.target])
   if(is.null(tmp.year)) tmp.year <- (nrow(fout$vwcaa)-eyear):nrow(fout$vwcaa)
   a <- data.frame("catch.mean"=mean(fout$vwcaa[tmp.year,col.target]),
@@ -1189,6 +1190,12 @@ get.stat <- function(fout,eyear=0,tmp.year=NULL, use_new_output=FALSE){
                   "biom.median"=median(fout$vbiom[tmp.year,col.target],na.rm=T),
                   "biom.L10"=quantile(fout$vbiom[tmp.year,col.target],na.rm=T,probs=0.1),
                   "biom.H10"=quantile(fout$vbiom[tmp.year,col.target],na.rm=T,probs=0.9),
+                  "cbiom.mean"  = mean   (fout$vbiom_catch[tmp.year,col.target]),
+                  "cbiom.sd"     =sd     (fout$vbiom_catch[tmp.year,col.target]),
+                  "cbiom.geomean"=geomean(fout$vbiom_catch[tmp.year,col.target]),
+                  "cbiom.median" =median (fout$vbiom_catch[tmp.year,col.target],na.rm=T),
+                  "cbiom.L10"   =quantile(fout$vbiom_catch[tmp.year,col.target],na.rm=T,probs=0.1),
+                  "cbiom.H10"   =quantile(fout$vbiom_catch[tmp.year,col.target],na.rm=T,probs=0.9),
                   "rec.mean"=mean(unlist(fout$naa[1,,])[tmp.year,col.target]),
                   "rec.sd"=sd(unlist(fout$naa[1,,])[tmp.year,col.target]),
                   "rec.geomean"=geomean(unlist(fout$naa[1,,])[tmp.year,col.target]),
@@ -1199,9 +1206,9 @@ get.stat <- function(fout,eyear=0,tmp.year=NULL, use_new_output=FALSE){
                   "Fref2Fcurrent"=fout$multi,
                   fmulti=fout$multi
   )
-  a$U.mean <- a$catch.mean/a$biom.mean
-  a$U.median <- a$catch.median/a$biom.median
-  a$U.geomean <- a$catch.geomean/a$biom.geomean
+  a$U.mean <- a$catch.mean/a$cbiom.mean
+  a$U.median <- a$catch.median/a$cbiom.median
+  a$U.geomean <- a$catch.geomean/a$cbiom.geomean
 
   a$catch.CV <- a$catch.sd/a$catch.mean
   a$ssb.CV <- a$ssb.sd/a$ssb.mean
@@ -1214,47 +1221,38 @@ get.stat <- function(fout,eyear=0,tmp.year=NULL, use_new_output=FALSE){
   colnames(Faa) <- paste("F",dimnames(fout$naa)[[1]],sep="")
   res.stat1 <- cbind(a,Faa) # ここまで、get.stat
 
-  agename <- dimnames(fout$naa)[[1]]
-  nage <- dim(fout$naa)[[1]]
-  tb <- fout$naa * fout$waa
-  if(is.null(fout$waa.catch)) fout$waa.catch <- fout$waa
-  ssb <- fout$naa * fout$waa *fout$maa
-  tb.mat <- tc.mat <- ssb.mat <- matrix(0,nage,6)
-  for(i in 1:nage){
-    tb.mat[i,1] <- mean(tb[i,tmp.year,col.target])
-    tb.mat[i,2] <- median(tb[i,tmp.year,col.target])
-    tb.mat[i,3] <- geomean(tb[i,tmp.year,col.target])
-    tb.mat[i,4] <- mean(tb[i,tmp.year,1])
-    tb.mat[i,5:6] <- quantile(tb[i,tmp.year,col.target],probs=c(0.1,0.9),na.rm=T)
-
-    tc.mat[i,1] <- mean(tc[i,tmp.year,col.target])
-    tc.mat[i,2] <- median(tc[i,tmp.year,col.target])
-    tc.mat[i,3] <- geomean(tc[i,tmp.year,col.target])
-    tc.mat[i,4] <- mean(tc[i,tmp.year,1])
-    tc.mat[i,5:6] <- quantile(tc[i,tmp.year,col.target],probs=c(0.1,0.9),na.rm=T)
-
-    ssb.mat[i,1] <- mean(ssb[i,tmp.year,col.target])
-    ssb.mat[i,2] <- median(ssb[i,tmp.year,col.target])
-    ssb.mat[i,3] <- geomean(ssb[i,tmp.year,col.target])
-    ssb.mat[i,4] <- mean(ssb[i,tmp.year,1])
-    ssb.mat[i,5:6] <- quantile(ssb[i,tmp.year,col.target],probs=c(0.1,0.9),na.rm=T)
+  tmpfunc_ <- function(x, nage, agename, label){
+    x.mat <- matrix(0,nage,5)
+    for(i in 1:nage){    
+      x.mat[i,1] <- mean   (x[i,tmp.year,col.target])
+      x.mat[i,2] <- median (x[i,tmp.year,col.target])
+      x.mat[i,3] <- geomean(x[i,tmp.year,col.target])
+      x.mat[i,4:5] <- quantile(x[i,tmp.year,col.target],probs=c(0.1,0.9),na.rm=T)
+    }
+    x.mat <- as.numeric(x.mat)
+    names(x.mat) <- c(paste(label,"-mean-A",agename,sep=""),
+                       paste(label,"-median-A",agename,sep=""),
+                       paste(label,"-geomean-A",agename,sep=""),
+                       paste(label,"-L10-A",agename,sep=""),
+                       paste(label,"-H10-A",agename,sep=""))
+    x.mat
   }
-  tc.mat <- as.numeric(tc.mat)
-  tb.mat <- as.numeric(tb.mat)
-  ssb.mat <- as.numeric(ssb.mat)
 
-  # mean, ME; median, geomean; geometric mean
-  names(tc.mat) <- c(paste("TC-mean-A",agename,sep=""),paste("TC-median-A",agename,sep=""),
-                     paste("TC-geomean-A",agename,sep=""),paste("TC-det-A",agename,sep=""),
-                     paste("TC-L10-A",agename,sep=""),paste("TC-H10-A",agename,sep=""))
-  names(tb.mat) <- c(paste("TB-mean-A",agename,sep=""),paste("TB-median-A",agename,sep=""),
-                     paste("TB-geomean-A",agename,sep=""),paste("TB-det-A",agename,sep=""),
-                     paste("TB-L10-A",agename,sep=""),paste("TB-H10-A",agename,sep=""))
-  names(ssb.mat) <- c(paste("SSB-GA-A",agename,sep=""),paste("SSB-median-A",agename,sep=""),
-                      paste("SSB-geomean-A",agename,sep=""),paste("SSB-det-A",agename,sep=""),
-                      paste("SSB-L10-A",agename,sep=""),paste("SSB-H10-A",agename,sep=""))
-  res.stat2 <- as.data.frame(t(c(tb.mat,tc.mat,ssb.mat)))
-  res.stat <- cbind(res.stat1,res.stat2) %>% as_tibble()
+  nage <- dim(fout$naa)[[1]]
+  agename <- dimnames(fout$naa)[[1]]
+  
+  tb  <- fout$naa * fout$waa
+  ctb <- fout$naa * fout$waa.catch
+  ssb <- fout$naa * fout$waa *fout$maa
+  tc  <- fout$wcaa
+
+  tb.mat  <- tmpfunc_(tb,  nage, agename, "TB")
+  ctb.mat <- tmpfunc_(ctb, nage, agename, "CTB")      
+  ssb.mat <- tmpfunc_(ssb, nage, agename, "SSB")      
+  tc.mat  <- tmpfunc_(tc,  nage, agename, "TC")
+
+  res.stat2 <- as.data.frame(t(c(tb.mat,ctb.mat,tc.mat,ssb.mat)))
+  res.stat  <- cbind(res.stat1,res.stat2) %>% as_tibble()
   return(res.stat)
 }
 
@@ -1395,13 +1393,14 @@ convert_future_table <- function(fout,label="tmp"){
 
   if(class(fout)=="future_new") fout <- format_to_old_future(fout)
 
-  U_table <- fout$vwcaa/fout$vbiom
+  U_table <- fout$vwcaa/fout$vbiom_catch
   if(is.null(fout$Fsakugen)) fout$Fsakugen <- -(1-fout$faa[1,,]/fout$currentF[1])
   if(is.null(fout$recruit))  fout$recruit <- fout$naa[1,,]
 
   ssb      <- convert_2d_future(df=fout$vssb,   name="SSB",     label=label)
   catch    <- convert_2d_future(df=fout$vwcaa,  name="catch",   label=label)
-  biomass  <- convert_2d_future(df=fout$vbiom,  name="biomass", label=label)
+  cbiomass  <- convert_2d_future(df=fout$vbiom_catch,  name="cbiomass", label=label)
+  biomass  <- convert_2d_future(df=fout$vbiom,  name="biomass", label=label)    
   U_table  <- convert_2d_future(df=U_table,     name="U",       label=label)
   beta_gamma    <- convert_2d_future(df=fout$alpha,  name="beta_gamma",   label=label)
   Fsakugen <- convert_2d_future(df=fout$Fsakugen, name="Fsakugen",   label=label)
@@ -1417,7 +1416,7 @@ convert_future_table <- function(fout,label="tmp"){
     mutate(value=value+1)
   Fsakugen_ratio$stat <- "Fsakugen_ratio"
 
-  bind_rows(ssb,catch,biomass,beta_gamma,Fsakugen,Fsakugen_ratio,recruit, U_table, Fratio)
+  bind_rows(ssb,catch,biomass,cbiomass,beta_gamma,Fsakugen,Fsakugen_ratio,recruit, U_table, Fratio)
 }
 
 
@@ -1439,6 +1438,7 @@ convert_vector <- function(vector,name){
 convert_vpa_tibble <- function(vpares,SPRtarget=NULL){
 
   if (is.null(vpares$input$dat$waa.catch)) {
+    vpares$input$dat$waa.catch <- vpares$input$dat$waa
     if (class(vpares)=="sam") {
       total.catch <- colSums(vpares$caa*vpares$input$dat$waa,na.rm=T)
     } else {
@@ -1447,12 +1447,18 @@ convert_vpa_tibble <- function(vpares,SPRtarget=NULL){
   } else {
     total.catch <- colSums(vpares$input$dat$caa*vpares$input$dat$waa.catch,na.rm=T)
   }
-  U <- total.catch/colSums(vpares$baa, na.rm=T)
 
-  SSB <- convert_vector(colSums(vpares$ssb,na.rm=T),"SSB") %>%
+  # ここでcbiomassを定義する(今後もbioamss, ssbを計算するときは極力ssb, biomを使わないようにする)
+  ssb <- vpares$naa * vpares$input$dat$maa * vpares$input$dat$waa
+  biomass <- vpares$naa * vpares$input$dat$waa
+  cbiomass <- vpares$naa * vpares$input$dat$waa.catch
+  U <- total.catch/colSums(cbiomass, na.rm=T)  
+  SSB <- convert_vector(colSums(ssb,na.rm=T),"SSB") %>%
     dplyr::filter(value>0&!is.na(value))
-  Biomass <- convert_vector(colSums(vpares$baa,na.rm=T),"biomass") %>%
+  Biomass <- convert_vector(colSums(biomass,na.rm=T),"biomass") %>%
     dplyr::filter(value>0&!is.na(value))
+  cBiomass <- convert_vector(colSums(cbiomass,na.rm=T),"cbiomass") %>%
+    dplyr::filter(value>0&!is.na(value))  
   FAA <- convert_df(vpares$faa,"fishing_mortality") %>%
     dplyr::filter(value>0&!is.na(value))
   Recruitment <- convert_vector(colSums(vpares$naa[1,,drop=F]),"Recruitment") %>%
@@ -1481,6 +1487,7 @@ convert_vpa_tibble <- function(vpares,SPRtarget=NULL){
 
   all_table <- bind_rows(SSB,
                          Biomass,
+                         cBiomass,                         
                          convert_vector(U[U>0],"U"),
                          convert_vector(total.catch[total.catch>0],"catch"),
                          convert_df(vpares$naa,"fish_number"),
@@ -2795,13 +2802,13 @@ derive_future_summary <- function(res_future, target=NULL){
     tmpfunc <- function(x) x[,target]
   }
 
-  biomass <- apply(res_future$naa*res_future$waa,c(2,3),sum)
   Fmean <- apply(res_future$faa,c(2,3),sum)
 
   tibble(
     year    = as.numeric(dimnames(res_future$SR_mat[,,"ssb"])[[1]]),
     SSB     = tmpfunc(res_future$SR_mat[,,"ssb"]),
-    biomass = tmpfunc(biomass),
+    biomass = tmpfunc(res_future$SR_mat[,,"biomass"]),
+    cbiomass = tmpfunc(res_future$SR_mat[,,"cbiomass"]),    
     recruit = tmpfunc(res_future$SR_mat[,,"recruit"]),
     intercept = tmpfunc(res_future$SR_mat[,,"intercept"]),
     deviance = tmpfunc(res_future$SR_mat[,,"deviance"]),

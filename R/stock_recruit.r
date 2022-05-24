@@ -32,6 +32,7 @@ get.SRdata <- function(vpares=NULL,
                        release.dat=NULL,
                        years = NULL,
                        weight.year = NULL,
+                       weight.data = NULL,
                        return.df = TRUE){
 
     is.release <- !is.null(release.dat) | !is.null(vpares$input$dat$release.alive)
@@ -50,7 +51,7 @@ get.SRdata <- function(vpares=NULL,
         else{
             assertthat::assert_that(length(R.dat)==length(years))
         }
-        dat <- as_tibble(R = R.dat,SSB = SSB.dat,year = years)
+        dat <- tibble(R = R.dat,SSB = SSB.dat,year = years)
         if(!is.null(release.dat)) R.dat$release <- release.dat
     } 
 
@@ -126,7 +127,13 @@ get.SRdata <- function(vpares=NULL,
     dat <- dat %>% mutate(weight=1)
   }
 
-  dat <- dat %>% select(year, SSB, R, weight, everything())
+  if(!is.null(weight.data)){
+    assertthat::assert_that(all(dat$year==weight.data$year))
+    if("weight" %in% names(dat)) dat <- dat %>% select(-weight)
+    dat <- dat %>% left_join(weight.data)
+  }
+
+  dat <- dat %>% select(year, SSB, R, weight, everything())    
   return(dat)
 
 }
@@ -2264,9 +2271,12 @@ out.SR = function(resSR,filename = "resSR") {
 #' @param seed \code{set.seed}で使用するseed
 #' @param output テキストファイルに結果を出力するか
 #' @param filename ファイル名('.txt')がつく
+#' @param fun_when_check5_replace check5にひっかかったとき、候補となるパラメータの中からどのパラメータを代表としてとってくるか。median, max, minなどの関数を入れる。デフォルト（今までの実装）はmedian。保守的な結果を出すならmaxのほうがよいかも（エクセルではmaxに近い値が出力されるみたい）
 #' @encoding UTF-8
 #' @export
-check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="checkSRfit") {
+
+check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="checkSRfit",
+                       fun_when_check5_replace=median) {
   opt = resSR$opt
   SRdata = resSR$input$SRdata
   flag = rep(0,5)
@@ -2432,19 +2442,19 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
       RES$percent_bias_summary <- percent_bias_summary
       RES$par_list <- par_list
       RES$par_list0 <- par_list0
-      # すべてのパラメータのmedianに最も近いパラメータセットを持つものを選んでoptimalに入れちゃう
+      # すべてのパラメータのfun_when_check5_replaceに最も近いパラメータセットを持つものを選んでoptimalに入れちゃう
       #      x <- sweep(par_list,2,apply(par_list,2,median),FUN="/") %>% apply(1,mean)
      if(class(resSR)!="fit.SRregime"){
-        x <- sweep(par_list[,c("a","b")],2,apply(par_list[,c("a","b")],2,median),FUN="/") %>% apply(1,mean)
+        x <- sweep(par_list[,c("a","b")],2,apply(par_list[,c("a","b")],2,fun_when_check5_replace),FUN="/") %>% apply(1,mean)
      }else{
         tmp <- 2:(1+2*length(unique(resSR$input$regime.key)))
-        x <- sweep(par_list[,tmp],2,apply(par_list[,tmp],2,median),FUN="/") %>% apply(1,mean)
+        x <- sweep(par_list[,tmp],2,apply(par_list[,tmp],2,fun_when_check5_replace),FUN="/") %>% apply(1,mean)
       }
       selected <- which.min(abs(x-1))
       cat("ほとんど同じ尤度を持つパラメータの範囲 (",n,"回試行のうち",nrow(par_list),"回分),\n")
       print(apply(par_list,2,summary))
       optimal <- resSR_list[selected_set][[selected]]
-      cat("中央値に最も近いパラメータセットを持つ推定結果をoptimumに出力します(そのときの初期値は",str_c(optimal$input$p0,collapse="-"),"です)\n")
+      cat(round(as.numeric(unlist(optimal$pars)),4), "をoptimumに出力します(そのときの初期値は",str_c(optimal$input$p0,collapse="-"),"です)\n")
     } else {
       cat(RES$pars <- "5. パラメータが唯一の解として推定されているのでOKです (OK)","\n")
     }
@@ -2908,13 +2918,13 @@ tryall_SR <- function(data_SR, plus_group=TRUE, bio_par=NULL, tol=FALSE){
 #' @export
 #'
 
-fit.SR_tol <- function(...,n_check=100,is_regime=FALSE,seed=12345){
+fit.SR_tol <- function(...,n_check=100,is_regime=FALSE,seed=12345,fun_when_check5_replace=median){
 
   if(is_regime==FALSE)  res_SR <- fit.SR(...)
   if(is_regime==TRUE )  res_SR <- fit.SRregime(...)
 
   cat("...check.SRfit 1 回目....\n")
-  check <- check.SRfit(res_SR, output=FALSE, n=n_check)
+  check <- check.SRfit(res_SR, output=FALSE, n=n_check, fun_when_check5_replace=fun_when_check5_replace)
   # まず大域解に達しているかどうかのflagを確認し、flagが立っている場合には$optimと置き換える
   if(check$flag[4]==1) {
     res_SR <- check$optimum
@@ -2922,7 +2932,7 @@ fit.SR_tol <- function(...,n_check=100,is_regime=FALSE,seed=12345){
 
     # 再度check.SRfit
     cat("...check.SRfit 2回目....\n")
-    check <- check.SRfit(res_SR,output=FALSE)
+    check <- check.SRfit(res_SR,output=FALSE,n=n_check, fun_when_check5_replace=fun_when_check5_replace)
   }
 
   # 5番目のflag(尤度が同じパラメータの範囲が存在する)が立っているかどうかも確認し、flagが立っていればoptimumと置き換える

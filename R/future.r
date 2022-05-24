@@ -6,7 +6,7 @@
 #' @param res_vpa vpaの結果 (vpa関数の返り値)
 #' @param nsim シミュレーションの繰り返し回数
 #' @param nyear 将来予測の実施年数
-#' @param plus_age プラスグループとして計算する行（年齢ではないことに注意）。デフォルト値（NULL）ならfuture_initial_year_name年にNA以外の数値が入っている一番大きい行をプラスグループの行とする。plus_ageという名前だが、plus_group=FALSEの場合には、たんに最大年齢になる。
+#' @param plus_age プラスグループとして計算する行（年齢ではないことに注意）。デフォルト値（NULL）ならfuture_initial_year_name年にNA以外の数値が入っている一番大きい行をプラスグループの行とする。plus_ageという名前だが、plus_group=FALSEの場合には、たんに最大年齢になる。年齢の行数よりもプラスグループが小さいような場合（対馬マイワシなど）に対応。
 #' @param plus_group プラスグループを考慮するかどうか。与えない場合、res_vpa$input$plus.groupの設定を引き継ぐ。ただし、inputを使ってdo.callする場合などにはうまく調整できないことがあるので、明示的に与えたほうがよいかも。
 #' @param future_initial_year_name 将来予測の「初期値となる」年齢別資源尾数を参照する年。この年の年齢別資源尾数を使って翌年の個体群動態が将来予測で決定される
 #' @param start_F_year_name 将来予測でF全体にmultiplierを乗じる場合、multiplierを乗じる最初の年
@@ -14,7 +14,10 @@
 #' @param start_random_rec_year_name 将来の加入を再生産関係から予測する最初の年
 #' @param waa_year 将来の年齢別体重を過去の平均値とする場合、過去のパラメータを平均する期間, maa_year, M_yearも同様
 #' @param waa 将来の年齢別体重を直接与える場合, maa, M_yearも同様
-#' @param waa_fun log(weight)~log(number)の回帰式から将来のweightを予測する
+#' @param waa_fun FALSE: 使わない、TRUE: log(weight)~log(number)の回帰式から将来のweightを予測する,
+#' @param waa_fun_name カスタマイズされたwaa_funを使う場合、その関数のオブジェクトの名前
+#' @param waa_catch_fun FALSE: 使わない、TRUE: log(weight)~log(number)の回帰式から将来のweightを予測する
+#' @param waa_catch_fun_name カスタマイズされたwaa_funを使う場合、その関数のオブジェクトの名前
 #' @param maa_fun maturity ~ number の回帰式から将来のmaturityを予測する(暫定的、太平洋マダラでのみ利用)
 #' @param start_waafun_year_name 上記の設定がスタートする最初の年。それ以外の年は上で設定されたパラメータが使われる
 #' @param faa_year 将来のFを過去の平均値とする場合、平均をとる年を指定する。下のcurrentF, futureFが指定されている場合にはこの設定は無視される
@@ -76,6 +79,10 @@ make_future_data <- function(res_vpa,
                              waa_catch_year, waa_catch=NULL,
                              waa_fun = FALSE,
                              start_waafun_year_name = start_biopar_year_name,
+                             waa_fun_name = NA, 
+                             waa_catch_fun = FALSE,                             
+                             start_waacatchfun_year_name = start_biopar_year_name,
+                             waa_catch_fun_name = NA,                              
                              maa_year, maa=NULL,
                              maa_fun = FALSE,
                              start_maafun_year_name = start_biopar_year_name,
@@ -131,6 +138,7 @@ make_future_data <- function(res_vpa,
   if(!is.na(HCR_TAC_carry_amount  )) assertthat::assert_that(min(HCR_TAC_carry_amount  ) >= 0)
 
   assertthat::assert_that(is.logical(waa_fun),
+                          is.logical(waa_catch_fun),
                           is.logical(maa_fun),
                           is.logical(bias_correction))
 
@@ -178,7 +186,8 @@ make_future_data <- function(res_vpa,
                                       "recruit","ssb",
                                       "intercept","sd",#9-10
                                       "bias_factor", #11
-                                      "blank2","blank3","blank4","blank5")))
+                                      "biomass","cbiomass", # add biomass statistics
+                                      "blank4","blank5")))
   #HCR_mat <- array(0, dim=c(total_nyear, nsim, 7),
   HCR_mat <- array(0, dim=c(total_nyear, nsim, 11),
                    dimnames=list(year=allyear_name, nsim=1:nsim,
@@ -337,24 +346,63 @@ make_future_data <- function(res_vpa,
     waa_par_mat <- array(0,dim=c(nage,nsim,3),
                          dimnames=list(age=age_name, nsim=1:nsim, pars=c("sd", "b0", "b1")))
     class(waa_rand_mat) <- class(waa_par_mat) <- "myarray"
-    waa_fun_year <- which(allyear_name %in% start_waafun_year_name:max(allyear_name))
-
-    for(a in 1:nage){
-      for(i in 1:nsim){
-        log.w <- as.numeric(log(waa_mat[a,,i]))
-        log.n <- as.numeric(log(naa_mat[a,,i]))
-        observed <- log.n>-Inf
-        log.w <- log.w[observed]
-        log.n <- log.n[observed]
-        tmp <- lm(log.w~log.n)
-        waa_par_mat[a,i,c("b0","b1")] <- as.numeric(tmp$coef[1:2])
-        waa_par_mat[a,i,c("sd")] <- sqrt(mean(tmp$residual^2))
-        waa_rand_mat[a,observed,i] <- tmp$residual
-        waa_rand_mat[a,waa_fun_year,i] <- rnorm(length(waa_fun_year),-0.5*waa_par_mat[a,i,c("sd")]^2,waa_par_mat[a,i,c("sd")])
-      }}
+    waa_fun_year <- which(allyear_name %in% start_waafun_year_name:max(allyear_name))    
+    if(is.na(waa_fun_name)){
+      for(a in 1:nage){
+        for(i in 1:nsim){
+          log.w <- as.numeric(log(waa_mat[a,,i]))
+          log.n <- as.numeric(log(naa_mat[a,,i]))
+          observed <- log.n>-Inf
+          log.w <- log.w[observed]
+          log.n <- log.n[observed]
+          tmp <- lm(log.w~log.n)
+          waa_par_mat[a,i,c("b0","b1")] <- as.numeric(tmp$coef[1:2])
+          waa_par_mat[a,i,c("sd")] <- sqrt(mean(tmp$residual^2))
+          waa_rand_mat[a,observed,i] <- tmp$residual
+          waa_rand_mat[a,waa_fun_year,i] <- rnorm(length(waa_fun_year),-0.5*waa_par_mat[a,i,c("sd")]^2,waa_par_mat[a,i,c("sd")])
+        }}
+    }
+    else{
+      dimnames(waa_par_mat)[[3]] <- c("waa_fun_name", "x1","x2")
+      waa_par_mat[,,1] <- waa_fun_name
+      waa_rand_mat[,waa_fun_year,] <- 1
+    }
     tmb_data$waa_rand_mat <- waa_rand_mat
     tmb_data$waa_par_mat <- waa_par_mat
-    tmb_data$waa_mat[,waa_fun_year,] <- 0
+    tmb_data$waa_mat[,waa_fun_year,] <- 0    
+  }
+
+
+  if(isTRUE(waa_catch_fun)){
+    waa_catch_rand_mat <- array(0,dim=c(nage,total_nyear,nsim),
+                                dimnames=list(age=age_name, year=allyear_name, nsim=1:nsim))
+    waa_catch_par_mat <- array(0,dim=c(nage,nsim,3),
+                               dimnames=list(age=age_name, nsim=1:nsim, pars=c("sd", "b0", "b1")))
+    class(waa_catch_rand_mat) <- class(waa_catch_par_mat) <- "myarray"
+    waa_catch_fun_year <- which(allyear_name %in% start_waacatchfun_year_name:max(allyear_name))
+    if(is.na(waa_catch_fun_name)){
+      for(a in 1:nage){
+        for(i in 1:nsim){
+          log.w <- as.numeric(log(waa_catch_mat[a,,i]))
+          log.n <- as.numeric(log(naa_mat[a,,i]))
+          observed <- log.n>-Inf
+          log.w <- log.w[observed]
+          log.n <- log.n[observed]
+          tmp <- lm(log.w~log.n)
+          waa_catch_par_mat[a,i,c("b0","b1")] <- as.numeric(tmp$coef[1:2])
+          waa_catch_par_mat[a,i,c("sd")] <- sqrt(mean(tmp$residual^2))
+          waa_catch_rand_mat[a,observed,i] <- tmp$residual
+          waa_catch_rand_mat[a,waa_catch_fun_year,i] <- rnorm(length(waa_catch_fun_year),-0.5*waa_catch_par_mat[a,i,c("sd")]^2,waa_catch_par_mat[a,i,c("sd")])
+        }}
+    }
+    else{
+      dimnames(waa_catch_par_mat)[[3]] <- c("waa_catch_fun_name", "x1","x2")
+      waa_catch_par_mat[,,1] <- waa_catch_fun_name
+      waa_catch_rand_mat[,waa_catch_fun_year,] <- 1
+    }
+    tmb_data$waa_catch_rand_mat <- waa_catch_rand_mat
+    tmb_data$waa_catch_par_mat <- waa_catch_par_mat
+    tmb_data$waa_catch_mat[,waa_catch_fun_year,] <- 0    
   }
 
   if(isTRUE(maa_fun)){
@@ -443,7 +491,7 @@ future_vpa <- function(tmb_data,
   tmb_data$obj_value <- obj_value
 
   if(optim_method=="tmb"){
-    if(!is.null(tmb_data$waa_par_mat) || !is.null(tmb_data$maa_par_mat)){
+    if(!is.null(tmb_data$waa_par_mat) || !is.null(tmb_data$maa_par_mat) || !is.null(tmb_data$waa_catch_par_mat)){
       cat("Warning: waa_fun and maa_fun option cannot be used in TMB. The optimization is conducted by R..\n")
       optim_method <- "R"
   }}
@@ -595,16 +643,29 @@ future_vpa_R <- function(naa_mat,
                          MSE_catch_exact_TAC=FALSE,
                          waa_par_mat  = NULL, # option for waa_fun
                          waa_rand_mat = NULL,
+                         waa_catch_par_mat  = NULL, # option for waa_catch_fun
+                         waa_catch_rand_mat = NULL,                         
                          maa_par_mat  = NULL, # option for maa_fun
                          maa_rand_mat = NULL
 ){
 
   options(deparse.max.lines=10)
 
+  # setting for density dependent biological parameter
   is_waa_fun <- !is.null(waa_par_mat)
   if(is_waa_fun) when_waa_fun <- apply(waa_mat[,,1],2,sum)==0
+  is_waa_catch_fun <- !is.null(waa_catch_par_mat)
+  if(is_waa_catch_fun) when_waa_catch_fun <- apply(waa_catch_mat[,,1],2,sum)==0
   is_maa_fun <- !is.null(maa_par_mat)
   if(is_maa_fun) when_maa_fun <- apply(maa_mat[,,1],2,sum)==0
+
+  # setting for specific function for waa_fun
+  if(is_waa_fun && dimnames(waa_par_mat)[[3]]=="waa_fun_name"){
+    update_waa_mat <- get(waa_par_mat[1,1,"waa_fun_name"])
+  }
+  if(is_waa_catch_fun && dimnames(waa_catch_par_mat)[[3]]=="waa_catch_fun_name"){
+    update_waa_catch_mat <- get(waa_catch_par_mat[1,1,"waa_catch_fun_name"])
+  }    
 
   HCR_function <- get(HCR_function_name)
   allyear_name <- as.numeric(dimnames(SR_mat)[[1]])
@@ -652,10 +713,18 @@ future_vpa_R <- function(naa_mat,
   ## この時点でもwaa_funを入れる必要がある
 
   for(t in future_initial_year:total_nyear){
-
-    if(is_waa_fun) waa_mat[,t,] <- waa_catch_mat[,t,] <- update_waa_mat(waa=waa_mat[,t,],rand=waa_rand_mat[,t,],naa=N_mat[,t,],pars_b0=waa_par_mat[,,"b0"],pars_b1=waa_par_mat[,,"b1"])
-    if(is_maa_fun) maa_mat[,t,] <-                       update_maa_mat(maa=maa_mat[,t,],rand=maa_rand_mat[,t,],naa=N_mat[,t,],pars_b0=maa_par_mat[,,"b0"],pars_b1=maa_par_mat[,,"b1"],min_value=maa_par_mat[,,"min"],max_value=maa_par_mat[,,"max"])
+    # 再生産関係から加入を推定するため、０歳以外のSSB計算用の体重と成熟率を更新
+    if(is_waa_fun)
+      waa_mat[,t,]       <- update_waa_mat(t=t,waa=waa_mat,rand=waa_rand_mat,naa=N_mat,
+                                     pars_b0=waa_par_mat[,,"b0"],pars_b1=waa_par_mat[,,"b1"])
+#    if(is_waa_catch_fun)
+#      waa_catch_mat[,t,] <- update_waa_catch_mat(t=t,waa=waa_catch_mat,rand=waa_catch_rand_mat,naa=N_mat,
+#                                                 pars_b0=waa_catch_par_mat[,,"b0"],pars_b1=waa_catch_par_mat[,,"b1"])    
+    if(is_maa_fun) maa_mat[,t,] <- update_maa_mat(maa=maa_mat[,t,],rand=maa_rand_mat[,t,],naa=N_mat[,t,],
+                                                  pars_b0=maa_par_mat[,,"b0"],pars_b1=maa_par_mat[,,"b1"],
+                                                  min_value=maa_par_mat[,,"min"],max_value=maa_par_mat[,,"max"])
     spawner_mat[t,] <- colSums(N_mat[,t,,drop=F] * waa_mat[,t,,drop=F] * maa_mat[,t,,drop=F])
+    spawner_mat[t,spawner_mat[t,]<0.0001] <-  0.0001
 
     if(t>=start_random_rec_year){
       spawn_t <- t-recruit_age
@@ -668,10 +737,7 @@ future_vpa_R <- function(naa_mat,
                                          fun <- list(SRF_HS,SRF_BH,SRF_RI)[[x]];
                                          fun(ssb,a,b)
                                        })
-        N_mat[1,t,] <- N_mat[1,t,]*exp(SR_mat[t,,"deviance"]) +
-          SR_mat[t,,"intercept"]
-        if(is.na(N_mat[1,t,1])) stop("Error: Recruitment cannot be estimated correctly...")
-        if(is_waa_fun) waa_mat[1,t,] <- waa_catch_mat[1,t,] <- update_waa_mat(waa=waa_mat[1,t,],rand=waa_rand_mat[1,t,],naa=N_mat[1,t,],pars_b0=waa_par_mat[1,,"b0"],pars_b1=waa_par_mat[1,,"b1"]) # calculate 0 age weight
+        N_mat[1,t,] <- N_mat[1,t,]*exp(SR_mat[t,,"deviance"]) + SR_mat[t,,"intercept"]
       }else{
         # fix_recruitですでに加入尾数が入っていて、自己相関ありの場合
         # make_future_dataの段階では対応するSSBがいくつかわからないので、SSBが計算された段階で
@@ -696,9 +762,17 @@ future_vpa_R <- function(naa_mat,
             SR_mat[(t+1):total_nyear,,"deviance"] <- SR_mat[(t+1):total_nyear,,"deviance"] - SR_mat[(t+1):total_nyear,,"bias_factor"]
           }
         }
-      }
-    }
+      } # close else in [all(N_mat[1,t,]==0)]
 
+      if(is.na(N_mat[1,t,1])) stop("Error: Recruitment cannot be estimated correctly...")
+      # 加入が入力されたあとで０歳のSSB計算用の体重と漁獲量計算用の体重を更新する
+      if(is_waa_fun)
+        waa_mat[1,t,]       <- update_waa_mat(t=t,waa=waa_mat,rand=waa_rand_mat,naa=N_mat,
+                                             pars_b0=waa_par_mat[,,"b0"],pars_b1=waa_par_mat[,,"b1"])[1,]
+      if(is_waa_catch_fun)
+        waa_catch_mat[,t,] <- update_waa_catch_mat(t=t,waa=waa_catch_mat,rand=waa_catch_rand_mat,naa=N_mat,
+                                                   pars_b0=waa_catch_par_mat[,,"b0"],pars_b1=waa_catch_par_mat[,,"b1"])
+    }
 
     if(t>=start_ABC_year){
       # harvest control rule
@@ -871,11 +945,18 @@ future_vpa_R <- function(naa_mat,
         N_mat[iage+1,t+1,] <- N_mat[iage,t,]*exp(-M_mat[iage,t,]-F_mat[iage,t,])
       }
       if(plus_group == TRUE) N_mat[plus_age,t+1,] <- N_mat[plus_age,t+1,] + N_mat[plus_age,t,]*exp(-M_mat[plus_age,t,]-F_mat[plus_age,t,])
-      if(is_waa_fun) waa_mat[,t,] <- waa_catch_mat[,t,] <- update_waa_mat(waa=waa_mat[,t,],rand=waa_rand_mat[,t,],naa=N_mat[,t,],pars_b0=waa_par_mat[,,"b0"],pars_b1=waa_par_mat[,,"b1"])
-      if(is_maa_fun) maa_mat[,t,] <-                       update_maa_mat(maa=maa_mat[,t,],rand=maa_rand_mat[,t,],naa=N_mat[,t,],pars_b0=maa_par_mat[,,"b0"],pars_b1=maa_par_mat[,,"b1"],min_value=maa_par_mat[,,"min"],max_value=maa_par_mat[,,"max"])
+      # waaとmaaの更新(ここ、不要では？)
+      ## if(is_waa_fun)
+      ##   waa_mat[,t,]       <- update_waa_mat(t=t,waa=waa_mat,rand=waa_rand_mat,naa=N_mat,
+      ##                                        pars_b0=waa_par_mat[,,"b0"],pars_b1=waa_par_mat[,,"b1"])
+      ## if(is_waa_catch_fun)
+      ##   waa_catch_mat[,t,] <- update_waa_catch_mat(t=t,waa=waa_catch_mat,rand=waa_catch_rand_mat,naa=N_mat,
+      ##                                              pars_b0=waa_catch_par_mat[,,"b0"],pars_b1=waa_catch_par_mat[,,"b1"])    
+      ## if(is_maa_fun) maa_mat[,t,] <- update_maa_mat(maa=maa_mat[,t,],rand=maa_rand_mat[,t,],naa=N_mat[,t,],
+      ##                                               pars_b0=maa_par_mat[,,"b0"],pars_b1=maa_par_mat[,,"b1"],
+      ##                                               min_value=maa_par_mat[,,"min"],max_value=maa_par_mat[,,"max"])
     }
-
-      HCR_realized[t,,"wcatch"] <- catch_equation(N_mat[,t,],F_mat[,t,],waa_catch_mat[,t,],M_mat[,t,],Pope=Pope) %>% colSums()
+    HCR_realized[t,,"wcatch"] <- catch_equation(N_mat[,t,],F_mat[,t,],waa_catch_mat[,t,],M_mat[,t,],Pope=Pope) %>% colSums()
   }
 
   if(Pope==1){
@@ -926,7 +1007,9 @@ future_vpa_R <- function(naa_mat,
   if(what_return=="obj")  return(obj)
   if(what_return=="stat"){
     tmb_data$SR_mat[,,"ssb"]  <- spawner_mat
-    tmb_data$SR_mat[,,"recruit"]  <- N_mat[1,,]
+    tmb_data$SR_mat[,,"recruit"]   <- N_mat[1,,]
+    tmb_data$SR_mat[,,"biomass"]   <- apply(N_mat*waa_mat,c(2,3),sum)
+    tmb_data$SR_mat[,,"cbiomass"]  <- apply(N_mat*waa_catch_mat,c(2,3),sum)  
     res <- list(naa=N_mat, wcaa=wcaa_mat, faa=F_mat, SR_mat=tmb_data$SR_mat,maa=maa_mat,
                 HCR_mat=HCR_mat,HCR_realized=HCR_realized,multi=exp(x),waa=waa_mat, waa_catch_mat=waa_catch_mat)
     if(isTRUE(do_MSE)) res$SR_MSE <- SR_MSE
@@ -1045,8 +1128,9 @@ set_SR_mat <- function(res_vpa=NULL,
     }
     SR_mat[,,"rho"] <- res_SR$pars$rho
     SR_mat[random_rec_year_period,,"intercept"] <- recruit_intercept # future intercept
-    if(!is.null(res_SR$input$SRdata$release))
-      SR_mat[as.character(res_SR$input$SRdata$year),,"intercept"] <- res_SR$input$SRdata$release
+    if("release" %in% str_sub(names(res_SR$input$SRdata),1,7))
+      if("release_alive" %in% names(res_SR$input$SRdata)) SR_mat[as.character(res_SR$input$SRdata$year),,"intercept"] <- res_SR$input$SRdata$release_alive
+      if("release" %in% names(res_SR$input$SRdata)) SR_mat[as.character(res_SR$input$SRdata$year),,"intercept"] <- res_SR$input$SRdata$release    
 
       if(!is.null(res_vpa)){
         SR_mat[1:(start_random_rec_year-1),,"ssb"] <- as.numeric(colSums(res_vpa$ssb,na.rm=T))[1:(start_random_rec_year-1)]
@@ -1057,7 +1141,7 @@ set_SR_mat <- function(res_vpa=NULL,
       ssb_range     <- 1:(start_random_rec_year-1-recruit_age)
 
       # re-culcurate past recruitment deviation
-      # intercept=relase fish
+      # intercept=release fish
       SR_mat[recruit_range,,"deviance"] <- SR_mat[recruit_range,,"rand_resid"] <-
         log(SR_mat[recruit_range,,"recruit"]-SR_mat[recruit_range,,"intercept"]) -
         log(SRF(SR_mat[ssb_range,,"ssb"],SR_mat[recruit_range,,"a"],SR_mat[recruit_range,,"b"]))
@@ -1362,8 +1446,8 @@ get_summary_stat <- function(all.stat){
 
   sumvalue <- all.stat %>% as_tibble %>%
     mutate(SSB2SSB0=all.stat$ssb.mean/all.stat$ssb.mean[2]) %>%
-    select(RP_name,ssb.mean,SSB2SSB0,biom.mean,U.mean,catch.mean,catch.CV,Fref2Fcurrent)
-  colnames(sumvalue) <- c("RP_name","SSB","SSB2SSB0","B","U","Catch","Catch.CV","Fref/Fcur")
+    select(RP_name,ssb.mean,SSB2SSB0,biom.mean,cbiom.mean, U.mean,catch.mean,catch.CV,Fref2Fcurrent)
+  colnames(sumvalue) <- c("RP_name","SSB","SSB2SSB0","B","cB","U","Catch","Catch.CV","Fref/Fcur")
 
   sumvalue <- bind_cols(sumvalue,all.stat[,substr(colnames(all.stat),1,1)=="F"])
 
@@ -1399,6 +1483,7 @@ format_to_old_future <- function(fout){
   }
   fout_old$M         <- fout$input$tmb_data$M_mat
   fout_old$vssb      <- apply(fout$naa * fout_old$waa * fout_old$maa, c(2,3), sum, na.rm=T)
+  fout_old$vbiom_catch <- apply(fout$naa * fout_old$waa.catch, c(2,3),sum, na.rm=T)  
   fout_old$vbiom     <- apply(fout$naa * fout_old$waa, c(2,3),sum, na.rm=T)
   fout_old$vwcaa     <- apply(fout$wcaa,c(2,3),sum, na.rm=T)
   fout_old$currentF  <- fout$faa[,fout$input$tmb_data$start_ABC_year-1,1]
@@ -1416,7 +1501,8 @@ format_to_old_future <- function(fout){
     fout_old$beta_gamma     <- fout$HCR_mat[,,"beta_gamma"]
       fout_old$alpha     <- fout$HCR_mat[,,"beta_gamma"]
       fout_old$Fratio     <- fout$HCR_mat[,,"Fratio"]
-      }
+  }
+  fout_old$wcaa <- fout$wcaa
   return(fout_old)
 }
 
@@ -1485,10 +1571,11 @@ if(0){
   #  2  0  0  2
 }
 
-update_waa_mat <- function(waa,rand,naa,pars_b0,pars_b1){
-  waa_tmp <- exp(pars_b0+pars_b1*log(naa)+rand)
-  waa[waa==0 & naa>0] <- waa_tmp[waa==0 & naa>0] # ここでwaa=0のところにだけ数値を入れるので、もともと数値が入っていたら置き換わらない
-  waa
+update_waa_mat <- update_waa_catch_mat <-function(t,waa,rand,naa,pars_b0,pars_b1){
+  waa_tmp <- exp(pars_b0+pars_b1*log(naa[,t,])+rand[,t,])
+  replace_tmp <- waa[,t,]==0 & naa[,t,]>0  
+  waa[,t,][replace_tmp] <- waa_tmp[replace_tmp] # ここでwaa=0のところにだけ数値を入れるので、もともと数値が入っていたら置き換わらない
+  waa[,t,]
 }
 
 update_maa_mat <- function(maa,rand,naa,pars_b0,pars_b1,min_value,max_value){
@@ -1506,7 +1593,10 @@ update_maa_mat <- function(maa,rand,naa,pars_b0,pars_b1,min_value,max_value){
 
 get_wcatch <- function(res){
     if(class(res)=="future_new")  return(apply(res$wcaa,c(2,3),sum))
-    if(class(res)=="vpa" || "tune" %in% names(res$input))  return(colSums(res$input$dat$caa * res$input$dat$waa,na.rm=T))
+    if(class(res)=="vpa" || "tune" %in% names(res$input)){
+        if(!is.null(res$input$dat$waa.catch)) return(colSums(res$input$dat$caa * res$input$dat$waa.catch,na.rm=T))
+        if(is.null(res$input$dat$waa.catch)) return(colSums(res$input$dat$caa * res$input$dat$waa,na.rm=T))
+    }
 }
 
 #' @export
@@ -1517,7 +1607,7 @@ get_ssb <- function(res){
 
 #' @export
 get_U <- function(res){
-    if(class(res)=="future_new")  return(res$HCR_realized[,,"wcatch"]/apply(res$naa * res$waa,c(2,3),sum))
+    if(class(res)=="future_new")  return(res$HCR_realized[,,"wcatch"]/apply(res$naa * res$waa_catch,c(2,3),sum))
     if(class(res)=="vpa" || "tune" %in% names(res$input)){
         wcatch <- get_wcatch(res)
         biomass <- colSums(res$naa * res$input$dat$waa,na.rm=T)
@@ -1777,6 +1867,7 @@ est_MSYRP_proxy <- function(data_future,
   # waa_fun, maa_fun=TRUEの場合にはFbaseの管理基準値は計算できない
   assertthat::assert_that(data_future$input$waa_fun==FALSE)
   assertthat::assert_that(data_future$input$maa_fun==FALSE)
+  assertthat::assert_that(data_future$input$waa_catch_fun==FALSE)  
 
   # candidateとして受け付けるもの以外ははねる
   assertthat::assert_that(all(Fmsy_proxy_candidate %in% c("Fmax","F0.1","F%spr")))

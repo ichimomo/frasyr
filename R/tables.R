@@ -1,85 +1,90 @@
-#' Make table for stock assessment result
-#'
-#' @param result_vpa Obejct returned from \code{vpa()}
-#' @param result_msy Object MSY result created previous SC meeting...?
-#' @param result_future Object returnd from \code{future_vpa()}
-#' @param yr_future_start Year when future projection starts
-#' @export
+## #' Make table for stock assessment result 
+## #'
+## #' !this function is replaced by make_stock_table2 so that currently not used
+## #' 
+## #' @param result_vpa Obejct returned from \code{vpa()}
+## #' @param result_msy Object MSY result created previous SC meeting...?
+## #' @param result_future Object returnd from \code{future_vpa()}
+## #' @param yr_future_start Year when future projection starts
+## #' @export
 
-make_stock_table <- function(result_vpa, result_msy, result_future,
-                             yr_future_start, yr_abc, faa_pre_abc, unit = "百トン") {
-  return_ <- function() {
-    rbind(recent_four_years_(),
-          future_start_year_(),
-          abc_year_())
-  }
+## make_stock_table <- function(result_vpa, result_msy, result_future,
+##                              yr_future_start, yr_abc, faa_pre_abc, unit = "百トン") {
+##   return_ <- function() {
+##     rbind(recent_four_years_(),
+##           future_start_year_(),
+##           abc_year_())
+##   }
 
-  n_years_to_display  <- 6
-  yr_newest_recent    <- yr_abc - 2
-  yr_oldest_recent    <- yr_abc - (n_years_to_display - 1)
+##   n_years_to_display  <- 6
+##   yr_newest_recent    <- yr_abc - 2
+##   yr_oldest_recent    <- yr_abc - (n_years_to_display - 1)
 
-  recent_four_years_ <- function() {
+##   recent_four_years_ <- function() {
 
-    f_per_fmsy_ <- function(year) {
-      make_kobe_ratio(result_vpa, result_msy) %>%
-        dplyr::select(year, Fratio) %>%
-        dplyr::filter(year %in% as.character(yr_oldest_recent:yr_newest_recent)) %>%
-        dplyr::pull(Fratio) %>%
-        round(2)
-    }
+##     f_per_fmsy_ <- function(year) {
+##       make_kobe_ratio(result_vpa, result_msy) %>%
+##         dplyr::select(year, Fratio) %>%
+##         dplyr::filter(year %in% as.character(yr_oldest_recent:yr_newest_recent)) %>%
+##         dplyr::pull(Fratio) %>%
+##         round(2)
+##     }
 
-    pull_x_from_vpa_result_ <- function(x) {
-      result_vpa %>%
-        convert_vpa_tibble() %>%
-        dplyr::filter(dplyr::between(year, yr_oldest_recent, yr_newest_recent),
-                      stat == x) %>%
-        dplyr::group_by(year) %>%
-        dplyr::summarize(output = convert_unit(value, to = unit)) %>%
-        dplyr::pull(output) %>%
-        round(0)
-    }
+##     pull_x_from_vpa_result_ <- function(x) {
+##       result_vpa %>%
+##         convert_vpa_tibble() %>%
+##         dplyr::filter(dplyr::between(year, yr_oldest_recent, yr_newest_recent),
+##                       stat == x) %>%
+##         dplyr::group_by(year) %>%
+##         dplyr::summarize(output = convert_unit(value, to = unit)) %>%
+##         dplyr::pull(output) %>%
+##         round(0)
+##     }
 
-    data.frame(Year     = yr_oldest_recent:yr_newest_recent,
-               Biomass  = pull_x_from_vpa_result_(x = "biomass"),
-               SSB      = pull_x_from_vpa_result_(x = "SSB"),
-               Catch    = pull_x_from_vpa_result_(x = "catch"),
-               `F/Fmsy` = f_per_fmsy_()) %>%
-      dplyr::mutate(HarvestRate = round(Catch / Biomass * 100, 0))
-  }
+##     data.frame(Year     = yr_oldest_recent:yr_newest_recent,
+##                Biomass  = pull_x_from_vpa_result_(x = "biomass"),
+##                cBiomass  = pull_x_from_vpa_result_(x = "cbiomass"),               
+##                SSB      = pull_x_from_vpa_result_(x = "SSB"),
+##                Catch    = pull_x_from_vpa_result_(x = "catch"),
+##                `F/Fmsy` = f_per_fmsy_()) %>%
+##       dplyr::mutate(HarvestRate = round(Catch / Biomass * 100, 0))
+##   }
 
-  future_start_year_ <- function() {
+##   future_start_year_ <- function() {
 
-    fratio <- mean(faa_pre_abc) / extract_fmsy(result_msy, mean = TRUE)
+##     fratio <- mean(faa_pre_abc) / extract_fmsy(result_msy, mean = TRUE)
 
-    data.frame(Year = yr_future_start,
-               Biomass  = calc_x_from_future_result_(x = "biomass", yr = yr_future_start),
-               SSB      = calc_x_from_future_result_(x = "ssb",     yr = yr_future_start),
-               Catch    = calc_x_from_future_result_(x = "catch",   yr = yr_future_start),
-               `F/Fmsy` = round(fratio, 2)) %>%
-      dplyr::mutate(HarvestRate = round(Catch / Biomass * 100, 0))
-  }
+##     data.frame(Year = yr_future_start,
+##                Biomass  = calc_x_from_future_result_(x = "biomass", yr = yr_future_start),
+##                cBiomass  = calc_x_from_future_result_(x = "cbiomass", yr = yr_future_start),               
+##                SSB      = calc_x_from_future_result_(x = "ssb",     yr = yr_future_start),
+##                Catch    = calc_x_from_future_result_(x = "catch",   yr = yr_future_start),
+##                `F/Fmsy` = round(fratio, 2)) %>%
+##       dplyr::mutate(HarvestRate = round(Catch / Biomass * 100, 0))
+##   }
 
-  abc_year_ <- function() {
-    data.frame(Year = yr_abc,
-               Biomass  = calc_x_from_future_result_(x = "biomass", yr = yr_abc),
-               SSB      = calc_x_from_future_result_(x = "ssb"    , yr = yr_abc),
-               Catch    = "-",
-               `F/Fmsy` = "-",
-               HarvestRate = "-")
-  }
+##   abc_year_ <- function() {
+##     data.frame(Year = yr_abc,
+##                Biomass  = calc_x_from_future_result_(x = "biomass", yr = yr_abc),
+##                cBiomass  = calc_x_from_future_result_(x = "cbiomass", yr = yr_abc),               
+##                SSB      = calc_x_from_future_result_(x = "ssb"    , yr = yr_abc),
+##                Catch    = "-",
+##                `F/Fmsy` = "-",
+##                HarvestRate = "-")
+##   }
 
-  calc_x_from_future_result_ <- function(x, yr) {
-    result_future %>%
-      extract_value.future_new(what = x,
-                               year = yr,
-                               unit = unit) %>%
-      dplyr::pull(average) %>%
-      round(0)
-  }
+##   calc_x_from_future_result_ <- function(x, yr) {
+##     result_future %>%
+##       extract_value.future_new(what = x,
+##                                year = yr,
+##                                unit = unit) %>%
+##       dplyr::pull(average) %>%
+##       round(0)
+##   }
 
 
-  return_()
-}
+##   return_()
+## }
 
 #' Make table for stock assessment result 2
 #'
@@ -96,10 +101,13 @@ make_stock_table2 <- function(result_future0.8,
                               Fcurrent_year_range) {
 
   years_to_display  <- (yr_future_ABC-5):yr_future_ABC
+
+  if(!"cbiomass" %in% names(result_future0.8$summary)) result_future0.8$summary$cbiomass <- apply(result_future0.8$waa_catch_mat * result_future0.8$naa, c(2,3), sum) %>% apply(1,mean)
+
   stock_table <- result_future0.8$summary %>%
     dplyr::filter(year %in% years_to_display) %>%
-    select(year, biomass, SSB, catch, Fratio) %>%
-    mutate(harvest_rate=catch/biomass) %>%
+    select(year, biomass, cbiomass, SSB, catch, Fratio) %>%
+    mutate(harvest_rate=catch/cbiomass) %>%
     rename("F_year/F_msy"=Fratio) %>%
     mutate(year_label=case_when(year==yr_future_ABC ~ "ABC year",
                                 year%in%Fcurrent_year_range ~ "Fcurrent year")) %>%

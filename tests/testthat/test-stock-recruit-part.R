@@ -75,7 +75,7 @@ test_that("output value check",{
 
   load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
   SRdata_pma_check <- get.SRdata(res_vpa_pma)
-
+  
   #上記引数での計算結果を読み込み
   load(system.file("extdata","SRdata_pma.rda",package = "frasyr"))
 
@@ -83,6 +83,32 @@ test_that("output value check",{
   expect_equal(SRdata_pma_check$year, SRdata_pma$year)
   expect_equal(SRdata_pma_check$SSB, SRdata_pma$SSB)
   expect_equal(SRdata_pma_check$R, SRdata_pma$R)
+
+})
+
+test_that("check weight.year option",{
+
+  load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))    
+  SRdata_pma_check_weight <- get.SRdata(res_vpa_pma, weight.year=1990:2000)
+  expect_equal(sum(SRdata_pma_check_weight$weight), length(1990:2000))
+
+  weight.value <- c(rep(0.5,15),rep(1,15))
+  SRdata_pma_check_weight <- get.SRdata(res_vpa_pma,
+                                        weight.data=tibble(year=SRdata_pma_check_weight$year,
+                                                           weight=weight.value))
+  expect_equal(SRdata_pma_check_weight$weight, weight.value)
+
+  res_SR1 <- fit.SR(SRdata_pma_check_weight, SR="HS", AR=0, method="L2")
+
+  res_SR2 <- SRdata_pma_check_weight %>% mutate(weight=ifelse(year<1997, 0.001, 1)) %>%
+    fit.SR(SR="HS", AR=0, method="L2")
+
+  res_SR3 <- SRdata_pma_check_weight %>% mutate(weight=ifelse(year<1997, 0, 1)) %>%
+    fit.SR(SR="HS", AR=0, method="L2")
+
+  expect_equal(res_SR2$pars$a==res_SR1$pars$a,FALSE)
+  expect_equal(res_SR2$pars$a, res_SR3$pars$a, tol=1e-5)
+  
 })
 
 context("stock-recruitment fitSR")
@@ -343,6 +369,7 @@ test_that("output value check",{
 })
 
 test_that("tentative test for sd of L1 and L2",{
+    
       #SSB=c(rep(1:5,2),3)
       SSB=c(rep(1:5,4))
       #CV=c(rep(-1,4),-2,rep(1,4),2,0)
@@ -404,6 +431,7 @@ test_that("tentative test for sd of L1 and L2",{
 context("stock-recruitment fit.SRregime")
 
 test_that("check matching of fit.SRregime and fit.SR",{
+    
   load(system.file("extdata","SRdata_pma.rda",package = "frasyr"))
   SRdata = SRdata_pma
   SRmodel.list <- expand.grid(SR.rel = c("HS", "BH", "RI"),
@@ -489,3 +517,4 @@ test_that("test for fit.SR_tol",{
   }
 
 })
+
