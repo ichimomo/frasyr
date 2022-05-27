@@ -275,9 +275,11 @@ plot_Fref <- function(rres,xlabel="max", # or, "mean","Fref/Fcur"
 #'
 
 plot_SRdata <- function(SRdata, type=c("classic","gg")[1]){
-  is_release_data <- "release" %in% names(SRdata)
+
+  is_release_data <- "release" %in% str_sub(names(SRdata),1,7)
   if(is_release_data){
-    allR <- SRdata$allR <- SRdata$R + SRdata$release
+    if(!"release_alive" %in% names(SRdata)) SRdata$release_alive <- SRdata$release
+    allR <- SRdata$allR <- SRdata$R + SRdata$release_alive
   }
   else{
     allR <- SRdata$R
@@ -365,11 +367,19 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
   SRdata.pred <- as_tibble(SR_result$pred) %>%
     mutate(type="pred", year=NA, R=R)
 
-  is_release_data <- "release" %in% names(SR_result$input$SRdata)
+  is_release_data <- "release" %in% str_sub(names(SRdata_R2),1,7)    
   if(is_release_data){
-    SRdata.release <- SR_result$input$SRdata %>% mutate(allR=release+R) %>%
+    if(!"release_alive" %in% names(SRdata)){
+      SR_result$input$SRdata$release_alive <- SRdata$release
+      SR_result$input$SRdata$release       <- NULL
+    }
+    else{
+      SR_result$input$SRdata$release_all <- NULL
+      SR_result$input$SRdata$release_aliverate <- NULL      
+    }
+    SRdata.release <- SR_result$input$SRdata %>% mutate(allR=release_alive+R) %>%
       mutate(weight=ifelse(weight>0, 1, 0)) %>%
-      select(-R, -release) %>% rename(R=allR) %>% mutate(type="release", weight=factor(weight, levels=c("0","1")))
+      select(-R, -release_alive) %>% rename(R=allR) %>% mutate(type="release", weight=factor(weight, levels=c("0","1")))
   }
   else{
     SRdata.release <- NULL

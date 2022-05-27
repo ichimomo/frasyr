@@ -48,6 +48,7 @@
 #' @param resample_year_range "resampling", "backward"で有効。0の場合、推定に使ったデータから計算される残差を用いる。年の範囲を入れると、対象とした年の範囲で計算される残差を用いる。
 #' @param backward_duration "backward"の場合、何年で１ブロックとするか。"backward"で有効。デフォルトは5 。
 #' @param recruit_intercept 将来の加入の切片。将来の加入は R=f(ssb) + intercept となる。
+#' @param setting_release より詳細な放流シナリオを設定する場合. 将来の放流数は list(number=tibble(value=)) or list(number=tibble(year=))) or list(number=tibble(year=xxx, value=xxx))) として与える。yearのみ単独で与えるのは過去年を与え、その期間の平均放流数を使う。yearとvalueの両方を与える場合には、将来年が想定されており、その年の放流尾数をvalueとして用いる。例えば tibble(year=c(2021:2100), value=c(100,200,rep(300,length(21:2100)-2)) と与えると2021,2022年は100, 200匹の総放流尾数、2023年以降は300匹となる。年は、実際に将来予測を実施するよりも十分長い年数を与えること（長すぎても問題はないので）。将来の添加効率も list(rate=tibble(value=)) or list(rate=tibble(year=))) として与える。この場合のyearは過去年。valueを与えると、与えたvalueのベクトルからランダムサンプリングされる。結果的にsetting_release = list(number=tibble(year=1990:2000), rate=tibble(value=c(0.4, 0.5, 0.3))) みたいな、リストの中に２つのtibbleが入ったちょっとややこしい構造になります
 #' @param model_average_option model averagingをする場合のオプション. SR_matのlistとweightをlist形式で入れる(list(SR_list=list(res_SR1,res_SR2),weight=c(0.5,0.5)))
 #' @param regime_shift_option res_SRにfit.SRregimeの返り値を入れた場合に指定する。将来予測で再生産関係のどのフェーズがおこるかを指定する。list(future_regime=将来のregimeの仮定。keyで指定された番号を入れる)
 #' @param special_setting list形式で与えるmake_future_dataの返り値のdataと同じ名前の要素について、最後にデータをここで示されたarrayのシミュレーション1回めの値で上書きする。arrayのデータに対してのみ有効。
@@ -120,6 +121,7 @@ make_future_data <- function(res_vpa,
                              resample_year_range=0, # only when "resample" or backward
                              backward_duration=5, # only when backward
                              recruit_intercept=0, # number of additional recruitment (immigration or enhancement)
+                             setting_release=NULL, # より詳細な放流シナリオを設定する場合
                              model_average_option=NULL,
                              regime_shift_option =NULL,
                              silent=FALSE,
@@ -241,6 +243,7 @@ make_future_data <- function(res_vpa,
                        bias_correction=bias_correction,
                        recruit_intercept=recruit_intercept,
                        recruit_age=recruit_age,
+                       setting_release=setting_release,
                        backward_duration=backward_duration,
                        model_average_option=model_average_option,
                        regime_shift_option=regime_shift_option,
@@ -844,6 +847,7 @@ future_vpa_R <- function(naa_mat,
                      backward_duration          = MSE_input_data$input$backward_duration,
                      bias_correction            = MSE_input_data$input$bias_correction,
                      recruit_intercept          = MSE_input_data$input$recruit_intercept,
+                     setting_release            = MSE_input_data$input$setting_release,
                      model_average_option       = MSE_input_data$input$model_average_option,
                      regime_shift_option        = MSE_input_data$input$regime_shift_option,
                      fix_recruit                = MSE_input_data$input$fix_recruit)
@@ -1049,6 +1053,7 @@ set_SR_mat <- function(res_vpa=NULL,
                        resample_year_range=0,
                        backward_duration=5,
                        recruit_intercept=0,
+                       setting_release=NULL,
                        recruit_age=0,
                        model_average_option=NULL,
                        regime_shift_option=NULL,
@@ -1128,6 +1133,8 @@ set_SR_mat <- function(res_vpa=NULL,
     }
     SR_mat[,,"rho"] <- res_SR$pars$rho
     SR_mat[random_rec_year_period,,"intercept"] <- recruit_intercept # future intercept
+
+    ## 放流関連の設定:過去
     if("release" %in% str_sub(names(res_SR$input$SRdata),1,7))
       if("release_alive" %in% names(res_SR$input$SRdata)) SR_mat[as.character(res_SR$input$SRdata$year),,"intercept"] <- res_SR$input$SRdata$release_alive
       if("release" %in% names(res_SR$input$SRdata)) SR_mat[as.character(res_SR$input$SRdata$year),,"intercept"] <- res_SR$input$SRdata$release    
@@ -1137,8 +1144,49 @@ set_SR_mat <- function(res_vpa=NULL,
         SR_mat[1:(start_random_rec_year-1),,"recruit"] <- as.numeric(res_vpa$naa[1,1:(start_random_rec_year-1)])
       }
 
-      recruit_range <- (recruit_age+1):(start_random_rec_year-1)
-      ssb_range     <- 1:(start_random_rec_year-1-recruit_age)
+    ## 未来の放流関連の設定
+    if(!is.null(setting_release)){
+      SRdata <- res_SR$input$SRdata
+      
+      assert_that(!is.null(SRdata$release_ratealive), TRUE)
+      assert_that(!is.null(SRdata$release_alive),     TRUE)
+      assert_that(ncol(setting_release$number)<3 , TRUE)
+      assert_that(ncol(setting_release$rate  )==1, TRUE)      
+
+      tmp <- SR_mat[random_rec_year_period,,"intercept"]
+      # for value_average
+      if(ncol(setting_release$number)==1){ # yearとvalueの両方が入っているか・いないか
+        if(!is.null(setting_release$number$year)){
+          tmp[] <- SRdata %>%
+            dplyr::filter(year %in% setting_release$number$year) %>%
+            select(release_all) %>% unlist() %>% mean(na.rm=TRUE)
+        }
+        if(!is.null(setting_release$number$value)){
+          tmp[] <- mean(setting_release$number$value, na.rm=TRUE)
+        }
+      }else{
+        # exclude data without random-recruitment assumption
+        setting_release$number <- setting_release$number %>%
+            dplyr::filter(year>=start_random_rec_year_name)
+        tmp[dimnames(tmp)[[1]] %in% setting_release$number$year,] <- setting_release$number$value[setting_release$number$year %in% dimnames(tmp)[[1]]]
+      }
+
+      if(!is.null(setting_release$rate$year)){
+        rate_value <- SRdata %>%
+            dplyr::filter(year %in% setting_release$number$year) %>%
+            select(release_ratealive) %>% unlist()
+      }
+      else{
+        rate_value <- setting_release$rate$value
+      }
+      tmp[] <- tmp[] * sample(rate_value, dim(tmp)[[1]] * dim(tmp)[[2]], replace=TRUE) 
+
+      SR_mat[random_rec_year_period,,"intercept"] <- tmp
+    }
+
+        
+    recruit_range <- (recruit_age+1):(start_random_rec_year-1)
+    ssb_range     <- 1:(start_random_rec_year-1-recruit_age)
 
       # re-culcurate past recruitment deviation
       # intercept=release fish
@@ -1212,6 +1260,7 @@ set_SR_mat <- function(res_vpa=NULL,
       for(i in seq_len(length(fix_recruit$year))){
         if(length(fix_recruit$rec[[i]])!=dim(SR_mat)[[2]]) stop("invalid length of recruit")
         SR_mat[as.character(fix_recruit$year[i]),,"recruit"] <- as.numeric(unlist(fix_recruit$rec[i]))
+        
       }
     }
   }
