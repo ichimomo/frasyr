@@ -367,7 +367,7 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
   SRdata.pred <- as_tibble(SR_result$pred) %>%
     mutate(type="pred", year=NA, R=R)
 
-  is_release_data <- "release" %in% str_sub(names(SRdata_R2),1,7)    
+  is_release_data <- "release" %in% str_sub(names(SRdata),1,7)    
   if(is_release_data){
     if(!"release_alive" %in% names(SRdata)){
       SR_result$input$SRdata$release_alive <- SRdata$release
