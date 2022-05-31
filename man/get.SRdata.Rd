@@ -12,6 +12,7 @@ get.SRdata(
   release.dat = NULL,
   years = NULL,
   weight.year = NULL,
+  weight.data = NULL,
   return.df = TRUE
 )
 }
