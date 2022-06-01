@@ -608,9 +608,9 @@ context("density dependent maturity option") # ----
 
 test_that("density dependent maturity option",{
     
-    aa <- safe_call(make_future_data, data_future_test$input)
-    aa$input$"test" <- 1
-    expect_error(safe_call(make_future_data, aa$input))
+    #aa <- safe_call(make_future_data, data_future_test$input)
+    #aa$input$"test" <- 1
+    #expect_error(safe_call(make_future_data, aa$input))
 
     data_future_maa <- redo_future(data_future_test,list(maa_fun=TRUE), only_data=TRUE)
     round(mean(data_future_maa$data$maa_rand_mat[,,1]),5) %>% 

@@ -35,7 +35,7 @@ get.SRdata <- function(vpares=NULL,
                        weight.data = NULL,
                        return.df = TRUE){
 
-    is.release <- !is.null(release.dat) | !is.null(vpares$input$dat$release.dat)
+    is.release <- !is.null(release.dat) | !is.null(vpares$input$dat$release.alive)
     if(is.null(years) && !is.null(vpares)) years <- as.numeric(colnames(vpares$naa))
 
     # R.datとSSB.datだけが与えられた場合、それを使ってシンプルにフィットする
@@ -51,72 +51,90 @@ get.SRdata <- function(vpares=NULL,
         else{
             assertthat::assert_that(length(R.dat)==length(years))
         }
-        dat <- data.frame(R = R.dat,SSB = SSB.dat,year = years)
+        dat <- tibble(R = R.dat,SSB = SSB.dat,year = years)
         if(!is.null(release.dat)) R.dat$release <- release.dat
-    } else {
-    # データの整形
+    } 
+
+    # vpa dataが与えられた場合にはデータの整形をする
+    if(!is.null(vpares)) {    
         n <- ncol(vpares$naa)
         L <- as.numeric(rownames(vpares$naa)[1])
 
         dat      <- list()
         dat$SSB  <- as.numeric(colSums(vpares$ssb,na.rm = TRUE))
         dat$year <- as.numeric(colnames(vpares$ssb))
-
-        if(!is.null(vpares$input$dat$release.dat)){
-            release_age <- which(rownames(vpares$naa)%in%rownames(vpares$input$dat$release.dat))
-            naa <- vpares$naa
-            naa[release_age, ] <- naa[release_age, ] - vpares$input$dat$release.dat
-            dat$R <-  as.numeric(naa[1,])
-            dat$R[dat$R<0] <- 0.001
-            dat$release <- vpares$input$dat$release.dat
-        }
-        else{
-            dat$R    <- as.numeric(vpares$naa[1,])
-            if(!is.null(release.dat)){
-                dat$R <- dat$R-release.dat
-                dat$release <- release.dat
-            }
-        }
-
-    # 加入年齢分だけずらす
+        dat$R   <-  as.numeric(vpares$naa[1,])
+        
+        # 加入年齢分だけずらす
         dat$R    <- dat$R[(L+1):n]
         dat$SSB  <- dat$SSB[1:(n-L)]
         dat$year <- dat$year[(L+1):n]
-        if(is.release) dat$release <- as.numeric(dat$release[(L+1):n])
 
-    # データの抽出
-        dat <- as.data.frame(dat)
-        dat <- dat[dat$year%in%years,]
+        dat <- as_tibble(dat)
+
+        if(!is.null(vpares$input$dat$release.dat)) vpares$input$dat$release.alive <- vpares$input$dat$release.dat
+        if(!is.null(vpares$input$dat$release.alive)){
+
+          tmpfunc <- function(rdat, data_name){
+            if(!is.null(rdat)){
+              dat <- rdat[rownames(rdat) %in% as.character(L), ]
+              rownames(dat) <- data_name
+              dat %>% t() %>% as.data.frame() %>% rownames_to_column(var="year") %>%
+                mutate(year=as.numeric(year)) %>% as_tibble()
+            }
+          }
+
+          dat <- left_join(dat, tmpfunc(vpares$input$dat$release.alive, "release_alive"))
+          dat <- dat %>% mutate(R=R-release_alive)
+          if(!is.null(vpares$input$dat$release.all)){
+            dat <- left_join(dat, tmpfunc(vpares$input$dat$release.all, "release_all"))
+            dat <- left_join(dat, tmpfunc(vpares$input$dat$release.ratealive, "release_ratealive"))            
+          }
+        }
+
+        dat$R[dat$R<0] <- 0.001
+
+        # データの抽出
+        dat <- dat %>% dplyr::filter(year%in%years)
     }
 
     assertthat::assert_that(all(dat[["R"]] > 0))
-    class(dat) <- "SRdata"
 
     #if (return.df == TRUE) return(data.frame(year = dat$year,
     #SSB  = dat$SSB,
     #                                         R    = dat$R,
     #                                             release=dat$release))
     #return(dat[c("year","SSB","R","release")])
-    dat.df <- data.frame(year = dat$year,
-                      SSB  = dat$SSB,
-                      R    = dat$R)
-    if(is.release) dat.df$release <- dat$release
 
-    if(!is.null(weight.year)){
-        dat.df$weight <- 0
-        dat.df$weight[dat$year %in% weight.year]  <- 1
+#    dat.df <- data.frame(year = dat$year,
+#                         SSB  = dat$SSB,
+#                         R    = dat$R)
+#    if(is.release){
+#        dat.df$release_alive <- dat$release_alive
+#        if(!is.null(dat$release_all)) dat.df$release_all <- dat$release_all
+#        if(!is.null(dat$release_ratealive))  dat.df$release_ratealive <- dat$
+#    }
 
-        if(length(weight.year)==1 && weight.year==0){
-            dat.df$weight[]  <- 1
-        }
+  if(!is.null(weight.year)){
+    dat <- dat %>% mutate(weight=0)
+    dat$weight[dat$year %in% weight.year]  <- 1
+    
+    if(length(weight.year)==1 && weight.year==0){
+      dat <- dat %>% mutate(weight=1)
     }
+  }
+  if(is.null(weight.year)){
+    dat <- dat %>% mutate(weight=1)
+  }
 
-    if(!is.null(weight.data)){
-        assertthat::assert_that(all(dat.df$year==weight.data$year))
-        if("weight" %in% names(dat.df)) dat.df <- dat.df %>% select(-weight)
-        dat.df <- dat.df %>% left_join(weight.data)
-    }
-    return(dat.df)
+  if(!is.null(weight.data)){
+    assertthat::assert_that(all(dat$year==weight.data$year))
+    if("weight" %in% names(dat)) dat <- dat %>% select(-weight)
+    dat <- dat %>% left_join(weight.data)
+  }
+
+  dat <- dat %>% select(year, SSB, R, weight, everything())    
+  return(dat)
 
 }
 
