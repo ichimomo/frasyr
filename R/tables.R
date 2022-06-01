@@ -419,7 +419,7 @@ export_tables <- function(to, ...) {
 
   initialize_csv_ <- function() {
     readr::write_excel_csv(data.frame(this_is_dummy = ""),
-                           path      = to,
+                           file      = to,
                            append    = FALSE,
                            col_names = FALSE)
   }
