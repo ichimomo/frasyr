@@ -629,8 +629,8 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 <code class="sourceCode R"><span class="va">res_tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">numeric</a></span><span class="op">(</span><span class="op">)</span>
 <span class="kw">for</span><span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span> <span class="va">res_tmp</span><span class="op">[</span><span class="va">i</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">res_vpa_bootstrap</span><span class="op">$</span><span class="va">res_boot</span><span class="op">[[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="va">Fc.at.age</span><span class="op">[</span><span class="fl">4</span><span class="op">]</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile</a></span><span class="op">(</span><span class="va">res_tmp</span>, probs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.025</span>,<span class="fl">0.5</span>,<span class="fl">0.975</span><span class="op">)</span><span class="op">)</span></code></pre></div>
-<pre><code>     2.5%       50%     97.5% 
-0.6298283 0.8463044 4.6038947 </code></pre>
+<pre><code>      2.5%        50%      97.5% 
+ 0.5382558  0.7705114 11.2043138 </code></pre>
 <p>この他、各パラメータの相関関係について、ブートストラップ標本を基にプロットが得られます。</p>
 <div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">res_vpa_bootstrap</span><span class="op">$</span><span class="va">plot_cor</span></code></pre></div>
