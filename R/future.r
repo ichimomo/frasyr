@@ -1142,14 +1142,13 @@ set_SR_mat <- function(res_vpa=NULL,
     }
 
     ## 放流関連の設定. res_SRとres_vpaのどちらの情報を使うかまず判断する
-    if(is.null(res_vpa) ||
-         (!is.null(setting_release) && is.null(setting_release$data_source)) ||
-         (!is.null(setting_release) && setting_release$data_source=="VPA")){
-      data_SR_release <- get.SRdata(res_vpa)
-    }
-    else{
-      data_SR_release <- res_SR$input$SRdata
-    }
+    data_SR_release <- res_SR$input$SRdata  
+    if(!is.null(res_vpa)){
+      if(!is.null(setting_release) && is.null(setting_release$data_source) ||
+           (!is.null(setting_release) && setting_release$data_source=="VPA")){
+        data_SR_release <- get.SRdata(res_vpa)
+      }}
+    
     # 過去データの入力
     if("release" %in% str_sub(names(data_SR_release),1,7))
       if("release_alive" %in% names(data_SR_release)) SR_mat[as.character(data_SR_release$year),,"intercept"] <- data_SR_release$release_alive
