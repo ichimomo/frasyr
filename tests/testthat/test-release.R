@@ -10,8 +10,8 @@ test_that("read_vpa with release data",{
 
   # vpa with relase data (with alive rate and  relased fish)
   res_vpa_R2 <- read.vpa(system.file("extdata","res_vpa_dummy_release_fish_new.csv",package="frasyr"))
-  expect_equal(res_vpa_R2$input$dat$release.all %>% as.numeric(), rep(10000, length(1973:2019)))
-  expect_equal(res_vpa_R2$input$dat$release.alive %>% as.numeric(), rep(1000, length(1973:2019)))
+  expect_equal(res_vpa_R2$input$dat$release.all %>% as.numeric(), rep(1000, length(1973:2019)))
+  expect_equal(res_vpa_R2$input$dat$release.alive %>% as.numeric(), rep(100, length(1973:2019)))
   expect_equal(res_vpa_R2$input$dat$release.ratealive %>% as.numeric(), rep(0.1, length(1973:2019)))
   
   SRdata_R2 <- res_vpa_R2 %>% get.SRdata()
@@ -82,8 +82,7 @@ test_that("read_vpa with release data",{
   
   setting_release <- list(
       number             = tibble(year=2015:2017), # or value= # or value= & year=
-      rate               = tibble(year=2015:2017), # or value=
-      is_bias_correction = TRUE)
+      rate               = tibble(year=2015:2017)) # or value=
   data_future_test$input$setting_release <- setting_release
   data_future_R2 <- redo_future(data_future_test,
                                 list(res_SR = res_SR_R2, 
@@ -122,11 +121,36 @@ test_that("read_vpa with release data",{
                                      res_vpa= res_vpa_R2),
                                 only_data=T)
   res_intercept <- data_future_R3$data$SR_mat[,,"intercept"]
-  res_intercept[as.character(data_future_test$input$start_random_rec_year_name:tail(dimnames(res_intercept)[[1]],n=1)),]
+#  res_intercept[as.character(data_future_test$input$start_random_rec_year_name:tail(dimnames(res_intercept)[[1]],n=1)),]
   expect_equal(as.numeric(res_intercept["2018",]), rep(0,10))
   expect_equal(unique(as.numeric(res_intercept["2019",])) %>% sort(),
                c(0.2,0.5,0.8) * 100)
   expect_equal(unique(as.numeric(res_intercept[as.character(2020:2030),])) %>% sort(),
-               c(0.2,0.5,0.8) * 200)  
+               c(0.2,0.5,0.8) * 200)
+
+  # VPA結果が１年更新される場合
+  res_vpa_R3 <- create_dummy_vpa(res_vpa_R2)
+  res_vpa_R3$input$dat$release.all["2020"][] <- 3000
+  res_vpa_R3$input$dat$release.alive["2020"][] <- 300
+
+  setting_release <- list(
+      number             = tibble(year=2020), # or value= # or value= & year=
+      rate               = tibble(year=2015:2017),
+      data_source="VPA") # or value=
+  data_future_test$input$setting_release <- setting_release  
+  
+  data_future_R2 <- redo_future(data_future_test,
+                                list(res_SR = res_SR_R2, 
+                                     res_vpa= res_vpa_R3,
+                                     start_random_rec_year_name=2021),
+                                only_data=T)
+  data_future_R2$data$SR_mat[as.character(2020:2037),,"intercept"] %>% mean() %>%
+      expect_equal(300)
+  
+  res_future_R2 <- future_vpa(data_future_R2$data)
+  res_future_R2$summary %>% dplyr::filter(year>2019) %>% select(intercept) %>% unlist() %>% mean() %>% expect_equal(300)
+
+  res_SR_R2 <- fit.SR(SRdata_R2)
+  expect_silent(plot_SR(res_SR_R2))  
   
 })

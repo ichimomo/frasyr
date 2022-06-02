@@ -2995,7 +2995,12 @@ create_dummy_vpa <- function(res_vpa){
   res_vpa_updated$input$dat$waa <- add_1year(res_vpa$input$dat$waa)
   res_vpa_updated$input$dat$maa <- add_1year(res_vpa$input$dat$maa)
   res_vpa_updated$input$dat$M   <- add_1year(res_vpa$input$dat$M  )
-  res_vpa_updated$input$dat$caa <- add_1year(res_vpa$input$dat$caa)  
+  res_vpa_updated$input$dat$caa <- add_1year(res_vpa$input$dat$caa)
+
+  if(!is.null(res_vpa_updated$input$dat$release.all))  res_vpa_updated$input$dat$release.all <- res_vpa_updated$input$dat$release.all %>% add_1year()
+  if(!is.null(res_vpa_updated$input$dat$release.alive))  res_vpa_updated$input$dat$release.alive <- res_vpa_updated$input$dat$release.alive %>% add_1year()
+  if(!is.null(res_vpa_updated$input$dat$release.ratealive))  res_vpa_updated$input$dat$release.ratealive <- res_vpa_updated$input$dat$release.ratealive %>% add_1year()
+  if(!is.null(res_vpa_updated$input$dat$release.dat))  res_vpa_updated$input$dat$release.all <- res_vpa_updated$input$dat$release.dat %>% add_1year()      
 
   if(!is.null(res_vpa_updated$input$dat$waa.catch))
     res_vpa_updated$input$dat$waa.catch <- add_1year(res_vpa$input$dat$waa.catch)    
