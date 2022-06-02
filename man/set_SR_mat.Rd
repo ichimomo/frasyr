@@ -13,9 +13,10 @@ set_SR_mat(
   seed_number,
   resid_type = "lognormal",
   bias_correction = TRUE,
-  resample_year_range = 0,
+  resample_year_range = NA,
   backward_duration = 5,
   recruit_intercept = 0,
+  setting_release = NULL,
   recruit_age = 0,
   model_average_option = NULL,
   regime_shift_option = NULL,
@@ -35,9 +36,11 @@ set_SR_mat(
 
 \item{resid_type}{残差の発生パターン；対数正規分布は"lognormal"、単純リサンプリングは"resampling"、backward-resamplingは"backward"}
 
-\item{resample_year_range}{"resampling", "backward"で有効。0の場合、推定に使ったデータから計算される残差を用いる。年の範囲を入れると、対象とした年の範囲で計算される残差を用いる。}
+\item{resample_year_range}{"resampling", "backward"で有効。年の範囲を入れると、対象とした年の範囲で計算される残差を用いる。}
 
 \item{backward_duration}{"backward"の場合、何年で１ブロックとするか。"backward"で有効。デフォルトは5 。}
+
+\item{setting_release}{詳細はmake_future_dataへ}
 
 \item{model_average_option}{model averagingをする場合のオプション. SR_matのlistとweightをlist形式で入れる(list(SR_list=list(res_SR1,res_SR2),weight=c(0.5,0.5))). 上で設定されたres_SRは使われない.}
 
