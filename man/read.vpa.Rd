@@ -16,7 +16,9 @@ read.vpa(
   faa.label = "fishing mortality at age",
   Fc.label = "Current F",
   naa.label = "numbers at age",
-  release.label = "release dat",
+  release_alive.label = "release alive dat",
+  release_all.label = "release all dat",
+  release_ratealive.label = "release alive rate dat",
   Blimit = NULL,
   Pope = NULL,
   plus.group = NULL,
@@ -26,11 +28,17 @@ read.vpa(
 \arguments{
 \item{tfile}{資源計算結果がまとめられたcsvファイルの名前}
 
-\item{release.label}{放流データを読み込みたい場合。ここで指定したラベルをつけて、年齢を行、年を列とするデータを入れる（catch at ageと同じ構造だが、年齢は必要な年齢だけ取り出した形で良い）}
+\item{release_alive.label}{放流魚のうち生き残って加入したものの尾数。年齢✕年の行列。データのない年齢は省略可。（release_all.labelとrelease_aliverate.labelが与えられる場合、release_alive.labelは与えないこと。加入年齢よりも高齢のデータは入力できるが、現時点では再生産関係や将来予測では考慮されない）}
+
+\item{release_all.label}{全放流尾数。年齢✕年の行列。データのない年齢は省略可。}
+
+\item{release_ratealive.label}{全放流尾数が生き残って加入したする比率。年齢✕年の行列。データのない年齢は省略可。}
 
 \item{Pope}{VPA計算時にどっちを使っているかここで設定する（TRUE or FALSE）。デフォルトはNULLで、その場合にはcaa,faa,naaの関係から自動判別するが、自動判別の結果が出力されるので、それをみて正しく判断されているか確認してください。}
 
 \item{plus.group}{プラスグループを考慮するかどうか。こちらについても、NULLの場合にはfaaとnaaの関係から自動判別するが、結果を一応確認すること。}
+
+\item{release.label}{放流データを読み込みたい場合。ここで指定したラベルをつけて、年齢を行、年を列とするデータを入れる（catch at ageと同じ構造だが、年齢は必要な年齢だけ取り出した形で良い）}
 }
 \description{
 csvファイルとしてまとめられた資源計算結果を読み込んでRのオブジェクトにする
