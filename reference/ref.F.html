@@ -89,51 +89,29 @@
 
     <div id="arguments">
     <h2>Arguments</h2>
-    <dl><dt>res</dt>
-<dd><p>VPAの出力結果(NULLも可)。ここがNULLの場合（VPAの出力結果を与えない場合）でも、Fcurrent, waa, maa, M, waa.catch, max.age, min.age, Popeを別途指定することによって、管理基準値計算ができるようになる</p></dd>
-<dt>Fcurrent</dt>
-<dd><p>仮定する選択率．NULLの場合，res$Fc.at.ageが使われる</p></dd>
-<dt>waa</dt>
-<dd><p>仮定する年齢別体重。直接の値を入れるか，waa.yearで年を指定するやり方のどちらでも動く。直接指定するほうが優先。</p></dd>
-<dt>maa</dt>
-<dd><p>仮定する年齢別成熟率。直接の値を入れるか，waa.yearで年を指定するやり方のどちらでも動く。直接指定するほうが優先。</p></dd>
-<dt>M</dt>
-<dd><p>仮定する年齢別死亡率。直接の値を入れるか，waa.yearで年を指定するやり方のどちらでも動く。直接指定するほうが優先。</p></dd>
-<dt>waa.catch</dt>
-<dd><p>仮定する年齢別体重（漁獲量計算用）。直接の値を入れるか，waa.yearで年を指定するやり方のどちらでも動く。直接指定するほうが優先。</p></dd>
-<dt>M.year</dt>
-<dd><p>年を指定して生物パラメータを仮定する場合．年の範囲の平均値が用いられる．NULLの場合，VPA最終年の値が使われる</p></dd>
-<dt>waa.year</dt>
-<dd><p>年を指定して生物パラメータを仮定する場合．年の範囲の平均値が用いられる．NULLの場合，VPA最終年の値が使われる</p></dd>
-<dt>maa.year</dt>
-<dd><p>年を指定して生物パラメータを仮定する場合．年の範囲の平均値が用いられる．NULLの場合，VPA最終年の値が使われる</p></dd>
-<dt>rps.year</dt>
-<dd><p>Fmedの計算に使うRPSの年の範囲．NULLの場合，全範囲が用いられる</p></dd>
-<dt>rps.vector</dt>
-<dd><p>Fmedの計算に使うRPSのベクトル。rps.yearよりもこちらが優先される。</p></dd>
-<dt>max.age</dt>
-<dd><p>加入年齢を０歳としたときに、SPR計算で考慮される最大の年齢の名前（何行目とかじゃないことに注意, デフォルトはInf）。min.ageも同様。VPA結果を与える場合にはVPA結果から自動的にもってくる。</p></dd>
-<dt>min.age</dt>
-<dd><p>VPA結果を与える場合にはVPA結果から自動的にもってくるが、VPA結果を与えない場合、加入年齢を入力する</p></dd>
-<dt>d</dt>
-<dd><p>0.001</p></dd>
-<dt>Fem.init</dt>
-<dd><p>経験的管理基準値(Fmed, Fmean, Fhigh, Flow)の初期値 (default=0.5)</p></dd>
-<dt>Fmax.init</dt>
-<dd><p>Fmaxの初期値 (default=1.5)</p></dd>
-<dt>F0.1.init</dt>
-<dd><p>F0.1の初期値 (default=0.7)</p></dd>
-<dt>pSPR</dt>
-<dd><p>= seq(10,90,by=10), # F%SPRを計算するときの％SPR</p></dd>
-<dt>iterlim</dt>
-<dd></dd>
-<dt>plot</dt>
-<dd><p>結果のプロットを表示するかどうか</p></dd>
-<dt>Pope</dt>
-<dd><p>Popeの式を使うか</p></dd>
-<dt>F.range</dt>
-<dd><p>YPR, SPR曲線を書くときのFの範囲（Fの最大値のスケール）、かつ、F%SPRを計算するときの初期値を決めるために利用される。F%SPRの推定がうまくいかない場合はこの範囲を調整してください。</p></dd>
-</dl></div>
+    <p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+    </div>
     <div id="note">
     <h2>Note</h2>
     <p>F_SPRのF管理基準値の初期値は　与えられたFのもとでのSPR/目的のSPR　を初期値とするように調整されるので不要。プラスグループを考慮するかどうかはVPAの結果のinput$plus.groupから自動判別される。</p>

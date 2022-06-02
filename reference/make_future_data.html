@@ -125,106 +125,60 @@
 
     <div id="arguments">
     <h2>Arguments</h2>
-    <dl><dt>res_vpa</dt>
-<dd><p>vpaの結果 (vpa関数の返り値)</p></dd>
-<dt>nsim</dt>
-<dd><p>シミュレーションの繰り返し回数</p></dd>
-<dt>nyear</dt>
-<dd><p>将来予測の実施年数</p></dd>
-<dt>plus_age</dt>
-<dd><p>プラスグループとして計算する行（年齢ではないことに注意）。デフォルト値（NULL）ならfuture_initial_year_name年にNA以外の数値が入っている一番大きい行をプラスグループの行とする。plus_ageという名前だが、plus_group=FALSEの場合には、たんに最大年齢になる。年齢の行数よりもプラスグループが小さいような場合（対馬マイワシなど）に対応。</p></dd>
-<dt>plus_group</dt>
-<dd><p>プラスグループを考慮するかどうか。与えない場合、res_vpa$input$plus.groupの設定を引き継ぐ。ただし、inputを使ってdo.callする場合などにはうまく調整できないことがあるので、明示的に与えたほうがよいかも。</p></dd>
-<dt>future_initial_year_name</dt>
-<dd><p>将来予測の「初期値となる」年齢別資源尾数を参照する年。この年の年齢別資源尾数を使って翌年の個体群動態が将来予測で決定される</p></dd>
-<dt>start_F_year_name</dt>
-<dd><p>将来予測でF全体にmultiplierを乗じる場合、multiplierを乗じる最初の年</p></dd>
-<dt>start_biopar_year_name</dt>
-<dd><p>生物パラメータを将来の生物パラメータとして設定された値に置き換える年の最初の年</p></dd>
-<dt>start_random_rec_year_name</dt>
-<dd><p>将来の加入を再生産関係から予測する最初の年</p></dd>
-<dt>waa_year</dt>
-<dd><p>将来の年齢別体重を過去の平均値とする場合、過去のパラメータを平均する期間, maa_year, M_yearも同様</p></dd>
-<dt>waa</dt>
-<dd><p>将来の年齢別体重を直接与える場合, maa, M_yearも同様</p></dd>
-<dt>waa_fun</dt>
-<dd><p>FALSE: 使わない、TRUE: log(weight)~log(number)の回帰式から将来のweightを予測する,</p></dd>
-<dt>start_waafun_year_name</dt>
-<dd><p>上記の設定がスタートする最初の年。それ以外の年は上で設定されたパラメータが使われる</p></dd>
-<dt>waa_fun_name</dt>
-<dd><p>カスタマイズされたwaa_funを使う場合、その関数のオブジェクトの名前</p></dd>
-<dt>waa_catch_fun</dt>
-<dd><p>FALSE: 使わない、TRUE: log(weight)~log(number)の回帰式から将来のweightを予測する</p></dd>
-<dt>waa_catch_fun_name</dt>
-<dd><p>カスタマイズされたwaa_funを使う場合、その関数のオブジェクトの名前</p></dd>
-<dt>maa_fun</dt>
-<dd><p>maturity ~ number の回帰式から将来のmaturityを予測する(暫定的、太平洋マダラでのみ利用)</p></dd>
-<dt>faa_year</dt>
-<dd><p>将来のFを過去の平均値とする場合、平均をとる年を指定する。下のcurrentF, futureFが指定されている場合にはこの設定は無視される</p></dd>
-<dt>currentF</dt>
-<dd><p>start_ABC_yar_name以前に使うFのベクトル（いわゆるcurrent F）</p></dd>
-<dt>futureF</dt>
-<dd><p>start_ABC_yar_name以降に使うFのベクトル（いわゆるFmsy）</p></dd>
-<dt>start_ABC_year_name</dt>
-<dd><p>HCRを有効にする年</p></dd>
-<dt>HCR_beta</dt>
-<dd><p>HCRのbeta</p></dd>
-<dt>HCR_Blimit</dt>
-<dd><p>HCRのBlimit</p></dd>
-<dt>HCR_Bban</dt>
-<dd><p>HCRのBban</p></dd>
-<dt>HCR_year_lag</dt>
-<dd><p>HCRするときにいつのタイミングのssbを参照するか.0の場合、ABC計算年のSSBを参照する。正の値1を入れると1年前のssbを参照する</p></dd>
-<dt>HCR_beta_year</dt>
-<dd><p>betaを年によって変える場合。tibble(year=2020:2024, beta=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える。HCR_betaで設定されたbetaは上書きされる。</p></dd>
-<dt>HCR_Blimit_year</dt>
-<dd><p>Blimitを年によって変える場合。tibble(year=2020:2024, Blimit=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える。HCR_Blimitで設定されたBlimitは上書きされる。</p></dd>
-<dt>HCR_Bban_year</dt>
-<dd><p>Bbanを年によって変える場合。tibble(year=2020:2024, Bban=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える。HCR_Bbanで設定されたBbanは上書きされる。</p></dd>
-<dt>HCR_TAC_reserve_rate</dt>
-<dd><p>TACの取り残し率</p></dd>
-<dt>HCR_TAC_reserve_amount</dt>
-<dd><p>その年の総漁獲可能量に対する獲り残し量</p></dd>
-<dt>HCR_TAC_carry_rate</dt>
-<dd><p>TACの何％まで持ち越せるか</p></dd>
-<dt>HCR_TAC_carry_amount</dt>
-<dd><p>当初TACのうち何トンまで持ち越せるか</p></dd>
-<dt>HCR_TAC_upper_CV</dt>
-<dd><p>漁獲量が前年の漁獲量のHCR_TAC_upper_CV倍と比較し、それよりも変化が大きい場合には前年の漁獲量xHCR_TAC_upper_CVを上限とする。単一の値か、tibble形式 tibble(year=2020:2024, TAC_upper_CV=rep(0.1,5)) で与える</p></dd>
-<dt>HCR_TAC_lower_CV</dt>
-<dd><p>漁獲量が前年の漁獲量のHCR_TAC_lower_CV倍と比較し、それよりも変化が大きい場合には前年の漁獲量xHCR_TAC_lower_CVを下限とする。単一の値か、tibble形式 tibble(year=2020:2024, TAC_lower_CV=rep(0.1,5)) で与える</p></dd>
-<dt>HCR_function_name</dt>
-<dd><p>デフォルトは"HCR_default" ここを変更(関数名を文字列で与える。関数は別に定義しておく)すると自作のHCRが適用される。その場合、データのほうで定義されているbeta, Blimit, Bbanなど、同じ名前のものは有効</p></dd>
-<dt>Pope</dt>
-<dd><p>漁獲方程式にPopeの近似式を使うかどうか。与えない場合には、VPAのオプションが引き継がれる</p></dd>
-<dt>fix_recruit</dt>
-<dd><p>将来予測において再生産関係を無視して加入量を一定値で与える場合、その加入の値。list(year=2020, rec=1000)のように与える。</p></dd>
-<dt>fix_wcatch</dt>
-<dd><p>将来予測において漁獲量をあらかじめ決める場合</p></dd>
-<dt>res_SR</dt>
-<dd><p>再生産関係の推定関数 (fit.SR　of fit.SRregime) の返り値</p></dd>
-<dt>seed_number</dt>
-<dd><p>乱数のシードの数</p></dd>
-<dt>resid_type</dt>
-<dd><p>加入量の残差の発生方法。"lognormal":対数正規分布, "resample": リサンプリング, "backward": backward resampling</p></dd>
-<dt>bias_correction</dt>
-<dd><p>将来予測でバイアス補正をするかどうか</p></dd>
-<dt>resample_year_range</dt>
-<dd><p>"resampling", "backward"で有効。0の場合、推定に使ったデータから計算される残差を用いる。年の範囲を入れると、対象とした年の範囲で計算される残差を用いる。</p></dd>
-<dt>backward_duration</dt>
-<dd><p>"backward"の場合、何年で１ブロックとするか。"backward"で有効。デフォルトは5 。</p></dd>
-<dt>recruit_intercept</dt>
-<dd><p>将来の加入の切片。将来の加入は R=f(ssb) + intercept となる。</p></dd>
-<dt>model_average_option</dt>
-<dd><p>model averagingをする場合のオプション. SR_matのlistとweightをlist形式で入れる(list(SR_list=list(res_SR1,res_SR2),weight=c(0.5,0.5)))</p></dd>
-<dt>regime_shift_option</dt>
-<dd><p>res_SRにfit.SRregimeの返り値を入れた場合に指定する。将来予測で再生産関係のどのフェーズがおこるかを指定する。list(future_regime=将来のregimeの仮定。keyで指定された番号を入れる)</p></dd>
-<dt>special_setting</dt>
-<dd><p>list形式で与えるmake_future_dataの返り値のdataと同じ名前の要素について、最後にデータをここで示されたarrayのシミュレーション1回めの値で上書きする。arrayのデータに対してのみ有効。</p></dd>
-</dl></div>
+    <p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+    </div>
     <div id="value">
     <h2>Value</h2>
-    <p>以下の要素からなるリスト</p><dl><dt><code>input</code></dt>
+    
+
+<p>以下の要素からなるリスト</p><dl><dt><code>input</code></dt>
 <dd><p>使用した引数のリスト。<code>do.call(make_future_data, input)</code>で計算を再現できる</p></dd>
 
 <dt><code>data</code></dt>
