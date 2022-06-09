@@ -976,6 +976,9 @@ out.vpa <- function(res=NULL,    # VPA result
 #' @param tfile 資源計算結果がまとめられたcsvファイルの名前
 #' @param Pope  VPA計算時にどっちを使っているかここで設定する（TRUE or FALSE）。デフォルトはNULLで、その場合にはcaa,faa,naaの関係から自動判別するが、自動判別の結果が出力されるので、それをみて正しく判断されているか確認してください。
 #' @param plus.group プラスグループを考慮するかどうか。こちらについても、NULLの場合にはfaaとnaaの関係から自動判別するが、結果を一応確認すること。
+#' @param release_alive.label 放流魚のうち生き残って加入したものの尾数。年齢✕年の行列。データのない年齢は省略可。（release_all.labelとrelease_aliverate.labelが与えられる場合、release_alive.labelは与えないこと。加入年齢よりも高齢のデータは入力できるが、現時点では再生産関係や将来予測では考慮されない）
+#' @param release_all.label 全放流尾数。年齢✕年の行列。データのない年齢は省略可。
+#' @param release_ratealive.label 全放流尾数が生き残って加入したする比率。年齢✕年の行列。データのない年齢は省略可。
 #'
 #' @encoding UTF-8
 #'
@@ -993,7 +996,9 @@ read.vpa <- function(tfile,
                      faa.label="fishing mortality at age",
                      Fc.label="Current F",
                      naa.label="numbers at age",
-                     release.label="release dat",
+                     release_alive.label="release alive dat", # for older version "release dat"
+                     release_all.label="release all dat",
+                     release_ratealive.label="release alive rate dat",
                      Blimit=NULL,
                      Pope=NULL,
                      plus.group=NULL,
@@ -1048,18 +1053,34 @@ read.vpa <- function(tfile,
   dres$input$dat$caa <- tmpfunc(tmpdata,caa.label)
   dres$input$dat$M <- tmpfunc(tmpdata,M.label)
   dres$input$dat$waa <- tmpfunc(tmpdata,waa.label)
-  dres$input$dat$release.dat <- tmpfunc(tmpdata,release.label)
   if(is.null(dres$input$dat$waa)) dres$input$dat$waa <- tmpfunc(tmpdata,waa.biomass.label)
   dres$input$dat$waa.catch <- tmpfunc(tmpdata,waa.catch.label)
   if(is.null(dres$input$dat$waa.catch)) dres$input$dat$waa.catch <- dres$input$dat$waa
 
+  # for release data (only release alive)
+  release.old <- tmpfunc(tmpdata,"release dat")  
+  dres$input$dat$release.alive <- tmpfunc(tmpdata,release_alive.label)
+  if(!is.null(release.old) && is.null(dres$input$dat$release.alive)) dres$input$dat$release.alive <- release.old
+  if(!is.null(dres$input$dat$release.alive)) assertthat::assert_that(is.null(dres$input$dat$release.all) && is.null(dres$input$dat$release.aliverate))
+
+  # for release data (with release all and rate)
+  dres$input$dat$release.all <- tmpfunc(tmpdata,release_all.label)
+  dres$input$dat$release.ratealive <- tmpfunc(tmpdata,release_ratealive.label)
+  if(!is.null(dres$input$dat$release.all)){
+    assertthat::assert_that(!is.null(dres$input$dat$release.ratealive),
+                            is.null(dres$input$dat$release.alive),
+                            all(dim(dres$input$dat$release.ratealive) == dim(dres$input$dat$release.all)))
+    dres$input$dat$release.alive <- dres$input$dat$release.ratealive * dres$input$dat$release.all
+  }
+
+  # create ssb & baa data
   dres$ssb <- dres$input$dat$waa * dres$input$dat$maa * dres$naa
   dres$ssb <- as.data.frame(dres$ssb)
 
   dres$baa <- dres$input$dat$waa * dres$naa
   dres$baa <- as.data.frame(dres$baa)
 
-  # setting total catch
+  # create total catch
   dres$wcaa <- dres$input$dat$waa.catch * dres$input$dat$caa
   dres$wcaa <- as.data.frame(dres$wcaa)
 
@@ -2974,7 +2995,12 @@ create_dummy_vpa <- function(res_vpa){
   res_vpa_updated$input$dat$waa <- add_1year(res_vpa$input$dat$waa)
   res_vpa_updated$input$dat$maa <- add_1year(res_vpa$input$dat$maa)
   res_vpa_updated$input$dat$M   <- add_1year(res_vpa$input$dat$M  )
-  res_vpa_updated$input$dat$caa <- add_1year(res_vpa$input$dat$caa)  
+  res_vpa_updated$input$dat$caa <- add_1year(res_vpa$input$dat$caa)
+
+  if(!is.null(res_vpa_updated$input$dat$release.all))  res_vpa_updated$input$dat$release.all <- res_vpa_updated$input$dat$release.all %>% add_1year()
+  if(!is.null(res_vpa_updated$input$dat$release.alive))  res_vpa_updated$input$dat$release.alive <- res_vpa_updated$input$dat$release.alive %>% add_1year()
+  if(!is.null(res_vpa_updated$input$dat$release.ratealive))  res_vpa_updated$input$dat$release.ratealive <- res_vpa_updated$input$dat$release.ratealive %>% add_1year()
+  if(!is.null(res_vpa_updated$input$dat$release.dat))  res_vpa_updated$input$dat$release.all <- res_vpa_updated$input$dat$release.dat %>% add_1year()      
 
   if(!is.null(res_vpa_updated$input$dat$waa.catch))
     res_vpa_updated$input$dat$waa.catch <- add_1year(res_vpa$input$dat$waa.catch)    

@@ -3,10 +3,10 @@ context("Utils for selecting SR models")
 data(res_vpa_org)
 
 test_that("get.SRdata returns data frame", {
-  expect_equal(class(get.SRdata(res_vpa_org)),
+  expect_equal(class(get.SRdata(res_vpa_org))[3],
                "data.frame")
   expect_equal(dim(get.SRdata(res_vpa_org)),
-               c(30, 3))
+               c(30, 4))
 })
 
 #test_that("get.SRdata returns list", {
