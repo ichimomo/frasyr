@@ -98,35 +98,118 @@
 
     <div id="arguments">
     <h2>Arguments</h2>
-    <p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-    </div>
+    <dl><dt>vpares</dt>
+<dd><p>VPAの結果のオブジェクト(NULLでもOK)</p></dd>
+
+
+<dt>future.list</dt>
+<dd><p>将来予測の結果をリストで並べたもの(こちらは必須)</p></dd>
+
+
+<dt>future.name</dt>
+<dd><p>将来予測のリストの名前。ない場合はfuture.listについている名前を使う</p></dd>
+
+
+<dt>CI_range</dt>
+<dd><p>予測区間の範囲。デフォルトは８０%でc(0.1,0.9)</p></dd>
+
+
+<dt>maxyear</dt>
+<dd><p>表示する年の最大</p></dd>
+
+
+<dt>minyear</dt>
+<dd><p>表示する年の最小</p></dd>
+
+
+<dt>is.plot.CIrange</dt>
+<dd><p>予測区間を表示するかどうか</p></dd>
+
+
+<dt>is.plot.CIline</dt>
+<dd><p>予測区間の上限と下限の線を引くか</p></dd>
+
+
+<dt>what.plot</dt>
+<dd><p>Recruitment,SSB,biomass,catch,beta_gamma,U,Fratioのうち何をプロットするか。これらの文字列のベクトルで指定する</p></dd>
+
+
+<dt>biomass.unit</dt>
+<dd><p>量の単位</p></dd>
+
+
+<dt>number.unit</dt>
+<dd><p>尾数（加入尾数とか）のときの単位</p></dd>
+
+
+<dt>number.name</dt>
+<dd><p>尾数の凡例をどのように表示するか（「億尾」とか）</p></dd>
+
+
+<dt>RP_name</dt>
+<dd><p>管理基準値をどのように名前つけるか</p></dd>
+
+
+<dt>Btarget</dt>
+<dd><p>Btargetの値</p></dd>
+
+
+<dt>Blimit</dt>
+<dd><p>Blimitの値</p></dd>
+
+
+<dt>Bban</dt>
+<dd><p>Bbanの値</p></dd>
+
+
+<dt>MSY</dt>
+<dd><p>MSYの値</p></dd>
+
+
+<dt>Umsy</dt>
+<dd><p>Umsyの値</p></dd>
+
+
+<dt>SPRtarget</dt>
+<dd><p>MSYのときのSPRの値</p></dd>
+
+
+<dt>exclude.japanese.font</dt>
+<dd><p>日本語を図中に表示しない</p></dd>
+
+
+<dt>average_lwd</dt>
+<dd><p>将来予測の平均値の線の太さ. 基本は1.</p></dd>
+
+
+<dt>n_example</dt>
+<dd><p>個々のシミュレーションの例を示す数</p></dd>
+
+
+<dt>future.replicate</dt>
+<dd><p>どのreplicateを選ぶかを選択する。この場合n_exampleによる指定は無効になる</p></dd>
+
+
+<dt>legend.position</dt>
+<dd><p>凡例の位置。top, right, left, bottomなど</p></dd>
+
+
+<dt>font.size</dt>
+<dd><p>フォントの大きさ</p></dd>
+
+
+<dt>ncol</dt>
+<dd><p>図を並べるときの列数</p></dd>
+
+
+<dt>remove.last.vpa.year</dt>
+<dd><p>VPAの最終年のデータのプロットを除くかどうか（last.catch.zero用オプション）</p></dd>
+
+
+<dt>width_example</dt>
+<dd><p>個々のシミュレーションをプロットする場合の線の太さ (default=0.7)</p></dd>
+
+</dl></div>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
@@ -140,7 +223,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.9000.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.9000.</p>
 </div>
 
       </footer></div>

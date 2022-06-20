@@ -71,10 +71,18 @@
 
     <div id="arguments">
     <h2>Arguments</h2>
-    <p></p>
-<p></p>
-<p></p>
-    </div>
+    <dl><dt>...</dt>
+<dd><p>fit.SRへの引数</p></dd>
+
+
+<dt>n_check</dt>
+<dd><p>check.SRfitに渡す引数n（初期値を変えて計算を繰り返す回数）</p></dd>
+
+
+<dt>seed</dt>
+<dd><p>check.SRfitに渡す引数seed。初期値を変えるときに使う乱数。toolのスクリプトではずっと12345を利用していた関係で、デフォルトの引数は12345にしている。</p></dd>
+
+</dl></div>
     <div id="details">
     <h2>Details</h2>
     <p>fit.SR_tolの動作は以下の通りです。1) fit.SRを実施 2) fit.SRの結果(便宜的にres0とする)にcheck.SRfitをあてはめる。check.SRfitでは以下のことが実施されます。2-1) 初期値を変えてn回パラメータ推定を繰り返す。2-2) res0から得られている対数尤度と、n回パラメータ推定を繰り返したときに得られた対数尤度を比較し、res0の対数尤度よりも大きいものが見つかったらres0は「4. 大域解ではない」という判定をする。また、帰り値$optimumの中に、最大の対数尤度を得たときの推定結果を返す。2-3) 4.がOKの場合、n回分の対数尤度の中で最大値との差が1-06以下だけど、パラメータの推定値が異なる（0.001以上）場合には、「5. 同じ対数尤度を持つ複数のパラメータが見つかりました」というメッセージが出る。この場合、対数尤度の差が1-06以下を示すパラメータの範囲（最小、最大、平均など）が出力される。また、中央値に最も近いパラメータのセットを$optimumに返す。3) check.SRfitの返り値を見て、4のフラグが立っている場合、res0をcheck.SRfitの返り値$optimumに置き換える。そうなった場合、もう一度check.SRfitを実行する（これによって4のフラグは立たなくなることが想定）。4) check.SRfitの返り値を見て、5のフラグが立っている場合、res0をcheck.SRfitの返り値$optimumに置き換える。5) res0を返す。</p>
@@ -92,7 +100,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.9000.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.9000.</p>
 </div>
 
       </footer></div>

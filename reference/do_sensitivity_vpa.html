@@ -73,12 +73,26 @@
 
     <div id="arguments">
     <h2>Arguments</h2>
-    <p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-    </div>
+    <dl><dt>res</dt>
+<dd><p>VPAの結果のオブジェクト</p></dd>
+
+
+<dt>what_replace</dt>
+<dd><p>感度分析の対象。"M"（自然死亡係数）, "maa"（年齢別成熟率）, "waa"（年齢別体重）, "waa.catch"（漁獲物の年齢別体重）, "alpha"（+グループA歳とA-1歳の漁獲係数の比）, "tuning"（最終年の漁獲係数の扱い）, "lambda"（リッジVPAのペナルティ）,"est.method"（推定方法）, "b"（hyperstability/depletion）から選べる。</p></dd>
+
+
+<dt>value</dt>
+<dd><p>感度分析の対象の値。ベースケースの結果に一定割合をかけたい場合は<code>numeric</code>型（"M", "waa", "waa.catch", "alpha"で使用可）、ベースケースの結果とは異なる表を入れたい場合は<code>list</code>型に<code>matrix</code>型を（"maa", "waa", "waa.catch"で使用可）入れてください。"tuning"を選んだ場合、資源量指数を用いていないVPA結果なら、tf.yearの期間を入れること。</p></dd>
+
+
+<dt>what_plot</dt>
+<dd><p>作図したい項目を選べる。引数を与えない場合（<code>NULL</code>）、全て（SSB, biomass, U, catch, Recruitment, fish_number, fishing_mortality, weight, maturity, catch_number）をプロットする。</p></dd>
+
+
+<dt>ncol</dt>
+<dd><p>作図の列数。標準で5列なので、<code>what_plot</code>の数が5以下の場合は適宜変えた方がよい。</p></dd>
+
+</dl></div>
     <div id="value">
     <h2>Value</h2>
     
@@ -134,7 +148,7 @@ https://ichimomo.github.io/frasyr/articles/Diagnostics-for-VPA.html</p></div>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.9000.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.9000.</p>
 </div>
 
       </footer></div>

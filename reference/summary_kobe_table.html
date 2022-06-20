@@ -75,8 +75,14 @@
 
     <div id="arguments">
     <h2>Arguments</h2>
-    <p></p>
-    </div>
+    <dl><dt>target_threshold</dt>
+<dd><p>c(60, 50)みたいな２つの長さのベクトル。一番目はbeta=0.8のときのtargetを上回る確率、２番めは50<!-- %のときの。資源状態が良い場合には１番目の値は２番めの値よりも大きいが、資源状態が悪いと１番目の値は２番めよりも小さくなる。その場合には自動的にc(100,50)となるように置き換わる（つまりランク３は出現しない）} --></p>
+<p>risk_thresholdc(0.2,15) みたいな2つの長さのベクトル。一番目はbeta=0.8のときに10年間でずっとthresholdを上回る確率、２番めは50<!-- %のとき。資源状態が良い場合には１番目の値は２番めの値よりも小さくなる。} -->ssbpercent_summary_year目標管理基準値を上回るかどうかを判断する年ssb_summary_yearパフォーマンス指標として取り出すSSBの年catch_summary_yearパフォーマンス指標として取り出すCatchの年SBmsyここで与えた相対値としてSBのパフォーマンス指標を示すMSYここで与えた相対値としてMSYのパフォーマンス指標を示すBthreshold_labelランクづけに利用するリスクをkobe.tableから持ってくるときのkobe.tableのリストの名前
+
+
+kobe.tableをさらにsummaryする</p></dd>
+
+</dl></div>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
@@ -90,7 +96,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.9000.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.9000.</p>
 </div>
 
       </footer></div>

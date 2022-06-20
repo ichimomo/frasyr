@@ -146,71 +146,262 @@
 
     <div id="arguments">
     <h2>Arguments</h2>
-    <p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-    </div>
+    <dl><dt>dat</dt>
+<dd><p>data for vpa</p></dd>
+
+
+<dt>sel.f</dt>
+<dd><p>最終年の選択率</p></dd>
+
+
+<dt>tf.year</dt>
+<dd><p>terminal Fをどの年の平均にするか</p></dd>
+
+
+<dt>rec.new</dt>
+<dd><p>翌年の加入を外から与える</p></dd>
+
+
+<dt>rec</dt>
+<dd><p>rec.yearの加入</p></dd>
+
+
+<dt>rec.year</dt>
+<dd><p>加入を代入する際の年</p></dd>
+
+
+<dt>rps.year</dt>
+<dd><p>翌年のRPSをどの範囲の平均にするか</p></dd>
+
+
+<dt>fc.year</dt>
+<dd><p>Fcurrentでどの範囲を参照するか</p></dd>
+
+
+<dt>last.year</dt>
+<dd><p>vpaを計算する最終年を指定（retrospective analysis）</p></dd>
+
+
+<dt>last.catch.zero</dt>
+<dd><p>TRUEなら強制的に最終年の漁獲量を0にする</p></dd>
+
+
+<dt>faa0</dt>
+<dd><p>sel.update=TRUEのとき，初期値となるfaa</p></dd>
+
+
+<dt>naa0</dt>
+<dd><p>sel.update=TRUEのとき，初期値となるnaa</p></dd>
+
+
+<dt>Pope</dt>
+<dd><p>Popeの近似式を使うかどうか</p></dd>
+
+
+<dt>p.pope</dt>
+<dd><p>Popeの式でどこで漁獲するか（0.5 = 真ん中の時期）</p></dd>
+
+
+<dt>tune</dt>
+<dd><p>tuningをするかどうか</p></dd>
+
+
+<dt>abund</dt>
+<dd><p>tuningの際，何の指標に対応するか. "N"=年の終わりの資源尾数，"Nm"=年の中間での資源尾数，"B"=年の終わりの資源重量，"Bm"=年の中間での資源重量，"SSB"=産卵親魚量，"Bs"=資源重量×選択率，"Bo"=資源重量×オメガで調節された選択率，"Ns"=資源尾数×選択率，"SSBm"=年の中間での産卵親魚量，"N1sj"=1歳の資源尾数（日本海スケトウダラ用）,"N0sj"=0歳の資源尾数（日本海スケトウダラ用），"F"=漁獲係数の平均</p></dd>
+
+
+<dt>min.age</dt>
+<dd><p>tuning指標の年齢参照範囲の下限</p></dd>
+
+
+<dt>max.age</dt>
+<dd><p>tuning指標の年齢参照範囲の上限</p></dd>
+
+
+<dt>link</dt>
+<dd><p>tuningのlink関数</p></dd>
+
+
+<dt>base</dt>
+<dd><p>link関数が"log"のとき，底を何にするか</p></dd>
+
+
+<dt>af</dt>
+<dd><p>資源量指数が年の中央のとき，af=0なら漁期前，af=1なら漁期真ん中，af=2なら漁期後となる</p></dd>
+
+
+<dt>index.w</dt>
+<dd><p>tuning indexの重み</p></dd>
+
+
+<dt>use.index</dt>
+<dd><p>indexのなにを使うか．c(1,3)というような与え方ができる.デフォルトは"all"</p></dd>
+
+
+<dt>scale</dt>
+<dd><p>重量のscaling</p></dd>
+
+
+<dt>alpha</dt>
+<dd><p>最高齢と最高齢-1のFの比 F_a = alpha*F_a-1</p></dd>
+
+
+<dt>maxit</dt>
+<dd><p>石岡・岸田/平松の方法の最大繰り返し数</p></dd>
+
+
+<dt>d</dt>
+<dd><p>石岡・岸田/平松の方法の収束判定基準</p></dd>
+
+
+<dt>min.caa</dt>
+<dd><p>caaに0があるとき，0をmin.caaで置き換える</p></dd>
+
+
+<dt>plot</dt>
+<dd><p>tuningに使った資源量指数に対するフィットのプロット</p></dd>
+
+
+<dt>plot.year</dt>
+<dd><p>上のプロットの参照年</p></dd>
+
+
+<dt>term.F</dt>
+<dd><p>terminal Fの何を推定するか: "max" or "all"</p></dd>
+
+
+<dt>stat.tf</dt>
+<dd><p>最終年のFを推定する統計量（年齢で同じとする：changed on Nov/2021）</p></dd>
+
+
+<dt>add.p.est</dt>
+<dd><p>追加で最高齢以外のfaaを推定する際．年齢を指定する．</p></dd>
+
+
+<dt>sel.update</dt>
+<dd><p>チューニングVPAにおいて，選択率を更新しながら推定</p></dd>
+
+
+<dt>sel.def</dt>
+<dd><p>sel.update=TRUEで選択率を更新していく際に，選択率をどのように計算するか．"max"=選択率が一番大きい年齢の選択率を１とする，"maxage"=最高齢の選択率を１とする，"mean"=全体に対する割合として選択率を決める（saa=faa/sum(faa))</p></dd>
+
+
+<dt>max.dd</dt>
+<dd><p>sel.updateの際の収束判定基準</p></dd>
+
+
+<dt>ti.scale</dt>
+<dd><p>資源量の係数と切片のscaling</p></dd>
+
+
+<dt>tf.mat</dt>
+<dd><p>terminal Fの平均をとる年の設定．NA行列に平均をとる箇所に1を入れる．</p></dd>
+
+
+<dt>eq.tf.mean</dt>
+<dd><p>terminal Fの平均値を過去のFの平均値と等しくする</p></dd>
+
+
+<dt>no.est</dt>
+<dd><p>パラメータ推定しない．</p></dd>
+
+
+<dt>est.method</dt>
+<dd><p>推定方法 （ls = 最小二乗法，ml = 最尤法,  ls_nolog =最小二乗法で実数)</p></dd>
+
+
+<dt>b.est</dt>
+<dd><p>bを推定するかどうか</p></dd>
+
+
+<dt>est.constraint</dt>
+<dd><p>制約付き推定をするかどうか</p></dd>
+
+
+<dt>q.const</dt>
+<dd><p>qパラメータの制約（0は推定しないで1にfix）</p></dd>
+
+
+<dt>b.const</dt>
+<dd><p>bパラメータの制約（0は推定しないで1にfix）</p></dd>
+
+
+<dt>max.iter</dt>
+<dd><p>q,b,sigma計算の際の最大繰り返し数</p></dd>
+
+
+<dt>lambda</dt>
+<dd><p>ridge penaltyの大きさ</p></dd>
+
+
+<dt>beta</dt>
+<dd><p>penaltyのexponent  (beta = 1: lasso, 2: ridge)</p></dd>
+
+
+<dt>penalty</dt>
+<dd><p>ridgeVPAの際に与えるpenaltyの種類．"p"=指定した年齢範囲の最終年の年齢別Fのbeta乗の和，"f"=｛最終年の年齢aのF－（tf.yearで指定した年のa歳の平均のF)｝のbeta乗の和，"s"=｛最終年の年齢aのs－（tf.yearで指定した年のa歳の平均のs)｝のbeta乗の和</p></dd>
+
+
+<dt>ssb.def</dt>
+<dd><p>i: 年はじめ，m: 年中央, l: 年最後</p></dd>
+
+
+<dt>ssb.lag</dt>
+<dd><p>0: no lag, 1: lag 1</p></dd>
+
+
+<dt>TMB</dt>
+<dd><p>TMBで高速計算する場合TMB=TRUE (事前にuse_rvpa_tmb()を実行)　全Ｆ推定法，POPE=TRUE, alpha=1, 途中でプラスグループが変化しない場合のみのときに使用可能</p></dd>
+
+
+<dt>sigma.constraint</dt>
+<dd><p>sigmaパラメータの制約.使い方としては，指標が５つあり，2番目と3番目の指標のsigmaは同じとしたい場合はc(1,2,2,3,4)と指定する</p></dd>
+
+
+<dt>eta</dt>
+<dd><p>Fのpenaltyを分けて与えるときにeta.ageで指定した年齢への相対的なpenalty (0~1)</p></dd>
+
+
+<dt>eta.age</dt>
+<dd><p>Fのpenaltyを分けるときにetaを与える年齢(0 = 0歳（加入）,0:1 = 0~1歳)</p></dd>
+
+
+<dt>tmb.file</dt>
+<dd><p>TMB=TRUEのとき使用するcppファイルの名前</p></dd>
+
+
+<dt>remove.abund</dt>
+<dd><p>ある値を引いた値に対してチューニングに使用する（トラフグ伊勢・三河湾系群で放流魚を引いて天然魚のみに対してチューニングするため）.</p></dd>
+
+
+<dt>madara</dt>
+<dd><p>マダラ太平洋系群で用いているチューニングのやり方</p></dd>
+
+
+<dt>p_by_age</dt>
+<dd><p>選択率更新法でridgeVPAの際にpenalty="p"のときに年齢別にペナルテイーを与えるか与えないか．与えたい場合はTRUEとして,penalty_age（eta=NULLのとき）もしくはno_eta_age(etaがNULLでないとき）に年齢範囲を指定する．</p></dd>
+
+
+<dt>penalty_age</dt>
+<dd><p>選択率更新法でridgeVPAをする際のpenalty="p"のときで，etaがNULLで，p_by_age=TRUE (年齢別にペナルテイーを与えたい）ときにペナルテイーを与える年齢範囲．0歳から2歳までなら0：２とする．</p></dd>
+
+
+<dt>no_eta_age</dt>
+<dd><p>選択率更新法でridgeVPAの際にpenalty="p"のときで，etaがNULLでなく，p_by_age=TRUE (年齢別にペナルテイーを与えたい）ときに，etaがかからないほうの年齢範囲</p></dd>
+
+
+<dt>sdreport</dt>
+<dd><p><code>TMB=TRUE</code>のときに<code>sdreport()</code>を実行するかどうか（naa, faa, 資源量, 親魚量, Fの平均, 漁獲割合のSDを計算する）</p></dd>
+
+
+<dt>use.equ</dt>
+<dd><p>plus groupが途中で変わる場合の計算式の選択 （old = 従来の方法（プラスグループが延長している年はプラスグループのＦが一歳若い年齢のＦと等しいという仮定は置かない），new= 新しい方法（プラスグループが延長している年はプラスグループのＦが一歳若い年齢のＦと等しいという仮定を置く)</p></dd>
+
+
+<dt>ave_S</dt>
+<dd><p>選択率更新法において，最終年の選択率の仮定が通常(TRUE)とは違い，ヒラメ瀬戸内のように，最終年の選択率がtf.yearで指定した年の平均のF（つまりSUM（F,a)/SUM(F,maxage))に等しいと仮定する場合はFALSEにする.この場合，sel.def="maxage"必須．</p></dd>
+
+</dl></div>
     <div id="value">
     <h2>Value</h2>
     
@@ -314,7 +505,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.9000.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.9000.</p>
 </div>
 
       </footer></div>

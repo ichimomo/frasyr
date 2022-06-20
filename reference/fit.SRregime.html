@@ -81,18 +81,50 @@
 
     <div id="arguments">
     <h2>Arguments</h2>
-    <p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-    </div>
+    <dl><dt>SRdata</dt>
+<dd><p><code>get.SRdata</code>で作成した再生産関係データ</p></dd>
+
+
+<dt>SR</dt>
+<dd><p>再生産関係 (<code>"HS"</code>: Hockey-stick, <code>"BH"</code>: Beverton-Holt, <code>"RI"</code>: Ricker)</p></dd>
+
+
+<dt>method</dt>
+<dd><p>最適化法（<code>"L2"</code>: 最小二乗法, <code>"L1"</code>: 最小絶対値法）</p></dd>
+
+
+<dt>regime.year</dt>
+<dd><p>レジームが変わる年</p></dd>
+
+
+<dt>regime.key</dt>
+<dd><p>レジームのパターンを表す(<code>0:2</code>だとA-&gt;B-&gt;Cで、<code>c(0,1,0)</code>だとA-&gt;B-&gt;Aのようなパターンとなる)</p></dd>
+
+
+<dt>regime.par</dt>
+<dd><p>レジームによって変化するパラメータ(<code>c("a","b","sd")</code>の中から選ぶ)</p></dd>
+
+
+<dt>length</dt>
+<dd><p>初期値を決める際のgridの長さ</p></dd>
+
+
+<dt>p0</dt>
+<dd><p><code>optim</code>で設定する初期値</p></dd>
+
+
+<dt>bio_par</dt>
+<dd><p>data.frame(waa=c(100,200,300),maa=c(0,1,1),M=c(0.3,0.3,0.3)) のような生物パラメータをあらわすデータフレーム。waaは資源量を計算するときのweight at age, maaはmaturity at age, Mは自然死亡係数。これを与えると、steepnessやR0も計算して返す</p></dd>
+
+
+<dt>plus_group</dt>
+<dd><p>hなどを計算するときに、プラスグループを考慮するか</p></dd>
+
+
+<dt>gamma</dt>
+<dd><p><code>SR="Mesnil"</code>のときに使用するsmoothing parameter</p></dd>
+
+</dl></div>
     <div id="value">
     <h2>Value</h2>
     
@@ -169,7 +201,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.9000.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.9000.</p>
 </div>
 
       </footer></div>

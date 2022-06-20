@@ -81,18 +81,50 @@
 
     <div id="arguments">
     <h2>Arguments</h2>
-    <p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-    </div>
+    <dl><dt>res_vpa</dt>
+<dd><p>VPAの推定結果</p></dd>
+
+
+<dt>start_random_rec_year_name</dt>
+<dd><p>ランダム加入を仮定する最初の年</p></dd>
+
+
+<dt>SR_mat</dt>
+<dd><p>将来予測用の再生産関係パラメータが格納する３次元行列</p></dd>
+
+
+<dt>res_SR</dt>
+<dd><p>再生産関係の推定結果</p></dd>
+
+
+<dt>seed_number</dt>
+<dd><p>シード番号</p></dd>
+
+
+<dt>resid_type</dt>
+<dd><p>残差の発生パターン；対数正規分布は"lognormal"、単純リサンプリングは"resampling"、backward-resamplingは"backward"</p></dd>
+
+
+<dt>resample_year_range</dt>
+<dd><p>"resampling", "backward"で有効。年の範囲を入れると、対象とした年の範囲で計算される残差を用いる。</p></dd>
+
+
+<dt>backward_duration</dt>
+<dd><p>"backward"の場合、何年で１ブロックとするか。"backward"で有効。デフォルトは5 。</p></dd>
+
+
+<dt>setting_release</dt>
+<dd><p>詳細はmake_future_dataへ</p></dd>
+
+
+<dt>model_average_option</dt>
+<dd><p>model averagingをする場合のオプション. SR_matのlistとweightをlist形式で入れる(list(SR_list=list(res_SR1,res_SR2),weight=c(0.5,0.5))). 上で設定されたres_SRは使われない.</p></dd>
+
+
+<dt>regime_shift_option</dt>
+<dd><p>レジームシフトを仮定する場合のオプション. この場合, res_SRにはfit.SRregimeの結果オブジェクトを入れる. オプションの設定は list(future_regime=将来のregimeの仮定。keyで指定された番号を入れる)</p></dd>
+
+</dl></div>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
@@ -106,7 +138,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.9000.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.9000.</p>
 </div>
 
       </footer></div>

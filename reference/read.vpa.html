@@ -83,14 +83,34 @@
 
     <div id="arguments">
     <h2>Arguments</h2>
-    <p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-    </div>
+    <dl><dt>tfile</dt>
+<dd><p>資源計算結果がまとめられたcsvファイルの名前</p></dd>
+
+
+<dt>release_alive.label</dt>
+<dd><p>放流魚のうち生き残って加入したものの尾数。年齢✕年の行列。データのない年齢は省略可。（release_all.labelとrelease_aliverate.labelが与えられる場合、release_alive.labelは与えないこと。加入年齢よりも高齢のデータは入力できるが、現時点では再生産関係や将来予測では考慮されない）</p></dd>
+
+
+<dt>release_all.label</dt>
+<dd><p>全放流尾数。年齢✕年の行列。データのない年齢は省略可。</p></dd>
+
+
+<dt>release_ratealive.label</dt>
+<dd><p>全放流尾数が生き残って加入したする比率。年齢✕年の行列。データのない年齢は省略可。</p></dd>
+
+
+<dt>Pope</dt>
+<dd><p>VPA計算時にどっちを使っているかここで設定する（TRUE or FALSE）。デフォルトはNULLで、その場合にはcaa,faa,naaの関係から自動判別するが、自動判別の結果が出力されるので、それをみて正しく判断されているか確認してください。</p></dd>
+
+
+<dt>plus.group</dt>
+<dd><p>プラスグループを考慮するかどうか。こちらについても、NULLの場合にはfaaとnaaの関係から自動判別するが、結果を一応確認すること。</p></dd>
+
+
+<dt>release.label</dt>
+<dd><p>放流データを読み込みたい場合。ここで指定したラベルをつけて、年齢を行、年を列とするデータを入れる（catch at ageと同じ構造だが、年齢は必要な年齢だけ取り出した形で良い）</p></dd>
+
+</dl></div>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
@@ -104,7 +124,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.9000.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.9000.</p>
 </div>
 
       </footer></div>

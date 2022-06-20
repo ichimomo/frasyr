@@ -74,15 +74,38 @@
 
     <div id="arguments">
     <h2>Arguments</h2>
-    <p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-    </div>
+    <dl><dt>res_future</dt>
+<dd><p>future_vpaの返り値</p></dd>
+
+
+<dt>SBtarget</dt>
+<dd><p>それを上回る・下回る確率を計算する。目標管理基準値</p></dd>
+
+
+<dt>SBlimit</dt>
+<dd><p>それを上回る・下回る確率を計算する。限界管理基準値</p></dd>
+
+
+<dt>SBban</dt>
+<dd><p>それを上回る・下回る確率を計算する。禁漁水準</p></dd>
+
+
+<dt>SBmin</dt>
+<dd><p>それを上回る・下回る確率を計算する。過去最低親魚量</p></dd>
+
+
+<dt>MSY</dt>
+<dd><p>それを上回る・下回る確率を計算する。MSY</p></dd>
+
+
+<dt>is_scale</dt>
+<dd><p>TRUEの場合、親魚量はSBtargetで、漁獲量はMSYで割った相対値が出力される。それ以外はそのまま</p></dd>
+
+
+<dt>unit</dt>
+<dd><p>確率を出力するときの単位。100を入れると％単位で結果が返される</p></dd>
+
+</dl></div>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
@@ -96,7 +119,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.9000.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.9000.</p>
 </div>
 
       </footer></div>
