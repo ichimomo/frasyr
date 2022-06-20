@@ -1210,10 +1210,12 @@ plot_resboot_vpa <- function(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
 #' @param B_ite ブートストラップ計算の数。デフォルトで1000。
 #' @param B_cv 乱数生成の変動係数。デフォルトは0.2。
 #' @param ci_range 信頼区間の幅。デフォルトでは0.95（95％信頼区間）
+#' @param detail TRUEの場合、個々のVPAの推定結果がリストで出力される
 #'
 #' @return 返ってくる値:
 #'     \code{plot} 親魚重量、資源尾数、資源重量それぞれについて信頼区間のプロットが得られる。
 #'     \code{caa_boot_sample} 年齢別漁獲尾数のブートストラップ標本が得られる。
+#'     \code{res_boot} detail=TRUEの場合、個々のVPAの推定結果のリスト
 #'
 #' @author 濵邉昂平, 市野川桃子
 #'
@@ -1227,7 +1229,7 @@ plot_resboot_vpa <- function(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
 
 # author: Kohei Hamabe
 
-do_caaboot_vpa <-  function(res, B_ite = 1000, B_cv = 0.2, ci_range = 0.95){
+do_caaboot_vpa <-  function(res, B_ite = 1000, B_cv = 0.2, ci_range = 0.95, detail=FALSE){
   year <- colnames(res$input$dat$caa) %>% as.numeric()
   age <- rownames(res$input$dat$caa) %>% as.numeric()
   caa_base <- res$input$dat$caa %>% unlist() %>% as.numeric()
@@ -1243,6 +1245,7 @@ do_caaboot_vpa <-  function(res, B_ite = 1000, B_cv = 0.2, ci_range = 0.95){
   }
   names(caa_boot) <- unlist(name_tmp)
 
+  res_list <- list()
   input0 <- res$input ; input0$plot <- FALSE
   tmp <- numeric()
   ssb_mat <- abund_mat <- biomass_mat <- matrix(NA, ncol = length(year), nrow = B_ite)
@@ -1252,16 +1255,16 @@ do_caaboot_vpa <-  function(res, B_ite = 1000, B_cv = 0.2, ci_range = 0.95){
     colnames(caa_tmp) <- year
     rownames(caa_tmp) <- age
     input0$dat$caa <- caa_tmp
-    res_tmp <- try(safe_call(vpa, input0, force=TRUE))
-    if(class(res_tmp) == "try-error"){
+    res_list[[i]] <- try(safe_call(vpa, input0, force=TRUE))
+    if(class(res_list[[i]]) == "try-error"){
       message(paste('Iteration',i,'was errored ...', sep = " "))
       ssb_mat[i,] <- rep(NA, length(year))
       abund_mat[i,] <- rep(NA, length(year))
       biomass_mat[i,] <- rep(NA, length(year))
     } else {
-      ssb_mat[i,] <- colSums(res_tmp$ssb, na.rm = TRUE)
-      abund_mat[i,] <- as.numeric(res_tmp$naa[1,])
-      biomass_mat[i,] <- colSums(res_tmp$baa, na.rm = TRUE)
+      ssb_mat[i,] <- colSums(res_list[[i]]$ssb, na.rm = TRUE)
+      abund_mat[i,] <- as.numeric(res_list[[i]]$naa[1,])
+      biomass_mat[i,] <- colSums(res_list[[i]]$baa, na.rm = TRUE)
       message(paste('Iteration',i,'has done ...', sep = " "))
     }
   }
@@ -1296,9 +1299,11 @@ do_caaboot_vpa <-  function(res, B_ite = 1000, B_cv = 0.2, ci_range = 0.95){
     ylim(c(0, NA)) +
     theme_SH()
 
-  return(list(plot_ssb = g1,
+  res <- list(plot_ssb = g1,
               plot_rec = g2,
               plot_biomass = g3,
               caa_boot_sample = caa_boot
-  ))
+              )
+  if(detail==TRUE) res$res_boot <- res_list
+  return(res)
 } # function(do_caaboot_vpa)
