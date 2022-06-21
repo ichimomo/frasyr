@@ -395,10 +395,20 @@ make_future_data <- function(res_vpa,
           waa_catch_par_mat[a,i,c("b0","b1")] <- as.numeric(tmp$coef[1:2])
           waa_catch_par_mat[a,i,c("sd")] <- sqrt(mean(tmp$residual^2))
           waa_catch_rand_mat[a,observed,i] <- tmp$residual
-          waa_catch_rand_mat[a,waa_catch_fun_year,i] <- rnorm(length(waa_catch_fun_year),-0.5*waa_catch_par_mat[a,i,c("sd")]^2,waa_catch_par_mat[a,i,c("sd")])
+          
+          # 特別なwaa_funを使っていないけどwaa_catch_funとcaa_funの両方を使っている場合
+          # 両者の乱数をSDで調整してから一致させる
+          if(waa_fun==TRUE && is.na(waa_fun_name)){
+            waa_catch_rand_mat[a,waa_catch_fun_year,i]  <- waa_rand_mat[a,waa_catch_fun_year,i] *
+              waa_catch_par_mat[a,i,c("sd")]/waa_par_mat[a,i,c("sd")]
+            warning("暫定的にwaa_funとwaa_catch_funで同じ年・年齢の場合には同じ正規化された残差を使うことにします。このオプションには今後より妥当な設定についての検討が必要です（漁獲量計算用の体重と資源量計算用の体重が同じ場合には大丈夫です）\n")            
+          }
+          else{
+            waa_catch_rand_mat[a,waa_catch_fun_year,i] <- rnorm(length(waa_catch_fun_year),-0.5*waa_catch_par_mat[a,i,c("sd")]^2,waa_catch_par_mat[a,i,c("sd")])
+          }
         }}
     }
-    else{
+    else{ # when using specific waa function
       dimnames(waa_catch_par_mat)[[3]] <- c("waa_catch_fun_name", "x1","x2")
       waa_catch_par_mat[,,1] <- waa_catch_fun_name
       waa_catch_rand_mat[,waa_catch_fun_year,] <- 1
