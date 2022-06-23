@@ -3211,25 +3211,31 @@ derive_all_stat <- function(res, word_vector, exact=FALSE){
 }
 
 
+#' リスクテーブルを作る
+#' 
+#' @param target_threshold カテゴリ分けに使うSSB>SSBtargetの確率。1番目がbeta=0.8のときの値、2番目が50％のときの値（なのでだいたい50％になるはず）
+#' @param limit_threshold  カテゴリ分けに使うSSBall>SSBthresholdの確率。1番目がbeta=0.8のときの値、2番目が50％のときの値（なので1番目よりも2番めのほうが小さいはず）
+#' 
 #' @export
 #'
 
 rank_HCR <- function(summary_HCR,
                      target_threshold,
                      risk_threshold,
-                     unit=100,
                      target_prob_name="SBtar_prob",
                      risk_prob_name="SBlim_prob"){
 
-  SSB_prob_vector <- summary_HCR[target_prob_name]*unit %>% unlist %>% as.numeric
-  risk_prob_vector <- summary_HCR[risk_prob_name]*unit  %>% unlist %>% as.numeric
-  target_threshold <- target_threshold * unit
-  risk_threshold   <- risk_threshold   * unit  
+  SSB_prob_vector <- summary_HCR[target_prob_name] %>% unlist %>% as.numeric
+  risk_prob_vector <- summary_HCR[risk_prob_name]  %>% unlist %>% as.numeric
+  target_threshold <- target_threshold
+  risk_threshold   <- risk_threshold
+
+  if(target_threshold[1]<target_threshold[2]) target_threshold[1] <- Inf
   
   summary_HCR <- summary_HCR %>%
       mutate(category_target = case_when((SSB_prob_vector >= target_threshold[1]) ~ 2,
-                                         (SSB_prob_vector <  target_threshold[1] & SSB_prob_vector >= (target_threshold[2]-0.5*unit/100)) ~ 1,
-                                         (SSB_prob_vector < (target_threshold[2]-0.5*unit/100)) ~ 0),
+                                         (SSB_prob_vector <  target_threshold[1] & SSB_prob_vector >= (target_threshold[2]*0.99)) ~ 1,
+                                         (SSB_prob_vector < (target_threshold[2]*0.99)) ~ 0),
              category_risk   = case_when((risk_prob_vector <= risk_threshold[1]) ~ 2,
                                          (risk_prob_vector >  risk_threshold[1] & risk_prob_vector <= risk_threshold[2]) ~ 1,
                                          (risk_prob_vector >  risk_threshold[2]) ~ 0)) 
