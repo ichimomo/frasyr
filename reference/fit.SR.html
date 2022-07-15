@@ -60,23 +60,23 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">fit.SR</span><span class="op">(</span>
-  <span class="va">SRdata</span>,
-  SR <span class="op">=</span> <span class="st">"HS"</span>,
-  method <span class="op">=</span> <span class="st">"L2"</span>,
-  AR <span class="op">=</span> <span class="fl">1</span>,
-  hessian <span class="op">=</span> <span class="cn">FALSE</span>,
-  w <span class="op">=</span> <span class="cn">NULL</span>,
-  length <span class="op">=</span> <span class="fl">20</span>,
-  max.ssb.pred <span class="op">=</span> <span class="fl">1.3</span>,
-  p0 <span class="op">=</span> <span class="cn">NULL</span>,
-  out.AR <span class="op">=</span> <span class="cn">TRUE</span>,
-  bio_par <span class="op">=</span> <span class="cn">NULL</span>,
-  plus_group <span class="op">=</span> <span class="cn">TRUE</span>,
-  is_jitter <span class="op">=</span> <span class="cn">FALSE</span>,
-  HS_fix_b <span class="op">=</span> <span class="cn">NULL</span>,
-  gamma <span class="op">=</span> <span class="fl">0.01</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">fit.SR</span><span class="op">(</span></span>
+<span>  <span class="va">SRdata</span>,</span>
+<span>  SR <span class="op">=</span> <span class="st">"HS"</span>,</span>
+<span>  method <span class="op">=</span> <span class="st">"L2"</span>,</span>
+<span>  AR <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  hessian <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  w <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  length <span class="op">=</span> <span class="fl">20</span>,</span>
+<span>  max.ssb.pred <span class="op">=</span> <span class="fl">1.3</span>,</span>
+<span>  p0 <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  out.AR <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  bio_par <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  plus_group <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  is_jitter <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  HS_fix_b <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  gamma <span class="op">=</span> <span class="fl">0.01</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -173,22 +173,22 @@
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">res_vpa</span><span class="op">)</span></span>
-<span class="r-in"><span class="va">SRdata</span> <span class="op">&lt;-</span> <span class="fu"><a href="get.SRdata.html">get.SRdata</a></span><span class="op">(</span><span class="va">res_vpa</span><span class="op">)</span></span>
-<span class="r-in"><span class="va">resSR</span> <span class="op">&lt;-</span> <span class="fu">fit.SR</span><span class="op">(</span><span class="va">SRdata</span>, SR <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"HS"</span>,<span class="st">"BH"</span>,<span class="st">"RI"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>,</span>
-<span class="r-in">                method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"L1"</span>,<span class="st">"L2"</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>, AR <span class="op">=</span> <span class="fl">1</span>,</span>
-<span class="r-in">                out.AR <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span class="r-in"><span class="va">resSR</span><span class="op">$</span><span class="va">pars</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># When outputting steepness, create a bio_par object using derive_biopar function with the res_vpa object and the corresponding year as its argument, and put the bio_par object in the argument of fit.SR.</span></span>
-<span class="r-in"><span class="va">bio_par</span> <span class="op">&lt;-</span> <span class="fu"><a href="derive_biopar.html">derive_biopar</a></span><span class="op">(</span>res_obj<span class="op">=</span><span class="va">res_vpa</span>,derive_year <span class="op">=</span> <span class="fl">2010</span><span class="op">)</span></span>
-<span class="r-in"><span class="va">resSR</span> <span class="op">&lt;-</span> <span class="fu">fit.SR</span><span class="op">(</span><span class="va">SRdata</span>, SR <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"HS"</span>,<span class="st">"BH"</span>,<span class="st">"RI"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>,</span>
-<span class="r-in">                method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"L1"</span>,<span class="st">"L2"</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>, AR <span class="op">=</span> <span class="fl">1</span>,</span>
-<span class="r-in">                out.AR <span class="op">=</span> <span class="cn">TRUE</span>,bio_par<span class="op">=</span><span class="va">bio_par</span><span class="op">)</span></span>
-<span class="r-in"><span class="va">resSR</span><span class="op">$</span><span class="va">pars</span></span>
-<span class="r-in"><span class="va">resSR</span><span class="op">$</span><span class="va">steepness</span></span>
-<span class="r-in"><span class="op">}</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">res_vpa</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">SRdata</span> <span class="op">&lt;-</span> <span class="fu"><a href="get.SRdata.html">get.SRdata</a></span><span class="op">(</span><span class="va">res_vpa</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">resSR</span> <span class="op">&lt;-</span> <span class="fu">fit.SR</span><span class="op">(</span><span class="va">SRdata</span>, SR <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"HS"</span>,<span class="st">"BH"</span>,<span class="st">"RI"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>,</span></span>
+<span class="r-in"><span>                method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"L1"</span>,<span class="st">"L2"</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>, AR <span class="op">=</span> <span class="fl">1</span>,</span></span>
+<span class="r-in"><span>                out.AR <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">resSR</span><span class="op">$</span><span class="va">pars</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># When outputting steepness, create a bio_par object using derive_biopar function with the res_vpa object and the corresponding year as its argument, and put the bio_par object in the argument of fit.SR.</span></span></span>
+<span class="r-in"><span><span class="va">bio_par</span> <span class="op">&lt;-</span> <span class="fu"><a href="derive_biopar.html">derive_biopar</a></span><span class="op">(</span>res_obj<span class="op">=</span><span class="va">res_vpa</span>,derive_year <span class="op">=</span> <span class="fl">2010</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">resSR</span> <span class="op">&lt;-</span> <span class="fu">fit.SR</span><span class="op">(</span><span class="va">SRdata</span>, SR <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"HS"</span>,<span class="st">"BH"</span>,<span class="st">"RI"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>,</span></span>
+<span class="r-in"><span>                method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"L1"</span>,<span class="st">"L2"</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>, AR <span class="op">=</span> <span class="fl">1</span>,</span></span>
+<span class="r-in"><span>                out.AR <span class="op">=</span> <span class="cn">TRUE</span>,bio_par<span class="op">=</span><span class="va">bio_par</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">resSR</span><span class="op">$</span><span class="va">pars</span></span></span>
+<span class="r-in"><span><span class="va">resSR</span><span class="op">$</span><span class="va">steepness</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -203,7 +203,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.9000.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.5.9000.</p>
 </div>
 
       </footer></div>

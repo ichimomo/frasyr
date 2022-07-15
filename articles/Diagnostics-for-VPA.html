@@ -77,7 +77,7 @@
       <h1 data-toc-skip>VPAモデル診断スクリプト</h1>
                         <h4 data-toc-skip class="author">濵邉昂平・市野川桃子</h4>
             
-            <h4 data-toc-skip class="date">2022-06-23</h4>
+            <h4 data-toc-skip class="date">2022-07-15</h4>
       
       
       <div class="hidden name"><code>Diagnostics-for-VPA.Rmd</code></div>
@@ -132,15 +132,15 @@
 </ul>
 <p><strong>※ tidyr, dplyr, purrr, ggplot2, stringerの5つは“tidyverse”というパッケージの中にまとめてあるので<code><a href="https://tidyverse.tidyverse.org" class="external-link">library(tidyverse)</a></code>だけでも大丈夫です</strong></p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co"># frasyrの最新版（dev）をインストールする</span>
-<span class="co">#devtools::install_github("ichimomo/frasyr@dev")</span>
-
-<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">frasyr</span><span class="op">)</span>
-<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tidyr.tidyverse.org" class="external-link">tidyr</a></span><span class="op">)</span>
-<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span>
-<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://purrr.tidyverse.org" class="external-link">purrr</a></span><span class="op">)</span>
-<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span>
-<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://stringr.tidyverse.org" class="external-link">stringr</a></span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># frasyrの最新版（dev）をインストールする</span></span>
+<span><span class="co">#devtools::install_github("ichimomo/frasyr@dev")</span></span>
+<span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">frasyr</span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tidyr.tidyverse.org" class="external-link">tidyr</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://purrr.tidyverse.org" class="external-link">purrr</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://stringr.tidyverse.org" class="external-link">stringr</a></span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="感度分析チューニングありなし">1. 感度分析(チューニングあり・なし）<a class="anchor" aria-label="anchor" href="#%E6%84%9F%E5%BA%A6%E5%88%86%E6%9E%90%E3%83%81%E3%83%A5%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0%E3%81%82%E3%82%8A%E3%81%AA%E3%81%97"></a>
@@ -168,7 +168,7 @@
 <p>結果では、<code>$result</code>にVPAの結果がリスト形式で、<code>$graph</code>に複数のVPAの結果を重ね書きしたグラフが入っています。</p>
 <p>関数の引数について（<strong>特に<code>value</code>に与える<font color="red">データの型</font>について</strong>）、不明点等ありましたら、以下のように<code>help</code>を使って確認してみてください。</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/help.html" class="external-link">help</a></span><span class="op">(</span><span class="va">do_sensitivity_vpa</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/help.html" class="external-link">help</a></span><span class="op">(</span><span class="va">do_sensitivity_vpa</span><span class="op">)</span></span></code></pre></div>
 <div class="section level3">
 <h3 id="生物パラメータ各種">生物パラメータ各種<a class="anchor" aria-label="anchor" href="#%E7%94%9F%E7%89%A9%E3%83%91%E3%83%A9%E3%83%A1%E3%83%BC%E3%82%BF%E5%90%84%E7%A8%AE"></a>
 </h3>
@@ -177,9 +177,9 @@
 </h4>
 <p><code>what_replace="M"</code>にすると自然死亡係数について感度分析を行えます。<code>value</code>には、感度分析を行いたい割合を<code>numeric</code>型で入れてください。（以下の例では、もとの自然死亡係数を0.5倍、1.5倍、2倍にした感度分析結果を返す）</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">res_vpa_sensitivity</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>,
-                                          what_replace <span class="op">=</span> <span class="st">"M"</span>, 
-                                          value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">1.5</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">res_vpa_sensitivity</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>,</span>
+<span>                                          what_replace <span class="op">=</span> <span class="st">"M"</span>, </span>
+<span>                                          value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">1.5</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <ul>
 <li>
 <code>$result</code>の中にはvpa計算の結果</li>
@@ -188,10 +188,10 @@
 </ul>
 <p>今回の例では、<code>value</code>を3通り仮定したので、それぞれの結果がリスト型式で以下のように入っております。</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">res_vpa_sensitivity</span><span class="op">$</span><span class="va">result</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">res_vpa_sensitivity</span><span class="op">$</span><span class="va">result</span><span class="op">)</span></span></code></pre></div>
 <pre><code>[1] "Sensitivity M= x0.5" "Sensitivity M= x1.5" "Sensitivity M= x2"  </code></pre>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">res_vpa_sensitivity</span><span class="op">$</span><span class="va">graph</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">res_vpa_sensitivity</span><span class="op">$</span><span class="va">graph</span></span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-6-1.png" width="672"></p>
 <p>自然死亡係数を大きくすると、資源量のスケールも併せて大きくなっています。</p>
 <p>直接Mの行列を入力しても実行できます。 最近年のMの仮定について見たい、掛け算ではなく足し算で実行したい、等の場合は行列を与えてください</p>
@@ -203,28 +203,28 @@
 <p>また、<code>what_plot</code>に作図で出力したい結果を指定することができます。</p>
 <p><strong>この他、<code>plot_year</code>に作図したい年（x軸の範囲）を指定することもできます</strong></p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">res_vpa_sensitivity</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>,
-                                          what_replace <span class="op">=</span> <span class="st">"waa"</span>,
-                                          value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.8</span>, <span class="fl">1.2</span><span class="op">)</span>,
-                                          what_plot<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SSB"</span>,<span class="st">"biomass"</span>,<span class="st">"U"</span>,<span class="st">"Recruitment"</span>,
-                                                      <span class="st">"fish_number"</span>,<span class="st">"fishing_mortality"</span><span class="op">)</span>, 
-                                          plot_year <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1997</span>, <span class="fl">2000</span><span class="op">)</span>,
-                                          ncol<span class="op">=</span><span class="fl">3</span>
-                                          <span class="op">)</span>
-<span class="va">res_vpa_sensitivity</span><span class="op">$</span><span class="va">graph</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">res_vpa_sensitivity</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>,</span>
+<span>                                          what_replace <span class="op">=</span> <span class="st">"waa"</span>,</span>
+<span>                                          value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.8</span>, <span class="fl">1.2</span><span class="op">)</span>,</span>
+<span>                                          what_plot<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SSB"</span>,<span class="st">"biomass"</span>,<span class="st">"U"</span>,<span class="st">"Recruitment"</span>,</span>
+<span>                                                      <span class="st">"fish_number"</span>,<span class="st">"fishing_mortality"</span><span class="op">)</span>, </span>
+<span>                                          plot_year <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1997</span>, <span class="fl">2000</span><span class="op">)</span>,</span>
+<span>                                          ncol<span class="op">=</span><span class="fl">3</span></span>
+<span>                                          <span class="op">)</span></span>
+<span><span class="va">res_vpa_sensitivity</span><span class="op">$</span><span class="va">graph</span></span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-7-1.png" width="672"></p>
 <p>また、解析に用いたwaaと同じ長さの<code>matrix</code>であれば、<code>list</code>にまとめて<code>value</code>に任意の値を与えることができます。</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">res_vpa_sensitivity</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>,
-                                          what_replace <span class="op">=</span> <span class="st">"waa"</span>,
-                                          value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">4</span>,<span class="fl">10</span><span class="op">)</span>,nrow <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>,
-                                                       <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">4</span>,<span class="fl">8</span><span class="op">)</span>,<span class="fl">10</span><span class="op">)</span>,nrow <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>
-                                                       <span class="op">)</span>,
-                                          what_plot<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SSB"</span>,<span class="st">"biomass"</span>,<span class="st">"U"</span>,<span class="st">"Recruitment"</span>,
-                                                      <span class="st">"fish_number"</span>,<span class="st">"fishing_mortality"</span><span class="op">)</span>, 
-                                          ncol<span class="op">=</span><span class="fl">3</span>
-                                          <span class="op">)</span>
-<span class="va">res_vpa_sensitivity</span><span class="op">$</span><span class="va">graph</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">res_vpa_sensitivity</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>,</span>
+<span>                                          what_replace <span class="op">=</span> <span class="st">"waa"</span>,</span>
+<span>                                          value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">4</span>,<span class="fl">10</span><span class="op">)</span>,nrow <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>,</span>
+<span>                                                       <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">4</span>,<span class="fl">8</span><span class="op">)</span>,<span class="fl">10</span><span class="op">)</span>,nrow <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span>
+<span>                                                       <span class="op">)</span>,</span>
+<span>                                          what_plot<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SSB"</span>,<span class="st">"biomass"</span>,<span class="st">"U"</span>,<span class="st">"Recruitment"</span>,</span>
+<span>                                                      <span class="st">"fish_number"</span>,<span class="st">"fishing_mortality"</span><span class="op">)</span>, </span>
+<span>                                          ncol<span class="op">=</span><span class="fl">3</span></span>
+<span>                                          <span class="op">)</span></span>
+<span><span class="va">res_vpa_sensitivity</span><span class="op">$</span><span class="va">graph</span></span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-8-1.png" width="672"></p>
 </div>
 <div class="section level4">
@@ -232,28 +232,28 @@
 </h4>
 <p>漁獲量計算と資源量計算で異なる年齢別体重を用いている場合には、漁獲物中の年齢別体重の設定についても感度分析ができます。この場合は、<code>what_replace = "waa.catch"</code>とします。 <code>value</code>に入れる値の型は<code>index = waa</code>の場合と同じく、<code>numeric</code>または<code>list</code>型です。 （この例の場合には、漁獲量用の年齢別体重が設定されていないため、エラーとなります。）</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">res_vpa_sensitivity</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>,
-                                          what_replace <span class="op">=</span> <span class="st">"waa.catch"</span>,
-                                          value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.8</span>, <span class="fl">1.2</span><span class="op">)</span>,
-                                          what_plot<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SSB"</span>,<span class="st">"biomass"</span>,<span class="st">"U"</span>,<span class="st">"Recruitment"</span>,
-                                                      <span class="st">"fish_number"</span>,<span class="st">"fishing_mortality"</span><span class="op">)</span>, 
-                                          ncol<span class="op">=</span><span class="fl">3</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">res_vpa_sensitivity</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>,</span>
+<span>                                          what_replace <span class="op">=</span> <span class="st">"waa.catch"</span>,</span>
+<span>                                          value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.8</span>, <span class="fl">1.2</span><span class="op">)</span>,</span>
+<span>                                          what_plot<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SSB"</span>,<span class="st">"biomass"</span>,<span class="st">"U"</span>,<span class="st">"Recruitment"</span>,</span>
+<span>                                                      <span class="st">"fish_number"</span>,<span class="st">"fishing_mortality"</span><span class="op">)</span>, </span>
+<span>                                          ncol<span class="op">=</span><span class="fl">3</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level4">
 <h4 id="成熟率">成熟率<a class="anchor" aria-label="anchor" href="#%E6%88%90%E7%86%9F%E7%8E%87"></a>
 </h4>
 <p>成熟率を置き換える場合は、<code>what_replace = "maa"</code>とします。 年齢別体重の場合と同様<code>value</code>には、<code>list</code>に格納した行列を与えてください。</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">res_vpa_sensitivity</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>, 
-                                          what_replace <span class="op">=</span> <span class="st">"maa"</span>, 
-                                          value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">1</span>,length<span class="op">=</span><span class="fl">4</span><span class="op">)</span>,<span class="fl">10</span><span class="op">)</span>,nrow <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>,
-                                                       <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">0</span>,<span class="fl">.5</span>,<span class="fl">1</span><span class="op">)</span>,<span class="fl">10</span><span class="op">)</span>,nrow <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>
-                                                       <span class="op">)</span>,
-                                          what_plot<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SSB"</span>,<span class="st">"biomass"</span>,<span class="st">"U"</span>,<span class="st">"Recruitment"</span>,
-                                                      <span class="st">"fish_number"</span>,<span class="st">"fishing_mortality"</span><span class="op">)</span>, 
-                                          ncol<span class="op">=</span><span class="fl">3</span>
-                                          <span class="op">)</span>
-<span class="va">res_vpa_sensitivity</span><span class="op">$</span><span class="va">graph</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">res_vpa_sensitivity</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>, </span>
+<span>                                          what_replace <span class="op">=</span> <span class="st">"maa"</span>, </span>
+<span>                                          value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">1</span>,length<span class="op">=</span><span class="fl">4</span><span class="op">)</span>,<span class="fl">10</span><span class="op">)</span>,nrow <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>,</span>
+<span>                                                       <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">0</span>,<span class="fl">.5</span>,<span class="fl">1</span><span class="op">)</span>,<span class="fl">10</span><span class="op">)</span>,nrow <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span>
+<span>                                                       <span class="op">)</span>,</span>
+<span>                                          what_plot<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SSB"</span>,<span class="st">"biomass"</span>,<span class="st">"U"</span>,<span class="st">"Recruitment"</span>,</span>
+<span>                                                      <span class="st">"fish_number"</span>,<span class="st">"fishing_mortality"</span><span class="op">)</span>, </span>
+<span>                                          ncol<span class="op">=</span><span class="fl">3</span></span>
+<span>                                          <span class="op">)</span></span>
+<span><span class="va">res_vpa_sensitivity</span><span class="op">$</span><span class="va">graph</span></span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-10-1.png" width="672"></p>
 </div>
 </div>
@@ -262,17 +262,17 @@
 </h3>
 <p>αを置き換えたい場合は、<code>what_replace = "alpha"</code>とします。 <code>value</code>には直接仮定したい値を入れてください。</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">res_vpa_sensitivity</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>, 
-                                          what_replace <span class="op">=</span> <span class="st">"alpha"</span>, 
-                                          value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.9</span>,<span class="fl">0.8</span><span class="op">)</span>,
-                                          what_plot<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SSB"</span>,<span class="st">"biomass"</span>,<span class="st">"U"</span>,<span class="st">"Recruitment"</span>,
-                                                      <span class="st">"fish_number"</span>,<span class="st">"fishing_mortality"</span><span class="op">)</span>, 
-                                          ncol<span class="op">=</span><span class="fl">3</span>
-                                          <span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">res_vpa_sensitivity</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>, </span>
+<span>                                          what_replace <span class="op">=</span> <span class="st">"alpha"</span>, </span>
+<span>                                          value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.9</span>,<span class="fl">0.8</span><span class="op">)</span>,</span>
+<span>                                          what_plot<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SSB"</span>,<span class="st">"biomass"</span>,<span class="st">"U"</span>,<span class="st">"Recruitment"</span>,</span>
+<span>                                                      <span class="st">"fish_number"</span>,<span class="st">"fishing_mortality"</span><span class="op">)</span>, </span>
+<span>                                          ncol<span class="op">=</span><span class="fl">3</span></span>
+<span>                                          <span class="op">)</span></span></code></pre></div>
 <pre><code>[1] "Warning! The estimated F for the older ages may not be accurate if C&lt;&lt;N is not satisfied for the older ages."
 [1] "Warning! The estimated F for the older ages may not be accurate if C&lt;&lt;N is not satisfied for the older ages."</code></pre>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">res_vpa_sensitivity</span><span class="op">$</span><span class="va">graph</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">res_vpa_sensitivity</span><span class="op">$</span><span class="va">graph</span></span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-11-1.png" width="672"></p>
 </div>
 <div class="section level3">
@@ -293,26 +293,26 @@
 </h4>
 <p>チューニングなしVPAの場合、最終年のFが過去何年分の平均になるかという仮定の部分の値を変えて感度分析を行います。</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co"># チューニングなしVPAの場合</span>
-<span class="va">res_tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">vpadat_estb</span>, tf.year<span class="op">=</span><span class="fl">1996</span><span class="op">:</span><span class="fl">1999</span>, last.catch.zero <span class="op">=</span> <span class="cn">FALSE</span>, 
-               Pope <span class="op">=</span> <span class="cn">TRUE</span>, p.init <span class="op">=</span> <span class="fl">0.8</span>, tune<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span>
-<span class="va">tmp</span> <span class="op">&lt;-</span>   <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_tmp</span>,what_replace <span class="op">=</span> <span class="st">"tuning"</span>, value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fl">1995</span><span class="op">:</span><span class="fl">1999</span>, <span class="fl">1998</span><span class="op">:</span><span class="fl">1999</span><span class="op">)</span><span class="op">)</span>
-                                                      <span class="co"># 2つの数列をlist型にしてvalueを与えています</span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># チューニングなしVPAの場合</span></span>
+<span><span class="va">res_tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">vpadat_estb</span>, tf.year<span class="op">=</span><span class="fl">1996</span><span class="op">:</span><span class="fl">1999</span>, last.catch.zero <span class="op">=</span> <span class="cn">FALSE</span>, </span>
+<span>               Pope <span class="op">=</span> <span class="cn">TRUE</span>, p.init <span class="op">=</span> <span class="fl">0.8</span>, tune<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="va">tmp</span> <span class="op">&lt;-</span>   <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_tmp</span>,what_replace <span class="op">=</span> <span class="st">"tuning"</span>, value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fl">1995</span><span class="op">:</span><span class="fl">1999</span>, <span class="fl">1998</span><span class="op">:</span><span class="fl">1999</span><span class="op">)</span><span class="op">)</span></span>
+<span>                                                      <span class="co"># 2つの数列をlist型にしてvalueを与えています</span></span></code></pre></div>
 </div>
 <div class="section level4">
 <h4 id="選択率更新法の場合">選択率更新法の場合<a class="anchor" aria-label="anchor" href="#%E9%81%B8%E6%8A%9E%E7%8E%87%E6%9B%B4%E6%96%B0%E6%B3%95%E3%81%AE%E5%A0%B4%E5%90%88"></a>
 </h4>
 <p>今回の例では選択率更新法で推定されているため、全F推定で感度分析が行われます。 これまでと同様に、<code>what_replace = "tuning"</code>といれれば大丈夫です。 <strong>選択率更新法の代わりに感度分析で全F推定を行う場合、<code>value</code>に値を入れる必要はありません</strong></p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">res_tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">vpadat_estb</span>, tf.year<span class="op">=</span><span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span>, last.catch.zero <span class="op">=</span> <span class="cn">FALSE</span>, 
-               Pope <span class="op">=</span> <span class="cn">TRUE</span>, p.init <span class="op">=</span> <span class="fl">0.5</span>, tune<span class="op">=</span><span class="cn">TRUE</span>, sel.update<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span>
-<span class="va">res_vpa_sensitivity</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_tmp</span>, 
-                                          what_replace <span class="op">=</span> <span class="st">"tuning"</span>,
-                                          what_plot<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SSB"</span>,<span class="st">"biomass"</span>,<span class="st">"U"</span>,<span class="st">"Recruitment"</span>,
-                                                      <span class="st">"fish_number"</span>,<span class="st">"fishing_mortality"</span><span class="op">)</span>, 
-                                          ncol<span class="op">=</span><span class="fl">3</span>
-                                          <span class="op">)</span>
-<span class="va">res_vpa_sensitivity</span><span class="op">$</span><span class="va">graph</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">res_tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">vpadat_estb</span>, tf.year<span class="op">=</span><span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span>, last.catch.zero <span class="op">=</span> <span class="cn">FALSE</span>, </span>
+<span>               Pope <span class="op">=</span> <span class="cn">TRUE</span>, p.init <span class="op">=</span> <span class="fl">0.5</span>, tune<span class="op">=</span><span class="cn">TRUE</span>, sel.update<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="va">res_vpa_sensitivity</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_tmp</span>, </span>
+<span>                                          what_replace <span class="op">=</span> <span class="st">"tuning"</span>,</span>
+<span>                                          what_plot<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SSB"</span>,<span class="st">"biomass"</span>,<span class="st">"U"</span>,<span class="st">"Recruitment"</span>,</span>
+<span>                                                      <span class="st">"fish_number"</span>,<span class="st">"fishing_mortality"</span><span class="op">)</span>, </span>
+<span>                                          ncol<span class="op">=</span><span class="fl">3</span></span>
+<span>                                          <span class="op">)</span></span>
+<span><span class="va">res_vpa_sensitivity</span><span class="op">$</span><span class="va">graph</span></span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-13-1.png" width="672"></p>
 </div>
 <div class="section level4">
@@ -320,12 +320,12 @@
 </h4>
 <p>全F推定の場合は、代わりに選択率更新法で感度分析が行われます。 また先のチューニングなしVPAのように、最終年Fの仮定についても値を変えて、感度分析することができます。</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co"># 全F推定法の場合</span>
-<span class="va">res_tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">vpadat_estb</span>, tf.year<span class="op">=</span><span class="fl">1997</span><span class="op">:</span><span class="fl">1999</span>, last.catch.zero <span class="op">=</span> <span class="cn">FALSE</span>, 
-               Pope <span class="op">=</span> <span class="cn">TRUE</span>, p.init <span class="op">=</span> <span class="fl">0.5</span>, tune<span class="op">=</span><span class="cn">TRUE</span>, sel.update<span class="op">=</span><span class="cn">FALSE</span>, term.F <span class="op">=</span> <span class="st">"all"</span><span class="op">)</span> 
-<span class="va">tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_tmp</span>, what_replace <span class="op">=</span> <span class="st">"tuning"</span>, value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fl">1995</span><span class="op">:</span><span class="fl">2000</span><span class="op">)</span><span class="op">)</span>
-                                                      <span class="co"># 数列をlist型にしてvalueを与えています</span>
-                                                      <span class="co"># チューニングなしVPAと同じです</span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># 全F推定法の場合</span></span>
+<span><span class="va">res_tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">vpadat_estb</span>, tf.year<span class="op">=</span><span class="fl">1997</span><span class="op">:</span><span class="fl">1999</span>, last.catch.zero <span class="op">=</span> <span class="cn">FALSE</span>, </span>
+<span>               Pope <span class="op">=</span> <span class="cn">TRUE</span>, p.init <span class="op">=</span> <span class="fl">0.5</span>, tune<span class="op">=</span><span class="cn">TRUE</span>, sel.update<span class="op">=</span><span class="cn">FALSE</span>, term.F <span class="op">=</span> <span class="st">"all"</span><span class="op">)</span> </span>
+<span><span class="va">tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_tmp</span>, what_replace <span class="op">=</span> <span class="st">"tuning"</span>, value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fl">1995</span><span class="op">:</span><span class="fl">2000</span><span class="op">)</span><span class="op">)</span></span>
+<span>                                                      <span class="co"># 数列をlist型にしてvalueを与えています</span></span>
+<span>                                                      <span class="co"># チューニングなしVPAと同じです</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level3">
@@ -333,15 +333,15 @@
 </h3>
 <p>全F推定でリッジVPAを行っている場合（λ＞0）にはλの値についての感度分析も実施してみてください。</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co"># リッジVPAの場合</span>
-<span class="va">res_tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">vpadat_estb</span>, tf.year<span class="op">=</span><span class="fl">1997</span><span class="op">:</span><span class="fl">1999</span>, last.catch.zero <span class="op">=</span> <span class="cn">FALSE</span>, 
-               Pope <span class="op">=</span> <span class="cn">TRUE</span>, p.init <span class="op">=</span> <span class="fl">0.5</span>, tune<span class="op">=</span><span class="cn">TRUE</span>, term.F <span class="op">=</span> <span class="st">"all"</span>, lambda <span class="op">=</span> <span class="fl">0.2</span><span class="op">)</span>
-<span class="va">tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_tmp</span>, what_replace <span class="op">=</span> <span class="st">"lambda"</span>, value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">0.1</span>,<span class="fl">0.5</span>,<span class="fl">0.7</span><span class="op">)</span>,
-                          what_plot<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SSB"</span>,<span class="st">"biomass"</span>,<span class="st">"U"</span>,<span class="st">"Recruitment"</span>,
-                                      <span class="st">"fish_number"</span>,<span class="st">"fishing_mortality"</span><span class="op">)</span>, 
-                          ncol<span class="op">=</span><span class="fl">3</span><span class="op">)</span>
-                                    <span class="co"># lambdaの値を"numeric型"で与えています</span>
-                                    <span class="co"># list型ではないので気を付けてください</span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># リッジVPAの場合</span></span>
+<span><span class="va">res_tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">vpadat_estb</span>, tf.year<span class="op">=</span><span class="fl">1997</span><span class="op">:</span><span class="fl">1999</span>, last.catch.zero <span class="op">=</span> <span class="cn">FALSE</span>, </span>
+<span>               Pope <span class="op">=</span> <span class="cn">TRUE</span>, p.init <span class="op">=</span> <span class="fl">0.5</span>, tune<span class="op">=</span><span class="cn">TRUE</span>, term.F <span class="op">=</span> <span class="st">"all"</span>, lambda <span class="op">=</span> <span class="fl">0.2</span><span class="op">)</span></span>
+<span><span class="va">tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_tmp</span>, what_replace <span class="op">=</span> <span class="st">"lambda"</span>, value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">0.1</span>,<span class="fl">0.5</span>,<span class="fl">0.7</span><span class="op">)</span>,</span>
+<span>                          what_plot<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SSB"</span>,<span class="st">"biomass"</span>,<span class="st">"U"</span>,<span class="st">"Recruitment"</span>,</span>
+<span>                                      <span class="st">"fish_number"</span>,<span class="st">"fishing_mortality"</span><span class="op">)</span>, </span>
+<span>                          ncol<span class="op">=</span><span class="fl">3</span><span class="op">)</span></span>
+<span>                                    <span class="co"># lambdaの値を"numeric型"で与えています</span></span>
+<span>                                    <span class="co"># list型ではないので気を付けてください</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="b-hyperstabilitydepletion">b (hyperstability/depletion)<a class="anchor" aria-label="anchor" href="#b-hyperstabilitydepletion"></a>
@@ -352,10 +352,10 @@
 <li>bを推定したい場合、<code>"b.est"</code>と入れる</li>
 </ul>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co"># b推定しているが、bを固定する場合</span>
-<span class="va">tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>, what_replace <span class="op">=</span> <span class="st">"b"</span>, value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">)</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1.2</span>,<span class="fl">1.2</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> 
-<span class="co"># bを固定しているが、bを推定する場合</span>
-<span class="va">tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>, what_replace <span class="op">=</span> <span class="st">"b"</span>, value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"b.est"</span><span class="op">)</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># b推定しているが、bを固定する場合</span></span>
+<span><span class="va">tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>, what_replace <span class="op">=</span> <span class="st">"b"</span>, value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">)</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1.2</span>,<span class="fl">1.2</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> </span>
+<span><span class="co"># bを固定しているが、bを推定する場合</span></span>
+<span><span class="va">tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>, what_replace <span class="op">=</span> <span class="st">"b"</span>, value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"b.est"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -397,30 +397,30 @@
 <p>があります。</p>
 <p>今回の解析結果<code>res_vpa_estb</code>を使って、7年分をさかのぼってレトロスペクティブ解析する場合、以下のようにコードします。</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">res_vpa_retrospective</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_retrospective_vpa.html">do_retrospective_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>,
-                                              n_retro <span class="op">=</span> <span class="fl">7</span>,
-                                              b_reest <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span>
-<span class="va">res_vpa_retrospective</span><span class="op">$</span><span class="va">mohn_rho</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">res_vpa_retrospective</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_retrospective_vpa.html">do_retrospective_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>,</span>
+<span>                                              n_retro <span class="op">=</span> <span class="fl">7</span>,</span>
+<span>                                              b_reest <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="va">res_vpa_retrospective</span><span class="op">$</span><span class="va">mohn_rho</span></span></code></pre></div>
 <pre><code>            N             B           SSB             R             F 
 -1.353966e-01 -1.019165e-01 -9.331421e-02 -1.829777e-01  1.626003e+05 </code></pre>
 <p>結果はlist型式でまとめてあり、<code>$</code>を使って呼び出すことが可能です。resultはVPAの推定結果、mohn_rhoはmorhのrhoの値、graphはグラフ、b_resはbの再推定結果です。またMohn’s rhoは、グラフ中にも併記してあります。 ここで、漁獲係数のMohn’s rhoは年齢別漁獲係数を全て足し合わせた値となっています。</p>
 <div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">res_vpa_retrospective</span><span class="op">$</span><span class="va">graph</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">res_vpa_retrospective</span><span class="op">$</span><span class="va">graph</span></span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-18-1.png" width="672"></p>
 <div class="section level4">
 <h4 id="レトロスペクティブ解析中でbの再推定を行う場合">レトロスペクティブ解析中でbの再推定を行う場合<a class="anchor" aria-label="anchor" href="#%E3%83%AC%E3%83%88%E3%83%AD%E3%82%B9%E3%83%9A%E3%82%AF%E3%83%86%E3%82%A3%E3%83%96%E8%A7%A3%E6%9E%90%E4%B8%AD%E3%81%A7b%E3%81%AE%E5%86%8D%E6%8E%A8%E5%AE%9A%E3%82%92%E8%A1%8C%E3%81%86%E5%A0%B4%E5%90%88"></a>
 </h4>
 <p>また、bをレトロスペクティブ解析内で再推定したい場合は以下のようにコードしてください。</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">res_tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">vpadat_estb</span>, tf.year<span class="op">=</span><span class="fl">1997</span><span class="op">:</span><span class="fl">1999</span>, last.catch.zero <span class="op">=</span> <span class="cn">FALSE</span>, Pope <span class="op">=</span> <span class="cn">TRUE</span>, 
-               p.init <span class="op">=</span> <span class="fl">0.5</span>, tune<span class="op">=</span><span class="cn">TRUE</span>, sel.update<span class="op">=</span><span class="cn">FALSE</span>, term.F <span class="op">=</span> <span class="st">"all"</span>, b.est <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> 
-                                                              <span class="co"># まずbを推定するvpaを実行しています</span>
-
-<span class="va">res_vpa_retrospective</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_retrospective_vpa.html">do_retrospective_vpa</a></span><span class="op">(</span><span class="va">res_tmp</span>,
-                                              n_retro <span class="op">=</span> <span class="fl">4</span>,
-                                              b_reest <span class="op">=</span> <span class="cn">TRUE</span> <span class="co"># ここをTRUEにしてください!!</span>
-                                              <span class="op">)</span>
-<span class="va">res_vpa_retrospective</span><span class="op">$</span><span class="va">b_res</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">res_tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">vpadat_estb</span>, tf.year<span class="op">=</span><span class="fl">1997</span><span class="op">:</span><span class="fl">1999</span>, last.catch.zero <span class="op">=</span> <span class="cn">FALSE</span>, Pope <span class="op">=</span> <span class="cn">TRUE</span>, </span>
+<span>               p.init <span class="op">=</span> <span class="fl">0.5</span>, tune<span class="op">=</span><span class="cn">TRUE</span>, sel.update<span class="op">=</span><span class="cn">FALSE</span>, term.F <span class="op">=</span> <span class="st">"all"</span>, b.est <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> </span>
+<span>                                                              <span class="co"># まずbを推定するvpaを実行しています</span></span>
+<span></span>
+<span><span class="va">res_vpa_retrospective</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_retrospective_vpa.html">do_retrospective_vpa</a></span><span class="op">(</span><span class="va">res_tmp</span>,</span>
+<span>                                              n_retro <span class="op">=</span> <span class="fl">4</span>,</span>
+<span>                                              b_reest <span class="op">=</span> <span class="cn">TRUE</span> <span class="co"># ここをTRUEにしてください!!</span></span>
+<span>                                              <span class="op">)</span></span>
+<span><span class="va">res_vpa_retrospective</span><span class="op">$</span><span class="va">b_res</span></span></code></pre></div>
 <pre><code> [38;5;246m# A tibble: 6 × 4 [39m
   `2000` `1999` `1998` `1997`
     [3m [38;5;246m&lt;dbl&gt; [39m [23m   [3m [38;5;246m&lt;dbl&gt; [39m [23m   [3m [38;5;246m&lt;dbl&gt; [39m [23m   [3m [38;5;246m&lt;dbl&gt; [39m [23m
@@ -437,20 +437,20 @@
 </h4>
 <p>VPAを2段階法で行っている場合は、<code>res_step1</code>引数に1段階目のVPA結果のオブジェクトを与えてください。</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">res_tmp1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">vpadat_estb</span>, tf.year<span class="op">=</span><span class="fl">1997</span><span class="op">:</span><span class="fl">1999</span>, last.catch.zero <span class="op">=</span> <span class="cn">FALSE</span>, Pope <span class="op">=</span> <span class="cn">TRUE</span>, 
-                p.init <span class="op">=</span> <span class="fl">0.5</span>, tune<span class="op">=</span><span class="cn">FALSE</span>, term.F <span class="op">=</span> <span class="st">"max"</span>, b.est <span class="op">=</span> <span class="cn">FALSE</span>,fc.year<span class="op">=</span><span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span><span class="op">)</span> 
-<span class="va">res_tmp2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">vpadat_estb</span>, tf.year<span class="op">=</span><span class="fl">1997</span><span class="op">:</span><span class="fl">1999</span>, last.catch.zero <span class="op">=</span> <span class="cn">FALSE</span>, Pope <span class="op">=</span> <span class="cn">TRUE</span>, 
-                p.init <span class="op">=</span> <span class="fl">0.5</span>, tune<span class="op">=</span><span class="cn">TRUE</span>, term.F <span class="op">=</span> <span class="st">"max"</span>, b.est <span class="op">=</span> <span class="cn">TRUE</span>, fc.year<span class="op">=</span><span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span>, 
-                sel.f <span class="op">=</span> <span class="va">res_tmp1</span><span class="op">$</span><span class="va">saa</span><span class="op">$</span><span class="va">`2000`</span><span class="op">)</span>   <span class="co"># sel.fで2段階目の選択率の初期値を与えます</span>
-
-<span class="va">res_vpa_retrospective</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_retrospective_vpa.html">do_retrospective_vpa</a></span><span class="op">(</span><span class="va">res_tmp2</span>,
-                                              n_retro <span class="op">=</span> <span class="fl">3</span>,
-                                              plot_year <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1995</span>, <span class="fl">2000</span><span class="op">)</span>,
-                                              b_reest <span class="op">=</span> <span class="cn">TRUE</span>,
-                                              res_step1 <span class="op">=</span> <span class="va">res_tmp1</span>
-                                              <span class="co"># ここに1段階目のチューニングなしVPAを与えてください</span>
-                                              <span class="op">)</span>
-<span class="va">res_vpa_retrospective</span><span class="op">$</span><span class="va">graph</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">res_tmp1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">vpadat_estb</span>, tf.year<span class="op">=</span><span class="fl">1997</span><span class="op">:</span><span class="fl">1999</span>, last.catch.zero <span class="op">=</span> <span class="cn">FALSE</span>, Pope <span class="op">=</span> <span class="cn">TRUE</span>, </span>
+<span>                p.init <span class="op">=</span> <span class="fl">0.5</span>, tune<span class="op">=</span><span class="cn">FALSE</span>, term.F <span class="op">=</span> <span class="st">"max"</span>, b.est <span class="op">=</span> <span class="cn">FALSE</span>,fc.year<span class="op">=</span><span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span><span class="op">)</span> </span>
+<span><span class="va">res_tmp2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">vpadat_estb</span>, tf.year<span class="op">=</span><span class="fl">1997</span><span class="op">:</span><span class="fl">1999</span>, last.catch.zero <span class="op">=</span> <span class="cn">FALSE</span>, Pope <span class="op">=</span> <span class="cn">TRUE</span>, </span>
+<span>                p.init <span class="op">=</span> <span class="fl">0.5</span>, tune<span class="op">=</span><span class="cn">TRUE</span>, term.F <span class="op">=</span> <span class="st">"max"</span>, b.est <span class="op">=</span> <span class="cn">TRUE</span>, fc.year<span class="op">=</span><span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span>, </span>
+<span>                sel.f <span class="op">=</span> <span class="va">res_tmp1</span><span class="op">$</span><span class="va">saa</span><span class="op">$</span><span class="va">`2000`</span><span class="op">)</span>   <span class="co"># sel.fで2段階目の選択率の初期値を与えます</span></span>
+<span></span>
+<span><span class="va">res_vpa_retrospective</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_retrospective_vpa.html">do_retrospective_vpa</a></span><span class="op">(</span><span class="va">res_tmp2</span>,</span>
+<span>                                              n_retro <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>                                              plot_year <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1995</span>, <span class="fl">2000</span><span class="op">)</span>,</span>
+<span>                                              b_reest <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>                                              res_step1 <span class="op">=</span> <span class="va">res_tmp1</span></span>
+<span>                                              <span class="co"># ここに1段階目のチューニングなしVPAを与えてください</span></span>
+<span>                                              <span class="op">)</span></span>
+<span><span class="va">res_vpa_retrospective</span><span class="op">$</span><span class="va">graph</span></span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-20-1.png" width="672"></p>
 </div>
 </div>
@@ -470,7 +470,7 @@
 </ul>
 <p>を指定します。コマンドは以下の通りです。</p>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">res_vpa_jitter</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_estcheck_vpa.html">do_estcheck_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>, n_ite<span class="op">=</span><span class="fl">10</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">res_vpa_jitter</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_estcheck_vpa.html">do_estcheck_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>, n_ite<span class="op">=</span><span class="fl">10</span><span class="op">)</span></span></code></pre></div>
 <pre><code>Maximum likelihood in jitter analysis is:  23.60018 
 Likelihood with estimated parameters is:  23.60018 </code></pre>
 <p>最初に引数で与えたVPA結果について、</p>
@@ -492,10 +492,10 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 </ul>
 <p>が入っています。</p>
 <div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">res_vpa_jitter</span><span class="op">$</span><span class="va">graph</span><span class="op">$</span><span class="va">estimated</span> <span class="co"># 推定されたF</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">res_vpa_jitter</span><span class="op">$</span><span class="va">graph</span><span class="op">$</span><span class="va">estimated</span> <span class="co"># 推定されたF</span></span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-22-1.png" width="672"></p>
 <div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">res_vpa_jitter</span><span class="op">$</span><span class="va">graph</span><span class="op">$</span><span class="va">likelihood</span> <span class="co"># 対数尤度（大きいほど良い）</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">res_vpa_jitter</span><span class="op">$</span><span class="va">graph</span><span class="op">$</span><span class="va">likelihood</span> <span class="co"># 対数尤度（大きいほど良い）</span></span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-22-2.png" width="672"></p>
 <p>ここで赤い横線は与えた結果の推定値と尤度を表しています。</p>
 <p>結果の図を見ると、いくつかの初期値のセットではFが0におちたり、Fが高い値になってしまっていることがわかります。これらのときの尤度は、推定値が得られたときの対数尤度（赤線）よりも小さい値になっていることから、推定パラメータから計算される尤度はほかの初期値を与えたときの推定値から得られる尤度と比較しても最大になっている(=最尤推定値が得られている)ことが確かめられました。</p>
@@ -517,16 +517,16 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 </ul>
 <p>また<code>index_name</code>引数中に、各指標の名前を与えるとプロットに反映されます（ない場合はIndex01、Index02・・・となります）。与える場合、用いた指標の数分引数に入れてください。</p>
 <div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">plot_example</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_residual_vpa.html">plot_residual_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>, index_name <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"CPUE1"</span>, <span class="st">"CPUE2"</span>,<span class="st">"CPUE3"</span>,<span class="st">"CPUE4"</span>,<span class="st">"CPUE5"</span>,<span class="st">"CPUE6"</span><span class="op">)</span>,plot_smooth<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span>
-<span class="va">plot_example</span><span class="op">$</span><span class="va">year_resid</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">plot_example</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_residual_vpa.html">plot_residual_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>, index_name <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"CPUE1"</span>, <span class="st">"CPUE2"</span>,<span class="st">"CPUE3"</span>,<span class="st">"CPUE4"</span>,<span class="st">"CPUE5"</span>,<span class="st">"CPUE6"</span><span class="op">)</span>,plot_smooth<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="va">plot_example</span><span class="op">$</span><span class="va">year_resid</span></span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-23-1.png" width="672"></p>
 <div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">plot_example</span><span class="op">$</span><span class="va">abund_Index</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">plot_example</span><span class="op">$</span><span class="va">abund_Index</span></span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-23-2.png" width="672"></p>
 <p>また、<code>plot_year</code>引数でプロットしたい年を指定することも可能です。</p>
 <div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">plot_example</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_residual_vpa.html">plot_residual_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>, plot_year <span class="op">=</span> <span class="fl">1995</span><span class="op">:</span><span class="fl">2000</span><span class="op">)</span>
-<span class="va">plot_example</span><span class="op">$</span><span class="va">fitting_Index</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">plot_example</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_residual_vpa.html">plot_residual_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>, plot_year <span class="op">=</span> <span class="fl">1995</span><span class="op">:</span><span class="fl">2000</span><span class="op">)</span></span>
+<span><span class="va">plot_example</span><span class="op">$</span><span class="va">fitting_Index</span></span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-24-1.png" width="672"></p>
 <p>これらの残差プロットは今回のバージョンから、<code>vpa</code>関数実行時に引数<code>plot = T</code>にすると自動生成されるようになっています。モデル診断の最も基本パートとなるので、是非活用ください。</p>
 <div class="section level3">
@@ -535,15 +535,15 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 <p>先程の図の通り、残差プロットに信頼区間が明記されるようになりました。 <strong>信頼区間は濃い色が80%、薄い色が95%</strong>のそれぞれ信頼区間となっております。</p>
 <p>これによって、外れ値の検出ができます。 特に、最近年に外れ値がある場合、その値が資源量推定結果に与える影響は大きいことが想定されるので、後述のジャックナイフ法などを通して結果の妥当性を評価してください。</p>
 <div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">plot_example</span><span class="op">$</span><span class="va">year_resid</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">plot_example</span><span class="op">$</span><span class="va">year_resid</span></span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-25-1.png" width="672"></p>
 <p>もし信頼区間の影が邪魔で消したい場合は、<code>resid_CI=FALSE</code>としてください。</p>
 <div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="../reference/plot_residual_vpa.html">plot_residual_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>, 
-                  index_name <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"CPUE1"</span>, <span class="st">"CPUE2"</span>,<span class="st">"CPUE3"</span>,
-                                 <span class="st">"CPUE4"</span>,<span class="st">"CPUE5"</span>,<span class="st">"CPUE6"</span><span class="op">)</span>,
-                  plot_smooth<span class="op">=</span><span class="cn">TRUE</span>,
-                  resid_CI <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">$</span><span class="va">year_resid</span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_residual_vpa.html">plot_residual_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>, </span>
+<span>                  index_name <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"CPUE1"</span>, <span class="st">"CPUE2"</span>,<span class="st">"CPUE3"</span>,</span>
+<span>                                 <span class="st">"CPUE4"</span>,<span class="st">"CPUE5"</span>,<span class="st">"CPUE6"</span><span class="op">)</span>,</span>
+<span>                  plot_smooth<span class="op">=</span><span class="cn">TRUE</span>,</span>
+<span>                  resid_CI <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">$</span><span class="va">year_resid</span></span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-26-1.png" width="672"></p>
 <p>また、自己相関係数も明記されるようになりました。 もしこの自己相関係数が有意に大きいあるいは小さい場合、<code>rho=0.6*</code>のように、*印が付きます。 この場合は、残差の独立の仮定が満たされていません。</p>
 <p>ただし、満たされていないから、一概にモデルとしての妥当性が不十分で、棄却されるというわけではありません。（主観的で恐縮ですが）</p>
@@ -562,15 +562,15 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 </ul>
 <p>引数<code>method</code>はデフォルトで“index”となっており、資源量指数の種類ごとに取り除いて解析を行います（つまり、資源量指数の種類分、結果が返ってきます）。一方、それぞれの種類を年ごとに取り除きたい場合は“all”を選択してください。この場合、資源量指数の種類×年数分、取り除いて計算するためデータ数によっては多くの計算時間を必要とする点に気を付けてください。</p>
 <div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">res_vpa_jackknife</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_jackknife_vpa.html">do_jackknife_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>,
-                                      what_plot <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SSB"</span>, <span class="st">"biomass"</span>, <span class="st">"U"</span>, <span class="st">"Recruitment"</span>,
-                                                    <span class="st">"fish_number"</span>, <span class="st">"fishing_mortality"</span><span class="op">)</span>,
-                                      ncol <span class="op">=</span> <span class="fl">3</span>, plot_year <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1995</span>, <span class="fl">2000</span><span class="op">)</span>,
-                                      scale_value <span class="op">=</span> <span class="fl">2</span><span class="op">:</span><span class="fl">8</span><span class="op">)</span>
-<span class="va">res_vpa_jackknife</span><span class="op">$</span><span class="va">JKplot_vpa</span> <span class="co"># 全体の結果</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">res_vpa_jackknife</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_jackknife_vpa.html">do_jackknife_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>,</span>
+<span>                                      what_plot <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SSB"</span>, <span class="st">"biomass"</span>, <span class="st">"U"</span>, <span class="st">"Recruitment"</span>,</span>
+<span>                                                    <span class="st">"fish_number"</span>, <span class="st">"fishing_mortality"</span><span class="op">)</span>,</span>
+<span>                                      ncol <span class="op">=</span> <span class="fl">3</span>, plot_year <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1995</span>, <span class="fl">2000</span><span class="op">)</span>,</span>
+<span>                                      scale_value <span class="op">=</span> <span class="fl">2</span><span class="op">:</span><span class="fl">8</span><span class="op">)</span></span>
+<span><span class="va">res_vpa_jackknife</span><span class="op">$</span><span class="va">JKplot_vpa</span> <span class="co"># 全体の結果</span></span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-27-1.png" width="672"></p>
 <div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">res_vpa_jackknife</span><span class="op">$</span><span class="va">JKplot_par</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/lims.html" class="external-link">ylim</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">1</span><span class="op">)</span> <span class="co"># 最終年のFの比較 (ここではylimで縦軸を調整しています)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">res_vpa_jackknife</span><span class="op">$</span><span class="va">JKplot_par</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/lims.html" class="external-link">ylim</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">1</span><span class="op">)</span> <span class="co"># 最終年のFの比較 (ここではylimで縦軸を調整しています)</span></span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-27-2.png" width="672"></p>
 </div>
 <div class="section level2">
@@ -603,7 +603,7 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 <li><p>引数<code>ci_range</code>で信頼区間の値を指定できます。デフォルトは0.95です（95％信頼区間の表記）。</p></li>
 </ul>
 <div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">res_vpa_bootstrap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_resboot_vpa.html">plot_resboot_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>, B_ite <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">res_vpa_bootstrap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_resboot_vpa.html">plot_resboot_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>, B_ite <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></code></pre></div>
 <pre><code>[1] 1
 [1] 2
 [1] 3
@@ -615,25 +615,25 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 [1] 9
 [1] 10</code></pre>
 <div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">res_vpa_bootstrap</span><span class="op">$</span><span class="va">plot_ssb</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">res_vpa_bootstrap</span><span class="op">$</span><span class="va">plot_ssb</span></span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-28-1.png" width="672"></p>
 <div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">res_vpa_bootstrap</span><span class="op">$</span><span class="va">plot_rec</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">res_vpa_bootstrap</span><span class="op">$</span><span class="va">plot_rec</span></span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-28-2.png" width="672"></p>
 <div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">res_vpa_bootstrap</span><span class="op">$</span><span class="va">plot_biomass</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">res_vpa_bootstrap</span><span class="op">$</span><span class="va">plot_biomass</span></span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-28-3.png" width="672"></p>
 <p>このようにSSB、加入量、バイオマスそれぞれについて95％信頼区間とともに資源動態の作図ができます。</p>
 <p>またブートストラップ法は資源量の信頼区間だけでなく、パラメータの信頼区間も算出出来ます。 ここでは最終年最高齢のFの信頼区間を出しています。</p>
 <div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">res_tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">numeric</a></span><span class="op">(</span><span class="op">)</span>
-<span class="kw">for</span><span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span> <span class="va">res_tmp</span><span class="op">[</span><span class="va">i</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">res_vpa_bootstrap</span><span class="op">$</span><span class="va">res_boot</span><span class="op">[[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="va">Fc.at.age</span><span class="op">[</span><span class="fl">4</span><span class="op">]</span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile</a></span><span class="op">(</span><span class="va">res_tmp</span>, probs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.025</span>,<span class="fl">0.5</span>,<span class="fl">0.975</span><span class="op">)</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">res_tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">numeric</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="kw">for</span><span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span> <span class="va">res_tmp</span><span class="op">[</span><span class="va">i</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">res_vpa_bootstrap</span><span class="op">$</span><span class="va">res_boot</span><span class="op">[[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="va">Fc.at.age</span><span class="op">[</span><span class="fl">4</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile</a></span><span class="op">(</span><span class="va">res_tmp</span>, probs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.025</span>,<span class="fl">0.5</span>,<span class="fl">0.975</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <pre><code>     2.5%       50%     97.5% 
-0.4823413 0.6553018 5.2631828 </code></pre>
+0.4734125 0.7533865 7.0236925 </code></pre>
 <p>この他、各パラメータの相関関係について、ブートストラップ標本を基にプロットが得られます。</p>
 <div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">res_vpa_bootstrap</span><span class="op">$</span><span class="va">plot_cor</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">res_vpa_bootstrap</span><span class="op">$</span><span class="va">plot_cor</span></span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-30-1.png" width="1152"></p>
 </div>
 <div class="section level3">
@@ -642,14 +642,14 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 <p>VPAは年齢別漁獲尾数（catch at age）が真であると仮定して推定するため、catch at ageの不確実性を評価することが出来ないモデルです。 ここで紹介する<code>do_caaboot_vpa</code>関数は、引数として与えている年齢別漁獲尾数(<code>$input$dat$caa</code>)の対数を取った後、正規分布乱数で生成した年齢別漁獲尾数を用いて、再度VPA計算を行います。</p>
 <p>引数<code>B_cv</code>で乱数生成の変動係数を決めることができます。デフォルトで0.2となっていますが、年齢別漁獲尾数データの不確実性が大きいことが想定される場合、この値を適宜大きくして検討してみてください。</p>
 <div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">res_vpa_caaboot</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_caaboot_vpa.html">do_caaboot_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>, B_ite <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>
-<span class="va">res_vpa_caaboot</span><span class="op">$</span><span class="va">plot_ssb</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">res_vpa_caaboot</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_caaboot_vpa.html">do_caaboot_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>, B_ite <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
+<span><span class="va">res_vpa_caaboot</span><span class="op">$</span><span class="va">plot_ssb</span></span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-31-1.png" width="672"></p>
 <div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">res_vpa_caaboot</span><span class="op">$</span><span class="va">plot_rec</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">res_vpa_caaboot</span><span class="op">$</span><span class="va">plot_rec</span></span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-31-2.png" width="672"></p>
 <div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">res_vpa_caaboot</span><span class="op">$</span><span class="va">plot_biomass</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">res_vpa_caaboot</span><span class="op">$</span><span class="va">plot_biomass</span></span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-31-3.png" width="672"></p>
 <p>一般に、VPAの資源量推定結果を信頼区間と重ねてプロットすると、先程の<code>res_vpa_bootstrap$plot_ssb</code>のように最近年で信頼区間が広く、過去にさかのぼるほど信頼区間は狭くなっています。</p>
 <p>これは決して過去の推定結果が正しいからではなく、確率変数として考えている資源量指数の不確実性を考慮しただけでは、最近の資源量の不確実性しか考慮できず、それより過去は正しいと仮定されている年齢別漁獲尾数データによって、決定的に求まっているだけなのです。 年齢別漁獲尾数の不確実性を考慮すると、時系列に関係なく資源量推定結果に不確実性があることが明らかになるかと思います。</p>
@@ -681,7 +681,7 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.9000.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.5.9000.</p>
 </div>
 
       </footer>

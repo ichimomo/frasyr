@@ -60,68 +60,68 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">make_future_data</span><span class="op">(</span>
-  <span class="va">res_vpa</span>,
-  nsim <span class="op">=</span> <span class="fl">1000</span>,
-  nyear <span class="op">=</span> <span class="fl">50</span>,
-  plus_age <span class="op">=</span> <span class="cn">NULL</span>,
-  plus_group <span class="op">=</span> <span class="cn">NULL</span>,
-  future_initial_year_name <span class="op">=</span> <span class="fl">2017</span>,
-  start_F_year_name <span class="op">=</span> <span class="fl">2018</span>,
-  start_biopar_year_name <span class="op">=</span> <span class="fl">2018</span>,
-  start_random_rec_year_name <span class="op">=</span> <span class="fl">2018</span>,
-  <span class="va">waa_year</span>,
-  waa <span class="op">=</span> <span class="cn">NULL</span>,
-  <span class="va">waa_catch_year</span>,
-  waa_catch <span class="op">=</span> <span class="cn">NULL</span>,
-  waa_fun <span class="op">=</span> <span class="cn">FALSE</span>,
-  start_waafun_year_name <span class="op">=</span> <span class="va">start_biopar_year_name</span>,
-  waa_fun_name <span class="op">=</span> <span class="cn">NA</span>,
-  waa_catch_fun <span class="op">=</span> <span class="cn">FALSE</span>,
-  start_waacatchfun_year_name <span class="op">=</span> <span class="va">start_biopar_year_name</span>,
-  waa_catch_fun_name <span class="op">=</span> <span class="cn">NA</span>,
-  <span class="va">maa_year</span>,
-  maa <span class="op">=</span> <span class="cn">NULL</span>,
-  maa_fun <span class="op">=</span> <span class="cn">FALSE</span>,
-  start_maafun_year_name <span class="op">=</span> <span class="va">start_biopar_year_name</span>,
-  <span class="va">M_year</span>,
-  M <span class="op">=</span> <span class="cn">NULL</span>,
-  faa_year <span class="op">=</span> <span class="cn">NULL</span>,
-  currentF <span class="op">=</span> <span class="cn">NULL</span>,
-  futureF <span class="op">=</span> <span class="cn">NULL</span>,
-  start_ABC_year_name <span class="op">=</span> <span class="fl">2019</span>,
-  HCR_beta <span class="op">=</span> <span class="fl">1</span>,
-  HCR_Blimit <span class="op">=</span> <span class="op">-</span><span class="fl">1</span>,
-  HCR_Bban <span class="op">=</span> <span class="op">-</span><span class="fl">1</span>,
-  HCR_year_lag <span class="op">=</span> <span class="fl">0</span>,
-  HCR_beta_year <span class="op">=</span> <span class="cn">NULL</span>,
-  HCR_Blimit_year <span class="op">=</span> <span class="cn">NULL</span>,
-  HCR_Bban_year <span class="op">=</span> <span class="cn">NULL</span>,
-  HCR_TAC_reserve_rate <span class="op">=</span> <span class="cn">NA</span>,
-  HCR_TAC_reserve_amount <span class="op">=</span> <span class="cn">NA</span>,
-  HCR_TAC_carry_rate <span class="op">=</span> <span class="cn">NA</span>,
-  HCR_TAC_carry_amount <span class="op">=</span> <span class="cn">NA</span>,
-  HCR_TAC_upper_CV <span class="op">=</span> <span class="cn">NA</span>,
-  HCR_TAC_lower_CV <span class="op">=</span> <span class="cn">NA</span>,
-  HCR_function_name <span class="op">=</span> <span class="st">"HCR_default"</span>,
-  Pope <span class="op">=</span> <span class="va">res_vpa</span><span class="op">$</span><span class="va">input</span><span class="op">$</span><span class="va">Pope</span>,
-  fix_recruit <span class="op">=</span> <span class="cn">NULL</span>,
-  fix_wcatch <span class="op">=</span> <span class="cn">NULL</span>,
-  max_F <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span>,
-  max_exploitation_rate <span class="op">=</span> <span class="fl">0.99</span>,
-  res_SR <span class="op">=</span> <span class="cn">NULL</span>,
-  seed_number <span class="op">=</span> <span class="fl">1</span>,
-  resid_type <span class="op">=</span> <span class="st">"lognormal"</span>,
-  bias_correction <span class="op">=</span> <span class="cn">TRUE</span>,
-  resample_year_range <span class="op">=</span> <span class="cn">NA</span>,
-  backward_duration <span class="op">=</span> <span class="fl">5</span>,
-  recruit_intercept <span class="op">=</span> <span class="fl">0</span>,
-  setting_release <span class="op">=</span> <span class="cn">NULL</span>,
-  model_average_option <span class="op">=</span> <span class="cn">NULL</span>,
-  regime_shift_option <span class="op">=</span> <span class="cn">NULL</span>,
-  silent <span class="op">=</span> <span class="cn">FALSE</span>,
-  special_setting <span class="op">=</span> <span class="cn">NULL</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">make_future_data</span><span class="op">(</span></span>
+<span>  <span class="va">res_vpa</span>,</span>
+<span>  nsim <span class="op">=</span> <span class="fl">1000</span>,</span>
+<span>  nyear <span class="op">=</span> <span class="fl">50</span>,</span>
+<span>  plus_age <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  plus_group <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  future_initial_year_name <span class="op">=</span> <span class="fl">2017</span>,</span>
+<span>  start_F_year_name <span class="op">=</span> <span class="fl">2018</span>,</span>
+<span>  start_biopar_year_name <span class="op">=</span> <span class="fl">2018</span>,</span>
+<span>  start_random_rec_year_name <span class="op">=</span> <span class="fl">2018</span>,</span>
+<span>  <span class="va">waa_year</span>,</span>
+<span>  waa <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  <span class="va">waa_catch_year</span>,</span>
+<span>  waa_catch <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  waa_fun <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  start_waafun_year_name <span class="op">=</span> <span class="va">start_biopar_year_name</span>,</span>
+<span>  waa_fun_name <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>  waa_catch_fun <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  start_waacatchfun_year_name <span class="op">=</span> <span class="va">start_biopar_year_name</span>,</span>
+<span>  waa_catch_fun_name <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>  <span class="va">maa_year</span>,</span>
+<span>  maa <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  maa_fun <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  start_maafun_year_name <span class="op">=</span> <span class="va">start_biopar_year_name</span>,</span>
+<span>  <span class="va">M_year</span>,</span>
+<span>  M <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  faa_year <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  currentF <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  futureF <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  start_ABC_year_name <span class="op">=</span> <span class="fl">2019</span>,</span>
+<span>  HCR_beta <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  HCR_Blimit <span class="op">=</span> <span class="op">-</span><span class="fl">1</span>,</span>
+<span>  HCR_Bban <span class="op">=</span> <span class="op">-</span><span class="fl">1</span>,</span>
+<span>  HCR_year_lag <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  HCR_beta_year <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  HCR_Blimit_year <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  HCR_Bban_year <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  HCR_TAC_reserve_rate <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>  HCR_TAC_reserve_amount <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>  HCR_TAC_carry_rate <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>  HCR_TAC_carry_amount <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>  HCR_TAC_upper_CV <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>  HCR_TAC_lower_CV <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>  HCR_function_name <span class="op">=</span> <span class="st">"HCR_default"</span>,</span>
+<span>  Pope <span class="op">=</span> <span class="va">res_vpa</span><span class="op">$</span><span class="va">input</span><span class="op">$</span><span class="va">Pope</span>,</span>
+<span>  fix_recruit <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  fix_wcatch <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  max_F <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span>,</span>
+<span>  max_exploitation_rate <span class="op">=</span> <span class="fl">0.99</span>,</span>
+<span>  res_SR <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  seed_number <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  resid_type <span class="op">=</span> <span class="st">"lognormal"</span>,</span>
+<span>  bias_correction <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  resample_year_range <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>  backward_duration <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  recruit_intercept <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  setting_release <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  model_average_option <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  regime_shift_option <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  silent <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  special_setting <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -355,7 +355,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.9000.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.5.9000.</p>
 </div>
 
       </footer></div>

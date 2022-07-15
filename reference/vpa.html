@@ -60,88 +60,88 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">vpa</span><span class="op">(</span>
-  <span class="va">dat</span>,
-  sel.f <span class="op">=</span> <span class="cn">NULL</span>,
-  tf.year <span class="op">=</span> <span class="fl">2008</span><span class="op">:</span><span class="fl">2010</span>,
-  rec.new <span class="op">=</span> <span class="cn">NULL</span>,
-  rec <span class="op">=</span> <span class="cn">NULL</span>,
-  rec.year <span class="op">=</span> <span class="fl">2010</span>,
-  rps.year <span class="op">=</span> <span class="fl">2001</span><span class="op">:</span><span class="fl">2010</span>,
-  fc.year <span class="op">=</span> <span class="fl">2009</span><span class="op">:</span><span class="fl">2011</span>,
-  last.year <span class="op">=</span> <span class="cn">NULL</span>,
-  last.catch.zero <span class="op">=</span> <span class="cn">FALSE</span>,
-  faa0 <span class="op">=</span> <span class="cn">NULL</span>,
-  naa0 <span class="op">=</span> <span class="cn">NULL</span>,
-  f.new <span class="op">=</span> <span class="cn">NULL</span>,
-  Pope <span class="op">=</span> <span class="cn">TRUE</span>,
-  p.pope <span class="op">=</span> <span class="fl">0.5</span>,
-  tune <span class="op">=</span> <span class="cn">FALSE</span>,
-  abund <span class="op">=</span> <span class="st">"B"</span>,
-  min.age <span class="op">=</span> <span class="fl">0</span>,
-  max.age <span class="op">=</span> <span class="fl">0</span>,
-  link <span class="op">=</span> <span class="st">"id"</span>,
-  base <span class="op">=</span> <span class="cn">NA</span>,
-  af <span class="op">=</span> <span class="cn">NA</span>,
-  p.m <span class="op">=</span> <span class="fl">0.5</span>,
-  omega <span class="op">=</span> <span class="cn">NULL</span>,
-  index.w <span class="op">=</span> <span class="cn">NULL</span>,
-  use.index <span class="op">=</span> <span class="st">"all"</span>,
-  scale <span class="op">=</span> <span class="fl">1000</span>,
-  hessian <span class="op">=</span> <span class="cn">TRUE</span>,
-  alpha <span class="op">=</span> <span class="fl">1</span>,
-  maxit <span class="op">=</span> <span class="fl">5</span>,
-  d <span class="op">=</span> <span class="fl">1e-04</span>,
-  min.caa <span class="op">=</span> <span class="fl">0.001</span>,
-  plot <span class="op">=</span> <span class="cn">FALSE</span>,
-  plot.year <span class="op">=</span> <span class="fl">1998</span><span class="op">:</span><span class="fl">2015</span>,
-  term.F <span class="op">=</span> <span class="st">"max"</span>,
-  plus.group <span class="op">=</span> <span class="cn">TRUE</span>,
-  stat.tf <span class="op">=</span> <span class="st">"mean"</span>,
-  add.p.est <span class="op">=</span> <span class="cn">NULL</span>,
-  add.p.ini <span class="op">=</span> <span class="cn">NULL</span>,
-  sel.update <span class="op">=</span> <span class="cn">FALSE</span>,
-  sel.def <span class="op">=</span> <span class="st">"max"</span>,
-  max.dd <span class="op">=</span> <span class="fl">1e-06</span>,
-  ti.scale <span class="op">=</span> <span class="cn">NULL</span>,
-  tf.mat <span class="op">=</span> <span class="cn">NULL</span>,
-  eq.tf.mean <span class="op">=</span> <span class="cn">FALSE</span>,
-  no.est <span class="op">=</span> <span class="cn">FALSE</span>,
-  est.method <span class="op">=</span> <span class="st">"ls"</span>,
-  b.est <span class="op">=</span> <span class="cn">FALSE</span>,
-  est.constraint <span class="op">=</span> <span class="cn">FALSE</span>,
-  q.const <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">abund</span><span class="op">)</span>,
-  b.const <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">abund</span><span class="op">)</span>,
-  q.fix <span class="op">=</span> <span class="cn">NULL</span>,
-  b.fix <span class="op">=</span> <span class="cn">NULL</span>,
-  sigma.const <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">abund</span><span class="op">)</span>,
-  fixed.index.var <span class="op">=</span> <span class="cn">NULL</span>,
-  max.iter <span class="op">=</span> <span class="fl">100</span>,
-  optimizer <span class="op">=</span> <span class="st">"nlm"</span>,
-  Lower <span class="op">=</span> <span class="op">-</span><span class="cn">Inf</span>,
-  Upper <span class="op">=</span> <span class="cn">Inf</span>,
-  p.fix <span class="op">=</span> <span class="cn">NULL</span>,
-  lambda <span class="op">=</span> <span class="fl">0</span>,
-  beta <span class="op">=</span> <span class="fl">2</span>,
-  penalty <span class="op">=</span> <span class="st">"p"</span>,
-  ssb.def <span class="op">=</span> <span class="st">"i"</span>,
-  ssb.lag <span class="op">=</span> <span class="fl">0</span>,
-  TMB <span class="op">=</span> <span class="cn">FALSE</span>,
-  sel.rank <span class="op">=</span> <span class="cn">NULL</span>,
-  p.init <span class="op">=</span> <span class="fl">0.2</span>,
-  sigma.constraint <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">abund</span><span class="op">)</span>,
-  eta <span class="op">=</span> <span class="cn">NULL</span>,
-  eta.age <span class="op">=</span> <span class="fl">0</span>,
-  tmb.file <span class="op">=</span> <span class="st">"rvpa_tmb"</span>,
-  remove.abund <span class="op">=</span> <span class="cn">NULL</span>,
-  madara <span class="op">=</span> <span class="cn">FALSE</span>,
-  p_by_age <span class="op">=</span> <span class="cn">FALSE</span>,
-  penalty_age <span class="op">=</span> <span class="cn">NULL</span>,
-  no_eta_age <span class="op">=</span> <span class="cn">NULL</span>,
-  sdreport <span class="op">=</span> <span class="cn">FALSE</span>,
-  use.equ <span class="op">=</span> <span class="st">"new"</span>,
-  ave_S <span class="op">=</span> <span class="cn">TRUE</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">vpa</span><span class="op">(</span></span>
+<span>  <span class="va">dat</span>,</span>
+<span>  sel.f <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  tf.year <span class="op">=</span> <span class="fl">2008</span><span class="op">:</span><span class="fl">2010</span>,</span>
+<span>  rec.new <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  rec <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  rec.year <span class="op">=</span> <span class="fl">2010</span>,</span>
+<span>  rps.year <span class="op">=</span> <span class="fl">2001</span><span class="op">:</span><span class="fl">2010</span>,</span>
+<span>  fc.year <span class="op">=</span> <span class="fl">2009</span><span class="op">:</span><span class="fl">2011</span>,</span>
+<span>  last.year <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  last.catch.zero <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  faa0 <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  naa0 <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  f.new <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  Pope <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  p.pope <span class="op">=</span> <span class="fl">0.5</span>,</span>
+<span>  tune <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  abund <span class="op">=</span> <span class="st">"B"</span>,</span>
+<span>  min.age <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  max.age <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  link <span class="op">=</span> <span class="st">"id"</span>,</span>
+<span>  base <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>  af <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>  p.m <span class="op">=</span> <span class="fl">0.5</span>,</span>
+<span>  omega <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  index.w <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  use.index <span class="op">=</span> <span class="st">"all"</span>,</span>
+<span>  scale <span class="op">=</span> <span class="fl">1000</span>,</span>
+<span>  hessian <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  alpha <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  maxit <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  d <span class="op">=</span> <span class="fl">1e-04</span>,</span>
+<span>  min.caa <span class="op">=</span> <span class="fl">0.001</span>,</span>
+<span>  plot <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  plot.year <span class="op">=</span> <span class="fl">1998</span><span class="op">:</span><span class="fl">2015</span>,</span>
+<span>  term.F <span class="op">=</span> <span class="st">"max"</span>,</span>
+<span>  plus.group <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  stat.tf <span class="op">=</span> <span class="st">"mean"</span>,</span>
+<span>  add.p.est <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  add.p.ini <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sel.update <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  sel.def <span class="op">=</span> <span class="st">"max"</span>,</span>
+<span>  max.dd <span class="op">=</span> <span class="fl">1e-06</span>,</span>
+<span>  ti.scale <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  tf.mat <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  eq.tf.mean <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  no.est <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  est.method <span class="op">=</span> <span class="st">"ls"</span>,</span>
+<span>  b.est <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  est.constraint <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  q.const <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">abund</span><span class="op">)</span>,</span>
+<span>  b.const <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">abund</span><span class="op">)</span>,</span>
+<span>  q.fix <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  b.fix <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sigma.const <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">abund</span><span class="op">)</span>,</span>
+<span>  fixed.index.var <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  max.iter <span class="op">=</span> <span class="fl">100</span>,</span>
+<span>  optimizer <span class="op">=</span> <span class="st">"nlm"</span>,</span>
+<span>  Lower <span class="op">=</span> <span class="op">-</span><span class="cn">Inf</span>,</span>
+<span>  Upper <span class="op">=</span> <span class="cn">Inf</span>,</span>
+<span>  p.fix <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  lambda <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  beta <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>  penalty <span class="op">=</span> <span class="st">"p"</span>,</span>
+<span>  ssb.def <span class="op">=</span> <span class="st">"i"</span>,</span>
+<span>  ssb.lag <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  TMB <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  sel.rank <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  p.init <span class="op">=</span> <span class="fl">0.2</span>,</span>
+<span>  sigma.constraint <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">abund</span><span class="op">)</span>,</span>
+<span>  eta <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  eta.age <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  tmb.file <span class="op">=</span> <span class="st">"rvpa_tmb"</span>,</span>
+<span>  remove.abund <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  madara <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  p_by_age <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  penalty_age <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  no_eta_age <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sdreport <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  use.equ <span class="op">=</span> <span class="st">"new"</span>,</span>
+<span>  ave_S <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -505,7 +505,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.9000.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.5.9000.</p>
 </div>
 
       </footer></div>

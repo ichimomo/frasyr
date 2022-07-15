@@ -60,40 +60,40 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">plot_futures</span><span class="op">(</span>
-  vpares <span class="op">=</span> <span class="cn">NULL</span>,
-  future.list <span class="op">=</span> <span class="cn">NULL</span>,
-  future.name <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">future.list</span><span class="op">)</span>,
-  future_tibble <span class="op">=</span> <span class="cn">NULL</span>,
-  CI_range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>, <span class="fl">0.9</span><span class="op">)</span>,
-  maxyear <span class="op">=</span> <span class="cn">NULL</span>,
-  minyear <span class="op">=</span> <span class="cn">NULL</span>,
-  is.plot.CIrange <span class="op">=</span> <span class="cn">TRUE</span>,
-  is.plot.CIline <span class="op">=</span> <span class="cn">TRUE</span>,
-  what.plot <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Recruitment"</span>, <span class="st">"SSB"</span>, <span class="st">"biomass"</span>, <span class="st">"cbiomass"</span>, <span class="st">"catch"</span>, <span class="st">"beta_gamma"</span>,
-    <span class="st">"U"</span>, <span class="st">"Fratio"</span><span class="op">)</span>,
-  biomass.unit <span class="op">=</span> <span class="fl">1</span>,
-  number.unit <span class="op">=</span> <span class="fl">1</span>,
-  number.name <span class="op">=</span> <span class="st">""</span>,
-  RP_name <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Btarget"</span>, <span class="st">"Blimit"</span>, <span class="st">"Bban"</span><span class="op">)</span>,
-  Btarget <span class="op">=</span> <span class="fl">0</span>,
-  Blimit <span class="op">=</span> <span class="fl">0</span>,
-  Bban <span class="op">=</span> <span class="fl">0</span>,
-  MSY <span class="op">=</span> <span class="fl">0</span>,
-  Umsy <span class="op">=</span> <span class="fl">0</span>,
-  SPRtarget <span class="op">=</span> <span class="cn">NULL</span>,
-  exclude.japanese.font <span class="op">=</span> <span class="cn">FALSE</span>,
-  average_lwd <span class="op">=</span> <span class="fl">1</span>,
-  n_example <span class="op">=</span> <span class="fl">3</span>,
-  example_width <span class="op">=</span> <span class="fl">0.7</span>,
-  future.replicate <span class="op">=</span> <span class="cn">NULL</span>,
-  seed <span class="op">=</span> <span class="fl">1</span>,
-  legend.position <span class="op">=</span> <span class="st">"top"</span>,
-  type <span class="op">=</span> <span class="st">"detail"</span>,
-  font.size <span class="op">=</span> <span class="fl">18</span>,
-  ncol <span class="op">=</span> <span class="fl">3</span>,
-  remove.last.vpa.year <span class="op">=</span> <span class="cn">FALSE</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">plot_futures</span><span class="op">(</span></span>
+<span>  vpares <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  future.list <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  future.name <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">future.list</span><span class="op">)</span>,</span>
+<span>  future_tibble <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  CI_range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>, <span class="fl">0.9</span><span class="op">)</span>,</span>
+<span>  maxyear <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  minyear <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  is.plot.CIrange <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  is.plot.CIline <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  what.plot <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Recruitment"</span>, <span class="st">"SSB"</span>, <span class="st">"biomass"</span>, <span class="st">"cbiomass"</span>, <span class="st">"catch"</span>, <span class="st">"beta_gamma"</span>,</span>
+<span>    <span class="st">"U"</span>, <span class="st">"Fratio"</span><span class="op">)</span>,</span>
+<span>  biomass.unit <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  number.unit <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  number.name <span class="op">=</span> <span class="st">""</span>,</span>
+<span>  RP_name <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Btarget"</span>, <span class="st">"Blimit"</span>, <span class="st">"Bban"</span><span class="op">)</span>,</span>
+<span>  Btarget <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  Blimit <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  Bban <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  MSY <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  Umsy <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  SPRtarget <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  exclude.japanese.font <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  average_lwd <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  n_example <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>  example_width <span class="op">=</span> <span class="fl">0.7</span>,</span>
+<span>  future.replicate <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  seed <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  legend.position <span class="op">=</span> <span class="st">"top"</span>,</span>
+<span>  type <span class="op">=</span> <span class="st">"detail"</span>,</span>
+<span>  font.size <span class="op">=</span> <span class="fl">18</span>,</span>
+<span>  ncol <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>  remove.last.vpa.year <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -223,7 +223,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.9000.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.5.9000.</p>
 </div>
 
       </footer></div>
