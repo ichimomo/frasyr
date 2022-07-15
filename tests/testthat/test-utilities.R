@@ -296,15 +296,16 @@ test_that("beta.simulation() works", {
                                  year.lag = 0,
                                  type = "new")
 
-    expect_is(kobe_data, "data.frame")
-    expect_setequal(colnames(kobe_data),
+    expect_is(kobe_data[[1]], "data.frame")
+    expect_is(kobe_data[[2]], "data.frame")    
+    expect_setequal(colnames(kobe_data[[1]]),
                     c("year", "sim", "value", "stat", "HCR_name", "beta"))
 
     kobe_data <- beta.simulation(generate_dummy_future_new_object(nsim=2)$input,
                                  beta_vector = seq(0, 1, 0.5),
                                  year.lag = 0,
                                  type = "new", save_detail=c(1,0,1))
-    expect_equal(names(kobe_data),c("tb","res_list"))
+    expect_equal(names(kobe_data),c("tb","tb2","res_list"))
 
     # multi-core
     if(0){

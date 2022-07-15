@@ -10,19 +10,13 @@ make_kobeII_table(
   res_vpa,
   year.catch = (max(as.numeric(colnames(res_vpa$naa))) + 1:10),
   year.ssb = (max(as.numeric(colnames(res_vpa$naa))) + 1:10),
-  year.Fsakugen = (max(as.numeric(colnames(res_vpa$naa))) + 1:10),
   year.ssbtarget = (max(as.numeric(colnames(res_vpa$naa))) + 1:10),
   year.ssblimit = (max(as.numeric(colnames(res_vpa$naa))) + 1:10),
   year.ssbban = (max(as.numeric(colnames(res_vpa$naa))) + 1:10),
   year.ssbmin = (max(as.numeric(colnames(res_vpa$naa))) + 1:10),
-  year.ssbmax = (max(as.numeric(colnames(res_vpa$naa))) + 1:10),
-  year.aav = (max(as.numeric(colnames(res_vpa$naa))) + 1:10),
-  year.risk = (max(as.numeric(colnames(res_vpa$naa))) + 1:10),
-  year.catchdiff = (max(as.numeric(colnames(res_vpa$naa))) + 1:10),
   Btarget = 0,
   Blimit = 0,
-  Bban = 0,
-  Bspecific = NULL
+  Bban = 0
 )
 }
 \arguments{
