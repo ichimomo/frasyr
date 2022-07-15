@@ -1643,23 +1643,23 @@ make_kobeII_table <- function(kobeII_data,
       arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
       mutate(stat_name="biomass.mean"))
 
-  # 親魚, 下10%
-  (ssb.ci10 <- kobeII_data %>%
+  # 親魚, 下5%
+  (ssb.ci05 <- kobeII_data %>%
       dplyr::filter(year%in%year.ssb,stat=="SSB") %>%
       group_by(HCR_name,beta,year) %>%
-      summarise(ssb.ci10=quantile(value,probs=0.1)) %>%
-      spread(key=year,value=ssb.ci10) %>% ungroup() %>%
+      summarise(ssb.ci05=quantile(value,probs=0.05)) %>%
+      spread(key=year,value=ssb.ci05) %>% ungroup() %>%
       arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
-      mutate(stat_name="ssb.ci10"))
+      mutate(stat_name="ssb.ci05"))
 
-  # 親魚, 上10%
-  (ssb.ci90 <- kobeII_data %>%
+  # 親魚, 上5%
+  (ssb.ci95 <- kobeII_data %>%
       dplyr::filter(year%in%year.ssb,stat=="SSB") %>%
       group_by(HCR_name,beta,year) %>%
-      summarise(ssb.ci90=quantile(value,probs=0.9)) %>%
-      spread(key=year,value=ssb.ci90) %>% ungroup() %>%
+      summarise(ssb.ci95=quantile(value,probs=0.95)) %>%
+      spread(key=year,value=ssb.ci95) %>% ungroup() %>%
       arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
-      mutate(stat_name="ssb.ci90"))
+      mutate(stat_name="ssb.ci95"))
 
   # 1-currentFに乗じる値=currentFからの努力量の削減率の平均値（実際には確率分布になっている）
   ## (Fsakugen.table <- kobeII_data %>%
@@ -1834,8 +1834,8 @@ make_kobeII_table <- function(kobeII_data,
   res_list <- list(catch.mean   = catch.mean,
                    ssb.mean         = ssb.mean,
                    biomass.mean         = biomass.mean,
-                   ssb.lower10percent            = ssb.ci10,
-                   ssb.upper90percent            = ssb.ci90,
+                   ssb.lower05percent            = ssb.ci05,
+                   ssb.upper95percent            = ssb.ci95,
                    prob.over.ssbtarget  = ssbtarget.table,
                    prob.over.ssblimit   = ssblimit.table,
                    prob.over.ssbban     = ssbban.table,
