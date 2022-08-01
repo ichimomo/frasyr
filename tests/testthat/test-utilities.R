@@ -441,5 +441,5 @@ test_that("calculate_all_pm", {
   all_pm2 <- calculate_all_pm(res_future, period_extra=list(2:6))
 
   expect_equal(all_pm1, all_pm2)
-  expect_equal(nrow(all_pm)<nrow(all_pm1)
+  expect_equal(nrow(all_pm)<nrow(all_pm1), TRUE)
 })
