@@ -3031,6 +3031,8 @@ create_dummy_vpa <- function(res_vpa){
 #' @param MSY それを上回る・下回る確率を計算する。MSY
 #' @param is_scale TRUEの場合、親魚量はSBtargetで、漁獲量はMSYで割った相対値が出力される。それ以外はそのまま
 #' @param unit 確率を出力するときの単位。100を入れると％単位で結果が返される
+#' @param period_extra デフォルトではSSBminなどを一度でも下回るなど、期間を指定して計算する統計量はABC_year + 0:9, 0:4, 5:9, 1:10, 1:4, 6:10で決め打ちしているが、それ以外の期間を指定したいときにここの引数で与える
+#' 
 #' 
 # #' @examples
 # #' \dontrun{
@@ -3041,7 +3043,7 @@ create_dummy_vpa <- function(res_vpa){
 #' @export
 #'
 
-calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmin=-1, MSY=-1, is_scale=FALSE, unit=1){
+calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmin=-1, MSY=-1, is_scale=FALSE, unit=1, period_extra=NULL){
     # by year performance (start_future_year:last_year)
     # mean, median, ci5%, ci10%, ci90%, ci95%, CV, 
     # ssb, biomass, number by age, catch weight
@@ -3125,14 +3127,20 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
     else{
       mat1 <- mat[tmp,]
       res <- apply(mat1,2,fun_name) %>% sum_fun_name()
-#      if(res==Inf) browser()
       return(res)
     }
   }
 
   ABC_year     <- year_label[res_future$input$tmb_data$start_ABC_year] %>% as.numeric()
-  period_list <- list(ABC_year + 0:9 , ABC_year + 0:4, ABC_year + 5:9,
-                      ABC_year + 1:10, ABC_year + 1:4, ABC_year + 6:10)
+  period_range <- list(0:9, 0:4, 5:9, 1:10, 1:4, 6:10)
+  if(!is.null(period_extra)){
+    for(i in 1:length(period_extra)){
+      if(sum(purrr::map_lgl(period_range, function(x) all(x==period_extra[[i]])))==0){
+        period_range <- c(period_range, period_extra[i])
+      }
+    }
+  }
+  period_list  <- purrr::map(period_range, function(x) ABC_year + x)
   names(period_list) <- purrr::map_chr(period_list, function(x) str_c(range(x),collapse="."))
 
   av <- function(x){
