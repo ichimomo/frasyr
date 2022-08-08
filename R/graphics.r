@@ -343,7 +343,7 @@ plot_SRdata <- function(SRdata, type=c("classic","gg")[1]){
 
 plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,ylabel="尾",
                     labeling.year=NULL,add.info=TRUE, recruit_intercept=0,
-                    plot_CI=FALSE, CI=0.9, shape_custom=c(21,3),
+                    plot_CI=FALSE, CI=0.9, shape_custom=c(21,3),box.padding=0,
                     add_graph=NULL){
 
   if(is.null(refs$Blimit) && !is.null(refs$Blim)) refs$Blimit <- refs$Blim
@@ -450,9 +450,12 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
     geom_point(data=dplyr::filter(alldata,type=="obs"),
                aes(y=R,x=SSB,shape=weight),fill="white") +
     scale_shape_manual(values = shape_custom) +
+      #    ggrepel::geom_text_repel(data=dplyr::filter(alldata,type=="obs"),
+      #                             segment.alpha=0.5,nudge_y=5,
+      #                             aes(y=R,x=SSB,label=pick.year)) +
     ggrepel::geom_text_repel(data=dplyr::filter(alldata,type=="obs"),
-                             segment.alpha=0.5,nudge_y=5,
-                             aes(y=R,x=SSB,label=pick.year)) +
+                             box.padding=box.padding,segment.color="gray",nudge_y=5,
+                             aes(y=R,x=SSB,label=pick.year)) +    
     theme_bw(base_size=14)+
     theme(legend.position = 'none') +
     theme(panel.grid = element_blank()) +
