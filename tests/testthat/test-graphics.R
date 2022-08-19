@@ -42,7 +42,7 @@ test_that("plot_SRdata", {
 
 test_that("SRplot_gg", {
   g1 <- SRplot_gg(res_sr_HSL1)
-  g2 <- SRplot_gg(res_sr_HSL2)
+  g2 <- SRplot_gg(res_sr_HSL2, box.padding=1)
   expect_equal(class(g1)[1],"gg")
   expect_equal(class(g2)[1],"gg")
 })

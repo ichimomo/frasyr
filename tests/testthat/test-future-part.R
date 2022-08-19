@@ -206,7 +206,7 @@ test_that("future_vpa function (yerly change of beta, Blimit and Bban) (level 2)
   res_bs <- beta.simulation(res_future$input,beta_vector=c(0.8,1),type="new",
                             year_beta_change=2024:2100)
 
-  res_bs %>% dplyr::filter(stat=="Fratio" & year>2020 & year < 2025) %>%
+  res_bs$tb %>% dplyr::filter(stat=="Fratio" & year>2020 & year < 2025) %>%
       group_by(beta,year) %>% summarise(mean=mean(value)) %>%
       ungroup()  %>%
       select(mean)  %>%

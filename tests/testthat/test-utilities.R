@@ -296,15 +296,16 @@ test_that("beta.simulation() works", {
                                  year.lag = 0,
                                  type = "new")
 
-    expect_is(kobe_data, "data.frame")
-    expect_setequal(colnames(kobe_data),
+    expect_is(kobe_data[[1]], "data.frame")
+    expect_is(kobe_data[[2]], "data.frame")    
+    expect_setequal(colnames(kobe_data[[1]]),
                     c("year", "sim", "value", "stat", "HCR_name", "beta"))
 
     kobe_data <- beta.simulation(generate_dummy_future_new_object(nsim=2)$input,
                                  beta_vector = seq(0, 1, 0.5),
                                  year.lag = 0,
                                  type = "new", save_detail=c(1,0,1))
-    expect_equal(names(kobe_data),c("tb","res_list"))
+    expect_equal(names(kobe_data),c("tb","tb2","res_list"))
 
     # multi-core
     if(0){
@@ -428,4 +429,17 @@ test_that("calculate_all_pm", {
   res_future <- data_future_test$data %>% future_vpa()
   all_pm <- calculate_all_pm(res_future)
   expect_equal(is_tibble(all_pm),TRUE)
+
+  # 暫定テスト(1:10までの出力が一致するか）
+  c(`2017` = 710.22, `2018` = 447.9, `2019` = 470.5, `2020` = 1000, 
+    `2021` = 2000, `2022` = 941.73, `2023` = 954.37, `2024` = 918.09, 
+    `2025` = 897.95, `2026` = 895.95) %>%
+      expect_equal(round(all_pm$value[1:10],2))
+
+  # 引数extra_periodの確認
+  all_pm1 <- calculate_all_pm(res_future, period_extra=list(2:6, 0:4))
+  all_pm2 <- calculate_all_pm(res_future, period_extra=list(2:6))
+
+  expect_equal(all_pm1, all_pm2)
+  expect_equal(nrow(all_pm)<nrow(all_pm1), TRUE)
 })
