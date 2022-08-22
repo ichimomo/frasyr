@@ -557,7 +557,7 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' \item{\code{np}}{推定されたターミナルFの数}
 #' \item{\code{minimum}}{最適解における目的関数の値（合計）}
 #' \item{\code{minimum.c}}{最適解における目的関数の値（個々）}
-#' \item{\code{logLik}}{負の対数尤度}
+#' \item{\code{logLik}}{対数尤度}
 #' \item{\code{gradient}}{最適解での傾き}
 #' \item{\code{code}}{最適化法から返されるコード（どのような理由で最適化が停止したのかがわかる）}
 #' \item{\code{q}}{推定されたq（資源量指標値の比例定数））}
