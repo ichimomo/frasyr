@@ -2029,7 +2029,7 @@ plot_worm <- function(kobe_data){
 
     mean_data <- bind_rows(kobe_data$catch.mean,
                            kobe_data$ssb.mean  ,
-                           kobe_data$ssb.lower10percent) %>%
+                           kobe_data$ssb.lower05percent) %>%
       pivot_longer(cols=c(-HCR_name,-beta,-stat_name)) %>%
       rename(Year=name) %>%
       mutate(Year=as.numeric(Year), MT=value/1000) #%>%
