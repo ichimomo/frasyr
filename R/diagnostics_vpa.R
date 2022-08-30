@@ -1209,8 +1209,10 @@ plot_resboot_vpa <- function(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
 #' @param res VPAの結果のオブジェクト
 #' @param B_ite ブートストラップ計算の数。デフォルトで1000。
 #' @param B_cv 乱数生成の変動係数。デフォルトは0.2。
+#' @param ess 多項分布の乱数生成の有効サンプル数。デフォルトは200。
 #' @param ci_range 信頼区間の幅。デフォルトでは0.95（95％信頼区間）
 #' @param detail TRUEの場合、個々のVPAの推定結果がリストで出力される
+#' @param ci_fill 描画された信頼区間の色の指定。デフォルトは`"blue"`
 #'
 #' @return 返ってくる値:
 #'     \code{plot} 親魚重量、資源尾数、資源重量それぞれについて信頼区間のプロットが得られる。
@@ -1227,7 +1229,14 @@ plot_resboot_vpa <- function(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
 #'
 #' @export
 
-do_caaboot_vpa <-  function(res, B_ite = 1000, B_cv = 0.2, ci_range = 0.95, detail=FALSE){
+do_caaboot_vpa <-  function(res,
+                            B_ite    = 1000,
+                            B_cv     = 0.2,
+                            ci_range = 0.95,
+                            ess      = 200,
+                            detail   = FALSE,
+                            ci_fill = "blue"
+                            ){
   year <- colnames(res$input$dat$caa) %>% as.numeric()
   age <- rownames(res$input$dat$caa) %>% as.numeric()
   caa_freq <- purrr::map(res$input$dat$caa, prop.table)
@@ -1235,10 +1244,10 @@ do_caaboot_vpa <-  function(res, B_ite = 1000, B_cv = 0.2, ci_range = 0.95, deta
     purrr::map(function(x){exp(log(x) + rnorm(B_ite, -0.5*B_cv*B_cv, B_cv))})
   caa_boot <- list()
   for(nc in 1:B_ite){
-    tmp <- purrr::map2(purrr::map(c_all, function(x)x[nc]),
-                       caa_freq,
-                       function(.x,.y){
-                         rmultinom(1,.x,.y)
+    tmp <- purrr::map2(caa_freq,
+                       purrr::map(c_all, function(x)x[nc]),
+                       function(.x, .y){
+                         rmultinom(1, ess, .x)*.y/ess
                        }) %>% unlist() %>% as.numeric() %>%
       matrix(ncol = length(year), nrow = length(age)) %>% as.data.frame()
     colnames(tmp) <- year ; rownames(tmp) <- age
@@ -1294,30 +1303,36 @@ do_caaboot_vpa <-  function(res, B_ite = 1000, B_cv = 0.2, ci_range = 0.95, deta
   d_biomass <- cbind.data.frame(Year = year, d_biomass)
 
   g1 <- ggplot(d_ssb, aes(x = Year, y = SSB))+
-    geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, fill = "blue")+
+    geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, fill = ci_fill)+
     geom_line(size = 1.5)+
     ylim(c(0, NA)) +
     theme_SH()
 
   g2 <- ggplot(d_abund, aes(x = Year, y = Abundance))+
-    geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, fill = "blue")+
+    geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, fill = ci_fill)+
     ylab("Recruitment") +
     geom_line(size = 1.5)+
     ylim(c(0, NA)) +
     theme_SH()
 
   g3 <- ggplot(d_biomass, aes(x = Year, y = Biomass))+
-    geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, fill = "blue")+
+    geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, fill = ci_fill)+
     geom_line(size = 1.5)+
     ylim(c(0, NA)) +
     theme_SH()
 
-  res <- list(plot_summary = (g1/g2/g3),
+  obj_return <- list(plot_summary = (g1/g2/g3),
               plot_ssb = g1,
               plot_rec = g2,
               plot_biomass = g3,
-              caa_boot_sample = caa_boot
+              caa_boot_sample = caa_boot,
+              input = list(res,
+                           B_ite = B_ite,
+                           B_cv = B_cv,
+                           ci_range = ci_range,
+                           ess = ess,
+                           detail=detail)
               )
-  if(detail==TRUE) res$res_boot <- res_list
-  return(res)
+  if(detail==TRUE) obj_return$res_boot <- res_list
+  return(obj_return)
 } # function(do_caaboot_vpa)
