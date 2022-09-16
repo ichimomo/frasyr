@@ -53,10 +53,10 @@ get.SRdata <- function(vpares=NULL,
         }
         dat <- tibble(R = R.dat,SSB = SSB.dat,year = years)
         if(!is.null(release.dat)) R.dat$release <- release.dat
-    } 
+    }
 
     # vpa dataが与えられた場合にはデータの整形をする
-    if(!is.null(vpares)) {    
+    if(!is.null(vpares)) {
         n <- ncol(vpares$naa)
         L <- as.numeric(rownames(vpares$naa)[1])
 
@@ -64,7 +64,7 @@ get.SRdata <- function(vpares=NULL,
         dat$SSB  <- as.numeric(colSums(vpares$ssb,na.rm = TRUE))
         dat$year <- as.numeric(colnames(vpares$ssb))
         dat$R   <-  as.numeric(vpares$naa[1,])
-        
+
         # 加入年齢分だけずらす
         dat$R    <- dat$R[(L+1):n]
         dat$SSB  <- dat$SSB[1:(n-L)]
@@ -88,7 +88,7 @@ get.SRdata <- function(vpares=NULL,
           dat <- dat %>% mutate(R=R-release_alive)
           if(!is.null(vpares$input$dat$release.all)){
             dat <- left_join(dat, tmpfunc(vpares$input$dat$release.all, "release_all"))
-            dat <- left_join(dat, tmpfunc(vpares$input$dat$release.ratealive, "release_ratealive"))            
+            dat <- left_join(dat, tmpfunc(vpares$input$dat$release.ratealive, "release_ratealive"))
           }
         }
 
@@ -118,7 +118,7 @@ get.SRdata <- function(vpares=NULL,
   if(!is.null(weight.year)){
     dat <- dat %>% mutate(weight=0)
     dat$weight[dat$year %in% weight.year]  <- 1
-    
+
     if(length(weight.year)==1 && weight.year==0){
       dat <- dat %>% mutate(weight=1)
     }
@@ -133,7 +133,7 @@ get.SRdata <- function(vpares=NULL,
     dat <- dat %>% left_join(weight.data)
   }
 
-  dat <- dat %>% select(year, SSB, R, weight, everything())    
+  dat <- dat %>% select(year, SSB, R, weight, everything())
   return(dat)
 
 }
@@ -2028,7 +2028,7 @@ jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename 
         points(jack.res[[i]]$pred$SSB,jack.res[[i]]$pred$R,type="l",lwd=2,col=rgb(0,0,1,alpha=0.1))
       }
       points(resSR$pred$SSB,resSR$pred$R,col=2,type="l",lwd=3,lty=2)
-      legend("topright", legend=c("Estimated SR function","A jackkine SR function"),col=c("red",rgb(0,0,1,alpha=0.1)),lty=c(2,1), cex=0.8)
+      legend("topright", legend=c("Estimated SR function","A jackknife SR function"),col=c("red",rgb(0,0,1,alpha=0.1)),lty=c(2,1), cex=0.8)
       if (output) dev.off()
     }
     #fit.SRregime ----
@@ -2098,8 +2098,8 @@ jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename 
         }
         pred_data = resSR$pred %>% filter(Regime == regime_unique[i])
         points(pred_data$SSB,pred_data$R,col=2,type="l",lwd=3,lty=2)
-       if(output) legend("topright", legend=c("Estimated SR function","A jackkine SR function"),col=c("red",rgb(0,0,1,alpha=0.1)),lty=c(2,1), cex=0.8)
-       else if(i==1) legend("topleft", legend=c("Estimated SR function","A jackkine SR function"),col=c("red",rgb(0,0,1,alpha=0.1)),lty=c(2,1), cex=0.8)
+       if(output) legend("topright", legend=c("Estimated SR function","A jackknife SR function"),col=c("red",rgb(0,0,1,alpha=0.1)),lty=c(2,1), cex=0.8)
+       else if(i==1) legend("topleft", legend=c("Estimated SR function","A jackknife SR function"),col=c("red",rgb(0,0,1,alpha=0.1)),lty=c(2,1), cex=0.8)
       }
       if (output) dev.off()
     }
