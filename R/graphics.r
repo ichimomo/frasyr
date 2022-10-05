@@ -94,7 +94,6 @@ plot_vpa <- function(vpalist,
                      ncol = 2,
                      scale_value = NULL # 浜辺加筆(2020/07/29)
                      ){
-  font_MAC <- "HiraginoSans-W3"#"Japan1GothicBBB"#
 
   if(!is.null(vpaname)){
     if(length(vpaname)!=length(vpalist)) stop("Length of vpalist and vpaname is different")
@@ -211,7 +210,7 @@ plot_Fcurrent <- function(vpares,
 
   pal <- c("#3B9AB2", "#56A6BA", "#71B3C2", "#9EBE91", "#D1C74C",
            "#E8C520", "#E4B80E", "#E29E00", "#EA5C00", "#F21A00")
-  if(!isTRUE(stringr::str_detect(version$os, pattern="darwin"))){
+
     g <- faa_history  %>% ggplot() +
     geom_path(aes(x=age_name,y=F,color=Year,group=Year),lwd=1.5) +
     scale_color_gradientn(colors = pal)+
@@ -224,20 +223,7 @@ plot_Fcurrent <- function(vpares,
     #                        )+
     xlab("年齢")+ylab("漁獲係数(F)")+theme_SH(legend.position="right")+
     scale_shape_discrete(name="", labels=c("F current"))
-  }else{
-    g <- faa_history  %>% ggplot() +
-      geom_path(aes(x=age_name,y=F,color=Year,group=Year),lwd=1.5) +
-      scale_color_gradientn(colors = pal)+
-      geom_path(data=fc_at_age_current,
-                mapping=aes(x=age_name,y=F,group=type),color="black",lwd=1.5,lty=1)+
-      geom_point(data=fc_at_age_current,
-                 mapping=aes(x=age_name,y=F,shape=type),color="black",size=3)+
-      coord_cartesian(ylim=c(0,max(faa_history$F,na.rm=T)))+
-      ##                        xlim=range(as.numeric(faa_history$age_name,na.rm=T))+c(-0.5,0.5)
-      #                        )+
-      xlab("年齢")+ylab("漁獲係数(F)")+theme_SH(legend.position="right")+theme(text = element_text(family = font_MAC)) +
-      scale_shape_discrete(name="", labels=c("F current"))
-  }
+
   return(g)
 }
 
