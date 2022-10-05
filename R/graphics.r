@@ -666,33 +666,47 @@ SRregime_plot <- plot_SRregime <- function (SRregime_result,xscale=1000,xlabel="
   obs_data = select(SRregime_result$pred_to_obs, -Pred, -resid) %>% mutate(Category = "Obs")
   if(!is.null(SRregime_result$input$SRdata$weight)){
     obs_data$weight <- factor(SRregime_result$input$SRdata$weight,levels=c("0","1"))
-  }
-  else{
+  }else{
     obs_data$weight <- factor(1,levels=c("0","1"))
-    }
+  }
+
   combined_data = full_join(pred_data, obs_data) %>%
     mutate(Year = as.double(Year))
+  combined_data = rename(combined_data,Regime.num=Regime)
+  if (is.null(regime.name)) {
+    regime.name = unique(combined_data$Regime)
+  }
+  Regime <- as.character(regime.name[combined_data$Regime.num])
+  combined_data <- combined_data %>% mutate(Regime)
+
+  if(length(unique(regime.name))<3) scaleshapeval <- c(3, 21)
+  else scaleshapeval <- 3*seq(length(unique(regime.name)))
+  weighted <- as.factor(as.numeric(as.character(combined_data$weight))*as.numeric(combined_data$Regime.num))
+  combined_data <- combined_data %>% mutate(weighted)
+
   if (is.null(labeling.year)) labeling.year <- c(min(obs_data$Year),obs_data$Year[obs_data$Year %% 5 == 0],max(obs_data$Year))
   combined_data = combined_data %>%
     mutate(label=if_else(is.na(Year),as.numeric(NA),if_else(Year %in% labeling.year, Year, as.numeric(NA)))) %>%
     mutate(SSB = SSB/xscale, R = R/yscale)
+
+
   g1 = ggplot(combined_data, aes(x=SSB,y=R,label=label)) +
     geom_path(data=dplyr::filter(combined_data, Category=="Pred"),aes(group=Regime,colour=Regime,linetype=Regime),size=2, show.legend = show.legend)+
-    geom_point(data=dplyr::filter(combined_data, Category=="Obs"),aes(group=Regime,colour=Regime, shape=weight),size=3, show.legend = show.legend)+
-    scale_shape_manual(values = c(3, 21)) +
-    scale_color_manual(values = c(1, 2)) +
+    geom_point(data=dplyr::filter(combined_data, Category=="Obs"),aes(group=Regime,colour=Regime,shape=weighted),size=3, show.legend = show.legend)+
+    scale_shape_manual(values = scaleshapeval,labels=regime.name) +
+    scale_color_manual(values = seq(length(unique(regime.name)))) +
     geom_path(data=dplyr::filter(combined_data, Category=="Obs"),colour="darkgray",size=1)+
     xlab(xlabel)+ylab(ylabel)+
     ggrepel::geom_label_repel()+
     theme_bw(base_size=base_size)+
     coord_cartesian(ylim=c(0,max(combined_data$R)*1.05),expand=0)
-  if (show.legend) {
-    if (is.null(regime.name)) {
-      regime.name = unique(combined_data$Regime)
-    }
-    g1 = g1 + #scale_colour_hue(name=legend.title, labels = regime.name) +
-      scale_linetype_discrete(name=legend.title, labels = regime.name)
-  }
+  # if (show.legend) {
+  #   if (is.null(regime.name)) {
+  #     regime.name = unique(combined_data$Regime)
+  #   }
+  #   g1 = g1 + #scale_colour_hue(name=legend.title, labels = regime.name) +
+  #     scale_linetype_discrete(name=legend.title, labels = regime.name)
+  # }
   if (add.info) {
     if (is.null(SRregime_result$input$regime.year)) {
       g1 = g1 +
