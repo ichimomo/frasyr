@@ -661,7 +661,7 @@ compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000, newplot=T
 
 SRregime_plot <- plot_SRregime <- function (SRregime_result,xscale=1000,xlabel="SSB",yscale=1,ylabel="R",
                            labeling.year = NULL, show.legend = TRUE, legend.title = "Regime",regime.name = NULL,
-                           base_size = 16, add.info = TRUE) {
+                           base_size = 16, add.info = TRUE, themeSH = FALSE) {
   pred_data = SRregime_result$pred %>% mutate(Category = "Pred")
   obs_data = select(SRregime_result$pred_to_obs, -Pred, -resid) %>% mutate(Category = "Obs")
   if(!is.null(SRregime_result$input$SRdata$weight)){
@@ -674,26 +674,32 @@ SRregime_plot <- plot_SRregime <- function (SRregime_result,xscale=1000,xlabel="
     mutate(Year = as.double(Year))
   combined_data = rename(combined_data,Regime.num=Regime)
   if (is.null(regime.name)) {
-    regime.name = unique(combined_data$Regime)
+    regime.name = c(unique(as.character(combined_data$Regime.num)))
   }
   Regime <- as.character(regime.name[combined_data$Regime.num])
   combined_data <- combined_data %>% mutate(Regime)
 
-  if(length(unique(regime.name))<3) scaleshapeval <- c(3, 21)
-  else scaleshapeval <- 3*seq(length(unique(regime.name)))
-  weighted <- as.factor(as.numeric(as.character(combined_data$weight))*as.numeric(combined_data$Regime.num))
-  combined_data <- combined_data %>% mutate(weighted)
+  if(prod(as.numeric(as.character(combined_data$weight)),na.rm=T)==0){
+    scaleshapeval <- c(3,20)
+  }else{
+    scaleshapeval <- c(20)
+  }
+
+  Weight <- as.character(combined_data$weight)
+  Weight[which(Weight=="0")] <- "unweighted"
+  Weight[which(Weight=="1")] <- "weighted"
+  #Weight[is.na(as.numeric(combined_data$weight))] <- "NA"
+  combined_data <- combined_data %>% mutate(Weight)
 
   if (is.null(labeling.year)) labeling.year <- c(min(obs_data$Year),obs_data$Year[obs_data$Year %% 5 == 0],max(obs_data$Year))
   combined_data = combined_data %>%
     mutate(label=if_else(is.na(Year),as.numeric(NA),if_else(Year %in% labeling.year, Year, as.numeric(NA)))) %>%
     mutate(SSB = SSB/xscale, R = R/yscale)
 
-
   g1 = ggplot(combined_data, aes(x=SSB,y=R,label=label)) +
     geom_path(data=dplyr::filter(combined_data, Category=="Pred"),aes(group=Regime,colour=Regime,linetype=Regime),size=2, show.legend = show.legend)+
-    geom_point(data=dplyr::filter(combined_data, Category=="Obs"),aes(group=Regime,colour=Regime,shape=weighted),size=3, show.legend = show.legend)+
-    scale_shape_manual(values = scaleshapeval,labels=regime.name) +
+    geom_point(data=dplyr::filter(combined_data, Category=="Obs"),aes(group=Regime,colour=Regime,shape=Weight),size=3, show.legend = show.legend) +
+    scale_shape_manual(values = scaleshapeval) +
     scale_color_manual(values = seq(length(unique(regime.name)))) +
     geom_path(data=dplyr::filter(combined_data, Category=="Obs"),colour="darkgray",size=1)+
     xlab(xlabel)+ylab(ylabel)+
@@ -707,6 +713,7 @@ SRregime_plot <- plot_SRregime <- function (SRregime_result,xscale=1000,xlabel="
   #   g1 = g1 + #scale_colour_hue(name=legend.title, labels = regime.name) +
   #     scale_linetype_discrete(name=legend.title, labels = regime.name)
   # }
+  if(themeSH) g1 = g1 + theme_SH()
   if (add.info) {
     if (is.null(SRregime_result$input$regime.year)) {
       g1 = g1 +
