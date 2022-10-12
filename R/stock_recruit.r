@@ -2248,6 +2248,7 @@ out.SR = function(resSR,filename = "resSR") {
   if (!is.null(resSR$AIC.ar)) RES$AIC.ar = resSR$AIC.ar
   RES$AICc = resSR$AICc
   RES$BIC = resSR$BIC
+  if(!is.null(resSR$input$bio_par)) RES$steepness=resSR$steepness
   RES$opt = resSR$opt
   if (class(resSR) == "fit.SR") {
     RES$pred_to_obs = as_tibble(resSR$input$SRdata) %>%
