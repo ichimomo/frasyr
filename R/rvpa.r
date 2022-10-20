@@ -325,12 +325,12 @@ abund.extractor <- function(
    res <- colSums(ssb,na.rm=TRUE)
  }
  if (abund=="SSBmsj"){
-   if (is.null(maa.tune)) ssb <- naa*waa*maa*exp(-p.m*dat$M) else ssb <- naa*waa*maa.tune*exp(-p.m*dat$M) 
+   if (is.null(maa.tune)) ssb <- naa*waa*maa*exp(-p.m*dat$M) else ssb <- naa*waa*maa.tune*exp(-p.m*dat$M)
    res <- colSums(ssb,na.rm=TRUE)
  }
 
- if (abund=="N1sj") res <- colSums(naa[1,]*exp(dat$M[1,]), na.rm=TRUE) 
- if (abund=="N0sj") res <- colSums(naa[1,]*exp(dat$M[1,]*2), na.rm=TRUE) 
+ if (abund=="N1sj") res <- colSums(naa[1,]*exp(dat$M[1,]), na.rm=TRUE)
+ if (abund=="N0sj") res <- colSums(naa[1,]*exp(dat$M[1,]*2), na.rm=TRUE)
 
  if (abund=="F") if (is.null(catch.prop)) res <- colMeans(faa[min.age:max.age,], na.rm=TRUE) else res <- colMeans(catch.prop[min.age:max.age, ]*faa[min.age:max.age,], na.rm=TRUE)
 
@@ -755,7 +755,7 @@ vpa <- function(
   }
 
   #if (length(stat.tf)==1) stat.tf <- rep(stat.tf, na[ny]-1)  # stat.tfが1個だけ指定されているときは，全年齢その統計量を使う(delete)
-  
+
   # tuningの際のパラメータが1個だけ指定されている場合は，nindexの数だけ増やす
   if (isTRUE(tune)){
 
@@ -866,14 +866,14 @@ vpa <- function(
       if (isTRUE(Pope)){
         for (i in (ny-1):1){
          naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update,alpha=alpha, use.equ=use.equ)
-         if(na[1]>na[ny]){ 
+         if(na[1]>na[ny]){
 		 if(is.na(naa[na[ny]+1, i])){
  naa[na[ny]+1, i]<-NA} else if(naa[na[ny]+1, i]==1.00000){
  naa[na[ny]+1, i]<-NA} else{
  naa[na[ny]+1, i]<-naa[na[ny]+1, i]}}#adjustment for sawara
-		 
+
 		 faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha, use.equ=use.equ)
-         if(na[1]>na[ny]){ 
+         if(na[1]>na[ny]){
 		if(is.na(faa[na[ny]+1, i])){
  faa[na[ny]+1, i]<-NA} else if(faa[na[ny]+1, i]==1.00000){
  faa[na[ny]+1, i]<-NA} else{
@@ -895,10 +895,10 @@ vpa <- function(
          naa[1:na[i], i] <- vpa.core(caa,faa,M,i)
        }
      }
- 
- if(na[1]>na[ny]){ 
+
+ if(na[1]>na[ny]){
  if(is.na(faa[na[ny]+1, ny-1]))faa[na[ny]+1, ny]<-NA else faa[na[ny]+1, ny-1]<-faa[na[ny]+1, ny-1]} #adjustment for sawara
-     
+
 	 faa1 <- faa
      saa1 <- sel.func(faa1, def=sel.def)
 
@@ -989,7 +989,7 @@ if (isTRUE(madara)){
 
     if (is.na(naa[na[ny]-1,ny])){
       if(isTRUE(Pope)){
-        for (i in (na[ny]-1):1){		 
+        for (i in (na[ny]-1):1){
           if (is.null(tf.mat)) faa[i, ny] <- get(stat.tf)(faa[i, years %in% tf.year])
           else faa[i, ny] <- get(stat.tf)(faa[i, !is.na(tf.mat[i,])])
           naa[i, ny] <- caa[i, ny]*exp(M[i, ny]/2)/(1-exp(-faa[i, ny]))
@@ -1300,7 +1300,7 @@ if (isTRUE(madara)){
         }
 
       if (penalty=="f") obj <- (1-lambda)*obj + lambda*sum((abs(faa[1:(na[ny]-1),ny]-apply(faa[1:(na[ny]-1), years %in% tf.year],1,get(stat.tf))))^beta)
-      
+
       if (penalty=="s") obj <- (1-lambda)*obj + lambda*sum((abs(saa[1:(na[ny]-1),ny]-apply(saa[1:(na[ny]-1), years %in% tf.year],1,get(stat.tf))))^beta)
 
       if (!is.null(sel.rank)) obj <- obj+1000000*sum((rank(saa[,ny])-sel.rank)^2)
@@ -1428,7 +1428,7 @@ if (isTRUE(madara)){
   if(isTRUE(TMB) & isFALSE(Pope)){print("TMB is not supported for baranov equation option. only for Pope");stop()}
   if(isTRUE(TMB) & penalty=="f"){print("TMB is not supported for penalty=f. only for penalty=p");stop()}
   if(isTRUE(TMB) & penalty=="s"){print("TMB is not supported for penalty=s. only for penalty=p");stop()}
-  
+
     index2 <- as.matrix(t(apply(index,1,function(x) ifelse(is.na(x),0,x))))
 
     Ab_type <- ifelse(abund=="SSB", 1, ifelse(abund=="N", 2, ifelse(abund=="B", 3, 4)))
@@ -1833,7 +1833,7 @@ cv.est <- function(res,n=5){
 #' @param ssb.forecast Mohn's rhoを計算する際にSSBは1年後を計算するか(last.catch.zero=TRUEのときのみ有効)
 #' @param grid.add.ini \code{add.p.ini}をgridで変えて初期値を事前に探索する
 #' @param grid.init \code{p.init}でgridを変えて初期値を事前に探索する
-#' @param remove.short.index 年数が2年以下になった指標値を除いて計算する
+#' @param remove.short.index 年数が指定された数字以下になった指標値を除いて計算する(初期設定:-1)
 #' @encoding UTF-8
 #' @export
 #'
@@ -1841,7 +1841,7 @@ cv.est <- function(res,n=5){
 retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE,
                       remove.maxAgeF=FALSE,ssb.forecast=FALSE,sel.mat=NULL,
                       grid.add.ini = NULL,grid.init = NULL,
-                      remove.short.index=FALSE){
+                      remove.short.index=-1){
    res.c <- res
    res.c$input$plot <- FALSE
    Res <- list()
@@ -1894,13 +1894,13 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE,
      # last.catch.zero = TRUE用に修正
      if (res.c$input$last.catch.zero) {res.c$input$dat$caa[,nc-1] <- 0; Y <- nc-2} else Y <- nc-1
 
-     if (isTRUE(remove.short.index)) {
+     if (remove.short.index>0) {
          index_n = apply(res.c$input$dat$index,1,function(x) length(x)-sum(is.na(x)))
          use.index = 1:nrow(res.c$input$dat$index)
          if (res.c$input$use.index[1]=="all") {
-           use.index = use.index[index_n > 2]
+           use.index = use.index[index_n > remove.short.index]
          } else {
-           use.index = intersect(res.c$input$use.index,use.index[index_n > 2])
+           use.index = intersect(res.c$input$use.index,use.index[index_n > remove.short.index])
          }
          res.c$input$use.index <- use.index
      }
