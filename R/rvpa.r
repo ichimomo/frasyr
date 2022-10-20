@@ -488,7 +488,7 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param Pope  Popeの近似式を使うかどうか
 #' @param p.pope  Popeの式でどこで漁獲するか（0.5 = 真ん中の時期）
 #' @param tune    tuningをするかどうか
-#' @param abund  tuningの際，何の指標に対応するか. "N"=年の終わりの資源尾数，"Nm"=年の中間での資源尾数，"B"=年の終わりの資源重量，"Bm"=年の中間での資源重量，"SSB"=産卵親魚量，"Bs"=資源重量×選択率，"Bo"=資源重量×オメガで調節された選択率，"Ns"=資源尾数×選択率，"SSBm"=年の中間での産卵親魚量，"N1sj"=1歳の資源尾数（日本海スケトウダラ用）,"N0sj"=0歳の資源尾数（日本海スケトウダラ用），"F"=漁獲係数の平均
+#' @param abund  tuningの際，何の指標に対応するか. "N"=年の初めの資源尾数，"Nm"=年の中間での資源尾数，"B"=年の初めの資源重量，"Bm"=年の中間での資源重量，"SSB"=産卵親魚量，"Bs"=資源重量×選択率，"Bo"=資源重量×オメガで調節された選択率，"Ns"=資源尾数×選択率，"SSBm"=年の中間での産卵親魚量，"N1sj"=1歳の資源尾数（日本海スケトウダラ用）,"N0sj"=0歳の資源尾数（日本海スケトウダラ用），"F"=漁獲係数の平均
 #' @param min.age tuning指標の年齢参照範囲の下限
 #' @param max.age tuning指標の年齢参照範囲の上限
 #' @param link    tuningのlink関数
@@ -557,7 +557,7 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' \item{\code{np}}{推定されたターミナルFの数}
 #' \item{\code{minimum}}{最適解における目的関数の値（合計）}
 #' \item{\code{minimum.c}}{最適解における目的関数の値（個々）}
-#' \item{\code{logLik}}{負の対数尤度}
+#' \item{\code{logLik}}{対数尤度}
 #' \item{\code{gradient}}{最適解での傾き}
 #' \item{\code{code}}{最適化法から返されるコード（どのような理由で最適化が停止したのかがわかる）}
 #' \item{\code{q}}{推定されたq（資源量指標値の比例定数））}

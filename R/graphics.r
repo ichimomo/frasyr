@@ -204,13 +204,14 @@ plot_Fcurrent <- function(vpares,
   fc_at_age_current <- tibble(F=fc_at_age_current,age=as.numeric(rownames(vpares$faa)),
                               year="0",type="currentF") %>%
       dplyr::filter(!is.na(F)) %>%
-      arrange(age) %>%      
+      arrange(age) %>%
       mutate(age_name=ifelse(max(age)==age,str_c(age,"+"),age))%>%
       mutate(age_name=fct_inorder(age_name))
 
   pal <- c("#3B9AB2", "#56A6BA", "#71B3C2", "#9EBE91", "#D1C74C",
            "#E8C520", "#E4B80E", "#E29E00", "#EA5C00", "#F21A00")
-  g <- faa_history  %>% ggplot() +
+
+    g <- faa_history  %>% ggplot() +
     geom_path(aes(x=age_name,y=F,color=Year,group=Year),lwd=1.5) +
     scale_color_gradientn(colors = pal)+
     geom_path(data=fc_at_age_current,
@@ -345,6 +346,7 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
                     labeling.year=NULL,add.info=TRUE, recruit_intercept=0,
                     plot_CI=FALSE, CI=0.9, shape_custom=c(21,3),box.padding=0,
                     add_graph=NULL){
+  font_MAC <- "HiraginoSans-W3"#"Japan1GothicBBB"#
 
   if(is.null(refs$Blimit) && !is.null(refs$Blim)) refs$Blimit <- refs$Blim
 
@@ -367,7 +369,7 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
   SRdata.pred <- as_tibble(SR_result$pred) %>%
     mutate(type="pred", year=NA, R=R)
 
-  is_release_data <- "release" %in% str_sub(names(SRdata),1,7)    
+  is_release_data <- "release" %in% str_sub(names(SRdata),1,7)
   if(is_release_data){
     if(!"release_alive" %in% names(SRdata)){
       SR_result$input$SRdata$release_alive <- SRdata$release
@@ -375,7 +377,7 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
     }
     else{
       SR_result$input$SRdata$release_all <- NULL
-      SR_result$input$SRdata$release_aliverate <- NULL      
+      SR_result$input$SRdata$release_aliverate <- NULL
     }
     SRdata.release <- SR_result$input$SRdata %>% mutate(allR=release_alive+R) %>%
       mutate(weight=ifelse(weight>0, 1, 0)) %>%
@@ -445,6 +447,7 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
     }
   }
 
+    if(!isTRUE(stringr::str_detect(version$os, pattern="darwin"))){
   g1 <- g1+  geom_path(data=dplyr::filter(alldata,type=="obs"),
                        aes(y=R,x=SSB),color="black") +
     geom_point(data=dplyr::filter(alldata,type=="obs"),
@@ -455,13 +458,33 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
       #                             aes(y=R,x=SSB,label=pick.year)) +
     ggrepel::geom_text_repel(data=dplyr::filter(alldata,type=="obs"),
                              box.padding=box.padding,segment.color="gray",nudge_y=5,
-                             aes(y=R,x=SSB,label=pick.year)) +    
+                             aes(y=R,x=SSB,label=pick.year)) +
     theme_bw(base_size=14)+
     theme(legend.position = 'none') +
     theme(panel.grid = element_blank()) +
     xlab(str_c("親魚量 (",xlabel,")"))+
     ylab(str_c("加入量 (",ylabel,")"))+
     coord_cartesian(ylim=c(0,ymax*1.05),expand=0)
+    }else{
+      g1 <- g1+  geom_path(data=dplyr::filter(alldata,type=="obs"),
+                           aes(y=R,x=SSB),color="black") +
+        geom_point(data=dplyr::filter(alldata,type=="obs"),
+                   aes(y=R,x=SSB,shape=weight),fill="white") +
+        scale_shape_manual(values = shape_custom) +
+        #    ggrepel::geom_text_repel(data=dplyr::filter(alldata,type=="obs"),
+        #                             segment.alpha=0.5,nudge_y=5,
+        #                             aes(y=R,x=SSB,label=pick.year)) +
+      ggrepel::geom_text_repel(data=dplyr::filter(alldata,type=="obs"),
+                               box.padding=box.padding,segment.color="gray",nudge_y=5,
+                               aes(y=R,x=SSB,label=pick.year)) +
+        theme_bw(base_size=14)+
+        theme(legend.position = 'none') +
+        theme(panel.grid = element_blank()) +
+        theme(text = element_text(family = font_MAC)) +
+        xlab(str_c("親魚量 (",xlabel,")"))+
+        ylab(str_c("加入量 (",ylabel,")"))+
+        coord_cartesian(ylim=c(0,ymax*1.05),expand=0)
+    }
 
   if(is_release_data){
     g1 <- g1 + geom_point(data=dplyr::filter(alldata,type=="release"),
@@ -491,7 +514,12 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
                   ", 最適化法",SR_result$input$method,", AICc: ",round(SR_result$AICc,2))
     if(sum(SRdata$weight=="0")>0) cap1 <- str_c(cap1, "\n パラメータ推定に利用（丸）,利用していない（バツ） ")
     if(is_release_data) cap1 <- str_c(cap1, "\n 灰色：放流＋天然、黒：天然のみ")
-    g1 <- g1+labs(caption=cap1)
+
+    if(!isTRUE(stringr::str_detect(version$os, pattern="darwin"))){
+      g1 <- g1+labs(caption=cap1)
+    }else{
+      g1 <- g1+labs(caption=cap1,family = font_MAC)
+    }
   }
 
   if(!is.null(refs)){
@@ -532,6 +560,7 @@ SRplot_gg <- plot.SR <- function(...){
 
 compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000, newplot=TRUE, output_folder=""){
 
+  font_MAC <- "HiraginoSans-W3"#"Japan1GothicBBB"#
 
   if(newplot){
     if(!is.null(SRlist[[1]]$input)){
@@ -560,8 +589,13 @@ compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000, newplot=T
     g1 <- g1 + geom_line(data=SRpred,
                          mapping=aes(x=SSB/biomass.unit,y=R/number.unit, linetype=SR_type, col=SR_type))
     g1 <- g1 + geom_point(data=SRdata, mapping=aes(x=SSB/biomass.unit, y=R/number.unit), color="black")
+    if(!isTRUE(stringr::str_detect(version$os, pattern="darwin"))){
     g1 <- g1 + xlim(c(0,max(SRdata$SSB/biomass.unit))) + ylim(c(0,max(SRdata$R/number.unit))) +
       labs(x = "親魚量（千トン）", y = "加入尾数（百万尾)") + theme_SH(legend.position="top")
+    }else{
+      g1 <- g1 + xlim(c(0,max(SRdata$SSB/biomass.unit))) + ylim(c(0,max(SRdata$R/number.unit))) +
+        labs(x = "親魚量（千トン）", y = "加入尾数（百万尾)") + theme_SH(legend.position="top")+theme(text = element_text(family = font_MAC))
+    }
     #g1
     ggsave_SH(g1, file=paste("./",output_folder,"/resSRcomp.png",sep=""))
     g1
@@ -627,38 +661,59 @@ compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000, newplot=T
 
 SRregime_plot <- plot_SRregime <- function (SRregime_result,xscale=1000,xlabel="SSB",yscale=1,ylabel="R",
                            labeling.year = NULL, show.legend = TRUE, legend.title = "Regime",regime.name = NULL,
-                           base_size = 16, add.info = TRUE) {
+                           base_size = 16, add.info = TRUE, themeSH = FALSE) {
   pred_data = SRregime_result$pred %>% mutate(Category = "Pred")
   obs_data = select(SRregime_result$pred_to_obs, -Pred, -resid) %>% mutate(Category = "Obs")
   if(!is.null(SRregime_result$input$SRdata$weight)){
     obs_data$weight <- factor(SRregime_result$input$SRdata$weight,levels=c("0","1"))
-  }
-  else{
+  }else{
     obs_data$weight <- factor(1,levels=c("0","1"))
-    }
+  }
+
   combined_data = full_join(pred_data, obs_data) %>%
     mutate(Year = as.double(Year))
+  combined_data = rename(combined_data,Regime.num=Regime)
+  if (is.null(regime.name)) {
+    regime.name = c(unique(as.character(combined_data$Regime.num)))
+  }
+  Regime <- as.character(regime.name[combined_data$Regime.num])
+  combined_data <- combined_data %>% mutate(Regime)
+
+  if(prod(as.numeric(as.character(combined_data$weight)),na.rm=T)==0){
+    scaleshapeval <- c(3,20)
+  }else{
+    scaleshapeval <- c(20)
+  }
+
+  Weight <- as.character(combined_data$weight)
+  Weight[which(Weight=="0")] <- "unweighted"
+  Weight[which(Weight=="1")] <- "weighted"
+  #Weight[is.na(as.numeric(combined_data$weight))] <- "NA"
+  combined_data <- combined_data %>% mutate(Weight)
+
   if (is.null(labeling.year)) labeling.year <- c(min(obs_data$Year),obs_data$Year[obs_data$Year %% 5 == 0],max(obs_data$Year))
   combined_data = combined_data %>%
     mutate(label=if_else(is.na(Year),as.numeric(NA),if_else(Year %in% labeling.year, Year, as.numeric(NA)))) %>%
     mutate(SSB = SSB/xscale, R = R/yscale)
+
   g1 = ggplot(combined_data, aes(x=SSB,y=R,label=label)) +
     geom_path(data=dplyr::filter(combined_data, Category=="Pred"),aes(group=Regime,colour=Regime,linetype=Regime),size=2, show.legend = show.legend)+
-    geom_point(data=dplyr::filter(combined_data, Category=="Obs"),aes(group=Regime,colour=Regime, shape=weight),size=3, show.legend = show.legend)+
-    scale_shape_manual(values = c(3, 21)) +
-    scale_color_manual(values = c(1, 2)) +
+    geom_point(data=dplyr::filter(combined_data, Category=="Obs"),aes(group=Regime,colour=Regime,shape=Weight),size=3, show.legend = show.legend) +
+    scale_shape_manual(values = scaleshapeval) +
+    scale_color_manual(values = seq(length(unique(regime.name)))) +
     geom_path(data=dplyr::filter(combined_data, Category=="Obs"),colour="darkgray",size=1)+
     xlab(xlabel)+ylab(ylabel)+
     ggrepel::geom_label_repel()+
     theme_bw(base_size=base_size)+
     coord_cartesian(ylim=c(0,max(combined_data$R)*1.05),expand=0)
-  if (show.legend) {
-    if (is.null(regime.name)) {
-      regime.name = unique(combined_data$Regime)
-    }
-    g1 = g1 + #scale_colour_hue(name=legend.title, labels = regime.name) +
-      scale_linetype_discrete(name=legend.title, labels = regime.name)
-  }
+  # if (show.legend) {
+  #   if (is.null(regime.name)) {
+  #     regime.name = unique(combined_data$Regime)
+  #   }
+  #   g1 = g1 + #scale_colour_hue(name=legend.title, labels = regime.name) +
+  #     scale_linetype_discrete(name=legend.title, labels = regime.name)
+  # }
+  if(themeSH) g1 = g1 + theme_SH()
   if (add.info) {
     if (is.null(SRregime_result$input$regime.year)) {
       g1 = g1 +
@@ -775,7 +830,7 @@ plot_futures <- function(vpares=NULL,
                               jstat=c(str_c("加入尾数(",number.name,")"),
                                       str_c("親魚量 (",junit,"トン)"),
                                       str_c("資源量 (",junit,"トン)"),
-                                      str_c("漁獲資源量 (",junit,"トン)"),                                      
+                                      str_c("漁獲資源量 (",junit,"トン)"),
                                       str_c("漁獲量 (",junit,"トン)"),
                                       "beta_gamma(F/Fmsy)",
                                       "漁獲割合(%)",
@@ -786,7 +841,7 @@ plot_futures <- function(vpares=NULL,
                               jstat=c(str_c("加入尾数(",number.name,")"),
                                       str_c("将来の親魚量 (",junit,"トン)"),
                                       str_c("資源量 (",junit,"トン)"),
-                                      str_c("漁獲資源量 (",junit,"トン)"),                                      
+                                      str_c("漁獲資源量 (",junit,"トン)"),
                                       str_c("将来の漁獲量 (",junit,"トン)"),
                                       "beta_gamma(F/Fmsy)",
                                       "漁獲割合(%)",
@@ -801,7 +856,7 @@ plot_futures <- function(vpares=NULL,
                           jstat=c(str_c("Recruits(",number_name,"fish)"),
                                   str_c("SB (",junit,"MT)"),
                                   str_c("Biomass (",junit,"MT)"),
-                                  str_c("cBiomass (",junit,"MT)"),                                  
+                                  str_c("cBiomass (",junit,"MT)"),
                                   str_c("Catch (",junit,"MT)"),
                                   "multiplier to Fmsy",
                                   "Catch/Biomass (U)",
@@ -1393,7 +1448,7 @@ plot_yield <- function(MSY_obj,refs_base,
 #' @param Btarget est_MSYRPから得られる管理基準値の表の中のRP.definitionの列でtargetとする行のラベル
 #' @param Blimit est_MSYRPから得られる管理基準値の表の中のRP.definitionの列でlimitとする行のラベル
 #' @param Bban est_MSYRPから得られる管理基準値の表の中のRP.definitionの列でbanとする行のラベル
-#' 
+#'
 #' @encoding UTF-8
 #'
 #' @export
@@ -1404,7 +1459,7 @@ plot_kobe_gg <- plot_kobe <- function(FBdata=NULL,
                                       refs_base=NULL,
                                       roll_mean=1,
                                       ylab_name="Fratio",
-                                      xlab_name="Bratio",                                      
+                                      xlab_name="Bratio",
                                       Btarget=c("Btarget0"),
                                       Blimit=c("Blimit0"),
                                       Bban=c("Bban0"),
@@ -1420,7 +1475,7 @@ plot_kobe_gg <- plot_kobe <- function(FBdata=NULL,
                                       plot.year="all"){
 
   if(!is.null(FBdata)) assertthat::assert_that(all(c(ylab_name, xlab_name) %in% colnames(FBdata)), TRUE)
-  
+
   target.RP <- derive_RP_value(refs_base,Btarget)
   limit.RP <- derive_RP_value(refs_base,Blimit)
 #  low.RP <- derive_RP_value(refs_base,Blow)
@@ -2029,7 +2084,7 @@ plot_worm <- function(kobe_data){
 
     mean_data <- bind_rows(kobe_data$catch.mean,
                            kobe_data$ssb.mean  ,
-                           kobe_data$ssb.lower10percent) %>%
+                           kobe_data$ssb.lower05percent) %>%
       pivot_longer(cols=c(-HCR_name,-beta,-stat_name)) %>%
       rename(Year=name) %>%
       mutate(Year=as.numeric(Year), MT=value/1000) #%>%
