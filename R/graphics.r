@@ -1258,7 +1258,7 @@ plot_yield <- function(MSY_obj,refs_base,
                        refs.color=c("#00533E","#edb918","#C73C2E"),
                        AR_select=FALSE,xlim.scale=1.1,
                        biomass.unit=1,labeling=TRUE,lining=TRUE,
-                       age.label.ratio=0.9, # 年齢のラベルを入れる位置（xの最大値からの割合)
+                       age.label.ratio=0.6, # 年齢のラベルを入れる位置（xの最大値からの割合)
                        #                       family = "JP1",
                        ylim.scale=1.2,future=NULL,
                        future.replicate=NULL,
@@ -1312,7 +1312,7 @@ plot_yield <- function(MSY_obj,refs_base,
     mutate(cumcatch=cumsum(value)-value/2)%>%
     mutate(age=as.numeric(as.character(age)))
   age.label <- age.label %>%
-    mutate(age_name=str_c("Age ",age,ifelse(age.label$age==max(age.label$age),plus.char,"")))
+    mutate(age_name=str_c(age,ifelse(age.label$age==max(age.label$age),plus.char,""),"歳"))
 
   g1 <- g1 + geom_area(aes(x=ssb.mean,y=value,fill=`年齢`),col="black",alpha=0.5,lwd=1*0.3528) +
     #    geom_line(aes(x=ssb.mean,y=catch.CV,fill=age)) +
