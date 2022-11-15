@@ -741,7 +741,12 @@ SRregime_plot <- plot_SRregime <- function (SRregime_result,xscale=1000,xlabel="
   g1
 }
 
+#'
+#' @export
 
+plot_SRregime <- function(...){
+  SRregime_plot(...)
+}
 
 # 将来予測用 ----
 
