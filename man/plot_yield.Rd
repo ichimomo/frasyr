@@ -15,7 +15,7 @@ plot_yield(
   biomass.unit = 1,
   labeling = TRUE,
   lining = TRUE,
-  age.label.ratio = 0.9,
+  age.label.ratio = 0.6,
   ylim.scale = 1.2,
   future = NULL,
   future.replicate = NULL,

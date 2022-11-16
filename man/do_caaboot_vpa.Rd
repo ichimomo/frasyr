@@ -5,7 +5,15 @@
 \alias{do_caaboot_vpa}
 \title{年齢別漁獲尾数の不確実性評価の関数}
 \usage{
-do_caaboot_vpa(res, B_ite = 1000, B_cv = 0.2, ci_range = 0.95, detail = FALSE)
+do_caaboot_vpa(
+  res,
+  B_ite = 1000,
+  B_cv = 0.2,
+  ci_range = 0.95,
+  ess = 200,
+  detail = FALSE,
+  ci_fill = "blue"
+)
 }
 \arguments{
 \item{res}{VPAの結果のオブジェクト}
@@ -16,7 +24,11 @@ do_caaboot_vpa(res, B_ite = 1000, B_cv = 0.2, ci_range = 0.95, detail = FALSE)
 
 \item{ci_range}{信頼区間の幅。デフォルトでは0.95（95％信頼区間）}
 
+\item{ess}{多項分布の乱数生成の有効サンプル数。デフォルトは200。}
+
 \item{detail}{TRUEの場合、個々のVPAの推定結果がリストで出力される}
+
+\item{ci_fill}{描画された信頼区間の色の指定。デフォルトは`"blue"`}
 }
 \value{
 返ってくる値:

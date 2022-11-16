@@ -12,7 +12,8 @@ calculate_all_pm(
   SBmin = -1,
   MSY = -1,
   is_scale = FALSE,
-  unit = 1
+  unit = 1,
+  period_extra = NULL
 )
 }
 \arguments{
@@ -31,6 +32,8 @@ calculate_all_pm(
 \item{is_scale}{TRUEの場合、親魚量はSBtargetで、漁獲量はMSYで割った相対値が出力される。それ以外はそのまま}
 
 \item{unit}{確率を出力するときの単位。100を入れると％単位で結果が返される}
+
+\item{period_extra}{デフォルトではSSBminなどを一度でも下回るなど、期間を指定して計算する統計量はABC_year + 0:9, 0:4, 5:9, 1:10, 1:4, 6:10で決め打ちしているが、それ以外の期間を指定したいときにここの引数で与える}
 }
 \description{
 res_futureから考えられるほぼすべてのパフォーマンス指標をとりだし、2行のtibbleで返す

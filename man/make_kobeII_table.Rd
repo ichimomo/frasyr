@@ -24,7 +24,7 @@ make_kobeII_table(
 
 \item{res_vpa}{VPAの結果}
 
-\item{Bspecific}{特定の資源量を一回でも下回るリスクを計算する。下回るリスクを判断する年はyear.riskに従う}
+\item{year.catch}{平均漁獲量の表を出力する期間。その他year.ssb(平均親魚量), year.ssbtarget(SBtargetを上回る確率)、、なども同様}
 }
 \description{
 beta.simluationの結果などを読んで、kobeII talbeに整形する関数

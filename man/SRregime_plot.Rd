@@ -16,7 +16,8 @@ SRregime_plot(
   legend.title = "Regime",
   regime.name = NULL,
   base_size = 16,
-  add.info = TRUE
+  add.info = TRUE,
+  themeSH = FALSE
 )
 }
 \arguments{

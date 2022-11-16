@@ -16,7 +16,8 @@ beta.simulation(
   label_name = NULL,
   output_type = "tidy",
   ncore = 1,
-  save_detail = rep(0, length(beta_vector))
+  save_detail = rep(0, length(beta_vector)),
+  ...
 )
 }
 \arguments{
@@ -35,5 +36,5 @@ beta.simulation(
 \item{ncore}{並列計算する場合のコア数。動くかどうか不明。}
 }
 \description{
-様々なベータやinput設定をもとに複数の将来予測を繰り返して結果をtibbleで返す関数
+その他、calculate_all_pmに渡す引数
 }
