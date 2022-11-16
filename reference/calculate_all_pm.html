@@ -68,7 +68,8 @@
 <span>  SBmin <span class="op">=</span> <span class="op">-</span><span class="fl">1</span>,</span>
 <span>  MSY <span class="op">=</span> <span class="op">-</span><span class="fl">1</span>,</span>
 <span>  is_scale <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  unit <span class="op">=</span> <span class="fl">1</span></span>
+<span>  unit <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  period_extra <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -104,6 +105,10 @@
 
 <dt>unit</dt>
 <dd><p>確率を出力するときの単位。100を入れると％単位で結果が返される</p></dd>
+
+
+<dt>period_extra</dt>
+<dd><p>デフォルトではSSBminなどを一度でも下回るなど、期間を指定して計算する統計量はABC_year + 0:9, 0:4, 5:9, 1:10, 1:4, 6:10で決め打ちしているが、それ以外の期間を指定したいときにここの引数で与える</p></dd>
 
 </dl></div>
 

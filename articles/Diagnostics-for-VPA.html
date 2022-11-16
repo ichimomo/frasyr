@@ -71,13 +71,13 @@
 
       
 
-      </header><script src="Diagnostics-for-VPA_files/accessible-code-block-0.0.1/empty-anchor.js"></script><div class="row">
+      </header><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>VPAモデル診断スクリプト</h1>
                         <h4 data-toc-skip class="author">濵邉昂平・市野川桃子</h4>
             
-            <h4 data-toc-skip class="date">2022-10-14</h4>
+            <h4 data-toc-skip class="date">2022-11-16</h4>
       
       
       <div class="hidden name"><code>Diagnostics-for-VPA.Rmd</code></div>
@@ -130,7 +130,8 @@
 <ul>
 <li>frasyrやggplot2などをインストールして呼び出しておいてください</li>
 </ul>
-<p><strong>※ tidyr, dplyr, purrr, ggplot2, stringerの5つは“tidyverse”というパッケージの中にまとめてあるので<code><a href="https://tidyverse.tidyverse.org" class="external-link">library(tidyverse)</a></code>だけでも大丈夫です</strong></p>
+<p><strong>※ tidyr, dplyr, purrr, ggplot2,
+stringerの5つは”tidyverse”というパッケージの中にまとめてあるので<code><a href="https://tidyverse.tidyverse.org" class="external-link">library(tidyverse)</a></code>だけでも大丈夫です</strong></p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># frasyrの最新版（dev）をインストールする</span></span>
 <span><span class="co">#devtools::install_github("ichimomo/frasyr@dev")</span></span>
@@ -156,7 +157,8 @@
 <li>α (プラスグループとプラスグループ-1歳のFの比)</li>
 <li>最終年のFの仮定
 <ul>
-<li>チューニングなしの場合: 最終年のF＝過去数年のFと同じと仮定しているか</li>
+<li>チューニングなしの場合:
+最終年のF＝過去数年のFと同じと仮定しているか</li>
 <li>チューニングありの場合：全F推定かsel.updateか</li>
 </ul>
 </li>
@@ -164,7 +166,8 @@
 </li>
 <li>近年の資源量推定に関わる重要な部分については、別途資源評価票で別途議論してください（たとえば近年の体重の変化が問題になっており、その値を変えたときのABCへの影響を調べたいなど）</li>
 </ul>
-<p>感度分析は<code>do_sensitivity_vpa</code>関数を使えばできます。 引数で重要なものは、VPA計算の結果（<code>vpa</code>関数の実行結果のオブジェクト）、感度分析を行いたい指標<code>what_replace</code>、感度分析の値<code>value</code>の3つです。また、結果のグラフについての引数は<code>what_plot</code>と<code>ncol</code>があります。出力数を減らしたい場合は<code>what_plot</code>に出力したい結果だけ入力してください。<code>ncol</code>はグラフの列数です。適宜調整してください。</p>
+<p>感度分析は<code>do_sensitivity_vpa</code>関数を使えばできます。
+引数で重要なものは、VPA計算の結果（<code>vpa</code>関数の実行結果のオブジェクト）、感度分析を行いたい指標<code>what_replace</code>、感度分析の値<code>value</code>の3つです。また、結果のグラフについての引数は<code>what_plot</code>と<code>ncol</code>があります。出力数を減らしたい場合は<code>what_plot</code>に出力したい結果だけ入力してください。<code>ncol</code>はグラフの列数です。適宜調整してください。</p>
 <p>結果では、<code>$result</code>にVPAの結果がリスト形式で、<code>$graph</code>に複数のVPAの結果を重ね書きしたグラフが入っています。</p>
 <p>関数の引数について（<strong>特に<code>value</code>に与える<font color="red">データの型</font>について</strong>）、不明点等ありましたら、以下のように<code>help</code>を使って確認してみてください。</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
@@ -194,12 +197,14 @@
 <code class="sourceCode R"><span><span class="va">res_vpa_sensitivity</span><span class="op">$</span><span class="va">graph</span></span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-6-1.png" width="672"></p>
 <p>自然死亡係数を大きくすると、資源量のスケールも併せて大きくなっています。</p>
-<p>直接Mの行列を入力しても実行できます。 最近年のMの仮定について見たい、掛け算ではなく足し算で実行したい、等の場合は行列を与えてください</p>
+<p>直接Mの行列を入力しても実行できます。
+最近年のMの仮定について見たい、掛け算ではなく足し算で実行したい、等の場合は行列を与えてください</p>
 </div>
 <div class="section level4">
 <h4 id="年齢別体重">年齢別体重<a class="anchor" aria-label="anchor" href="#%E5%B9%B4%E9%BD%A2%E5%88%A5%E4%BD%93%E9%87%8D"></a>
 </h4>
-<p>年齢別体重を置き換える場合は、<code>what_replace = "waa"</code>とします。 自然死亡係数の場合と同様に、<code>value</code>に入れた値がもとの年齢別体重にかけられます。</p>
+<p>年齢別体重を置き換える場合は、<code>what_replace = "waa"</code>とします。
+自然死亡係数の場合と同様に、<code>value</code>に入れた値がもとの年齢別体重にかけられます。</p>
 <p>また、<code>what_plot</code>に作図で出力したい結果を指定することができます。</p>
 <p><strong>この他、<code>plot_year</code>に作図したい年（x軸の範囲）を指定することもできます</strong></p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
@@ -230,7 +235,9 @@
 <div class="section level4">
 <h4 id="漁獲物中の年齢別体重">漁獲物中の年齢別体重<a class="anchor" aria-label="anchor" href="#%E6%BC%81%E7%8D%B2%E7%89%A9%E4%B8%AD%E3%81%AE%E5%B9%B4%E9%BD%A2%E5%88%A5%E4%BD%93%E9%87%8D"></a>
 </h4>
-<p>漁獲量計算と資源量計算で異なる年齢別体重を用いている場合には、漁獲物中の年齢別体重の設定についても感度分析ができます。この場合は、<code>what_replace = "waa.catch"</code>とします。 <code>value</code>に入れる値の型は<code>index = waa</code>の場合と同じく、<code>numeric</code>または<code>list</code>型です。 （この例の場合には、漁獲量用の年齢別体重が設定されていないため、エラーとなります。）</p>
+<p>漁獲量計算と資源量計算で異なる年齢別体重を用いている場合には、漁獲物中の年齢別体重の設定についても感度分析ができます。この場合は、<code>what_replace = "waa.catch"</code>とします。
+<code>value</code>に入れる値の型は<code>index = waa</code>の場合と同じく、<code>numeric</code>または<code>list</code>型です。
+（この例の場合には、漁獲量用の年齢別体重が設定されていないため、エラーとなります。）</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">res_vpa_sensitivity</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>,</span>
 <span>                                          what_replace <span class="op">=</span> <span class="st">"waa.catch"</span>,</span>
@@ -242,7 +249,8 @@
 <div class="section level4">
 <h4 id="成熟率">成熟率<a class="anchor" aria-label="anchor" href="#%E6%88%90%E7%86%9F%E7%8E%87"></a>
 </h4>
-<p>成熟率を置き換える場合は、<code>what_replace = "maa"</code>とします。 年齢別体重の場合と同様<code>value</code>には、<code>list</code>に格納した行列を与えてください。</p>
+<p>成熟率を置き換える場合は、<code>what_replace = "maa"</code>とします。
+年齢別体重の場合と同様<code>value</code>には、<code>list</code>に格納した行列を与えてください。</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">res_vpa_sensitivity</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>, </span>
 <span>                                          what_replace <span class="op">=</span> <span class="st">"maa"</span>, </span>
@@ -260,7 +268,8 @@
 <div class="section level3">
 <h3 id="α">α<a class="anchor" aria-label="anchor" href="#%CE%B1"></a>
 </h3>
-<p>αを置き換えたい場合は、<code>what_replace = "alpha"</code>とします。 <code>value</code>には直接仮定したい値を入れてください。</p>
+<p>αを置き換えたい場合は、<code>what_replace = "alpha"</code>とします。
+<code>value</code>には直接仮定したい値を入れてください。</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">res_vpa_sensitivity</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_sensitivity_vpa.html">do_sensitivity_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>, </span>
 <span>                                          what_replace <span class="op">=</span> <span class="st">"alpha"</span>, </span>
@@ -280,11 +289,14 @@
 </h3>
 <p><strong>チューニングの有無で行える感度分析が大きく変わります。</strong></p>
 <ul>
-<li>チューニングなしVPA(<code>tune=FALSE</code>で解析している) : <code>tf.year</code>について感度分析を行います</li>
+<li>チューニングなしVPA(<code>tune=FALSE</code>で解析している) :
+<code>tf.year</code>について感度分析を行います</li>
 <li>チューニングVPA(<code>tune=TRUE</code>で解析している)
 <ul>
-<li>選択率更新法(<code>sel.update=TRUE</code>) : 選択率更新法の代わりに全F推定法を行います</li>
-<li>全F推定法(<code>term.f="all"</code>) : 全F推定の代わりに選択率更新法を行います</li>
+<li>選択率更新法(<code>sel.update=TRUE</code>) :
+選択率更新法の代わりに全F推定法を行います</li>
+<li>全F推定法(<code>term.f="all"</code>) :
+全F推定の代わりに選択率更新法を行います</li>
 </ul>
 </li>
 </ul>
@@ -302,7 +314,9 @@
 <div class="section level4">
 <h4 id="選択率更新法の場合">選択率更新法の場合<a class="anchor" aria-label="anchor" href="#%E9%81%B8%E6%8A%9E%E7%8E%87%E6%9B%B4%E6%96%B0%E6%B3%95%E3%81%AE%E5%A0%B4%E5%90%88"></a>
 </h4>
-<p>今回の例では選択率更新法で推定されているため、全F推定で感度分析が行われます。 これまでと同様に、<code>what_replace = "tuning"</code>といれれば大丈夫です。 <strong>選択率更新法の代わりに感度分析で全F推定を行う場合、<code>value</code>に値を入れる必要はありません</strong></p>
+<p>今回の例では選択率更新法で推定されているため、全F推定で感度分析が行われます。
+これまでと同様に、<code>what_replace = "tuning"</code>といれれば大丈夫です。
+<strong>選択率更新法の代わりに感度分析で全F推定を行う場合、<code>value</code>に値を入れる必要はありません</strong></p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">res_tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">vpadat_estb</span>, tf.year<span class="op">=</span><span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span>, last.catch.zero <span class="op">=</span> <span class="cn">FALSE</span>, </span>
 <span>               Pope <span class="op">=</span> <span class="cn">TRUE</span>, p.init <span class="op">=</span> <span class="fl">0.5</span>, tune<span class="op">=</span><span class="cn">TRUE</span>, sel.update<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span>
@@ -318,7 +332,8 @@
 <div class="section level4">
 <h4 id="全f推定の場合">全F推定の場合<a class="anchor" aria-label="anchor" href="#%E5%85%A8f%E6%8E%A8%E5%AE%9A%E3%81%AE%E5%A0%B4%E5%90%88"></a>
 </h4>
-<p>全F推定の場合は、代わりに選択率更新法で感度分析が行われます。 また先のチューニングなしVPAのように、最終年Fの仮定についても値を変えて、感度分析することができます。</p>
+<p>全F推定の場合は、代わりに選択率更新法で感度分析が行われます。
+また先のチューニングなしVPAのように、最終年Fの仮定についても値を変えて、感度分析することができます。</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 全F推定法の場合</span></span>
 <span><span class="va">res_tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">vpadat_estb</span>, tf.year<span class="op">=</span><span class="fl">1997</span><span class="op">:</span><span class="fl">1999</span>, last.catch.zero <span class="op">=</span> <span class="cn">FALSE</span>, </span>
@@ -365,7 +380,8 @@
 <li>過去～7年分くらいのデータを削除して資源計算をしなおした場合に、資源量やFの推定値が傾向を持って変化するようなレトロスペクティブパターンが見られるかどうかを調べます。その際には
 <ul>
 <li>非線形パラメータbを推定しなおすかどうか</li>
-<li>リッジの場合、λを推定しなおすかどうか という問題がありますが、デフォルトは、これらのパラメータは固定（最終年で推定されたものを用いる）して計算してみます。</li>
+<li>リッジの場合、λを推定しなおすかどうか
+という問題がありますが、デフォルトは、これらのパラメータは固定（最終年で推定されたものを用いる）して計算してみます。</li>
 </ul>
 </li>
 <li>
@@ -385,12 +401,15 @@
 <li>
 <code>res</code> : vpa計算の結果のオブジェクトの他に</li>
 <li>
-<code>n_retro</code> : レトロスペクティブ解析を何年さかのぼって実行するか（デフォルトで5年）</li>
+<code>n_retro</code> :
+レトロスペクティブ解析を何年さかのぼって実行するか（デフォルトで5年）</li>
 <li>
-<code>b_reest</code> : b(hyperstability/depletion)をレトロスペクティブ解析内で再推定するか</li>
+<code>b_reest</code> :
+b(hyperstability/depletion)をレトロスペクティブ解析内で再推定するか</li>
 <li>
 <code>what_plot</code> : 作図で何を出力するか</li>
-<li><strong><code>plot_year</code> : 作図したい年（作図のx軸の範囲）</strong></li>
+<li><strong><code>plot_year</code> :
+作図したい年（作図のx軸の範囲）</strong></li>
 <li>
 <code>ncol</code> : 作図の列数</li>
 </ul>
@@ -403,7 +422,9 @@
 <span><span class="va">res_vpa_retrospective</span><span class="op">$</span><span class="va">mohn_rho</span></span></code></pre></div>
 <pre><code>            N             B           SSB             R             F 
 -1.353966e-01 -1.019165e-01 -9.331421e-02 -1.829777e-01  1.626003e+05 </code></pre>
-<p>結果はlist型式でまとめてあり、<code>$</code>を使って呼び出すことが可能です。resultはVPAの推定結果、mohn_rhoはmorhのrhoの値、graphはグラフ、b_resはbの再推定結果です。またMohn’s rhoは、グラフ中にも併記してあります。 ここで、漁獲係数のMohn’s rhoは年齢別漁獲係数を全て足し合わせた値となっています。</p>
+<p>結果はlist型式でまとめてあり、<code>$</code>を使って呼び出すことが可能です。resultはVPAの推定結果、mohn_rhoはmorhのrhoの値、graphはグラフ、b_resはbの再推定結果です。またMohn’s
+rhoは、グラフ中にも併記してあります。 ここで、漁獲係数のMohn’s
+rhoは年齢別漁獲係数を全て足し合わせた値となっています。</p>
 <div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">res_vpa_retrospective</span><span class="op">$</span><span class="va">graph</span></span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-18-1.png" width="672"></p>
@@ -457,16 +478,22 @@
 <div class="section level2">
 <h2 id="パラメータの収束の確認-jitter-analysis">3. パラメータの収束の確認 (jitter analysis)<a class="anchor" aria-label="anchor" href="#%E3%83%91%E3%83%A9%E3%83%A1%E3%83%BC%E3%82%BF%E3%81%AE%E5%8F%8E%E6%9D%9F%E3%81%AE%E7%A2%BA%E8%AA%8D-jitter-analysis"></a>
 </h2>
-<p>Fの推定結果が初期値に依存せずに、安定した結果となっているかを診断するために、jitter analysis（初期値を乱数で生成し、vpa計算を繰り返し実施する）をおこないます。<code>vpa</code>関数では推定パラメータの初期値は引数<code>p.init</code>で与えられますが、全F推定法の場合、最終年の各年齢のFの初期値になります。</p>
-<p>Fの結果が初期値に依存する場合、初期値に応じて推定結果も変わることが考えられます。このような場合、パラメータの初期値への依存が高く、局所的な最適解に引っ張られている可能性などが考えられます。すなわち、データの持つ情報量が低いことが考えられるため注意が必要です。jitter analysisはこのようなことがおこっていないか確認するための解析です。</p>
+<p>Fの推定結果が初期値に依存せずに、安定した結果となっているかを診断するために、jitter
+analysis（初期値を乱数で生成し、vpa計算を繰り返し実施する）をおこないます。<code>vpa</code>関数では推定パラメータの初期値は引数<code>p.init</code>で与えられますが、全F推定法の場合、最終年の各年齢のFの初期値になります。</p>
+<p>Fの結果が初期値に依存する場合、初期値に応じて推定結果も変わることが考えられます。このような場合、パラメータの初期値への依存が高く、局所的な最適解に引っ張られている可能性などが考えられます。すなわち、データの持つ情報量が低いことが考えられるため注意が必要です。jitter
+analysisはこのようなことがおこっていないか確認するための解析です。</p>
 <p>初期値は対数を取った0.001から2の間を10刻みにした後、指数を取ってます。刻みの数は<code>n_ite</code>で指定できます。</p>
-<p><code>do_estcheck_vpa</code>関数で、自動的にjitter analysisとその結果の作図が行われます。</p>
-<p>基本的に、vpa計算の結果のオブジェクトのみを与えれば計算が行われます。 その他に引数として、</p>
+<p><code>do_estcheck_vpa</code>関数で、自動的にjitter
+analysisとその結果の作図が行われます。</p>
+<p>基本的に、vpa計算の結果のオブジェクトのみを与えれば計算が行われます。
+その他に引数として、</p>
 <ul>
 <li>
 <code>what_plot</code> : 作図したい年齢</li>
 <li>
-<code>TMB</code> : TMBで解析する（ <strong>始めて実行する場合は<code><a href="../reference/use_rvpa_tmb.html">use_rvpa_tmb()</a></code>を先に実行</strong> ）</li>
+<code>TMB</code> : TMBで解析する（
+<strong>始めて実行する場合は<code><a href="../reference/use_rvpa_tmb.html">use_rvpa_tmb()</a></code>を先に実行</strong>
+）</li>
 </ul>
 <p>を指定します。コマンドは以下の通りです。</p>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
@@ -478,8 +505,13 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 <li>ヘッセ行列の対角成分が正であるか</li>
 <li>パラメータの推定結果が収束してるか</li>
 </ul>
-<p>を知らせてくれます。ヘッセ行列の対角成分に負がある（本来正になる値であり、パラメータ推定が失敗してる）、あるいは収束していない場合、ここで関数が止まります。 再度、<code>VPA</code>関数を使って解析してください。（初期値を変える、全F推定の場合パラメータを減らす、資源量指数の非線形性を考慮している場合はbを与えるあるいは1にする、などの工夫が必要となります）</p>
-<p>次に、関数内でjitter analysisが行われます。n_ite数分のVPA計算を行います。 生成する初期値の数は <strong>10個(<code>n_ite = 10</code>)</strong> で十分です。推定値と初期値の大体の関係が見れれば問題ありませんが、初期値に応じて、Fが異なる値で推定される（大きな値に発散せずに）場合には注意が必要です。 その結果が<code>res_vpa_jitter</code>内にあり、それぞれ、</p>
+<p>を知らせてくれます。ヘッセ行列の対角成分に負がある（本来正になる値であり、パラメータ推定が失敗してる）、あるいは収束していない場合、ここで関数が止まります。
+再度、<code>VPA</code>関数を使って解析してください。（初期値を変える、全F推定の場合パラメータを減らす、資源量指数の非線形性を考慮している場合はbを与えるあるいは1にする、などの工夫が必要となります）</p>
+<p>次に、関数内でjitter
+analysisが行われます。n_ite数分のVPA計算を行います。
+生成する初期値の数は <strong>10個(<code>n_ite = 10</code>)</strong>
+で十分です。推定値と初期値の大体の関係が見れれば問題ありませんが、初期値に応じて、Fが異なる値で推定される（大きな値に発散せずに）場合には注意が必要です。
+その結果が<code>res_vpa_jitter</code>内にあり、それぞれ、</p>
 <ul>
 <li>
 <code>$initial_value</code>に初期値</li>
@@ -499,21 +531,33 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-22-2.png" width="672"></p>
 <p>ここで赤い横線は与えた結果の推定値と尤度を表しています。</p>
 <p>結果の図を見ると、いくつかの初期値のセットではFが0におちたり、Fが高い値になってしまっていることがわかります。これらのときの尤度は、推定値が得られたときの対数尤度（赤線）よりも小さい値になっていることから、推定パラメータから計算される尤度はほかの初期値を与えたときの推定値から得られる尤度と比較しても最大になっている(=最尤推定値が得られている)ことが確かめられました。</p>
-<p>またVPAは、最終年のFでしか指標値とのフィットをコントロールできないことから、FがInfなどの大きな値になることもあります。このような場合に、推定結果の最大対数尤度より、Fが発散した場合の最大対数尤度の方が大きくなることがあります。これはFが収束していないだけですので、こういった場合は推定と初期値の関係に問題ありません。 <strong>（逆にこういったFが大きく発散しないFを探すという方が実際の資源に適用する場合には多いかと思います）</strong></p>
-<p>関数を実施したとき、“Maximum likelihood in jitter analysis is: , Likelihood with estimated parameters is :” という表示が出ますので、上下の値が一致している、または上の値よりも下の値のほうが大きければOKです。逆に、上の値（Maximum likelihood in jitter analysis）のほうが大きい場合には、上述のように<strong>Fが発散している</strong>ため問題ないか、<strong>最尤推定値は他にある可能性</strong>がある場合の2通り考えられます。後者の場合は初期値を変えて計算しなおしてください。</p>
+<p>またVPAは、最終年のFでしか指標値とのフィットをコントロールできないことから、FがInfなどの大きな値になることもあります。このような場合に、推定結果の最大対数尤度より、Fが発散した場合の最大対数尤度の方が大きくなることがあります。これはFが収束していないだけですので、こういった場合は推定と初期値の関係に問題ありません。
+<strong>（逆にこういったFが大きく発散しないFを探すという方が実際の資源に適用する場合には多いかと思います）</strong></p>
+<p>関数を実施したとき、“Maximum likelihood in jitter analysis is: ,
+Likelihood with estimated parameters is :”
+という表示が出ますので、上下の値が一致している、または上の値よりも下の値のほうが大きければOKです。逆に、上の値（Maximum
+likelihood in jitter
+analysis）のほうが大きい場合には、上述のように<strong>Fが発散している</strong>ため問題ないか、<strong>最尤推定値は他にある可能性</strong>がある場合の2通り考えられます。後者の場合は初期値を変えて計算しなおしてください。</p>
 </div>
 <div class="section level2">
 <h2 id="残差プロット">4. 残差プロット<a class="anchor" aria-label="anchor" href="#%E6%AE%8B%E5%B7%AE%E3%83%97%E3%83%AD%E3%83%83%E3%83%88"></a>
 </h2>
-<p>残差プロットはモデル診断の中でも、最も重要なパートの1つです。残差とは、CPUEとその予測値(qN^b)の差のことを指し、これが小さいほうがよりフィッティングの良いモデルとなります。残差の対数（対数残差）プロットは0を平均とした分布になります。また、 <strong>残差プロットが時系列的に一貫して増える（または減る）傾向（自己相関）</strong>がみられる場合、モデルとデータの間に何らかの齟齬がある可能性があり、注意が必要です。この他、 <strong>他の残差に比べて著しく大きい残差は、そのデータ（CPUE）が外れ値</strong>である場合があります。外れ値はパラメータ推定に大きな影響を及ぼすので、外れ値と思われるデータを解析に含めるか再考する必要があります。 ただし、いずれも時系列データを扱っていると往々に起こりうることですので、外れ値がある、あるいは自己相関係数が有意であっても、結果が妥当そうであれば問題ありません。 残差プロットを行うことでこれらの傾向を一目にして把握することができます。</p>
+<p>残差プロットはモデル診断の中でも、最も重要なパートの1つです。残差とは、CPUEとその予測値(qN^b)の差のことを指し、これが小さいほうがよりフィッティングの良いモデルとなります。残差の対数（対数残差）プロットは0を平均とした分布になります。また、
+<strong>残差プロットが時系列的に一貫して増える（または減る）傾向（自己相関）</strong>がみられる場合、モデルとデータの間に何らかの齟齬がある可能性があり、注意が必要です。この他、
+<strong>他の残差に比べて著しく大きい残差は、そのデータ（CPUE）が外れ値</strong>である場合があります。外れ値はパラメータ推定に大きな影響を及ぼすので、外れ値と思われるデータを解析に含めるか再考する必要があります。
+ただし、いずれも時系列データを扱っていると往々に起こりうることですので、外れ値がある、あるいは自己相関係数が有意であっても、結果が妥当そうであれば問題ありません。
+残差プロットを行うことでこれらの傾向を一目にして把握することができます。</p>
 <p>残差プロットは<code>plot_residual_vpa</code>関数で実行できます。大きく3種類のプロットを書くことができます。</p>
 <ul>
 <li>
-<code>$year_resid</code>: 対数残差を時系列にプロットしたもの。先述の残差の傾向と外れ値の把握に利用。標準化残差のプロットについては<code>$year_sd_resid</code>中にある。</li>
+<code>$year_resid</code>:
+対数残差を時系列にプロットしたもの。先述の残差の傾向と外れ値の把握に利用。標準化残差のプロットについては<code>$year_sd_resid</code>中にある。</li>
 <li>
-<code>$fitting_Index</code>: CPUEと予測CPUEをそれぞれ重ねてプロットしたもの。データと推定結果のフィッティングを見るもの。</li>
+<code>$fitting_Index</code>:
+CPUEと予測CPUEをそれぞれ重ねてプロットしたもの。データと推定結果のフィッティングを見るもの。</li>
 <li>
-<code>$abund_Index</code>: 資源量/資源重量/親魚重量とその予測CPUEとの関係。赤い線が推定した資源量とその指数の線形/非線形性を表す。</li>
+<code>$abund_Index</code>:
+資源量/資源重量/親魚重量とその予測CPUEとの関係。赤い線が推定した資源量とその指数の線形/非線形性を表す。</li>
 </ul>
 <p>また<code>index_name</code>引数中に、各指標の名前を与えるとプロットに反映されます（ない場合はIndex01、Index02・・・となります）。与える場合、用いた指標の数分引数に入れてください。</p>
 <div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
@@ -532,8 +576,10 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 <div class="section level3">
 <h3 id="年度変更点-1">2021年度変更点<a class="anchor" aria-label="anchor" href="#%E5%B9%B4%E5%BA%A6%E5%A4%89%E6%9B%B4%E7%82%B9-1"></a>
 </h3>
-<p>先程の図の通り、残差プロットに信頼区間が明記されるようになりました。 <strong>信頼区間は濃い色が80%、薄い色が95%</strong>のそれぞれ信頼区間となっております。</p>
-<p>これによって、外れ値の検出ができます。 特に、最近年に外れ値がある場合、その値が資源量推定結果に与える影響は大きいことが想定されるので、後述のジャックナイフ法などを通して結果の妥当性を評価してください。</p>
+<p>先程の図の通り、残差プロットに信頼区間が明記されるようになりました。
+<strong>信頼区間は濃い色が80%、薄い色が95%</strong>のそれぞれ信頼区間となっております。</p>
+<p>これによって、外れ値の検出ができます。
+特に、最近年に外れ値がある場合、その値が資源量推定結果に与える影響は大きいことが想定されるので、後述のジャックナイフ法などを通して結果の妥当性を評価してください。</p>
 <div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">plot_example</span><span class="op">$</span><span class="va">year_resid</span></span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-25-1.png" width="672"></p>
@@ -545,7 +591,9 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 <span>                  plot_smooth<span class="op">=</span><span class="cn">TRUE</span>,</span>
 <span>                  resid_CI <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">$</span><span class="va">year_resid</span></span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-26-1.png" width="672"></p>
-<p>また、自己相関係数も明記されるようになりました。 もしこの自己相関係数が有意に大きいあるいは小さい場合、<code>rho=0.6*</code>のように、*印が付きます。 この場合は、残差の独立の仮定が満たされていません。</p>
+<p>また、自己相関係数も明記されるようになりました。
+もしこの自己相関係数が有意に大きいあるいは小さい場合、<code>rho=0.6*</code>のように、*印が付きます。
+この場合は、残差の独立の仮定が満たされていません。</p>
 <p>ただし、満たされていないから、一概にモデルとしての妥当性が不十分で、棄却されるというわけではありません。（主観的で恐縮ですが）</p>
 <p>ジャックナイフ法によるデータの影響力の検証等を通して、結果の妥当性が確認されれば、問題がないと考えます。</p>
 <p>こういった妥当性の検証のプロセスを説明することが大切だと考えます。</p>
@@ -554,13 +602,15 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 <div class="section level2">
 <h2 id="ジャックナイフ法">5. ジャックナイフ法<a class="anchor" aria-label="anchor" href="#%E3%82%B8%E3%83%A3%E3%83%83%E3%82%AF%E3%83%8A%E3%82%A4%E3%83%95%E6%B3%95"></a>
 </h2>
-<p>観測値（資源量指数）を1つずつ抜いて解析を行うことで、影響力の強いデータや外れ値を検出する方法です。 <code>do_jackknife_vpa</code>関数で自動で観測値を抜いて再解析を行います。</p>
+<p>観測値（資源量指数）を1つずつ抜いて解析を行うことで、影響力の強いデータや外れ値を検出する方法です。
+<code>do_jackknife_vpa</code>関数で自動で観測値を抜いて再解析を行います。</p>
 <ul>
 <li><p><code>plot_year</code>に作図したい年（x軸の範囲）を指定することもできます</p></li>
 <li><p><strong><code>scale_value</code>に任意の値を与えることで、プロットの点の形を任意で指定できます（ベースモデル＋ジャックナイフの数分与えてください）</strong></p></li>
-<li><p>　<strong>=&gt; ジャックナイフ法の他に、感度分析、レトロスペクティブ解析でも指定できます</strong></p></li>
+<li><p>　<strong>=&gt;
+ジャックナイフ法の他に、感度分析、レトロスペクティブ解析でも指定できます</strong></p></li>
 </ul>
-<p>引数<code>method</code>はデフォルトで“index”となっており、資源量指数の種類ごとに取り除いて解析を行います（つまり、資源量指数の種類分、結果が返ってきます）。一方、それぞれの種類を年ごとに取り除きたい場合は“all”を選択してください。この場合、資源量指数の種類×年数分、取り除いて計算するためデータ数によっては多くの計算時間を必要とする点に気を付けてください。</p>
+<p>引数<code>method</code>はデフォルトで”index”となっており、資源量指数の種類ごとに取り除いて解析を行います（つまり、資源量指数の種類分、結果が返ってきます）。一方、それぞれの種類を年ごとに取り除きたい場合は”all”を選択してください。この場合、資源量指数の種類×年数分、取り除いて計算するためデータ数によっては多くの計算時間を必要とする点に気を付けてください。</p>
 <div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">res_vpa_jackknife</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_jackknife_vpa.html">do_jackknife_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>,</span>
 <span>                                      what_plot <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SSB"</span>, <span class="st">"biomass"</span>, <span class="st">"U"</span>, <span class="st">"Recruitment"</span>,</span>
@@ -576,28 +626,34 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 <div class="section level2">
 <h2 id="ブートストラップによる信頼区間推定">6. ブートストラップによる信頼区間推定<a class="anchor" aria-label="anchor" href="#%E3%83%96%E3%83%BC%E3%83%88%E3%82%B9%E3%83%88%E3%83%A9%E3%83%83%E3%83%97%E3%81%AB%E3%82%88%E3%82%8B%E4%BF%A1%E9%A0%BC%E5%8C%BA%E9%96%93%E6%8E%A8%E5%AE%9A"></a>
 </h2>
-<p>ブートストラップ法は乱数でデータを再生成し、信頼区間等を推定する方法です。 ここでは</p>
+<p>ブートストラップ法は乱数でデータを再生成し、信頼区間等を推定する方法です。
+ここでは</p>
 <ul>
 <li>CPUEについて乱数生成する方法</li>
 <li>年齢別漁獲尾数について乱数生成する方法</li>
 </ul>
-<p>それぞれについて、新規関数とともに紹介します。 また<strong>パッケージの更新速度の都合上、ブートストラップ標本数は10個</strong>としていますが、<font color="blue">95%信頼区間などを正確に計算したい場合は<strong>1000回（デフォルト）</strong></font>ほど必要です。 ただし、データの特性や推定された<code>sigma</code>の大きさにも依存するので、<font color="blue">200回や500回でも、1000回と信頼区間がそれほど変わらない場合は、少なくても構いません。</font></p>
+<p>それぞれについて、新規関数とともに紹介します。
+また<strong>パッケージの更新速度の都合上、ブートストラップ標本数は10個</strong>としていますが、<font color="blue">95%信頼区間などを正確に計算したい場合は<strong>1000回（デフォルト）</strong></font>ほど必要です。
+ただし、データの特性や推定された<code>sigma</code>の大きさにも依存するので、<font color="blue">200回や500回でも、1000回と信頼区間がそれほど変わらない場合は、少なくても構いません。</font></p>
 <p>一方で<font color="blue">大まかな幅や各パラメータの相関関係だけを知りたい場合には、<strong>100回ほど</strong></font>でも問題ありません。</p>
 <p>ブートストラップ法ではVPA計算を繰り返し行うことから時間がかかるので、TMBの仕様を推奨します。最初にvpa計算する時に<code>TMB=T</code>にしておくと、以下のブートストラップ計算もTMBで行われます。</p>
 <div class="section level3">
 <h3 id="cpueのブートストラップ法について">1. CPUEのブートストラップ法について<a class="anchor" aria-label="anchor" href="#cpue%E3%81%AE%E3%83%96%E3%83%BC%E3%83%88%E3%82%B9%E3%83%88%E3%83%A9%E3%83%83%E3%83%97%E6%B3%95%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6"></a>
 </h3>
-<p>先述の通り、ブートストラップ法はデータをリサンプリングする方法ですが、VPAでは残差をリサンプリングすることで、データ（CPUE）を再生成します。 frasyrの中にはブートストラップ法を自動で行う<code>boo.vpa</code>関数がありますが、今回作成した<code>plot_resboot_vpa</code>関数内でも<code>boo.vpa</code>関数を使っています。したがって、<code>plot_resboot_vpa</code>関数に直接vpa計算結果のオブジェクトを入れてください。</p>
+<p>先述の通り、ブートストラップ法はデータをリサンプリングする方法ですが、VPAでは残差をリサンプリングすることで、データ（CPUE）を再生成します。
+frasyrの中にはブートストラップ法を自動で行う<code>boo.vpa</code>関数がありますが、今回作成した<code>plot_resboot_vpa</code>関数内でも<code>boo.vpa</code>関数を使っています。したがって、<code>plot_resboot_vpa</code>関数に直接vpa計算結果のオブジェクトを入れてください。</p>
 <ul>
 <li>
 <p>引数<code>B_method</code>でブートストラップ法の方法を変えることができます。基本はパラメトリックブートストラップで問題ありません。ノンパラメトリックブートストラップ法では残差を重複ありでランダムにデータに足し合わせて再生成します。一方、パラメトリックブートストラップは平均0、分散が残差の分散となるような正規分布から乱数でデータを生成して、それぞれ解析する方法です。</p>
 <ul>
 <li>
-<code>"p"</code>: パラメトリックブートストラップ法（デフォルト）</li>
+<code>"p"</code>:
+パラメトリックブートストラップ法（デフォルト）</li>
 <li>
 <code>"n"</code>: ノンパラメトリックブートストラップ法</li>
 <li>
-<code>"r"</code>: 残差のスムージング後にBootstrap-t法を行う方法。</li>
+<code>"r"</code>:
+残差のスムージング後にBootstrap-t法を行う方法。</li>
 </ul>
 </li>
 <li><p>引数<code>ci_range</code>で信頼区間の値を指定できます。デフォルトは0.95です（95％信頼区間の表記）。</p></li>
@@ -624,13 +680,14 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 <code class="sourceCode R"><span><span class="va">res_vpa_bootstrap</span><span class="op">$</span><span class="va">plot_biomass</span></span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-28-3.png" width="672"></p>
 <p>このようにSSB、加入量、バイオマスそれぞれについて95％信頼区間とともに資源動態の作図ができます。</p>
-<p>またブートストラップ法は資源量の信頼区間だけでなく、パラメータの信頼区間も算出出来ます。 ここでは最終年最高齢のFの信頼区間を出しています。</p>
+<p>またブートストラップ法は資源量の信頼区間だけでなく、パラメータの信頼区間も算出出来ます。
+ここでは最終年最高齢のFの信頼区間を出しています。</p>
 <div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">res_tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">numeric</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="kw">for</span><span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span> <span class="va">res_tmp</span><span class="op">[</span><span class="va">i</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">res_vpa_bootstrap</span><span class="op">$</span><span class="va">res_boot</span><span class="op">[[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="va">Fc.at.age</span><span class="op">[</span><span class="fl">4</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile</a></span><span class="op">(</span><span class="va">res_tmp</span>, probs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.025</span>,<span class="fl">0.5</span>,<span class="fl">0.975</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <pre><code>     2.5%       50%     97.5% 
-0.4914278 0.8683401 7.8211928 </code></pre>
+0.4029427 0.6957142 5.4147928 </code></pre>
 <p>この他、各パラメータの相関関係について、ブートストラップ標本を基にプロットが得られます。</p>
 <div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">res_vpa_bootstrap</span><span class="op">$</span><span class="va">plot_cor</span></span></code></pre></div>
@@ -639,7 +696,10 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 <div class="section level3">
 <h3 id="年齢別漁獲尾数について乱数生成する方法">2. 年齢別漁獲尾数について乱数生成する方法<a class="anchor" aria-label="anchor" href="#%E5%B9%B4%E9%BD%A2%E5%88%A5%E6%BC%81%E7%8D%B2%E5%B0%BE%E6%95%B0%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6%E4%B9%B1%E6%95%B0%E7%94%9F%E6%88%90%E3%81%99%E3%82%8B%E6%96%B9%E6%B3%95"></a>
 </h3>
-<p>VPAは年齢別漁獲尾数（catch at age）が真であると仮定して推定するため、catch at ageの不確実性を評価することが出来ないモデルです。 ここで紹介する<code>do_caaboot_vpa</code>関数は、引数として与えている年齢別漁獲尾数(<code>$input$dat$caa</code>)の対数を取った後、正規分布乱数で生成した年齢別漁獲尾数を用いて、再度VPA計算を行います。</p>
+<p>VPAは年齢別漁獲尾数（catch at
+age）が真であると仮定して推定するため、catch at
+ageの不確実性を評価することが出来ないモデルです。
+ここで紹介する<code>do_caaboot_vpa</code>関数は、引数として与えている年齢別漁獲尾数(<code>$input$dat$caa</code>)の対数を取った後、正規分布乱数で生成した年齢別漁獲尾数を用いて、再度VPA計算を行います。</p>
 <p>引数<code>B_cv</code>で乱数生成の変動係数を決めることができます。デフォルトで0.2となっていますが、年齢別漁獲尾数データの不確実性が大きいことが想定される場合、この値を適宜大きくして検討してみてください。</p>
 <div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">res_vpa_caaboot</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/do_caaboot_vpa.html">do_caaboot_vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>, B_ite <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
@@ -652,7 +712,8 @@ Likelihood with estimated parameters is:  23.60018 </code></pre>
 <code class="sourceCode R"><span><span class="va">res_vpa_caaboot</span><span class="op">$</span><span class="va">plot_biomass</span></span></code></pre></div>
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-31-3.png" width="672"></p>
 <p>一般に、VPAの資源量推定結果を信頼区間と重ねてプロットすると、先程の<code>res_vpa_bootstrap$plot_ssb</code>のように最近年で信頼区間が広く、過去にさかのぼるほど信頼区間は狭くなっています。</p>
-<p>これは決して過去の推定結果が正しいからではなく、確率変数として考えている資源量指数の不確実性を考慮しただけでは、最近の資源量の不確実性しか考慮できず、それより過去は正しいと仮定されている年齢別漁獲尾数データによって、決定的に求まっているだけなのです。 年齢別漁獲尾数の不確実性を考慮すると、時系列に関係なく資源量推定結果に不確実性があることが明らかになるかと思います。</p>
+<p>これは決して過去の推定結果が正しいからではなく、確率変数として考えている資源量指数の不確実性を考慮しただけでは、最近の資源量の不確実性しか考慮できず、それより過去は正しいと仮定されている年齢別漁獲尾数データによって、決定的に求まっているだけなのです。
+年齢別漁獲尾数の不確実性を考慮すると、時系列に関係なく資源量推定結果に不確実性があることが明らかになるかと思います。</p>
 </div>
 </div>
 <div class="section level2">

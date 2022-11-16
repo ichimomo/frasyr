@@ -60,7 +60,15 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">do_caaboot_vpa</span><span class="op">(</span><span class="va">res</span>, B_ite <span class="op">=</span> <span class="fl">1000</span>, B_cv <span class="op">=</span> <span class="fl">0.2</span>, ci_range <span class="op">=</span> <span class="fl">0.95</span>, detail <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">do_caaboot_vpa</span><span class="op">(</span></span>
+<span>  <span class="va">res</span>,</span>
+<span>  B_ite <span class="op">=</span> <span class="fl">1000</span>,</span>
+<span>  B_cv <span class="op">=</span> <span class="fl">0.2</span>,</span>
+<span>  ci_range <span class="op">=</span> <span class="fl">0.95</span>,</span>
+<span>  ess <span class="op">=</span> <span class="fl">200</span>,</span>
+<span>  detail <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  ci_fill <span class="op">=</span> <span class="st">"blue"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -81,8 +89,16 @@
 <dd><p>信頼区間の幅。デフォルトでは0.95（95％信頼区間）</p></dd>
 
 
+<dt>ess</dt>
+<dd><p>多項分布の乱数生成の有効サンプル数。デフォルトは200。</p></dd>
+
+
 <dt>detail</dt>
 <dd><p>TRUEの場合、個々のVPAの推定結果がリストで出力される</p></dd>
+
+
+<dt>ci_fill</dt>
+<dd><p>描画された信頼区間の色の指定。デフォルトは`"blue"`</p></dd>
 
 </dl></div>
     <div id="value">

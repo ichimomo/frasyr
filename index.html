@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
 <!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="pkgdown.css" rel="stylesheet">
 <script src="pkgdown.js"></script><meta property="og:title" content="Fisheries Research Agency (FRA) provides the method for calculating sustainable yield (SY) with R">
-<meta property="og:description" content="Estimating stock status with stock assessment models and calculating RPs and ABC for Japanese fisheries management">
+<meta property="og:description" content="This package estimates stock status with stock assessment models and calculating RPs and ABC for Japanese fisheries management.">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
@@ -111,11 +111,18 @@
 <li>v1.00 : future-rvpaから移動してきたほぼそのままのバージョン</li>
 <li>v1.10 : future.vpaにuse.MSEオプションを追加</li>
 <li>v1.20 : 2019年アジ・イワシ事前検討会用</li>
-<li>v2.00 : 2020年アジ・イワシ研究機関会議用(事前配布版)<ul><li>将来予測のメイン関数をfuture.vpaからfuture_vpaに移行。基本的な使い方は以下のマニュアルのリンク先を参照のこと</li></ul>
+<li>v2.00 : 2020年アジ・イワシ研究機関会議用(事前配布版)
+<ul>
+<li>将来予測のメイン関数をfuture.vpaからfuture_vpaに移行。基本的な使い方は以下のマニュアルのリンク先を参照のこと</li>
+</ul>
 </li>
-<li>v2.01 : 2020年アジ・イワシ研究機関会議用(最終版)<ul><li>fit.parでL1の場合のSDをRMSEに統一</li></ul>
+<li>v2.01 : 2020年アジ・イワシ研究機関会議用(最終版)
+<ul>
+<li>fit.parでL1の場合のSDをRMSEに統一</li>
+</ul>
 </li>
-<li>v2.1.0.0 : 2020年度資源評価会議用プロトタイプバージョン<ul>
+<li>v2.1.0.0 : 2020年度資源評価会議用プロトタイプバージョン
+<ul>
 <li>VPAを用いたモデル診断スクリプトをvignetteに追加</li>
 <li>途中でプラスグループが変わる（対馬マイワシ）VPAの計算を修正</li>
 <li>ほか、関数のテストを充実。</li>
