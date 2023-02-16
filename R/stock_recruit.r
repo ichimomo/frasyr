@@ -237,7 +237,8 @@ fit.SR <- function(SRdata,
                    plus_group = TRUE,
                    is_jitter = FALSE,
                    HS_fix_b = NULL,
-                   gamma=0.01
+                   gamma=0.01,
+                   bias_correct=FALSE # only for test and L2 option
 ){
   validate_sr(SR = SR, method = method, AR = AR, out.AR = out.AR)
 
@@ -336,7 +337,12 @@ fit.SR <- function(SRdata,
         for(i in 2:N) rss <- rss + w[i]*resid2[i]^2
         sd <- sqrt(rss/NN)
         sd2 <- c(sd/sqrt(1-rho^2), rep(sd,N-1))
-        obj <- -sum(w*dnorm(resid2,0,sd2,log=TRUE))
+        if(bias_correct==FALSE){
+            obj <- -sum(w*dnorm(resid2,0,sd2,log=TRUE))
+        }
+        else{
+            obj <- -sum(w*dnorm(resid2,-0.5*sd2^2,sd2,log=TRUE))
+        }
       } else {
         rss <- w[1]*abs(resid2[1])*sqrt(1-rho^2)
         for(i in 2:N) rss <- rss + w[i]*abs(resid2[i])
