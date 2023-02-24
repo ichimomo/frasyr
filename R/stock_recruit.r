@@ -341,7 +341,7 @@ fit.SR <- function(SRdata,
           obj <- -sum(w*dnorm(resid2,0,sd2,log=TRUE))
         }
         else{
-          resid2 <- resid-mean(resid)
+#          resid2 <- resid-mean(resid)
           rss <- w[1]*resid2[1]^2*(1-rho^2)
           for(i in 2:N) rss <- rss + w[i]*resid2[i]^2
           sd <-  sqrt(rss/NN)
