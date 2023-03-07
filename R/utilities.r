@@ -3216,7 +3216,7 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
   mean2 <- function(x) mean(x,na.rm=TRUE)
   fun_list2 <- list(cv     = function(x) sd(x, na.rm=TRUE)/mean(x,na.rm=TRUE),
                     mean   = function(x) mean(x,na.rm=TRUE),
-                    median   = function(x) mean(x,na.rm=TRUE),
+                    median   = function(x) median(x,na.rm=TRUE),
                     aav   = function(x) mean(abs(av(x)),na.rm=TRUE),
                     adr = function(x){ x0 <- av(x) ;
                                        x0[x0>0] <- NA ;
