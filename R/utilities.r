@@ -3148,20 +3148,21 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
   get_period_pm <- function(mat, fun_name, year_period, sum_fun_name, fun_name_char){
     tmp <- rownames(mat)%in%year_period
     if(sum(tmp)!=length(year_period)){
-      cat("year_period does not match future projection year\n"); return(NA)
+        cat("part of years does not match future projection year\n")
+        return(NA)
     }
     else{
       if(type=="PM"){
         if(fun_name_char==c("prob_limit_any")){
-          mat <- sweep(mat, 1, SBlimit, FUN="/")
+          mat <- sweep(mat, 2, SBlimit, FUN="/")
           SBlimit <- 1
         }
         if(fun_name_char==c("prob_ban_any")){
-          mat <- sweep(mat, 1, SBban, FUN="/")
+          mat <- sweep(mat, 2, SBban, FUN="/")
           SBban <- 1
         }
         if(fun_name_char==c("prob_min_any")){
-          mat <- sweep(mat, 1, SBmin, FUN="/")
+          mat <- sweep(mat, 2, SBmin, FUN="/")
           SBmin <- 1
         }                
       }
