@@ -3155,15 +3155,12 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
       if(type=="PM"){
         if(fun_name_char==c("prob_limit_any")){
           mat <- sweep(mat, 2, SBlimit, FUN="/")
-          SBlimit <- 1
         }
         if(fun_name_char==c("prob_ban_any")){
           mat <- sweep(mat, 2, SBban, FUN="/")
-          SBban <- 1
         }
         if(fun_name_char==c("prob_min_any")){
           mat <- sweep(mat, 2, SBmin, FUN="/")
-          SBmin <- 1
         }                
       }
       mat1 <- mat[tmp,]
@@ -3215,6 +3212,7 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
   }
 
   mean2 <- function(x) mean(x,na.rm=TRUE)
+    
   fun_list2 <- list(cv     = function(x) sd(x, na.rm=TRUE)/mean(x,na.rm=TRUE),
                     mean   = function(x) mean(x,na.rm=TRUE),
                     median   = function(x) median(x,na.rm=TRUE),
@@ -3227,10 +3225,19 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
                     min_value = function(x) min(x, na.rm=TRUE),
                     max_value = function(x) max(x, na.rm=TRUE),
                     prob_target_any  = function(x) ifelse(sum(x<SBtarget,na.rm=TRUE)>0,1,0),
-                    prob_limit_any  = function(x){ ifelse(sum(x<SBlimit,na.rm=TRUE)>0,1,0)},
+                    prob_limit_any  = function(x){
+                      if(type=="PM") SBlimit <- rep(1,length(x))
+                      ifelse(sum(x<SBlimit,na.rm=TRUE)>0,1,0)
+                    },
                     prob_half_any  = function(x) ifelse(sum(x[-1]<0.5*x[-length(x)])>0,1,0),
-                    prob_ban_any    = function(x) ifelse(sum(x<SBban,na.rm=TRUE)>0,1,0),
-                    prob_min_any    = function(x) ifelse(sum(x<SBmin,na.rm=TRUE)>0,1,0))
+                    prob_ban_any    = function(x){
+                      if(type=="PM") SBban <- rep(1,length(x))                      
+                      ifelse(sum(x<SBban,na.rm=TRUE)>0,1,0)
+                    },
+                    prob_min_any    = function(x){
+                      if(type=="PM") SBmin <- rep(1,length(x))                      
+                      ifelse(sum(x<SBmin,na.rm=TRUE)>0,1,0)
+                    })
 
   mat_list <- lst(ssb=ssb_mat, biom=biom_mat, catch=catch_mat)
   for(j in seq_len(length(fun_list2))){
@@ -3239,7 +3246,7 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
         stat_data,
         purrr::map_dfr(1:length(mat_list),
                        function(x)
-                         tibble(stat=str_c(names(fun_list2)[j],names(mat_list)[x],names(period_list)[i],sep="_"),
+                           tibble(stat=str_c(names(fun_list2)[j],names(mat_list)[x],names(period_list)[i],sep="_"),
                                 value=get_period_pm(mat_list[[x]], fun_list2[[j]], period_list[[i]], mean2, fun_name_char=names(fun_list2)[j])))
         )
     }}
