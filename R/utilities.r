@@ -3351,3 +3351,12 @@ check_fix_CVoption <- function(res_future){
   wcatch <- res_future$HCR_realized[,,"wcatch"]
   wcatch[-1,]/wcatch[-nrow(wcatch),]
 }
+        
+#' @export      
+
+format_type <- function(){
+    tribble(~name, ~col, ~ lty,
+            "target", "#00533E", "dashed",
+            "limit",  "#EDB918", "dotdash",
+            "ban",   "#C73C2E", "dotted")
+}
