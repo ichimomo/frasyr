@@ -1020,9 +1020,8 @@ plot_futures <- function(vpares=NULL,
 
   if("SSB" %in% what.plot){
     g1 <- g1 + geom_hline(data = ssb_RP,
-                          aes(yintercept = value,linetype=RP_name,color=RP_name),
-						  linetype=c(unlist(format_type()[1,3]),unlist(format_type()[2,3]),unlist(format_type()[3,3])),
-						  color = c(col.SBtarget, col.SBlim, col.SBban)))
+                          aes(yintercept = value, linetype = RP_name),
+                          color = c(col.SBtarget, col.SBlim, col.SBban))
   }
 
   if("catch" %in% what.plot){
@@ -1076,6 +1075,7 @@ plot_futures <- function(vpares=NULL,
               mapping=aes(x=year,y=mean),lwd=1,color="black")# VPAのプロット
   return(g1)
 }
+
 
 #' 複数の将来予測の結果をプロットする（ggplotは使わず）
 #'
@@ -1642,9 +1642,9 @@ plot_HCR <- function(SBtarget,SBlim,SBban,Ftarget,
   #Drawing of the funciton by ggplot2
   ggplct <- ggplot(data.frame(x = c(0,1.5*SBtarget),y= c(0,1.5*Ftarget)), aes(x=x)) +
     stat_function(fun = h,lwd=1.5,color=col.multi2currf, n=5000)
-  g <- ggplct  + geom_vline(xintercept = SBtarget, size = 0.9, linetype = "41", color = col.SBtarget) +
-    geom_vline(xintercept = SBlim, size = 0.9, linetype = "41", color = col.SBlim) +
-    geom_vline(xintercept = SBban, size = 0.9, linetype = "41", color = col.SBban) +
+  g <- ggplct  + geom_vline(xintercept = SBtarget, size = 0.9, linetype = unlist(format_type()[1,3]), color = col.SBtarget) +
+    geom_vline(xintercept = SBlim, size = 0.9, linetype = unlist(format_type()[2,3]), color = col.SBlim) +
+    geom_vline(xintercept = SBban, size = 0.9, linetype = unlist(format_type()[3,3]), color = col.SBban) +
     geom_hline(yintercept = Ftarget, size = 0.9, linetype = "43", color = col.Ftarget) +
     geom_hline(yintercept = beta*Ftarget, size = 0.7, linetype = "43", color = col.betaFtarget) +
     labs(x = str_c("親魚量 (",junit,"トン)"),y = "漁獲圧の比(F/Fmsy)",color = "") +
@@ -1756,9 +1756,9 @@ plot_HCR_by_catch <- function(trace,
     ggplot()+
     geom_line(aes(x=ssb.mean/biomass.unit,y=catch_HCR/biomass.unit),lwd=1)+
     theme_SH()+
-    geom_vline(xintercept = SBtarget/biomass.unit, size = 0.9, linetype = "41", color = col.SBtarget) +
-    geom_vline(xintercept = SBlim/biomass.unit, size = 0.9, linetype = "41", color = col.SBlim) +
-    geom_vline(xintercept = SBban/biomass.unit, size = 0.9, linetype = "41", color = col.SBban) +
+    geom_vline(xintercept = SBtarget/biomass.unit, size = 0.9, linetype = unlist(format_type()[1,3]), color = col.SBtarget) +
+    geom_vline(xintercept = SBlim/biomass.unit, size = 0.9, linetype = unlist(format_type()[2,3]), color = col.SBlim) +
+    geom_vline(xintercept = SBban/biomass.unit, size = 0.9, linetype = unlist(format_type()[3,3]), color = col.SBban) +
     #      geom_hline(yintercept = MSY/biomass.unit,color="gray")+
     xlab(str_c("親魚量 (",junit,"トン)"))+
     ylab(str_c("漁獲量 (",junit,"トン)"))
