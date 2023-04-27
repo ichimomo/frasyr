@@ -1020,8 +1020,9 @@ plot_futures <- function(vpares=NULL,
 
   if("SSB" %in% what.plot){
     g1 <- g1 + geom_hline(data = ssb_RP,
-                          aes(yintercept = value, linetype = RP_name),
-                          color = c(col.SBtarget, col.SBlim, col.SBban))
+                          aes(yintercept = value,linetype=RP_name,color=RP_name),
+						  linetype=c(unlist(format_type()[1,3]),unlist(format_type()[2,3]),unlist(format_type()[3,3])),
+						  color = c(col.SBtarget, col.SBlim, col.SBban)))
   }
 
   if("catch" %in% what.plot){
@@ -1300,7 +1301,7 @@ plot_yield <- function(MSY_obj,refs_base,
 
   g1 <- trace %>%
     ggplot2::ggplot()
-
+ 
   if(is.null(future.name)) future.name <- 1:length(future)
 
   if(is.null(refs.label)) {
@@ -1318,13 +1319,15 @@ plot_yield <- function(MSY_obj,refs_base,
     mutate(age=as.numeric(as.character(age)))
   age.label <- age.label %>%
     mutate(age_name=str_c(age,ifelse(age.label$age==max(age.label$age),plus.char,""),"歳"))
-
+  
+  legend.labels <- as.vector(age.label$age_name)
+  
   g1 <- g1 + geom_area(aes(x=ssb.mean,y=value,fill=`年齢`),col="black",alpha=0.5,lwd=1*0.3528) +
     #    geom_line(aes(x=ssb.mean,y=catch.CV,fill=age)) +
     #    scale_y_continuous(sec.axis = sec_axis(~.*5, name = "CV catch"))+
-    scale_fill_brewer() +
+    scale_fill_brewer(labels=rev(legend.labels)) +
     theme_bw() +
-    theme(legend.position = 'none') +
+    #theme(legend.position = 'none') +
     #    geom_point(data=refs_base,aes(y=Catch,x=SSB,shape=refs.label,color=refs.label),size=4)+
     #形は塗りつぶしができる形にすること
     scale_shape_manual(values = c(21, 24,5,10)) +
@@ -1333,10 +1336,10 @@ plot_yield <- function(MSY_obj,refs_base,
     theme(panel.grid = element_blank(),axis.text=element_text(color="black")) +
     coord_cartesian(xlim=c(0,xmax*xlim.scale),
                     ylim=c(0,ymax*ylim.scale),expand=0) +
-    geom_text(data=age.label,
-              mapping = aes(y = cumcatch, x = ssb.mean, label = age_name)#,
+    #geom_text(data=age.label,
+     #         mapping = aes(y = cumcatch, x = ssb.mean, label = age_name)#,
               #                            family = family
-    ) +
+    #) +
     #    geom_text_repel(data=refs_base,
     #                     aes(y=Catch,x=SSB,label=refs.label),
     #                     size=4,box.padding=0.5,segment.color="gray",
@@ -1414,7 +1417,7 @@ plot_yield <- function(MSY_obj,refs_base,
 
   if(isTRUE(lining)){
     #        ylim.scale.factor <- rep(c(0.94,0.97),ceiling(length(refs.label)/2))[1:length(refs.label)]
-    g1 <- g1 + geom_vline(xintercept=refs_base$SSB,lty="41",lwd=0.6,color=refs.color)+
+    g1 <- g1 + geom_vline(xintercept=refs_base$SSB,lty=c(unlist(format_type()[1,3]),unlist(format_type()[2,3]),unlist(format_type()[3,3])),lwd=0.6,color=refs.color)+
       ggrepel::geom_label_repel(data=refs_base,
                                 aes(y=ymax*ylim.scale*0.85,
                                     x=SSB,label=refs.label),
@@ -1548,7 +1551,7 @@ plot_kobe_gg <- plot_kobe <- function(FBdata=NULL,
                              y=c(-1,-1,1,1)),aes(x=x,y=y),fill=yellow.color)
 
   if(write.vline){
-    g4 <- g4 + geom_vline(xintercept=c(1,limit.ratio,ban.ratio),color=refs.color,lty="41",lwd=0.7)+
+    g4 <- g4 + geom_vline(xintercept=c(1,limit.ratio,ban.ratio),color=refs.color,lty=c(unlist(format_type()[1,3]),unlist(format_type()[2,3]),unlist(format_type()[3,3])),lwd=0.7)+
       ggrepel::geom_label_repel(data=tibble(x=c(1,limit.ratio,ban.ratio),
                                             y=max.F*0.85,
                                             label=RP.label),
