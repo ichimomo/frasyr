@@ -809,7 +809,7 @@ plot_futures <- function(vpares=NULL,
                          seed=1, # seed for selecting the above example
                          legend.position="top",
                          type="detail",
-                         font.size=18,
+                         font.size=16,
                          ncol=3,
                          remove.last.vpa.year = FALSE
 ){
@@ -1020,8 +1020,9 @@ plot_futures <- function(vpares=NULL,
 
   if("SSB" %in% what.plot){
     g1 <- g1 + geom_hline(data = ssb_RP,
-                          aes(yintercept = value, linetype = RP_name),
-                          color = c(col.SBtarget, col.SBlim, col.SBban))
+                          aes(yintercept = value,linetype=RP_name),
+						  color = c(col.SBtarget, col.SBlim, col.SBban))+
+						  scale_linetype_manual(name="",values=c("solid","dashed",unlist(format_type()[1,3])[[1]],unlist(format_type()[1,3])[[1]],unlist(format_type()[3,3])[[1]],unlist(format_type()[2,3])[[1]],unlist(format_type()[1,3])[[1]]))
   }
 
   if("catch" %in% what.plot){
