@@ -3217,13 +3217,18 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
                     mean   = function(x) mean(x,na.rm=TRUE),
                     median   = function(x) median(x,na.rm=TRUE),
                     aav   = function(x) mean(abs(av(x)),na.rm=TRUE),
+                    mav   = function(x) median(abs(av(x)),na.rm=TRUE),                    
                     adr = function(x){ x0 <- av(x) ;
                                        x0[x0>0] <- NA ;
                                        mean(x0,na.rm=TRUE)    },
                     mdr = calc_mdr_,
                     mdr0 = calc_mdr0_,
-                    min_value = function(x) min(x, na.rm=TRUE),
-                    max_value = function(x) max(x, na.rm=TRUE),
+                    min_value = function(x){
+                        if(all(is.na(x))) NA else min(x, na.rm=TRUE)
+                    },
+                    max_value = function(x){
+                        if(all(is.na(x))) NA else max(x, na.rm=TRUE)
+                    },
                     prob_target_any  = function(x) ifelse(sum(x<SBtarget,na.rm=TRUE)>0,1,0),
                     prob_limit_any  = function(x){
                       if(type=="PM") SBlimit <- rep(1,length(x))
