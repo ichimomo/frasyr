@@ -3044,7 +3044,7 @@ create_dummy_vpa <- function(res_vpa){
 #' @export
 #'
 
-calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmin=-1, MSY=-1, is_scale=FALSE, unit=1, period_extra=NULL, type="AS"){
+calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmin=-1, MSY=-1, is_scale=FALSE, unit=1, period_extra=NULL, type="AS", fun_period=mean){
     # by year performance (start_future_year:last_year)
     # mean, median, ci5%, ci10%, ci90%, ci95%, CV,
     # ssb, biomass, number by age, catch weight
@@ -3211,7 +3211,7 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
     }
   }
 
-  mean2 <- function(x) mean(x,na.rm=TRUE)
+  mean2 <- function(x) fun_period(x,na.rm=TRUE)
     
   fun_list2 <- list(cv     = function(x) sd(x, na.rm=TRUE)/mean(x,na.rm=TRUE),
                     mean   = function(x) mean(x,na.rm=TRUE),
