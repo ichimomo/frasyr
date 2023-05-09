@@ -1125,9 +1125,6 @@ plot_resboot_vpa <- function(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
   year <- res_boo[[1]]$index %>% colnames() %>% as.numeric()
   ssb_mat <- abund_mat <- biomass_mat <- matrix(NA, nrow = B_ite, ncol = length(year))
   cor_mat <- NULL
-  # cor_mat <- matrix(NA, nrow = B_ite,
-  #                   ncol = length(res_boo[[1]]$Fc.at.age)+#length(res_boo[[1]]$q)+
-  #                     length(res_boo[[1]]$b)+2)
   for(i in 1:B_ite){
     tmp <- res_boo[[i]]
     if(tmp[1]=="try-error")next
