@@ -1124,25 +1124,26 @@ plot_resboot_vpa <- function(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
 
   year <- res_boo[[1]]$index %>% colnames() %>% as.numeric()
   ssb_mat <- abund_mat <- biomass_mat <- matrix(NA, nrow = B_ite, ncol = length(year))
-  cor_mat <- matrix(NA, nrow = B_ite,
-                    ncol = length(res_boo[[1]]$Fc.at.age)+#length(res_boo[[1]]$q)+
-                      length(res_boo[[1]]$b)+2)
-  for(i in  1:B_ite){
+  cor_mat <- NULL
+  for(i in 1:B_ite){
     tmp <- res_boo[[i]]
     if(tmp[1]=="try-error")next
     ssb_mat[i,] <- colSums(tmp$ssb, na.rm = TRUE)
     abund_mat[i,] <- as.numeric(tmp$naa[1,])
     biomass_mat[i,] <- colSums(tmp$baa, na.rm = TRUE)
-    cor_mat[i, 1:length(tmp$Fc.at.age)] <- tmp$Fc.at.age
-    cor_mat[i, (length(tmp$Fc.at.age)+1):
-              (length(tmp$Fc.at.age)+length(tmp$b))] <- tmp$b
-    cor_mat[i, length(tmp$Fc.at.age)+length(tmp$b)+1] <- last(colSums(tmp$ssb))
-    cor_mat[i, length(tmp$Fc.at.age)+length(tmp$b)+2] <- last(tmp$naa[1,])
+    cor_num <- c(tmp$Fc.at.age, tmp$b, last(colSums(tmp$ssb)), last(as.numeric(tmp$naa[1,]))) %>%
+      unlist() %>% as.numeric()
     if(res$input$last.catch.zero){
-      cor_mat[i, length(tmp$Fc.at.age)+length(tmp$b)+1] <- tail(colSums(tmp$ssb),2)[1] %>% as.numeric()
-      cor_mat[i, length(tmp$Fc.at.age)+length(tmp$b)+2] <- tail(tmp$naa[1,],2)[1] %>% as.numeric()
-    }
-  }
+      cor_num <- c(tail(colSums(tmp$ssb),2)[1] %>% as.numeric(),
+                   tail(tmp$naa[1,],2)[1] %>% as.numeric())
+    } # if(res$input$last.catch.zero)
+    cor_mat <- rbind(cor_mat, cor_num)
+  } # for(i)
+  cor_mat <- as.data.frame(cor_mat)
+  rownames(cor_mat) <- str_c("ite",1:B_ite)
+  colnames(cor_mat) <- c(str_c("term.F_age",1:length(tmp$Fc.at.age)-1),
+                         str_c("b",1:length(tmp$b)),
+                         "SSB_last", "Recruitment_last")
 
   PB_value <- c((1-ci_range)/2, 0.5, 1-(1-ci_range)/2)
   d_ssb <- t(apply(ssb_mat, 2, quantile, probs = PB_value, na.rm = T))
@@ -1176,15 +1177,7 @@ plot_resboot_vpa <- function(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
 
 
   row_damy <- apply(cor_mat, 1, function(x) if(sum(is.nan(x))>=1)0 else 1)
-  if(class(which(row_damy == 0)) == "numeric") cor_mat <- cor_mat[-which(row_damy == 0),]
-  cor_mat <- as.data.frame(cor_mat)
-  names(cor_mat) <- c(paste0("term.F_age",1:length(tmp$Fc.at.age)-1),
-                      #                      paste0("q",1:length(tmp$q)),
-                      paste0("b",1:length(tmp$b)),
-                      #                      paste0("sigma",1:length(tmp$sigma)),
-                      paste0("SSB_last"),
-                      paste0("Recruitment_last")
-  )
+  if(any(row_damy == 0)) cor_mat <- cor_mat[-which(row_damy == 0),]
   cor_mat2 <- cor(cor_mat)
   g4 <- GGally::ggpairs(cor_mat) + theme_SH()
 
@@ -1192,6 +1185,7 @@ plot_resboot_vpa <- function(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
               plot_rec = g2,
               plot_biomass = g3,
               res_boot = res_boo,
+              res_par_boot = cor_mat,
               cor_mat = cor_mat2,
               plot_cor = g4
   ))

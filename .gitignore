@@ -42,3 +42,5 @@ inst/executable/*o
 inst/executable/*so
 
 
+/doc/
+/Meta/
