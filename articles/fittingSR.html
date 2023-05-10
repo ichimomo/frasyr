@@ -78,7 +78,7 @@
                         <h4 data-toc-skip class="author">Shota Nisijima
 &amp; Shin Fukui</h4>
             
-            <h4 data-toc-skip class="date">2022-11-16</h4>
+            <h4 data-toc-skip class="date">2023-05-10</h4>
       
       
       <div class="hidden name"><code>fittingSR.Rmd</code></div>
@@ -97,14 +97,14 @@
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">frasyr</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: replacing previous import 'magrittr::set_names' by 'purrr::set_names'</span></span>
 <span><span class="co">#&gt; when loading 'frasyr'</span></span>
-<span><span class="co">#&gt; Warning: replacing previous import 'EnvStats::qpareto' by 'rmutil::qpareto' when</span></span>
-<span><span class="co">#&gt; loading 'frasyr'</span></span>
-<span><span class="co">#&gt; Warning: replacing previous import 'EnvStats::ppareto' by 'rmutil::ppareto' when</span></span>
-<span><span class="co">#&gt; loading 'frasyr'</span></span>
-<span><span class="co">#&gt; Warning: replacing previous import 'EnvStats::rpareto' by 'rmutil::rpareto' when</span></span>
-<span><span class="co">#&gt; loading 'frasyr'</span></span>
-<span><span class="co">#&gt; Warning: replacing previous import 'EnvStats::dpareto' by 'rmutil::dpareto' when</span></span>
-<span><span class="co">#&gt; loading 'frasyr'</span></span>
+<span><span class="co">#&gt; Warning: replacing previous import 'EnvStats::rpareto' by 'rmutil::rpareto'</span></span>
+<span><span class="co">#&gt; when loading 'frasyr'</span></span>
+<span><span class="co">#&gt; Warning: replacing previous import 'EnvStats::ppareto' by 'rmutil::ppareto'</span></span>
+<span><span class="co">#&gt; when loading 'frasyr'</span></span>
+<span><span class="co">#&gt; Warning: replacing previous import 'EnvStats::qpareto' by 'rmutil::qpareto'</span></span>
+<span><span class="co">#&gt; when loading 'frasyr'</span></span>
+<span><span class="co">#&gt; Warning: replacing previous import 'EnvStats::dpareto' by 'rmutil::dpareto'</span></span>
+<span><span class="co">#&gt; when loading 'frasyr'</span></span>
 <span><span class="co">#&gt; Warning: replacing previous import 'assertthat::has_name' by 'tibble::has_name'</span></span>
 <span><span class="co">#&gt; when loading 'frasyr'</span></span>
 <span><span class="co">#&gt; Warning: replacing previous import 'rmutil::nesting' by 'tidyr::nesting' when</span></span>
@@ -174,7 +174,7 @@ AICc等の結果はfit.SRと比較できます。</p>
 <span></span>
 <span><span class="co">## プロットする。</span></span>
 <span><span class="op">(</span><span class="va">g2</span> <span class="op">=</span> <span class="fu"><a href="../reference/SRregime_plot.html">SRregime_plot</a></span><span class="op">(</span><span class="va">resR1</span>, regime.name <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Usual"</span>, <span class="st">"High"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Joining, by = c("Regime", "SSB", "R", "Category")</span></span></code></pre></div>
+<span><span class="co">#&gt; Joining with `by = join_by(Regime, SSB, R, Category)`</span></span></code></pre></div>
 <p><img src="fittingSR_files/figure-html/unnamed-chunk-6-1.png" width="700"></p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
@@ -201,7 +201,7 @@ AICc等の結果はfit.SRと比較できます。</p>
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.9000.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.9000.</p>
 </div>
 
       </footer>

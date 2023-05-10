@@ -69,7 +69,8 @@
 <span>  MSY <span class="op">=</span> <span class="op">-</span><span class="fl">1</span>,</span>
 <span>  is_scale <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  unit <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  period_extra <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  period_extra <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  type <span class="op">=</span> <span class="st">"AS"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -110,6 +111,10 @@
 <dt>period_extra</dt>
 <dd><p>デフォルトではSSBminなどを一度でも下回るなど、期間を指定して計算する統計量はABC_year + 0:9, 0:4, 5:9, 1:10, 1:4, 6:10で決め打ちしているが、それ以外の期間を指定したいときにここの引数で与える</p></dd>
 
+
+<dt>type</dt>
+<dd><p>"AS": age-structured from frasyr, "PM": production model from frapmr</p></dd>
+
 </dl></div>
 
   </div>
@@ -124,7 +129,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.9000.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.9000.</p>
 </div>
 
       </footer></div>
