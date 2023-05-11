@@ -2027,3 +2027,37 @@ retro.est2 <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE){
 
    return(list(Res=Res,retro.n=obj.n, retro.b=obj.b, retro.s=obj.s, retro.r=obj.r, retro.f=obj.f, mohn=mohn))
 }
+
+#' VPAの結果を受けて，バブルプロット(横軸が年，縦軸が年齢，バブルの大きさと色で値を示す）を生成する
+#'
+#' @param res VPAの出力
+#' @param target プロットしたい対象　例）"faa"や"naa"
+#' @param years プロットしたい年数　デフォルトはNULLで全年．例）１９９７：１９９９とすると１９９７～１９９９年のみプロット
+#' @param fix_ratio x軸とy軸のスケールの比．ここが２だと１：１になる
+#' @param max_size バブルの最大の大きさ
+#' @encoding UTF-8
+#' @export
+#'
+
+bubble_plot2 <- function(
+res,
+target="faa",
+years=NULL,
+fix_ratio=2, #x軸とy軸のスケールの比.ここが2だと１：１
+max_size=10#バブルの最大の大きさ
+){
+
+res00 <- res
+dat <- res00[names(res00)==paste0(target)]
+
+dat <- dat[[1]] %>% as.data.frame() %>% tibble::rownames_to_column("age") %>% pivot_longer(!age, names_to = "year", values_to = "value") %>% mutate_at(vars(year), as.factor)
+
+dat <- dat %>% mutate_at(vars(age), as.factor)
+dat$age <- factor(dat$age, levels=rev(levels(dat$age)))
+
+range <- range[1:(length(range)-1)]
+
+if(!is.null(years)) dat <- subset(dat, year %in% years)
+
+ggplot(dat,aes(x=year, y=age)) + geom_point(aes(size=value, fill=value), alpha = 0.75, shape = 21) +  coord_fixed(ratio=fix_ratio)+scale_size_continuous(limits = c(0.0001, 1.0001)*max(dat$value,na.rm=TRUE), range = c(1,max_size))+theme_bw() + theme(axis.text.x = element_text(angle = 90, hjust = 1), panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2)) + labs(x="Year", y="Age",size=paste0(target),fill=paste0(target))  +guides(color=c("none"),fill=guide_colourbar(reverse=TRUE))
+}
