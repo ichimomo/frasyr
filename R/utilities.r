@@ -3229,6 +3229,8 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
                     max_value = function(x){
                         if(all(is.na(x))) NA else max(x, na.rm=TRUE)
                     },
+                    # 以下、na.rm=FALSEに変更。PMで全てのデータがNAであった場合、na.rm=TRUEとすると0という数字が入ってしまうので、PMで使うならここはFALSEとすべき
+                    # ただし、一部だけNAが入るような場合にはどうすべきか？そういう事例がでたときに要検討
                     prob_target_any  = function(x) ifelse(sum(x<SBtarget,na.rm=FALSE)>0,1,0),
                     prob_limit_any  = function(x){
                       if(type=="PM") SBlimit <- rep(1,length(x))
