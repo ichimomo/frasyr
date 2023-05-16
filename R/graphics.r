@@ -1659,7 +1659,7 @@ plot_HCR <- function(SBtarget,SBlim,SBban,Ftarget,
     RPdata <- tibble(RP.label=RP.label, value=c(SBtarget, SBlim, SBban), y=c(1.1,1.05,1.05))
     g <- g + ggrepel::geom_label_repel(data=RPdata,
                                        mapping=aes(x=value, y=y, label=RP.label),
-                                       box.padding=0.5, nudge_y=1) +
+                                       box.padding=0.5, nudge_y=0.05) +
       geom_label(label="Fmsy", x=SBtarget*1.3, y=Ftarget)+
       geom_label(label=str_c(beta,"Fmsy"), x=SBtarget*1.3, y=beta*Ftarget)+
       ylim(0,1.3)
