@@ -2035,6 +2035,7 @@ retro.est2 <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE){
 #' @param years プロットしたい年数　デフォルトはNULLで全年．例）１９９７：１９９９とすると１９９７～１９９９年のみプロット
 #' @param fix_ratio x軸とy軸のスケールの比．ここが２だと１：１になる
 #' @param max_size バブルの最大の大きさ
+#' @param legend_position legendの位置（see `theme_SH`）
 #' @encoding UTF-8
 #' @export
 #'
@@ -2044,7 +2045,8 @@ res,
 target="faa",
 years=NULL,
 fix_ratio=2, #x軸とy軸のスケールの比.ここが2だと１：１
-max_size=10#バブルの最大の大きさ
+max_size=10, #バブルの最大の大きさ
+legend_position = "bottom" # legendの位置
 ){
 
 res00 <- res
@@ -2055,9 +2057,18 @@ dat <- dat[[1]] %>% as.data.frame() %>% tibble::rownames_to_column("age") %>% pi
 dat <- dat %>% mutate_at(vars(age), as.factor)
 dat$age <- factor(dat$age, levels=rev(levels(dat$age)))
 
-range <- range[1:(length(range)-1)]
+#range <- range[1:(length(range)-1)]
 
 if(!is.null(years)) dat <- subset(dat, year %in% years)
 
-ggplot(dat,aes(x=year, y=age)) + geom_point(aes(size=value, fill=value), alpha = 0.75, shape = 21) +  coord_fixed(ratio=fix_ratio)+scale_size_continuous(limits = c(0.0001, 1.0001)*max(dat$value,na.rm=TRUE), range = c(1,max_size))+theme_bw() + theme(axis.text.x = element_text(angle = 90, hjust = 1), panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2)) + labs(x="Year", y="Age",size=paste0(target),fill=paste0(target))  +guides(color=c("none"),fill=guide_colourbar(reverse=TRUE))
+ggplot(dat,aes(x=year, y=age)) +
+  geom_point(aes(size=value, fill=value), alpha = 0.75, shape = 21) +
+  coord_fixed(ratio=fix_ratio)+
+  scale_size_continuous(limits = c(0.0001, 1.0001)*max(dat$value,na.rm=TRUE), range = c(1,max_size))+
+  scale_fill_continuous(trans="reverse")+
+  labs(x="Year", y="Age",size=paste0(target),fill=paste0(target),fill=guide_colourbar(reverse=TRUE))  +
+  guides(color=c("none"))+
+  ggtitle(toupper(target))+
+  theme_SH(legend.position = legend_position) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1), panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2))
 }
