@@ -5,7 +5,14 @@
 \alias{bubble_plot2}
 \title{VPAの結果を受けて，バブルプロット(横軸が年，縦軸が年齢，バブルの大きさと色で値を示す）を生成する}
 \usage{
-bubble_plot2(res, target = "faa", years = NULL, fix_ratio = 2, max_size = 10)
+bubble_plot2(
+  res,
+  target = "faa",
+  years = NULL,
+  fix_ratio = 2,
+  max_size = 10,
+  legend_position = "bottom"
+)
 }
 \arguments{
 \item{res}{VPAの出力}
@@ -17,6 +24,8 @@ bubble_plot2(res, target = "faa", years = NULL, fix_ratio = 2, max_size = 10)
 \item{fix_ratio}{x軸とy軸のスケールの比．ここが２だと１：１になる}
 
 \item{max_size}{バブルの最大の大きさ}
+
+\item{legend_position}{legendの位置（see `theme_SH`）}
 }
 \description{
 VPAの結果を受けて，バブルプロット(横軸が年，縦軸が年齢，バブルの大きさと色で値を示す）を生成する
