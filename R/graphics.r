@@ -1323,7 +1323,7 @@ plot_yield <- function(MSY_obj,refs_base,
   
   legend.labels <- as.vector(age.label$age_name)
   
-  g1 <- g1 + geom_area(aes(x=ssb.mean,y=value,fill=`年齢`),col="black",alpha=0.5,lwd=1*0.3528) +
+  g1 <- g1 + geom_area(aes(x=ssb.mean,y=value,fill=`年齢`),col="black",alpha=0.5,lwd=1*0.3528,stat="identity") +
     #    geom_line(aes(x=ssb.mean,y=catch.CV,fill=age)) +
     #    scale_y_continuous(sec.axis = sec_axis(~.*5, name = "CV catch"))+
     scale_fill_brewer(labels=rev(legend.labels)) +
