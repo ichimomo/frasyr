@@ -39,6 +39,7 @@ Imports:
     patchwork,
     GGally, 
     splus2R,
+    scales,
 Suggests:
     knitr,
     rmarkdown,
