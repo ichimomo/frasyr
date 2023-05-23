@@ -2128,28 +2128,33 @@ autocalc_ridgevpa <- function(input,
       tmp_rho[names(tmp_rho)==target_retro] %>% as.numeric()
     }# search_lambda_vpa
 
-    penalty_set1 <- expand.grid(lambda = seq(0,1,bin), eta = seq(0,1,bin))
-    res1 <- purrr::map2(as.list(penalty_set1$lambda), as.list(penalty_set1$eta), search_lambda_vpa) %>%
-      as.numeric() %>% matrix(ncol = length(seq(0,1,bin)))
-    penalty_mat <- penalty_set1 %>%
-      bind_cols(mohn = res1) %>%
+    penalty_set <- expand.grid(lambda = seq(0,1,bin), eta = seq(0,1,bin))
+    res1 <- purrr::map2(as.list(penalty_set$lambda), as.list(penalty_set$eta), search_lambda_vpa) %>%
+      as.numeric()
+    penalty_mat <- penalty_set %>%
+      mutate(mohn = res1) %>%
       mutate(delta_mohn = abs(mohn)-min(abs(mohn)))
 
     g2 <- ggplot(penalty_mat %>%
                    mutate(delta_mohn = ifelse(delta_mohn>1,NA,delta_mohn)),
                  aes(x=eta, y=lambda, fill=delta_mohn)) +
       geom_tile()+
-      geom_text(aes(label = delta_mohn))
+      geom_text(aes(label = as.character(round(delta_mohn, 3))))+
+      geom_text(data = penalty_mat %>% filter(delta_mohn == 0),
+                aes(label = as.character(round(delta_mohn, 3))), color = "red")+
+      scale_fill_continuous(trans="reverse", na.value = "grey")
+
   } #if(is.null(eta))
 
 
   return(
     if(is.null(input$eta)){
-      list(min_lambda  = lambda_mat2$lambda[tmp_min],
+      list(min_penalty  = lambda_mat2$lambda[tmp_min],
            plot = g2,
            lambda_mat1 = lambda_mat1, lambda_mat2 = lambda_mat2)
     } else {
-
+      list(min_penalty  = penalty_mat %>% filter(delta_mohn == 0),
+           plot = g2, penalty_mat = penalty_mat)
     }
   ) # return()
 
