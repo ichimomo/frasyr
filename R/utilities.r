@@ -9,6 +9,7 @@
 #' @import stringr
 #' @import assertthat
 #' @import patchwork
+#' @import scales
 #' @importFrom magrittr %>%
 #' @importFrom magrittr %T>%
 #' @importFrom dplyr filter
