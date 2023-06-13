@@ -1,6 +1,6 @@
 include .env
 
-CR := ghcr.io/fra-dev-ops-bu
+CR := some-registry
 VERSION := $(shell git describe --tags --always --dirty)
 BRANCH := $(shell git symbolic-ref --short HEAD)
 
