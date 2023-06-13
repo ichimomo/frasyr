@@ -1,6 +1,6 @@
 include .env
 
-CR := some-registry
+CR := rindrics
 GIT_VERSION := $(shell git describe --tags --always --dirty)
 BRANCH := $(shell git symbolic-ref --short HEAD)
 VERSION := latest
