@@ -2028,6 +2028,7 @@ retro.est2 <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE){
    return(list(Res=Res,retro.n=obj.n, retro.b=obj.b, retro.s=obj.s, retro.r=obj.r, retro.f=obj.f, mohn=mohn))
 }
 
+
 #' VPAの結果を受けて，バブルプロット(横軸が年，縦軸が年齢，バブルの大きさと色で値を示す）を生成する
 #'
 #' @param res VPAの出力
@@ -2072,3 +2073,89 @@ ggplot(dat,aes(x=year, y=age)) +
   theme_SH(legend.position = legend_position) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1), panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2))
 }
+
+
+#' リッジVPAのλ探索の自動化
+#'
+#' @param input `vpa`関数の引数をlist形式で与える
+#' @param target_retro ペナルティλの選択に用いるmohn's rhoのパラメータ
+#' @param n_retro レトロスペクティブ解析で遡る年数。デフォルトは`5`
+#' @param b_fix レトロスペクティブ解析内でbを固定するか。デフォルトは`TRUE`
+#' @details etaのオプションに対応できているかは怪しい。
+
+autocalc_ridgevpa <- function(input,
+                              target_retro,
+                              n_retro = 5,
+                              b_fix   = TRUE,
+                              bin     = 0.1 # lambdaとetaのペナルティ探索の幅
+){
+  assert_that(target_retro %in% c("F", "B", "FAA"))
+
+  if(is.null(input$eta)){
+    search_lambda_vpa <- function(x){
+      input$lambda <- x
+      tmp          <- do.call(vpa,input)
+      tmp_rho      <- retro.est(tmp, n = n_retro, b.fix = b_fix)$mohn
+      tmp_rho[names(tmp_rho)==target_retro] %>% as.numeric()
+    }# search_lambda_vpa
+
+    lambda_set1 <- seq(0,1,0.1)
+    res1 <- purrr::map(as.list(lambda_set1), search_lambda_vpa) %>% as.numeric()
+    tmp_min <- which(abs(res1) == min(abs(res1)))
+    lambda_set2 <- seq(lambda_set1[tmp_min-1],lambda_set1[tmp_min+1],0.01)
+    res2 <- purrr::map(as.list(lambda_set2), search_lambda_vpa) %>% as.numeric()
+    tmp_min <- which(abs(res2) == min(abs(res2)))
+
+    lambda_mat1 <- data.frame(lambda = lambda_set1, mohn = res1) %>%
+      mutate(delta_mohn = abs(mohn)-min(abs(mohn)))
+    lambda_mat2 <- data.frame(lambda = lambda_set2, mohn = res2) %>%
+      mutate(delta_mohn = abs(mohn)-min(abs(mohn)))
+
+    g2 <- ggplot(lambda_mat2,
+                 aes(x=1, y=lambda, fill=delta_mohn)) +
+      geom_tile()+
+      geom_hline(aes(yintercept = lambda_mat2$lambda[tmp_min]))+
+      xlab("")+
+      coord_cartesian(xlim = c(0.75,1.25))
+  } #if(is.null(eta))
+
+  if(!is.null(input$eta)){
+    search_lambda_vpa <- function(x,y){
+      input$lambda <- x
+      input$eta    <- y
+      tmp          <- do.call(vpa,input)
+      tmp_rho      <- retro.est(tmp, n = n_retro, b.fix = b_fix)$mohn
+      tmp_rho[names(tmp_rho)==target_retro] %>% as.numeric()
+    }# search_lambda_vpa
+
+    penalty_set <- expand.grid(lambda = seq(0,1,bin), eta = seq(0,1,bin))
+    res1 <- purrr::map2(as.list(penalty_set$lambda), as.list(penalty_set$eta), search_lambda_vpa) %>%
+      as.numeric()
+    penalty_mat <- penalty_set %>%
+      mutate(mohn = res1) %>%
+      mutate(delta_mohn = abs(mohn)-min(abs(mohn)))
+
+    g2 <- ggplot(penalty_mat %>%
+                   mutate(delta_mohn = ifelse(delta_mohn>1,NA,delta_mohn)),
+                 aes(x=eta, y=lambda, fill=delta_mohn)) +
+      geom_tile()+
+      geom_text(aes(label = as.character(round(delta_mohn, 3))))+
+      geom_text(data = penalty_mat %>% filter(delta_mohn == 0),
+                aes(label = as.character(round(delta_mohn, 3))), color = "red")+
+      scale_fill_continuous(trans="reverse", na.value = "grey")
+
+  } #if(is.null(eta))
+
+
+  return(
+    if(is.null(input$eta)){
+      list(min_penalty  = lambda_mat2$lambda[tmp_min],
+           plot = g2,
+           lambda_mat1 = lambda_mat1, lambda_mat2 = lambda_mat2)
+    } else {
+      list(min_penalty  = penalty_mat %>% filter(delta_mohn == 0),
+           plot = g2, penalty_mat = penalty_mat)
+    }
+  ) # return()
+
+} #autocalc_ridgevpa
