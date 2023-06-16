@@ -2082,6 +2082,10 @@ ggplot(dat,aes(x=year, y=age)) +
 #' @param n_retro レトロスペクティブ解析で遡る年数。デフォルトは`5`
 #' @param b_fix レトロスペクティブ解析内でbを固定するか。デフォルトは`TRUE`
 #' @details etaのオプションに対応できているかは怪しい。
+#' @encoding UTF-8
+#'
+#' @export
+#'
 
 autocalc_ridgevpa <- function(input,
                               target_retro,
