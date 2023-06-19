@@ -1324,12 +1324,13 @@ plot_yield <- function(MSY_obj,refs_base,
   legend.labels <- as.vector(age.label$age_name)
   
   nb.cols <- length(unique(trace$age)) # 年齢グループが多い場合に対応できるように変更
-  mycolors <- grDevices::colorRampPalette(brewer.pal(8, "Blues"))(nb.cols)
+   mycolors <- grDevices::colorRampPalette(c("#F7FBFF", "#DEEBF7", "#C6DBEF", "#9ECAE1", "#6BAED6", "#4292C6",
+"#2171B5", "#084594"))(nb.cols)
   
   g1 <- g1 + geom_area(aes(x=ssb.mean,y=value,fill=`年齢`),col="black",alpha=0.5,lwd=1*0.3528,stat="identity") +
     #    geom_line(aes(x=ssb.mean,y=catch.CV,fill=age)) +
     #    scale_y_continuous(sec.axis = sec_axis(~.*5, name = "CV catch"))+
-    scale_fill_brewer(values=mycolors,labels=rev(legend.labels)) +
+    scale_fill_manual(values=mycolors,labels=rev(legend.labels)) +
     theme_bw() +
     #theme(legend.position = 'none') +
     #    geom_point(data=refs_base,aes(y=Catch,x=SSB,shape=refs.label,color=refs.label),size=4)+
