@@ -40,7 +40,7 @@ Imports:
     GGally, 
     splus2R,
     scales,
-  RcolorBrewer,
+   RcolorBrewer,
 Suggests:
     knitr,
     rmarkdown,
