@@ -17,17 +17,17 @@ pt1             <- 0.3528
 
 theme_SH <- function(legend.position="none",base_size=12){
 
-  if(isTRUE(stringr::str_detect(version$os, pattern="darwin"))){
-    font_MAC <- "HiraginoSans-W3"#"Japan1GothicBBB"#
-    theme_bw(base_size=base_size) +
-      theme(panel.grid = element_blank(),
-            axis.text.x=element_text(size=11,color="black"),
-            axis.text.y=element_text(size=11,color="black"),
-            axis.line.x=element_line(size= 0.3528),
-            axis.line.y=element_line(size= 0.3528),
-            legend.position=legend.position, text =element_text(family = font_MAC) )
-  }
-  else{
+  ## if(isTRUE(stringr::str_detect(version$os, pattern="darwin"))){
+  ##   font_MAC <- "HiraginoSans-W3"
+  ##   theme_bw(base_size=base_size) +
+  ##     theme(panel.grid = element_blank(),
+  ##           axis.text.x=element_text(size=11,color="black"),
+  ##           axis.text.y=element_text(size=11,color="black"),
+  ##           axis.line.x=element_line(size= 0.3528),
+  ##           axis.line.y=element_line(size= 0.3528),
+  ##           legend.position=legend.position, text =element_text(family = font_MAC) )
+  ## }
+  ## else{
     theme_bw(base_size=base_size) +
       theme(panel.grid = element_blank(),
             axis.text.x=element_text(size=11,color="black"),
@@ -36,7 +36,7 @@ theme_SH <- function(legend.position="none",base_size=12){
             axis.line.y=element_line(size= 0.3528),
             legend.position=legend.position)
 
-  }
+#  }
 }
 
 #' 会議用の図の出力関数（大きさ・サイズの指定済）：通常サイズ
