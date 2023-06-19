@@ -1013,7 +1013,7 @@ plot_futures <- function(vpares=NULL,
     geom_blank(data=dummy2,mapping=aes(y=value,x=year))+
     #theme_bw(base_size=font.size) +
     #        coord_cartesian(expand=0)+
-    scale_y_continuous(expand=expansion(mult=c(0,0.05)),labels = scales::comma)+
+    scale_y_continuous(expand=expand_scale(mult=c(0,0.05)),labels = scales::comma)+
     facet_wrap(~factor(jstat,levels=rename_list$jstat),scales="free_y",ncol=ncol)+
     xlab("年")+ylab("")+ labs(fill = "",linetype="",color="")+
     xlim(minyear,maxyear)

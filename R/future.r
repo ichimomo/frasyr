@@ -673,10 +673,10 @@ future_vpa_R <- function(naa_mat,
   if(is_maa_fun) when_maa_fun <- apply(maa_mat[,,1],2,sum)==0
 
   # setting for specific function for waa_fun
-  if(is_waa_fun && dimnames(waa_par_mat)[[3]]=="waa_fun_name"){
+  if(is_waa_fun && dimnames(waa_par_mat)[[3]][1]=="waa_fun_name"){
     update_waa_mat <- get(waa_par_mat[1,1,"waa_fun_name"])
   }
-  if(is_waa_catch_fun && dimnames(waa_catch_par_mat)[[3]]=="waa_catch_fun_name"){
+  if(is_waa_catch_fun && dimnames(waa_catch_par_mat)[[3]][1]=="waa_catch_fun_name"){
     update_waa_catch_mat <- get(waa_catch_par_mat[1,1,"waa_catch_fun_name"])
   }    
 

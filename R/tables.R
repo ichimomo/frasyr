@@ -437,7 +437,7 @@ export_tables <- function(to, ...) {
 
     purrr::map(purrr::map(list(...), add_blank_line_),
                readr::write_excel_csv,
-               path      = to,
+               file      = to,
                append    = TRUE,
                col_names = TRUE,
                delim     = ",") %>%
