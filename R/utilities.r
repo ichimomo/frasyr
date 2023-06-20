@@ -857,7 +857,7 @@ out.vpa <- function(res=NULL,    # VPA result
                                          out.AR = srres$input$out.AR)
     }
 
-    if(class(srres)=="fit.SR"){
+    if("fit.SR" %in% class(srres)){
       write("\n# SR fit data",file=csvname,append=T)
       srres$input$SRdata %>% as_tibble() %>%  mutate(weight=srres$input$w) %>%
         write_csv(path=csvname,append=T,col_names=TRUE)
@@ -866,7 +866,7 @@ out.vpa <- function(res=NULL,    # VPA result
       write_csv(sr_summary,path=csvname,append=T,
                 col_names=TRUE)
     }
-    if(class(srres)=="fit.SRregime"){
+    if("fit.SRregime" %in% class(srres)){
       write("\n# SR fit data",file=csvname,append=T)
       srres$input$SRdata %>% as_tibble() %>%  mutate(weight=srres$input$w) %>%
         write_csv(path=csvname,append=T,col_names=TRUE)
@@ -883,7 +883,7 @@ out.vpa <- function(res=NULL,    # VPA result
       # tentative
       write_csv(partable, path=csvname,append=T,col_names=TRUE)
     }
-    if(class(srres)=="SRfit.average"){
+    if("SRfit.average" %in% class(srres)){
       write("\n# SR fit data",file=csvname,append=T)
       srres[[1]]$input$SRdata %>% as_tibble() %>%  mutate(weight=srres$input$w) %>%
         write_csv(path=csvname, append=T, col_names=TRUE)
@@ -947,7 +947,7 @@ out.vpa <- function(res=NULL,    # VPA result
     kobeII.table_name <- names(kobeII)
     for(i in 1:length(kobeII.table_name)){
       tmptable <- kobeII[kobeII.table_name[i]][[1]]
-      if(!is.na(tmptable) && nrow(tmptable)>0){
+      if(nrow(tmptable)>0){
         write(str_c("\n# ",kobeII.table_name[i]),file=csvname,append=T)
         write_csv(tmptable,path=csvname,append=TRUE,
                   col_names = TRUE)

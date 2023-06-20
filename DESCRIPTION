@@ -40,6 +40,7 @@ Imports:
     GGally, 
     splus2R,
     scales,
+    ragg,
 Suggests:
     knitr,
     rmarkdown,
