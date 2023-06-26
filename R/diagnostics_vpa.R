@@ -643,7 +643,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_
     d_tmp[,(i+length(res$q)*1+4)] <- abund.extractor(abund = res$input$abund[i], naa = res$naa, faa = res$faa,
                                                      dat = res$input$dat,
                                                      min.age = res$input$min.age[i], max.age = res$input$max.age[i],
-                                                     link = res$input$link, base = res$input$base, af = res$input$af,
+                                                     link = res$input$link[i], base = res$input$base, af = res$input$af,
                                                      sel.def = res$input$sel.def, p.m=res$input$p.m,
                                                      omega=res$input$omega, scale=1) #res$input$scale)
                                                     #res$ssbはスケーリングしていない結果が出ている(2021/06/09KoHMB)
