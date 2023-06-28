@@ -754,8 +754,8 @@ vpa <- function(
     if(length(p.init) >= na[ny]-1) p.init <- p.init[1:na[ny]-1]  # 初期値の成分数が年齢数-1以上であれば，年齢数以上の値は使用しない
   }
 
-  #if (length(stat.tf)==1) stat.tf <- rep(stat.tf, na[ny]-1)  # stat.tfが1個だけ指定されているときは，全年齢その統計量を使う(delete)
-
+  assertthat::assert_that(length(stat.tf) == 1) # stat.tfがベクトルで与えられた場合にエラーを出す
+  
   # tuningの際のパラメータが1個だけ指定されている場合は，nindexの数だけ増やす
   if (isTRUE(tune)){
 
