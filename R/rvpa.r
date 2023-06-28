@@ -708,7 +708,12 @@ vpa <- function(
 
   if (use.index[1]!="all") {
     index <- index[use.index,,drop=FALSE]
-    if (length(use.index)!=length(abund)){
+    lens <- purrr::map_int(list(abund, min.age, max.age, link, base, af, index.w), length)
+    if (any(unique(lens) != nrow(index))) {
+      warning(paste("The arguments `abund`, `min.age`, `max.age`, `link`, `base`,",
+                    "`af`, and `index.w` should be the same length as 'nrow(dat$index)'.",
+                    "Otherwise, incorrect results may be returned when",
+                    "the argument `use.index` is specified as anything other than 'all'."))
       if (length(abund)>1) abund <- abund[use.index]
       if (length(min.age)>1) min.age <- min.age[use.index]
       if (length(max.age)>1) max.age <- max.age[use.index]
