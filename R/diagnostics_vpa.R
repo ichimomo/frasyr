@@ -640,7 +640,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_
     sd_resid_tmp <- resid_tmp/sd(resid_tmp, na.rm = TRUE) # 対数残差の標準化残差
 
     #abund.extractor関数で書き換え #catch.prop引数は不要か
-	if (use.index[1]!="all") {
+	if (res$input$use.index[1]!="all") {
 	d_tmp[,(i+length(res$q)*1+4)] <- abund.extractor(abund = res$input$abund[res$input$use.index[i]], naa = res$naa, faa = res$faa,
                                                      dat = res$input$dat,
                                                      min.age = res$input$min.age[res$input$use.index[i]], max.age = res$input$max.age[res$input$use.index[i]],
@@ -808,7 +808,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_
                                 0, max(tmp_data$pred, na.rm = T), length=100))
     predabund_g3[[i]] <- (as.numeric(predIndex_g3[[i]])/res$q[i])^(1/res$b[i])
     
-	if (use.index[1]!="all") {
+	if (res$input$use.index[1]!="all") {
 	tmp <- str_split(res$input$abund[res$input$use.index[i]], "") %>% unlist()
 	}else
 	{
