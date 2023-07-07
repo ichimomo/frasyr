@@ -640,6 +640,16 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_
     sd_resid_tmp <- resid_tmp/sd(resid_tmp, na.rm = TRUE) # 対数残差の標準化残差
 
     #abund.extractor関数で書き換え #catch.prop引数は不要か
+	if (res$input$use.index[1]!="all") {
+	d_tmp[,(i+length(res$q)*1+4)] <- abund.extractor(abund = res$input$abund[res$input$use.index[i]], naa = res$naa, faa = res$faa,
+                                                     dat = res$input$dat,
+                                                     min.age = res$input$min.age[res$input$use.index[i]], max.age = res$input$max.age[res$input$use.index[i]],
+                                                     link = res$input$link[res$input$use.index[i]], base = res$input$base, af = res$input$af,
+                                                     sel.def = res$input$sel.def, p.m=res$input$p.m,
+                                                     omega=res$input$omega, scale=1) #res$input$scale)
+                                                    #res$ssbはスケーリングしていない結果が出ている(2021/06/09KoHMB)
+	}
+	else{
     d_tmp[,(i+length(res$q)*1+4)] <- abund.extractor(abund = res$input$abund[i], naa = res$naa, faa = res$faa,
                                                      dat = res$input$dat,
                                                      min.age = res$input$min.age[i], max.age = res$input$max.age[i],
@@ -647,7 +657,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_
                                                      sel.def = res$input$sel.def, p.m=res$input$p.m,
                                                      omega=res$input$omega, scale=1) #res$input$scale)
                                                     #res$ssbはスケーリングしていない結果が出ている(2021/06/09KoHMB)
-
+    }
     d_tmp[,(i+length(res$q)*2+4)] <- res$pred.index[i,] # q*N^B計算結果
     d_tmp[,(i+length(res$q)*3+4)] <- resid_tmp
     d_tmp[,(i+length(res$q)*4+4)] <- sd_resid_tmp
@@ -681,7 +691,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_
   d_tmp <- as.data.frame(d_tmp)
   names(d_tmp) <- c("year", name_tmp1, "abundance",  "biomass", "ssb", name_tmp2,
                     name_tmp3, name_tmp4, name_tmp5, q_tmp, sig_tmp, b_tmp)
-
+  
   d_tidy <- tidyr::pivot_longer(d_tmp, col = c(-year, -abundance, -biomass, -ssb),
                                 names_to = c(".value", "Index_Label"),
                                 names_sep = "_",
@@ -692,7 +702,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_
     if(!length(index_name) == length(res$q)) stop(paste0("Length of index_name was different to the number of indices"))
     d_tidy$Index_Label <- rep(index_name, nrow(d_tmp))
   }
-
+ 
   # 自己相関係数推定
   rho.numeric <- signif.numeric <- numeric()
   for(i in 1:length(unique(d_tidy$Index_Label))){
@@ -797,9 +807,16 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_
                               seq(#min(tmp_data$pred, na.rm = T),
                                 0, max(tmp_data$pred, na.rm = T), length=100))
     predabund_g3[[i]] <- (as.numeric(predIndex_g3[[i]])/res$q[i])^(1/res$b[i])
+    
+	if (res$input$use.index[1]!="all") {
+	tmp <- str_split(res$input$abund[res$input$use.index[i]], "") %>% unlist()
+	}else
+	{
     tmp <- str_split(res$input$abund[i], "") %>% unlist()
+	}
     if(sum(tmp == "N") == 0) predabund_g3[[i]] <- predabund_g3[[i]]*res$input$scale
   }
+ 
   # 横軸に資源量（指数に合わせてSSBやNだったり）、縦軸に予測CPUEを
   # 線が描けるように、横軸100刻みほどでデータがある
   ab_Index_tmp <- data.frame(Index_Label = rep(unique(d_tidy$Index_Label), each = 100),
