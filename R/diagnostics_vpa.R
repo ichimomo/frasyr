@@ -928,10 +928,7 @@ do_jackknife_vpa <- function(res,
         input0 <- res$input
         input0$use.index <- input0$use.index[-i]
         #input0$dat$index <- res$input$dat$index[-i,]
-        input0$abund <- input0$abund[-i]
         input0$plot <- FALSE
-        input0$sigma.const <- input0$sigma.const[-i]
-        input0$sigma.constraint <- input0$sigma.constraint[-i]
         res_tmp <- safe_call(vpa, input0, force=TRUE)  # vpa関数の実行
 
         res_list[[i]] <- res_tmp
