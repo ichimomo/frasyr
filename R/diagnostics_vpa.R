@@ -691,7 +691,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_
   d_tmp <- as.data.frame(d_tmp)
   names(d_tmp) <- c("year", name_tmp1, "abundance",  "biomass", "ssb", name_tmp2,
                     name_tmp3, name_tmp4, name_tmp5, q_tmp, sig_tmp, b_tmp)
-  
+
   d_tidy <- tidyr::pivot_longer(d_tmp, col = c(-year, -abundance, -biomass, -ssb),
                                 names_to = c(".value", "Index_Label"),
                                 names_sep = "_",
@@ -702,7 +702,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_
     if(!length(index_name) == length(res$q)) stop(paste0("Length of index_name was different to the number of indices"))
     d_tidy$Index_Label <- rep(index_name, nrow(d_tmp))
   }
- 
+
   # 自己相関係数推定
   rho.numeric <- signif.numeric <- numeric()
   for(i in 1:length(unique(d_tidy$Index_Label))){
@@ -807,7 +807,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_
                               seq(#min(tmp_data$pred, na.rm = T),
                                 0, max(tmp_data$pred, na.rm = T), length=100))
     predabund_g3[[i]] <- (as.numeric(predIndex_g3[[i]])/res$q[i])^(1/res$b[i])
-    
+
 	if (res$input$use.index[1]!="all") {
 	tmp <- str_split(res$input$abund[res$input$use.index[i]], "") %>% unlist()
 	}else
@@ -816,7 +816,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_
 	}
     if(sum(tmp == "N") == 0) predabund_g3[[i]] <- predabund_g3[[i]]*res$input$scale
   }
- 
+
   # 横軸に資源量（指数に合わせてSSBやNだったり）、縦軸に予測CPUEを
   # 線が描けるように、横軸100刻みほどでデータがある
   ab_Index_tmp <- data.frame(Index_Label = rep(unique(d_tidy$Index_Label), each = 100),
@@ -904,6 +904,18 @@ do_jackknife_vpa <- function(res,
         input0$sigma.const <- input0$sigma.const[-i]
         input0$sigma.constraint <- input0$sigma.constraint[-i]
         res_tmp <- safe_call(vpa, input0, force=TRUE)  # vpa関数の実行
+        if(any(res_tmp$term.f > 10)){
+          input0$p.init <- as.numeric(res$faa[,ncol(res$faa)])
+          res_tmp <- safe_call(vpa, input0, force=TRUE)
+        }
+        if(any(res_tmp$term.f > 10)){
+          input0$p.init <- input0$p.init * 1.5
+          res_tmp <- safe_call(vpa, input0, force=TRUE)
+        }
+        if(any(res_tmp$term.f > 10)){
+          input0$p.init <- input0$p.init * 0.5
+          res_tmp <- safe_call(vpa, input0, force=TRUE)
+        }
 
         res_list[[i]] <- res_tmp
         abund_tmp[[i]] <- apply(res_tmp$naa,2,sum)
@@ -930,6 +942,18 @@ do_jackknife_vpa <- function(res,
         #input0$dat$index <- res$input$dat$index[-i,]
         input0$plot <- FALSE
         res_tmp <- safe_call(vpa, input0, force=TRUE)  # vpa関数の実行
+        if(any(res_tmp$term.f > 10)){
+          input0$p.init <- as.numeric(res$faa[,ncol(res$faa)])
+          res_tmp <- safe_call(vpa, input0, force=TRUE)
+        }
+        if(any(res_tmp$term.f > 10)){
+          input0$p.init <- input0$p.init * 1.5
+          res_tmp <- safe_call(vpa, input0, force=TRUE)
+        }
+        if(any(res_tmp$term.f > 10)){
+          input0$p.init <- input0$p.init * 0.5
+          res_tmp <- safe_call(vpa, input0, force=TRUE)
+        }
 
         res_list[[i]] <- res_tmp
         abund_tmp[[i]] <- apply(res_tmp$naa,2,sum)
@@ -960,6 +984,18 @@ do_jackknife_vpa <- function(res,
           input0$dat$index[i,] <- index_tmp
           input0$plot <- FALSE
           res_tmp <- safe_call(vpa, input0, force=TRUE)  # vpa関数の実行
+          if(any(res_tmp$term.f > 10)){
+            input0$p.init <- as.numeric(res$faa[,ncol(res$faa)])
+            res_tmp <- safe_call(vpa, input0, force=TRUE)
+          }
+          if(any(res_tmp$term.f > 10)){
+            input0$p.init <- input0$p.init * 1.5
+            res_tmp <- safe_call(vpa, input0, force=TRUE)
+          }
+          if(any(res_tmp$term.f > 10)){
+            input0$p.init <- input0$p.init * 0.5
+            res_tmp <- safe_call(vpa, input0, force=TRUE)
+          }
 
           if(i == 1){
             res_list[[j]] <- res_tmp
@@ -1009,6 +1045,18 @@ do_jackknife_vpa <- function(res,
           input0$dat$index[use.index_tmp,] <- index_tmp
           input0$plot <- FALSE
           res_tmp <- safe_call(vpa, input0, force=TRUE)  # vpa関数の実行
+          if(any(res_tmp$term.f > 10)){
+            input0$p.init <- as.numeric(res$faa[,ncol(res$faa)])
+            res_tmp <- safe_call(vpa, input0, force=TRUE)
+          }
+          if(any(res_tmp$term.f > 10)){
+            input0$p.init <- input0$p.init * 1.5
+            res_tmp <- safe_call(vpa, input0, force=TRUE)
+          }
+          if(any(res_tmp$term.f > 10)){
+            input0$p.init <- input0$p.init * 0.5
+            res_tmp <- safe_call(vpa, input0, force=TRUE)
+          }
 
           if(i == 1){
             res_list[[j]] <- res_tmp
@@ -1098,7 +1146,8 @@ do_jackknife_vpa <- function(res,
   if(!is.null(scale_value)) g4 <- g4 + scale_shape_manual(values = scale_value)
   ## ----------------------------------------------------------------- ##
   return(list(JKplot_vpa = gg,
-              JKplot_par = g4
+              JKplot_par = g4,
+              res_vpa    = res_list
               # 一応オブジェクト残しているが、JKplot_vpaで事足りるな...
   ))
 } # function(do_jackknife_vpa)
