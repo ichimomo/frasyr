@@ -885,7 +885,8 @@ do_jackknife_vpa <- function(res,
     used_index <- res$input$dat$index
   } else {
     used_index <- res$input$dat$index[res$input$use.index,]
-  } # 7月7日加筆（浜辺）vpa関数の引数use.index対策
+  }
+  # 2023/7/20 use.indexで管理するので不要か？（浜辺）
 
   year <- as.numeric(colnames(res$input$dat$index))
   res_list <- list()
@@ -898,11 +899,12 @@ do_jackknife_vpa <- function(res,
       name_tmp <- rep(NA, length = length(row.names(res$input$dat$index)))
       for(i in 1:length(name_tmp)){
         input0 <- res$input
-        input0$dat$index <- res$input$dat$index[-i,]
-        input0$abund <- input0$abund[-i]
-        input0$plot <- FALSE
-        input0$sigma.const <- input0$sigma.const[-i]
-        input0$sigma.constraint <- input0$sigma.constraint[-i]
+        input0$use.index <- c(1:nrow(input0$dat$index))[-i]
+        # input0$dat$index <- res$input$dat$index[-i,]
+        # input0$abund <- input0$abund[-i]
+        # input0$plot <- FALSE
+        # input0$sigma.const <- input0$sigma.const[-i]
+        # input0$sigma.constraint <- input0$sigma.constraint[-i]
         res_tmp <- safe_call(vpa, input0, force=TRUE)  # vpa関数の実行
         if(any(res_tmp$term.f > 10)){
           input0$p.init <- as.numeric(res$faa[,ncol(res$faa)])
@@ -940,7 +942,7 @@ do_jackknife_vpa <- function(res,
         input0 <- res$input
         input0$use.index <- input0$use.index[-i]
         #input0$dat$index <- res$input$dat$index[-i,]
-        input0$plot <- FALSE
+        #input0$plot <- FALSE
         res_tmp <- safe_call(vpa, input0, force=TRUE)  # vpa関数の実行
         if(any(res_tmp$term.f > 10)){
           input0$p.init <- as.numeric(res$faa[,ncol(res$faa)])
