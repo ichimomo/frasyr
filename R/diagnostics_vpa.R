@@ -905,18 +905,18 @@ do_jackknife_vpa <- function(res,
         # input0$plot <- FALSE
         # input0$sigma.const <- input0$sigma.const[-i]
         # input0$sigma.constraint <- input0$sigma.constraint[-i]
-        res_tmp <- safe_call(vpa, input0, force=TRUE)  # vpa関数の実行
+        res_tmp <- suppressWarnings(safe_call(vpa, input0, force=TRUE))
         if(any(res_tmp$term.f > 10)){
           input0$p.init <- as.numeric(res$faa[,ncol(res$faa)])
-          res_tmp <- safe_call(vpa, input0, force=TRUE)
+          res_tmp <- suppressWarnings(safe_call(vpa, input0, force=TRUE))
         }
         if(any(res_tmp$term.f > 10)){
           input0$p.init <- input0$p.init * 1.5
-          res_tmp <- safe_call(vpa, input0, force=TRUE)
+          res_tmp <- suppressWarnings(safe_call(vpa, input0, force=TRUE))
         }
         if(any(res_tmp$term.f > 10)){
           input0$p.init <- input0$p.init * 0.5
-          res_tmp <- safe_call(vpa, input0, force=TRUE)
+          res_tmp <- suppressWarnings(safe_call(vpa, input0, force=TRUE))
         }
 
         res_list[[i]] <- res_tmp
@@ -943,18 +943,18 @@ do_jackknife_vpa <- function(res,
         input0$use.index <- input0$use.index[-i]
         #input0$dat$index <- res$input$dat$index[-i,]
         #input0$plot <- FALSE
-        res_tmp <- safe_call(vpa, input0, force=TRUE)  # vpa関数の実行
+        res_tmp <- suppressWarnings(safe_call(vpa, input0, force=TRUE))
         if(any(res_tmp$term.f > 10)){
           input0$p.init <- as.numeric(res$faa[,ncol(res$faa)])
-          res_tmp <- safe_call(vpa, input0, force=TRUE)
+          res_tmp <- suppressWarnings(safe_call(vpa, input0, force=TRUE))
         }
         if(any(res_tmp$term.f > 10)){
           input0$p.init <- input0$p.init * 1.5
-          res_tmp <- safe_call(vpa, input0, force=TRUE)
+          res_tmp <- suppressWarnings(safe_call(vpa, input0, force=TRUE))
         }
         if(any(res_tmp$term.f > 10)){
           input0$p.init <- input0$p.init * 0.5
-          res_tmp <- safe_call(vpa, input0, force=TRUE)
+          res_tmp <- suppressWarnings(safe_call(vpa, input0, force=TRUE))
         }
 
         res_list[[i]] <- res_tmp
