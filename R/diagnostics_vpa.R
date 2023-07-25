@@ -886,7 +886,6 @@ do_jackknife_vpa <- function(res,
   } else {
     used_index <- res$input$dat$index[res$input$use.index,]
   }
-  # 2023/7/20 use.indexで管理するので不要か？（浜辺）
 
   year <- as.numeric(colnames(res$input$dat$index))
   res_list <- list()
@@ -894,82 +893,41 @@ do_jackknife_vpa <- function(res,
 
   if(method == "index"){
     if(length(used_index[,1]) == 1) stop(paste0('The number of indicies is only 1 !!'))
-
-    if(res$input$use.index[1] == "all"){
-      name_tmp <- rep(NA, length = length(row.names(res$input$dat$index)))
-      for(i in 1:length(name_tmp)){
-        input0 <- res$input
-        input0$use.index <- c(1:nrow(input0$dat$index))[-i]
-        # input0$dat$index <- res$input$dat$index[-i,]
-        # input0$abund <- input0$abund[-i]
-        # input0$plot <- FALSE
-        # input0$sigma.const <- input0$sigma.const[-i]
-        # input0$sigma.constraint <- input0$sigma.constraint[-i]
-        res_tmp <- suppressWarnings(safe_call(vpa, input0, force=TRUE))
-        if(any(res_tmp$term.f > 10)){
-          input0$p.init <- as.numeric(res$faa[,ncol(res$faa)])
-          res_tmp <- suppressWarnings(safe_call(vpa, input0, force=TRUE))
-        }
-        if(any(res_tmp$term.f > 10)){
-          input0$p.init <- input0$p.init * 1.5
-          res_tmp <- suppressWarnings(safe_call(vpa, input0, force=TRUE))
-        }
-        if(any(res_tmp$term.f > 10)){
-          input0$p.init <- input0$p.init * 0.5
-          res_tmp <- suppressWarnings(safe_call(vpa, input0, force=TRUE))
-        }
-
-        res_list[[i]] <- res_tmp
-        abund_tmp[[i]] <- apply(res_tmp$naa,2,sum)
-        ssb_tmp[[i]] <- apply(res_tmp$ssb,2,sum)
-        biom_tmp[[i]] <- apply(res_tmp$baa,2,sum)
-        tf_tmp[[i]] <- res_tmp$faa[,ncol(res_tmp$faa)]
-
-        if(i <= 9){
-          name_tmp[i] <- paste0('Removed index0',i)
-        } else {
-          name_tmp[i] <- paste0('Removed index',i)
-        }
-      } #for(i) データの種類について
+    res_list <-
+      purrr::map(as.list(1:nrow(used_index)),
+                 function(ite){
+                   input0                  <- res$input
+                   if(res$input$use.index[1] == "all"){
+                     input0$use.index <- (1:nrow(used_index))[-ite]
+                   } else {
+                     input0$use.index <- input0$use.index[-ite]
+                   }
+                   input0$plot <- FALSE
+                   res_tmp <- do.call(vpa, input0)
+                   if(any(res_tmp$term.f > 10)){
+                     input0$p.init <- as.numeric(res$faa[,ncol(res$faa)])
+                     res_tmp <- suppressWarnings(safe_call(vpa, input0, force=TRUE))
+                   }
+                   if(any(res_tmp$term.f > 10)){
+                     input0$p.init <- input0$p.init * 1.5
+                     res_tmp <- suppressWarnings(safe_call(vpa, input0, force=TRUE))
+                   }
+                   if(any(res_tmp$term.f > 10)){
+                     input0$p.init <- input0$p.init * 0.5
+                     res_tmp <- suppressWarnings(safe_call(vpa, input0, force=TRUE))
+                   }
+                   res_tmp
+                 }) # map()
+    abund_tmp <- purrr::map(res_list, function(x)colSums(x$naa))
+    ssb_tmp   <- purrr::map(res_list, function(x)colSums(x$ssb))
+    biom_tmp  <- purrr::map(res_list, function(x)colSums(x$baa))
+    tf_tmp    <- purrr::map(res_list, function(x)x$faa[,ncol(x$faa)])
+    if(nrow(used_index) <= 9){
+      name_tmp <- str_c('Removed index0',1:nrow(used_index))
     } else {
-      # use.indexに指定がある場合用のif文分岐の追加
-      ## ------------------------------------------------ ##
-      # ここエラー出ないようにコンサバにコーディングしてます
-      # 2021年度までにはここ修正加えたい
-      ## ------------------------------------------------ ##
-      name_tmp <- rep(NA, length = length(row.names(used_index)))
-      for(i in 1:length(name_tmp)){
-        input0 <- res$input
-        input0$use.index <- input0$use.index[-i]
-        #input0$dat$index <- res$input$dat$index[-i,]
-        #input0$plot <- FALSE
-        res_tmp <- suppressWarnings(safe_call(vpa, input0, force=TRUE))
-        if(any(res_tmp$term.f > 10)){
-          input0$p.init <- as.numeric(res$faa[,ncol(res$faa)])
-          res_tmp <- suppressWarnings(safe_call(vpa, input0, force=TRUE))
-        }
-        if(any(res_tmp$term.f > 10)){
-          input0$p.init <- input0$p.init * 1.5
-          res_tmp <- suppressWarnings(safe_call(vpa, input0, force=TRUE))
-        }
-        if(any(res_tmp$term.f > 10)){
-          input0$p.init <- input0$p.init * 0.5
-          res_tmp <- suppressWarnings(safe_call(vpa, input0, force=TRUE))
-        }
-
-        res_list[[i]] <- res_tmp
-        abund_tmp[[i]] <- apply(res_tmp$naa,2,sum)
-        ssb_tmp[[i]] <- apply(res_tmp$ssb,2,sum)
-        biom_tmp[[i]] <- apply(res_tmp$baa,2,sum)
-        tf_tmp[[i]] <- res_tmp$faa[,ncol(res_tmp$faa)]
-
-        if(i <= 9){
-          name_tmp[i] <- paste0('Removed index0',i)
-        } else {
-          name_tmp[i] <- paste0('Removed index',i)
-        }
-      } #for(i) データの種類について
-    }
+      name_tmp <- c(str_c('Removed index0',1:9),
+                    str_c('Removed index',10:nrow(used_index)))
+    }# if()
 
   } else if(method == "all"){ ####-----------------------------------------------------####
 
