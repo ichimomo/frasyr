@@ -49,3 +49,35 @@ test_that("bootstrap using use.index options", {
 })
 
 
+context("jackknife")
+
+test_that("extract data test", {
+  data("res_vpa_estb")
+  testinput                  <- res_vpa_estb$input
+  testinput$use.index        <- "all"
+  testinput$dat$index        <- testinput$dat$index[-1,]
+  testinput$abund            <- testinput$abund[-1]
+  testinput$min.age          <- testinput$min.age[-1]
+  testinput$max.age          <- testinput$max.age[-1]
+  testinput$sigma.const      <- testinput$sigma.const[-1]
+  testinput$sigma.constraint <- testinput$sigma.constraint[-1]
+  testinput$link             <- testinput$link[-1]
+  if(!is.na(testinput$base)) testinput$base <- testinput$base[-1]
+  if(!is.na(testinput$af)) testinput$af <- testinput$af[-1]
+  if(!is.null(testinput$index.w)) testinput$index.w <- testinput$index.w[-1]
+  testinput$plot <- FALSE
+  res_test <- do.call(vpa, testinput)
+  res_JK   <- do_jackknife_vpa(res_vpa_estb, method = "index")
+  # use.indexで管理すると以下はズレるので注意 ~~~~~~~~~~~~~~~~~ ##
+  expect_equal(nrow(res_test$input$dat$index), nrow(res_JK$res_vpa$`Removed index01`$input$dat$index))
+  expect_equal((res_test$input$dat$index), (res_JK$res_vpa$`Removed index01`$input$dat$index))
+  expect_equal(res_test$input$abund, res_JK$res_vpa$`Removed index01`$input$abund)
+  expect_equal(res_test$input$min.age, res_JK$res_vpa$`Removed index01`$input$min.age)
+  expect_equal(res_test$input$max.age, res_JK$res_vpa$`Removed index01`$input$max.age)
+  expect_equal(res_test$input$sigma.constraint, res_JK$res_vpa$`Removed index01`$input$sigma.constraint)
+  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+  expect_equal(colSums(res_test$naa), colSums(res_JK$res_vpa$`Removed index01`$naa))
+  expect_equal(colSums(res_test$ssb), colSums(res_JK$res_vpa$`Removed index01`$ssb))
+  expect_equal(colSums(res_test$baa), colSums(res_JK$res_vpa$`Removed index01`$baa))
+})
+
