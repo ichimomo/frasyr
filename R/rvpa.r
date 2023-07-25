@@ -469,6 +469,17 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
    return(list(q=q, b=rep(1,np), sigma=sigma, obj=obj, convergence=convergence))
 }
 
+length2 <- function(x, ncpue){
+  if(length(x)==1){
+    if(is.na(x))  res <- ncpue  # naだったら条件にひっかからないようにresを定義
+  } else if (is.null(x)){
+    res <- ncpue  # nullだったら条件にひっかからないようにresを定義
+  } else{
+    res <- length(x)
+  }
+  return(res)
+}
+
 
 #' VPAによる資源計算を実施する
 #'
@@ -708,12 +719,18 @@ vpa <- function(
 
   if (use.index[1]!="all") {
     index <- index[use.index,,drop=FALSE]
-    lens <- purrr::map_int(list(abund, min.age, max.age, link, base, af, index.w), length)
-    if (any(unique(lens) != nrow(index))) {
+    lens <- purrr::map_int(list(abund, min.age, max.age, link, base, af, index.w),
+                           function(x)length2(x, nrow(dat$index)))
+    #lens <- purrr::map_int(list(abund, min.age, max.age, link, base, af, index.w), length)
+    if (any(unique(lens) != nrow(dat$index))) {
+      # dat$indexの行数と引数で与えているベクトル数が違う場合にミスしている可能性がある
       warning(paste("The arguments `abund`, `min.age`, `max.age`, `link`, `base`,",
                     "`af`, and `index.w` should be the same length as 'nrow(dat$index)'.",
                     "Otherwise, incorrect results may be returned when",
                     "the argument `use.index` is specified as anything other than 'all'."))
+    }
+    if (any(unique(lens) != nrow(index))) {
+      # これはfrasyrの仕様で、dat$index[use.index,,]と引数のベクトル数が違う場合にuse.indexが動作
       if (length(abund)>1) abund <- abund[use.index]
       if (length(min.age)>1) min.age <- min.age[use.index]
       if (length(max.age)>1) max.age <- max.age[use.index]
@@ -760,7 +777,7 @@ vpa <- function(
   }
 
   assertthat::assert_that(length(stat.tf) == 1) # stat.tfがベクトルで与えられた場合にエラーを出す
-  
+
   # tuningの際のパラメータが1個だけ指定されている場合は，nindexの数だけ増やす
   if (isTRUE(tune)){
 
