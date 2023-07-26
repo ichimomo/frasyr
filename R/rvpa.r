@@ -1549,9 +1549,13 @@ Ft <- mean(faa[,ny],na.rm=TRUE)
   Fc.max <- max(Fc.at.age,na.rm=TRUE)
 
   res <- list(input=arglist, term.f=term.f, np=np, minimum=out$minimum, minimum.c=out$minimum.c, logLik=logLik, gradient=gradient, code=code, q=q, b=b, sigma=sigma, convergence=convergence, message=message, hessian=hessian, Ft=Ft, Fc.at.age=Fc.at.age, Fc.mean=Fc.mean, Fc.max=Fc.max, last.year=last.year, Pope=Pope, ssb.coef=ssb.coef, pred.index=pred.index, wcaa=caa*waa.catch,naa=naa, faa=faa, baa=baa, ssb=ssb, saa=saa)
-
+  
+  invisible(res2 <- list(input=arglist, use.index=use.index, abund=abund, min.age=min.age, max.age=max.age, link=link, base=base, af=af, index.w=index.w, q=q, naa=naa, faa=faa, baa=baa, ssb=ssb, pred.index=pred.index, sigma=sigma, b=b)) #use.indexを考慮し，実際にVPAのチューニングで与えた値
+  
+  print(list(use.index=use.index, abund=abund, min.age=min.age, max.age=max.age, link=link, base=base, af=af, index.w=index.w))
+  
   if (isTRUE(plot) & isTRUE(tune)){
-    graph <- try(plot_residual_vpa(res, index_name = NULL, plot_year = plot.year)) # plot.yearに対応する引数を追加してください
+    graph <- try(plot_residual_vpa(res2, index_name = NULL, plot_year = plot.year)) # plot.yearに対応する引数を追加してください
     if(class(graph)=="try-error"){
       for (i in 1:nindex){
         Y <- years %in% plot.year

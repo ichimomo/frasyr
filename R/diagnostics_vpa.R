@@ -616,6 +616,8 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_
   } else {
     assertthat::assert_that(is.numeric(res$input$use.index)|res$input$use.index=="all")
   }
+  
+ 
   # x軸の範囲
   if(is.numeric(plot_year)) xlim_year <- c(min(plot_year), max(plot_year)) else xlim_year <- c(min(as.numeric(colnames(res_vpa_estb$naa))), max(as.numeric(colnames(res_vpa_estb$naa))))
 
@@ -633,31 +635,22 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_
   name_tmp1 <- name_tmp2 <- name_tmp3 <- name_tmp4 <- name_tmp5 <- numeric()
 
   for(i in 1:length(res$q)){
-    if(length(res$input$min.age)==1) min_age_tmp <- res$input$min.age[1] else min_age_tmp <- res$input$min.age[i]
-    if(length(res$input$min.age)==1) max_age_tmp <- res$input$max.age[1] else max_age_tmp <- res$input$max.age[i]
+    if(length(res$min.age)==1) min_age_tmp <- res$min.age[1] else min_age_tmp <- res$min.age[i]
+    if(length(res$min.age)==1) max_age_tmp <- res$max.age[1] else max_age_tmp <- res$max.age[i]
 
     resid_tmp <- log(d_tmp[,i+1]) - log(res$pred.index[i,]) # 対数残差
     sd_resid_tmp <- resid_tmp/sd(resid_tmp, na.rm = TRUE) # 対数残差の標準化残差
 
     #abund.extractor関数で書き換え #catch.prop引数は不要か
-	if (res$input$use.index[1]!="all") {
-	d_tmp[,(i+length(res$q)*1+4)] <- abund.extractor(abund = res$input$abund[res$input$use.index[i]], naa = res$naa, faa = res$faa,
+	#use.indexを使用した場合のif文は必要なくなったので消去
+	d_tmp[,(i+length(res$q)*1+4)] <- abund.extractor(abund = res$abund[i], naa = res$naa, faa = res$faa,
                                                      dat = res$input$dat,
-                                                     min.age = res$input$min.age[res$input$use.index[i]], max.age = res$input$max.age[res$input$use.index[i]],
-                                                     link = res$input$link[res$input$use.index[i]], base = res$input$base, af = res$input$af,
+                                                     min.age = res$min.age[i], max.age = res$max.age[i],
+                                                     link = res$link[i], base = res$base, af = res$af,
                                                      sel.def = res$input$sel.def, p.m=res$input$p.m,
                                                      omega=res$input$omega, scale=1) #res$input$scale)
                                                     #res$ssbはスケーリングしていない結果が出ている(2021/06/09KoHMB)
-	}
-	else{
-    d_tmp[,(i+length(res$q)*1+4)] <- abund.extractor(abund = res$input$abund[i], naa = res$naa, faa = res$faa,
-                                                     dat = res$input$dat,
-                                                     min.age = res$input$min.age[i], max.age = res$input$max.age[i],
-                                                     link = res$input$link[i], base = res$input$base, af = res$input$af,
-                                                     sel.def = res$input$sel.def, p.m=res$input$p.m,
-                                                     omega=res$input$omega, scale=1) #res$input$scale)
-                                                    #res$ssbはスケーリングしていない結果が出ている(2021/06/09KoHMB)
-    }
+	
     d_tmp[,(i+length(res$q)*2+4)] <- res$pred.index[i,] # q*N^B計算結果
     d_tmp[,(i+length(res$q)*3+4)] <- resid_tmp
     d_tmp[,(i+length(res$q)*4+4)] <- sd_resid_tmp
