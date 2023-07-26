@@ -896,13 +896,13 @@ do_jackknife_vpa <- function(res,
     res_list <-
       purrr::map(as.list(1:nrow(used_index)),
                  function(ite){
-                   input0                  <- res$input
+                   input0 <- res$input
+                   input0$plot <- FALSE
                    if(res$input$use.index[1] == "all"){
                      input0$use.index <- (1:nrow(used_index))[-ite]
                    } else {
                      input0$use.index <- input0$use.index[-ite]
                    }
-                   input0$plot <- FALSE
                    res_tmp <- do.call(vpa, input0)
                    if(any(res_tmp$term.f > 10)){
                      input0$p.init <- as.numeric(res$faa[,ncol(res$faa)])
