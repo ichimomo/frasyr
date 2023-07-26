@@ -469,17 +469,6 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
    return(list(q=q, b=rep(1,np), sigma=sigma, obj=obj, convergence=convergence))
 }
 
-length2 <- function(x, ncpue){
-  if(length(x)==1){
-    if(is.na(x))  res <- ncpue  # naだったら条件にひっかからないようにresを定義
-  } else if (is.null(x)){
-    res <- ncpue  # nullだったら条件にひっかからないようにresを定義
-  } else{
-    res <- length(x)
-  }
-  return(res)
-}
-
 
 #' VPAによる資源計算を実施する
 #'
@@ -716,20 +705,33 @@ vpa <- function(
   ages <- dimnames(caa)[[1]]  # 年齢
 
   if (class(index)=="numeric") index <- t(as.matrix(index))
+  
+# tuningの際のパラメータが1個だけ指定されている場合は，nindexの数だけ増やす
+  if (isTRUE(tune)){
 
+    nindex <- nrow(index)
+
+    if (nindex > length(abund) & length(abund)==1) abund <- rep(abund, nindex)
+    if (nindex > length(min.age) & length(min.age)==1) min.age <- rep(min.age, nindex)
+    if (nindex > length(max.age) & length(max.age)==1) max.age <- rep(max.age, nindex)
+    if (nindex > length(link) & length(link)==1) link <- rep(link, nindex)
+    if (nindex > length(base) & length(base)==1) base <- rep(base, nindex)
+
+    if (is.null(index.w)) index.w <- rep(1, nindex)
+    if (!is.na(af[1])) if(nindex > length(af) & length(af)==1) af <- rep(af, nindex)
+
+    q <- rep(NA, nindex)
+  }
+
+# nindexの数だけtuningの際のパラメータを増やしたのちに，use.indexを使用する場合は，use.indexで指定した部分だけを抜き出して計算する．  
   if (use.index[1]!="all") {
     index <- index[use.index,,drop=FALSE]
-    lens <- purrr::map_int(list(abund, min.age, max.age, link, base, af, index.w),
-                           function(x)length2(x, nrow(dat$index)))
-    #lens <- purrr::map_int(list(abund, min.age, max.age, link, base, af, index.w), length)
-    if (any(unique(lens) != nrow(dat$index))) {
-      # dat$indexの行数と引数で与えているベクトル数が違う場合にミスしている可能性がある
-      warning(paste("The arguments `abund`, `min.age`, `max.age`, `link`, `base`,",
-                    "`af`, and `index.w` should be the same length as 'nrow(dat$index)'.",
-                    "Otherwise, incorrect results may be returned when",
-                    "the argument `use.index` is specified as anything other than 'all'."))
-    }
-    if (any(unique(lens) != nrow(index))) {
+	nindex <- nrow(index)
+	q <- rep(NA, nindex)
+
+  #以前追加したwarningは削除．何故なら，この前の部分で， nrow(index)と同じ長さだけのベクトルをtuningの際のパラメータに与える仕様にしているため．
+
+    if(length(use.index)!=length(abund)){
       # これはfrasyrの仕様で、dat$index[use.index,,]と引数のベクトル数が違う場合にuse.indexが動作
       if (length(abund)>1) abund <- abund[use.index]
       if (length(min.age)>1) min.age <- min.age[use.index]
@@ -777,24 +779,6 @@ vpa <- function(
   }
 
   assertthat::assert_that(length(stat.tf) == 1) # stat.tfがベクトルで与えられた場合にエラーを出す
-
-  # tuningの際のパラメータが1個だけ指定されている場合は，nindexの数だけ増やす
-  if (isTRUE(tune)){
-
-    nindex <- nrow(index)
-
-    if (nindex > length(abund) & length(abund)==1) abund <- rep(abund, nindex)
-    if (nindex > length(min.age) & length(min.age)==1) min.age <- rep(min.age, nindex)
-    if (nindex > length(max.age) & length(max.age)==1) max.age <- rep(max.age, nindex)
-    if (nindex > length(link) & length(link)==1) link <- rep(link, nindex)
-    if (nindex > length(base) & length(base)==1) base <- rep(base, nindex)
-
-    if (is.null(index.w)) index.w <- rep(1, nindex)
-    if (!is.na(af[1])) if(nindex > length(af) & length(af)==1) af <- rep(af, nindex)
-
-    q <- rep(NA, nindex)
-  }
-
 
   # selectivityを更新する場合にfaa0，naa0が与えられていれば，それを使う
    if (!isTRUE(sel.update)){
@@ -1143,7 +1127,7 @@ if (isTRUE(madara)){
     {
         Abund <- nn <- sigma <- b <- NULL
         for (i in 1:nindex)
-        {
+        {    
             abundance <- abund.extractor(abund=abund[i], naa, faa, dat, min.age=min.age[i], max.age=max.age[i], link=link[i], base=base[i], af=af[i], catch.prop=catch.prop, sel.def=sel.def, p.m=p.m, omega=omega, scale=scale)
             if (!is.null(remove.abund)) {
               abundance <- abundance - as.numeric(remove.abund[i,])
