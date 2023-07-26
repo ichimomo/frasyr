@@ -607,7 +607,26 @@ do_estcheck_vpa <- function(res, n_ite = 10, sd_jitter = 1, what_plot = NULL, TM
 
 # author: Kohei Hamabe
 
-plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_year = FALSE, plot_scale = FALSE, resid_CI=TRUE, plotAR=FALSE){
+plot_residual_vpa <- function(
+    res,
+    index_name = NULL,
+    plot_smooth = FALSE,
+    plot_year = FALSE,
+    plot_scale = FALSE,
+    resid_CI=TRUE,
+    plotAR=FALSE){
+  input <- res$input
+  input_plot_residual <- list(input = input, #use.indexを考慮し，実際にVPAのチューニングで与えた値
+                              use.index = input$use.index, abund = input$abund, min.age = input$min.age,
+                              max.age = input$max.age, link = input$link, base = input$base,
+                              af = input$af, index.w = input$index.w,
+                              q = res$q, naa = res$naa, faa = res$faa, baa = res$baa, ssb = res$ssb,
+                              pred.index = res$pred.index, sigma = res$sigma, b = res$b)
+  plot_residual_vpa2(res = input_plot_residual, index_name = index_name, plot_smooth = plot_smooth, plot_year = plot_year, plot_scale = plot_scale, resid_CI = resid_CI, plotAR = plotAR)
+}
+
+
+plot_residual_vpa2 <- function(res, index_name = NULL, plot_smooth = FALSE, plot_year = FALSE, plot_scale = FALSE, resid_CI=TRUE, plotAR=FALSE){
   if(is.numeric(res$input$use.index)){
     assertthat::assert_that(length(res$input$dat$index[,1]) >= length(res$input$use.index))
     used_index <- res$input$dat$index[res$input$use.index,]
@@ -616,8 +635,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_
   } else {
     assertthat::assert_that(is.numeric(res$input$use.index)|res$input$use.index=="all")
   }
-  
- 
+
   # x軸の範囲
   if(is.numeric(plot_year)) xlim_year <- c(min(plot_year), max(plot_year)) else xlim_year <- c(min(as.numeric(colnames(res_vpa_estb$naa))), max(as.numeric(colnames(res_vpa_estb$naa))))
 
@@ -629,7 +647,6 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_
   d_tmp[,(2+length(res$q))] <- as.numeric(apply(res$naa, 2, sum))
   d_tmp[,(3+length(res$q))] <- as.numeric(apply(res$baa, 2, sum))
   d_tmp[,(4+length(res$q))] <- as.numeric(apply(res$ssb, 2, sum))
-
 
   q_tmp <- b_tmp <- sig_tmp <- numeric()
   name_tmp1 <- name_tmp2 <- name_tmp3 <- name_tmp4 <- name_tmp5 <- numeric()
@@ -650,7 +667,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_
                                                      sel.def = res$input$sel.def, p.m=res$input$p.m,
                                                      omega=res$input$omega, scale=1) #res$input$scale)
                                                     #res$ssbはスケーリングしていない結果が出ている(2021/06/09KoHMB)
-	
+
     d_tmp[,(i+length(res$q)*2+4)] <- res$pred.index[i,] # q*N^B計算結果
     d_tmp[,(i+length(res$q)*3+4)] <- resid_tmp
     d_tmp[,(i+length(res$q)*4+4)] <- sd_resid_tmp
@@ -726,7 +743,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_
       geom_ribbon(aes(x = year, ymin = -qnorm(0.1)*sigma, ymax = qnorm(0.1)*sigma), alpha=0.1)+
       geom_point(aes(x=year, y=resid, colour = Index_Label), size = 2) +
       facet_wrap(~Index_Label, scale = if(plot_scale) "free" else "fixed")+
-      geom_hline(yintercept = 0, size = 1)+
+      geom_hline(yintercept = 0, linewidth = 1)+
       xlab("Year") +
       xlim(xlim_year) +
       ylab("log(Residual)") +
@@ -741,7 +758,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_
       geom_ribbon(aes(x = year, ymin = -qnorm(0.1), ymax = qnorm(0.1)), alpha=0.1)+
       geom_point(aes(x=year, y=sd.resid, colour = Index_Label), size = 2) +
       facet_wrap(~Index_Label, scale = if(plot_scale) "fixed" else "free")+
-      geom_hline(yintercept = 0, size = 1)+
+      geom_hline(yintercept = 0, linewidth = 1)+
       xlab("Year") +
       xlim(xlim_year) +
       ylab("log(Residual)") +
@@ -755,7 +772,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_
     g1 <- ggplot(d_tidy) +
       geom_point(aes(x=year, y=resid, colour = Index_Label), size = 2) +
       facet_wrap(~Index_Label, scale = if(plot_scale) "free" else "fixed")+
-      geom_hline(yintercept = 0, size = 1)+
+      geom_hline(yintercept = 0, linewidth = 1)+
       xlab("Year") +
       xlim(xlim_year) +
       ylab("log(Residual)") +
@@ -768,7 +785,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_
     g1_sd <- ggplot(d_tidy) +
       geom_point(aes(x=year, y=sd.resid, colour = Index_Label), size = 2) +
       facet_wrap(~Index_Label, scale = if(plot_scale) "fixed" else "free")+
-      geom_hline(yintercept = 0, size = 1)+
+      geom_hline(yintercept = 0, linewidth = 1)+
       xlab("Year") +
       xlim(xlim_year) +
       ylab("log(Residual)") +
@@ -784,7 +801,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_
 
   g2 <- ggplot(d_tidy) +
     geom_point(aes(x=year, y=obs, colour = Index_Label), size = 2) +
-    geom_line(aes(x=year, y=pred, colour = Index_Label), size = 1) +
+    geom_line(aes(x=year, y=pred, colour = Index_Label), linewidth = 1) +
     facet_wrap(~Index_Label, scale="free") +
     xlim(xlim_year) + ylim(0, NA) +
     ylab("Abundance index") +
