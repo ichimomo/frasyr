@@ -705,7 +705,7 @@ vpa <- function(
   ages <- dimnames(caa)[[1]]  # 年齢
 
   if (class(index)=="numeric") index <- t(as.matrix(index))
-  
+
 # tuningの際のパラメータが1個だけ指定されている場合は，nindexの数だけ増やす
   if (isTRUE(tune)){
 
@@ -723,7 +723,7 @@ vpa <- function(
     q <- rep(NA, nindex)
   }
 
-# nindexの数だけtuningの際のパラメータを増やしたのちに，use.indexを使用する場合は，use.indexで指定した部分だけを抜き出して計算する．  
+# nindexの数だけtuningの際のパラメータを増やしたのちに，use.indexを使用する場合は，use.indexで指定した部分だけを抜き出して計算する．
   if (use.index[1]!="all") {
     index <- index[use.index,,drop=FALSE]
 	nindex <- nrow(index)
@@ -732,7 +732,6 @@ vpa <- function(
   #以前追加したwarningは削除．何故なら，この前の部分で， nrow(index)と同じ長さだけのベクトルをtuningの際のパラメータに与える仕様にしているため．
 
     if(length(use.index)!=length(abund)){
-      # これはfrasyrの仕様で、dat$index[use.index,,]と引数のベクトル数が違う場合にuse.indexが動作
       if (length(abund)>1) abund <- abund[use.index]
       if (length(min.age)>1) min.age <- min.age[use.index]
       if (length(max.age)>1) max.age <- max.age[use.index]
@@ -1127,7 +1126,7 @@ if (isTRUE(madara)){
     {
         Abund <- nn <- sigma <- b <- NULL
         for (i in 1:nindex)
-        {    
+        {
             abundance <- abund.extractor(abund=abund[i], naa, faa, dat, min.age=min.age[i], max.age=max.age[i], link=link[i], base=base[i], af=af[i], catch.prop=catch.prop, sel.def=sel.def, p.m=p.m, omega=omega, scale=scale)
             if (!is.null(remove.abund)) {
               abundance <- abundance - as.numeric(remove.abund[i,])
