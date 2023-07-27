@@ -620,7 +620,7 @@ vpa <- function(
   d = 0.0001,  # 石岡・岸田/平松の方法の収束判定基準
   min.caa = 0.001,   # caaに0があるとき，0をmin.caaで置き換える
   plot = FALSE,   # tuningに使った資源量指数に対するフィットのプロット
-  plot.year = 1998:2015,   # 上のプロットの参照年
+  plot.year = NULL,   # 上のプロットの参照年
   term.F = "max",   # terminal Fの何を推定するか: "max" or "all"
   plus.group = TRUE,
   stat.tf = "mean",  # 最終年のFを推定する統計量（年齢で同じとする）
@@ -706,14 +706,32 @@ vpa <- function(
 
   if (class(index)=="numeric") index <- t(as.matrix(index))
 
+# tuningの際のパラメータが1個だけ指定されている場合は，nindexの数だけ増やす
+  if (isTRUE(tune)){
+
+    nindex <- nrow(index)
+
+    if (nindex > length(abund) & length(abund)==1) abund <- rep(abund, nindex)
+    if (nindex > length(min.age) & length(min.age)==1) min.age <- rep(min.age, nindex)
+    if (nindex > length(max.age) & length(max.age)==1) max.age <- rep(max.age, nindex)
+    if (nindex > length(link) & length(link)==1) link <- rep(link, nindex)
+    if (nindex > length(base) & length(base)==1) base <- rep(base, nindex)
+
+    if (is.null(index.w)) index.w <- rep(1, nindex)
+    if (!is.na(af[1])) if(nindex > length(af) & length(af)==1) af <- rep(af, nindex)
+
+    q <- rep(NA, nindex)
+  }
+
+# nindexの数だけtuningの際のパラメータを増やしたのちに，use.indexを使用する場合は，use.indexで指定した部分だけを抜き出して計算する．
   if (use.index[1]!="all") {
     index <- index[use.index,,drop=FALSE]
-    lens <- purrr::map_int(list(abund, min.age, max.age, link, base, af, index.w), length)
-    if (any(unique(lens) != nrow(index))) {
-      warning(paste("The arguments `abund`, `min.age`, `max.age`, `link`, `base`,",
-                    "`af`, and `index.w` should be the same length as 'nrow(dat$index)'.",
-                    "Otherwise, incorrect results may be returned when",
-                    "the argument `use.index` is specified as anything other than 'all'."))
+	nindex <- nrow(index)
+	q <- rep(NA, nindex)
+
+  #以前追加したwarningは削除．何故なら，この前の部分で， nrow(index)と同じ長さだけのベクトルをtuningの際のパラメータに与える仕様にしているため．
+
+    if(length(use.index)!=length(abund)){
       if (length(abund)>1) abund <- abund[use.index]
       if (length(min.age)>1) min.age <- min.age[use.index]
       if (length(max.age)>1) max.age <- max.age[use.index]
@@ -760,24 +778,6 @@ vpa <- function(
   }
 
   assertthat::assert_that(length(stat.tf) == 1) # stat.tfがベクトルで与えられた場合にエラーを出す
-  
-  # tuningの際のパラメータが1個だけ指定されている場合は，nindexの数だけ増やす
-  if (isTRUE(tune)){
-
-    nindex <- nrow(index)
-
-    if (nindex > length(abund) & length(abund)==1) abund <- rep(abund, nindex)
-    if (nindex > length(min.age) & length(min.age)==1) min.age <- rep(min.age, nindex)
-    if (nindex > length(max.age) & length(max.age)==1) max.age <- rep(max.age, nindex)
-    if (nindex > length(link) & length(link)==1) link <- rep(link, nindex)
-    if (nindex > length(base) & length(base)==1) base <- rep(base, nindex)
-
-    if (is.null(index.w)) index.w <- rep(1, nindex)
-    if (!is.na(af[1])) if(nindex > length(af) & length(af)==1) af <- rep(af, nindex)
-
-    q <- rep(NA, nindex)
-  }
-
 
   # selectivityを更新する場合にfaa0，naa0が与えられていれば，それを使う
    if (!isTRUE(sel.update)){
@@ -1549,8 +1549,13 @@ Ft <- mean(faa[,ny],na.rm=TRUE)
 
   res <- list(input=arglist, term.f=term.f, np=np, minimum=out$minimum, minimum.c=out$minimum.c, logLik=logLik, gradient=gradient, code=code, q=q, b=b, sigma=sigma, convergence=convergence, message=message, hessian=hessian, Ft=Ft, Fc.at.age=Fc.at.age, Fc.mean=Fc.mean, Fc.max=Fc.max, last.year=last.year, Pope=Pope, ssb.coef=ssb.coef, pred.index=pred.index, wcaa=caa*waa.catch,naa=naa, faa=faa, baa=baa, ssb=ssb, saa=saa)
 
+  invisible(res2 <- list(input=arglist, use.index=use.index, abund=abund, min.age=min.age, max.age=max.age, link=link, base=base, af=af, index.w=index.w, q=q, naa=naa, faa=faa, baa=baa, ssb=ssb, pred.index=pred.index, sigma=sigma, b=b)) #use.indexを考慮し，実際にVPAのチューニングで与えた値
+
+  print(list(use.index=use.index, abund=abund, min.age=min.age, max.age=max.age, link=link, base=base, af=af, index.w=index.w))
+
   if (isTRUE(plot) & isTRUE(tune)){
-    graph <- try(plot_residual_vpa(res, index_name = NULL, plot_year = plot.year)) # plot.yearに対応する引数を追加してください
+    if(is.null(plot.year)) plot.year <- colnames(naa) %>% as.numeric()
+    graph <- try(plot_residual_vpa2(res2, index_name = NULL, plot_year = plot.year)) # plot.yearに対応する引数を追加してください
     if(class(graph)=="try-error"){
       for (i in 1:nindex){
         Y <- years %in% plot.year
