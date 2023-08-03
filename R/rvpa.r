@@ -325,12 +325,12 @@ abund.extractor <- function(
    res <- colSums(ssb,na.rm=TRUE)
  }
  if (abund=="SSBmsj"){
-   if (is.null(maa.tune)) ssb <- naa*waa*maa*exp(-p.m*dat$M) else ssb <- naa*waa*maa.tune*exp(-p.m*dat$M) 
+   if (is.null(maa.tune)) ssb <- naa*waa*maa*exp(-p.m*dat$M) else ssb <- naa*waa*maa.tune*exp(-p.m*dat$M)
    res <- colSums(ssb,na.rm=TRUE)
  }
 
- if (abund=="N1sj") res <- colSums(naa[1,]*exp(dat$M[1,]), na.rm=TRUE) 
- if (abund=="N0sj") res <- colSums(naa[1,]*exp(dat$M[1,]*2), na.rm=TRUE) 
+ if (abund=="N1sj") res <- colSums(naa[1,]*exp(dat$M[1,]), na.rm=TRUE)
+ if (abund=="N0sj") res <- colSums(naa[1,]*exp(dat$M[1,]*2), na.rm=TRUE)
 
  if (abund=="F") if (is.null(catch.prop)) res <- colMeans(faa[min.age:max.age,], na.rm=TRUE) else res <- colMeans(catch.prop[min.age:max.age, ]*faa[min.age:max.age,], na.rm=TRUE)
 
@@ -755,7 +755,7 @@ vpa <- function(
   }
 
   #if (length(stat.tf)==1) stat.tf <- rep(stat.tf, na[ny]-1)  # stat.tfが1個だけ指定されているときは，全年齢その統計量を使う(delete)
-  
+
   # tuningの際のパラメータが1個だけ指定されている場合は，nindexの数だけ増やす
   if (isTRUE(tune)){
 
@@ -866,14 +866,14 @@ vpa <- function(
       if (isTRUE(Pope)){
         for (i in (ny-1):1){
          naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update,alpha=alpha, use.equ=use.equ)
-         if(na[1]>na[ny]){ 
+         if(na[1]>na[ny]){
 		 if(is.na(naa[na[ny]+1, i])){
  naa[na[ny]+1, i]<-NA} else if(naa[na[ny]+1, i]==1.00000){
  naa[na[ny]+1, i]<-NA} else{
  naa[na[ny]+1, i]<-naa[na[ny]+1, i]}}#adjustment for sawara
-		 
+
 		 faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha, use.equ=use.equ)
-         if(na[1]>na[ny]){ 
+         if(na[1]>na[ny]){
 		if(is.na(faa[na[ny]+1, i])){
  faa[na[ny]+1, i]<-NA} else if(faa[na[ny]+1, i]==1.00000){
  faa[na[ny]+1, i]<-NA} else{
@@ -895,10 +895,10 @@ vpa <- function(
          naa[1:na[i], i] <- vpa.core(caa,faa,M,i)
        }
      }
- 
- if(na[1]>na[ny]){ 
+
+ if(na[1]>na[ny]){
  if(is.na(faa[na[ny]+1, ny-1]))faa[na[ny]+1, ny]<-NA else faa[na[ny]+1, ny-1]<-faa[na[ny]+1, ny-1]} #adjustment for sawara
-     
+
 	 faa1 <- faa
      saa1 <- sel.func(faa1, def=sel.def)
 
@@ -989,7 +989,7 @@ if (isTRUE(madara)){
 
     if (is.na(naa[na[ny]-1,ny])){
       if(isTRUE(Pope)){
-        for (i in (na[ny]-1):1){		 
+        for (i in (na[ny]-1):1){
           if (is.null(tf.mat)) faa[i, ny] <- get(stat.tf)(faa[i, years %in% tf.year])
           else faa[i, ny] <- get(stat.tf)(faa[i, !is.na(tf.mat[i,])])
           naa[i, ny] <- caa[i, ny]*exp(M[i, ny]/2)/(1-exp(-faa[i, ny]))
@@ -1300,7 +1300,7 @@ if (isTRUE(madara)){
         }
 
       if (penalty=="f") obj <- (1-lambda)*obj + lambda*sum((abs(faa[1:(na[ny]-1),ny]-apply(faa[1:(na[ny]-1), years %in% tf.year],1,get(stat.tf))))^beta)
-      
+
       if (penalty=="s") obj <- (1-lambda)*obj + lambda*sum((abs(saa[1:(na[ny]-1),ny]-apply(saa[1:(na[ny]-1), years %in% tf.year],1,get(stat.tf))))^beta)
 
       if (!is.null(sel.rank)) obj <- obj+1000000*sum((rank(saa[,ny])-sel.rank)^2)
@@ -1428,7 +1428,7 @@ if (isTRUE(madara)){
   if(isTRUE(TMB) & isFALSE(Pope)){print("TMB is not supported for baranov equation option. only for Pope");stop()}
   if(isTRUE(TMB) & penalty=="f"){print("TMB is not supported for penalty=f. only for penalty=p");stop()}
   if(isTRUE(TMB) & penalty=="s"){print("TMB is not supported for penalty=s. only for penalty=p");stop()}
-  
+
     index2 <- as.matrix(t(apply(index,1,function(x) ifelse(is.na(x),0,x))))
 
     Ab_type <- ifelse(abund=="SSB", 1, ifelse(abund=="N", 2, ifelse(abund=="B", 3, 4)))
@@ -1767,17 +1767,19 @@ boo.vpa <- function(res,B=5,method="p",mean.correction=FALSE){
     print(b)
 
     for (i in 1:R){
-      if (method=="p") b.index[i,!is.na(index[i,])] <- exp(log(p.index[i,!is.na(index[i,])]) + rnorm(sum(!is.na(index[i,])),0,sd=sqrt(rs2[i])))
-      if (method=="n") b.index[i,!is.na(index[i,])] <- exp(log(p.index[i,!is.na(index[i,])]) + sample(resid[i,!is.na(index[i,])],length(index[i,!is.na(index[i,])]),replace=TRUE))
-      if (isTRUE(mean.correction)) b.index[i,!is.na(index[i,])] <- b.index[i,!is.na(index[i,])]*exp(-rs2[i]/2)
+    　#use.indexオプションを使っているとき、b.indexの行数とずれるので、b.indexの行番号をjで設定
+      j <- ifelse(is.numeric(res$input$use.index), res$input$use.index[i],i)
+      if (method=="p") b.index[j,!is.na(index[i,])] <- exp(log(p.index[i,!is.na(index[i,])]) + rnorm(sum(!is.na(index[i,])),0,sd=sqrt(rs2[i])))
+      if (method=="n") b.index[j,!is.na(index[i,])] <- exp(log(p.index[i,!is.na(index[i,])]) + sample(resid[i,!is.na(index[i,])],length(index[i,!is.na(index[i,])]),replace=TRUE))
+      if (isTRUE(mean.correction)) b.index[j,!is.na(index[i,])] <- b.index[j,!is.na(index[i,])]*exp(-rs2[i]/2)
       if (method=="r") {
         rs.d <- density(resid[i,!is.na(index[i,])])
         rs.db <- sample(rs.d$x,length(index[i,!is.na(index[i,])]),prob=rs.d$y,replace=TRUE)
         sd.j <- sd(rs.db)
         s.rs.b <- rs.db/sd.j
-        b.index[i,!is.na(index[i,])] <- exp(log(p.index[i,!is.na(index[i,])]) + s.rs.b*sqrt(rs2[i]))
+        b.index[j,!is.na(index[i,])] <- exp(log(p.index[i,!is.na(index[i,])]) + s.rs.b*sqrt(rs2[i]))
       }
-      if (isTRUE(mean.correction)) b.index[i,!is.na(index[i,])] <- b.index[i,!is.na(index[i,])]*exp(-rs2[i]/2)
+      if (isTRUE(mean.correction)) b.index[j,!is.na(index[i,])] <- b.index[j,!is.na(index[i,])]*exp(-rs2[i]/2)
     }
 
     res.c$input$dat$index <- b.index
