@@ -85,14 +85,14 @@ F_SPRのF管理基準値の初期値は　与えられたFのもとでのSPR/目
 \examples{
 \dontrun{
 data(res_vpa_example)
-# VPAデータを使う場合
+# VPA繝<87>繝ｼ繧ｿ繧剃ｽｿ縺<86>蝣ｴ蜷<88>
 res_refF1 <- ref.F(res=res_vpa_example,Fcurrent=frasyr::apply_year_colum(res_vpa_example$faa,2015:2017),
                 waa.year=2015:2017,maa.year=2015:2017,M.year=2015:2017)
 
-# 生物パラメータをデータとして与える場合
+# 逕溽黄繝代Λ繝｡繝ｼ繧ｿ繧偵ョ繝ｼ繧ｿ縺ｨ縺励※荳弱∴繧句<a0>ｴ蜷<88>
 res_refF2 <- ref.F(res=NULL,Fcurrent=rep(0.1,5),
                    waa=rep(100,5),maa=c(0,0,1,1,1),M=rep(0.3,5),waa.catch=rep(100,5),
-                   rps.vector=NULL, # Fmedを計算したりする場合のRPSのベクトル.NULLでもOK
+                   rps.vector=NULL, # Fmed繧定ｨ育ｮ励＠縺溘ｊ縺吶ｋ蝣ｴ蜷医<81>ｮRPS縺ｮ繝吶け繝医Ν.NULL縺ｧ繧０K
                    Pope=TRUE,min.age=0,pSPR=c(30,40))
 }
 
