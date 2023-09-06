@@ -390,14 +390,15 @@ ref.F <- function(
         else waa.catch <- waa
     }
 
-    if(is.null(waa.catch)){
-      if(is.null(res$input$dat$waa.catch)){
-        waa.catch <- waa
-      }
-      else{
-        waa.catch <- apply_year_colum(res$input$dat$waa.catch,waa.year)
-      }
-    }
+## Remove duplicate code  
+#    if(is.null(waa.catch)){
+#      if(is.null(res$input$dat$waa.catch)){
+#        waa.catch <- waa
+#      }
+#      else{
+#       waa.catch <- apply_year_colum(res$input$dat$waa.catch,waa.year) # here, waa.year should be waa.catch.year
+#      }
+#    }
 
     na <- sum(!is.na(Fcurrent))
     ssb.coef <- ifelse(is.null(res$ssb.coef),0,res$ssb.coef)
