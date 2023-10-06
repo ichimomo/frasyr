@@ -637,7 +637,7 @@ plot_residual_vpa2 <- function(res, index_name = NULL, plot_smooth = FALSE, plot
   }
 
   # x軸の範囲
-  if(is.numeric(plot_year)) xlim_year <- c(min(plot_year), max(plot_year)) else xlim_year <- c(min(as.numeric(colnames(res_vpa_estb$naa))), max(as.numeric(colnames(res_vpa_estb$naa))))
+  if(is.numeric(plot_year)) xlim_year <- c(min(plot_year), max(plot_year)) else xlim_year <- c(min(as.numeric(colnames(res$naa))), max(as.numeric(colnames(res$naa))))
 
   d_tmp <- matrix(NA,
                   nrow = length(used_index[1,]),
@@ -818,14 +818,9 @@ plot_residual_vpa2 <- function(res, index_name = NULL, plot_smooth = FALSE, plot
                                 0, max(tmp_data$pred, na.rm = T), length=100))
     predabund_g3[[i]] <- (as.numeric(predIndex_g3[[i]])/res$q[i])^(1/res$b[i])
 
-	if (res$input$use.index[1]!="all") {
-	tmp <- str_split(res$input$abund[res$input$use.index[i]], "") %>% unlist()
-	}else
-	{
     tmp <- str_split(res$input$abund[i], "") %>% unlist()
-	}
-    if(sum(tmp == "N") == 0) predabund_g3[[i]] <- predabund_g3[[i]]*res$input$scale
-  }
+    if(any(tmp == "B")) predabund_g3[[i]] <- predabund_g3[[i]]*res$input$scale
+  }#for(i)
 
   # 横軸に資源量（指数に合わせてSSBやNだったり）、縦軸に予測CPUEを
   # 線が描けるように、横軸100刻みほどでデータがある
