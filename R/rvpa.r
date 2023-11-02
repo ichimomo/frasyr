@@ -1551,7 +1551,7 @@ Ft <- mean(faa[,ny],na.rm=TRUE)
 
   invisible(res2 <- list(input=arglist, use.index=use.index, abund=abund, min.age=min.age, max.age=max.age, link=link, base=base, af=af, index.w=index.w, q=q, naa=naa, faa=faa, baa=baa, ssb=ssb, pred.index=pred.index, sigma=sigma, b=b)) #use.indexを考慮し，実際にVPAのチューニングで与えた値
 
-  print(list(use.index=use.index, abund=abund, min.age=min.age, max.age=max.age, link=link, base=base, af=af, index.w=index.w))
+  # print(list(use.index=use.index, abund=abund, min.age=min.age, max.age=max.age, link=link, base=base, af=af, index.w=index.w))
 
   if (isTRUE(plot) & isTRUE(tune)){
     if(is.null(plot.year)) plot.year <- colnames(naa) %>% as.numeric()
