@@ -2976,3 +2976,138 @@ fit.SR_pen <- function(bio_par, h_upper=Inf, h_lower=0.2, plus_group=TRUE, ...){
     obj_pen(opt$par,out=TRUE)
 
 }
+
+
+#'
+#' 再生産関係のレジームシフトを隠れマルコフモデルで推定する
+#'
+#' Tang et al. (2021) ICESJMSの論文を改変
+#'
+#' @inheritParams fit.SRregime
+#' @params k_regime 推定するレジームの数（2以上の整数）
+#' @params b_range パラメータbの範囲
+#' @params p0 パラメータの初期値（リスト）
+#' @params overwrite cppファイルのコンパイルを上書きして行うか
+#' @encoding UTF-8
+#' @export
+#'
+#
+hmm_SR = function(SRdata,SR="BH",k_regime=2,gamma=0.01,b_range=NULL,p0=NULL,overwrite=FALSE,max.ssb.pred = 1.3) {
+  argname <- ls()
+  arglist <- lapply(argname,function(xx) eval(parse(text=xx)))
+  names(arglist) <- argname
+
+  k_regime<-round(k_regime)
+
+  if(k_regime<2) stop("Incorrect 'k_regime'")
+
+  data = SRdata
+  st = data$SSB
+  # st = st/(10^4)
+  yt = log(data$R/data$SSB)
+
+  SRcode = case_when(SR=="RI" ~ 1,SR=="BH" ~ 2,SR=="HS"~3,SR=="Mesnil"~4,TRUE~5)
+  if (SRcode==5) stop("SR not recognized")
+  if (is.null(b_range)) {
+    if (SRcode<3) { # Ricker or BH
+      b_range = range(1/st)
+    } else {
+      b_range = range(st)
+    }
+  }
+
+  tmb_data = list(st=st,yt=yt,
+                  alpha_u=max(yt),alpha_l=min(yt),
+                  beta_u=max(b_range),beta_l=min(b_range),
+                  sigma_u=sd(yt),SRcode=SRcode,gamma=gamma)
+
+  if (!is.null(p0)) {
+    parameters = p0
+  } else {
+    parameters = list(
+      lalpha = -log(k_regime+1-1:k_regime),
+      lbeta = rep(0,k_regime),
+      lsigma = rep(0,k_regime),
+      pi1_tran = rep(0,k_regime-1),
+      qij_tran = matrix(0,nrow=k_regime,ncol=k_regime-1)
+    )
+  }
+
+  if (overwrite==TRUE){
+    use_rvpa_tmb("HMM_SR",overwrite=TRUE)
+  }
+  if (!file.exists("HMM_SR.dll")) {
+    use_rvpa_tmb("HMM_SR")
+  }
+
+  obj = TMB::MakeADFun(tmb_data,parameters,DLL="HMM_SR",inner.control=list(maxit=50000,trace=F),silent=TRUE)
+  if (length(obj$par)>length(st)) {
+    stop("NOT estimable because k > n (k: parameter number, n: sample size")
+  }
+  opt = nlminb(obj$par,obj$fn,obj$gr,control = list(trace=10,iter.max=10000,eval.max=10000,sing.tol=1e-20))
+
+  Res = list()
+
+  Res$tmb_data = tmb_data
+  Res$p0 = parameters
+  Res$obj = obj
+  Res$opt = opt
+
+  rep = obj$report(opt$par)
+  Res$rep = rep
+
+  alpha = rep[["alpha"]]
+  a = exp(alpha)
+  b = rep[["beta"]]
+  sigma = rep[["sigma"]]
+  pars=data.frame(regime=1:length(a),a=a,b=b,sd=sigma)
+  Res$pars=pars
+  regime_prob = (rep[["r_pred"]])
+  colnames(regime_prob) = data$year
+  Res$regime_prob=round(t(regime_prob),3)
+  regime=Rfast::colMaxs(regime_prob)
+  names(regime) = data$year
+  Res$regime = regime
+  Res$trans_prob = rep[["qij"]]
+
+  Res$loglik <- loglik <- -opt$objective
+  Res$k <- k <- length(opt$par)
+  Res$AIC <- -2*loglik+2*k
+  Res$AICc <- Res$AIC+2*k*(k+1)/(length(data$year)-k-1)
+  Res$BIC <- -2*loglik+k*log(length(data$year))
+  Res$input <- arglist
+
+  # calculate residuals and predicted values
+  if (SR=="HS") SRF <- function(x,a,b) ifelse(x>b,b*a,x*a)
+  if (SR=="BH") SRF <- function(x,a,b) a*x/(1+b*x)
+  if (SR=="RI") SRF <- function(x,a,b) a*x*exp(-b*x)
+  SRFV = Vectorize(SRF,vectorize.args = "x")
+
+  pred = sapply(1:nrow(pars), function(i) {
+    regime_prob[i,] *log(SRFV(SRdata$SSB,pars$a[i],pars$b[i]))
+  }) %>% rowSums %>% exp()
+
+  pred_to_obs = SRdata %>%
+    dplyr::rename(Year=year) %>%
+    dplyr::mutate(Regime=factor(regime),
+                  Pred=pred) %>%
+    dplyr::mutate(resid=log(R/pred))
+
+  Res$pred_to_obs <- pred_to_obs
+  Res$resid <- pred_to_obs$resid
+
+  ssb.tmp <- seq(from=0,to=max(SRdata$SSB)*max.ssb.pred,length=100)
+  pred2 = sapply(1:nrow(pars), function(i) SRFV(ssb.tmp,pars$a[i],pars$b[i])) %>% as.data.frame
+  colnames(pred2) <- pars$regime
+  pred2 = pred2 %>% mutate(SSB = ssb.tmp) %>%
+    pivot_longer(., cols=-SSB,values_to="R") %>%
+    mutate(Regime=factor(name)) %>%
+    arrange(Regime,SSB) %>%
+    dplyr::select(Regime,SSB,R)
+
+  Res$pred <- pred2
+
+  class(Res) <- "hmm_SR"
+
+  return( Res )
+}
