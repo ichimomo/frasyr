@@ -1726,6 +1726,7 @@ set_lower_limit_catch <- function(catch_previous_year, catch_current_year, lower
 #' @param candidate_B0 b0の計算候補
 #' @param candidate_Babs Babsの計算候補
 #' @param trace_multi （このベクトル）×（管理基準値として計算されるF）の平行状態の資源状態などを計算する。HCR_catchのプロットするときに、この値をもっと細かく設定することが必要になってくるかも
+#' @param multi_upper_PGY PGYを計算するときの探索範囲の上限。デフォルトは10だが、うまくいかない場合にはこの数字を少し変えてみるとよいかも。
 #'
 #' @export
 #' @encoding UTF-8
@@ -1735,7 +1736,8 @@ est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE,
                       only_lowerPGY="lower", candidate_B0=-1, candidate_Babs=-1, candidate_Fbase=-1,
                       calc_yieldcurve=TRUE,
                       trace_multi=c(0.9,0.925,0.95,0.975,1.025,1.05,1.075),
-                      select_Btarget=0, select_Blimit=0, select_Bban=0){
+                      select_Btarget=0, select_Blimit=0, select_Bban=0,
+                      multi_upper_PGY=10){
 
   res_vpa_MSY <- data_future$input$res_vpa
   res_SR_MSY <-  data_future$input$res_SR
@@ -1769,7 +1771,7 @@ est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE,
                                     optim_method=optim_method,
                                     multi_init = res_future_MSY$multi*1.2,
                                     multi_lower= res_future_MSY$multi,
-                                    multi_upper= 10,
+                                    multi_upper= multi_upper_PGY,
                                     objective="PGY"
                                     ))
 
