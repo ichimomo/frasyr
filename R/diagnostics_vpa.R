@@ -660,6 +660,7 @@ plot_residual_vpa2 <- function(res, index_name = NULL, plot_smooth = FALSE, plot
 
     #abund.extractor関数で書き換え #catch.prop引数は不要か
 	#use.indexを使用した場合のif文は必要なくなったので消去
+    if (is.na(res$link[i])) res$link[i] <- res$link[1]
 	d_tmp[,(i+length(res$q)*1+4)] <- abund.extractor(abund = res$abund[i], naa = res$naa, faa = res$faa,
                                                      dat = res$input$dat,
                                                      min.age = res$min.age[i], max.age = res$max.age[i],
