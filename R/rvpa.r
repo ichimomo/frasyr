@@ -1777,7 +1777,7 @@ boo.vpa <- function(res,B=5,method="p",mean.correction=FALSE){
     print(b)
 
     for (i in 1:R){
-    　#use.indexオプションを使っているとき、b.indexの行数とずれるので、b.indexの行番号をjで設定
+    #use.indexオプションを使っているとき、b.indexの行数とずれるので、b.indexの行番号をjで設定
       j <- ifelse(is.numeric(res$input$use.index), res$input$use.index[i],i)
       if (method=="p") b.index[j,!is.na(index[i,])] <- exp(log(p.index[i,!is.na(index[i,])]) + rnorm(sum(!is.na(index[i,])),0,sd=sqrt(rs2[i])))
       if (method=="n") b.index[j,!is.na(index[i,])] <- exp(log(p.index[i,!is.na(index[i,])]) + sample(resid[i,!is.na(index[i,])],length(index[i,!is.na(index[i,])]),replace=TRUE))
@@ -2105,13 +2105,15 @@ autocalc_ridgevpa <- function(input,
                               b_fix   = TRUE,
                               bin     = 0.1 # lambdaとetaのペナルティ探索の幅
 ){
-  assert_that(target_retro %in% c("F", "B", "FAA"))
+  assert_that(target_retro %in% c("F", "B", "N","SSB","R"))
 
   if(is.null(input$eta)){
     search_lambda_vpa <- function(x){
+      print(x)
       input$lambda <- x
       tmp          <- do.call(vpa,input)
       tmp_rho      <- retro.est(tmp, n = n_retro, b.fix = b_fix)$mohn
+      print(tmp_rho)
       tmp_rho[names(tmp_rho)==target_retro] %>% as.numeric()
     }# search_lambda_vpa
 
@@ -2137,10 +2139,13 @@ autocalc_ridgevpa <- function(input,
 
   if(!is.null(input$eta)){
     search_lambda_vpa <- function(x,y){
+	 print(x)
+	 print(y)
       input$lambda <- x
       input$eta    <- y
       tmp          <- do.call(vpa,input)
       tmp_rho      <- retro.est(tmp, n = n_retro, b.fix = b_fix)$mohn
+	 print(tmp_rho)
       tmp_rho[names(tmp_rho)==target_retro] %>% as.numeric()
     }# search_lambda_vpa
 
