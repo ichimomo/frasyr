@@ -1777,7 +1777,7 @@ boo.vpa <- function(res,B=5,method="p",mean.correction=FALSE){
     print(b)
 
     for (i in 1:R){
-    　#use.indexオプションを使っているとき、b.indexの行数とずれるので、b.indexの行番号をjで設定
+    #use.indexオプションを使っているとき、b.indexの行数とずれるので、b.indexの行番号をjで設定
       j <- ifelse(is.numeric(res$input$use.index), res$input$use.index[i],i)
       if (method=="p") b.index[j,!is.na(index[i,])] <- exp(log(p.index[i,!is.na(index[i,])]) + rnorm(sum(!is.na(index[i,])),0,sd=sqrt(rs2[i])))
       if (method=="n") b.index[j,!is.na(index[i,])] <- exp(log(p.index[i,!is.na(index[i,])]) + sample(resid[i,!is.na(index[i,])],length(index[i,!is.na(index[i,])]),replace=TRUE))
