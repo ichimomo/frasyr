@@ -2105,13 +2105,15 @@ autocalc_ridgevpa <- function(input,
                               b_fix   = TRUE,
                               bin     = 0.1 # lambdaとetaのペナルティ探索の幅
 ){
-  assert_that(target_retro %in% c("F", "B", "FAA"))
+  assert_that(target_retro %in% c("F", "B", "N","SSB","R"))
 
   if(is.null(input$eta)){
     search_lambda_vpa <- function(x){
+      print(x)
       input$lambda <- x
       tmp          <- do.call(vpa,input)
       tmp_rho      <- retro.est(tmp, n = n_retro, b.fix = b_fix)$mohn
+      print(tmp_rho)
       tmp_rho[names(tmp_rho)==target_retro] %>% as.numeric()
     }# search_lambda_vpa
 
@@ -2137,10 +2139,13 @@ autocalc_ridgevpa <- function(input,
 
   if(!is.null(input$eta)){
     search_lambda_vpa <- function(x,y){
+	 print(x)
+	 print(y)
       input$lambda <- x
       input$eta    <- y
       tmp          <- do.call(vpa,input)
       tmp_rho      <- retro.est(tmp, n = n_retro, b.fix = b_fix)$mohn
+	 print(tmp_rho)
       tmp_rho[names(tmp_rho)==target_retro] %>% as.numeric()
     }# search_lambda_vpa
 
