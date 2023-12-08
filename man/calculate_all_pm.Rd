@@ -14,7 +14,8 @@ calculate_all_pm(
   is_scale = FALSE,
   unit = 1,
   period_extra = NULL,
-  type = "AS"
+  type = "AS",
+  fun_period = mean
 )
 }
 \arguments{
