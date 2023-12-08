@@ -74,7 +74,8 @@
 <span>  trace_multi <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.9</span>, <span class="fl">0.925</span>, <span class="fl">0.95</span>, <span class="fl">0.975</span>, <span class="fl">1.025</span>, <span class="fl">1.05</span>, <span class="fl">1.075</span><span class="op">)</span>,</span>
 <span>  select_Btarget <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  select_Blimit <span class="op">=</span> <span class="fl">0</span>,</span>
-<span>  select_Bban <span class="op">=</span> <span class="fl">0</span></span>
+<span>  select_Bban <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  multi_upper_PGY <span class="op">=</span> <span class="fl">10</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -98,6 +99,10 @@
 
 <dt>trace_multi</dt>
 <dd><p>（このベクトル）×（管理基準値として計算されるF）の平行状態の資源状態などを計算する。HCR_catchのプロットするときに、この値をもっと細かく設定することが必要になってくるかも</p></dd>
+
+
+<dt>multi_upper_PGY</dt>
+<dd><p>PGYを計算するときの探索範囲の上限。デフォルトは10だが、うまくいかない場合にはこの数字を少し変えてみるとよいかも。</p></dd>
 
 </dl></div>
 
