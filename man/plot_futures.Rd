@@ -35,7 +35,7 @@ plot_futures(
   seed = 1,
   legend.position = "top",
   type = "detail",
-  font.size = 18,
+  font.size = 16,
   ncol = 3,
   remove.last.vpa.year = FALSE
 )

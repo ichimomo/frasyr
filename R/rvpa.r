@@ -620,7 +620,7 @@ vpa <- function(
   d = 0.0001,  # 石岡・岸田/平松の方法の収束判定基準
   min.caa = 0.001,   # caaに0があるとき，0をmin.caaで置き換える
   plot = FALSE,   # tuningに使った資源量指数に対するフィットのプロット
-  plot.year = 1998:2015,   # 上のプロットの参照年
+  plot.year = NULL,   # 上のプロットの参照年
   term.F = "max",   # terminal Fの何を推定するか: "max" or "all"
   plus.group = TRUE,
   stat.tf = "mean",  # 最終年のFを推定する統計量（年齢で同じとする）
@@ -706,9 +706,32 @@ vpa <- function(
 
   if (class(index)=="numeric") index <- t(as.matrix(index))
 
+# tuningの際のパラメータが1個だけ指定されている場合は，nindexの数だけ増やす
+  if (isTRUE(tune)){
+
+    nindex <- nrow(index)
+
+    if (nindex > length(abund) & length(abund)==1) abund <- rep(abund, nindex)
+    if (nindex > length(min.age) & length(min.age)==1) min.age <- rep(min.age, nindex)
+    if (nindex > length(max.age) & length(max.age)==1) max.age <- rep(max.age, nindex)
+    if (nindex > length(link) & length(link)==1) link <- rep(link, nindex)
+    if (nindex > length(base) & length(base)==1) base <- rep(base, nindex)
+
+    if (is.null(index.w)) index.w <- rep(1, nindex)
+    if (!is.na(af[1])) if(nindex > length(af) & length(af)==1) af <- rep(af, nindex)
+
+    q <- rep(NA, nindex)
+  }
+
+# nindexの数だけtuningの際のパラメータを増やしたのちに，use.indexを使用する場合は，use.indexで指定した部分だけを抜き出して計算する．
   if (use.index[1]!="all") {
     index <- index[use.index,,drop=FALSE]
-    if (length(use.index)!=length(abund)){
+	nindex <- nrow(index)
+	q <- rep(NA, nindex)
+
+  #以前追加したwarningは削除．何故なら，この前の部分で， nrow(index)と同じ長さだけのベクトルをtuningの際のパラメータに与える仕様にしているため．
+
+    if(length(use.index)!=length(abund)){
       if (length(abund)>1) abund <- abund[use.index]
       if (length(min.age)>1) min.age <- min.age[use.index]
       if (length(max.age)>1) max.age <- max.age[use.index]
@@ -754,25 +777,7 @@ vpa <- function(
     if(length(p.init) >= na[ny]-1) p.init <- p.init[1:na[ny]-1]  # 初期値の成分数が年齢数-1以上であれば，年齢数以上の値は使用しない
   }
 
-  #if (length(stat.tf)==1) stat.tf <- rep(stat.tf, na[ny]-1)  # stat.tfが1個だけ指定されているときは，全年齢その統計量を使う(delete)
-
-  # tuningの際のパラメータが1個だけ指定されている場合は，nindexの数だけ増やす
-  if (isTRUE(tune)){
-
-    nindex <- nrow(index)
-
-    if (nindex > length(abund) & length(abund)==1) abund <- rep(abund, nindex)
-    if (nindex > length(min.age) & length(min.age)==1) min.age <- rep(min.age, nindex)
-    if (nindex > length(max.age) & length(max.age)==1) max.age <- rep(max.age, nindex)
-    if (nindex > length(link) & length(link)==1) link <- rep(link, nindex)
-    if (nindex > length(base) & length(base)==1) base <- rep(base, nindex)
-
-    if (is.null(index.w)) index.w <- rep(1, nindex)
-    if (!is.na(af[1])) if(nindex > length(af) & length(af)==1) af <- rep(af, nindex)
-
-    q <- rep(NA, nindex)
-  }
-
+  assertthat::assert_that(length(stat.tf) == 1) # stat.tfがベクトルで与えられた場合にエラーを出す
 
   # selectivityを更新する場合にfaa0，naa0が与えられていれば，それを使う
    if (!isTRUE(sel.update)){
@@ -1544,8 +1549,13 @@ Ft <- mean(faa[,ny],na.rm=TRUE)
 
   res <- list(input=arglist, term.f=term.f, np=np, minimum=out$minimum, minimum.c=out$minimum.c, logLik=logLik, gradient=gradient, code=code, q=q, b=b, sigma=sigma, convergence=convergence, message=message, hessian=hessian, Ft=Ft, Fc.at.age=Fc.at.age, Fc.mean=Fc.mean, Fc.max=Fc.max, last.year=last.year, Pope=Pope, ssb.coef=ssb.coef, pred.index=pred.index, wcaa=caa*waa.catch,naa=naa, faa=faa, baa=baa, ssb=ssb, saa=saa)
 
+  invisible(res2 <- list(input=arglist, use.index=use.index, abund=abund, min.age=min.age, max.age=max.age, link=link, base=base, af=af, index.w=index.w, q=q, naa=naa, faa=faa, baa=baa, ssb=ssb, pred.index=pred.index, sigma=sigma, b=b)) #use.indexを考慮し，実際にVPAのチューニングで与えた値
+
+  # print(list(use.index=use.index, abund=abund, min.age=min.age, max.age=max.age, link=link, base=base, af=af, index.w=index.w))
+
   if (isTRUE(plot) & isTRUE(tune)){
-    graph <- try(plot_residual_vpa(res, index_name = NULL, plot_year = plot.year)) # plot.yearに対応する引数を追加してください
+    if(is.null(plot.year)) plot.year <- colnames(naa) %>% as.numeric()
+    graph <- try(plot_residual_vpa2(res2, index_name = NULL, plot_year = plot.year)) # plot.yearに対応する引数を追加してください
     if(class(graph)=="try-error"){
       for (i in 1:nindex){
         Y <- years %in% plot.year
@@ -1767,17 +1777,19 @@ boo.vpa <- function(res,B=5,method="p",mean.correction=FALSE){
     print(b)
 
     for (i in 1:R){
-      if (method=="p") b.index[i,!is.na(index[i,])] <- exp(log(p.index[i,!is.na(index[i,])]) + rnorm(sum(!is.na(index[i,])),0,sd=sqrt(rs2[i])))
-      if (method=="n") b.index[i,!is.na(index[i,])] <- exp(log(p.index[i,!is.na(index[i,])]) + sample(resid[i,!is.na(index[i,])],length(index[i,!is.na(index[i,])]),replace=TRUE))
-      if (isTRUE(mean.correction)) b.index[i,!is.na(index[i,])] <- b.index[i,!is.na(index[i,])]*exp(-rs2[i]/2)
+    #use.indexオプションを使っているとき、b.indexの行数とずれるので、b.indexの行番号をjで設定
+      j <- ifelse(is.numeric(res$input$use.index), res$input$use.index[i],i)
+      if (method=="p") b.index[j,!is.na(index[i,])] <- exp(log(p.index[i,!is.na(index[i,])]) + rnorm(sum(!is.na(index[i,])),0,sd=sqrt(rs2[i])))
+      if (method=="n") b.index[j,!is.na(index[i,])] <- exp(log(p.index[i,!is.na(index[i,])]) + sample(resid[i,!is.na(index[i,])],length(index[i,!is.na(index[i,])]),replace=TRUE))
+      if (isTRUE(mean.correction)) b.index[j,!is.na(index[i,])] <- b.index[j,!is.na(index[i,])]*exp(-rs2[i]/2)
       if (method=="r") {
         rs.d <- density(resid[i,!is.na(index[i,])])
         rs.db <- sample(rs.d$x,length(index[i,!is.na(index[i,])]),prob=rs.d$y,replace=TRUE)
         sd.j <- sd(rs.db)
         s.rs.b <- rs.db/sd.j
-        b.index[i,!is.na(index[i,])] <- exp(log(p.index[i,!is.na(index[i,])]) + s.rs.b*sqrt(rs2[i]))
+        b.index[j,!is.na(index[i,])] <- exp(log(p.index[i,!is.na(index[i,])]) + s.rs.b*sqrt(rs2[i]))
       }
-      if (isTRUE(mean.correction)) b.index[i,!is.na(index[i,])] <- b.index[i,!is.na(index[i,])]*exp(-rs2[i]/2)
+      if (isTRUE(mean.correction)) b.index[j,!is.na(index[i,])] <- b.index[j,!is.na(index[i,])]*exp(-rs2[i]/2)
     }
 
     res.c$input$dat$index <- b.index
@@ -2027,3 +2039,144 @@ retro.est2 <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE){
 
    return(list(Res=Res,retro.n=obj.n, retro.b=obj.b, retro.s=obj.s, retro.r=obj.r, retro.f=obj.f, mohn=mohn))
 }
+
+
+#' VPAの結果を受けて，バブルプロット(横軸が年，縦軸が年齢，バブルの大きさと色で値を示す）を生成する
+#'
+#' @param res VPAの出力
+#' @param target プロットしたい対象　例）"faa"や"naa"
+#' @param years プロットしたい年数　デフォルトはNULLで全年．例）１９９７：１９９９とすると１９９７～１９９９年のみプロット
+#' @param fix_ratio x軸とy軸のスケールの比．ここが２だと１：１になる
+#' @param max_size バブルの最大の大きさ
+#' @param legend_position legendの位置（see `theme_SH`）
+#' @encoding UTF-8
+#' @export
+#'
+
+bubble_plot2 <- function(
+res,
+target="faa",
+years=NULL,
+fix_ratio=2, #x軸とy軸のスケールの比.ここが2だと１：１
+max_size=10, #バブルの最大の大きさ
+legend_position = "bottom" # legendの位置
+){
+
+res00 <- res
+dat <- res00[names(res00)==paste0(target)]
+
+dat <- dat[[1]] %>% as.data.frame() %>% tibble::rownames_to_column("age") %>% pivot_longer(!age, names_to = "year", values_to = "value") %>% mutate_at(vars(year), as.factor)
+
+dat <- dat %>% mutate_at(vars(age), as.factor)
+dat$age <- factor(dat$age, levels=rev(levels(dat$age)))
+
+#range <- range[1:(length(range)-1)]
+
+if(!is.null(years)) dat <- subset(dat, year %in% years)
+
+ggplot(dat,aes(x=year, y=age)) +
+  geom_point(aes(size=value, fill=value), alpha = 0.75, shape = 21) +
+  coord_fixed(ratio=fix_ratio)+
+  scale_size_continuous(limits = c(0.0001, 1.0001)*max(dat$value,na.rm=TRUE), range = c(1,max_size))+
+  scale_fill_continuous(trans="reverse")+
+  labs(x="Year", y="Age",size=paste0(target),fill=paste0(target),fill=guide_colourbar(reverse=TRUE))  +
+  guides(color=c("none"))+
+  ggtitle(toupper(target))+
+  theme_SH(legend.position = legend_position) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1), panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2))
+}
+
+
+#' リッジVPAのλ探索の自動化
+#'
+#' @param input `vpa`関数の引数をlist形式で与える
+#' @param target_retro ペナルティλの選択に用いるmohn's rhoのパラメータ
+#' @param n_retro レトロスペクティブ解析で遡る年数。デフォルトは`5`
+#' @param b_fix レトロスペクティブ解析内でbを固定するか。デフォルトは`TRUE`
+#' @details etaのオプションに対応できているかは怪しい。
+#' @encoding UTF-8
+#'
+#' @export
+#'
+
+autocalc_ridgevpa <- function(input,
+                              target_retro,
+                              n_retro = 5,
+                              b_fix   = TRUE,
+                              bin     = 0.1 # lambdaとetaのペナルティ探索の幅
+){
+  assert_that(target_retro %in% c("F", "B", "N","SSB","R"))
+
+  if(is.null(input$eta)){
+    search_lambda_vpa <- function(x){
+      print(x)
+      input$lambda <- x
+      tmp          <- do.call(vpa,input)
+      tmp_rho      <- retro.est(tmp, n = n_retro, b.fix = b_fix)$mohn
+      print(tmp_rho)
+      tmp_rho[names(tmp_rho)==target_retro] %>% as.numeric()
+    }# search_lambda_vpa
+
+    lambda_set1 <- seq(0,1,0.1)
+    res1 <- purrr::map(as.list(lambda_set1), search_lambda_vpa) %>% as.numeric()
+    tmp_min <- which(abs(res1) == min(abs(res1)))
+    lambda_set2 <- seq(lambda_set1[tmp_min-1],lambda_set1[tmp_min+1],0.01)
+    res2 <- purrr::map(as.list(lambda_set2), search_lambda_vpa) %>% as.numeric()
+    tmp_min <- which(abs(res2) == min(abs(res2)))
+
+    lambda_mat1 <- data.frame(lambda = lambda_set1, mohn = res1) %>%
+      mutate(delta_mohn = abs(mohn)-min(abs(mohn)))
+    lambda_mat2 <- data.frame(lambda = lambda_set2, mohn = res2) %>%
+      mutate(delta_mohn = abs(mohn)-min(abs(mohn)))
+
+    g2 <- ggplot(lambda_mat2,
+                 aes(x=1, y=lambda, fill=delta_mohn)) +
+      geom_tile()+
+      geom_hline(aes(yintercept = lambda_mat2$lambda[tmp_min]))+
+      xlab("")+
+      coord_cartesian(xlim = c(0.75,1.25))
+  } #if(is.null(eta))
+
+  if(!is.null(input$eta)){
+    search_lambda_vpa <- function(x,y){
+	 print(x)
+	 print(y)
+      input$lambda <- x
+      input$eta    <- y
+      tmp          <- do.call(vpa,input)
+      tmp_rho      <- retro.est(tmp, n = n_retro, b.fix = b_fix)$mohn
+	 print(tmp_rho)
+      tmp_rho[names(tmp_rho)==target_retro] %>% as.numeric()
+    }# search_lambda_vpa
+
+    penalty_set <- expand.grid(lambda = seq(0,1,bin), eta = seq(0,1,bin))
+    res1 <- purrr::map2(as.list(penalty_set$lambda), as.list(penalty_set$eta), search_lambda_vpa) %>%
+      as.numeric()
+    penalty_mat <- penalty_set %>%
+      mutate(mohn = res1) %>%
+      mutate(delta_mohn = abs(mohn)-min(abs(mohn)))
+
+    g2 <- ggplot(penalty_mat %>%
+                   mutate(delta_mohn = ifelse(delta_mohn>1,NA,delta_mohn)),
+                 aes(x=eta, y=lambda, fill=delta_mohn)) +
+      geom_tile()+
+      geom_text(aes(label = as.character(round(delta_mohn, 3))))+
+      geom_text(data = penalty_mat %>% filter(delta_mohn == 0),
+                aes(label = as.character(round(delta_mohn, 3))), color = "red")+
+      scale_fill_continuous(trans="reverse", na.value = "grey")
+
+  } #if(is.null(eta))
+
+
+  return(
+    if(is.null(input$eta)){
+      list(min_penalty  = lambda_mat2$lambda[tmp_min],
+           plot = g2,
+           lambda_mat1 = lambda_mat1, lambda_mat2 = lambda_mat2)
+    } else {
+      list(min_penalty  = penalty_mat %>% filter(delta_mohn == 0),
+           plot = g2, penalty_mat = penalty_mat)
+    }
+  ) # return()
+
+} #autocalc_ridgevpa

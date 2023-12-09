@@ -645,15 +645,15 @@ frasyrの中にはブートストラップ法を自動で行う`boo.vpa`関数�
 ```{r}
 
 res_vpa_bootstrap <- plot_resboot_vpa(res_vpa_estb, B_ite = 10)
-res_vpa_bootstrap$plot_ssb
-res_vpa_bootstrap$plot_rec
-res_vpa_bootstrap$plot_biomass
+
+library(patchwork)
+res_vpa_bootstrap$plot_ssb/res_vpa_bootstrap$plot_rec/res_vpa_bootstrap$plot_biomass
 
 ```
 
-このようにSSB、加入量、バイオマスそれぞれについて95％信頼区間とともに資源動態の作図ができます。
+このようにSSB、加入量、バイオマスそれぞれについて95％信頼区間とともに資源動態の作図ができます。ここで使っている`patchwork`パッケージは、`ggplot2`の作図オブジェクトを後からくっつけることが可能なパッケージです。frasyrインストール時に一緒にインストールされます。
 
-またブートストラップ法は資源量の信頼区間だけでなく、パラメータの信頼区間も算出出来ます。
+ブートストラップ法は資源量の信頼区間だけでなく、パラメータの信頼区間も算出出来ます。
 ここでは最終年最高齢のFの信頼区間を出しています。
 
 ```{r}

@@ -101,7 +101,7 @@ vpadat_estb <- data.handler(caa=to_vpa_data(data_estb, label_name="caa"),
                             catch.prop = NULL)
 
 res_vpa_estb_tune4l_b <- vpa(vpadat_estb,last.catch.zero = FALSE, min.age=c(0,0,0,0,0,0),max.age=c(3,3,0,0,3,3),
-                             Pope = TRUE,  tune=TRUE, term.F="all", est.method="ml" ,b.est=TRUE,p.init=c(0.2,0.3,0.6,0.6),abund=c("N","N","N","N","N","N"),fc.year=1998:2000)
+                             Pope = TRUE,  tune=TRUE, term.F="all", est.method="ml" ,b.est=TRUE,p.init=c(0.2,0.3,0.6,0.6),abund=c("N","N","N","N","N","N"),fc.year=1998:2000,link=c("id","id","id","id","id","id"))
 
 res_vpa_estb <- res_vpa_estb_tune4l_b
 use_data(vpadat_estb, overwrite=TRUE)

@@ -390,14 +390,15 @@ ref.F <- function(
         else waa.catch <- waa
     }
 
-    if(is.null(waa.catch)){
-      if(is.null(res$input$dat$waa.catch)){
-        waa.catch <- waa
-      }
-      else{
-        waa.catch <- apply_year_colum(res$input$dat$waa.catch,waa.year)
-      }
-    }
+## Remove duplicate code  
+#    if(is.null(waa.catch)){
+#      if(is.null(res$input$dat$waa.catch)){
+#        waa.catch <- waa
+#      }
+#      else{
+#       waa.catch <- apply_year_colum(res$input$dat$waa.catch,waa.year) # here, waa.year should be waa.catch.year
+#      }
+#    }
 
     na <- sum(!is.na(Fcurrent))
     ssb.coef <- ifelse(is.null(res$ssb.coef),0,res$ssb.coef)
@@ -857,7 +858,7 @@ out.vpa <- function(res=NULL,    # VPA result
                                          out.AR = srres$input$out.AR)
     }
 
-    if(class(srres)=="fit.SR"){
+    if("fit.SR" %in% class(srres)){
       write("\n# SR fit data",file=csvname,append=T)
       srres$input$SRdata %>% as_tibble() %>%  mutate(weight=srres$input$w) %>%
         write_csv(path=csvname,append=T,col_names=TRUE)
@@ -866,7 +867,7 @@ out.vpa <- function(res=NULL,    # VPA result
       write_csv(sr_summary,path=csvname,append=T,
                 col_names=TRUE)
     }
-    if(class(srres)=="fit.SRregime"){
+    if("fit.SRregime" %in% class(srres)){
       write("\n# SR fit data",file=csvname,append=T)
       srres$input$SRdata %>% as_tibble() %>%  mutate(weight=srres$input$w) %>%
         write_csv(path=csvname,append=T,col_names=TRUE)
@@ -883,7 +884,7 @@ out.vpa <- function(res=NULL,    # VPA result
       # tentative
       write_csv(partable, path=csvname,append=T,col_names=TRUE)
     }
-    if(class(srres)=="SRfit.average"){
+    if("SRfit.average" %in% class(srres)){
       write("\n# SR fit data",file=csvname,append=T)
       srres[[1]]$input$SRdata %>% as_tibble() %>%  mutate(weight=srres$input$w) %>%
         write_csv(path=csvname, append=T, col_names=TRUE)
@@ -947,7 +948,7 @@ out.vpa <- function(res=NULL,    # VPA result
     kobeII.table_name <- names(kobeII)
     for(i in 1:length(kobeII.table_name)){
       tmptable <- kobeII[kobeII.table_name[i]][[1]]
-      if(!is.na(tmptable) && nrow(tmptable)>0){
+      if(nrow(tmptable)>0){
         write(str_c("\n# ",kobeII.table_name[i]),file=csvname,append=T)
         write_csv(tmptable,path=csvname,append=TRUE,
                   col_names = TRUE)
@@ -3032,6 +3033,7 @@ create_dummy_vpa <- function(res_vpa){
 #' @param is_scale TRUEの場合、親魚量はSBtargetで、漁獲量はMSYで割った相対値が出力される。それ以外はそのまま
 #' @param unit 確率を出力するときの単位。100を入れると％単位で結果が返される
 #' @param period_extra デフォルトではSSBminなどを一度でも下回るなど、期間を指定して計算する統計量はABC_year + 0:9, 0:4, 5:9, 1:10, 1:4, 6:10で決め打ちしているが、それ以外の期間を指定したいときにここの引数で与える
+#' @param type "AS": age-structured from frasyr, "PM": production model from frapmr
 #'
 #'
 # #' @examples
@@ -3043,7 +3045,7 @@ create_dummy_vpa <- function(res_vpa){
 #' @export
 #'
 
-calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmin=-1, MSY=-1, is_scale=FALSE, unit=1, period_extra=NULL){
+calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmin=-1, MSY=-1, is_scale=FALSE, unit=1, period_extra=NULL, type="AS", fun_period=mean){
     # by year performance (start_future_year:last_year)
     # mean, median, ci5%, ci10%, ci90%, ci95%, CV,
     # ssb, biomass, number by age, catch weight
@@ -3054,17 +3056,17 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
         tibble(stat=str_c(label,"_",names(x)),value=x)
     }
 
-    fun_list <- list(ci0.05=function(x) quantile(x,0.05),
-                     ci0.10 = function(x) quantile(x,0.1),
-                     ci0.95 = function(x) quantile(x,0.95),
-                     ci0.90 = function(x) quantile(x,0.90),
-                     cv = function(x) sqrt(var(x))/mean(x),
-                     mean = function(x) mean(x),
-                     median = function(x) median(x),
-                     prob_target = function(x) mean(x>SBtarget)*unit,
-                     prob_limit  = function(x) mean(x>SBlimit)*unit,
-                     prob_ban    = function(x) mean(x>SBban)*unit,
-                     prob_min    = function(x) mean(x>SBmin)*unit)
+    fun_list <- list(ci0.05=function(x) quantile(x,0.05, na.rm=TRUE),
+                     ci0.10 = function(x) quantile(x,0.1, na.rm=TRUE),
+                     ci0.95 = function(x) quantile(x,0.95, na.rm=TRUE),
+                     ci0.90 = function(x) quantile(x,0.90, na.rm=TRUE),
+                     cv = function(x) sqrt(var(x, na.rm=TRUE))/mean(x, na.rm=TRUE),
+                     mean = function(x) mean(x, na.rm=TRUE),
+                     median = function(x) median(x, na.rm=TRUE),
+                     prob_target = function(x) mean(x>SBtarget, na.rm=TRUE)*unit,
+                     prob_limit  = function(x) mean(x>SBlimit, na.rm=TRUE)*unit,
+                     prob_ban    = function(x) mean(x>SBban, na.rm=TRUE)*unit,
+                     prob_min    = function(x) mean(x>SBmin, na.rm=TRUE)*unit)
 
   if(is_scale){
     scale_ssb <- SBtarget
@@ -3079,59 +3081,101 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
     scale_catch <- 1
   }
 
-  year_future <- dimnames(res_future$naa)[[2]][res_future$input$tmb_data$future_initial_year:dim(res_future$naa)[[2]]]
-  age_label <- str_c("A",dimnames(res_future$naa)[[1]])
-  year_label <- dimnames(res_future$naa)[[2]]
+  if(type=="AS"){
+    year_future <- dimnames(res_future$naa)[[2]][res_future$input$tmb_data$future_initial_year:dim(res_future$naa)[[2]]]
+    age_label <- str_c("A",dimnames(res_future$naa)[[1]])
+    year_label <- dimnames(res_future$naa)[[2]]
 
-  ssb_mat <- res_future$SR_mat[year_future,,"ssb"] / scale_ssb
-  catch_mat <- res_future$HCR_realized[year_future,,"wcatch"] / scale_catch
-  biom_mat <- apply(res_future$naa * res_future$waa,c(2,3),sum)
+    ssb_mat <- res_future$SR_mat[year_future,,"ssb"] / scale_ssb
+    catch_mat <- res_future$HCR_realized[year_future,,"wcatch"] / scale_catch
+    biom_mat <- apply(res_future$naa * res_future$waa,c(2,3),sum)
+  }
+  if(type=="PM"){
+    year_future <- res_future$mat_year$year[!res_future$mat_year$is_est]
+    age_label   <- NULL
+    year_label  <- res_future$mat_year$year
+
+    if(!is_scale){
+      ssb_mat   <- res_future$mat_stat["B",,] 
+      catch_mat <- res_future$mat_stat["C",,] 
+      biom_mat  <- res_future$mat_stat["B",,] 
+    }
+    else{
+      ssb_mat   <- res_future$mat_stat["Bratio",,] 
+      catch_mat <- res_future$mat_stat["Cratio",,] 
+      biom_mat  <- res_future$mat_stat["Bratio",,]       
+    }
+  }
 
   stat_data <- NULL
   for(i in 1:length(fun_list)){
     fun <- fun_list[[i]]
     funname <- names(fun_list)[i]
-    tmp <- bind_rows(
-            purrr::map_dfr(seq_len(length(age_label)),
-                           function(x) get_annual_pm(res_future$naa [x,year_future,],
-                                                     fun,str_c(funname,"_naa_", age_label[x]))),
-            purrr::map_dfr(seq_len(length(age_label)),
-                           function(x) get_annual_pm(res_future$wcaa[x,year_future,],
-                                                     fun,str_c(funname,"_wcaa_",age_label[x]))),
-            purrr::map_dfr(seq_len(length(age_label)),
-                           function(x) get_annual_pm(res_future$faa [x,year_future,],
-                                                     fun,str_c(funname,"_faa_", age_label[x]))),
-            get_annual_pm(ssb_mat,  fun  ,str_c(funname,"_ssb")),
-            get_annual_pm(catch_mat,fun  ,str_c(funname,"_catch")),
-            get_annual_pm(biom_mat, fun  ,str_c(funname,"_biom"))
-        )
-        stat_data <- bind_rows(stat_data, tmp)
-    }
 
-    # temporal scale
-    # by term performance
-    # - management term1, ABC_year + 0:9
-    # - management term2, ABC_year + 0:4
-    # - management term3, ABC_year + 5:9
-    # - management term4, ABC_year + 1:10
-    # - management term5, ABC_year + 1:4
-    # - management term6, ABC_year + 6:10
-    #
-    # mean(ssb), mean(biomass), mean(catch), mean(AAV), mean(CV), Pr(SBany>SBtarget), Pr(SBany>SBlimit),Pr(SBany>SBban),Pr(SBany>SBmin), AAV_min (査読コメントを参照), max_AAV_min, mean(min_catch)
-
-  get_period_pm <- function(mat, fun_name, year_period, sum_fun_name){
-    tmp <- rownames(mat)%in%year_period
-    if(sum(tmp)!=length(year_period)){
-      cat("year_period does not match future projection year\n"); return(NA)
+    if(type=="AS"){
+      x1 <- purrr::map_dfr(seq_len(length(age_label)),
+                       function(x) get_annual_pm(res_future$naa [x,year_future,],
+                                                 fun,str_c(funname,"_naa_", age_label[x])))
+      x2 <- purrr::map_dfr(seq_len(length(age_label)),
+                     function(x) get_annual_pm(res_future$wcaa[x,year_future,],
+                                               fun,str_c(funname,"_wcaa_",age_label[x])))
+      x3 <- purrr::map_dfr(seq_len(length(age_label)),
+                       function(x) get_annual_pm(res_future$faa [x,year_future,],
+                                                 fun,str_c(funname,"_faa_", age_label[x])))      
     }
     else{
+      x1 <- x2 <- x3 <- NULL
+    }
+    tmp <- bind_rows(
+      x1,x2,x3,
+      get_annual_pm(ssb_mat,  fun  ,str_c(funname,"_ssb")),
+      get_annual_pm(catch_mat,fun  ,str_c(funname,"_catch")),
+      get_annual_pm(biom_mat, fun  ,str_c(funname,"_biom"))
+    )
+    stat_data <- bind_rows(stat_data, tmp)
+  }
+
+  # temporal scale
+  # by term performance
+  # - management term1, ABC_year + 0:9
+  # - management term2, ABC_year + 0:4
+  # - management term3, ABC_year + 5:9
+  # - management term4, ABC_year + 1:10
+  # - management term5, ABC_year + 1:4
+  # - management term6, ABC_year + 6:10
+  #
+  # mean(ssb), mean(biomass), mean(catch), mean(AAV), mean(CV), Pr(SBany>SBtarget), Pr(SBany>SBlimit),Pr(SBany>SBban),Pr(SBany>SBmin), AAV_min (査読コメントを参照), max_AAV_min, mean(min_catch)
+
+  get_period_pm <- function(mat, fun_name, year_period, sum_fun_name, fun_name_char){
+    tmp <- rownames(mat)%in%year_period
+    if(sum(tmp)!=length(year_period)){
+        cat("part of years does not match future projection year\n")
+        return(NA)
+    }
+    else{
+      if(type=="PM"){
+        if(fun_name_char==c("prob_limit_any")){
+          mat <- sweep(mat, 2, SBlimit, FUN="/")
+        }
+        if(fun_name_char==c("prob_ban_any")){
+          mat <- sweep(mat, 2, SBban, FUN="/")
+        }
+        if(fun_name_char==c("prob_min_any")){
+          mat <- sweep(mat, 2, SBmin, FUN="/")
+        }                
+      }
       mat1 <- mat[tmp,]
       res <- apply(mat1,2,fun_name) %>% sum_fun_name()
       return(res)
     }
   }
 
-  ABC_year     <- year_label[res_future$input$tmb_data$start_ABC_year] %>% as.numeric()
+  if(type=="AS"){
+    ABC_year     <- year_label[res_future$input$tmb_data$start_ABC_year] %>% as.numeric()
+  }
+  if(type=="PM"){
+    ABC_year     <- res_future$mat_year$year[res_future$mat_year$is_manage] %>% min()
+  }
   period_range <- list(0:9, 0:4, 5:9, 1:10, 1:4, 6:10)
   if(!is.null(period_extra)){
     for(i in 1:length(period_extra)){
@@ -3168,23 +3212,40 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
     }
   }
 
-  mean2 <- function(x) mean(x,na.rm=TRUE)
-  fun_list2 <- list(cv     = function(x) sd(x)/mean(x,rm.na=TRUE),
-                    mean   = function(x) mean(x,rm.na=TRUE),
-                    median   = function(x) mean(x,rm.na=TRUE),
+  mean2 <- function(x) fun_period(x,na.rm=TRUE)
+    
+  fun_list2 <- list(cv     = function(x) sd(x, na.rm=TRUE)/mean(x,na.rm=TRUE),
+                    mean   = function(x) mean(x,na.rm=TRUE),
+                    median   = function(x) median(x,na.rm=TRUE),
                     aav   = function(x) mean(abs(av(x)),na.rm=TRUE),
+                    mav   = function(x) median(abs(av(x)),na.rm=TRUE),                    
                     adr = function(x){ x0 <- av(x) ;
                                        x0[x0>0] <- NA ;
                                        mean(x0,na.rm=TRUE)    },
                     mdr = calc_mdr_,
                     mdr0 = calc_mdr0_,
-                    min_value = function(x) min(x, na.rm=TRUE),
-                    max_value = function(x) max(x, na.rm=TRUE),
-                    prob_target_any  = function(x) ifelse(sum(x<SBtarget)>0,1,0),
-                    prob_limit_any  = function(x) ifelse(sum(x<SBlimit)>0,1,0),
+                    min_value = function(x){
+                        if(all(is.na(x))) NA else min(x, na.rm=TRUE)
+                    },
+                    max_value = function(x){
+                        if(all(is.na(x))) NA else max(x, na.rm=TRUE)
+                    },
+                    # 以下、na.rm=FALSEに変更。PMで全てのデータがNAであった場合、na.rm=TRUEとすると0という数字が入ってしまうので、PMで使うならここはFALSEとすべき
+                    # ただし、一部だけNAが入るような場合にはどうすべきか？そういう事例がでたときに要検討
+                    prob_target_any  = function(x) ifelse(sum(x<SBtarget,na.rm=FALSE)>0,1,0),
+                    prob_limit_any  = function(x){
+                      if(type=="PM") SBlimit <- rep(1,length(x))
+                      ifelse(sum(x<SBlimit,na.rm=FALSE)>0,1,0)
+                    },
                     prob_half_any  = function(x) ifelse(sum(x[-1]<0.5*x[-length(x)])>0,1,0),
-                    prob_ban_any    = function(x) ifelse(sum(x<SBban)>0,1,0),
-                    prob_min_any    = function(x) ifelse(sum(x<SBmin)>0,1,0))
+                    prob_ban_any    = function(x){
+                      if(type=="PM") SBban <- rep(1,length(x))                      
+                      ifelse(sum(x<SBban,na.rm=FALSE)>0,1,0)
+                    },
+                    prob_min_any    = function(x){
+                      if(type=="PM") SBmin <- rep(1,length(x))                      
+                      ifelse(sum(x<SBmin,na.rm=FALSE)>0,1,0)
+                    })
 
   mat_list <- lst(ssb=ssb_mat, biom=biom_mat, catch=catch_mat)
   for(j in seq_len(length(fun_list2))){
@@ -3193,8 +3254,8 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
         stat_data,
         purrr::map_dfr(1:length(mat_list),
                        function(x)
-                         tibble(stat=str_c(names(fun_list2)[j],names(mat_list)[x],names(period_list)[i],sep="_"),
-                                value=get_period_pm(mat_list[[x]], fun_list2[[j]], period_list[[i]], mean2)))
+                           tibble(stat=str_c(names(fun_list2)[j],names(mat_list)[x],names(period_list)[i],sep="_"),
+                                value=get_period_pm(mat_list[[x]], fun_list2[[j]], period_list[[i]], mean2, fun_name_char=names(fun_list2)[j])))
         )
     }}
   return(stat_data)
@@ -3297,4 +3358,13 @@ get.ab.bh <- function(h,R0,biopars){
 check_fix_CVoption <- function(res_future){
   wcatch <- res_future$HCR_realized[,,"wcatch"]
   wcatch[-1,]/wcatch[-nrow(wcatch),]
+}
+        
+#' @export      
+
+format_type <- function(){
+    tribble(~name, ~col, ~ lty,
+            "target", "#00533E", "dashed",
+            "limit",  "#EDB918", "dotdash",
+            "ban",   "#C73C2E", "dotted")
 }

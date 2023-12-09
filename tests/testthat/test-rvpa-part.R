@@ -49,3 +49,17 @@ test_that("bootstrap using use.index options", {
 })
 
 
+context("jackknife")
+
+test_that("extract data test", {
+  data("res_vpa_estb")
+  testinput           <- res_vpa_estb$input
+  testinput$use.index <- 2:6
+  testinput$plot      <- FALSE
+  res_test <- do.call(vpa, testinput)
+  res_JK   <- do_jackknife_vpa(res_vpa_estb, method = "index")
+  expect_equal(colSums(res_test$naa), colSums(res_JK$res_vpa$`Removed index01`$naa))
+  expect_equal(colSums(res_test$ssb), colSums(res_JK$res_vpa$`Removed index01`$ssb))
+  expect_equal(colSums(res_test$baa), colSums(res_JK$res_vpa$`Removed index01`$baa))
+})
+

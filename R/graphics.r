@@ -17,17 +17,17 @@ pt1             <- 0.3528
 
 theme_SH <- function(legend.position="none",base_size=12){
 
-  if(isTRUE(stringr::str_detect(version$os, pattern="darwin"))){
-    font_MAC <- "HiraginoSans-W3"#"Japan1GothicBBB"#
-    theme_bw(base_size=base_size) +
-      theme(panel.grid = element_blank(),
-            axis.text.x=element_text(size=11,color="black"),
-            axis.text.y=element_text(size=11,color="black"),
-            axis.line.x=element_line(size= 0.3528),
-            axis.line.y=element_line(size= 0.3528),
-            legend.position=legend.position, text =element_text(family = font_MAC) )
-  }
-  else{
+  ## if(isTRUE(stringr::str_detect(version$os, pattern="darwin"))){
+  ##   font_MAC <- "HiraginoSans-W3"
+  ##   theme_bw(base_size=base_size) +
+  ##     theme(panel.grid = element_blank(),
+  ##           axis.text.x=element_text(size=11,color="black"),
+  ##           axis.text.y=element_text(size=11,color="black"),
+  ##           axis.line.x=element_line(size= 0.3528),
+  ##           axis.line.y=element_line(size= 0.3528),
+  ##           legend.position=legend.position, text =element_text(family = font_MAC) )
+  ## }
+  ## else{
     theme_bw(base_size=base_size) +
       theme(panel.grid = element_blank(),
             axis.text.x=element_text(size=11,color="black"),
@@ -36,7 +36,7 @@ theme_SH <- function(legend.position="none",base_size=12){
             axis.line.y=element_line(size= 0.3528),
             legend.position=legend.position)
 
-  }
+#  }
 }
 
 #' 会議用の図の出力関数（大きさ・サイズの指定済）：通常サイズ
@@ -809,7 +809,7 @@ plot_futures <- function(vpares=NULL,
                          seed=1, # seed for selecting the above example
                          legend.position="top",
                          type="detail",
-                         font.size=18,
+                         font.size=16,
                          ncol=3,
                          remove.last.vpa.year = FALSE
 ){
@@ -1013,15 +1013,16 @@ plot_futures <- function(vpares=NULL,
     geom_blank(data=dummy2,mapping=aes(y=value,x=year))+
     #theme_bw(base_size=font.size) +
     #        coord_cartesian(expand=0)+
-    scale_y_continuous(expand=expansion(mult=c(0,0.05)))+
+    scale_y_continuous(expand=expand_scale(mult=c(0,0.05)),labels = scales::comma)+
     facet_wrap(~factor(jstat,levels=rename_list$jstat),scales="free_y",ncol=ncol)+
     xlab("年")+ylab("")+ labs(fill = "",linetype="",color="")+
     xlim(minyear,maxyear)
 
   if("SSB" %in% what.plot){
     g1 <- g1 + geom_hline(data = ssb_RP,
-                          aes(yintercept = value, linetype = RP_name),
-                          color = c(col.SBtarget, col.SBlim, col.SBban))
+                          aes(yintercept = value,linetype=RP_name),
+						  color = c(col.SBtarget, col.SBlim, col.SBban))+
+						  scale_linetype_manual(name="",values=c("solid","dashed",unlist(format_type()[1,3])[[1]],unlist(format_type()[1,3])[[1]],unlist(format_type()[3,3])[[1]],unlist(format_type()[2,3])[[1]],unlist(format_type()[1,3])[[1]]))
   }
 
   if("catch" %in% what.plot){
@@ -1075,6 +1076,7 @@ plot_futures <- function(vpares=NULL,
               mapping=aes(x=year,y=mean),lwd=1,color="black")# VPAのプロット
   return(g1)
 }
+
 
 #' 複数の将来予測の結果をプロットする（ggplotは使わず）
 #'
@@ -1300,7 +1302,7 @@ plot_yield <- function(MSY_obj,refs_base,
 
   g1 <- trace %>%
     ggplot2::ggplot()
-
+ 
   if(is.null(future.name)) future.name <- 1:length(future)
 
   if(is.null(refs.label)) {
@@ -1318,13 +1320,19 @@ plot_yield <- function(MSY_obj,refs_base,
     mutate(age=as.numeric(as.character(age)))
   age.label <- age.label %>%
     mutate(age_name=str_c(age,ifelse(age.label$age==max(age.label$age),plus.char,""),"歳"))
-
-  g1 <- g1 + geom_area(aes(x=ssb.mean,y=value,fill=`年齢`),col="black",alpha=0.5,lwd=1*0.3528) +
+  
+  legend.labels <- as.vector(age.label$age_name)
+  
+  nb.cols <- length(unique(trace$age)) # 年齢グループが多い場合に対応できるように変更
+   mycolors <- grDevices::colorRampPalette(c("#F7FBFF", "#DEEBF7", "#C6DBEF", "#9ECAE1", "#6BAED6", "#4292C6",
+"#2171B5", "#084594"))(nb.cols)
+  
+  g1 <- g1 + geom_area(aes(x=ssb.mean,y=value,fill=`年齢`),col="black",alpha=0.5,lwd=1*0.3528,stat="identity") +
     #    geom_line(aes(x=ssb.mean,y=catch.CV,fill=age)) +
     #    scale_y_continuous(sec.axis = sec_axis(~.*5, name = "CV catch"))+
-    scale_fill_brewer() +
+    scale_fill_manual(values=mycolors,labels=rev(legend.labels)) +
     theme_bw() +
-    theme(legend.position = 'none') +
+    #theme(legend.position = 'none') +
     #    geom_point(data=refs_base,aes(y=Catch,x=SSB,shape=refs.label,color=refs.label),size=4)+
     #形は塗りつぶしができる形にすること
     scale_shape_manual(values = c(21, 24,5,10)) +
@@ -1333,10 +1341,10 @@ plot_yield <- function(MSY_obj,refs_base,
     theme(panel.grid = element_blank(),axis.text=element_text(color="black")) +
     coord_cartesian(xlim=c(0,xmax*xlim.scale),
                     ylim=c(0,ymax*ylim.scale),expand=0) +
-    geom_text(data=age.label,
-              mapping = aes(y = cumcatch, x = ssb.mean, label = age_name)#,
+    #geom_text(data=age.label,
+     #         mapping = aes(y = cumcatch, x = ssb.mean, label = age_name)#,
               #                            family = family
-    ) +
+    #) +
     #    geom_text_repel(data=refs_base,
     #                     aes(y=Catch,x=SSB,label=refs.label),
     #                     size=4,box.padding=0.5,segment.color="gray",
@@ -1414,7 +1422,7 @@ plot_yield <- function(MSY_obj,refs_base,
 
   if(isTRUE(lining)){
     #        ylim.scale.factor <- rep(c(0.94,0.97),ceiling(length(refs.label)/2))[1:length(refs.label)]
-    g1 <- g1 + geom_vline(xintercept=refs_base$SSB,lty="41",lwd=0.6,color=refs.color)+
+    g1 <- g1 + geom_vline(xintercept=refs_base$SSB,lty=c(unlist(format_type()[1,3]),unlist(format_type()[2,3]),unlist(format_type()[3,3])),lwd=0.6,color=refs.color)+
       ggrepel::geom_label_repel(data=refs_base,
                                 aes(y=ymax*ylim.scale*0.85,
                                     x=SSB,label=refs.label),
@@ -1548,7 +1556,7 @@ plot_kobe_gg <- plot_kobe <- function(FBdata=NULL,
                              y=c(-1,-1,1,1)),aes(x=x,y=y),fill=yellow.color)
 
   if(write.vline){
-    g4 <- g4 + geom_vline(xintercept=c(1,limit.ratio,ban.ratio),color=refs.color,lty="41",lwd=0.7)+
+    g4 <- g4 + geom_vline(xintercept=c(1,limit.ratio,ban.ratio),color=refs.color,lty=c(unlist(format_type()[1,3]),unlist(format_type()[2,3]),unlist(format_type()[3,3])),lwd=0.7)+
       ggrepel::geom_label_repel(data=tibble(x=c(1,limit.ratio,ban.ratio),
                                             y=max.F*0.85,
                                             label=RP.label),
@@ -1639,9 +1647,9 @@ plot_HCR <- function(SBtarget,SBlim,SBban,Ftarget,
   #Drawing of the funciton by ggplot2
   ggplct <- ggplot(data.frame(x = c(0,1.5*SBtarget),y= c(0,1.5*Ftarget)), aes(x=x)) +
     stat_function(fun = h,lwd=1.5,color=col.multi2currf, n=5000)
-  g <- ggplct  + geom_vline(xintercept = SBtarget, size = 0.9, linetype = "41", color = col.SBtarget) +
-    geom_vline(xintercept = SBlim, size = 0.9, linetype = "41", color = col.SBlim) +
-    geom_vline(xintercept = SBban, size = 0.9, linetype = "41", color = col.SBban) +
+  g <- ggplct  + geom_vline(xintercept = SBtarget, size = 0.9, linetype = unlist(format_type()[1,3]), color = col.SBtarget) +
+    geom_vline(xintercept = SBlim, size = 0.9, linetype = unlist(format_type()[2,3]), color = col.SBlim) +
+    geom_vline(xintercept = SBban, size = 0.9, linetype = unlist(format_type()[3,3]), color = col.SBban) +
     geom_hline(yintercept = Ftarget, size = 0.9, linetype = "43", color = col.Ftarget) +
     geom_hline(yintercept = beta*Ftarget, size = 0.7, linetype = "43", color = col.betaFtarget) +
     labs(x = str_c("親魚量 (",junit,"トン)"),y = "漁獲圧の比(F/Fmsy)",color = "") +
@@ -1659,7 +1667,7 @@ plot_HCR <- function(SBtarget,SBlim,SBban,Ftarget,
     RPdata <- tibble(RP.label=RP.label, value=c(SBtarget, SBlim, SBban), y=c(1.1,1.05,1.05))
     g <- g + ggrepel::geom_label_repel(data=RPdata,
                                        mapping=aes(x=value, y=y, label=RP.label),
-                                       box.padding=0.5, nudge_y=1) +
+                                       box.padding=0.5, nudge_y=0.05) +
       geom_label(label="Fmsy", x=SBtarget*1.3, y=Ftarget)+
       geom_label(label=str_c(beta,"Fmsy"), x=SBtarget*1.3, y=beta*Ftarget)+
       ylim(0,1.3)
@@ -1753,9 +1761,9 @@ plot_HCR_by_catch <- function(trace,
     ggplot()+
     geom_line(aes(x=ssb.mean/biomass.unit,y=catch_HCR/biomass.unit),lwd=1)+
     theme_SH()+
-    geom_vline(xintercept = SBtarget/biomass.unit, size = 0.9, linetype = "41", color = col.SBtarget) +
-    geom_vline(xintercept = SBlim/biomass.unit, size = 0.9, linetype = "41", color = col.SBlim) +
-    geom_vline(xintercept = SBban/biomass.unit, size = 0.9, linetype = "41", color = col.SBban) +
+    geom_vline(xintercept = SBtarget/biomass.unit, size = 0.9, linetype = unlist(format_type()[1,3]), color = col.SBtarget) +
+    geom_vline(xintercept = SBlim/biomass.unit, size = 0.9, linetype = unlist(format_type()[2,3]), color = col.SBlim) +
+    geom_vline(xintercept = SBban/biomass.unit, size = 0.9, linetype = unlist(format_type()[3,3]), color = col.SBban) +
     #      geom_hline(yintercept = MSY/biomass.unit,color="gray")+
     xlab(str_c("親魚量 (",junit,"トン)"))+
     ylab(str_c("漁獲量 (",junit,"トン)"))

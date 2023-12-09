@@ -39,7 +39,7 @@ vpa(
   d = 1e-04,
   min.caa = 0.001,
   plot = FALSE,
-  plot.year = 1998:2015,
+  plot.year = NULL,
   term.F = "max",
   plus.group = TRUE,
   stat.tf = "mean",
