@@ -237,7 +237,8 @@ fit.SR <- function(SRdata,
                    plus_group = TRUE,
                    is_jitter = FALSE,
                    HS_fix_b = NULL,
-                   gamma=0.01
+                   gamma=0.01,
+                   bias_correct=FALSE # only for test and L2 option
 ){
   validate_sr(SR = SR, method = method, AR = AR, out.AR = out.AR)
 
@@ -332,11 +333,21 @@ fit.SR <- function(SRdata,
       }
 
       if (method == "L2") {
-        rss <- w[1]*resid2[1]^2*(1-rho^2)
-        for(i in 2:N) rss <- rss + w[i]*resid2[i]^2
-        sd <- sqrt(rss/NN)
-        sd2 <- c(sd/sqrt(1-rho^2), rep(sd,N-1))
-        obj <- -sum(w*dnorm(resid2,0,sd2,log=TRUE))
+        if(bias_correct==FALSE){
+          rss <- w[1]*resid2[1]^2*(1-rho^2)
+          for(i in 2:N) rss <- rss + w[i]*resid2[i]^2
+          sd <- sqrt(rss/NN)
+          sd2 <- c(sd/sqrt(1-rho^2), rep(sd,N-1))
+          obj <- -sum(w*dnorm(resid2,0,sd2,log=TRUE))
+        }
+        else{
+#          resid2 <- resid-mean(resid)
+          rss <- w[1]*resid2[1]^2*(1-rho^2)
+          for(i in 2:N) rss <- rss + w[i]*resid2[i]^2
+          sd <-  sqrt(rss/NN)
+          sd2 <- c(sd/sqrt(1-rho^2), rep(sd,N-1))          
+          obj <- -sum(w*dnorm(resid2,-0.5*sd2^2,sd2,log=TRUE))
+        }
       } else {
         rss <- w[1]*abs(resid2[1])*sqrt(1-rho^2)
         for(i in 2:N) rss <- rss + w[i]*abs(resid2[i])
@@ -346,9 +357,9 @@ fit.SR <- function(SRdata,
       }
       return(obj)
     }
-    }
+  }
 
-    if(is.null(HS_fix_b)){
+  if(is.null(HS_fix_b)){
       if (is.null(p0)) {
     a.range <- range(rec/ssb)
     b.range <- range(1/ssb)
@@ -453,6 +464,11 @@ fit.SR <- function(SRdata,
     resid2 <- NULL
     for (i in 1:N) {
       resid2[i] <- ifelse(i == 1,resid[i], resid[i]-rho*resid[i-1])
+    }
+
+    if(bias_correct==TRUE){
+      resid <- resid-mean(resid)
+      resid2 <- resid2-mean(resid2)
     }
 
     # if (method=="L2") {
