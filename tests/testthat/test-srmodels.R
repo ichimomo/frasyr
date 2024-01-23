@@ -1,12 +1,12 @@
 context("Utils for selecting SR models")
 
-data(res_vpa)
+data(res_vpa_org)
 
 test_that("get.SRdata returns data frame", {
-  expect_equal(class(get.SRdata(res_vpa)),
+  expect_equal(class(get.SRdata(res_vpa_org))[3],
                "data.frame")
-  expect_equal(dim(get.SRdata(res_vpa)),
-               c(30, 3))
+  expect_equal(dim(get.SRdata(res_vpa_org)),
+               c(30, 4))
 })
 
 #test_that("get.SRdata returns list", {
@@ -16,20 +16,20 @@ test_that("get.SRdata returns data frame", {
 #})
 
 test_that("get data frame from list object", {
-  expect_equal(class(pull_df_from_list(list = res_vpa, dfname = "baa")),
+  expect_equal(class(pull_df_from_list(list = res_vpa_org, dfname = "baa")),
                "data.frame")
-  expect_equal(dim(pull_df_from_list(list = res_vpa, dfname = "baa")),
+  expect_equal(dim(pull_df_from_list(list = res_vpa_org, dfname = "baa")),
                c(4, 30))
 })
 
 test_that("Obtain SR data for plot quickly", {
-  output <- make_SR_dframe("HS", "L1", res_vpa)
+  output <- make_SR_dframe("HS", "L1", res_vpa_org)
   expect_is(output, "data.frame")
   expect_equal(nrow(output), 100)
   expect_equal(ncol(output), 3)
 
   inputs_are <- function(SR, method, return_is) {
-    expect_equal(make_SR_dframe(SR = SR, method = method, res_vpa) %>%
+    expect_equal(make_SR_dframe(SR = SR, method = method, res_vpa_org) %>%
                    dplyr::pull(name) %>%
                    unique(),
                  return_is)

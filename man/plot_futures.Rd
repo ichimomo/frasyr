@@ -15,7 +15,8 @@ plot_futures(
   minyear = NULL,
   is.plot.CIrange = TRUE,
   is.plot.CIline = TRUE,
-  what.plot = c("Recruitment", "SSB", "biomass", "catch", "beta_gamma", "U", "Fratio"),
+  what.plot = c("Recruitment", "SSB", "biomass", "cbiomass", "catch", "beta_gamma", "U",
+    "Fratio"),
   biomass.unit = 1,
   number.unit = 1,
   number.name = "",
@@ -34,7 +35,7 @@ plot_futures(
   seed = 1,
   legend.position = "top",
   type = "detail",
-  font.size = 18,
+  font.size = 16,
   ncol = 3,
   remove.last.vpa.year = FALSE
 )

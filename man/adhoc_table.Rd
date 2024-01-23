@@ -16,8 +16,6 @@ adhoc_table(
 )
 }
 \arguments{
-\item{result_vpa}{Obejct returned from \code{vpa()}}
-
 \item{yrs_preabc}{Vector of future years preceding ABC year}
 
 \item{number}{Table number}
@@ -25,8 +23,6 @@ adhoc_table(
 \item{sbtarget}{Value of SB target}
 
 \item{fmsy}{Value of Fmsy}
-
-\item{result_msy}{Object MSY result created previous SC meeting...?}
 }
 \description{
 Dispacher function for making table

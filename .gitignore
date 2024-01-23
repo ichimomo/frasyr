@@ -38,3 +38,9 @@ rsconnect/
 
 #doc
 doc
+inst/executable/*o
+inst/executable/*so
+
+
+/doc/
+/Meta/

@@ -21,6 +21,10 @@ make_future_data(
   waa_catch = NULL,
   waa_fun = FALSE,
   start_waafun_year_name = start_biopar_year_name,
+  waa_fun_name = NA,
+  waa_catch_fun = FALSE,
+  start_waacatchfun_year_name = start_biopar_year_name,
+  waa_catch_fun_name = NA,
   maa_year,
   maa = NULL,
   maa_fun = FALSE,
@@ -54,9 +58,10 @@ make_future_data(
   seed_number = 1,
   resid_type = "lognormal",
   bias_correction = TRUE,
-  resample_year_range = 0,
+  resample_year_range = NA,
   backward_duration = 5,
   recruit_intercept = 0,
+  setting_release = NULL,
   model_average_option = NULL,
   regime_shift_option = NULL,
   silent = FALSE,
@@ -70,7 +75,7 @@ make_future_data(
 
 \item{nyear}{将来予測の実施年数}
 
-\item{plus_age}{プラスグループとして計算する行（年齢ではないことに注意）。デフォルト値（NULL）ならfuture_initial_year_name年にNA以外の数値が入っている一番大きい行をプラスグループの行とする。plus_ageという名前だが、plus_group=FALSEの場合には、たんに最大年齢になる。}
+\item{plus_age}{プラスグループとして計算する行（年齢ではないことに注意）。デフォルト値（NULL）ならfuture_initial_year_name年にNA以外の数値が入っている一番大きい行をプラスグループの行とする。plus_ageという名前だが、plus_group=FALSEの場合には、たんに最大年齢になる。年齢の行数よりもプラスグループが小さいような場合（対馬マイワシなど）に対応。}
 
 \item{plus_group}{プラスグループを考慮するかどうか。与えない場合、res_vpa$input$plus.groupの設定を引き継ぐ。ただし、inputを使ってdo.callする場合などにはうまく調整できないことがあるので、明示的に与えたほうがよいかも。}
 
@@ -86,9 +91,15 @@ make_future_data(
 
 \item{waa}{将来の年齢別体重を直接与える場合, maa, M_yearも同様}
 
-\item{waa_fun}{log(weight)~log(number)の回帰式から将来のweightを予測する}
+\item{waa_fun}{FALSE: 使わない、TRUE: log(weight)~log(number)の回帰式から将来のweightを予測する,}
 
 \item{start_waafun_year_name}{上記の設定がスタートする最初の年。それ以外の年は上で設定されたパラメータが使われる}
+
+\item{waa_fun_name}{カスタマイズされたwaa_funを使う場合、その関数のオブジェクトの名前}
+
+\item{waa_catch_fun}{FALSE: 使わない、TRUE: log(weight)~log(number)の回帰式から将来のweightを予測する}
+
+\item{waa_catch_fun_name}{カスタマイズされたwaa_funを使う場合、その関数のオブジェクトの名前}
 
 \item{maa_fun}{maturity ~ number の回帰式から将来のmaturityを予測する(暫定的、太平洋マダラでのみ利用)}
 
@@ -142,11 +153,13 @@ make_future_data(
 
 \item{bias_correction}{将来予測でバイアス補正をするかどうか}
 
-\item{resample_year_range}{"resampling", "backward"で有効。0の場合、推定に使ったデータから計算される残差を用いる。年の範囲を入れると、対象とした年の範囲で計算される残差を用いる。}
+\item{resample_year_range}{"resampling", "backward"で有効。年の範囲を入れると、対象とした年の範囲で計算される残差を用いる。}
 
 \item{backward_duration}{"backward"の場合、何年で１ブロックとするか。"backward"で有効。デフォルトは5 。}
 
 \item{recruit_intercept}{将来の加入の切片。将来の加入は R=f(ssb) + intercept となる。}
+
+\item{setting_release}{より詳細な放流シナリオを設定する場合. 将来の放流数は list(number=tibble(value=)) or list(number=tibble(year=))) or list(number=tibble(year=xxx, value=xxx))) として与える。yearのみ単独で与えるのは過去年を与え、その期間の平均放流数を使う。yearとvalueの両方を与える場合には、将来年が想定されており、その年の放流尾数をvalueとして用いる。例えば tibble(year=c(2021:2100), value=c(100,200,rep(300,length(21:2100)-2)) と与えると2021,2022年は100, 200匹の総放流尾数、2023年以降は300匹となる。年は、実際に将来予測を実施するよりも十分長い年数を与えること（長すぎても問題はないので）。将来の添加効率も list(rate=tibble(value=)) or list(rate=tibble(year=))) として与える。この場合のyearは過去年。valueを与えると、与えたvalueのベクトルからランダムサンプリングされる。結果的にsetting_release = list(number=tibble(year=1990:2000), rate=tibble(value=c(0.4, 0.5, 0.3))) みたいな、リストの中に２つのtibbleが入ったちょっとややこしい構造になります。この将来予測へのデータにはres_vpaとres_SR$input$SRdataの両方に放流に関するデータが格納されています。過去の放流データをどちらのソースからとってくるかについても、data_source="SR" or "VPA"で選択してください。setting_releaseで指定されない限り、デフォルトはVPA結果からとってきます。}
 
 \item{model_average_option}{model averagingをする場合のオプション. SR_matのlistとweightをlist形式で入れる(list(SR_list=list(res_SR1,res_SR2),weight=c(0.5,0.5)))}
 

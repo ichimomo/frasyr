@@ -75,7 +75,7 @@ test_that("output value check",{
 
   load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
   SRdata_pma_check <- get.SRdata(res_vpa_pma)
-
+  
   #上記引数での計算結果を読み込み
   load(system.file("extdata","SRdata_pma.rda",package = "frasyr"))
 
@@ -83,6 +83,32 @@ test_that("output value check",{
   expect_equal(SRdata_pma_check$year, SRdata_pma$year)
   expect_equal(SRdata_pma_check$SSB, SRdata_pma$SSB)
   expect_equal(SRdata_pma_check$R, SRdata_pma$R)
+
+})
+
+test_that("check weight.year option",{
+
+  load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))    
+  SRdata_pma_check_weight <- get.SRdata(res_vpa_pma, weight.year=1990:2000)
+  expect_equal(sum(SRdata_pma_check_weight$weight), length(1990:2000))
+
+  weight.value <- c(rep(0.5,15),rep(1,15))
+  SRdata_pma_check_weight <- get.SRdata(res_vpa_pma,
+                                        weight.data=tibble(year=SRdata_pma_check_weight$year,
+                                                           weight=weight.value))
+  expect_equal(SRdata_pma_check_weight$weight, weight.value)
+
+  res_SR1 <- fit.SR(SRdata_pma_check_weight, SR="HS", AR=0, method="L2")
+
+  res_SR2 <- SRdata_pma_check_weight %>% mutate(weight=ifelse(year<1997, 0.001, 1)) %>%
+    fit.SR(SR="HS", AR=0, method="L2")
+
+  res_SR3 <- SRdata_pma_check_weight %>% mutate(weight=ifelse(year<1997, 0, 1)) %>%
+    fit.SR(SR="HS", AR=0, method="L2")
+
+  expect_equal(res_SR2$pars$a==res_SR1$pars$a,FALSE)
+  expect_equal(res_SR2$pars$a, res_SR3$pars$a, tol=1e-5)
+  
 })
 
 context("stock-recruitment fitSR")
@@ -323,8 +349,8 @@ test_that("output value check",{
 
  # check HS_b_fix option
  # HS_b_fixにmin(SSB)としてもその1/100としても切片(a*HS_b_fix)とほぼ一致するはず。
-  data(res_vpa)
-  SRdata <- get.SRdata(res_vpa)
+  data(res_vpa_org)
+  SRdata <- get.SRdata(res_vpa_org)
 
   minSSB_b <- min(SRdata$SSB)
   res_fitSR_HS_b_fix_l1 <- fit.SR(SRdata=SRdata,SR="HS",method = "L1",AR=0,HS_fix_b = minSSB_b)
@@ -343,6 +369,7 @@ test_that("output value check",{
 })
 
 test_that("tentative test for sd of L1 and L2",{
+    
       #SSB=c(rep(1:5,2),3)
       SSB=c(rep(1:5,4))
       #CV=c(rep(-1,4),-2,rep(1,4),2,0)
@@ -404,6 +431,7 @@ test_that("tentative test for sd of L1 and L2",{
 context("stock-recruitment fit.SRregime")
 
 test_that("check matching of fit.SRregime and fit.SR",{
+    
   load(system.file("extdata","SRdata_pma.rda",package = "frasyr"))
   SRdata = SRdata_pma
   SRmodel.list <- expand.grid(SR.rel = c("HS", "BH", "RI"),
@@ -415,7 +443,7 @@ test_that("check matching of fit.SRregime and fit.SR",{
   SRdata2 = list(year=regime2, R=SRdata$R[SRdata$year %in% regime2],SSB=SRdata$SSB[SRdata$year %in% regime2])
   # レジームを完全に分けたときのfit.SRregimeの結果とfit.SRの結果が一致するかのテスト
   for (i in 1:nrow(SRmodel.list)) {
-    bio_par <- derive_biopar(res_vpa, derive_year=2017)
+    bio_par <- derive_biopar(res_vpa_org, derive_year=2017)
     resSR1 <- fit.SR(SRdata1, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],AR = 0, hessian = FALSE,length=20, bio_par=bio_par)
     resSR2 <- fit.SR(SRdata2, SR = SRmodel.list$SR.rel[i], method = SRmodel.list$L.type[i],AR = 0, hessian = FALSE,length=20, bio_par=bio_par)
     resSRregime <- fit.SRregime(SRdata, SR = as.character(SRmodel.list$SR.rel[i]), method = as.character(SRmodel.list$L.type[i]), regime.year = regime_year, regime.key = 0:1, regime.par = c("a","b","sd"), use.fit.SR = TRUE,bio_par=bio_par)
@@ -435,7 +463,7 @@ test_that("check matching of fit.SRregime and fit.SR",{
 
 test_that("test for fit.SR_tol",{
 
-  SRdata <- get.SRdata(res_vpa)
+  SRdata <- get.SRdata(res_vpa_org)
 
   # fit.SR_tol
   res1 <- fit.SR_tol(SRdata=SRdata, SR="HS", method="L1", AR=0)
@@ -463,12 +491,12 @@ test_that("test for fit.SR_tol",{
 
   # 以下、technical documentのR4の図1用のコード
   if(0){
-      res4 <- get.SRdata(res_vpa) %>%
+      res4 <- get.SRdata(res_vpa_org) %>%
           dplyr::filter(year%in%1988:2000) %>%
           fit.SR(SR="HS", method="L1", AR=0) %>%
           check.SRfit(n=400, seed=10)
 
-      res5 <- get.SRdata(res_vpa) %>%
+      res5 <- get.SRdata(res_vpa_org) %>%
           dplyr::filter(year%in%1988:2000) %>%
           fit.SR(SR="HS", method="L1", AR=0) %>%
           check.SRfit(n=400, seed=1)
@@ -489,3 +517,4 @@ test_that("test for fit.SR_tol",{
   }
 
 })
+

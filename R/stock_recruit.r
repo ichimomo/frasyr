@@ -32,9 +32,10 @@ get.SRdata <- function(vpares=NULL,
                        release.dat=NULL,
                        years = NULL,
                        weight.year = NULL,
+                       weight.data = NULL,
                        return.df = TRUE){
 
-    is.release <- !is.null(release.dat) | !is.null(vpares$input$dat$release.dat)
+    is.release <- !is.null(release.dat) | !is.null(vpares$input$dat$release.alive)
     if(is.null(years) && !is.null(vpares)) years <- as.numeric(colnames(vpares$naa))
 
     # R.datとSSB.datだけが与えられた場合、それを使ってシンプルにフィットする
@@ -50,66 +51,90 @@ get.SRdata <- function(vpares=NULL,
         else{
             assertthat::assert_that(length(R.dat)==length(years))
         }
-        dat <- data.frame(R = R.dat,SSB = SSB.dat,year = years)
+        dat <- tibble(R = R.dat,SSB = SSB.dat,year = years)
         if(!is.null(release.dat)) R.dat$release <- release.dat
-    } else {
-    # データの整形
+    }
+
+    # vpa dataが与えられた場合にはデータの整形をする
+    if(!is.null(vpares)) {
         n <- ncol(vpares$naa)
         L <- as.numeric(rownames(vpares$naa)[1])
 
         dat      <- list()
         dat$SSB  <- as.numeric(colSums(vpares$ssb,na.rm = TRUE))
         dat$year <- as.numeric(colnames(vpares$ssb))
+        dat$R   <-  as.numeric(vpares$naa[1,])
 
-        if(!is.null(vpares$input$dat$release.dat)){
-            release_age <- which(rownames(vpares$naa)%in%rownames(vpares$input$dat$release.dat))
-            naa <- vpares$naa
-            naa[release_age, ] <- naa[release_age, ] - vpares$input$dat$release.dat
-            dat$R <-  as.numeric(naa[1,])
-            dat$R[dat$R<0] <- 0.001
-            dat$release <- vpares$input$dat$release.dat
-        }
-        else{
-            dat$R    <- as.numeric(vpares$naa[1,])
-            if(!is.null(release.dat)){
-                dat$R <- dat$R-release.dat
-                dat$release <- release.dat
-            }
-        }
-
-    # 加入年齢分だけずらす
+        # 加入年齢分だけずらす
         dat$R    <- dat$R[(L+1):n]
         dat$SSB  <- dat$SSB[1:(n-L)]
         dat$year <- dat$year[(L+1):n]
-        if(is.release) dat$release <- as.numeric(dat$release[(L+1):n])
 
-    # データの抽出
-        dat <- as.data.frame(dat)
-        dat <- dat[dat$year%in%years,]
+        dat <- as_tibble(dat)
+
+        if(!is.null(vpares$input$dat$release.dat)) vpares$input$dat$release.alive <- vpares$input$dat$release.dat
+        if(!is.null(vpares$input$dat$release.alive)){
+
+          tmpfunc <- function(rdat, data_name){
+            if(!is.null(rdat)){
+              dat <- rdat[rownames(rdat) %in% as.character(L), ]
+              rownames(dat) <- data_name
+              dat %>% t() %>% as.data.frame() %>% rownames_to_column(var="year") %>%
+                mutate(year=as.numeric(year)) %>% as_tibble()
+            }
+          }
+
+          dat <- left_join(dat, tmpfunc(vpares$input$dat$release.alive, "release_alive"))
+          dat <- dat %>% mutate(R=R-release_alive)
+          if(!is.null(vpares$input$dat$release.all)){
+            dat <- left_join(dat, tmpfunc(vpares$input$dat$release.all, "release_all"))
+            dat <- left_join(dat, tmpfunc(vpares$input$dat$release.ratealive, "release_ratealive"))
+          }
+        }
+
+        dat$R[dat$R<0] <- 0.001
+
+        # データの抽出
+        dat <- dat %>% dplyr::filter(year%in%years)
     }
 
     assertthat::assert_that(all(dat[["R"]] > 0))
-    class(dat) <- "SRdata"
 
     #if (return.df == TRUE) return(data.frame(year = dat$year,
     #SSB  = dat$SSB,
     #                                         R    = dat$R,
     #                                             release=dat$release))
     #return(dat[c("year","SSB","R","release")])
-    dat.df <- data.frame(year = dat$year,
-                      SSB  = dat$SSB,
-                      R    = dat$R)
-    if(is.release) dat.df$release <- dat$release
 
-    if(!is.null(weight.year)){
-        dat.df$weight <- 0
-        dat.df$weight[dat$year %in% weight.year]  <- 1
+#    dat.df <- data.frame(year = dat$year,
+#                         SSB  = dat$SSB,
+#                         R    = dat$R)
+#    if(is.release){
+#        dat.df$release_alive <- dat$release_alive
+#        if(!is.null(dat$release_all)) dat.df$release_all <- dat$release_all
+#        if(!is.null(dat$release_ratealive))  dat.df$release_ratealive <- dat$
+#    }
 
-        if(length(weight.year)==1 && weight.year==0){
-            dat.df$weight[]  <- 1
-        }
+  if(!is.null(weight.year)){
+    dat <- dat %>% mutate(weight=0)
+    dat$weight[dat$year %in% weight.year]  <- 1
+
+    if(length(weight.year)==1 && weight.year==0){
+      dat <- dat %>% mutate(weight=1)
     }
-    return(dat.df)
+  }
+  if(is.null(weight.year)){
+    dat <- dat %>% mutate(weight=1)
+  }
+
+  if(!is.null(weight.data)){
+    assertthat::assert_that(all(dat$year==weight.data$year))
+    if("weight" %in% names(dat)) dat <- dat %>% select(-weight)
+    dat <- dat %>% left_join(weight.data)
+  }
+
+  dat <- dat %>% select(year, SSB, R, weight, everything())
+  return(dat)
 
 }
 
@@ -212,7 +237,8 @@ fit.SR <- function(SRdata,
                    plus_group = TRUE,
                    is_jitter = FALSE,
                    HS_fix_b = NULL,
-                   gamma=0.01
+                   gamma=0.01,
+                   bias_correct=FALSE # only for test and L2 option
 ){
   validate_sr(SR = SR, method = method, AR = AR, out.AR = out.AR)
 
@@ -309,11 +335,21 @@ fit.SR <- function(SRdata,
       }
 
       if (method == "L2") {
-        rss <- w[1]*resid2[1]^2*(1-rho^2)
-        for(i in 2:N) rss <- rss + w[i]*resid2[i]^2
-        sd <- sqrt(rss/NN)
-        sd2 <- c(sd/sqrt(1-rho^2), rep(sd,N-1))
-        obj <- -sum(w*dnorm(resid2,0,sd2,log=TRUE))
+        if(bias_correct==FALSE){
+          rss <- w[1]*resid2[1]^2*(1-rho^2)
+          for(i in 2:N) rss <- rss + w[i]*resid2[i]^2
+          sd <- sqrt(rss/NN)
+          sd2 <- c(sd/sqrt(1-rho^2), rep(sd,N-1))
+          obj <- -sum(w*dnorm(resid2,0,sd2,log=TRUE))
+        }
+        else{
+#          resid2 <- resid-mean(resid)
+          rss <- w[1]*resid2[1]^2*(1-rho^2)
+          for(i in 2:N) rss <- rss + w[i]*resid2[i]^2
+          sd <-  sqrt(rss/NN)
+          sd2 <- c(sd/sqrt(1-rho^2), rep(sd,N-1))          
+          obj <- -sum(w*dnorm(resid2,-0.5*sd2^2,sd2,log=TRUE))
+        }
       } else {
         rss <- w[1]*abs(resid2[1])*sqrt(1-rho^2)
         for(i in 2:N) rss <- rss + w[i]*abs(resid2[i])
@@ -323,9 +359,9 @@ fit.SR <- function(SRdata,
       }
       return(obj)
     }
-    }
+  }
 
-    if(is.null(HS_fix_b)){
+  if(is.null(HS_fix_b)){
       if (is.null(p0)) {
     a.range <- range(rec/ssb)
     b.range <- range(1/ssb)
@@ -430,6 +466,11 @@ fit.SR <- function(SRdata,
     resid2 <- NULL
     for (i in 1:N) {
       resid2[i] <- ifelse(i == 1,resid[i], resid[i]-rho*resid[i-1])
+    }
+
+    if(bias_correct==TRUE){
+      resid <- resid-mean(resid)
+      resid2 <- resid2-mean(resid2)
     }
 
     # if (method=="L2") {
@@ -777,10 +818,52 @@ fit.SR2 <- function(SRdata,
 #' 再生産関係のブートストラップ
 #'
 #' ①残差のパラメトリックブートストラップ、②残差のノンパラメトリックブートストラップ（リサンプリング）、③データのブートストラップ（リサンプリング）が行える
+#'
+#' 残差のパラメトリックブートストラップはmethod="p"で実行可能で、自己相関なしの場合、fit.SRのpars$sdを標準偏差とする正規分布からランダムに乱数を発生させ、予測値からのずれを加えて加入量のブートストラップデータを生成し、再推定している
+#'
+#' 自己相関ありの場合、fit.SRのpars$sdを1から自己相関係数rho^2を引き2乗根をとって除したもの(pars$sd/sqrt(1-pars$rho^2))を標準偏差とする正規分布からランダムに乱数（epsilon_t）を発生させ、 毎年の残差(resid_t) を resid_(t+1) = rho × resid_t + epsilon_t とし、resid_tを予測値に加えたブートストラップデータを生成し、再推定している
+#'
+#' 自己相関ありの場合はノンパラメトリックブートストラップは使わずにパラメトリックブートストラップを用いること
+#'
+#' 残差のノンパラメトリックブートストラップはmethod="n"で実行可能で、残差の確率分布を仮定せず、残差を重複ありでリサンプリングして、加入量のブートストラップデータを生成する
+#'
+#' データのブートストラップはmethod="d"で実行可能で、データを重複ありでリサンプリングしたデータを使用して、再生産関係の再推定を行う
+#'
+#' 親魚量データもリサンプリングにより変化するため、親魚量の不確実性も考慮されることになることから、親魚量データに偏りがあったり、データ数が少なかったり、あるデータ点に推定値が大きく依存している場合はバイアスや不確実性が大きくなりやすい
+#'
+#' 図のプロットにはbootSR.plotを使用する
+#'
+#' 自己相関を推定していない場合は最後のrhoの図は表示されない
+#'
+#' fit.SRの引数にbio_parを入れてスティープネスを計算した場合、SB0、R0、B0、hの図もされる
+#'
+#' 図の出力bootSR.plotのオプションoutput=Tとすると、各パラメータのヒストグラムが出力される
+#'
 #' @import purrr
 #' @param Res \code{fit.SR}か\code{fit.SRregime}のオブジェクト
-#' @param method パラメトリック ("p") かノンパラメトリック ("n")
+#' @param method 残差ブートストラップ(パラメトリック ("p") かノンパラメトリック ("n")) もしくはデータブートストラップ("d")
+#' @param n ブートストラップの回数（例では100回だが500回あるいは1000回を推奨）
 #' @encoding UTF-8
+#' @examples
+#' \dontrun{
+#' data(res_vpa)
+#' SRdata <- get.SRdata(res_vpa)
+#' bio_par <- derive_biopar(res_obj=res_vpa,derive_year = 2010)
+#' resL1outer = fit.SR(SRdata, SR = "HS", method = "L1", out.AR = TRUE, AR = 1,bio_par=bio_par)
+#'
+#' # example if parametric bootstrap
+#' boot.res1 = boot.SR(resL1outer, n = 100, method = "p")
+#' bootSR.plot(boot.res1)
+#'
+#' # example if non-parametric bootstrap
+#' boot.res2 = boot.SR(resL1outer, n = 100, method = "n")
+#' bootSR.plot(boot.res2)
+#'
+#' #' # example if data bootstrap (optional method)
+#' boot.res3 = boot.SR(resL1outer, n = 100, method = "d")
+#' bootSR.plot(boot.res3)
+
+#' }
 #' @export
 #'
 boot.SR <- function(Res,method="p",n=100,seed=1){
@@ -1557,13 +1640,20 @@ autocor.plot = function(resSR,use.resid=1,lag.max=NULL,output = FALSE,filename =
 
 #' 再生産関係の残差ブートストラップをプロットする関数
 #'
+#' ブートストラップによる各パラメータのヒストグラムと、それらパラメータをつかった再生産関係が描画される
+#'
+#' ヒストグラムの描画ではとその中央値、上側・下側CIが（デフォルトのggplt=Tでは加えて平均値が）推定値とともに表示される
+#'
+#' ヒストグラムのプロットにはggplotをつかうオプションggplt=TRUEをデフォルトにしているが、ggplotを使わない作図もggplt=Fで実行可能
+#'　
+#' ggplotで描画する場合でRstudio利用時にはplotをZoomで表示にしないと描画されないことがあるので注意
 #' @param boot.res \code{boot.SR}のオブジェクト
 #' @param CI プロットする信頼区間
 #' @param output pngファイルに出力するか否か
 #' @param filename ファイル名
 #' @encoding UTF-8
 #' @export
-bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1.2,pch=1,ggplt=FALSE,...) {
+bootSR.plot = function(boot.res, CI = 0.8,output = FALSE,filename = "boot",lwd=1.2,pch=1,ggplt=TRUE,...) {
   res_base = boot.res$input$Res
   if (class(boot.res$input$Res)=="fit.SR") {
     validate_sr(res_sr = boot.res$input$Res)
@@ -1958,7 +2048,7 @@ jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename 
         points(jack.res[[i]]$pred$SSB,jack.res[[i]]$pred$R,type="l",lwd=2,col=rgb(0,0,1,alpha=0.1))
       }
       points(resSR$pred$SSB,resSR$pred$R,col=2,type="l",lwd=3,lty=2)
-      legend("topright", legend=c("Estimated SR function","A jackkine SR function"),col=c("red",rgb(0,0,1,alpha=0.1)),lty=c(2,1), cex=0.8)
+      legend("topright", legend=c("Estimated SR function","A jackknife SR function"),col=c("red",rgb(0,0,1,alpha=0.1)),lty=c(2,1), cex=0.8)
       if (output) dev.off()
     }
     #fit.SRregime ----
@@ -2028,8 +2118,8 @@ jackknife.SR = function(resSR,is.plot=TRUE,use.p0 = TRUE, output=FALSE,filename 
         }
         pred_data = resSR$pred %>% filter(Regime == regime_unique[i])
         points(pred_data$SSB,pred_data$R,col=2,type="l",lwd=3,lty=2)
-       if(output) legend("topright", legend=c("Estimated SR function","A jackkine SR function"),col=c("red",rgb(0,0,1,alpha=0.1)),lty=c(2,1), cex=0.8)
-       else if(i==1) legend("topleft", legend=c("Estimated SR function","A jackkine SR function"),col=c("red",rgb(0,0,1,alpha=0.1)),lty=c(2,1), cex=0.8)
+       if(output) legend("topright", legend=c("Estimated SR function","A jackknife SR function"),col=c("red",rgb(0,0,1,alpha=0.1)),lty=c(2,1), cex=0.8)
+       else if(i==1) legend("topleft", legend=c("Estimated SR function","A jackknife SR function"),col=c("red",rgb(0,0,1,alpha=0.1)),lty=c(2,1), cex=0.8)
       }
       if (output) dev.off()
     }
@@ -2178,6 +2268,7 @@ out.SR = function(resSR,filename = "resSR") {
   if (!is.null(resSR$AIC.ar)) RES$AIC.ar = resSR$AIC.ar
   RES$AICc = resSR$AICc
   RES$BIC = resSR$BIC
+  if(!is.null(resSR$input$bio_par)) RES$steepness=resSR$steepness
   RES$opt = resSR$opt
   if (class(resSR) == "fit.SR") {
     RES$pred_to_obs = as_tibble(resSR$input$SRdata) %>%
@@ -2201,9 +2292,12 @@ out.SR = function(resSR,filename = "resSR") {
 #' @param seed \code{set.seed}で使用するseed
 #' @param output テキストファイルに結果を出力するか
 #' @param filename ファイル名('.txt')がつく
+#' @param fun_when_check5_replace check5にひっかかったとき、候補となるパラメータの中からどのパラメータを代表としてとってくるか。median, max, minなどの関数を入れる。デフォルト（今までの実装）はmedian。保守的な結果を出すならmaxのほうがよいかも（エクセルではmaxに近い値が出力されるみたい）
 #' @encoding UTF-8
 #' @export
-check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="checkSRfit") {
+
+check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="checkSRfit",
+                       fun_when_check5_replace=median) {
   opt = resSR$opt
   SRdata = resSR$input$SRdata
   flag = rep(0,5)
@@ -2369,19 +2463,19 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
       RES$percent_bias_summary <- percent_bias_summary
       RES$par_list <- par_list
       RES$par_list0 <- par_list0
-      # すべてのパラメータのmedianに最も近いパラメータセットを持つものを選んでoptimalに入れちゃう
+      # すべてのパラメータのfun_when_check5_replaceに最も近いパラメータセットを持つものを選んでoptimalに入れちゃう
       #      x <- sweep(par_list,2,apply(par_list,2,median),FUN="/") %>% apply(1,mean)
      if(class(resSR)!="fit.SRregime"){
-        x <- sweep(par_list[,c("a","b")],2,apply(par_list[,c("a","b")],2,median),FUN="/") %>% apply(1,mean)
+        x <- sweep(par_list[,c("a","b")],2,apply(par_list[,c("a","b")],2,fun_when_check5_replace),FUN="/") %>% apply(1,mean)
      }else{
         tmp <- 2:(1+2*length(unique(resSR$input$regime.key)))
-        x <- sweep(par_list[,tmp],2,apply(par_list[,tmp],2,median),FUN="/") %>% apply(1,mean)
+        x <- sweep(par_list[,tmp],2,apply(par_list[,tmp],2,fun_when_check5_replace),FUN="/") %>% apply(1,mean)
       }
       selected <- which.min(abs(x-1))
       cat("ほとんど同じ尤度を持つパラメータの範囲 (",n,"回試行のうち",nrow(par_list),"回分),\n")
       print(apply(par_list,2,summary))
       optimal <- resSR_list[selected_set][[selected]]
-      cat("中央値に最も近いパラメータセットを持つ推定結果をoptimumに出力します(そのときの初期値は",str_c(optimal$input$p0,collapse="-"),"です)\n")
+      cat(round(as.numeric(unlist(optimal$pars)),4), "をoptimumに出力します(そのときの初期値は",str_c(optimal$input$p0,collapse="-"),"です)\n")
     } else {
       cat(RES$pars <- "5. パラメータが唯一の解として推定されているのでOKです (OK)","\n")
     }
@@ -2845,13 +2939,13 @@ tryall_SR <- function(data_SR, plus_group=TRUE, bio_par=NULL, tol=FALSE){
 #' @export
 #'
 
-fit.SR_tol <- function(...,n_check=100,is_regime=FALSE,seed=12345){
+fit.SR_tol <- function(...,n_check=100,is_regime=FALSE,seed=12345,fun_when_check5_replace=median){
 
   if(is_regime==FALSE)  res_SR <- fit.SR(...)
   if(is_regime==TRUE )  res_SR <- fit.SRregime(...)
 
   cat("...check.SRfit 1 回目....\n")
-  check <- check.SRfit(res_SR, output=FALSE, n=n_check)
+  check <- check.SRfit(res_SR, output=FALSE, n=n_check, fun_when_check5_replace=fun_when_check5_replace)
   # まず大域解に達しているかどうかのflagを確認し、flagが立っている場合には$optimと置き換える
   if(check$flag[4]==1) {
     res_SR <- check$optimum
@@ -2859,7 +2953,7 @@ fit.SR_tol <- function(...,n_check=100,is_regime=FALSE,seed=12345){
 
     # 再度check.SRfit
     cat("...check.SRfit 2回目....\n")
-    check <- check.SRfit(res_SR,output=FALSE)
+    check <- check.SRfit(res_SR,output=FALSE,n=n_check, fun_when_check5_replace=fun_when_check5_replace)
   }
 
   # 5番目のflag(尤度が同じパラメータの範囲が存在する)が立っているかどうかも確認し、flagが立っていればoptimumと置き換える
@@ -2875,15 +2969,15 @@ fit.SR_tol <- function(...,n_check=100,is_regime=FALSE,seed=12345){
 #' fit.SRのwrapper関数でhに制約を置いたもの
 #'
 #' 現状は推定されたパラメータのみが出力される
-#' 
+#'
 #' @export
 #'
-#' 
+#'
 
 fit.SR_pen <- function(bio_par, h_upper=Inf, h_lower=0.2, plus_group=TRUE, ...){
     res1 = fit.SR(...)
 #    ri1$pars
-#    ri1$steepness    
+#    ri1$steepness
 #    h_upper = 1
     init = res1$opt$par
 
@@ -2892,7 +2986,7 @@ fit.SR_pen <- function(bio_par, h_upper=Inf, h_lower=0.2, plus_group=TRUE, ...){
         h0 = calc_steepness(SR="RI",rec_pars=data.frame("a"=a,"b"=b),waa=bio_par$waa,maa=bio_par$maa,M=bio_par$M,plus_group=plus_group)
         h <- h0[1,"h"]
         if(out==FALSE) {
-            res1$obj.f2(x)+1000*max(0,h-h_upper) + 1000*max(0,h_lower-h) 
+            res1$obj.f2(x)+1000*max(0,h-h_upper) + 1000*max(0,h_lower-h)
         } else{
             bind_cols(data.frame("a"=a,"b"=b),h0)
         }
@@ -2900,5 +2994,140 @@ fit.SR_pen <- function(bio_par, h_upper=Inf, h_lower=0.2, plus_group=TRUE, ...){
 
     opt = optim(init,obj_pen)
     obj_pen(opt$par,out=TRUE)
-    
+
+}
+
+
+#'
+#' 再生産関係のレジームシフトを隠れマルコフモデルで推定する
+#'
+#' Tang et al. (2021) ICESJMSの論文を改変
+#'
+#' @inheritParams fit.SRregime
+#' @params k_regime 推定するレジームの数（2以上の整数）
+#' @params b_range パラメータbの範囲
+#' @params p0 パラメータの初期値（リスト）
+#' @params overwrite cppファイルのコンパイルを上書きして行うか
+#' @encoding UTF-8
+#' @export
+#'
+#
+hmm_SR = function(SRdata,SR="BH",k_regime=2,gamma=0.01,b_range=NULL,p0=NULL,overwrite=FALSE,max.ssb.pred = 1.3) {
+  argname <- ls()
+  arglist <- lapply(argname,function(xx) eval(parse(text=xx)))
+  names(arglist) <- argname
+
+  k_regime<-round(k_regime)
+
+  if(k_regime<2) stop("Incorrect 'k_regime'")
+
+  data = SRdata
+  st = data$SSB
+  # st = st/(10^4)
+  yt = log(data$R/data$SSB)
+
+  SRcode = case_when(SR=="RI" ~ 1,SR=="BH" ~ 2,SR=="HS"~3,SR=="Mesnil"~4,TRUE~5)
+  if (SRcode==5) stop("SR not recognized")
+  if (is.null(b_range)) {
+    if (SRcode<3) { # Ricker or BH
+      b_range = range(1/st)
+    } else {
+      b_range = range(st)
+    }
+  }
+
+  tmb_data = list(st=st,yt=yt,
+                  alpha_u=max(yt),alpha_l=min(yt),
+                  beta_u=max(b_range),beta_l=min(b_range),
+                  sigma_u=sd(yt),SRcode=SRcode,gamma=gamma)
+
+  if (!is.null(p0)) {
+    parameters = p0
+  } else {
+    parameters = list(
+      lalpha = -log(k_regime+1-1:k_regime),
+      lbeta = rep(0,k_regime),
+      lsigma = rep(0,k_regime),
+      pi1_tran = rep(0,k_regime-1),
+      qij_tran = matrix(0,nrow=k_regime,ncol=k_regime-1)
+    )
+  }
+
+  if (overwrite==TRUE){
+    use_rvpa_tmb("HMM_SR",overwrite=TRUE)
+  }
+  if (!file.exists("HMM_SR.dll")) {
+    use_rvpa_tmb("HMM_SR")
+  }
+
+  obj = TMB::MakeADFun(tmb_data,parameters,DLL="HMM_SR",inner.control=list(maxit=50000,trace=F),silent=TRUE)
+  if (length(obj$par)>length(st)) {
+    stop("NOT estimable because k > n (k: parameter number, n: sample size")
+  }
+  opt = nlminb(obj$par,obj$fn,obj$gr,control = list(trace=10,iter.max=10000,eval.max=10000,sing.tol=1e-20))
+
+  Res = list()
+
+  Res$tmb_data = tmb_data
+  Res$p0 = parameters
+  Res$obj = obj
+  Res$opt = opt
+
+  rep = obj$report(opt$par)
+  Res$rep = rep
+
+  alpha = rep[["alpha"]]
+  a = exp(alpha)
+  b = rep[["beta"]]
+  sigma = rep[["sigma"]]
+  pars=data.frame(regime=1:length(a),a=a,b=b,sd=sigma)
+  Res$pars=pars
+  regime_prob = (rep[["r_pred"]])
+  colnames(regime_prob) = data$year
+  Res$regime_prob=round(t(regime_prob),3)
+  regime=Rfast::colMaxs(regime_prob)
+  names(regime) = data$year
+  Res$regime = regime
+  Res$trans_prob = rep[["qij"]]
+
+  Res$loglik <- loglik <- -opt$objective
+  Res$k <- k <- length(opt$par)
+  Res$AIC <- -2*loglik+2*k
+  Res$AICc <- Res$AIC+2*k*(k+1)/(length(data$year)-k-1)
+  Res$BIC <- -2*loglik+k*log(length(data$year))
+  Res$input <- arglist
+
+  # calculate residuals and predicted values
+  if (SR=="HS") SRF <- function(x,a,b) ifelse(x>b,b*a,x*a)
+  if (SR=="BH") SRF <- function(x,a,b) a*x/(1+b*x)
+  if (SR=="RI") SRF <- function(x,a,b) a*x*exp(-b*x)
+  SRFV = Vectorize(SRF,vectorize.args = "x")
+
+  pred = sapply(1:nrow(pars), function(i) {
+    regime_prob[i,] *log(SRFV(SRdata$SSB,pars$a[i],pars$b[i]))
+  }) %>% rowSums %>% exp()
+
+  pred_to_obs = SRdata %>%
+    dplyr::rename(Year=year) %>%
+    dplyr::mutate(Regime=factor(regime),
+                  Pred=pred) %>%
+    dplyr::mutate(resid=log(R/pred))
+
+  Res$pred_to_obs <- pred_to_obs
+  Res$resid <- pred_to_obs$resid
+
+  ssb.tmp <- seq(from=0,to=max(SRdata$SSB)*max.ssb.pred,length=100)
+  pred2 = sapply(1:nrow(pars), function(i) SRFV(ssb.tmp,pars$a[i],pars$b[i])) %>% as.data.frame
+  colnames(pred2) <- pars$regime
+  pred2 = pred2 %>% mutate(SSB = ssb.tmp) %>%
+    pivot_longer(., cols=-SSB,values_to="R") %>%
+    mutate(Regime=factor(name)) %>%
+    arrange(Regime,SSB) %>%
+    dplyr::select(Regime,SSB,R)
+
+  Res$pred <- pred2
+
+  class(Res) <- "hmm_SR"
+
+  return( Res )
 }

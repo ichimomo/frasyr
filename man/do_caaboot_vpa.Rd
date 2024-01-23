@@ -5,7 +5,15 @@
 \alias{do_caaboot_vpa}
 \title{年齢別漁獲尾数の不確実性評価の関数}
 \usage{
-do_caaboot_vpa(res, B_ite = 1000, B_cv = 0.2, ci_range = 0.95)
+do_caaboot_vpa(
+  res,
+  B_ite = 1000,
+  B_cv = 0.2,
+  ci_range = 0.95,
+  ess = 200,
+  detail = FALSE,
+  ci_fill = "blue"
+)
 }
 \arguments{
 \item{res}{VPAの結果のオブジェクト}
@@ -15,11 +23,18 @@ do_caaboot_vpa(res, B_ite = 1000, B_cv = 0.2, ci_range = 0.95)
 \item{B_cv}{乱数生成の変動係数。デフォルトは0.2。}
 
 \item{ci_range}{信頼区間の幅。デフォルトでは0.95（95％信頼区間）}
+
+\item{ess}{多項分布の乱数生成の有効サンプル数。デフォルトは200。}
+
+\item{detail}{TRUEの場合、個々のVPAの推定結果がリストで出力される}
+
+\item{ci_fill}{描画された信頼区間の色の指定。デフォルトは`"blue"`}
 }
 \value{
 返ってくる値:
     \code{plot} 親魚重量、資源尾数、資源重量それぞれについて信頼区間のプロットが得られる。
     \code{caa_boot_sample} 年齢別漁獲尾数のブートストラップ標本が得られる。
+    \code{res_boot} detail=TRUEの場合、個々のVPAの推定結果のリスト
 }
 \description{
 年齢別漁獲尾数を乱数で再生成した後、VPA計算を行う関数

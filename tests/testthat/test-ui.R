@@ -2,7 +2,7 @@ context("User interfaces")
 
 test_that("load_data() works", {
   expect_is(load_data("../../inst/extdata/res_vpa_pma.rda"), "list")
-  expect_is(load_data("../../inst/extdata/vpa.csv"), "list")
+  expect_is(load_data("../../inst/extdata/vpa.csv"), "vpa")
 })
 
 context("Reuse input from the result of scientist meeting")

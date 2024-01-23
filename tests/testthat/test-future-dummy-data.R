@@ -104,10 +104,18 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
   res_future_F0.1_wcatch <- redo_future(data_future_test,
                                         list(res_vpa=res_vpa_base1_nontune),
                                         optim_method="none", multi_init = 1)
-
   # waa.catchを別に与えた場合の総漁獲量は倍になっているはず
   expect_equal(sum(res_future_F0.1$wcaa[,,1])*2,
                sum(res_future_F0.1_wcatch$wcaa[,,1]))
+
+  #plot_futures(res_vpa_base1_nontune, list(res_future_F0.1_wcatch))
+
+  data_future_F0.1_wcatch <- redo_future(data_future_test,
+                                         list(res_vpa=res_vpa_base1_nontune),
+                                         only_data=TRUE)
+  aa <- est_MSYRP(data_future_F0.1_wcatch)
+  expect_equal(aa$summary$cB,aa$summary$B*2)
+  expect_equal(aa$summary$U,aa$summary$Catch/aa$summary$cB)  
 
   # change plus group (途中でプラスグループが変わるVPA結果でもエラーなく計算できることだけ確認（レベル１）
   res_future_pgc <- redo_future(data_future_test,
@@ -117,7 +125,7 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
   # backward resampling
   res_future_backward <- redo_future(data_future_test,
                                      list(resid_type="backward", # 加入の誤差分布（"lognormal": 対数正規分布、"resample": 残差リサンプリング）
-                                          resample_year_range=0, # リサンプリングの場合、残差をリサンプリングする年の範囲
+                                          resample_year_range=as.numeric(colnames(data_future_test$input$res_vpa$naa)), # リサンプリングの場合、残差をリサンプリングする年の範囲
                                           backward_duration=5),
                                 optim_method="none", multi_init = 1)     
 
@@ -287,7 +295,7 @@ test_that("future_vpa function (with dummy vpa data) for regime shift (level 2-3
                      res_SR=res_sr_list[[1]], # 将来予測に使いたい再生産関係の推定結果が入っているfit.SRの返り値
                      seed_number=1,
                      resid_type="lognormal", # 加入の誤差分布（"lognormal": 対数正規分布、"resample": 残差リサンプリング）
-                     resample_year_range=0, # リサンプリングの場合、残差をリサンプリングする年の範囲
+                     resample_year_range=as.numeric(colnames(res_vpa_base0_nontune$naa)), # リサンプリングの場合、残差をリサンプリングする年の範囲
                      bias_correction=TRUE, # バイアス補正をするかどうか
                      recruit_intercept=0, # 移入や放流などで一定の加入がある場合に足す加入尾数
                      # Other
@@ -324,7 +332,6 @@ test_that("future_vpa function (with dummy vpa data) for regime shift (level 2-3
                               multi_init = 1)
 
 
-
   # simple, MSY
   res_future_MSY <- future_vpa(tmb_data=data_future_test$data,
                                optim_method="R", objective ="MSY",
@@ -359,7 +366,7 @@ test_that("future_vpa function (with dummy vpa data) for regime shift (level 2-3
   # backward resampling
   res_future_backward <- data_future_test$input %>%
     list_modify(resid_type="backward", # 加入の誤差分布（"lognormal": 対数正規分布、"resample": 残差リサンプリング）
-                resample_year_range=0, # リサンプリングの場合、残差をリサンプリングする年の範囲
+                resample_year_range=as.numeric(colnames(data_future_test$input$res_vpa$naa)), # リサンプリングの場合、残差をリサンプリングする年の範囲
                 backward_duration=5) %>%
     safe_call(make_future_data,.) %>%
       future_vpa(tmb_data=.$data, optim_method="none", multi_init=1)
@@ -408,7 +415,7 @@ test_that("future_vpa function (with dummy vpa data) for regime shift (level 2-3
                      res_SR=res_sr_list[[1]], # 将来予測に使いたい再生産関係の推定結果が入っているfit.SRの返り値
                      seed_number=1,
                      resid_type="lognormal", # 加入の誤差分布（"lognormal": 対数正規分布、"resample": 残差リサンプリング）
-                     resample_year_range=0, # リサンプリングの場合、残差をリサンプリングする年の範囲
+                     resample_year_range=as.numeric(colnames(vpa_list[[2]]$naa)), # リサンプリングの場合、残差をリサンプリングする年の範囲
                      bias_correction=TRUE, # バイアス補正をするかどうか
                      recruit_intercept=0, # 移入や放流などで一定の加入がある場合に足す加入尾数
                      # Other
@@ -549,6 +556,3 @@ test_that("future_vpa function (with dummy vpa data) for regime shift & shepherd
 
 
 })
-
-
-

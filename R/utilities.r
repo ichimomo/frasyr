@@ -240,7 +240,18 @@ Generation.Time <- function(vpares,
 }
 
 ### dynamics MSYを計算してみる
-dyn.msy <- function(naa.past,naa.init=NULL,fmsy,a,b,resid,resid.year,waa,maa,M,SR=TRUE){
+#' @export
+#'
+
+dyn.msy <- function(naa.past,naa.init=NULL,fmsy,a,b,resid,resid.year,waa,maa,M,assume_SR=TRUE, SR="HS"){
+
+  if(assume_SR==TRUE){
+    if (SR=="HS") SRF <- function(x,a,b) ifelse(x>b,b*a,x*a)
+    if (SR=="BH") SRF <- function(x,a,b) a*x/(1+b*x)
+    if (SR=="RI") SRF <- function(x,a,b) a*x*exp(-b*x)
+    if (SR=="Mesnil") SRF <- function(x,a,b) 0.5*a*(x+sqrt(b^2+gamma^2/4)-sqrt((x-b)^2+gamma^2/4))
+  }
+
   nyear <- length(resid)
   if(is.null(naa.init)) nage <- nrow(naa.past) else nage <- length(naa.init)
   naa <- matrix(0,nage,nyear)
@@ -255,8 +266,8 @@ dyn.msy <- function(naa.past,naa.init=NULL,fmsy,a,b,resid,resid.year,waa,maa,M,S
   }
   for(i in 2:nyear){
     ssb[i-1] <- sum(naa[,i-1]*waa[,i-1]*maa[,i-1],na.rm=T)
-    if(SR==TRUE){
-      naa[1,i] <- HS(ssb[i-1],a,b)*exp(resid[i])
+    if(assume_SR==TRUE){
+      naa[1,i] <- SRF(ssb[i-1],a,b)*exp(resid[i])
     }
     else{
       naa[1,i] <- naa.past[1,i]
@@ -264,7 +275,7 @@ dyn.msy <- function(naa.past,naa.init=NULL,fmsy,a,b,resid,resid.year,waa,maa,M,S
     for(j in 2:(nage-1)) naa[j,i] <- naa[j-1,i-1] * exp(-fmsy[j-1]-M[j-1,i-1])
     naa[nage,i] <- naa[nage-1,i-1] * exp(-fmsy[j-1]-M[j-1,i-1]) + naa[nage,i-1] * exp(-fmsy[nage]-M[nage,i-1])
   }
-  i <- nyear ; ssb[i] <- sum(naa[,i]*waa[,i]*maa[,i])
+  i <- nyear ; ssb[i] <- sum(naa[,i]*waa[,i]*maa[,i], na.rm=TRUE)
   list(naa=naa,ssb=ssb)
 }
 
@@ -302,9 +313,10 @@ dyn.msy <- function(naa.past,naa.init=NULL,fmsy,a,b,resid,resid.year,waa,maa,M,S
 #' @note F_SPRのF管理基準値の初期値は　与えられたFのもとでのSPR/目的のSPR　を初期値とするように調整されるので不要。プラスグループを考慮するかどうかはVPAの結果のinput$plus.groupから自動判別される。
 #'
 #' @examples
-#' data(res_vpa)
+#' \dontrun{
+#' data(res_vpa_example)
 #' # VPAデータを使う場合
-#' res_refF1 <- ref.F(res=res_vpa,Fcurrent=frasyr::apply_year_colum(res_vpa$faa,2015:2017),
+#' res_refF1 <- ref.F(res=res_vpa_example,Fcurrent=frasyr::apply_year_colum(res_vpa_example$faa,2015:2017),
 #'                 waa.year=2015:2017,maa.year=2015:2017,M.year=2015:2017)
 #'
 #' # 生物パラメータをデータとして与える場合
@@ -312,6 +324,7 @@ dyn.msy <- function(naa.past,naa.init=NULL,fmsy,a,b,resid,resid.year,waa,maa,M,S
 #'                    waa=rep(100,5),maa=c(0,0,1,1,1),M=rep(0.3,5),waa.catch=rep(100,5),
 #'                    rps.vector=NULL, # Fmedを計算したりする場合のRPSのベクトル.NULLでもOK
 #'                    Pope=TRUE,min.age=0,pSPR=c(30,40))
+#' }
 #'
 #'
 #' @export
@@ -377,14 +390,15 @@ ref.F <- function(
         else waa.catch <- waa
     }
 
-    if(is.null(waa.catch)){
-      if(is.null(res$input$dat$waa.catch)){
-        waa.catch <- waa
-      }
-      else{
-        waa.catch <- apply_year_colum(res$input$dat$waa.catch,waa.year)
-      }
-    }
+## Remove duplicate code  
+#    if(is.null(waa.catch)){
+#      if(is.null(res$input$dat$waa.catch)){
+#        waa.catch <- waa
+#      }
+#      else{
+#       waa.catch <- apply_year_colum(res$input$dat$waa.catch,waa.year) # here, waa.year should be waa.catch.year
+#      }
+#    }
 
     na <- sum(!is.na(Fcurrent))
     ssb.coef <- ifelse(is.null(res$ssb.coef),0,res$ssb.coef)
@@ -466,9 +480,12 @@ ref.F <- function(
   spr0 <- sum(original.spr0$spr,na.rm=T)
   tmp <- lapply(F.range, function(x) calc.rel.abund2_(sel,x))
   ypr <- sapply(tmp,function(x) sum(x$ypr,na.rm=T))
+  ypr_by_age <- purrr::map_dfr(tmp,function(x) x$ypr)
+  colnames(ypr_by_age) <- str_c("TC-mean-A",colnames(ypr_by_age))
   pspr <- sapply(tmp,function(x) sum(x$spr,na.rm=T))/spr0*100
   ypr.spr <- data.frame(F.range=F.range,ypr=ypr,pspr=pspr)
   ypr.spr$Frange2Fcurrent  <- ypr.spr$F.range/Fcurrent_max
+  ypr.spr <- cbind(ypr.spr, ypr_by_age)
 
   # F.spr
 
@@ -616,22 +633,24 @@ ref.F <- function(
   return(Res)
 }
 
-#' 毎年のFの\%SPRやターゲットした\%SPRに相当するFの大きさを計算する
+#' 毎年のFの\%SPRやターゲットした\%SPRに相当するFの相対的な大きさを計算する
 #'
-#' VPA計算結果を使って毎年のF at ageがどのくらいのSPR, YPRに相当するかを計算する。また、各年のFが、目標としたSPR（target.SPR）を達成するためのF(Ftarget)の何倍(F/Ftarget)に相当するかも計算する。F/Ftargetは数値的に探索するが、そのときのF/Ftargetの上限をFmaxにて指定する。十分大きい値（デフォルトは１０）を与えておけば大丈夫だが、Ftargetが非常に小さい数字になりそうな場合にはこの値をもっと大きくとるなどする。また、SPRの計算は、デフォルトでは等比級数の和の公式を使って、無限大の年齢までSPRを足しているが、max.ageを指定することで、有限の年齢までの和も計算できる。
+#' VPA計算結果を使って毎年のF at ageがどのくらいのSPR, YPRに相当するかを計算する。また、各年のFが、目標としたSPR（target.SPR）を達成するためのF(Ftarget)の何倍(F/Ftarget)に相当するかも計算する。F/Ftargetは数値的に探索するが、そのときのF/Ftargetの上限をFmaxにて指定する。十分大きい値（デフォルトは10）を与えておけば大丈夫だが、Ftargetが非常に小さい数字になりそうな場合にはこの値をもっと大きくとるなどする。また、SPRの計算は、デフォルトでは等比級数の和の公式を使って、無限大の年齢までSPRを足しているが、max.ageを指定することで、有限の年齢までの和も計算できる。
 #'
 #' @param dres vpa関数の返り値
 #' @param target.SPR 目標とするSPR。この値を入れると、結果の$ysdata$"F/Ftarget"で、その年のFが目標としたSPR(％)を達成するためのF（Ftarget）の何倍になっているかを返す。デフォルトは30が入っている。このとき、SPRを計算するための生物パラメータ（年齢別体重・成熟率・死亡率）はそれぞれの年で仮定されているものを用いる。
 #' @param Fmax F/Ftargetを推定するときに探索するFの乗数の最大値
 #' @param max.age SPRやYPRの計算をするときに最大何歳まで考慮するか（年齢のラベルではなく、ベクトルの長さ。デフォルトは無限大)。VPA計算でプラスグループを考慮していない（dres$input$plus.group==FALSE)場合には自動的に設定される。
 #'
+#'
 #' @encoding UTF-8
 #'
-#' @examples
-#' data(res_vpa)
-#' Fratio <- get.SPR(res_vpa,target.SPR=12)$ysdata$"F/Ftarget"
-#' plot(colnames(res_vpa$naa),Fratio,type="b")
-#'
+# #' @examples
+# #' \dontrun{
+# #'  data(res_vpa_example)
+# #'  Fratio <- get.SPR(res_vpa_example,target.SPR=12)$ysdata$"F/Ftarget"
+# #'  plot(colnames(res_vpa_example$naa),Fratio,type="b")
+# #' }
 #'
 #' @export
 #' @encoding UTF-8
@@ -645,7 +664,7 @@ get.SPR <- function(dres,target.SPR=30,Fmax=10,max.age=Inf){
       byear <- colnames(dres$faa)[i] # 何年の生物パラメータを使うか
 
       a <- ref.F(dres,waa.year=byear,maa.year=byear,M.year=byear,rps.year=2000:2011,
-                 pSPR=round(target.SPR),
+                 pSPR=target.SPR,
                  F.range=c(seq(from=0,to=ceiling(max(dres$Fc.at.age,na.rm=T)*Fmax),
                                length=301),max(dres$Fc.at.age,na.rm=T)),plot=FALSE)
       # YPRと%SPR
@@ -732,7 +751,7 @@ make_summary_table <- function(mat_data,side=1,probs=c(0.1,0.5,0.8)){
 #' @param csvname csvファイルのファイル名
 #' @param pdfname pdfファイルのファイル名
 #' @param
-#' 
+#'
 #' @encoding UTF-8
 #' @export
 
@@ -836,24 +855,24 @@ out.vpa <- function(res=NULL,    # VPA result
                                          method = srres$input$method,
                                          type   = srres$input$SR,
                                          AR     = srres$input$AR,
-                                         out.AR = srres$input$out.AR)      
+                                         out.AR = srres$input$out.AR)
     }
-    
-    if(class(srres)=="fit.SR"){
+
+    if("fit.SR" %in% class(srres)){
       write("\n# SR fit data",file=csvname,append=T)
       srres$input$SRdata %>% as_tibble() %>%  mutate(weight=srres$input$w) %>%
         write_csv(path=csvname,append=T,col_names=TRUE)
-      write("\n# SR fit resutls",file=csvname,append=T)      
+      write("\n# SR fit resutls",file=csvname,append=T)
       sr_summary <- get_summary_(srres)
       write_csv(sr_summary,path=csvname,append=T,
                 col_names=TRUE)
     }
-    if(class(srres)=="fit.SRregime"){
+    if("fit.SRregime" %in% class(srres)){
       write("\n# SR fit data",file=csvname,append=T)
       srres$input$SRdata %>% as_tibble() %>%  mutate(weight=srres$input$w) %>%
         write_csv(path=csvname,append=T,col_names=TRUE)
-      
-      write("\n# SR fit resutls",file=csvname,append=T)            
+
+      write("\n# SR fit resutls",file=csvname,append=T)
       tibble(AICc   =srres$AICc,
              AIC    =srres$AIC,
              method=srres$input$method,
@@ -865,16 +884,16 @@ out.vpa <- function(res=NULL,    # VPA result
       # tentative
       write_csv(partable, path=csvname,append=T,col_names=TRUE)
     }
-    if(class(srres)=="SRfit.average"){
+    if("SRfit.average" %in% class(srres)){
       write("\n# SR fit data",file=csvname,append=T)
       srres[[1]]$input$SRdata %>% as_tibble() %>%  mutate(weight=srres$input$w) %>%
         write_csv(path=csvname, append=T, col_names=TRUE)
 
-      write("\n# SR fit resutls",file=csvname,append=T)            
+      write("\n# SR fit resutls",file=csvname,append=T)
       sr_summary <- purrr::map_dfr(srres, function(x) get_summary_(x), .id="id")
       write_csv(sr_summary,path=csvname,append=T,
-                col_names=TRUE)      
-    }      
+                col_names=TRUE)
+    }
   }
 
   if(!is.null(msyres)){
@@ -901,16 +920,16 @@ out.vpa <- function(res=NULL,    # VPA result
     write.table2(apply(fres$waa,c(1,2),mean),title.tmp="Average weight numbers at age")
 
     write(str_c("\n# future weight (for catch) at age",label), file=csvname,append=T)
-    write.table2(apply(fres$waa.catch,c(1,2),mean),title.tmp="Average weight numbers at age")        
+    write.table2(apply(fres$waa.catch,c(1,2),mean),title.tmp="Average weight numbers at age")
 
     write(str_c("\n# future total biomass",label), file=csvname,append=T)
     make_summary_table(fres$vbiom,1,probs=ci.future) %>%
-      rownames_to_column(var="year") %>%       
+      rownames_to_column(var="year") %>%
       write_csv(path=csvname,append=TRUE, col_names = TRUE)
 
     write(str_c("\n# future total catch",label), file=csvname,append=T)
     make_summary_table(fres$vwcaa,1,probs=ci.future) %>%
-      rownames_to_column(var="year") %>%       
+      rownames_to_column(var="year") %>%
       write_csv(path=csvname,append=TRUE, col_names = TRUE)
   }
 
@@ -929,7 +948,7 @@ out.vpa <- function(res=NULL,    # VPA result
     kobeII.table_name <- names(kobeII)
     for(i in 1:length(kobeII.table_name)){
       tmptable <- kobeII[kobeII.table_name[i]][[1]]
-      if(!is.na(tmptable) && nrow(tmptable)>0){
+      if(nrow(tmptable)>0){
         write(str_c("\n# ",kobeII.table_name[i]),file=csvname,append=T)
         write_csv(tmptable,path=csvname,append=TRUE,
                   col_names = TRUE)
@@ -947,7 +966,7 @@ out.vpa <- function(res=NULL,    # VPA result
     for(i in seq_len(length(other_tables))){
       write(str_c("\n# ", names(other_tables)[i]), file=csvname,append=T)
       other_tables[[i]] %>%
-        write_csv(path=csvname,append=T, col_names=TRUE)      
+        write_csv(path=csvname,append=T, col_names=TRUE)
     }
   }
 }
@@ -958,6 +977,9 @@ out.vpa <- function(res=NULL,    # VPA result
 #' @param tfile 資源計算結果がまとめられたcsvファイルの名前
 #' @param Pope  VPA計算時にどっちを使っているかここで設定する（TRUE or FALSE）。デフォルトはNULLで、その場合にはcaa,faa,naaの関係から自動判別するが、自動判別の結果が出力されるので、それをみて正しく判断されているか確認してください。
 #' @param plus.group プラスグループを考慮するかどうか。こちらについても、NULLの場合にはfaaとnaaの関係から自動判別するが、結果を一応確認すること。
+#' @param release_alive.label 放流魚のうち生き残って加入したものの尾数。年齢✕年の行列。データのない年齢は省略可。（release_all.labelとrelease_aliverate.labelが与えられる場合、release_alive.labelは与えないこと。加入年齢よりも高齢のデータは入力できるが、現時点では再生産関係や将来予測では考慮されない）
+#' @param release_all.label 全放流尾数。年齢✕年の行列。データのない年齢は省略可。
+#' @param release_ratealive.label 全放流尾数が生き残って加入したする比率。年齢✕年の行列。データのない年齢は省略可。
 #'
 #' @encoding UTF-8
 #'
@@ -975,7 +997,9 @@ read.vpa <- function(tfile,
                      faa.label="fishing mortality at age",
                      Fc.label="Current F",
                      naa.label="numbers at age",
-                     release.label="release dat",
+                     release_alive.label="release alive dat", # for older version "release dat"
+                     release_all.label="release all dat",
+                     release_ratealive.label="release alive rate dat",
                      Blimit=NULL,
                      Pope=NULL,
                      plus.group=NULL,
@@ -1030,18 +1054,34 @@ read.vpa <- function(tfile,
   dres$input$dat$caa <- tmpfunc(tmpdata,caa.label)
   dres$input$dat$M <- tmpfunc(tmpdata,M.label)
   dres$input$dat$waa <- tmpfunc(tmpdata,waa.label)
-  dres$input$dat$release.dat <- tmpfunc(tmpdata,release.label)
   if(is.null(dres$input$dat$waa)) dres$input$dat$waa <- tmpfunc(tmpdata,waa.biomass.label)
   dres$input$dat$waa.catch <- tmpfunc(tmpdata,waa.catch.label)
   if(is.null(dres$input$dat$waa.catch)) dres$input$dat$waa.catch <- dres$input$dat$waa
 
+  # for release data (only release alive)
+  release.old <- tmpfunc(tmpdata,"release dat")
+  dres$input$dat$release.alive <- tmpfunc(tmpdata,release_alive.label)
+  if(!is.null(release.old) && is.null(dres$input$dat$release.alive)) dres$input$dat$release.alive <- release.old
+  if(!is.null(dres$input$dat$release.alive)) assertthat::assert_that(is.null(dres$input$dat$release.all) && is.null(dres$input$dat$release.aliverate))
+
+  # for release data (with release all and rate)
+  dres$input$dat$release.all <- tmpfunc(tmpdata,release_all.label)
+  dres$input$dat$release.ratealive <- tmpfunc(tmpdata,release_ratealive.label)
+  if(!is.null(dres$input$dat$release.all)){
+    assertthat::assert_that(!is.null(dres$input$dat$release.ratealive),
+                            is.null(dres$input$dat$release.alive),
+                            all(dim(dres$input$dat$release.ratealive) == dim(dres$input$dat$release.all)))
+    dres$input$dat$release.alive <- dres$input$dat$release.ratealive * dres$input$dat$release.all
+  }
+
+  # create ssb & baa data
   dres$ssb <- dres$input$dat$waa * dres$input$dat$maa * dres$naa
   dres$ssb <- as.data.frame(dres$ssb)
 
   dres$baa <- dres$input$dat$waa * dres$naa
   dres$baa <- as.data.frame(dres$baa)
 
-  # setting total catch
+  # create total catch
   dres$wcaa <- dres$input$dat$waa.catch * dres$input$dat$caa
   dres$wcaa <- as.data.frame(dres$wcaa)
 
@@ -1082,6 +1122,7 @@ read.vpa <- function(tfile,
 
   # その他、他関数で必要になるVPAへのインプット
   dres$input$last.catch.zero <- FALSE
+  class(dres) <- "vpa"
 
   return(dres)
 }
@@ -1128,7 +1169,8 @@ get.stat <- function(fout,eyear=0,tmp.year=NULL, use_new_output=FALSE){
   else{
     col.target <- ifelse(fout$input$N==0,1,-1)
   }
-  tc <- fout$caa * fout$waa.catch
+
+
   tmp <- as.numeric(fout$vssb[(nrow(fout$vssb)-eyear):nrow(fout$vssb),col.target])
   if(is.null(tmp.year)) tmp.year <- (nrow(fout$vwcaa)-eyear):nrow(fout$vwcaa)
   a <- data.frame("catch.mean"=mean(fout$vwcaa[tmp.year,col.target]),
@@ -1149,6 +1191,12 @@ get.stat <- function(fout,eyear=0,tmp.year=NULL, use_new_output=FALSE){
                   "biom.median"=median(fout$vbiom[tmp.year,col.target],na.rm=T),
                   "biom.L10"=quantile(fout$vbiom[tmp.year,col.target],na.rm=T,probs=0.1),
                   "biom.H10"=quantile(fout$vbiom[tmp.year,col.target],na.rm=T,probs=0.9),
+                  "cbiom.mean"  = mean   (fout$vbiom_catch[tmp.year,col.target]),
+                  "cbiom.sd"     =sd     (fout$vbiom_catch[tmp.year,col.target]),
+                  "cbiom.geomean"=geomean(fout$vbiom_catch[tmp.year,col.target]),
+                  "cbiom.median" =median (fout$vbiom_catch[tmp.year,col.target],na.rm=T),
+                  "cbiom.L10"   =quantile(fout$vbiom_catch[tmp.year,col.target],na.rm=T,probs=0.1),
+                  "cbiom.H10"   =quantile(fout$vbiom_catch[tmp.year,col.target],na.rm=T,probs=0.9),
                   "rec.mean"=mean(unlist(fout$naa[1,,])[tmp.year,col.target]),
                   "rec.sd"=sd(unlist(fout$naa[1,,])[tmp.year,col.target]),
                   "rec.geomean"=geomean(unlist(fout$naa[1,,])[tmp.year,col.target]),
@@ -1159,9 +1207,9 @@ get.stat <- function(fout,eyear=0,tmp.year=NULL, use_new_output=FALSE){
                   "Fref2Fcurrent"=fout$multi,
                   fmulti=fout$multi
   )
-  a$U.mean <- a$catch.mean/a$biom.mean
-  a$U.median <- a$catch.median/a$biom.median
-  a$U.geomean <- a$catch.geomean/a$biom.geomean
+  a$U.mean <- a$catch.mean/a$cbiom.mean
+  a$U.median <- a$catch.median/a$cbiom.median
+  a$U.geomean <- a$catch.geomean/a$cbiom.geomean
 
   a$catch.CV <- a$catch.sd/a$catch.mean
   a$ssb.CV <- a$ssb.sd/a$ssb.mean
@@ -1174,47 +1222,38 @@ get.stat <- function(fout,eyear=0,tmp.year=NULL, use_new_output=FALSE){
   colnames(Faa) <- paste("F",dimnames(fout$naa)[[1]],sep="")
   res.stat1 <- cbind(a,Faa) # ここまで、get.stat
 
-  agename <- dimnames(fout$naa)[[1]]
-  nage <- dim(fout$naa)[[1]]
-  tb <- fout$naa * fout$waa
-  if(is.null(fout$waa.catch)) fout$waa.catch <- fout$waa
-  ssb <- fout$naa * fout$waa *fout$maa
-  tb.mat <- tc.mat <- ssb.mat <- matrix(0,nage,6)
-  for(i in 1:nage){
-    tb.mat[i,1] <- mean(tb[i,tmp.year,col.target])
-    tb.mat[i,2] <- median(tb[i,tmp.year,col.target])
-    tb.mat[i,3] <- geomean(tb[i,tmp.year,col.target])
-    tb.mat[i,4] <- mean(tb[i,tmp.year,1])
-    tb.mat[i,5:6] <- quantile(tb[i,tmp.year,col.target],probs=c(0.1,0.9),na.rm=T)
-
-    tc.mat[i,1] <- mean(tc[i,tmp.year,col.target])
-    tc.mat[i,2] <- median(tc[i,tmp.year,col.target])
-    tc.mat[i,3] <- geomean(tc[i,tmp.year,col.target])
-    tc.mat[i,4] <- mean(tc[i,tmp.year,1])
-    tc.mat[i,5:6] <- quantile(tc[i,tmp.year,col.target],probs=c(0.1,0.9),na.rm=T)
-
-    ssb.mat[i,1] <- mean(ssb[i,tmp.year,col.target])
-    ssb.mat[i,2] <- median(ssb[i,tmp.year,col.target])
-    ssb.mat[i,3] <- geomean(ssb[i,tmp.year,col.target])
-    ssb.mat[i,4] <- mean(ssb[i,tmp.year,1])
-    ssb.mat[i,5:6] <- quantile(ssb[i,tmp.year,col.target],probs=c(0.1,0.9),na.rm=T)
+  tmpfunc_ <- function(x, nage, agename, label){
+    x.mat <- matrix(0,nage,5)
+    for(i in 1:nage){
+      x.mat[i,1] <- mean   (x[i,tmp.year,col.target])
+      x.mat[i,2] <- median (x[i,tmp.year,col.target])
+      x.mat[i,3] <- geomean(x[i,tmp.year,col.target])
+      x.mat[i,4:5] <- quantile(x[i,tmp.year,col.target],probs=c(0.1,0.9),na.rm=T)
+    }
+    x.mat <- as.numeric(x.mat)
+    names(x.mat) <- c(paste(label,"-mean-A",agename,sep=""),
+                       paste(label,"-median-A",agename,sep=""),
+                       paste(label,"-geomean-A",agename,sep=""),
+                       paste(label,"-L10-A",agename,sep=""),
+                       paste(label,"-H10-A",agename,sep=""))
+    x.mat
   }
-  tc.mat <- as.numeric(tc.mat)
-  tb.mat <- as.numeric(tb.mat)
-  ssb.mat <- as.numeric(ssb.mat)
 
-  # mean, ME; median, geomean; geometric mean
-  names(tc.mat) <- c(paste("TC-mean-A",agename,sep=""),paste("TC-median-A",agename,sep=""),
-                     paste("TC-geomean-A",agename,sep=""),paste("TC-det-A",agename,sep=""),
-                     paste("TC-L10-A",agename,sep=""),paste("TC-H10-A",agename,sep=""))
-  names(tb.mat) <- c(paste("TB-mean-A",agename,sep=""),paste("TB-median-A",agename,sep=""),
-                     paste("TB-geomean-A",agename,sep=""),paste("TB-det-A",agename,sep=""),
-                     paste("TB-L10-A",agename,sep=""),paste("TB-H10-A",agename,sep=""))
-  names(ssb.mat) <- c(paste("SSB-GA-A",agename,sep=""),paste("SSB-median-A",agename,sep=""),
-                      paste("SSB-geomean-A",agename,sep=""),paste("SSB-det-A",agename,sep=""),
-                      paste("SSB-L10-A",agename,sep=""),paste("SSB-H10-A",agename,sep=""))
-  res.stat2 <- as.data.frame(t(c(tb.mat,tc.mat,ssb.mat)))
-  res.stat <- cbind(res.stat1,res.stat2) %>% as_tibble()
+  nage <- dim(fout$naa)[[1]]
+  agename <- dimnames(fout$naa)[[1]]
+
+  tb  <- fout$naa * fout$waa
+  ctb <- fout$naa * fout$waa.catch
+  ssb <- fout$naa * fout$waa *fout$maa
+  tc  <- fout$wcaa
+
+  tb.mat  <- tmpfunc_(tb,  nage, agename, "TB")
+  ctb.mat <- tmpfunc_(ctb, nage, agename, "CTB")
+  ssb.mat <- tmpfunc_(ssb, nage, agename, "SSB")
+  tc.mat  <- tmpfunc_(tc,  nage, agename, "TC")
+
+  res.stat2 <- as.data.frame(t(c(tb.mat,ctb.mat,tc.mat,ssb.mat)))
+  res.stat  <- cbind(res.stat1,res.stat2) %>% as_tibble()
   return(res.stat)
 }
 
@@ -1355,12 +1394,13 @@ convert_future_table <- function(fout,label="tmp"){
 
   if(class(fout)=="future_new") fout <- format_to_old_future(fout)
 
-  U_table <- fout$vwcaa/fout$vbiom
+  U_table <- fout$vwcaa/fout$vbiom_catch
   if(is.null(fout$Fsakugen)) fout$Fsakugen <- -(1-fout$faa[1,,]/fout$currentF[1])
   if(is.null(fout$recruit))  fout$recruit <- fout$naa[1,,]
 
   ssb      <- convert_2d_future(df=fout$vssb,   name="SSB",     label=label)
   catch    <- convert_2d_future(df=fout$vwcaa,  name="catch",   label=label)
+  cbiomass  <- convert_2d_future(df=fout$vbiom_catch,  name="cbiomass", label=label)
   biomass  <- convert_2d_future(df=fout$vbiom,  name="biomass", label=label)
   U_table  <- convert_2d_future(df=U_table,     name="U",       label=label)
   beta_gamma    <- convert_2d_future(df=fout$alpha,  name="beta_gamma",   label=label)
@@ -1377,7 +1417,7 @@ convert_future_table <- function(fout,label="tmp"){
     mutate(value=value+1)
   Fsakugen_ratio$stat <- "Fsakugen_ratio"
 
-  bind_rows(ssb,catch,biomass,beta_gamma,Fsakugen,Fsakugen_ratio,recruit, U_table, Fratio)
+  bind_rows(ssb,catch,biomass,cbiomass,beta_gamma,Fsakugen,Fsakugen_ratio,recruit, U_table, Fratio)
 }
 
 
@@ -1399,6 +1439,7 @@ convert_vector <- function(vector,name){
 convert_vpa_tibble <- function(vpares,SPRtarget=NULL){
 
   if (is.null(vpares$input$dat$waa.catch)) {
+    vpares$input$dat$waa.catch <- vpares$input$dat$waa
     if (class(vpares)=="sam") {
       total.catch <- colSums(vpares$caa*vpares$input$dat$waa,na.rm=T)
     } else {
@@ -1407,11 +1448,17 @@ convert_vpa_tibble <- function(vpares,SPRtarget=NULL){
   } else {
     total.catch <- colSums(vpares$input$dat$caa*vpares$input$dat$waa.catch,na.rm=T)
   }
-  U <- total.catch/colSums(vpares$baa, na.rm=T)
 
-  SSB <- convert_vector(colSums(vpares$ssb,na.rm=T),"SSB") %>%
+  # ここでcbiomassを定義する(今後もbioamss, ssbを計算するときは極力ssb, biomを使わないようにする)
+  ssb <- vpares$naa * vpares$input$dat$maa * vpares$input$dat$waa
+  biomass <- vpares$naa * vpares$input$dat$waa
+  cbiomass <- vpares$naa * vpares$input$dat$waa.catch
+  U <- total.catch/colSums(cbiomass, na.rm=T)
+  SSB <- convert_vector(colSums(ssb,na.rm=T),"SSB") %>%
     dplyr::filter(value>0&!is.na(value))
-  Biomass <- convert_vector(colSums(vpares$baa,na.rm=T),"biomass") %>%
+  Biomass <- convert_vector(colSums(biomass,na.rm=T),"biomass") %>%
+    dplyr::filter(value>0&!is.na(value))
+  cBiomass <- convert_vector(colSums(cbiomass,na.rm=T),"cbiomass") %>%
     dplyr::filter(value>0&!is.na(value))
   FAA <- convert_df(vpares$faa,"fishing_mortality") %>%
     dplyr::filter(value>0&!is.na(value))
@@ -1441,6 +1488,7 @@ convert_vpa_tibble <- function(vpares,SPRtarget=NULL){
 
   all_table <- bind_rows(SSB,
                          Biomass,
+                         cBiomass,
                          convert_vector(U[U>0],"U"),
                          convert_vector(total.catch[total.catch>0],"catch"),
                          convert_df(vpares$naa,"fish_number"),
@@ -1543,16 +1591,12 @@ derive_RP_value <- function(refs_base,RP_name){
 #'
 #' @param kobeII_data beta.simulationまたはconvert_future_list_tableの返り値
 #' @param res_vpa VPAの結果
-#' @param Bspecific 特定の資源量を一回でも下回るリスクを計算する。下回るリスクを判断する年はyear.riskに従う
+#' @param year.catch 平均漁獲量の表を出力する期間。その他year.ssb(平均親魚量), year.ssbtarget(SBtargetを上回る確率)、、なども同様
 #'
-
 #' @details
 #' tidy形式になっているkobeII_dataにおいて、HCR_name, betaの列のラベルの組み合わせを一つの管理方式として、その管理方式ごとに少尉予測の結果を集計する
 #'
-
 #' @export
-#'
-#'
 #'
 #' @encoding UTF-8
 
@@ -1560,19 +1604,18 @@ make_kobeII_table <- function(kobeII_data,
                               res_vpa,
                               year.catch=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
                               year.ssb=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
-                              year.Fsakugen=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+#                              year.Fsakugen=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
                               year.ssbtarget=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
                               year.ssblimit=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
                               year.ssbban=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
                               year.ssbmin=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
-                              year.ssbmax=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
-                              year.aav=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
-                              year.risk=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
-                              year.catchdiff=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+#                              year.ssbmax=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+#                              year.aav=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+#                              year.risk=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+#                              year.catchdiff=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
                               Btarget=0,
                               Blimit=0,
-                              Bban=0,
-                              Bspecific=NULL){
+                              Bban=0){
   # 平均漁獲量
   (catch.mean <- kobeII_data %>%
      dplyr::filter(year%in%year.catch,stat=="catch") %>% # 取り出す年とラベル("catch")を選ぶ
@@ -1601,32 +1644,32 @@ make_kobeII_table <- function(kobeII_data,
       arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
       mutate(stat_name="biomass.mean"))
 
-  # 親魚, 下10%
-  (ssb.ci10 <- kobeII_data %>%
+  # 親魚, 下5%
+  (ssb.ci05 <- kobeII_data %>%
       dplyr::filter(year%in%year.ssb,stat=="SSB") %>%
       group_by(HCR_name,beta,year) %>%
-      summarise(ssb.ci10=quantile(value,probs=0.1)) %>%
-      spread(key=year,value=ssb.ci10) %>% ungroup() %>%
+      summarise(ssb.ci05=quantile(value,probs=0.05)) %>%
+      spread(key=year,value=ssb.ci05) %>% ungroup() %>%
       arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
-      mutate(stat_name="ssb.ci10"))
+      mutate(stat_name="ssb.ci05"))
 
-  # 親魚, 上10%
-  (ssb.ci90 <- kobeII_data %>%
+  # 親魚, 上5%
+  (ssb.ci95 <- kobeII_data %>%
       dplyr::filter(year%in%year.ssb,stat=="SSB") %>%
       group_by(HCR_name,beta,year) %>%
-      summarise(ssb.ci90=quantile(value,probs=0.9)) %>%
-      spread(key=year,value=ssb.ci90) %>% ungroup() %>%
+      summarise(ssb.ci95=quantile(value,probs=0.95)) %>%
+      spread(key=year,value=ssb.ci95) %>% ungroup() %>%
       arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
-      mutate(stat_name="ssb.ci90"))
+      mutate(stat_name="ssb.ci95"))
 
   # 1-currentFに乗じる値=currentFからの努力量の削減率の平均値（実際には確率分布になっている）
-  (Fsakugen.table <- kobeII_data %>%
-      dplyr::filter(year%in%year.Fsakugen,stat=="Fsakugen") %>% # 取り出す年とラベル("catch")を選ぶ
-      group_by(HCR_name,beta,year) %>%
-      summarise(Fsakugen=round(mean(value),2)) %>%
-      spread(key=year,value=Fsakugen) %>% ungroup() %>%
-      arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
-      mutate(stat_name="Fsakugen"))
+  ## (Fsakugen.table <- kobeII_data %>%
+  ##     dplyr::filter(year%in%year.Fsakugen,stat=="Fsakugen") %>% # 取り出す年とラベル("catch")を選ぶ
+  ##     group_by(HCR_name,beta,year) %>%
+  ##     summarise(Fsakugen=round(mean(value),2)) %>%
+  ##     spread(key=year,value=Fsakugen) %>% ungroup() %>%
+  ##     arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
+  ##     mutate(stat_name="Fsakugen"))
 
   # SSB>SSBtargetとなる確率
   ssbtarget.table <- kobeII_data %>%
@@ -1670,155 +1713,161 @@ make_kobeII_table <- function(kobeII_data,
     mutate(stat_name="Pr(SSB>SSBmin)")
 
   # SSB>SSBmax(過去最低親魚量を上回る確率)
-  ssb.max <- max(unlist(colSums(res_vpa$ssb, na.rm=T)))
-  ssbmax.table <- kobeII_data %>%
-    dplyr::filter(year%in%year.ssbmax,stat=="SSB") %>%
-    group_by(HCR_name,beta,year) %>%
-    summarise(ssb.over=round(100*mean(value>ssb.max))) %>%
-    spread(key=year,value=ssb.over)%>%
-    ungroup() %>%
-    arrange(HCR_name,desc(beta))%>%
-    mutate(stat_name="Pr(SSB>SSBmax)")
+  ## ssb.max <- max(unlist(colSums(res_vpa$ssb, na.rm=T)))
+  ## ssbmax.table <- kobeII_data %>%
+  ##   dplyr::filter(year%in%year.ssbmax,stat=="SSB") %>%
+  ##   group_by(HCR_name,beta,year) %>%
+  ##   summarise(ssb.over=round(100*mean(value>ssb.max))) %>%
+  ##   spread(key=year,value=ssb.over)%>%
+  ##   ungroup() %>%
+  ##   arrange(HCR_name,desc(beta))%>%
+  ##   mutate(stat_name="Pr(SSB>SSBmax)")
 
   # オプション: Catch AAV mean
-  calc.aav <- function(x)sum(abs(diff(x)))/sum(x[-1])
-  catch.aav.table <- kobeII_data %>%
-    dplyr::filter(year%in%year.aav,stat=="catch") %>%
-    group_by(HCR_name,beta,sim) %>%
-    dplyr::summarise(catch.aav=(calc.aav(value))) %>%
-    group_by(HCR_name,beta) %>%
-    summarise(catch.aav.mean=mean(catch.aav)) %>%
-    arrange(HCR_name,desc(beta))%>%
-    mutate(stat_name="catch.aav")
+  ## calc.aav <- function(x)sum(abs(diff(x)))/sum(x[-1])
+  ## catch.aav.table <- kobeII_data %>%
+  ##   dplyr::filter(year%in%year.aav,stat=="catch") %>%
+  ##   group_by(HCR_name,beta,sim) %>%
+  ##   dplyr::summarise(catch.aav=(calc.aav(value))) %>%
+  ##   group_by(HCR_name,beta) %>%
+  ##   summarise(catch.aav.mean=mean(catch.aav)) %>%
+  ##   arrange(HCR_name,desc(beta))%>%
+  ##   mutate(stat_name="catch.aav")
 
-  # risk
-  calc.aav2 <- function(x){
-      xx <- sum(x[-1]/x[-length(x)]<0.5,na.rm=T) # 0が2つ続く場合にNAが発生するがそこは計算から除く
-      return(xx)
-  }
+  ## # risk
+  ## calc.aav2 <- function(x){
+  ##     xx <- sum(x[-1]/x[-length(x)]<0.5,na.rm=T) # 0が2つ続く場合にNAが発生するがそこは計算から除く
+  ##     return(xx)
+  ## }
 
-    #  calc.aav2 <- function(x){ xx <- sum(x[-1]/x[-length(x)]<0.5); if(is.na(xx)) browser() else return(xx)}
-  catch.risk <- kobeII_data %>%
-    dplyr::filter(year%in%year.risk,stat=="catch") %>%
-    group_by(HCR_name,beta,sim) %>%
-    dplyr::summarise(catch.aav=calc.aav2(value)) %>%
-    group_by(HCR_name,beta) %>%
-    summarise(value=mean(catch.aav>0)) %>%
-    arrange(HCR_name,desc(beta))%>%
-    mutate(stat_name="catch.risk")
+  ##   #  calc.aav2 <- function(x){ xx <- sum(x[-1]/x[-length(x)]<0.5); if(is.na(xx)) browser() else return(xx)}
+  ## catch.risk <- kobeII_data %>%
+  ##   dplyr::filter(year%in%year.risk,stat=="catch") %>%
+  ##   group_by(HCR_name,beta,sim) %>%
+  ##   dplyr::summarise(catch.aav=calc.aav2(value)) %>%
+  ##   group_by(HCR_name,beta) %>%
+  ##   summarise(value=mean(catch.aav>0)) %>%
+  ##   arrange(HCR_name,desc(beta))%>%
+  ##   mutate(stat_name="catch.risk")
 
-  bban.risk <- kobeII_data %>%
-    dplyr::filter(year%in%year.risk & stat=="SSB") %>%
-    group_by(HCR_name,beta,sim) %>%
-    dplyr::summarise(Bban.fail=sum(value<Bban)) %>%
-    group_by(HCR_name,beta) %>%
-    summarise(value=mean(Bban.fail>0)) %>%
-    arrange(HCR_name,desc(beta))%>%
-    mutate(stat_name="bban.risk")
+##   bban.risk <- kobeII_data %>%
+##     dplyr::filter(year%in%year.risk & stat=="SSB") %>%
+##     group_by(HCR_name,beta,sim) %>%
+##     dplyr::summarise(Bban.fail=sum(value<Bban)) %>%
+##     group_by(HCR_name,beta) %>%
+##     summarise(value=mean(Bban.fail>0)) %>%
+##     arrange(HCR_name,desc(beta))%>%
+##     mutate(stat_name="bban.risk")
 
-  blimit.risk <- kobeII_data %>%
-    dplyr::filter(year%in%year.risk,stat=="SSB") %>%
-    group_by(HCR_name,beta,sim) %>%
-    dplyr::summarise(Blimit.fail=sum(value<Blimit)) %>%
-    group_by(HCR_name,beta) %>%
-    summarise(value=mean(Blimit.fail>0)) %>%
-    arrange(HCR_name,desc(beta))%>%
-    mutate(stat_name="blimit.risk")
+##   blimit.risk <- kobeII_data %>%
+##     dplyr::filter(year%in%year.risk,stat=="SSB") %>%
+##     group_by(HCR_name,beta,sim) %>%
+##     dplyr::summarise(Blimit.fail=sum(value<Blimit)) %>%
+##     group_by(HCR_name,beta) %>%
+##     summarise(value=mean(Blimit.fail>0)) %>%
+##     arrange(HCR_name,desc(beta))%>%
+##     mutate(stat_name="blimit.risk")
 
-  overfishing.risk <- kobeII_data %>%
-    dplyr::filter(year%in%year.risk,stat=="Fratio") %>%
-    group_by(HCR_name,beta,sim) %>%
-    dplyr::summarise(overfishing=sum(value>1)) %>%
-    group_by(HCR_name,beta) %>%
-    summarise(value=mean(overfishing>0)) %>%
-    arrange(HCR_name,desc(beta))%>%
-    mutate(stat_name="overfishing.risk")
+##   overfishing.risk <- kobeII_data %>%
+##     dplyr::filter(year%in%year.risk,stat=="Fratio") %>%
+##     group_by(HCR_name,beta,sim) %>%
+##     dplyr::summarise(overfishing=sum(value>1)) %>%
+##     group_by(HCR_name,beta) %>%
+##     summarise(value=mean(overfishing>0)) %>%
+##     arrange(HCR_name,desc(beta))%>%
+##     mutate(stat_name="overfishing.risk")
 
-  redzone.risk1 <- kobeII_data %>%
-    dplyr::filter(year%in%year.risk,stat=="Fratio")
+##   redzone.risk1 <- kobeII_data %>%
+##     dplyr::filter(year%in%year.risk,stat=="Fratio")
 
-  redzone.risk2 <- kobeII_data %>%
-    dplyr::filter(year%in%year.risk,stat=="SSB") %>%
-    mutate(Bratio=value/Btarget) %>%
-    mutate(Fratio=redzone.risk1$value) %>%
-    mutate(is.redzone=(Bratio < 1 & round(Fratio,3) > 1)) %>%
-    arrange(HCR_name,beta,sim)
+##   redzone.risk2 <- kobeII_data %>%
+##     dplyr::filter(year%in%year.risk,stat=="SSB") %>%
+##     mutate(Bratio=value/Btarget) %>%
+##     mutate(Fratio=redzone.risk1$value) %>%
+##     mutate(is.redzone=(Bratio < 1 & round(Fratio,3) > 1)) %>%
+##     arrange(HCR_name,beta,sim)
 
-#  browser()
+## #  browser()
 
-  redzone.risk <- redzone.risk2 %>%
-    group_by(HCR_name,beta,sim) %>%
-     dplyr::summarise(sum.redzone=sum(is.redzone==TRUE)) %>%
-    group_by(HCR_name,beta) %>%
-    dplyr::summarise(value=mean(sum.redzone>0)) %>%
-    arrange(HCR_name,desc(beta)) %>%
-    mutate(stat_name="redzone.risk")
+##   redzone.risk <- redzone.risk2 %>%
+##     group_by(HCR_name,beta,sim) %>%
+##      dplyr::summarise(sum.redzone=sum(is.redzone==TRUE)) %>%
+##     group_by(HCR_name,beta) %>%
+##     dplyr::summarise(value=mean(sum.redzone>0)) %>%
+##     arrange(HCR_name,desc(beta)) %>%
+##     mutate(stat_name="redzone.risk")
 
-  if(!is.null(Bspecific)){
-    bspecific.risk <- kobeII_data %>%
-      dplyr::filter(year%in%year.risk,stat=="SSB") %>%
-      group_by(HCR_name,beta,sim) %>%
-      dplyr::summarise(Bspecific.fail=sum(value<Bspecific)) %>%
-      group_by(HCR_name,beta) %>%
-      summarise(value=mean(Bspecific.fail>0)) %>%
-      arrange(HCR_name,desc(beta))%>%
-      mutate(stat_name="bspecific.risk")
-  }else{
-    bspecific.risk <- NA
-  }
+  ## if(!is.null(Bspecific)){
+  ##   bspecific.risk <- kobeII_data %>%
+  ##     dplyr::filter(year%in%year.risk,stat=="SSB") %>%
+  ##     group_by(HCR_name,beta,sim) %>%
+  ##     dplyr::summarise(Bspecific.fail=sum(value<Bspecific)) %>%
+  ##     group_by(HCR_name,beta) %>%
+  ##     summarise(value=mean(Bspecific.fail>0)) %>%
+  ##     arrange(HCR_name,desc(beta))%>%
+  ##     mutate(stat_name="bspecific.risk")
+  ## }else{
+  ##   bspecific.risk <- NA
+  ## }
 
   # kobe statistics
-  overssbtar <- kobeII_data %>%
-    dplyr::filter(year%in%year.risk,stat=="SSB") %>%
-    mutate(is.over.ssbtar= value > Btarget)
-  overFtar <- kobeII_data %>%
-    dplyr::filter(year%in%year.risk,stat=="Fratio") %>%
-    mutate(is.over.Ftar= round(value,2) > 1)
-  overssbtar$is.over.Ftar <- overFtar$is.over.Ftar
+  ## overssbtar <- kobeII_data %>%
+  ##   dplyr::filter(year%in%year.risk,stat=="SSB") %>%
+  ##   mutate(is.over.ssbtar= value > Btarget)
+  ## overFtar <- kobeII_data %>%
+  ##   dplyr::filter(year%in%year.risk,stat=="Fratio") %>%
+  ##   mutate(is.over.Ftar= round(value,2) > 1)
+  ## overssbtar$is.over.Ftar <- overFtar$is.over.Ftar
 
-  kobe.stat <- overssbtar %>%
-      mutate("red"   =(is.over.ssbtar==FALSE) & (is.over.Ftar==TRUE),
-             "green" =(is.over.ssbtar==TRUE ) & (is.over.Ftar==FALSE),
-             "yellow"=(is.over.ssbtar==FALSE) & (is.over.Ftar==FALSE),
-             "orange"=(is.over.ssbtar==TRUE ) & (is.over.Ftar==TRUE)) %>%
-    group_by(HCR_name,beta,year) %>%
-    summarise(red.prob=mean(red,na.rm=T),
-              green.prob=mean(green,na.rm=T),
-              yellow.prob=mean(yellow,na.rm=T),
-              orange.prob=mean(orange,na.rm=T))  %>%
-      mutate(stat_name="kobe.stat")
+  ## kobe.stat <- overssbtar %>%
+  ##     mutate("red"   =(is.over.ssbtar==FALSE) & (is.over.Ftar==TRUE),
+  ##            "green" =(is.over.ssbtar==TRUE ) & (is.over.Ftar==FALSE),
+  ##            "yellow"=(is.over.ssbtar==FALSE) & (is.over.Ftar==FALSE),
+  ##            "orange"=(is.over.ssbtar==TRUE ) & (is.over.Ftar==TRUE)) %>%
+  ##   group_by(HCR_name,beta,year) %>%
+  ##   summarise(red.prob=mean(red,na.rm=T),
+  ##             green.prob=mean(green,na.rm=T),
+  ##             yellow.prob=mean(yellow,na.rm=T),
+  ##             orange.prob=mean(orange,na.rm=T))  %>%
+  ##     mutate(stat_name="kobe.stat")
 
 
   res_list <- list(catch.mean   = catch.mean,
                    ssb.mean         = ssb.mean,
                    biomass.mean         = biomass.mean,
-                   ssb.lower10percent            = ssb.ci10,
-                   ssb.upper90percent            = ssb.ci90,
+                   ssb.lower05percent            = ssb.ci05,
+                   ssb.upper95percent            = ssb.ci95,
                    prob.over.ssbtarget  = ssbtarget.table,
                    prob.over.ssblimit   = ssblimit.table,
                    prob.over.ssbban     = ssbban.table,
-                   prob.over.ssbmin     = ssbmin.table,
-                   prob.over.ssbmax     = ssbmax.table,
-                   catch.aav       = catch.aav.table,
-                   kobe.stat       = kobe.stat,
-                   catch.risk = catch.risk,
-                   overfishing.risk = overfishing.risk,
-                   redzone.risk = redzone.risk,
-                   bban.risk = bban.risk,
-                   blimit.risk = blimit.risk,
-                   bspecific.risk = bspecific.risk)
+                   prob.over.ssbmin     = ssbmin.table)
+#                   prob.over.ssbmax     = ssbmax.table,
+                   ## catch.aav       = catch.aav.table,
+                   ## kobe.stat       = kobe.stat,
+                   ## catch.risk = catch.risk,
+                   ## overfishing.risk = overfishing.risk,
+                   ## redzone.risk = redzone.risk,
+                   ## bban.risk = bban.risk,
+                   ## blimit.risk = blimit.risk,
+#                   bspecific.risk = bspecific.risk)
   return(res_list)
 
 }
 
 
-#' kobeII matrixの簡易版（Btarget, Blimitは決め打ちでβのみ変える)
+#'
+#' 様々なベータやinput設定をもとに複数の将来予測を繰り返して結果をtibbleで返す関数
 #'
 #' @param finput future_vpaの返り値の$input
+#' @param beta_vector betaを単純に変える場合のbetaのベクトル
 #' @param year_beta_change betaを変更する年の範囲。NULLの場合には全部の年を変える。
-#' @param datainput_setting_original make_future_dataに与えて引数を作り直す場合の make_future_dataの返り値
-#' @param datainput_setting_extra betaに加えて変えたい追加の設定
+#' @param datainput_setting_original make_future_dataに与えて引数を作り直す場合の make_future_dataの返り値.
+#' @param datainput_setting_extra betaに加えて変えたい追加の設定。beta_vectorと同じ長さ分必要で、beta_vectorも一緒にかかる
 #' @param label_name HCR_nameのラベルの名前. NULLの場合、beta_vectorが使われる
+#' @param ncore 並列計算する場合のコア数。動くかどうか不明。
+#'
+#' @description
+#' その他、calculate_all_pmに渡す引数
 #'
 #' @encoding UTF-8
 #' @export
@@ -1831,7 +1880,7 @@ beta.simulation <- function(finput,beta_vector,
                             datainput_setting_original=NULL,
                             label_name = NULL,
                             output_type="tidy", ncore = 1,
-                            save_detail=rep(0,length(beta_vector))){
+                            save_detail=rep(0,length(beta_vector)), ...){
 
   if(!is.null(datainput_setting_extra)) assertthat::assert_that(length(datainput_setting_extra)==length(beta_vector))
   if(!is.null(label_name)){
@@ -1840,9 +1889,9 @@ beta.simulation <- function(finput,beta_vector,
   else{
     label_name <- beta_vector
   }
-  assertthat::assert_that(length(beta_vector)==length(save_detail))    
+  assertthat::assert_that(length(beta_vector)==length(save_detail))
 
-  tb <- NULL
+  tb <- tb2 <- NULL
   future_year <- dimnames(finput$tmb_data$HCR_mat)[[1]]
   if(!is.null(year_beta_change)){
     year_column_beta_change <- future_year %in% year_beta_change
@@ -1852,7 +1901,7 @@ beta.simulation <- function(finput,beta_vector,
   }
 
   res_list <- purrr::map(rep(NA, length(beta_vector)), function(x) x)
-  
+
   if(ncore==1){
     for(i in 1:length(beta_vector)){
       if(type=="old"){
@@ -1866,11 +1915,15 @@ beta.simulation <- function(finput,beta_vector,
         }
         fres_base <- do.call(future_vpa,finput)
         if(save_detail[i]==1) res_list[[i]] <- fres_base
-        fres_base <- format_to_old_future(fres_base)
+#        fres_base <- format_to_old_future(fres_base)
       }
       tmp <- convert_future_table(fres_base,label=label_name[i]) %>%
         rename(HCR_name=label)  %>% mutate(beta=beta_vector[i])
       tb <- bind_rows(tb,tmp)
+
+      tmp <- calculate_all_pm(fres_base,...) %>%
+          mutate(HCR_name=label_name[i], beta=beta_vector[i])
+      tb2 <- bind_rows(tb2,tmp)
     }
   }
   else{
@@ -1884,27 +1937,29 @@ beta.simulation <- function(finput,beta_vector,
       if(!is.null(datainput_setting_extra)){
         finput$tmb_data <- redo_future(datainput_setting_original, datainput_setting_extra[[i]], only_data=TRUE)$data
       }
-      do.call(future_vpa,finput)      
-#  fres_base <- do.call(future_vpa,finput)
-#      fres_base <- format_to_old_future(fres_base)
-#      tmp <- convert_future_table(fres_base,label=label_name[i]) %>%
-#        rename(HCR_name=label)  %>% mutate(beta=beta_vector[i])
-#      tmp
+      do.call(future_vpa,finput)
     }
     parallel::stopCluster(cl)
-    
+
     res_list <- tb
     res_list[save_detail==0] <- NULL
 
+    tb2 <- purrr::map_dfr(seq_len(length(tb)), function(i){
+      calculate_all_pm(tb[[i]],...) %>%
+        rename(HCR_name=label_name[i],beta=beta_vector[i])
+    })
+
     tb <- purrr::map_dfr(seq_len(length(tb)), function(i){
-      format_to_old_future(tb[[i]]) %>% 
+      format_to_old_future(tb[[i]]) %>%
         convert_future_table(label=label_name[i]) %>%
         rename(HCR_name=label)  %>% mutate(beta=beta_vector[i])
     })
+
+
   }
-  
-  if(sum(save_detail)==0) return(tb)
-  else return(list(tb=tb, res_list=res_list))
+
+  if(sum(save_detail)==0) return(lst(tb,tb2))
+  else return(list(tb=tb, tb2=tb2, res_list=res_list))
 }
 
 
@@ -1951,7 +2006,10 @@ calc_future_perSPR <- function(fout=NULL,
     is_pope <- res_vpa$input$Pope
     plus_group <- res_vpa$input$plus.group
   }
-  if(!is.null(fout))  info_source  <- "future"
+  if(!is.null(fout)){
+    info_source  <- "future"
+    if(class(fout)=="future_new") fout <- format_to_old_future(fout)
+  }
   if(!is.null(biopar))  info_source  <- "bio" # bioが優先される
 
   fout.tmp <- fout
@@ -2702,7 +2760,7 @@ derive_biopar <- function(res_obj=NULL, derive_year=NULL, stat=mean){
     if(!is.null(res_obj$input$dat$waa.catch)) bio_par$waa.catch <- bio_par$waa
   }
 
-  if(class(res_obj)=="future"|class(res_obj)=="future_new"){
+  if(class(res_obj)[[1]]=="future"||class(res_obj)[[1]]=="future_new"){
     bio_list <- res_obj[c("waa","faa")]
     if(is.null(res_obj$maa)) bio_list$maa <- res_obj$input$tmb_data$maa else bio_list$maa <- res_obj$maa
     bio_list$M <- res_obj$input$tmb_data$M
@@ -2752,13 +2810,13 @@ derive_future_summary <- function(res_future, target=NULL){
     tmpfunc <- function(x) x[,target]
   }
 
-  biomass <- apply(res_future$naa*res_future$waa,c(2,3),sum)
   Fmean <- apply(res_future$faa,c(2,3),sum)
 
   tibble(
     year    = as.numeric(dimnames(res_future$SR_mat[,,"ssb"])[[1]]),
     SSB     = tmpfunc(res_future$SR_mat[,,"ssb"]),
-    biomass = tmpfunc(biomass),
+    biomass = tmpfunc(res_future$SR_mat[,,"biomass"]),
+    cbiomass = tmpfunc(res_future$SR_mat[,,"cbiomass"]),
     recruit = tmpfunc(res_future$SR_mat[,,"recruit"]),
     intercept = tmpfunc(res_future$SR_mat[,,"intercept"]),
     deviance = tmpfunc(res_future$SR_mat[,,"deviance"]),
@@ -2857,7 +2915,7 @@ rowtapply2 <- function(a0,FUN.name){
 #' @param SBmsy ここで与えた相対値としてSBのパフォーマンス指標を示す
 #' @param MSY ここで与えた相対値としてMSYのパフォーマンス指標を示す
 #' @param Bthreshold_label ランクづけに利用するリスクをkobe.tableから持ってくるときのkobe.tableのリストの名前
-#' 
+#'
 #' @export
 
 summary_kobe_table <- function(kobeII.table,
@@ -2876,8 +2934,8 @@ summary_kobe_table <- function(kobeII.table,
   ssb_table <-  ssb_table  %>% as_tibble() %>% rename_all(tmpfunc_, header="SSB")
   catch_table <- kobeII.table$catch.mean %>% select(as.character(catch_summary_year))/MSY
   catch_table <- catch_table %>% as_tibble() %>% rename_all(tmpfunc_, header="Catch")
-  
-  summary_HCR <- 
+
+  summary_HCR <-
       bind_cols(
           kobeII.table$ssb.mean %>% select("HCR_name","beta"),
           kobeII.table$prob.over.ssbtarget %>% select(as.character(ssbpercent_summary_year)) %>% rename_all(tmpfunc_, header="SSB_prob"),
@@ -2890,7 +2948,7 @@ summary_kobe_table <- function(kobeII.table,
 
   if(target_threshold[1]<target_threshold[2]){ target_threshold[1] <- 100; risk_threshold[1] <- 0}
   summary_HCR$SSB_prob_XXXX <- summary_HCR[str_c("SSB_prob_", ssbpercent_summary_year)]
-  summary_HCR$Catch_XXXX <- summary_HCR[str_c("Catch_", catch_summary_year[1])]  
+  summary_HCR$Catch_XXXX <- summary_HCR[str_c("Catch_", catch_summary_year[1])]
   summary_HCR <- summary_HCR %>%
       mutate(category_target = case_when((SSB_prob_XXXX >= target_threshold[1]) ~ 2,
                                          (SSB_prob_XXXX <  target_threshold[1] & SSB_prob_XXXX >= (target_threshold[2]-0.5)) ~ 1,
@@ -2898,7 +2956,7 @@ summary_kobe_table <- function(kobeII.table,
              category_risk   = case_when((risk_Bthreshold <= risk_threshold[1]) ~ 2,
                                          (risk_Bthreshold >  risk_threshold[1] & risk_Bthreshold <= risk_threshold[2]) ~ 1,
                                          (risk_Bthreshold >  risk_threshold[2]) ~ 0)) %>%
-      mutate(category_risk = ifelse(sum(risk_threshold)==0, 2, category_risk)) %>% 
+      mutate(category_risk = ifelse(sum(risk_threshold)==0, 2, category_risk)) %>%
       mutate(category_combine = str_c(category_target,category_risk)) %>%
       mutate(category         = case_when(category_combine=="10" ~ 1,
                                           category_combine=="20" ~ 1.5,
@@ -2907,11 +2965,11 @@ summary_kobe_table <- function(kobeII.table,
                                           category_combine=="21" ~ 2.5,
                                           category_combine=="22" ~ 3,
                                           category_target==0     ~ 0)) %>%
-      select(category, HCR_name:risk_catch, category_risk, category_target)      
-      
+      select(category, HCR_name:risk_catch, category_risk, category_target)
+
 
   if(sort_result_table==TRUE){
-    summary_HCR <- summary_HCR %>%      
+    summary_HCR <- summary_HCR %>%
         arrange(desc(category), desc(Catch_XXXX))
   }
   return(summary_HCR)
@@ -2919,7 +2977,7 @@ summary_kobe_table <- function(kobeII.table,
 
 #'
 #' VPAデータが1年分追加されたダミーデータを生成する
-#' 
+#'
 #' @export
 #'
 
@@ -2931,10 +2989,10 @@ create_dummy_vpa <- function(res_vpa){
     nyear <- ncol(naa)
     year_name <- colnames(naa) %>% as.numeric()
     year_name <- c(year_name,max(year_name)+1)
-    nage  <- nrow(naa)    
+    nage  <- nrow(naa)
     empty_matrix <- matrix(0, nage, nyear+1)
     dimnames(empty_matrix) <- list(rownames(naa), year_name)
-    
+
     empty_matrix[,-nyear] <- as.matrix(naa)
     empty_matrix[, nyear] <- naa[,nyear]
     as.data.frame(empty_matrix)
@@ -2945,15 +3003,368 @@ create_dummy_vpa <- function(res_vpa){
   res_vpa_updated$input$dat$waa <- add_1year(res_vpa$input$dat$waa)
   res_vpa_updated$input$dat$maa <- add_1year(res_vpa$input$dat$maa)
   res_vpa_updated$input$dat$M   <- add_1year(res_vpa$input$dat$M  )
-  res_vpa_updated$input$dat$caa <- add_1year(res_vpa$input$dat$caa)  
+  res_vpa_updated$input$dat$caa <- add_1year(res_vpa$input$dat$caa)
+
+  if(!is.null(res_vpa_updated$input$dat$release.all))  res_vpa_updated$input$dat$release.all <- res_vpa_updated$input$dat$release.all %>% add_1year()
+  if(!is.null(res_vpa_updated$input$dat$release.alive))  res_vpa_updated$input$dat$release.alive <- res_vpa_updated$input$dat$release.alive %>% add_1year()
+  if(!is.null(res_vpa_updated$input$dat$release.ratealive))  res_vpa_updated$input$dat$release.ratealive <- res_vpa_updated$input$dat$release.ratealive %>% add_1year()
+  if(!is.null(res_vpa_updated$input$dat$release.dat))  res_vpa_updated$input$dat$release.all <- res_vpa_updated$input$dat$release.dat %>% add_1year()
 
   if(!is.null(res_vpa_updated$input$dat$waa.catch))
-    res_vpa_updated$input$dat$waa.catch <- add_1year(res_vpa$input$dat$waa.catch)    
+    res_vpa_updated$input$dat$waa.catch <- add_1year(res_vpa$input$dat$waa.catch)
 
   res_vpa_updated$baa <- res_vpa_updated$input$dat$waa * res_vpa_updated$naa
   res_vpa_updated$ssb <- res_vpa_updated$input$dat$maa * res_vpa_updated$baa
-  res_vpa_updated$wcca <- res_vpa_updated$input$dat$caa * res_vpa_updated$input$dat$waa  
-  
+  res_vpa_updated$wcca <- res_vpa_updated$input$dat$caa * res_vpa_updated$input$dat$waa
+
   return(res_vpa_updated)
 }
 
+
+#'
+#' res_futureから考えられるほぼすべてのパフォーマンス指標をとりだし、2行のtibbleで返す
+#'
+#' @param res_future future_vpaの返り値
+#' @param SBtarget それを上回る・下回る確率を計算する。目標管理基準値
+#' @param SBlimit それを上回る・下回る確率を計算する。限界管理基準値
+#' @param SBban それを上回る・下回る確率を計算する。禁漁水準
+#' @param SBmin それを上回る・下回る確率を計算する。過去最低親魚量
+#' @param MSY それを上回る・下回る確率を計算する。MSY
+#' @param is_scale TRUEの場合、親魚量はSBtargetで、漁獲量はMSYで割った相対値が出力される。それ以外はそのまま
+#' @param unit 確率を出力するときの単位。100を入れると％単位で結果が返される
+#' @param period_extra デフォルトではSSBminなどを一度でも下回るなど、期間を指定して計算する統計量はABC_year + 0:9, 0:4, 5:9, 1:10, 1:4, 6:10で決め打ちしているが、それ以外の期間を指定したいときにここの引数で与える
+#' @param type "AS": age-structured from frasyr, "PM": production model from frapmr
+#'
+#'
+# #' @examples
+# #' \dontrun{
+# #'   data(res_future_HSL2)
+# #'   calculate_all_pm(res_future_HSL2, 0, 0, 0, 0)
+# #' }
+#'
+#' @export
+#'
+
+calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmin=-1, MSY=-1, is_scale=FALSE, unit=1, period_extra=NULL, type="AS", fun_period=mean){
+    # by year performance (start_future_year:last_year)
+    # mean, median, ci5%, ci10%, ci90%, ci95%, CV,
+    # ssb, biomass, number by age, catch weight
+    # probability > SBtarget, SBmin, SBlimit, SBban, SBmax
+
+    get_annual_pm <- function(mat,fun,label){
+        x <- apply(mat,1,fun)
+        tibble(stat=str_c(label,"_",names(x)),value=x)
+    }
+
+    fun_list <- list(ci0.05=function(x) quantile(x,0.05, na.rm=TRUE),
+                     ci0.10 = function(x) quantile(x,0.1, na.rm=TRUE),
+                     ci0.95 = function(x) quantile(x,0.95, na.rm=TRUE),
+                     ci0.90 = function(x) quantile(x,0.90, na.rm=TRUE),
+                     cv = function(x) sqrt(var(x, na.rm=TRUE))/mean(x, na.rm=TRUE),
+                     mean = function(x) mean(x, na.rm=TRUE),
+                     median = function(x) median(x, na.rm=TRUE),
+                     prob_target = function(x) mean(x>SBtarget, na.rm=TRUE)*unit,
+                     prob_limit  = function(x) mean(x>SBlimit, na.rm=TRUE)*unit,
+                     prob_ban    = function(x) mean(x>SBban, na.rm=TRUE)*unit,
+                     prob_min    = function(x) mean(x>SBmin, na.rm=TRUE)*unit)
+
+  if(is_scale){
+    scale_ssb <- SBtarget
+    scale_catch <- MSY
+    SBlimit     <- SBlimit/SBtarget
+    SBban       <- SBban/SBtarget
+    SBmin       <- SBmin/SBtarget
+    SBtarget    <- SBtarget/SBtarget
+  }
+  else{
+    scale_ssb <- 1
+    scale_catch <- 1
+  }
+
+  if(type=="AS"){
+    year_future <- dimnames(res_future$naa)[[2]][res_future$input$tmb_data$future_initial_year:dim(res_future$naa)[[2]]]
+    age_label <- str_c("A",dimnames(res_future$naa)[[1]])
+    year_label <- dimnames(res_future$naa)[[2]]
+
+    ssb_mat <- res_future$SR_mat[year_future,,"ssb"] / scale_ssb
+    catch_mat <- res_future$HCR_realized[year_future,,"wcatch"] / scale_catch
+    biom_mat <- apply(res_future$naa * res_future$waa,c(2,3),sum)
+  }
+  if(type=="PM"){
+    year_future <- res_future$mat_year$year[!res_future$mat_year$is_est]
+    age_label   <- NULL
+    year_label  <- res_future$mat_year$year
+
+    if(!is_scale){
+      ssb_mat   <- res_future$mat_stat["B",,] 
+      catch_mat <- res_future$mat_stat["C",,] 
+      biom_mat  <- res_future$mat_stat["B",,] 
+    }
+    else{
+      ssb_mat   <- res_future$mat_stat["Bratio",,] 
+      catch_mat <- res_future$mat_stat["Cratio",,] 
+      biom_mat  <- res_future$mat_stat["Bratio",,]       
+    }
+  }
+
+  stat_data <- NULL
+  for(i in 1:length(fun_list)){
+    fun <- fun_list[[i]]
+    funname <- names(fun_list)[i]
+
+    if(type=="AS"){
+      x1 <- purrr::map_dfr(seq_len(length(age_label)),
+                       function(x) get_annual_pm(res_future$naa [x,year_future,],
+                                                 fun,str_c(funname,"_naa_", age_label[x])))
+      x2 <- purrr::map_dfr(seq_len(length(age_label)),
+                     function(x) get_annual_pm(res_future$wcaa[x,year_future,],
+                                               fun,str_c(funname,"_wcaa_",age_label[x])))
+      x3 <- purrr::map_dfr(seq_len(length(age_label)),
+                       function(x) get_annual_pm(res_future$faa [x,year_future,],
+                                                 fun,str_c(funname,"_faa_", age_label[x])))      
+    }
+    else{
+      x1 <- x2 <- x3 <- NULL
+    }
+    tmp <- bind_rows(
+      x1,x2,x3,
+      get_annual_pm(ssb_mat,  fun  ,str_c(funname,"_ssb")),
+      get_annual_pm(catch_mat,fun  ,str_c(funname,"_catch")),
+      get_annual_pm(biom_mat, fun  ,str_c(funname,"_biom"))
+    )
+    stat_data <- bind_rows(stat_data, tmp)
+  }
+
+  # temporal scale
+  # by term performance
+  # - management term1, ABC_year + 0:9
+  # - management term2, ABC_year + 0:4
+  # - management term3, ABC_year + 5:9
+  # - management term4, ABC_year + 1:10
+  # - management term5, ABC_year + 1:4
+  # - management term6, ABC_year + 6:10
+  #
+  # mean(ssb), mean(biomass), mean(catch), mean(AAV), mean(CV), Pr(SBany>SBtarget), Pr(SBany>SBlimit),Pr(SBany>SBban),Pr(SBany>SBmin), AAV_min (査読コメントを参照), max_AAV_min, mean(min_catch)
+
+  get_period_pm <- function(mat, fun_name, year_period, sum_fun_name, fun_name_char){
+    tmp <- rownames(mat)%in%year_period
+    if(sum(tmp)!=length(year_period)){
+        cat("part of years does not match future projection year\n")
+        return(NA)
+    }
+    else{
+      if(type=="PM"){
+        if(fun_name_char==c("prob_limit_any")){
+          mat <- sweep(mat, 2, SBlimit, FUN="/")
+        }
+        if(fun_name_char==c("prob_ban_any")){
+          mat <- sweep(mat, 2, SBban, FUN="/")
+        }
+        if(fun_name_char==c("prob_min_any")){
+          mat <- sweep(mat, 2, SBmin, FUN="/")
+        }                
+      }
+      mat1 <- mat[tmp,]
+      res <- apply(mat1,2,fun_name) %>% sum_fun_name()
+      return(res)
+    }
+  }
+
+  if(type=="AS"){
+    ABC_year     <- year_label[res_future$input$tmb_data$start_ABC_year] %>% as.numeric()
+  }
+  if(type=="PM"){
+    ABC_year     <- res_future$mat_year$year[res_future$mat_year$is_manage] %>% min()
+  }
+  period_range <- list(0:9, 0:4, 5:9, 1:10, 1:4, 6:10)
+  if(!is.null(period_extra)){
+    for(i in 1:length(period_extra)){
+      if(sum(purrr::map_lgl(period_range, function(x) all(x==period_extra[[i]])))==0){
+        period_range <- c(period_range, period_extra[i])
+      }
+    }
+  }
+  period_list  <- purrr::map(period_range, function(x) ABC_year + x)
+  names(period_list) <- purrr::map_chr(period_list, function(x) str_c(range(x),collapse="."))
+
+  av <- function(x){
+    av_value <- (x[-1]-x[-length(x)])/x[-length(x)]
+    av_value <- av_value[!is.nan(av_value) & av_value<Inf]
+    if(length(av_value)==0) return(NA) else av_value
+  }
+
+  calc_mdr_ <- function(x){
+    if(!is.na(av(x)[1])){
+#      if(min(av(x))>0) cat(min(av(x)),"\n")
+      return(min(c(av(x),0), na.rm=TRUE))
+    }
+    else{
+      return(NA)
+    }
+  }
+
+  calc_mdr0_ <- function(x){
+    if(!is.na(av(x)[1])){
+      return(min(av(x), na.rm=TRUE))
+    }
+    else{
+      return(NA)
+    }
+  }
+
+  mean2 <- function(x) fun_period(x,na.rm=TRUE)
+    
+  fun_list2 <- list(cv     = function(x) sd(x, na.rm=TRUE)/mean(x,na.rm=TRUE),
+                    mean   = function(x) mean(x,na.rm=TRUE),
+                    median   = function(x) median(x,na.rm=TRUE),
+                    aav   = function(x) mean(abs(av(x)),na.rm=TRUE),
+                    mav   = function(x) median(abs(av(x)),na.rm=TRUE),                    
+                    adr = function(x){ x0 <- av(x) ;
+                                       x0[x0>0] <- NA ;
+                                       mean(x0,na.rm=TRUE)    },
+                    mdr = calc_mdr_,
+                    mdr0 = calc_mdr0_,
+                    min_value = function(x){
+                        if(all(is.na(x))) NA else min(x, na.rm=TRUE)
+                    },
+                    max_value = function(x){
+                        if(all(is.na(x))) NA else max(x, na.rm=TRUE)
+                    },
+                    # 以下、na.rm=FALSEに変更。PMで全てのデータがNAであった場合、na.rm=TRUEとすると0という数字が入ってしまうので、PMで使うならここはFALSEとすべき
+                    # ただし、一部だけNAが入るような場合にはどうすべきか？そういう事例がでたときに要検討
+                    prob_target_any  = function(x) ifelse(sum(x<SBtarget,na.rm=FALSE)>0,1,0),
+                    prob_limit_any  = function(x){
+                      if(type=="PM") SBlimit <- rep(1,length(x))
+                      ifelse(sum(x<SBlimit,na.rm=FALSE)>0,1,0)
+                    },
+                    prob_half_any  = function(x) ifelse(sum(x[-1]<0.5*x[-length(x)])>0,1,0),
+                    prob_ban_any    = function(x){
+                      if(type=="PM") SBban <- rep(1,length(x))                      
+                      ifelse(sum(x<SBban,na.rm=FALSE)>0,1,0)
+                    },
+                    prob_min_any    = function(x){
+                      if(type=="PM") SBmin <- rep(1,length(x))                      
+                      ifelse(sum(x<SBmin,na.rm=FALSE)>0,1,0)
+                    })
+
+  mat_list <- lst(ssb=ssb_mat, biom=biom_mat, catch=catch_mat)
+  for(j in seq_len(length(fun_list2))){
+    for(i in seq_len(length(period_list))){
+      stat_data <- bind_rows(
+        stat_data,
+        purrr::map_dfr(1:length(mat_list),
+                       function(x)
+                           tibble(stat=str_c(names(fun_list2)[j],names(mat_list)[x],names(period_list)[i],sep="_"),
+                                value=get_period_pm(mat_list[[x]], fun_list2[[j]], period_list[[i]], mean2, fun_name_char=names(fun_list2)[j])))
+        )
+    }}
+  return(stat_data)
+}
+
+#'
+#' @export
+#'
+
+
+derive_all_stat <- function(res, word_vector, exact=FALSE){
+  if(exact==FALSE){
+    for(i in 1:length(word_vector)){
+      res <- res %>% dplyr::filter(str_detect(stat,word_vector[i]))
+    }
+    if(nrow(res)==0) stop("no match") else return(res)
+  }
+  else{
+    res <- res %>% dplyr::filter(stat==word_vector)
+    return(res)
+  }
+}
+
+
+#' リスクテーブルを作る
+#'
+#' @param target_threshold カテゴリ分けに使うSSB>SSBtargetの確率。1番目がbeta=0.8のときの値、2番目が50％のときの値（なのでだいたい50％になるはず）
+#' @param limit_threshold  カテゴリ分けに使うSSBall>SSBthresholdの確率。1番目がbeta=0.8のときの値、2番目が50％のときの値（なので1番目よりも2番めのほうが小さいはず）
+#'
+#' @export
+#'
+
+rank_HCR <- function(summary_HCR,
+                     target_threshold,
+                     risk_threshold,
+                     target_prob_name="SBtar_prob",
+                     risk_prob_name="SBlim_prob"){
+
+  SSB_prob_vector <- summary_HCR[target_prob_name] %>% unlist %>% as.numeric
+  risk_prob_vector <- summary_HCR[risk_prob_name]  %>% unlist %>% as.numeric
+  target_threshold <- target_threshold
+  risk_threshold   <- risk_threshold
+
+  if(target_threshold[1]<target_threshold[2]) target_threshold[1] <- Inf
+
+  summary_HCR <- summary_HCR %>%
+      mutate(category_target = case_when((SSB_prob_vector >= target_threshold[1]) ~ 2,
+                                         (SSB_prob_vector <  target_threshold[1] & SSB_prob_vector >= (target_threshold[2]*0.99)) ~ 1,
+                                         (SSB_prob_vector < (target_threshold[2]*0.99)) ~ 0),
+             category_risk   = case_when((risk_prob_vector <= risk_threshold[1]) ~ 2,
+                                         (risk_prob_vector >  risk_threshold[1] & risk_prob_vector <= risk_threshold[2]) ~ 1,
+                                         (risk_prob_vector >  risk_threshold[2]) ~ 0))
+
+  if(sum(risk_threshold)==0) summary_HCR$category_risk[] <- 2
+
+  summary_HCR <- summary_HCR %>%
+      mutate(category_combine = str_c(category_target,category_risk)) %>%
+      mutate(category         = case_when(category_combine=="10" ~ 1,
+                                          category_combine=="20" ~ 1.5,
+                                          category_combine=="11" ~ 2,
+                                          category_combine=="12" ~ 2.5,
+                                          category_combine=="21" ~ 2.5,
+                                          category_combine=="22" ~ 3,
+                                          category_target==0     ~ 0))
+  return(summary_HCR)
+
+}
+
+#'
+#' beverton-holtのh,R0とbioparsを与えるとa,bを返す関数
+#'
+#' @export
+
+get.ab.bh <- function(h,R0,biopars){
+
+    get.SPR0 <- function(M,maa,waa,output="simple"){
+        nage <- length(M)
+        S <- exp(-M)
+        N <- numeric()
+        N[1] <- 1
+        for(i in 2:(nage-1)) N[i] <- N[i-1]*S[i-1]
+        N[nage] <- N[nage-1] * S[nage]/(1-S[nage])
+        SPR0 <- sum(N * maa * waa)
+        if(output=="simple") return(SPR0) else return(listN2(N,SPR0))
+    }
+    SPR0 <- get.SPR0(biopars$M,biopars$maa,biopars$waa)
+    S0 <- R0*SPR0
+    beta <- (5*h-1)/(4*h*R0)
+    alpha <- SPR0*(1-h)/(4*h)
+    a <- 1/alpha
+    b <- beta/alpha
+    return(tibble::lst(SPR0,R0,h,S0,a,b))
+}
+
+#' 漁獲量の上限設定をしたときの設定がちゃんと生きているかどうかを確かめる
+#'
+#' @export
+#'
+
+check_fix_CVoption <- function(res_future){
+  wcatch <- res_future$HCR_realized[,,"wcatch"]
+  wcatch[-1,]/wcatch[-nrow(wcatch),]
+}
+        
+#' @export      
+
+format_type <- function(){
+    tribble(~name, ~col, ~ lty,
+            "target", "#00533E", "dashed",
+            "limit",  "#EDB918", "dotdash",
+            "ban",   "#C73C2E", "dotted")
+}

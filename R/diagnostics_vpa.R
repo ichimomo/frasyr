@@ -607,7 +607,26 @@ do_estcheck_vpa <- function(res, n_ite = 10, sd_jitter = 1, what_plot = NULL, TM
 
 # author: Kohei Hamabe
 
-plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_year = FALSE, plot_scale = FALSE, resid_CI=TRUE, plotAR=FALSE){
+plot_residual_vpa <- function(
+    res,
+    index_name = NULL,
+    plot_smooth = FALSE,
+    plot_year = FALSE,
+    plot_scale = FALSE,
+    resid_CI=TRUE,
+    plotAR=FALSE){
+  input <- res$input
+  input_plot_residual <- list(input = input, #use.indexを考慮し，実際にVPAのチューニングで与えた値
+                              use.index = input$use.index, abund = input$abund, min.age = input$min.age,
+                              max.age = input$max.age, link = input$link, base = input$base,
+                              af = input$af, index.w = input$index.w,
+                              q = res$q, naa = res$naa, faa = res$faa, baa = res$baa, ssb = res$ssb,
+                              pred.index = res$pred.index, sigma = res$sigma, b = res$b)
+  plot_residual_vpa2(res = input_plot_residual, index_name = index_name, plot_smooth = plot_smooth, plot_year = plot_year, plot_scale = plot_scale, resid_CI = resid_CI, plotAR = plotAR)
+}
+
+
+plot_residual_vpa2 <- function(res, index_name = NULL, plot_smooth = FALSE, plot_year = FALSE, plot_scale = FALSE, resid_CI=TRUE, plotAR=FALSE){
   if(is.numeric(res$input$use.index)){
     assertthat::assert_that(length(res$input$dat$index[,1]) >= length(res$input$use.index))
     used_index <- res$input$dat$index[res$input$use.index,]
@@ -616,8 +635,9 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_
   } else {
     assertthat::assert_that(is.numeric(res$input$use.index)|res$input$use.index=="all")
   }
+
   # x軸の範囲
-  if(is.numeric(plot_year)) xlim_year <- c(min(plot_year), max(plot_year)) else xlim_year <- c(min(as.numeric(colnames(res_vpa_estb$naa))), max(as.numeric(colnames(res_vpa_estb$naa))))
+  if(is.numeric(plot_year)) xlim_year <- c(min(plot_year), max(plot_year)) else xlim_year <- c(min(as.numeric(colnames(res$naa))), max(as.numeric(colnames(res$naa))))
 
   d_tmp <- matrix(NA,
                   nrow = length(used_index[1,]),
@@ -628,22 +648,23 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_
   d_tmp[,(3+length(res$q))] <- as.numeric(apply(res$baa, 2, sum))
   d_tmp[,(4+length(res$q))] <- as.numeric(apply(res$ssb, 2, sum))
 
-
   q_tmp <- b_tmp <- sig_tmp <- numeric()
   name_tmp1 <- name_tmp2 <- name_tmp3 <- name_tmp4 <- name_tmp5 <- numeric()
 
   for(i in 1:length(res$q)){
-    if(length(res$input$min.age)==1) min_age_tmp <- res$input$min.age[1] else min_age_tmp <- res$input$min.age[i]
-    if(length(res$input$min.age)==1) max_age_tmp <- res$input$max.age[1] else max_age_tmp <- res$input$max.age[i]
+    if(length(res$min.age)==1) min_age_tmp <- res$min.age[1] else min_age_tmp <- res$min.age[i]
+    if(length(res$min.age)==1) max_age_tmp <- res$max.age[1] else max_age_tmp <- res$max.age[i]
 
     resid_tmp <- log(d_tmp[,i+1]) - log(res$pred.index[i,]) # 対数残差
     sd_resid_tmp <- resid_tmp/sd(resid_tmp, na.rm = TRUE) # 対数残差の標準化残差
 
     #abund.extractor関数で書き換え #catch.prop引数は不要か
-    d_tmp[,(i+length(res$q)*1+4)] <- abund.extractor(abund = res$input$abund[i], naa = res$naa, faa = res$faa,
+	#use.indexを使用した場合のif文は必要なくなったので消去
+    if (is.na(res$link[i])) res$link[i] <- res$link[1]
+	d_tmp[,(i+length(res$q)*1+4)] <- abund.extractor(abund = res$abund[i], naa = res$naa, faa = res$faa,
                                                      dat = res$input$dat,
-                                                     min.age = res$input$min.age[i], max.age = res$input$max.age[i],
-                                                     link = res$input$link, base = res$input$base, af = res$input$af,
+                                                     min.age = res$min.age[i], max.age = res$max.age[i],
+                                                     link = res$link[i], base = res$base, af = res$af,
                                                      sel.def = res$input$sel.def, p.m=res$input$p.m,
                                                      omega=res$input$omega, scale=1) #res$input$scale)
                                                     #res$ssbはスケーリングしていない結果が出ている(2021/06/09KoHMB)
@@ -723,7 +744,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_
       geom_ribbon(aes(x = year, ymin = -qnorm(0.1)*sigma, ymax = qnorm(0.1)*sigma), alpha=0.1)+
       geom_point(aes(x=year, y=resid, colour = Index_Label), size = 2) +
       facet_wrap(~Index_Label, scale = if(plot_scale) "free" else "fixed")+
-      geom_hline(yintercept = 0, size = 1)+
+      geom_hline(yintercept = 0, linewidth = 1)+
       xlab("Year") +
       xlim(xlim_year) +
       ylab("log(Residual)") +
@@ -738,7 +759,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_
       geom_ribbon(aes(x = year, ymin = -qnorm(0.1), ymax = qnorm(0.1)), alpha=0.1)+
       geom_point(aes(x=year, y=sd.resid, colour = Index_Label), size = 2) +
       facet_wrap(~Index_Label, scale = if(plot_scale) "fixed" else "free")+
-      geom_hline(yintercept = 0, size = 1)+
+      geom_hline(yintercept = 0, linewidth = 1)+
       xlab("Year") +
       xlim(xlim_year) +
       ylab("log(Residual)") +
@@ -752,7 +773,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_
     g1 <- ggplot(d_tidy) +
       geom_point(aes(x=year, y=resid, colour = Index_Label), size = 2) +
       facet_wrap(~Index_Label, scale = if(plot_scale) "free" else "fixed")+
-      geom_hline(yintercept = 0, size = 1)+
+      geom_hline(yintercept = 0, linewidth = 1)+
       xlab("Year") +
       xlim(xlim_year) +
       ylab("log(Residual)") +
@@ -765,7 +786,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_
     g1_sd <- ggplot(d_tidy) +
       geom_point(aes(x=year, y=sd.resid, colour = Index_Label), size = 2) +
       facet_wrap(~Index_Label, scale = if(plot_scale) "fixed" else "free")+
-      geom_hline(yintercept = 0, size = 1)+
+      geom_hline(yintercept = 0, linewidth = 1)+
       xlab("Year") +
       xlim(xlim_year) +
       ylab("log(Residual)") +
@@ -781,7 +802,7 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_
 
   g2 <- ggplot(d_tidy) +
     geom_point(aes(x=year, y=obs, colour = Index_Label), size = 2) +
-    geom_line(aes(x=year, y=pred, colour = Index_Label), size = 1) +
+    geom_line(aes(x=year, y=pred, colour = Index_Label), linewidth = 1) +
     facet_wrap(~Index_Label, scale="free") +
     xlim(xlim_year) + ylim(0, NA) +
     ylab("Abundance index") +
@@ -797,9 +818,11 @@ plot_residual_vpa <- function(res, index_name = NULL, plot_smooth = FALSE, plot_
                               seq(#min(tmp_data$pred, na.rm = T),
                                 0, max(tmp_data$pred, na.rm = T), length=100))
     predabund_g3[[i]] <- (as.numeric(predIndex_g3[[i]])/res$q[i])^(1/res$b[i])
+
     tmp <- str_split(res$input$abund[i], "") %>% unlist()
-    if(sum(tmp == "N") == 0) predabund_g3[[i]] <- predabund_g3[[i]]*res$input$scale
-  }
+    if(any(tmp == "B")) predabund_g3[[i]] <- predabund_g3[[i]]*res$input$scale
+  }#for(i)
+
   # 横軸に資源量（指数に合わせてSSBやNだったり）、縦軸に予測CPUEを
   # 線が描けるように、横軸100刻みほどでデータがある
   ab_Index_tmp <- data.frame(Index_Label = rep(unique(d_tidy$Index_Label), each = 100),
@@ -868,7 +891,7 @@ do_jackknife_vpa <- function(res,
     used_index <- res$input$dat$index
   } else {
     used_index <- res$input$dat$index[res$input$use.index,]
-  } # 7月7日加筆（浜辺）vpa関数の引数use.index対策
+  }
 
   year <- as.numeric(colnames(res$input$dat$index))
   res_list <- list()
@@ -876,60 +899,41 @@ do_jackknife_vpa <- function(res,
 
   if(method == "index"){
     if(length(used_index[,1]) == 1) stop(paste0('The number of indicies is only 1 !!'))
-
-    if(res$input$use.index[1] == "all"){
-      name_tmp <- rep(NA, length = length(row.names(res$input$dat$index)))
-      for(i in 1:length(name_tmp)){
-        input0 <- res$input
-        input0$dat$index <- res$input$dat$index[-i,]
-        input0$abund <- input0$abund[-i]
-        input0$plot <- FALSE
-        input0$sigma.const <- input0$sigma.const[-i]
-        input0$sigma.constraint <- input0$sigma.constraint[-i]
-        res_tmp <- safe_call(vpa, input0, force=TRUE)  # vpa関数の実行
-
-        res_list[[i]] <- res_tmp
-        abund_tmp[[i]] <- apply(res_tmp$naa,2,sum)
-        ssb_tmp[[i]] <- apply(res_tmp$ssb,2,sum)
-        biom_tmp[[i]] <- apply(res_tmp$baa,2,sum)
-        tf_tmp[[i]] <- res_tmp$faa[,ncol(res_tmp$faa)]
-
-        if(i <= 9){
-          name_tmp[i] <- paste0('Removed index0',i)
-        } else {
-          name_tmp[i] <- paste0('Removed index',i)
-        }
-      } #for(i) データの種類について
+    res_list <-
+      purrr::map(as.list(1:nrow(used_index)),
+                 function(ite){
+                   input0 <- res$input
+                   input0$plot <- FALSE
+                   if(res$input$use.index[1] == "all"){
+                     input0$use.index <- (1:nrow(used_index))[-ite]
+                   } else {
+                     input0$use.index <- input0$use.index[-ite]
+                   }
+                   res_tmp <- do.call(vpa, input0)
+                   if(any(res_tmp$term.f > 10)){
+                     input0$p.init <- as.numeric(res$faa[,ncol(res$faa)])
+                     res_tmp <- suppressWarnings(safe_call(vpa, input0, force=TRUE))
+                   }
+                   if(any(res_tmp$term.f > 10)){
+                     input0$p.init <- input0$p.init * 1.5
+                     res_tmp <- suppressWarnings(safe_call(vpa, input0, force=TRUE))
+                   }
+                   if(any(res_tmp$term.f > 10)){
+                     input0$p.init <- input0$p.init * 0.5
+                     res_tmp <- suppressWarnings(safe_call(vpa, input0, force=TRUE))
+                   }
+                   res_tmp
+                 }) # map()
+    abund_tmp <- purrr::map(res_list, function(x)colSums(x$naa))
+    ssb_tmp   <- purrr::map(res_list, function(x)colSums(x$ssb))
+    biom_tmp  <- purrr::map(res_list, function(x)colSums(x$baa))
+    tf_tmp    <- purrr::map(res_list, function(x)x$faa[,ncol(x$faa)])
+    if(nrow(used_index) <= 9){
+      name_tmp <- str_c('Removed index0',1:nrow(used_index))
     } else {
-      # use.indexに指定がある場合用のif文分岐の追加
-      ## ------------------------------------------------ ##
-      # ここエラー出ないようにコンサバにコーディングしてます
-      # 2021年度までにはここ修正加えたい
-      ## ------------------------------------------------ ##
-      name_tmp <- rep(NA, length = length(row.names(used_index)))
-      for(i in 1:length(name_tmp)){
-        input0 <- res$input
-        input0$use.index <- input0$use.index[-i]
-        #input0$dat$index <- res$input$dat$index[-i,]
-        input0$abund <- input0$abund[-i]
-        input0$plot <- FALSE
-        input0$sigma.const <- input0$sigma.const[-i]
-        input0$sigma.constraint <- input0$sigma.constraint[-i]
-        res_tmp <- safe_call(vpa, input0, force=TRUE)  # vpa関数の実行
-
-        res_list[[i]] <- res_tmp
-        abund_tmp[[i]] <- apply(res_tmp$naa,2,sum)
-        ssb_tmp[[i]] <- apply(res_tmp$ssb,2,sum)
-        biom_tmp[[i]] <- apply(res_tmp$baa,2,sum)
-        tf_tmp[[i]] <- res_tmp$faa[,ncol(res_tmp$faa)]
-
-        if(i <= 9){
-          name_tmp[i] <- paste0('Removed index0',i)
-        } else {
-          name_tmp[i] <- paste0('Removed index',i)
-        }
-      } #for(i) データの種類について
-    }
+      name_tmp <- c(str_c('Removed index0',1:9),
+                    str_c('Removed index',10:nrow(used_index)))
+    }# if()
 
   } else if(method == "all"){ ####-----------------------------------------------------####
 
@@ -946,6 +950,18 @@ do_jackknife_vpa <- function(res,
           input0$dat$index[i,] <- index_tmp
           input0$plot <- FALSE
           res_tmp <- safe_call(vpa, input0, force=TRUE)  # vpa関数の実行
+          if(any(res_tmp$term.f > 10)){
+            input0$p.init <- as.numeric(res$faa[,ncol(res$faa)])
+            res_tmp <- safe_call(vpa, input0, force=TRUE)
+          }
+          if(any(res_tmp$term.f > 10)){
+            input0$p.init <- input0$p.init * 1.5
+            res_tmp <- safe_call(vpa, input0, force=TRUE)
+          }
+          if(any(res_tmp$term.f > 10)){
+            input0$p.init <- input0$p.init * 0.5
+            res_tmp <- safe_call(vpa, input0, force=TRUE)
+          }
 
           if(i == 1){
             res_list[[j]] <- res_tmp
@@ -995,6 +1011,18 @@ do_jackknife_vpa <- function(res,
           input0$dat$index[use.index_tmp,] <- index_tmp
           input0$plot <- FALSE
           res_tmp <- safe_call(vpa, input0, force=TRUE)  # vpa関数の実行
+          if(any(res_tmp$term.f > 10)){
+            input0$p.init <- as.numeric(res$faa[,ncol(res$faa)])
+            res_tmp <- safe_call(vpa, input0, force=TRUE)
+          }
+          if(any(res_tmp$term.f > 10)){
+            input0$p.init <- input0$p.init * 1.5
+            res_tmp <- safe_call(vpa, input0, force=TRUE)
+          }
+          if(any(res_tmp$term.f > 10)){
+            input0$p.init <- input0$p.init * 0.5
+            res_tmp <- safe_call(vpa, input0, force=TRUE)
+          }
 
           if(i == 1){
             res_list[[j]] <- res_tmp
@@ -1084,7 +1112,8 @@ do_jackknife_vpa <- function(res,
   if(!is.null(scale_value)) g4 <- g4 + scale_shape_manual(values = scale_value)
   ## ----------------------------------------------------------------- ##
   return(list(JKplot_vpa = gg,
-              JKplot_par = g4
+              JKplot_par = g4,
+              res_vpa    = res_list
               # 一応オブジェクト残しているが、JKplot_vpaで事足りるな...
   ))
 } # function(do_jackknife_vpa)
@@ -1124,25 +1153,26 @@ plot_resboot_vpa <- function(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
 
   year <- res_boo[[1]]$index %>% colnames() %>% as.numeric()
   ssb_mat <- abund_mat <- biomass_mat <- matrix(NA, nrow = B_ite, ncol = length(year))
-  cor_mat <- matrix(NA, nrow = B_ite,
-                    ncol = length(res_boo[[1]]$Fc.at.age)+#length(res_boo[[1]]$q)+
-                      length(res_boo[[1]]$b)+2)
-  for(i in  1:B_ite){
+  cor_mat <- NULL
+  for(i in 1:B_ite){
     tmp <- res_boo[[i]]
     if(tmp[1]=="try-error")next
     ssb_mat[i,] <- colSums(tmp$ssb, na.rm = TRUE)
     abund_mat[i,] <- as.numeric(tmp$naa[1,])
     biomass_mat[i,] <- colSums(tmp$baa, na.rm = TRUE)
-    cor_mat[i, 1:length(tmp$Fc.at.age)] <- tmp$Fc.at.age
-    cor_mat[i, (length(tmp$Fc.at.age)+1):
-              (length(tmp$Fc.at.age)+length(tmp$b))] <- tmp$b
-    cor_mat[i, length(tmp$Fc.at.age)+length(tmp$b)+1] <- last(colSums(tmp$ssb))
-    cor_mat[i, length(tmp$Fc.at.age)+length(tmp$b)+2] <- last(tmp$naa[1,])
+    cor_num <- c(tmp$Fc.at.age, tmp$b, last(colSums(tmp$ssb)), last(as.numeric(tmp$naa[1,]))) %>%
+      unlist() %>% as.numeric()
     if(res$input$last.catch.zero){
-      cor_mat[i, length(tmp$Fc.at.age)+length(tmp$b)+1] <- tail(colSums(tmp$ssb),2)[1] %>% as.numeric()
-      cor_mat[i, length(tmp$Fc.at.age)+length(tmp$b)+2] <- tail(tmp$naa[1,],2)[1] %>% as.numeric()
-    }
-  }
+      cor_num <- c(tail(colSums(tmp$ssb),2)[1] %>% as.numeric(),
+                   tail(tmp$naa[1,],2)[1] %>% as.numeric())
+    } # if(res$input$last.catch.zero)
+    cor_mat <- rbind(cor_mat, cor_num)
+  } # for(i)
+  cor_mat <- as.data.frame(cor_mat)
+  rownames(cor_mat) <- str_c("ite",1:B_ite)
+  colnames(cor_mat) <- c(str_c("term.F_age",1:length(tmp$Fc.at.age)-1),
+                         str_c("b",1:length(tmp$b)),
+                         "SSB_last", "Recruitment_last")
 
   PB_value <- c((1-ci_range)/2, 0.5, 1-(1-ci_range)/2)
   d_ssb <- t(apply(ssb_mat, 2, quantile, probs = PB_value, na.rm = T))
@@ -1176,15 +1206,7 @@ plot_resboot_vpa <- function(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
 
 
   row_damy <- apply(cor_mat, 1, function(x) if(sum(is.nan(x))>=1)0 else 1)
-  if(class(which(row_damy == 0)) == "numeric") cor_mat <- cor_mat[-which(row_damy == 0),]
-  cor_mat <- as.data.frame(cor_mat)
-  names(cor_mat) <- c(paste0("term.F_age",1:length(tmp$Fc.at.age)-1),
-                      #                      paste0("q",1:length(tmp$q)),
-                      paste0("b",1:length(tmp$b)),
-                      #                      paste0("sigma",1:length(tmp$sigma)),
-                      paste0("SSB_last"),
-                      paste0("Recruitment_last")
-  )
+  if(any(row_damy == 0)) cor_mat <- cor_mat[-which(row_damy == 0),]
   cor_mat2 <- cor(cor_mat)
   g4 <- GGally::ggpairs(cor_mat) + theme_SH()
 
@@ -1192,6 +1214,7 @@ plot_resboot_vpa <- function(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
               plot_rec = g2,
               plot_biomass = g3,
               res_boot = res_boo,
+              res_par_boot = cor_mat,
               cor_mat = cor_mat2,
               plot_cor = g4
   ))
@@ -1209,11 +1232,15 @@ plot_resboot_vpa <- function(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
 #' @param res VPAの結果のオブジェクト
 #' @param B_ite ブートストラップ計算の数。デフォルトで1000。
 #' @param B_cv 乱数生成の変動係数。デフォルトは0.2。
+#' @param ess 多項分布の乱数生成の有効サンプル数。デフォルトは200。
 #' @param ci_range 信頼区間の幅。デフォルトでは0.95（95％信頼区間）
+#' @param detail TRUEの場合、個々のVPAの推定結果がリストで出力される
+#' @param ci_fill 描画された信頼区間の色の指定。デフォルトは`"blue"`
 #'
 #' @return 返ってくる値:
 #'     \code{plot} 親魚重量、資源尾数、資源重量それぞれについて信頼区間のプロットが得られる。
 #'     \code{caa_boot_sample} 年齢別漁獲尾数のブートストラップ標本が得られる。
+#'     \code{res_boot} detail=TRUEの場合、個々のVPAの推定結果のリスト
 #'
 #' @author 濵邉昂平, 市野川桃子
 #'
@@ -1225,43 +1252,64 @@ plot_resboot_vpa <- function(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
 #'
 #' @export
 
-# author: Kohei Hamabe
-
-do_caaboot_vpa <-  function(res, B_ite = 1000, B_cv = 0.2, ci_range = 0.95){
+do_caaboot_vpa <-  function(res,
+                            B_ite    = 1000,
+                            B_cv     = 0.2,
+                            ci_range = 0.95,
+                            ess      = 200,
+                            detail   = FALSE,
+                            ci_fill = "blue"
+                            ){
   year <- colnames(res$input$dat$caa) %>% as.numeric()
   age <- rownames(res$input$dat$caa) %>% as.numeric()
-  caa_base <- res$input$dat$caa %>% unlist() %>% as.numeric()
+  caa_freq <- purrr::map(res$input$dat$caa, prop.table)
+  c_all <- purrr::map(res$input$dat$caa, sum) %>%
+    purrr::map(function(x){exp(log(x) + rnorm(B_ite, -0.5*B_cv*B_cv, B_cv))})
   caa_boot <- list()
-  for(i in 1:length(caa_base)) caa_boot[[i]] <- exp(log(caa_base[i])+rnorm(B_ite, -0.5*B_cv, B_cv))
+  for(nc in 1:B_ite){
+    tmp <- purrr::map2(caa_freq,
+                       purrr::map(c_all, function(x)x[nc]),
+                       function(.x, .y){
+                         rmultinom(1, ess, .x)*.y/ess
+                       }) %>% unlist() %>% as.numeric() %>%
+      matrix(ncol = length(year), nrow = length(age)) %>% as.data.frame()
+    colnames(tmp) <- year ; rownames(tmp) <- age
+    caa_boot[[nc]] <- tmp
+  } # for(nc)
 
-  name_tmp <- list() ; tmp <- numeric()
-  for(i in 1:length(year)){
-    for(j in 1:length(age)){
-      tmp[j] <- paste0('age',age[j],'_',year[i])
-    }
-    name_tmp[[i]] <- tmp
-  }
-  names(caa_boot) <- unlist(name_tmp)
+  # caa_base <- res$input$dat$caa %>% unlist() %>% as.numeric()
+  # caa_boot <- list()
+  # for(i in 1:length(caa_base)) caa_boot[[i]] <- exp(log(caa_base[i])+rnorm(B_ite, -0.5*B_cv, B_cv))
+  # name_tmp <- list() ; tmp <- numeric()
+  # for(i in 1:length(year)){
+  #   for(j in 1:length(age)){
+  #     tmp[j] <- paste0('age',age[j],'_',year[i])
+  #   }
+  #   name_tmp[[i]] <- tmp
+  # }
+  # names(caa_boot) <- unlist(name_tmp)
 
+  res_list <- list()
   input0 <- res$input ; input0$plot <- FALSE
   tmp <- numeric()
   ssb_mat <- abund_mat <- biomass_mat <- matrix(NA, ncol = length(year), nrow = B_ite)
   for(i in 1:B_ite){
-    for(j in 1:length(caa_boot)) tmp[j] <- caa_boot[[j]][i]
-    caa_tmp <- matrix(tmp, ncol = length(year)) %>% as.data.frame()
-    colnames(caa_tmp) <- year
-    rownames(caa_tmp) <- age
-    input0$dat$caa <- caa_tmp
-    res_tmp <- try(safe_call(vpa, input0, force=TRUE))
-    if(class(res_tmp) == "try-error"){
+    # for(j in 1:length(caa_boot)) tmp[j] <- caa_boot[[j]][i]
+    # caa_tmp <- matrix(tmp, ncol = length(year)) %>% as.data.frame()
+    # colnames(caa_tmp) <- year
+    # rownames(caa_tmp) <- age
+    # input0$dat$caa <- caa_tmp
+    input0$dat$caa <- caa_boot[[i]]
+    res_list[[i]] <- try(do.call(vpa, input0), silent = TRUE)
+    if(class(res_list[[i]]) == "try-error"){
       message(paste('Iteration',i,'was errored ...', sep = " "))
       ssb_mat[i,] <- rep(NA, length(year))
       abund_mat[i,] <- rep(NA, length(year))
       biomass_mat[i,] <- rep(NA, length(year))
     } else {
-      ssb_mat[i,] <- colSums(res_tmp$ssb, na.rm = TRUE)
-      abund_mat[i,] <- as.numeric(res_tmp$naa[1,])
-      biomass_mat[i,] <- colSums(res_tmp$baa, na.rm = TRUE)
+      ssb_mat[i,] <- colSums(res_list[[i]]$ssb, na.rm = TRUE)
+      abund_mat[i,] <- as.numeric(res_list[[i]]$naa[1,])
+      biomass_mat[i,] <- colSums(res_list[[i]]$baa, na.rm = TRUE)
       message(paste('Iteration',i,'has done ...', sep = " "))
     }
   }
@@ -1278,27 +1326,36 @@ do_caaboot_vpa <-  function(res, B_ite = 1000, B_cv = 0.2, ci_range = 0.95){
   d_biomass <- cbind.data.frame(Year = year, d_biomass)
 
   g1 <- ggplot(d_ssb, aes(x = Year, y = SSB))+
-    geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, fill = "blue")+
+    geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, fill = ci_fill)+
     geom_line(size = 1.5)+
     ylim(c(0, NA)) +
     theme_SH()
 
   g2 <- ggplot(d_abund, aes(x = Year, y = Abundance))+
-    geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, fill = "blue")+
+    geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, fill = ci_fill)+
     ylab("Recruitment") +
     geom_line(size = 1.5)+
     ylim(c(0, NA)) +
     theme_SH()
 
   g3 <- ggplot(d_biomass, aes(x = Year, y = Biomass))+
-    geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, fill = "blue")+
+    geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, fill = ci_fill)+
     geom_line(size = 1.5)+
     ylim(c(0, NA)) +
     theme_SH()
 
-  return(list(plot_ssb = g1,
+  obj_return <- list(plot_summary = (g1/g2/g3),
+              plot_ssb = g1,
               plot_rec = g2,
               plot_biomass = g3,
-              caa_boot_sample = caa_boot
-  ))
+              caa_boot_sample = caa_boot,
+              input = list(res,
+                           B_ite = B_ite,
+                           B_cv = B_cv,
+                           ci_range = ci_range,
+                           ess = ess,
+                           detail=detail)
+              )
+  if(detail==TRUE) obj_return$res_boot <- res_list
+  return(obj_return)
 } # function(do_caaboot_vpa)

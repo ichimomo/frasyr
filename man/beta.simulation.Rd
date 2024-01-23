@@ -3,7 +3,7 @@
 \encoding{UTF-8}
 \name{beta.simulation}
 \alias{beta.simulation}
-\title{kobeII matrixの簡易版（Btarget, Blimitは決め打ちでβのみ変える)}
+\title{様々なベータやinput設定をもとに複数の将来予測を繰り返して結果をtibbleで返す関数}
 \usage{
 beta.simulation(
   finput,
@@ -16,20 +16,25 @@ beta.simulation(
   label_name = NULL,
   output_type = "tidy",
   ncore = 1,
-  save_detail = rep(0, length(beta_vector))
+  save_detail = rep(0, length(beta_vector)),
+  ...
 )
 }
 \arguments{
 \item{finput}{future_vpaの返り値の$input}
 
+\item{beta_vector}{betaを単純に変える場合のbetaのベクトル}
+
 \item{year_beta_change}{betaを変更する年の範囲。NULLの場合には全部の年を変える。}
 
-\item{datainput_setting_extra}{betaに加えて変えたい追加の設定}
+\item{datainput_setting_extra}{betaに加えて変えたい追加の設定。beta_vectorと同じ長さ分必要で、beta_vectorも一緒にかかる}
 
-\item{datainput_setting_original}{make_future_dataに与えて引数を作り直す場合の make_future_dataの返り値}
+\item{datainput_setting_original}{make_future_dataに与えて引数を作り直す場合の make_future_dataの返り値.}
 
 \item{label_name}{HCR_nameのラベルの名前. NULLの場合、beta_vectorが使われる}
+
+\item{ncore}{並列計算する場合のコア数。動くかどうか不明。}
 }
 \description{
-kobeII matrixの簡易版（Btarget, Blimitは決め打ちでβのみ変える)
+その他、calculate_all_pmに渡す引数
 }

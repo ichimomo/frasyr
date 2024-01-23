@@ -3,7 +3,7 @@
 \encoding{UTF-8}
 \name{get.SPR}
 \alias{get.SPR}
-\title{毎年のFの\%SPRやターゲットした\%SPRに相当するFの大きさを計算する}
+\title{毎年のFの\%SPRやターゲットした\%SPRに相当するFの相対的な大きさを計算する}
 \usage{
 get.SPR(dres, target.SPR = 30, Fmax = 10, max.age = Inf)
 }
@@ -17,12 +17,5 @@ get.SPR(dres, target.SPR = 30, Fmax = 10, max.age = Inf)
 \item{max.age}{SPRやYPRの計算をするときに最大何歳まで考慮するか（年齢のラベルではなく、ベクトルの長さ。デフォルトは無限大)。VPA計算でプラスグループを考慮していない（dres$input$plus.group==FALSE)場合には自動的に設定される。}
 }
 \description{
-VPA計算結果を使って毎年のF at ageがどのくらいのSPR, YPRに相当するかを計算する。また、各年のFが、目標としたSPR（target.SPR）を達成するためのF(Ftarget)の何倍(F/Ftarget)に相当するかも計算する。F/Ftargetは数値的に探索するが、そのときのF/Ftargetの上限をFmaxにて指定する。十分大きい値（デフォルトは１０）を与えておけば大丈夫だが、Ftargetが非常に小さい数字になりそうな場合にはこの値をもっと大きくとるなどする。また、SPRの計算は、デフォルトでは等比級数の和の公式を使って、無限大の年齢までSPRを足しているが、max.ageを指定することで、有限の年齢までの和も計算できる。
-}
-\examples{
-data(res_vpa)
-Fratio <- get.SPR(res_vpa,target.SPR=12)$ysdata$"F/Ftarget"
-plot(colnames(res_vpa$naa),Fratio,type="b")
-
-
+VPA計算結果を使って毎年のF at ageがどのくらいのSPR, YPRに相当するかを計算する。また、各年のFが、目標としたSPR（target.SPR）を達成するためのF(Ftarget)の何倍(F/Ftarget)に相当するかも計算する。F/Ftargetは数値的に探索するが、そのときのF/Ftargetの上限をFmaxにて指定する。十分大きい値（デフォルトは10）を与えておけば大丈夫だが、Ftargetが非常に小さい数字になりそうな場合にはこの値をもっと大きくとるなどする。また、SPRの計算は、デフォルトでは等比級数の和の公式を使って、無限大の年齢までSPRを足しているが、max.ageを指定することで、有限の年齢までの和も計算できる。
 }

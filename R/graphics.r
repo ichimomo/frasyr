@@ -17,17 +17,17 @@ pt1             <- 0.3528
 
 theme_SH <- function(legend.position="none",base_size=12){
 
-  if(isTRUE(stringr::str_detect(version$os, pattern="darwin"))){
-    font_MAC <- "HiraginoSans-W3"#"Japan1GothicBBB"#
-    theme_bw(base_size=base_size) +
-      theme(panel.grid = element_blank(),
-            axis.text.x=element_text(size=11,color="black"),
-            axis.text.y=element_text(size=11,color="black"),
-            axis.line.x=element_line(size= 0.3528),
-            axis.line.y=element_line(size= 0.3528),
-            legend.position=legend.position, text =element_text(family = font_MAC) )
-  }
-  else{
+  ## if(isTRUE(stringr::str_detect(version$os, pattern="darwin"))){
+  ##   font_MAC <- "HiraginoSans-W3"
+  ##   theme_bw(base_size=base_size) +
+  ##     theme(panel.grid = element_blank(),
+  ##           axis.text.x=element_text(size=11,color="black"),
+  ##           axis.text.y=element_text(size=11,color="black"),
+  ##           axis.line.x=element_line(size= 0.3528),
+  ##           axis.line.y=element_line(size= 0.3528),
+  ##           legend.position=legend.position, text =element_text(family = font_MAC) )
+  ## }
+  ## else{
     theme_bw(base_size=base_size) +
       theme(panel.grid = element_blank(),
             axis.text.x=element_text(size=11,color="black"),
@@ -36,7 +36,7 @@ theme_SH <- function(legend.position="none",base_size=12){
             axis.line.y=element_line(size= 0.3528),
             legend.position=legend.position)
 
-  }
+#  }
 }
 
 #' 会議用の図の出力関数（大きさ・サイズの指定済）：通常サイズ
@@ -191,7 +191,9 @@ plot_Fcurrent <- function(vpares,
     group_by(year) %>%
     dplyr::filter(!is.na(F)) %>%
     mutate(Year=as.numeric(year)) %>%
-    mutate(age_name=ifelse(max(age)==age,str_c(age,"+"),age))
+    arrange(age) %>%
+    mutate(age_name=ifelse(max(age)==age,str_c(age,"+"),age)) %>%
+    mutate(age_name=fct_inorder(age_name))
 
   if(is.null(Fcurrent)){
     fc_at_age_current <- vpares$Fc.at.age
@@ -199,14 +201,17 @@ plot_Fcurrent <- function(vpares,
   else{
     fc_at_age_current <- Fcurrent
   }
-  fc_at_age_current <- tibble(F=fc_at_age_current,age=as.numeric(rownames(vpares$naa)),
+  fc_at_age_current <- tibble(F=fc_at_age_current,age=as.numeric(rownames(vpares$faa)),
                               year="0",type="currentF") %>%
-    dplyr::filter(!is.na(F)) %>%
-    mutate(age_name=ifelse(max(age)==age,str_c(age,"+"),age))
+      dplyr::filter(!is.na(F)) %>%
+      arrange(age) %>%
+      mutate(age_name=ifelse(max(age)==age,str_c(age,"+"),age))%>%
+      mutate(age_name=fct_inorder(age_name))
 
   pal <- c("#3B9AB2", "#56A6BA", "#71B3C2", "#9EBE91", "#D1C74C",
            "#E8C520", "#E4B80E", "#E29E00", "#EA5C00", "#F21A00")
-  g <- faa_history  %>% ggplot() +
+
+    g <- faa_history  %>% ggplot() +
     geom_path(aes(x=age_name,y=F,color=Year,group=Year),lwd=1.5) +
     scale_color_gradientn(colors = pal)+
     geom_path(data=fc_at_age_current,
@@ -271,9 +276,11 @@ plot_Fref <- function(rres,xlabel="max", # or, "mean","Fref/Fcur"
 #'
 
 plot_SRdata <- function(SRdata, type=c("classic","gg")[1]){
-  is_release_data <- "release" %in% names(SRdata)
+
+  is_release_data <- "release" %in% str_sub(names(SRdata),1,7)
   if(is_release_data){
-    allR <- SRdata$allR <- SRdata$R + SRdata$release
+    if(!"release_alive" %in% names(SRdata)) SRdata$release_alive <- SRdata$release
+    allR <- SRdata$allR <- SRdata$R + SRdata$release_alive
   }
   else{
     allR <- SRdata$R
@@ -337,8 +344,9 @@ plot_SRdata <- function(SRdata, type=c("classic","gg")[1]){
 
 plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,ylabel="尾",
                     labeling.year=NULL,add.info=TRUE, recruit_intercept=0,
-                    plot_CI=FALSE, CI=0.9, shape_custom=c(21,3),
+                    plot_CI=FALSE, CI=0.9, shape_custom=c(21,3),box.padding=0,
                     add_graph=NULL){
+  font_MAC <- "HiraginoSans-W3"#"Japan1GothicBBB"#
 
   if(is.null(refs$Blimit) && !is.null(refs$Blim)) refs$Blimit <- refs$Blim
 
@@ -356,14 +364,25 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
   SRdata <- as_tibble(SR_result$input$SRdata) %>%
       mutate(type="obs")
   if(is.null(SRdata$weight)) SRdata$weight <- SR_result$input$w
-  SRdata <- SRdata %>% mutate(weight=factor(weight,levels=c("1","0")))
+  SRdata <- SRdata %>%
+    mutate(weight=ifelse(weight>0, 1, 0)) %>%
+    mutate(weight=factor(weight,levels=c("1","0")))
   SRdata.pred <- as_tibble(SR_result$pred) %>%
     mutate(type="pred", year=NA, R=R)
 
-  is_release_data <- "release" %in% names(SR_result$input$SRdata)
+  is_release_data <- "release" %in% str_sub(names(SRdata),1,7)
   if(is_release_data){
-    SRdata.release <- SR_result$input$SRdata %>% mutate(allR=release+R) %>%
-      select(-R, -release) %>% rename(R=allR) %>% mutate(type="release", weight=factor(weight, levels=c("0","1")))
+    if(!"release_alive" %in% names(SRdata)){
+      SR_result$input$SRdata$release_alive <- SRdata$release
+      SR_result$input$SRdata$release       <- NULL
+    }
+    else{
+      SR_result$input$SRdata$release_all <- NULL
+      SR_result$input$SRdata$release_aliverate <- NULL
+    }
+    SRdata.release <- SR_result$input$SRdata %>% mutate(allR=release_alive+R) %>%
+      mutate(weight=ifelse(weight>0, 1, 0)) %>%
+      select(-R, -release_alive) %>% rename(R=allR) %>% mutate(type="release", weight=factor(weight, levels=c("0","1")))
   }
   else{
     SRdata.release <- NULL
@@ -431,13 +450,17 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
     }
   }
 
+    if(!isTRUE(stringr::str_detect(version$os, pattern="darwin"))){
   g1 <- g1+  geom_path(data=dplyr::filter(alldata,type=="obs"),
                        aes(y=R,x=SSB),color="black") +
     geom_point(data=dplyr::filter(alldata,type=="obs"),
                aes(y=R,x=SSB,shape=weight),fill="white") +
     scale_shape_manual(values = shape_custom) +
+      #    ggrepel::geom_text_repel(data=dplyr::filter(alldata,type=="obs"),
+      #                             segment.alpha=0.5,nudge_y=5,
+      #                             aes(y=R,x=SSB,label=pick.year)) +
     ggrepel::geom_text_repel(data=dplyr::filter(alldata,type=="obs"),
-                             segment.alpha=0.5,nudge_y=5,
+                             box.padding=box.padding,segment.color="gray",nudge_y=5,
                              aes(y=R,x=SSB,label=pick.year)) +
     theme_bw(base_size=14)+
     theme(legend.position = 'none') +
@@ -445,6 +468,26 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
     xlab(str_c("親魚量 (",xlabel,")"))+
     ylab(str_c("加入量 (",ylabel,")"))+
     coord_cartesian(ylim=c(0,ymax*1.05),expand=0)
+    }else{
+      g1 <- g1+  geom_path(data=dplyr::filter(alldata,type=="obs"),
+                           aes(y=R,x=SSB),color="black") +
+        geom_point(data=dplyr::filter(alldata,type=="obs"),
+                   aes(y=R,x=SSB,shape=weight),fill="white") +
+        scale_shape_manual(values = shape_custom) +
+        #    ggrepel::geom_text_repel(data=dplyr::filter(alldata,type=="obs"),
+        #                             segment.alpha=0.5,nudge_y=5,
+        #                             aes(y=R,x=SSB,label=pick.year)) +
+      ggrepel::geom_text_repel(data=dplyr::filter(alldata,type=="obs"),
+                               box.padding=box.padding,segment.color="gray",nudge_y=5,
+                               aes(y=R,x=SSB,label=pick.year)) +
+        theme_bw(base_size=14)+
+        theme(legend.position = 'none') +
+        theme(panel.grid = element_blank()) +
+        theme(text = element_text(family = font_MAC)) +
+        xlab(str_c("親魚量 (",xlabel,")"))+
+        ylab(str_c("加入量 (",ylabel,")"))+
+        coord_cartesian(ylim=c(0,ymax*1.05),expand=0)
+    }
 
   if(is_release_data){
     g1 <- g1 + geom_point(data=dplyr::filter(alldata,type=="release"),
@@ -474,7 +517,12 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
                   ", 最適化法",SR_result$input$method,", AICc: ",round(SR_result$AICc,2))
     if(sum(SRdata$weight=="0")>0) cap1 <- str_c(cap1, "\n パラメータ推定に利用（丸）,利用していない（バツ） ")
     if(is_release_data) cap1 <- str_c(cap1, "\n 灰色：放流＋天然、黒：天然のみ")
-    g1 <- g1+labs(caption=cap1)
+
+    if(!isTRUE(stringr::str_detect(version$os, pattern="darwin"))){
+      g1 <- g1+labs(caption=cap1)
+    }else{
+      g1 <- g1+labs(caption=cap1,family = font_MAC)
+    }
   }
 
   if(!is.null(refs)){
@@ -515,6 +563,7 @@ SRplot_gg <- plot.SR <- function(...){
 
 compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000, newplot=TRUE, output_folder=""){
 
+  font_MAC <- "HiraginoSans-W3"#"Japan1GothicBBB"#
 
   if(newplot){
     if(!is.null(SRlist[[1]]$input)){
@@ -543,8 +592,13 @@ compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000, newplot=T
     g1 <- g1 + geom_line(data=SRpred,
                          mapping=aes(x=SSB/biomass.unit,y=R/number.unit, linetype=SR_type, col=SR_type))
     g1 <- g1 + geom_point(data=SRdata, mapping=aes(x=SSB/biomass.unit, y=R/number.unit), color="black")
+    if(!isTRUE(stringr::str_detect(version$os, pattern="darwin"))){
     g1 <- g1 + xlim(c(0,max(SRdata$SSB/biomass.unit))) + ylim(c(0,max(SRdata$R/number.unit))) +
       labs(x = "親魚量（千トン）", y = "加入尾数（百万尾)") + theme_SH(legend.position="top")
+    }else{
+      g1 <- g1 + xlim(c(0,max(SRdata$SSB/biomass.unit))) + ylim(c(0,max(SRdata$R/number.unit))) +
+        labs(x = "親魚量（千トン）", y = "加入尾数（百万尾)") + theme_SH(legend.position="top")+theme(text = element_text(family = font_MAC))
+    }
     #g1
     ggsave_SH(g1, file=paste("./",output_folder,"/resSRcomp.png",sep=""))
     g1
@@ -610,38 +664,59 @@ compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000, newplot=T
 
 SRregime_plot <- plot_SRregime <- function (SRregime_result,xscale=1000,xlabel="SSB",yscale=1,ylabel="R",
                            labeling.year = NULL, show.legend = TRUE, legend.title = "Regime",regime.name = NULL,
-                           base_size = 16, add.info = TRUE) {
+                           base_size = 16, add.info = TRUE, themeSH = FALSE) {
   pred_data = SRregime_result$pred %>% mutate(Category = "Pred")
   obs_data = select(SRregime_result$pred_to_obs, -Pred, -resid) %>% mutate(Category = "Obs")
   if(!is.null(SRregime_result$input$SRdata$weight)){
     obs_data$weight <- factor(SRregime_result$input$SRdata$weight,levels=c("0","1"))
-  }
-  else{
+  }else{
     obs_data$weight <- factor(1,levels=c("0","1"))
-    }
+  }
+
   combined_data = full_join(pred_data, obs_data) %>%
     mutate(Year = as.double(Year))
+  combined_data = rename(combined_data,Regime.num=Regime)
+  if (is.null(regime.name)) {
+    regime.name = c(unique(as.character(combined_data$Regime.num)))
+  }
+  Regime <- as.character(regime.name[combined_data$Regime.num])
+  combined_data <- combined_data %>% mutate(Regime)
+
+  if(prod(as.numeric(as.character(combined_data$weight)),na.rm=T)==0){
+    scaleshapeval <- c(3,20)
+  }else{
+    scaleshapeval <- c(20)
+  }
+
+  Weight <- as.character(combined_data$weight)
+  Weight[which(Weight=="0")] <- "unweighted"
+  Weight[which(Weight=="1")] <- "weighted"
+  #Weight[is.na(as.numeric(combined_data$weight))] <- "NA"
+  combined_data <- combined_data %>% mutate(Weight)
+
   if (is.null(labeling.year)) labeling.year <- c(min(obs_data$Year),obs_data$Year[obs_data$Year %% 5 == 0],max(obs_data$Year))
   combined_data = combined_data %>%
     mutate(label=if_else(is.na(Year),as.numeric(NA),if_else(Year %in% labeling.year, Year, as.numeric(NA)))) %>%
     mutate(SSB = SSB/xscale, R = R/yscale)
+
   g1 = ggplot(combined_data, aes(x=SSB,y=R,label=label)) +
     geom_path(data=dplyr::filter(combined_data, Category=="Pred"),aes(group=Regime,colour=Regime,linetype=Regime),size=2, show.legend = show.legend)+
-    geom_point(data=dplyr::filter(combined_data, Category=="Obs"),aes(group=Regime,colour=Regime, shape=weight),size=3, show.legend = show.legend)+
-    scale_shape_manual(values = c(3, 21)) +
-    scale_color_manual(values = c(1, 2)) +
+    geom_point(data=dplyr::filter(combined_data, Category=="Obs"),aes(group=Regime,colour=Regime,shape=Weight),size=3, show.legend = show.legend) +
+    scale_shape_manual(values = scaleshapeval) +
+    scale_color_manual(values = seq(length(unique(regime.name)))) +
     geom_path(data=dplyr::filter(combined_data, Category=="Obs"),colour="darkgray",size=1)+
     xlab(xlabel)+ylab(ylabel)+
     ggrepel::geom_label_repel()+
     theme_bw(base_size=base_size)+
     coord_cartesian(ylim=c(0,max(combined_data$R)*1.05),expand=0)
-  if (show.legend) {
-    if (is.null(regime.name)) {
-      regime.name = unique(combined_data$Regime)
-    }
-    g1 = g1 + #scale_colour_hue(name=legend.title, labels = regime.name) +
-      scale_linetype_discrete(name=legend.title, labels = regime.name)
-  }
+  # if (show.legend) {
+  #   if (is.null(regime.name)) {
+  #     regime.name = unique(combined_data$Regime)
+  #   }
+  #   g1 = g1 + #scale_colour_hue(name=legend.title, labels = regime.name) +
+  #     scale_linetype_discrete(name=legend.title, labels = regime.name)
+  # }
+  if(themeSH) g1 = g1 + theme_SH()
   if (add.info) {
     if (is.null(SRregime_result$input$regime.year)) {
       g1 = g1 +
@@ -669,7 +744,12 @@ SRregime_plot <- plot_SRregime <- function (SRregime_result,xscale=1000,xlabel="
   g1
 }
 
+#'
+#' @export
 
+plot_SRregime <- function(...){
+  SRregime_plot(...)
+}
 
 # 将来予測用 ----
 
@@ -716,7 +796,7 @@ plot_futures <- function(vpares=NULL,
                          minyear=NULL,
                          is.plot.CIrange=TRUE,
                          is.plot.CIline = TRUE,
-                         what.plot=c("Recruitment","SSB","biomass","catch","beta_gamma","U","Fratio"),
+                         what.plot=c("Recruitment","SSB","biomass","cbiomass","catch","beta_gamma","U","Fratio"),
                          biomass.unit=1,
                          number.unit=1,
                          number.name="",
@@ -732,7 +812,7 @@ plot_futures <- function(vpares=NULL,
                          seed=1, # seed for selecting the above example
                          legend.position="top",
                          type="detail",
-                         font.size=18,
+                         font.size=16,
                          ncol=3,
                          remove.last.vpa.year = FALSE
 ){
@@ -754,20 +834,22 @@ plot_futures <- function(vpares=NULL,
     junit <- c("","十","百","千","万")[log10(biomass.unit)+1]
 
     if(type=="detail"){
-        rename_list <- tibble(stat=c("Recruitment","SSB","biomass","catch","beta_gamma","U","Fratio"),
+        rename_list <- tibble(stat=c("Recruitment","SSB","biomass","cbiomass","catch","beta_gamma","U","Fratio"),
                               jstat=c(str_c("加入尾数(",number.name,")"),
                                       str_c("親魚量 (",junit,"トン)"),
                                       str_c("資源量 (",junit,"トン)"),
+                                      str_c("漁獲資源量 (",junit,"トン)"),
                                       str_c("漁獲量 (",junit,"トン)"),
                                       "beta_gamma(F/Fmsy)",
                                       "漁獲割合(%)",
                                       "漁獲圧の比(F/Fmsy)"))
     }
     if(type=="simple"){
-        rename_list <- tibble(stat=c("Recruitment","SSB","biomass","catch","beta_gamma","U","Fratio"),
+        rename_list <- tibble(stat=c("Recruitment","SSB","biomass","cbiomass","catch","beta_gamma","U","Fratio"),
                               jstat=c(str_c("加入尾数(",number.name,")"),
                                       str_c("将来の親魚量 (",junit,"トン)"),
                                       str_c("資源量 (",junit,"トン)"),
+                                      str_c("漁獲資源量 (",junit,"トン)"),
                                       str_c("将来の漁獲量 (",junit,"トン)"),
                                       "beta_gamma(F/Fmsy)",
                                       "漁獲割合(%)",
@@ -778,10 +860,11 @@ plot_futures <- function(vpares=NULL,
     junit <- c("","10","100","1000","10,000")[log10(biomass.unit)+1]
     #    require(tidyverse,quietly=TRUE)
 
-    rename_list <- tibble(stat=c("Recruitment","SSB","biomass","catch","beta_gamma","U","Fratio"),
+    rename_list <- tibble(stat=c("Recruitment","SSB","biomass","cbiomass","catch","beta_gamma","U","Fratio"),
                           jstat=c(str_c("Recruits(",number_name,"fish)"),
                                   str_c("SB (",junit,"MT)"),
                                   str_c("Biomass (",junit,"MT)"),
+                                  str_c("cBiomass (",junit,"MT)"),
                                   str_c("Catch (",junit,"MT)"),
                                   "multiplier to Fmsy",
                                   "Catch/Biomass (U)",
@@ -790,7 +873,7 @@ plot_futures <- function(vpares=NULL,
 
   # define unit of value
   rename_list <- rename_list %>%
-    mutate(unit=dplyr::case_when(stat%in%c("SSB","biomass","catch") ~ biomass.unit,
+    mutate(unit=dplyr::case_when(stat%in%c("SSB","biomass","cbiomass","catch") ~ biomass.unit,
                                  stat%in%c("Recruitment")           ~ number.unit,
                                  stat%in%c("U")                     ~ 0.01,
                                  TRUE                               ~ 1))
@@ -933,15 +1016,16 @@ plot_futures <- function(vpares=NULL,
     geom_blank(data=dummy2,mapping=aes(y=value,x=year))+
     #theme_bw(base_size=font.size) +
     #        coord_cartesian(expand=0)+
-    scale_y_continuous(expand=expansion(mult=c(0,0.05)))+
+    scale_y_continuous(expand=expand_scale(mult=c(0,0.05)),labels = scales::comma)+
     facet_wrap(~factor(jstat,levels=rename_list$jstat),scales="free_y",ncol=ncol)+
     xlab("年")+ylab("")+ labs(fill = "",linetype="",color="")+
     xlim(minyear,maxyear)
 
   if("SSB" %in% what.plot){
     g1 <- g1 + geom_hline(data = ssb_RP,
-                          aes(yintercept = value, linetype = RP_name),
-                          color = c(col.SBtarget, col.SBlim, col.SBban))
+                          aes(yintercept = value,linetype=RP_name),
+						  color = c(col.SBtarget, col.SBlim, col.SBban))+
+						  scale_linetype_manual(name="",values=c("solid","dashed",unlist(format_type()[1,3])[[1]],unlist(format_type()[1,3])[[1]],unlist(format_type()[3,3])[[1]],unlist(format_type()[2,3])[[1]],unlist(format_type()[1,3])[[1]]))
   }
 
   if("catch" %in% what.plot){
@@ -995,6 +1079,7 @@ plot_futures <- function(vpares=NULL,
               mapping=aes(x=year,y=mean),lwd=1,color="black")# VPAのプロット
   return(g1)
 }
+
 
 #' 複数の将来予測の結果をプロットする（ggplotは使わず）
 #'
@@ -1183,7 +1268,7 @@ plot_yield <- function(MSY_obj,refs_base,
                        refs.color=c("#00533E","#edb918","#C73C2E"),
                        AR_select=FALSE,xlim.scale=1.1,
                        biomass.unit=1,labeling=TRUE,lining=TRUE,
-                       age.label.ratio=0.9, # 年齢のラベルを入れる位置（xの最大値からの割合)
+                       age.label.ratio=0.6, # 年齢のラベルを入れる位置（xの最大値からの割合)
                        #                       family = "JP1",
                        ylim.scale=1.2,future=NULL,
                        future.replicate=NULL,
@@ -1220,7 +1305,7 @@ plot_yield <- function(MSY_obj,refs_base,
 
   g1 <- trace %>%
     ggplot2::ggplot()
-
+ 
   if(is.null(future.name)) future.name <- 1:length(future)
 
   if(is.null(refs.label)) {
@@ -1237,14 +1322,20 @@ plot_yield <- function(MSY_obj,refs_base,
     mutate(cumcatch=cumsum(value)-value/2)%>%
     mutate(age=as.numeric(as.character(age)))
   age.label <- age.label %>%
-    mutate(age_name=str_c("Age ",age,ifelse(age.label$age==max(age.label$age),plus.char,"")))
-
-  g1 <- g1 + geom_area(aes(x=ssb.mean,y=value,fill=`年齢`),col="black",alpha=0.5,lwd=1*0.3528) +
+    mutate(age_name=str_c(age,ifelse(age.label$age==max(age.label$age),plus.char,""),"歳"))
+  
+  legend.labels <- as.vector(age.label$age_name)
+  
+  nb.cols <- length(unique(trace$age)) # 年齢グループが多い場合に対応できるように変更
+   mycolors <- grDevices::colorRampPalette(c("#F7FBFF", "#DEEBF7", "#C6DBEF", "#9ECAE1", "#6BAED6", "#4292C6",
+"#2171B5", "#084594"))(nb.cols)
+  
+  g1 <- g1 + geom_area(aes(x=ssb.mean,y=value,fill=`年齢`),col="black",alpha=0.5,lwd=1*0.3528,stat="identity") +
     #    geom_line(aes(x=ssb.mean,y=catch.CV,fill=age)) +
     #    scale_y_continuous(sec.axis = sec_axis(~.*5, name = "CV catch"))+
-    scale_fill_brewer() +
+    scale_fill_manual(values=mycolors,labels=rev(legend.labels)) +
     theme_bw() +
-    theme(legend.position = 'none') +
+    #theme(legend.position = 'none') +
     #    geom_point(data=refs_base,aes(y=Catch,x=SSB,shape=refs.label,color=refs.label),size=4)+
     #形は塗りつぶしができる形にすること
     scale_shape_manual(values = c(21, 24,5,10)) +
@@ -1253,10 +1344,10 @@ plot_yield <- function(MSY_obj,refs_base,
     theme(panel.grid = element_blank(),axis.text=element_text(color="black")) +
     coord_cartesian(xlim=c(0,xmax*xlim.scale),
                     ylim=c(0,ymax*ylim.scale),expand=0) +
-    geom_text(data=age.label,
-              mapping = aes(y = cumcatch, x = ssb.mean, label = age_name)#,
+    #geom_text(data=age.label,
+     #         mapping = aes(y = cumcatch, x = ssb.mean, label = age_name)#,
               #                            family = family
-    ) +
+    #) +
     #    geom_text_repel(data=refs_base,
     #                     aes(y=Catch,x=SSB,label=refs.label),
     #                     size=4,box.padding=0.5,segment.color="gray",
@@ -1334,7 +1425,7 @@ plot_yield <- function(MSY_obj,refs_base,
 
   if(isTRUE(lining)){
     #        ylim.scale.factor <- rep(c(0.94,0.97),ceiling(length(refs.label)/2))[1:length(refs.label)]
-    g1 <- g1 + geom_vline(xintercept=refs_base$SSB,lty="41",lwd=0.6,color=refs.color)+
+    g1 <- g1 + geom_vline(xintercept=refs_base$SSB,lty=c(unlist(format_type()[1,3]),unlist(format_type()[2,3]),unlist(format_type()[3,3])),lwd=0.6,color=refs.color)+
       ggrepel::geom_label_repel(data=refs_base,
                                 aes(y=ymax*ylim.scale*0.85,
                                     x=SSB,label=refs.label),
@@ -1364,21 +1455,32 @@ plot_yield <- function(MSY_obj,refs_base,
 
 #' Kobe plotを書く
 #'
-#' @param vpares VPAの結果のオブジェクト
-#' @param refs_base est.MSYから得られる管理基準値の表
+#' @param FBdata tibble(year=, Bratio=, Fratio=, Uratio=, DBratio= )の形式のデータ。UratioはU/Umsy、DBratioはB/(dynamic Bmsy)
+#' @param xcol_name x軸に利用するデータの列名
+#' @param ycol_name y軸に利用するデータの列名
+#' @param refs_base est_MSYRPから得られる管理基準値の表
+#' @param vpares 上記のdataを与えずにVPAの結果のオブジェクトなどからBratioを計算する場合のVPAの結果
+#' @param Fratio 上記のdataを与えずにVPAの結果のオブジェクトなどからFratioを計算する場合、かつylab.type="F"の場合のFratioの値
+#' @param Btarget est_MSYRPから得られる管理基準値の表の中のRP.definitionの列でtargetとする行のラベル
+#' @param Blimit est_MSYRPから得られる管理基準値の表の中のRP.definitionの列でlimitとする行のラベル
+#' @param Bban est_MSYRPから得られる管理基準値の表の中のRP.definitionの列でbanとする行のラベル
+#'
 #' @encoding UTF-8
 #'
 #' @export
 #'
 
-plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
-                                      category=4,# 削除予定オプション
+plot_kobe_gg <- plot_kobe <- function(FBdata=NULL,
+                                      vpares=NULL,
+                                      refs_base=NULL,
+                                      roll_mean=1,
+                                      ylab_name="Fratio",
+                                      xlab_name="Bratio",
                                       Btarget=c("Btarget0"),
                                       Blimit=c("Blimit0"),
-                                      Blow=c("Blow0"), # 削除予定オプション
                                       Bban=c("Bban0"),
                                       write.vline=TRUE,
-                                      ylab.type="U", # or "U"
+#                                      ylab.type="F", # or "U"
                                       labeling.year=NULL,
                                       RP.label=c("目標管理基準値","限界管理基準値","禁漁水準"),
                                       refs.color=c("#00533E","#edb918","#C73C2E"),
@@ -1388,52 +1490,59 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
                                       beta=NULL,
                                       plot.year="all"){
 
+  if(!is.null(FBdata)) assertthat::assert_that(all(c(ylab_name, xlab_name) %in% colnames(FBdata)), TRUE)
+
   target.RP <- derive_RP_value(refs_base,Btarget)
   limit.RP <- derive_RP_value(refs_base,Blimit)
-  low.RP <- derive_RP_value(refs_base,Blow)
+#  low.RP <- derive_RP_value(refs_base,Blow)
   ban.RP <- derive_RP_value(refs_base,Bban)
 
-  low.ratio <- low.RP$SSB/target.RP$SSB
+#  low.ratio <- low.RP$SSB/target.RP$SSB
   limit.ratio <- limit.RP$SSB/target.RP$SSB
   ban.ratio <- ban.RP$SSB/target.RP$SSB
 
-  vpa_tb <- convert_vpa_tibble(vpares)
-  UBdata <- vpa_tb %>% dplyr::filter(stat=="U" | stat=="SSB") %>%
-    spread(key=stat,value=value) %>%
-    mutate(Uratio=RcppRoll::roll_mean(U/target.RP$U,n=roll_mean,fill=NA,align="right"),
-           Bratio=RcppRoll::roll_mean(SSB/target.RP$SSB,n=roll_mean,fill=NA,align="right")) %>%
-    arrange(year)
-  if(ylab.type=="F") UBdata <- UBdata %>% mutate(Uratio=Fratio)
+  if(is.null(FBdata)){
+    vpa_tb <- convert_vpa_tibble(vpares)
+    FBdata <- vpa_tb %>% dplyr::filter(stat=="U" | stat=="SSB") %>%
+      spread(key=stat,value=value) %>%
+      mutate(Uratio=RcppRoll::roll_mean(U/target.RP$U,n=roll_mean,fill=NA,align="right"),
+             Bratio=RcppRoll::roll_mean(SSB/target.RP$SSB,n=roll_mean,fill=NA,align="right")) %>%
+      arrange(year)
+    if(!is.null(Fratio)) FBdata <- FBdata %>% mutate(Fratio=Fratio)
+  }
 
-  UBdata <- UBdata %>% mutate(year_group=1)
+  FBdata <- FBdata %>% mutate(year_group=1)
   if(plot.year[1]!="all") {
     diff.year <- plot.year[which(diff(plot.year)>1)+1]
-    UBdata <- UBdata %>% filter(year %in% plot.year)
+    FBdata <- FBdata %>% filter(year %in% plot.year)
 
     if (length(diff.year)>0) {
       for(i in 1:length(diff.year)){
-        UBdata <- UBdata %>%
+        FBdata <- FBdata %>%
           mutate(year_group = ifelse(year >= diff.year[i], year_group+1, year_group))
       }
     }
   }
 
   if(is.null(labeling.year)){
-    years <- unique(UBdata$year)
+    years <- unique(FBdata$year)
     labeling.year <- c(years[years%%5==0],max(years))
   }
 
-  UBdata <- UBdata %>%
+  FBdata$Bratio <- FBdata[xlab_name][[1]] %>% as.numeric()
+  FBdata$Fratio <- FBdata[ylab_name][[1]] %>% as.numeric()
+
+  FBdata <- FBdata %>%
     mutate(year.label=ifelse(year%in%labeling.year,year,""))
 
-  max.B <- max(c(UBdata$Bratio,xscale),na.rm=T)
-  max.U <- max(c(UBdata$Uratio,yscale),na.rm=T)
+  max.B <- max(c(FBdata$Bratio,xscale),na.rm=T)
+  max.F <- max(c(FBdata$Fratio,yscale),na.rm=T)
 
   red.color <- "indianred1" # rgb(238/255,121/255,72/255)
   yellow.color <- "khaki1" # rgb(245/255,229/255,107/255)
   green.color <- "olivedrab2" # rgb(175/255,209/255,71/255) #"olivedrab2"#rgb(58/255,180/255,131/255)
 
-  g4 <- ggplot(data=UBdata) +theme(legend.position="none")+
+  g4 <- ggplot(data=FBdata) +theme(legend.position="none")+
     geom_polygon(data=tibble(x=c(-1,1,1,-1),
                              y=c(-1,-1,1,1)),
                  aes(x=x,y=y),fill=yellow.color)+
@@ -1450,12 +1559,12 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
                              y=c(-1,-1,1,1)),aes(x=x,y=y),fill=yellow.color)
 
   if(write.vline){
-    g4 <- g4 + geom_vline(xintercept=c(1,limit.ratio,ban.ratio),color=refs.color,lty="41",lwd=0.7)+
+    g4 <- g4 + geom_vline(xintercept=c(1,limit.ratio,ban.ratio),color=refs.color,lty=c(unlist(format_type()[1,3]),unlist(format_type()[2,3]),unlist(format_type()[3,3])),lwd=0.7)+
       ggrepel::geom_label_repel(data=tibble(x=c(1,limit.ratio,ban.ratio),
-                                            y=max.U*0.85,
+                                            y=max.F*0.85,
                                             label=RP.label),
                                 aes(x=x,y=y,label=label),
-                                direction="x",nudge_y=max.U*0.9,size=11*0.282)
+                                direction="x",nudge_y=max.F*0.9,size=11*0.282)
   }
 
   if(!is.null(beta)){
@@ -1479,15 +1588,15 @@ plot_kobe_gg <- plot_kobe <- function(vpares,refs_base,roll_mean=1,
   }
 
   g4 <- g4 +
-    geom_path(mapping=aes(x=Bratio,y=Uratio,group=year_group)) +
-    geom_point(mapping=aes(x=Bratio,y=Uratio,group=year_group),shape=21,fill="white") +
-    coord_cartesian(xlim=c(0,max.B*1.1),ylim=c(0,max.U*1.15),expand=0) +
+    geom_path(mapping=aes(x=Bratio,y=Fratio,group=year_group)) +
+    geom_point(mapping=aes(x=Bratio,y=Fratio,group=year_group),shape=21,fill="white") +
+    coord_cartesian(xlim=c(0,max.B*1.1),ylim=c(0,max.F*1.15),expand=0) +
     ylab("漁獲割合の比 (U/Umsy)") + xlab("親魚量の比 (SB/SBmsy)")  +
-    ggrepel::geom_text_repel(#data=dplyr::filter(UBdata,year%in%labeling.year),
-      aes(x=Bratio,y=Uratio,label=year.label),
+    ggrepel::geom_text_repel(#data=dplyr::filter(FBdata,year%in%labeling.year),
+      aes(x=Bratio,y=Fratio,label=year.label),
       size=4,box.padding=0.5,segment.color="gray")
 
-  if(ylab.type=="F"){
+  if(ylab_name=="Fratio"){
     g4 <- g4 + ylab("漁獲圧の比 (F/Fmsy)")
   }
 
@@ -1541,9 +1650,9 @@ plot_HCR <- function(SBtarget,SBlim,SBban,Ftarget,
   #Drawing of the funciton by ggplot2
   ggplct <- ggplot(data.frame(x = c(0,1.5*SBtarget),y= c(0,1.5*Ftarget)), aes(x=x)) +
     stat_function(fun = h,lwd=1.5,color=col.multi2currf, n=5000)
-  g <- ggplct  + geom_vline(xintercept = SBtarget, size = 0.9, linetype = "41", color = col.SBtarget) +
-    geom_vline(xintercept = SBlim, size = 0.9, linetype = "41", color = col.SBlim) +
-    geom_vline(xintercept = SBban, size = 0.9, linetype = "41", color = col.SBban) +
+  g <- ggplct  + geom_vline(xintercept = SBtarget, size = 0.9, linetype = unlist(format_type()[1,3]), color = col.SBtarget) +
+    geom_vline(xintercept = SBlim, size = 0.9, linetype = unlist(format_type()[2,3]), color = col.SBlim) +
+    geom_vline(xintercept = SBban, size = 0.9, linetype = unlist(format_type()[3,3]), color = col.SBban) +
     geom_hline(yintercept = Ftarget, size = 0.9, linetype = "43", color = col.Ftarget) +
     geom_hline(yintercept = beta*Ftarget, size = 0.7, linetype = "43", color = col.betaFtarget) +
     labs(x = str_c("親魚量 (",junit,"トン)"),y = "漁獲圧の比(F/Fmsy)",color = "") +
@@ -1561,7 +1670,7 @@ plot_HCR <- function(SBtarget,SBlim,SBban,Ftarget,
     RPdata <- tibble(RP.label=RP.label, value=c(SBtarget, SBlim, SBban), y=c(1.1,1.05,1.05))
     g <- g + ggrepel::geom_label_repel(data=RPdata,
                                        mapping=aes(x=value, y=y, label=RP.label),
-                                       box.padding=0.5, nudge_y=1) +
+                                       box.padding=0.5, nudge_y=0.05) +
       geom_label(label="Fmsy", x=SBtarget*1.3, y=Ftarget)+
       geom_label(label=str_c(beta,"Fmsy"), x=SBtarget*1.3, y=beta*Ftarget)+
       ylim(0,1.3)
@@ -1655,9 +1764,9 @@ plot_HCR_by_catch <- function(trace,
     ggplot()+
     geom_line(aes(x=ssb.mean/biomass.unit,y=catch_HCR/biomass.unit),lwd=1)+
     theme_SH()+
-    geom_vline(xintercept = SBtarget/biomass.unit, size = 0.9, linetype = "41", color = col.SBtarget) +
-    geom_vline(xintercept = SBlim/biomass.unit, size = 0.9, linetype = "41", color = col.SBlim) +
-    geom_vline(xintercept = SBban/biomass.unit, size = 0.9, linetype = "41", color = col.SBban) +
+    geom_vline(xintercept = SBtarget/biomass.unit, size = 0.9, linetype = unlist(format_type()[1,3]), color = col.SBtarget) +
+    geom_vline(xintercept = SBlim/biomass.unit, size = 0.9, linetype = unlist(format_type()[2,3]), color = col.SBlim) +
+    geom_vline(xintercept = SBban/biomass.unit, size = 0.9, linetype = unlist(format_type()[3,3]), color = col.SBban) +
     #      geom_hline(yintercept = MSY/biomass.unit,color="gray")+
     xlab(str_c("親魚量 (",junit,"トン)"))+
     ylab(str_c("漁獲量 (",junit,"トン)"))
@@ -1991,7 +2100,7 @@ plot_worm <- function(kobe_data){
 
     mean_data <- bind_rows(kobe_data$catch.mean,
                            kobe_data$ssb.mean  ,
-                           kobe_data$ssb.lower10percent) %>%
+                           kobe_data$ssb.lower05percent) %>%
       pivot_longer(cols=c(-HCR_name,-beta,-stat_name)) %>%
       rename(Year=name) %>%
       mutate(Year=as.numeric(Year), MT=value/1000) #%>%

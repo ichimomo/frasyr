@@ -324,9 +324,14 @@ abund.extractor <- function(
    if (is.null(maa.tune)) ssb <- naa*waa*maa*exp(-p.m*dat$M-p.m*af*faa) else ssb <- naa*waa*maa.tune*exp(-p.m*dat$M-p.m*af*faa)
    res <- colSums(ssb,na.rm=TRUE)
  }
+ if (abund=="SSBmsj"){
+   if (is.null(maa.tune)) ssb <- naa*waa*maa*exp(-p.m*dat$M) else ssb <- naa*waa*maa.tune*exp(-p.m*dat$M)
+   res <- colSums(ssb,na.rm=TRUE)
+ }
 
- if (abund=="N1sj") res <- colSums(cbind(naa[1,-1]*exp(dat$M[1,-1]),NA), na.rm=TRUE)
- if (abund=="N0sj") res <- colSums(cbind(naa[1,-1]*exp(dat$M[1,-1]*2),NA), na.rm=TRUE)
+ if (abund=="N1sj") res <- colSums(naa[1,]*exp(dat$M[1,]), na.rm=TRUE)
+ if (abund=="N0sj") res <- colSums(naa[1,]*exp(dat$M[1,]*2), na.rm=TRUE)
+
  if (abund=="F") if (is.null(catch.prop)) res <- colMeans(faa[min.age:max.age,], na.rm=TRUE) else res <- colMeans(catch.prop[min.age:max.age, ]*faa[min.age:max.age,], na.rm=TRUE)
 
  if (link=="log") res <- log(res, base=base)
@@ -483,7 +488,7 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' @param Pope  Popeの近似式を使うかどうか
 #' @param p.pope  Popeの式でどこで漁獲するか（0.5 = 真ん中の時期）
 #' @param tune    tuningをするかどうか
-#' @param abund  tuningの際，何の指標に対応するか. "N"=年の終わりの資源尾数，"Nm"=年の中間での資源尾数，"B"=年の終わりの資源重量，"Bm"=年の中間での資源重量，"SSB"=産卵親魚量，"Bs"=資源重量×選択率，"Bo"=資源重量×オメガで調節された選択率，"Ns"=資源尾数×選択率，"SSBm"=年の中間での産卵親魚量，"N1sj"=1歳の資源尾数（日本海スケトウダラ用）,"N0sj"=0歳の資源尾数（日本海スケトウダラ用），"F"=漁獲係数の平均
+#' @param abund  tuningの際，何の指標に対応するか. "N"=年の初めの資源尾数，"Nm"=年の中間での資源尾数，"B"=年の初めの資源重量，"Bm"=年の中間での資源重量，"SSB"=産卵親魚量，"Bs"=資源重量×選択率，"Bo"=資源重量×オメガで調節された選択率，"Ns"=資源尾数×選択率，"SSBm"=年の中間での産卵親魚量，"N1sj"=1歳の資源尾数（日本海スケトウダラ用）,"N0sj"=0歳の資源尾数（日本海スケトウダラ用），"F"=漁獲係数の平均
 #' @param min.age tuning指標の年齢参照範囲の下限
 #' @param max.age tuning指標の年齢参照範囲の上限
 #' @param link    tuningのlink関数
@@ -552,7 +557,7 @@ qbs.f2 <- function(p0,index, Abund, nindex, index.w, fixed.index.var=NULL){
 #' \item{\code{np}}{推定されたターミナルFの数}
 #' \item{\code{minimum}}{最適解における目的関数の値（合計）}
 #' \item{\code{minimum.c}}{最適解における目的関数の値（個々）}
-#' \item{\code{logLik}}{負の対数尤度}
+#' \item{\code{logLik}}{対数尤度}
 #' \item{\code{gradient}}{最適解での傾き}
 #' \item{\code{code}}{最適化法から返されるコード（どのような理由で最適化が停止したのかがわかる）}
 #' \item{\code{q}}{推定されたq（資源量指標値の比例定数））}
@@ -615,7 +620,7 @@ vpa <- function(
   d = 0.0001,  # 石岡・岸田/平松の方法の収束判定基準
   min.caa = 0.001,   # caaに0があるとき，0をmin.caaで置き換える
   plot = FALSE,   # tuningに使った資源量指数に対するフィットのプロット
-  plot.year = 1998:2015,   # 上のプロットの参照年
+  plot.year = NULL,   # 上のプロットの参照年
   term.F = "max",   # terminal Fの何を推定するか: "max" or "all"
   plus.group = TRUE,
   stat.tf = "mean",  # 最終年のFを推定する統計量（年齢で同じとする）
@@ -701,9 +706,32 @@ vpa <- function(
 
   if (class(index)=="numeric") index <- t(as.matrix(index))
 
+# tuningの際のパラメータが1個だけ指定されている場合は，nindexの数だけ増やす
+  if (isTRUE(tune)){
+
+    nindex <- nrow(index)
+
+    if (nindex > length(abund) & length(abund)==1) abund <- rep(abund, nindex)
+    if (nindex > length(min.age) & length(min.age)==1) min.age <- rep(min.age, nindex)
+    if (nindex > length(max.age) & length(max.age)==1) max.age <- rep(max.age, nindex)
+    if (nindex > length(link) & length(link)==1) link <- rep(link, nindex)
+    if (nindex > length(base) & length(base)==1) base <- rep(base, nindex)
+
+    if (is.null(index.w)) index.w <- rep(1, nindex)
+    if (!is.na(af[1])) if(nindex > length(af) & length(af)==1) af <- rep(af, nindex)
+
+    q <- rep(NA, nindex)
+  }
+
+# nindexの数だけtuningの際のパラメータを増やしたのちに，use.indexを使用する場合は，use.indexで指定した部分だけを抜き出して計算する．
   if (use.index[1]!="all") {
     index <- index[use.index,,drop=FALSE]
-    if (length(use.index)!=length(abund)){
+	nindex <- nrow(index)
+	q <- rep(NA, nindex)
+
+  #以前追加したwarningは削除．何故なら，この前の部分で， nrow(index)と同じ長さだけのベクトルをtuningの際のパラメータに与える仕様にしているため．
+
+    if(length(use.index)!=length(abund)){
       if (length(abund)>1) abund <- abund[use.index]
       if (length(min.age)>1) min.age <- min.age[use.index]
       if (length(max.age)>1) max.age <- max.age[use.index]
@@ -749,25 +777,7 @@ vpa <- function(
     if(length(p.init) >= na[ny]-1) p.init <- p.init[1:na[ny]-1]  # 初期値の成分数が年齢数-1以上であれば，年齢数以上の値は使用しない
   }
 
-  #if (length(stat.tf)==1) stat.tf <- rep(stat.tf, na[ny]-1)  # stat.tfが1個だけ指定されているときは，全年齢その統計量を使う(delete)
-  
-  # tuningの際のパラメータが1個だけ指定されている場合は，nindexの数だけ増やす
-  if (isTRUE(tune)){
-
-    nindex <- nrow(index)
-
-    if (nindex > length(abund) & length(abund)==1) abund <- rep(abund, nindex)
-    if (nindex > length(min.age) & length(min.age)==1) min.age <- rep(min.age, nindex)
-    if (nindex > length(max.age) & length(max.age)==1) max.age <- rep(max.age, nindex)
-    if (nindex > length(link) & length(link)==1) link <- rep(link, nindex)
-    if (nindex > length(base) & length(base)==1) base <- rep(base, nindex)
-
-    if (is.null(index.w)) index.w <- rep(1, nindex)
-    if (!is.na(af[1])) if(nindex > length(af) & length(af)==1) af <- rep(af, nindex)
-
-    q <- rep(NA, nindex)
-  }
-
+  assertthat::assert_that(length(stat.tf) == 1) # stat.tfがベクトルで与えられた場合にエラーを出す
 
   # selectivityを更新する場合にfaa0，naa0が与えられていれば，それを使う
    if (!isTRUE(sel.update)){
@@ -861,8 +871,19 @@ vpa <- function(
       if (isTRUE(Pope)){
         for (i in (ny-1):1){
          naa[1:na[i], i] <- backward.calc(caa,naa,M,na,i,min.caa=min.caa,p=p.pope,plus.group=plus.group,sel.update=sel.update,alpha=alpha, use.equ=use.equ)
-         faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha, use.equ=use.equ)
-       }
+         if(na[1]>na[ny]){
+		 if(is.na(naa[na[ny]+1, i])){
+ naa[na[ny]+1, i]<-NA} else if(naa[na[ny]+1, i]==1.00000){
+ naa[na[ny]+1, i]<-NA} else{
+ naa[na[ny]+1, i]<-naa[na[ny]+1, i]}}#adjustment for sawara
+
+		 faa[1:na[i], i] <- f.at.age(caa,naa,M,na,i,p=p.pope,alpha=alpha, use.equ=use.equ)
+         if(na[1]>na[ny]){
+		if(is.na(faa[na[ny]+1, i])){
+ faa[na[ny]+1, i]<-NA} else if(faa[na[ny]+1, i]==1.00000){
+ faa[na[ny]+1, i]<-NA} else{
+ faa[na[ny]+1, i]<-faa[na[ny]+1, i]}}#adjustment for sawara
+	   }
      }
      else{
        for (i in (ny-1):1){
@@ -880,7 +901,10 @@ vpa <- function(
        }
      }
 
-     faa1 <- faa
+ if(na[1]>na[ny]){
+ if(is.na(faa[na[ny]+1, ny-1]))faa[na[ny]+1, ny]<-NA else faa[na[ny]+1, ny-1]<-faa[na[ny]+1, ny-1]} #adjustment for sawara
+
+	 faa1 <- faa
      saa1 <- sel.func(faa1, def=sel.def)
 
      for (i in (na[ny]-1):1){
@@ -898,7 +922,7 @@ vpa <- function(
      if(length(p)==1) faa1[1:na[ny], ny] <- p*sel.func(saa1, def=sel.def)[1:na[ny],ny] else  faa1[1:na[ny], ny] <- p[length(p)]*sel.func(saa1, def=sel.def)[1:na[ny],ny]
      faa1[na[ny], ny] <- alpha*faa1[na[ny]-1, ny]
 
-     dd <- max(sqrt((saa1[,ny] - saa[,ny])^2))
+     dd <- max(sqrt((saa1[,ny] - saa[,ny])^2),na.rm=TRUE)
      itt <- itt + 1
 
      faa <- faa1
@@ -970,7 +994,7 @@ if (isTRUE(madara)){
 
     if (is.na(naa[na[ny]-1,ny])){
       if(isTRUE(Pope)){
-        for (i in (na[ny]-1):1){		 
+        for (i in (na[ny]-1):1){
           if (is.null(tf.mat)) faa[i, ny] <- get(stat.tf)(faa[i, years %in% tf.year])
           else faa[i, ny] <- get(stat.tf)(faa[i, !is.na(tf.mat[i,])])
           naa[i, ny] <- caa[i, ny]*exp(M[i, ny]/2)/(1-exp(-faa[i, ny]))
@@ -1281,7 +1305,7 @@ if (isTRUE(madara)){
         }
 
       if (penalty=="f") obj <- (1-lambda)*obj + lambda*sum((abs(faa[1:(na[ny]-1),ny]-apply(faa[1:(na[ny]-1), years %in% tf.year],1,get(stat.tf))))^beta)
-      
+
       if (penalty=="s") obj <- (1-lambda)*obj + lambda*sum((abs(saa[1:(na[ny]-1),ny]-apply(saa[1:(na[ny]-1), years %in% tf.year],1,get(stat.tf))))^beta)
 
       if (!is.null(sel.rank)) obj <- obj+1000000*sum((rank(saa[,ny])-sel.rank)^2)
@@ -1409,7 +1433,7 @@ if (isTRUE(madara)){
   if(isTRUE(TMB) & isFALSE(Pope)){print("TMB is not supported for baranov equation option. only for Pope");stop()}
   if(isTRUE(TMB) & penalty=="f"){print("TMB is not supported for penalty=f. only for penalty=p");stop()}
   if(isTRUE(TMB) & penalty=="s"){print("TMB is not supported for penalty=s. only for penalty=p");stop()}
-  
+
     index2 <- as.matrix(t(apply(index,1,function(x) ifelse(is.na(x),0,x))))
 
     Ab_type <- ifelse(abund=="SSB", 1, ifelse(abund=="N", 2, ifelse(abund=="B", 3, 4)))
@@ -1525,8 +1549,13 @@ Ft <- mean(faa[,ny],na.rm=TRUE)
 
   res <- list(input=arglist, term.f=term.f, np=np, minimum=out$minimum, minimum.c=out$minimum.c, logLik=logLik, gradient=gradient, code=code, q=q, b=b, sigma=sigma, convergence=convergence, message=message, hessian=hessian, Ft=Ft, Fc.at.age=Fc.at.age, Fc.mean=Fc.mean, Fc.max=Fc.max, last.year=last.year, Pope=Pope, ssb.coef=ssb.coef, pred.index=pred.index, wcaa=caa*waa.catch,naa=naa, faa=faa, baa=baa, ssb=ssb, saa=saa)
 
+  invisible(res2 <- list(input=arglist, use.index=use.index, abund=abund, min.age=min.age, max.age=max.age, link=link, base=base, af=af, index.w=index.w, q=q, naa=naa, faa=faa, baa=baa, ssb=ssb, pred.index=pred.index, sigma=sigma, b=b)) #use.indexを考慮し，実際にVPAのチューニングで与えた値
+
+  # print(list(use.index=use.index, abund=abund, min.age=min.age, max.age=max.age, link=link, base=base, af=af, index.w=index.w))
+
   if (isTRUE(plot) & isTRUE(tune)){
-    graph <- try(plot_residual_vpa(res, index_name = NULL, plot_year = plot.year)) # plot.yearに対応する引数を追加してください
+    if(is.null(plot.year)) plot.year <- colnames(naa) %>% as.numeric()
+    graph <- try(plot_residual_vpa2(res2, index_name = NULL, plot_year = plot.year)) # plot.yearに対応する引数を追加してください
     if(class(graph)=="try-error"){
       for (i in 1:nindex){
         Y <- years %in% plot.year
@@ -1748,17 +1777,19 @@ boo.vpa <- function(res,B=5,method="p",mean.correction=FALSE){
     print(b)
 
     for (i in 1:R){
-      if (method=="p") b.index[i,!is.na(index[i,])] <- exp(log(p.index[i,!is.na(index[i,])]) + rnorm(sum(!is.na(index[i,])),0,sd=sqrt(rs2[i])))
-      if (method=="n") b.index[i,!is.na(index[i,])] <- exp(log(p.index[i,!is.na(index[i,])]) + sample(resid[i,!is.na(index[i,])],length(index[i,!is.na(index[i,])]),replace=TRUE))
-      if (isTRUE(mean.correction)) b.index[i,!is.na(index[i,])] <- b.index[i,!is.na(index[i,])]*exp(-rs2[i]/2)
+    #use.indexオプションを使っているとき、b.indexの行数とずれるので、b.indexの行番号をjで設定
+      j <- ifelse(is.numeric(res$input$use.index), res$input$use.index[i],i)
+      if (method=="p") b.index[j,!is.na(index[i,])] <- exp(log(p.index[i,!is.na(index[i,])]) + rnorm(sum(!is.na(index[i,])),0,sd=sqrt(rs2[i])))
+      if (method=="n") b.index[j,!is.na(index[i,])] <- exp(log(p.index[i,!is.na(index[i,])]) + sample(resid[i,!is.na(index[i,])],length(index[i,!is.na(index[i,])]),replace=TRUE))
+      if (isTRUE(mean.correction)) b.index[j,!is.na(index[i,])] <- b.index[j,!is.na(index[i,])]*exp(-rs2[i]/2)
       if (method=="r") {
         rs.d <- density(resid[i,!is.na(index[i,])])
         rs.db <- sample(rs.d$x,length(index[i,!is.na(index[i,])]),prob=rs.d$y,replace=TRUE)
         sd.j <- sd(rs.db)
         s.rs.b <- rs.db/sd.j
-        b.index[i,!is.na(index[i,])] <- exp(log(p.index[i,!is.na(index[i,])]) + s.rs.b*sqrt(rs2[i]))
+        b.index[j,!is.na(index[i,])] <- exp(log(p.index[i,!is.na(index[i,])]) + s.rs.b*sqrt(rs2[i]))
       }
-      if (isTRUE(mean.correction)) b.index[i,!is.na(index[i,])] <- b.index[i,!is.na(index[i,])]*exp(-rs2[i]/2)
+      if (isTRUE(mean.correction)) b.index[j,!is.na(index[i,])] <- b.index[j,!is.na(index[i,])]*exp(-rs2[i]/2)
     }
 
     res.c$input$dat$index <- b.index
@@ -1814,7 +1845,7 @@ cv.est <- function(res,n=5){
 #' @param ssb.forecast Mohn's rhoを計算する際にSSBは1年後を計算するか(last.catch.zero=TRUEのときのみ有効)
 #' @param grid.add.ini \code{add.p.ini}をgridで変えて初期値を事前に探索する
 #' @param grid.init \code{p.init}でgridを変えて初期値を事前に探索する
-#' @param remove.short.index 年数が2年以下になった指標値を除いて計算する
+#' @param remove.short.index 年数が指定された数字以下になった指標値を除いて計算する(初期設定:-1)
 #' @encoding UTF-8
 #' @export
 #'
@@ -1822,7 +1853,7 @@ cv.est <- function(res,n=5){
 retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE,
                       remove.maxAgeF=FALSE,ssb.forecast=FALSE,sel.mat=NULL,
                       grid.add.ini = NULL,grid.init = NULL,
-                      remove.short.index=FALSE){
+                      remove.short.index=-1){
    res.c <- res
    res.c$input$plot <- FALSE
    Res <- list()
@@ -1875,13 +1906,13 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE,
      # last.catch.zero = TRUE用に修正
      if (res.c$input$last.catch.zero) {res.c$input$dat$caa[,nc-1] <- 0; Y <- nc-2} else Y <- nc-1
 
-     if (isTRUE(remove.short.index)) {
+     if (remove.short.index>0) {
          index_n = apply(res.c$input$dat$index,1,function(x) length(x)-sum(is.na(x)))
          use.index = 1:nrow(res.c$input$dat$index)
          if (res.c$input$use.index[1]=="all") {
-           use.index = use.index[index_n > 2]
+           use.index = use.index[index_n > remove.short.index]
          } else {
-           use.index = intersect(res.c$input$use.index,use.index[index_n > 2])
+           use.index = intersect(res.c$input$use.index,use.index[index_n > remove.short.index])
          }
          res.c$input$use.index <- use.index
      }
@@ -2008,3 +2039,144 @@ retro.est2 <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE){
 
    return(list(Res=Res,retro.n=obj.n, retro.b=obj.b, retro.s=obj.s, retro.r=obj.r, retro.f=obj.f, mohn=mohn))
 }
+
+
+#' VPAの結果を受けて，バブルプロット(横軸が年，縦軸が年齢，バブルの大きさと色で値を示す）を生成する
+#'
+#' @param res VPAの出力
+#' @param target プロットしたい対象　例）"faa"や"naa"
+#' @param years プロットしたい年数　デフォルトはNULLで全年．例）１９９７：１９９９とすると１９９７～１９９９年のみプロット
+#' @param fix_ratio x軸とy軸のスケールの比．ここが２だと１：１になる
+#' @param max_size バブルの最大の大きさ
+#' @param legend_position legendの位置（see `theme_SH`）
+#' @encoding UTF-8
+#' @export
+#'
+
+bubble_plot2 <- function(
+res,
+target="faa",
+years=NULL,
+fix_ratio=2, #x軸とy軸のスケールの比.ここが2だと１：１
+max_size=10, #バブルの最大の大きさ
+legend_position = "bottom" # legendの位置
+){
+
+res00 <- res
+dat <- res00[names(res00)==paste0(target)]
+
+dat <- dat[[1]] %>% as.data.frame() %>% tibble::rownames_to_column("age") %>% pivot_longer(!age, names_to = "year", values_to = "value") %>% mutate_at(vars(year), as.factor)
+
+dat <- dat %>% mutate_at(vars(age), as.factor)
+dat$age <- factor(dat$age, levels=rev(levels(dat$age)))
+
+#range <- range[1:(length(range)-1)]
+
+if(!is.null(years)) dat <- subset(dat, year %in% years)
+
+ggplot(dat,aes(x=year, y=age)) +
+  geom_point(aes(size=value, fill=value), alpha = 0.75, shape = 21) +
+  coord_fixed(ratio=fix_ratio)+
+  scale_size_continuous(limits = c(0.0001, 1.0001)*max(dat$value,na.rm=TRUE), range = c(1,max_size))+
+  scale_fill_continuous(trans="reverse")+
+  labs(x="Year", y="Age",size=paste0(target),fill=paste0(target),fill=guide_colourbar(reverse=TRUE))  +
+  guides(color=c("none"))+
+  ggtitle(toupper(target))+
+  theme_SH(legend.position = legend_position) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1), panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2))
+}
+
+
+#' リッジVPAのλ探索の自動化
+#'
+#' @param input `vpa`関数の引数をlist形式で与える
+#' @param target_retro ペナルティλの選択に用いるmohn's rhoのパラメータ
+#' @param n_retro レトロスペクティブ解析で遡る年数。デフォルトは`5`
+#' @param b_fix レトロスペクティブ解析内でbを固定するか。デフォルトは`TRUE`
+#' @details etaのオプションに対応できているかは怪しい。
+#' @encoding UTF-8
+#'
+#' @export
+#'
+
+autocalc_ridgevpa <- function(input,
+                              target_retro,
+                              n_retro = 5,
+                              b_fix   = TRUE,
+                              bin     = 0.1 # lambdaとetaのペナルティ探索の幅
+){
+  assert_that(target_retro %in% c("F", "B", "N","SSB","R"))
+
+  if(is.null(input$eta)){
+    search_lambda_vpa <- function(x){
+      print(x)
+      input$lambda <- x
+      tmp          <- do.call(vpa,input)
+      tmp_rho      <- retro.est(tmp, n = n_retro, b.fix = b_fix)$mohn
+      print(tmp_rho)
+      tmp_rho[names(tmp_rho)==target_retro] %>% as.numeric()
+    }# search_lambda_vpa
+
+    lambda_set1 <- seq(0,1,0.1)
+    res1 <- purrr::map(as.list(lambda_set1), search_lambda_vpa) %>% as.numeric()
+    tmp_min <- which(abs(res1) == min(abs(res1)))
+    lambda_set2 <- seq(lambda_set1[tmp_min-1],lambda_set1[tmp_min+1],0.01)
+    res2 <- purrr::map(as.list(lambda_set2), search_lambda_vpa) %>% as.numeric()
+    tmp_min <- which(abs(res2) == min(abs(res2)))
+
+    lambda_mat1 <- data.frame(lambda = lambda_set1, mohn = res1) %>%
+      mutate(delta_mohn = abs(mohn)-min(abs(mohn)))
+    lambda_mat2 <- data.frame(lambda = lambda_set2, mohn = res2) %>%
+      mutate(delta_mohn = abs(mohn)-min(abs(mohn)))
+
+    g2 <- ggplot(lambda_mat2,
+                 aes(x=1, y=lambda, fill=delta_mohn)) +
+      geom_tile()+
+      geom_hline(aes(yintercept = lambda_mat2$lambda[tmp_min]))+
+      xlab("")+
+      coord_cartesian(xlim = c(0.75,1.25))
+  } #if(is.null(eta))
+
+  if(!is.null(input$eta)){
+    search_lambda_vpa <- function(x,y){
+	 print(x)
+	 print(y)
+      input$lambda <- x
+      input$eta    <- y
+      tmp          <- do.call(vpa,input)
+      tmp_rho      <- retro.est(tmp, n = n_retro, b.fix = b_fix)$mohn
+	 print(tmp_rho)
+      tmp_rho[names(tmp_rho)==target_retro] %>% as.numeric()
+    }# search_lambda_vpa
+
+    penalty_set <- expand.grid(lambda = seq(0,1,bin), eta = seq(0,1,bin))
+    res1 <- purrr::map2(as.list(penalty_set$lambda), as.list(penalty_set$eta), search_lambda_vpa) %>%
+      as.numeric()
+    penalty_mat <- penalty_set %>%
+      mutate(mohn = res1) %>%
+      mutate(delta_mohn = abs(mohn)-min(abs(mohn)))
+
+    g2 <- ggplot(penalty_mat %>%
+                   mutate(delta_mohn = ifelse(delta_mohn>1,NA,delta_mohn)),
+                 aes(x=eta, y=lambda, fill=delta_mohn)) +
+      geom_tile()+
+      geom_text(aes(label = as.character(round(delta_mohn, 3))))+
+      geom_text(data = penalty_mat %>% filter(delta_mohn == 0),
+                aes(label = as.character(round(delta_mohn, 3))), color = "red")+
+      scale_fill_continuous(trans="reverse", na.value = "grey")
+
+  } #if(is.null(eta))
+
+
+  return(
+    if(is.null(input$eta)){
+      list(min_penalty  = lambda_mat2$lambda[tmp_min],
+           plot = g2,
+           lambda_mat1 = lambda_mat1, lambda_mat2 = lambda_mat2)
+    } else {
+      list(min_penalty  = penalty_mat %>% filter(delta_mohn == 0),
+           plot = g2, penalty_mat = penalty_mat)
+    }
+  ) # return()
+
+} #autocalc_ridgevpa

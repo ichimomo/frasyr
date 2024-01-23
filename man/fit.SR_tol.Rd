@@ -4,7 +4,13 @@
 \alias{fit.SR_tol}
 \title{再生産関係のフィット（頑健版）}
 \usage{
-fit.SR_tol(..., n_check = 100, is_regime = FALSE, seed = 12345)
+fit.SR_tol(
+  ...,
+  n_check = 100,
+  is_regime = FALSE,
+  seed = 12345,
+  fun_when_check5_replace = median
+)
 }
 \arguments{
 \item{...}{fit.SRへの引数}

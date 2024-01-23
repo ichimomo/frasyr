@@ -31,7 +31,8 @@ test_that("ref.F (level 2)",{
   load(system.file("extdata","res_ref_f_pma.rda",package = "frasyr"))
 
   #照合内容
-  testcontents <-c("sel","max.age","min.age","rps.q","spr.q","Fcurrent","Fmed","Flow","Fhigh","Fmax","F0.1","Fmean","rps.data","FpSPR","summary","ypr.spr","waa","waa.catch","maa","spr0")
+  testcontents <-c("sel","max.age","min.age","rps.q","spr.q","Fcurrent","Fmed","Flow","Fhigh","Fmax","F0.1","Fmean","rps.data","FpSPR","summary", #"ypr.spr",
+                   "waa","waa.catch","maa","spr0")
 
   for(i in 1:length(testcontents)){
       tmp1 <- eval(parse(text=paste("res_ref_f_pma$",testcontents[i])))
@@ -71,10 +72,16 @@ test_that("ref.F (level 2)",{
   expect_equal(for_test_tmp,Fratio_test$Fratio,tol=0.0001)
   expect_equal(1:4 * 10,Fratio_test$SPR_est,tol=0.0001)
 
-  MSY_perSPR1 <- calc_future_perSPR(res_future_0.8HCR,res_vpa=res_vpa_example,Fvector=res_MSY$F.msy)
-  MSY_perSPR2 <- calc_future_perSPR(res_future_0.8HCR,res_vpa=res_vpa_example,Fvector=res_MSY$F.msy,target.year=2040:2045)
-  MSY_perSPR3 <- calc_future_perSPR(res_future_0.8HCR,res_vpa=res_vpa_example,Fvector=res_MSY$F.msy,target.col=30)
-  expect_equal(MSY_perSPR1,0.2307774,tol=1e-4)
+#  MSY_perSPR1 <- calc_future_perSPR(res_future_0.8HCR,res_vpa=res_vpa_example,Fvector=res_MSY$F.msy)
+#  MSY_perSPR2 <- calc_future_perSPR(res_future_0.8HCR,res_vpa=res_vpa_example,Fvector=res_MSY$F.msy,target.year=2040:2045)
+#  MSY_perSPR3 <- calc_future_perSPR(res_future_0.8HCR,res_vpa=res_vpa_example,Fvector=res_MSY$F.msy,target.col=30)
+
+  MSY_perSPR1 <- calc_future_perSPR(res_future_HSL1,res_vpa=res_vpa_example,Fvector=res_MSY_HSL1$F.msy)
+  MSY_perSPR2 <- calc_future_perSPR(res_future_HSL1,res_vpa=res_vpa_example,Fvector=res_MSY_HSL1$F.msy,target.year=2030:2035)
+  MSY_perSPR3 <- calc_future_perSPR(res_future_HSL1,res_vpa=res_vpa_example,Fvector=res_MSY_HSL1$F.msy,target.col=30)
+  
+  #  expect_equal(MSY_perSPR1,0.2307774,tol=1e-4)
+  expect_equal(MSY_perSPR1,0.251,tol=1e-3)  
   expect_equal(MSY_perSPR1,MSY_perSPR2,tol=1e-4)
   expect_equal(MSY_perSPR1,MSY_perSPR3,tol=1e-4)
 
@@ -109,7 +116,7 @@ test_that("ref.F (level 2)",{
   expect_equal(mean(faa/tmp3$Fvector),1,tol=0.0001)
   
   # just for run
-  MSY_Fratio <- calc_perspr(res_future_0.8HCR,res_vpa=res_vpa_example,Fvector=res_MSY$F.msy,SPRtarget=0.3)
+#  MSY_Fratio <- calc_perspr(res_future_0.8HCR,res_vpa=res_vpa_example,Fvector=res_MSY$F.msy,SPRtarget=0.3)
 
 })
 

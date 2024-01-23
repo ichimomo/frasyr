@@ -132,8 +132,8 @@ context("specify gamma in SR=Mesnil")
 
 test_that("output value check",{
 
-  data("res_vpa")
-  SRdata=get.SRdata(res_vpa)
+  data("res_vpa_example")
+  SRdata=get.SRdata(res_vpa_example)
   res_sr_MesnilL1 <- fit.SR(SRdata,SR="Mesnil",method = "L1",AR=0,out.AR = F)
   res_spec_Mesnil<-specify.Mesnil.gamma(res_sr_MesnilL1)
   expect_equal(res_spec_Mesnil$gamma,2)

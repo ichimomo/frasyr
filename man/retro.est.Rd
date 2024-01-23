@@ -16,7 +16,7 @@ retro.est(
   sel.mat = NULL,
   grid.add.ini = NULL,
   grid.init = NULL,
-  remove.short.index = FALSE
+  remove.short.index = -1
 )
 }
 \arguments{
@@ -34,7 +34,7 @@ retro.est(
 
 \item{grid.init}{\code{p.init}でgridを変えて初期値を事前に探索する}
 
-\item{remove.short.index}{年数が2年以下になった指標値を除いて計算する}
+\item{remove.short.index}{年数が指定された数字以下になった指標値を除いて計算する(初期設定:-1)}
 }
 \description{
 レトロスペクティブ解析の実施
