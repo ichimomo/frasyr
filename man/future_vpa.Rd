@@ -29,6 +29,8 @@ future_vpa(
 \arguments{
 \item{tmb_data}{make_future_dataの返り値。将来の生物パラメータや再生産関係のシナリオを年齢×年×シミュレーション回数で指定した様々なarrayが含まれる。}
 
+\item{optim_method}{"none"の場合、通常の将来予測を実施. "R": 以下のobj関係の設定とあわせてMSYなどを探索する. "tmb"もあるが、限定した設定でしか使えない}
+
 \item{objective}{MSY:MSYの推定、PGY:PGYの値をobj_valueに入れる、percentB0:B0パーセント、何％にするかはobj_valueで指定, SSB:obj_valueで指定した特定の親魚資源量に一致するようにする}
 
 \item{obj_value}{目的とする値}

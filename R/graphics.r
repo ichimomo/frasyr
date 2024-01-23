@@ -354,7 +354,8 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
   if (SR_result$input$SR=="BH") SRF <- function(SSB,a,b,recruit_intercept=0) (a*SSB*xscale/(1+b*SSB*xscale)+recruit_intercept)/yscale
   if (SR_result$input$SR=="RI") SRF <- function(SSB,a,b,recruit_intercept=0) (a*SSB*xscale*exp(-b*SSB*xscale)+recruit_intercept)/yscale
   if (SR_result$input$SR=="Mesnil") SRF <- function(SSB,a,b,gamma) (0.5*a*(SSB*xscale+sqrt(b^2+gamma^2/4)-sqrt((SSB*xscale-b)^2+gamma^2/4))+recruit_intercept)/yscale
-
+  if (SR_result$input$SR=="Shepherd") SRF <- function(SSB,a,b,gamma,recruit_intercept=0) (a*SSB*xscale/(1+(b*SSB*xscale)^gamma)+recruit_intercept)/yscale
+  if (SR_result$input$SR=="Cushing") SRF <- function(SSB,a,b,recruit_intercept=0) (a*(SSB*xscale)^b+recruit_intercept)/yscale
 
   SRF_CI <- function(CI,sigma,sign,...){
     exp(log(SRF(...))+qnorm(1-(1-CI)/2)*sigma*sign)
@@ -394,7 +395,9 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
   if(is.null(labeling.year)) labeling.year <- c(tmp[tmp%%5==0],year.max)
     alldata <- alldata %>% mutate(pick.year=ifelse(year%in%labeling.year,year,""))
 
-  if(SR_result$input$SR!="Mesnil"){
+  use_gamma <- SR_result$input$SR %in% c("Mesnil", "Shepherd")
+
+  if(!use_gamma){
     g1 <- ggplot(data=alldata,mapping=aes(x=SSB,y=R)) +
       stat_function(fun=SRF,args=list(a=SR_result$pars$a,
                                       b=SR_result$pars$b),color="deepskyblue3",lwd=1.3,
@@ -410,7 +413,7 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
   if(!is.null(add_graph)) g1 <- g1+add_graph
 
   if(isTRUE(plot_CI)){
-    if(SR_result$input$SR!="Mesnil"){
+    if(!use_gamma){
       g1 <- g1+
         stat_function(fun=SRF_CI,
                       args=list(a=SR_result$pars$a,
@@ -492,7 +495,7 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
   }
 
   if(recruit_intercept>0){
-    if(SR_result$input$SR!="Mesnil"){
+    if(!use_gamma){
       g1 <- g1+stat_function(fun=SRF,
                              args=list(a=SR_result$pars$a,
                                        b=SR_result$pars$b,

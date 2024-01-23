@@ -188,8 +188,10 @@ make_future_data <- function(res_vpa,
                                       "recruit","ssb",
                                       "intercept","sd",#9-10
                                       "bias_factor", #11
+                                      "gamma", #12 gamma for shepherd
                                       "biomass","cbiomass", # add biomass statistics
-                                      "blank4","blank5")))
+                                      "blank5")))
+
   #HCR_mat <- array(0, dim=c(total_nyear, nsim, 7),
   HCR_mat <- array(0, dim=c(total_nyear, nsim, 11),
                    dimnames=list(year=allyear_name, nsim=1:nsim,
@@ -455,6 +457,7 @@ make_future_data <- function(res_vpa,
 #' 将来予測の実施関数
 #'
 #' @param tmb_data make_future_dataの返り値。将来の生物パラメータや再生産関係のシナリオを年齢×年×シミュレーション回数で指定した様々なarrayが含まれる。
+#' @param optim_method "none"の場合、通常の将来予測を実施. "R": 以下のobj関係の設定とあわせてMSYなどを探索する. "tmb"もあるが、限定した設定でしか使えない
 #' @param SPR_target 目標とする\%SPR。NULL以外の値の場合、過去〜将来のそれぞれの年・シミュレーションが、目標とするF\%SPRに対して何倍にあたるか(F/Ftarget)を計算して、HCR_realizedの"Fratio"に入れる。HCRが生きている年については"beta_gamma"と一致するはず。
 #' @param max_F 漁獲量一定方策を実施する際のF at ageの最大値の上限（将来的にはmake_future_data関数に入れたい)
 #' @param max_exploitation_rate 漁獲量一定方策を実施する際のMを考慮した上での漁獲率の上限（将来的にはmake_future_data関数に入れたい)
@@ -470,7 +473,7 @@ make_future_data <- function(res_vpa,
 #' @encoding UTF-8
 
 future_vpa <- function(tmb_data,
-                       optim_method="none", # or "R" or "none"
+                       optim_method="none", # or "R" or "none" or "tmb"
                        multi_init = 1,
                        multi_lower = 0.0001,
                        multi_upper = 10,
@@ -745,10 +748,10 @@ future_vpa_R <- function(naa_mat,
       if(all(N_mat[1,t,]==0)){
         N_mat[1,t,] <- purrr::pmap_dbl(tibble(x=SR_mat[t,,"SR_type"],
                                               ssb=spawner_mat[spawn_t,],
-                                              a=SR_mat[t,,"a"],b=SR_mat[t,,"b"]),
-                                       function(x,ssb,a,b){
-                                         fun <- list(SRF_HS,SRF_BH,SRF_RI)[[x]];
-                                         fun(ssb,a,b)
+                                              a=SR_mat[t,,"a"],b=SR_mat[t,,"b"],gamma=SR_mat[t,,"gamma"]),
+                                       function(x,ssb,a,b,gamma){
+                                         fun <- list(SRF_HS,SRF_BH,SRF_RI,SRF_SH,SRF_CU)[[x]];
+                                         fun(ssb,a,b,gamma)
                                        })
         N_mat[1,t,] <- N_mat[1,t,]*exp(SR_mat[t,,"deviance"]) + SR_mat[t,,"intercept"]
       }else{
@@ -758,10 +761,10 @@ future_vpa_R <- function(naa_mat,
         if(!all(N_mat[1,t,]==0) && all(SR_mat[t-1,,"rho"]>0)){
           rec_predict <- purrr::pmap_dbl(tibble(x=SR_mat[t,,"SR_type"],
                                               ssb=spawner_mat[spawn_t,],
-                                              a=SR_mat[t,,"a"],b=SR_mat[t,,"b"]),
-                                         function(x,ssb,a,b){
-                                           fun <- list(SRF_HS,SRF_BH,SRF_RI)[[x]];
-                                           fun(ssb,a,b)
+                                              a=SR_mat[t,,"a"],b=SR_mat[t,,"b"],gamma=SR_mat[t,,"gamma"]),
+                                         function(x,ssb,a,b,gamma){
+                                           fun <- list(SRF_HS,SRF_BH,SRF_RI,SRF_SH,SRF_CU)[[x]];
+                                           fun(ssb,a,b,gamma)
                                          })
           new_deviance <- log(N_mat[1,t,]) - log(rec_predict)
           SR_mat[t,,"deviance"] <- new_deviance
@@ -1111,14 +1114,22 @@ set_SR_mat <- function(res_vpa=NULL,
       SR_mat[,,"SR_type"] <- 3
       SRF <- SRF_RI
     }
+    if(res_SR$input$SR=="Shepherd" | res_SR$input$SR=="SH"){
+      SR_mat[,,"SR_type"] <- 4
+      SRF <- SRF_SH
+    }
+    if(res_SR$input$SR=="Cushing" | res_SR$input$SR=="CU"){
+      SR_mat[,,"SR_type"] <- 5
+      SRF <- SRF_CU
+    }      
 
     # define SR parameter
-    if(is.null(regime_shift_option)){
+    if(is.null(regime_shift_option)){ # when no-regime shift
       SR_mat[,,"a"] <- res_SR$pars$a
       SR_mat[,,"b"] <- res_SR$pars$b
       SR_mat[,,"sd"] <- res_SR$pars$sd
     }
-    else{
+    else{ # when regime_shift
       regime_data <- res_SR$regime_resid %>%
         left_join(res_SR$regime_pars, by="regime") %>%
         bind_cols(res_SR$input$SRdata)
@@ -1142,6 +1153,11 @@ set_SR_mat <- function(res_vpa=NULL,
 
       res_SR$pars$rho <- 0
     }
+
+    # set gamma parameter (暫定. regimeありでもなしでも同じgammaがinput$gammaで与えられている場合の特殊ケース)
+    SR_mat[,,"gamma"] <- ifelse(!is.null(res_SR$input$gamma), res_SR$input$gamma, NA)
+    if(res_SR$input$SR!="Shepherd"&&res_SR$input$SR!="SH") SR_mat[,,"gamma"] <- NA
+      
     SR_mat[,,"rho"] <- res_SR$pars$rho
     SR_mat[random_rec_year_period,,"intercept"] <- recruit_intercept # future intercept
 
@@ -1209,7 +1225,7 @@ set_SR_mat <- function(res_vpa=NULL,
     # intercept=release fish
     SR_mat[recruit_range,,"deviance"] <- SR_mat[recruit_range,,"rand_resid"] <-
         log(SR_mat[recruit_range,,"recruit"]-SR_mat[recruit_range,,"intercept"]) -
-        log(SRF(SR_mat[ssb_range,,"ssb"],SR_mat[recruit_range,,"a"],SR_mat[recruit_range,,"b"]))
+        log(SRF(SR_mat[ssb_range,,"ssb"],SR_mat[recruit_range,,"a"],SR_mat[recruit_range,,"b"],SR_mat[recruit_range,,"gamma"]))
 
       # define future recruitment deviation
       set.seed(seed_number)
@@ -1286,13 +1302,19 @@ set_SR_mat <- function(res_vpa=NULL,
 }
 
 #' @export
-SRF_HS <- function(x,a,b) ifelse(x>b,b*a,x*a)
+SRF_HS <- function(x,a,b,gamma) ifelse(x>b,b*a,x*a)
 
 #' @export
-SRF_BH <- function(x,a,b) a*x/(1+b*x)
+SRF_BH <- function(x,a,b,gamma) a*x/(1+b*x)
 
 #' @export
-SRF_RI <- function(x,a,b) a*x*exp(-b*x)
+SRF_RI <- function(x,a,b,gamma) a*x*exp(-b*x)
+
+#' @export
+SRF_SH <- function(x,a,b,gamma) a*x/(1+(b*x)^gamma)
+
+#' @export
+SRF_CU <- function(x,a,b,gamma) a*x^b
 
 #'
 #' 将来予測用の三次元行列（年齢×年×シミュレーション）を与えられたら, pars.yearで指定された期間のパラメータを平均するか、parで指定されたパラメータを、year_replace_future以降の年で置き換える

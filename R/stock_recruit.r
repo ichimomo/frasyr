@@ -146,7 +146,7 @@ validate_sr <- function(SR = NULL, method = NULL, AR = NULL, out.AR = NULL, res_
   if (!is.null(SR)) {
     assertthat::assert_that(
       length(SR) == 1,
-      SR %in% c("HS", "BH", "RI","Mesnil")
+      SR %in% c("HS", "BH", "RI","Mesnil", "Shepherd", "Cushing")
     )
   }
   if (!is.null(method)) {
@@ -263,6 +263,8 @@ fit.SR <- function(SRdata,
   if (SR=="BH") SRF <- function(x,a,b) a*x/(1+b*x)
   if (SR=="RI") SRF <- function(x,a,b) a*x*exp(-b*x)
   if (SR=="Mesnil") SRF <- function(x,a,b) 0.5*a*(x+sqrt(b^2+gamma^2/4)-sqrt((x-b)^2+gamma^2/4))
+  if (SR=="Shepherd") SRF <- function(x,a,b) a*x/(1+(b*x)^gamma)
+  if (SR=="Cushing") SRF <- function(x,a,b) a*x^b
 
   if (length(SRdata$R) != length(w)) stop("The length of 'w' is not appropriate!")
 
@@ -1112,6 +1114,8 @@ fit.SRregime <- function(
   if (SR=="BH") SRF <- function(x,a,b) a*x/(1+b*x)
   if (SR=="RI") SRF <- function(x,a,b) a*x*exp(-b*x)
   if (SR=="Mesnil") SRF <- function(x,a,b) 0.5*a*(x+sqrt(b^2+gamma^2/4)-sqrt((x-b)^2+gamma^2/4))
+  if (SR=="Shepherd") SRF <- function(x,a,b) a*x/(1+(b*x)^gamma)
+  if (SR=="Cushing") SRF <- function(x,a,b) a*x^b
 
   obj.f <- function(a,b,out="nll"){ #a,bはベクトル
     resid <- NULL

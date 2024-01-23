@@ -542,7 +542,7 @@ test_that("set_SR_mat with sample data", {
                                       "recruit","ssb",
                                       "intercept","sd",#9-10
                                       "bias_factor", #11
-                                      "blank2","blank3","blank4","blank5")))
+                                      "gamma","blank3","blank4","blank5")))
   SR_mat[, , "deviance"]
 
   # set_SR_matを用いて、加入のdeviationを計算しSR_matに格納する。

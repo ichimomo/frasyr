@@ -138,5 +138,38 @@ test_that("output value check",{
   res_spec_Mesnil<-specify.Mesnil.gamma(res_sr_MesnilL1)
   expect_equal(res_spec_Mesnil$gamma,2)
   }
-)
+  )
+
+test_that("Add Shaefer and Cusing",{
+
+  data("res_vpa")
+  SRdata=get.SRdata(res_vpa)
+  
+  if(0){ # まだ実装されていないが将来的にはこのようにしたい
+      res_sr_SH <- fit.SR(SRdata,SR="SH",method = "L1",AR=0,out.AR = F)
+      res_sr_CU <- fit.SR(SRdata,SR="CU",method = "L1",AR=0,out.AR = F)
+
+      expect_equal(all(c("a","b","sd","rho","gamma") %in% names(res_sr_SH$pars)),TRUE)
+      expect_equal(all(c("a","b","sd","rho") %in% names(res_sr_CU)),TRUE)      
+  }
+
+  # non-regime for test
+  res_sr_SH <- fit.SR(SRdata,SR="Shepherd",method = "L2",AR=0,out.AR = F, gamma=1)
+  res_sr_BH <- fit.SR(SRdata,SR="BH"      ,method = "L2",AR=0,out.AR = F)
+  expect_equal(res_sr_BH$pars, res_sr_SH$pars)
+
+  # non-regime
+  res_sr_SH <- fit.SR(SRdata,SR="Shepherd",method = "L2",AR=0,out.AR = F, gamma=0.51)  
+  res_sr_CU <- fit.SR(SRdata,SR="Cushing" ,method = "L2",AR=0,out.AR = F)
+
+  # regime
+  res_sr_SHr <- fit.SRregime(SRdata,SR="Shepherd",method = "L2", gamma=0.72, regime.year=2000)
+  res_sr_CUr <- fit.SRregime(SRdata,SR="Cushing" ,method = "L2", regime.year=2000)
+
+  gg <- plot_SRregime(res_sr_SHr)
+  gg <- plot_SRregime(res_sr_CUr)
+  # テストにはなっていないが、empty testと言われないために
+  expect_equal(class(gg)[1],"gg")
+})
+
 

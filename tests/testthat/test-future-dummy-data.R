@@ -435,4 +435,124 @@ test_that("future_vpa function (with dummy vpa data) for regime shift (level 2-3
 
 })
 
+test_that("future_vpa function (with dummy vpa data) for regime shift & shepherd ",{
 
+  res_sr_list <- list()
+  data(res_vpa)
+  res_sr_list[[1]] <- fit.SRregime(get.SRdata(res_vpa),
+                                   SR="Shepherd",method="L2",regime.key=c(0,1),
+                                   regime.par=c("a","b","sd"),regime.year=2005,gamma=0.5)
+  res_sr_list[[1]]$regime_pars$sd[2] <- 0
+  
+  res_sr_list[[2]] <- fit.SRregime(get.SRdata(res_vpa),
+                                   SR="Cushing",method="L2",regime.key=c(0,1),
+                                   regime.par=c("a","b","sd"),regime.year=2005)
+  res_sr_list[[2]]$regime_pars$sd[2] <- 0
+
+ 
+  res_sr_list[[3]] <- fit.SRregime(get.SRdata(res_vpa),
+                                   SR="BH",method="L2",regime.key=c(0,1),
+                                   regime.par=c("a","b","sd"),regime.year=2005)
+
+  res_sr_list[[4]] <- fit.SRregime(get.SRdata(res_vpa),
+                                   SR="Shepherd",method="L2",regime.key=c(0,1),
+                                   regime.par=c("a","b","sd"),regime.year=2005,gamma=1,
+                                   p0=as.numeric(unlist(t(res_sr_list[[3]]$regime_pars[c("a","b")]))))  
+
+  expect_equal(mean(unlist(res_sr_list[[3]]$regime_pars[c("a","b","sd")]/res_sr_list[[4]]$regime_pars[c("a","b","sd")])),
+               1,tol=0.0001)
+  res_sr_list[[3]]$regime_pars$sd[2] <- 0  
+  res_sr_list[[4]]$regime_pars$sd[2] <- 0  
+  
+  # future projection with dummy data ----
+  max_vpa_year <- max(as.numeric(colnames(res_vpa$naa)))
+  bio_year <- rev(as.numeric(colnames(res_vpa$naa)))[1:3]
+  Fvalue <- 0.1
+  data_future_test <-
+    make_future_data(res_vpa,
+                     nsim = 10,
+                     nyear = 20,
+                     future_initial_year_name = max_vpa_year, 
+                     start_F_year_name = max_vpa_year+1, 
+                     start_biopar_year_name=max_vpa_year+1, 
+                     start_random_rec_year_name = max_vpa_year+1, 
+                     # biopar setting
+                     waa_year=bio_year, waa=NULL, 
+                     waa_catch_year=bio_year, waa_catch=NULL,
+                     maa_year=bio_year, maa=NULL,
+                     M_year=bio_year, M=NULL,
+                     # faa setting
+                     faa_year=2015:2017, 
+                     currentF=rep(Fvalue,4),futureF=rep(Fvalue,4), 
+                     # HCR setting (not work when using TMB)
+                     start_ABC_year_name=max_vpa_year+2, # HCRを適用する最初の年
+                     HCR_beta=1, # HCRのbeta
+                     HCR_Blimit=-1, # HCRのBlimit
+                     HCR_Bban=-1, # HCRのBban
+                     HCR_year_lag=0, # HCRで何年遅れにするか
+                     # SR setting
+                     res_SR=res_sr_list[[1]], # 将来予測に使いたい再生産関係の推定結果が入っているfit.SRの返り値
+                     seed_number=1,
+                     resid_type="lognormal", # 加入の誤差分布（"lognormal": 対数正規分布、"resample": 残差リサンプリング）
+                     resample_year_range=0, # リサンプリングの場合、残差をリサンプリングする年の範囲
+                     bias_correction=TRUE, # バイアス補正をするかどうか
+                     recruit_intercept=0, # 移入や放流などで一定の加入がある場合に足す加入尾数
+                     # Other
+                     Pope=res_vpa$input$Pope,
+                     fix_recruit=NULL,
+                     fix_wcatch=NULL,regime_shift_option=list(future_regime=1)
+                     )
+
+
+  # simple
+  res_future_F0.1 <- future_vpa(tmb_data=data_future_test$data,
+                                optim_method="none",
+                                multi_init = 1)
+  pars <- res_sr_list[[1]]$regime_pars
+  # SSB -> SRF_SH -> recruitment
+  pred_rec <- res_future_F0.1$summary %>% dplyr::filter(year>max_vpa_year) %>% select(SSB) %>%
+      SRF_SH(a=pars$a[2], b=pars$b[2], gamma=res_sr_list[[1]]$input$gamma) %>% unlist() %>%
+      as.numeric()
+  # calculated recruitment
+  cacl_rec <- res_future_F0.1$summary %>% dplyr::filter(year>max_vpa_year) %>% select(recruit) %>% unlist() %>% as.numeric()
+  expect_equal(cacl_rec, pred_rec)  
+
+  # Cushing
+  data_future_test2 <- data_future_test
+  data_future_test2 <- safe_call(make_future_data,
+                                 list_modify(data_future_test2$input,res_SR=res_sr_list[[2]]))
+  res_future_F2 <- future_vpa(tmb_data=data_future_test2$data,
+                              optim_method="none",
+                              multi_init = 1)
+  pars <- res_sr_list[[2]]$regime_pars
+  # SSB -> SRF_SH -> recruitment
+  pred_rec <- res_future_F2$summary %>% dplyr::filter(year>max_vpa_year) %>% select(SSB) %>%
+      SRF_CU(a=pars$a[2], b=pars$b[2]) %>% unlist() %>%
+      as.numeric()
+  # calculated recruitment
+  calc_rec <- res_future_F2$summary %>% dplyr::filter(year>max_vpa_year) %>% select(recruit) %>% unlist() %>% as.numeric()
+  expect_equal(calc_rec, pred_rec)  
+  
+  # simple, MSY
+  res_future_MSY <- future_vpa(tmb_data=data_future_test$data,
+                               optim_method="R", objective ="MSY",
+                               multi_init = 2, multi_lower=0.01)
+
+  # backward resampling
+  res_future_backward <- data_future_test$input %>%
+    list_modify(resid_type="backward", # 加入の誤差分布（"lognormal": 対数正規分布、"resample": 残差リサンプリング）
+                resample_year_range=0, # リサンプリングの場合、残差をリサンプリングする年の範囲
+                backward_duration=5) %>%
+    safe_call(make_future_data,.) %>%
+      future_vpa(tmb_data=.$data, optim_method="none", multi_init=1)
+
+  # 結果の数値チェックはまだない
+
+  MSY_BH <- redo_future(data_future_test, list(res_SR=res_sr_list[[3]]), only_data=TRUE) %>%
+      est_MSYRP()
+  MSY_SH <- redo_future(data_future_test, list(res_SR=res_sr_list[[4]]), only_data=TRUE) %>%
+      est_MSYRP()  
+  expect_equal(MSY_BH$summary$SSB/MSY_SH$summary$SSB, c(1,1,1,1),tol=0.001)
+
+
+})
