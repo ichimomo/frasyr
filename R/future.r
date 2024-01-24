@@ -116,6 +116,7 @@ make_future_data <- function(res_vpa,
                              # SR setting
                              res_SR=NULL,
                              seed_number=1,
+                             scale_ssb=1,
                              resid_type="lognormal", # or resample or backward
                              bias_correction=TRUE,
                              resample_year_range=NA, # only when "resample" or backward
@@ -338,6 +339,7 @@ make_future_data <- function(res_vpa,
                    recruit_age = recruit_age,
                    max_exploitation_rate=max_exploitation_rate,
                    max_F=max_F,
+                   scale_ssb=scale_ssb,
                    HCR_mat = HCR_mat,
                    obj_stat = 0, # 0: mean, 1:geomean
                    objective = 0, # 0: MSY, 1: PGY, 2: percentB0 or Bempirical
