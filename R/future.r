@@ -647,6 +647,7 @@ future_vpa_R <- function(naa_mat,
                          objective,
                          obj_value,
                          x,
+                         scale_ssb=1,
                          what_return="obj",
                          HCR_mat,
                          HCR_function_name,
@@ -751,7 +752,7 @@ future_vpa_R <- function(naa_mat,
                                               a=SR_mat[t,,"a"],b=SR_mat[t,,"b"],gamma=SR_mat[t,,"gamma"]),
                                        function(x,ssb,a,b,gamma){
                                          fun <- list(SRF_HS,SRF_BH,SRF_RI,SRF_SH,SRF_CU,SRF_BHS)[[x]];
-                                         fun(ssb,a,b,gamma)
+                                         fun(ssb,a,b,gamma,scale_ssb)
                                        })
         N_mat[1,t,] <- N_mat[1,t,]*exp(SR_mat[t,,"deviance"]) + SR_mat[t,,"intercept"]
       }else{
@@ -1306,23 +1307,23 @@ set_SR_mat <- function(res_vpa=NULL,
 }
 
 #' @export
-SRF_HS <- function(x,a,b,gamma) ifelse(x>b,b*a,x*a)
+SRF_HS <- function(x,a,b,gamma,scale_ssb) ifelse(x/scale_ssb>b,b*a,x*a/scale_ssb)
 
 #' @export
-SRF_BH <- function(x,a,b,gamma) a*x/(1+b*x)
+SRF_BH <- function(x,a,b,gamma,scale_ssb) a*(x/scale_ssb)/(1+b*x/scale_ssb)
 
 #' @export
-SRF_RI <- function(x,a,b,gamma) a*x*exp(-b*x)
+SRF_RI <- function(x,a,b,gamma,scale_ssb) a*x/scale_ssb*exp(-b*x/scale_ssb)
 
 #' @export
-SRF_SH <- function(x,a,b,gamma) a*x/(1+(b*x)^gamma)
+SRF_SH <- function(x,a,b,gamma,scale_ssb) a*(x/scale_ssb)/(1+(b*x/scale_ssb)^gamma)
 
 #' @export
-SRF_CU <- function(x,a,b,gamma) a*x^b
+SRF_CU <- function(x,a,b,gamma,scale_ssb) a*(x/scale_ssb)^b
 
 #' @export
-SRF_BHS <- function(x,a,b,gamma){
-    res <- ifelse(x<b, a*b*(x/b)^{1-(x/b)^gamma}, a*b)
+SRF_BHS <- function(x,a,b,gamma,scale_ssb){
+    res <- ifelse(x/scale_ssb < b, a*b*((x/scale_ssb)/b)^{1-((x/scale_ssb)/b)^gamma}, a*b)
     return(res)    
 }
 
