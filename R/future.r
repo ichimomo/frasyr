@@ -751,7 +751,7 @@ future_vpa_R <- function(naa_mat,
       if(all(N_mat[1,t,]==0)){
         N_mat[1,t,] <- purrr::pmap_dbl(tibble(x=SR_mat[t,,"SR_type"],
                                               ssb=spawner_mat[spawn_t,],
-                                              a=SR_mat[t,,"a"],b=SR_mat[t,,"b"],gamma=SR_mat[t,,"gamma"]),
+                                              a=SR_mat[t,,"a"],b=SR_mat[t,,"b"],gamma=SR_mat[t,,"gamma"],scale_ssb=scale_ssb),
                                        function(x,ssb,a,b,gamma){
                                          fun <- list(SRF_HS,SRF_BH,SRF_RI,SRF_SH,SRF_CU,SRF_BHS)[[x]];
                                          fun(ssb,a,b,gamma,scale_ssb)
