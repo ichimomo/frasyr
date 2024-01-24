@@ -1322,8 +1322,7 @@ SRF_CU <- function(x,a,b,gamma) a*x^b
 
 #' @export
 SRF_BHS <- function(x,a,b,gamma){
-    if(x<b) res <- a*b*(x/b)^{1-(x/b)^gamma}
-    else res <- a*b
+    res <- ifelse(x<b, a*b*(x/b)^{1-(x/b)^gamma}, a*b)
     return(res)    
 }
 
