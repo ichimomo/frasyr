@@ -753,7 +753,7 @@ future_vpa_R <- function(naa_mat,
         N_mat[1,t,] <- purrr::pmap_dbl(tibble(x=SR_mat[t,,"SR_type"],
                                               ssb=spawner_mat[spawn_t,],
                                               a=SR_mat[t,,"a"],b=SR_mat[t,,"b"],gamma=SR_mat[t,,"gamma"],scale_ssb=scale_ssb),
-                                       function(x,ssb,a,b,gamma){
+                                       function(x,ssb,a,b,gamma,scale_ssb){
                                          fun <- list(SRF_HS,SRF_BH,SRF_RI,SRF_SH,SRF_CU,SRF_BHS)[[x]];
                                          fun(ssb,a,b,gamma,scale_ssb)
                                        })
@@ -765,10 +765,10 @@ future_vpa_R <- function(naa_mat,
         if(!all(N_mat[1,t,]==0) && all(SR_mat[t-1,,"rho"]>0)){
           rec_predict <- purrr::pmap_dbl(tibble(x=SR_mat[t,,"SR_type"],
                                               ssb=spawner_mat[spawn_t,],
-                                              a=SR_mat[t,,"a"],b=SR_mat[t,,"b"],gamma=SR_mat[t,,"gamma"]),
-                                         function(x,ssb,a,b,gamma){
+                                              a=SR_mat[t,,"a"],b=SR_mat[t,,"b"],gamma=SR_mat[t,,"gamma"],scale_ssb=scale_ssb),
+                                         function(x,ssb,a,b,gamma,scale_ssb){
                                            fun <- list(SRF_HS,SRF_BH,SRF_RI,SRF_SH,SRF_CU)[[x]];
-                                           fun(ssb,a,b,gamma)
+                                           fun(ssb,a,b,gamma,scale_ssb)
                                          })
           new_deviance <- log(N_mat[1,t,]) - log(rec_predict)
           SR_mat[t,,"deviance"] <- new_deviance
