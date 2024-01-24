@@ -750,7 +750,7 @@ future_vpa_R <- function(naa_mat,
                                               ssb=spawner_mat[spawn_t,],
                                               a=SR_mat[t,,"a"],b=SR_mat[t,,"b"],gamma=SR_mat[t,,"gamma"]),
                                        function(x,ssb,a,b,gamma){
-                                         fun <- list(SRF_HS,SRF_BH,SRF_RI,SRF_SH,SRF_CU)[[x]];
+                                         fun <- list(SRF_HS,SRF_BH,SRF_RI,SRF_SH,SRF_CU,SRF_BHS)[[x]];
                                          fun(ssb,a,b,gamma)
                                        })
         N_mat[1,t,] <- N_mat[1,t,]*exp(SR_mat[t,,"deviance"]) + SR_mat[t,,"intercept"]
@@ -1121,7 +1121,11 @@ set_SR_mat <- function(res_vpa=NULL,
     if(res_SR$input$SR=="Cushing" | res_SR$input$SR=="CU"){
       SR_mat[,,"SR_type"] <- 5
       SRF <- SRF_CU
-    }      
+    }
+    if(res_SR$input$SR=="BHS"){
+      SR_mat[,,"SR_type"] <- 6
+      SRF <- SRF_BHS
+    }            
 
     # define SR parameter
     if(is.null(regime_shift_option)){ # when no-regime shift
@@ -1156,7 +1160,7 @@ set_SR_mat <- function(res_vpa=NULL,
 
     # set gamma parameter (暫定. regimeありでもなしでも同じgammaがinput$gammaで与えられている場合の特殊ケース)
     SR_mat[,,"gamma"] <- ifelse(!is.null(res_SR$input$gamma), res_SR$input$gamma, NA)
-    if(res_SR$input$SR!="Shepherd"&&res_SR$input$SR!="SH") SR_mat[,,"gamma"] <- NA
+#    if(res_SR$input$SR!="Shepherd"&&res_SR$input$SR!="SH") SR_mat[,,"gamma"] <- NA
       
     SR_mat[,,"rho"] <- res_SR$pars$rho
     SR_mat[random_rec_year_period,,"intercept"] <- recruit_intercept # future intercept
@@ -1315,6 +1319,13 @@ SRF_SH <- function(x,a,b,gamma) a*x/(1+(b*x)^gamma)
 
 #' @export
 SRF_CU <- function(x,a,b,gamma) a*x^b
+
+#' @export
+SRF_BHS <- function(x,a,b,gamma){
+    if(x<b) res <- a*b*(x/b)^{1-(x/b)^gamma}
+    else res <- a*b
+    return(res)    
+}
 
 #'
 #' 将来予測用の三次元行列（年齢×年×シミュレーション）を与えられたら, pars.yearで指定された期間のパラメータを平均するか、parで指定されたパラメータを、year_replace_future以降の年で置き換える

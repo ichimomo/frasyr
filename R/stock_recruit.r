@@ -146,7 +146,7 @@ validate_sr <- function(SR = NULL, method = NULL, AR = NULL, out.AR = NULL, res_
   if (!is.null(SR)) {
     assertthat::assert_that(
       length(SR) == 1,
-      SR %in% c("HS", "BH", "RI","Mesnil", "Shepherd", "Cushing")
+      SR %in% c("HS", "BH", "RI","Mesnil", "Shepherd", "Cushing","BHS")
     )
   }
   if (!is.null(method)) {
@@ -265,6 +265,7 @@ fit.SR <- function(SRdata,
   if (SR=="Mesnil") SRF <- function(x,a,b) 0.5*a*(x+sqrt(b^2+gamma^2/4)-sqrt((x-b)^2+gamma^2/4))
   if (SR=="Shepherd") SRF <- function(x,a,b) a*x/(1+(b*x)^gamma)
   if (SR=="Cushing") SRF <- function(x,a,b) a*x^b
+  if (SR=="BHS") SRF <- function(x,a,b) ifelse(x<b, a*b*(x/b)^{1-(x/b)^gamma}, a*b)
 
   if (length(SRdata$R) != length(w)) stop("The length of 'w' is not appropriate!")
 
@@ -365,20 +366,20 @@ fit.SR <- function(SRdata,
       if (is.null(p0)) {
     a.range <- range(rec/ssb)
     b.range <- range(1/ssb)
-    if (SR == "HS" | SR=="Mesnil") b.range <- range(ssb)
+    if (SR == "HS" | SR=="Mesnil" | SR=="BHS") b.range <- range(ssb)
     grids <- as.matrix(expand.grid(
       seq(a.range[1],a.range[2],len=length),
       seq(b.range[1],b.range[2],len=length)
     ))
     init <- as.numeric(grids[which.min(sapply(1:nrow(grids),function(i) obj.f(grids[i,1],grids[i,2],0))),])
     init[1] <- log(init[1])
-    init[2] <- ifelse (SR == "HS" | SR =="Mesnil",-log(max(0.000001,(max(ssb)-min(ssb))/max(init[2]-min(ssb),0.000001)-1)),log(init[2]))
+    init[2] <- ifelse (SR == "HS" | SR =="Mesnil" | SR=="BHS",-log(max(0.000001,(max(ssb)-min(ssb))/max(init[2]-min(ssb),0.000001)-1)),log(init[2]))
     if (AR != 0 && !isTRUE(out.AR)) init[3] <- 0
   } else {
     init = p0
   }
 
-  if (SR == "HS" | SR == "Mesnil") {
+  if (SR == "HS" | SR == "Mesnil" | SR=="BHS") {
       if (AR == 0 || out.AR) {
         obj.f2 <- function(x) obj.f(exp(x[1]),min(ssb)+(max(ssb)-min(ssb))/(1+exp(-x[2])),0)
       } else {

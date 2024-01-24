@@ -356,6 +356,12 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
   if (SR_result$input$SR=="Mesnil") SRF <- function(SSB,a,b,gamma) (0.5*a*(SSB*xscale+sqrt(b^2+gamma^2/4)-sqrt((SSB*xscale-b)^2+gamma^2/4))+recruit_intercept)/yscale
   if (SR_result$input$SR=="Shepherd") SRF <- function(SSB,a,b,gamma,recruit_intercept=0) (a*SSB*xscale/(1+(b*SSB*xscale)^gamma)+recruit_intercept)/yscale
   if (SR_result$input$SR=="Cushing") SRF <- function(SSB,a,b,recruit_intercept=0) (a*(SSB*xscale)^b+recruit_intercept)/yscale
+  if (SR_result$input$SR=="BHS") SRF <- function(SSB,a,b,gamma){
+    SSB <- SSB*xscale
+    res <- ifelse(SSB < b, a*b*(SSB/b)^{1-(SSB/b)^gamma}, a*b)
+    return(res/yscale)    
+}
+
 
   SRF_CI <- function(CI,sigma,sign,...){
     exp(log(SRF(...))+qnorm(1-(1-CI)/2)*sigma*sign)
@@ -395,7 +401,7 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
   if(is.null(labeling.year)) labeling.year <- c(tmp[tmp%%5==0],year.max)
     alldata <- alldata %>% mutate(pick.year=ifelse(year%in%labeling.year,year,""))
 
-  use_gamma <- SR_result$input$SR %in% c("Mesnil", "Shepherd")
+  use_gamma <- SR_result$input$SR %in% c("Mesnil", "Shepherd", "BHS")
 
   if(!use_gamma){
     g1 <- ggplot(data=alldata,mapping=aes(x=SSB,y=R)) +
