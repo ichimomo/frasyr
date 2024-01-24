@@ -438,7 +438,8 @@ test_that("future_vpa function (with dummy vpa data) for regime shift (level 2-3
 test_that("future_vpa function (with dummy vpa data) for regime shift & shepherd ",{
 
   res_sr_list <- list()
-  data(res_vpa)
+  data(res_vpa_example)
+  res_vpa <- res_vpa_example
   res_sr_list[[1]] <- fit.SRregime(get.SRdata(res_vpa),
                                    SR="Shepherd",method="L2",regime.key=c(0,1),
                                    regime.par=c("a","b","sd"),regime.year=2005,gamma=0.5)
@@ -541,7 +542,7 @@ test_that("future_vpa function (with dummy vpa data) for regime shift & shepherd
   # backward resampling
   res_future_backward <- data_future_test$input %>%
     list_modify(resid_type="backward", # 加入の誤差分布（"lognormal": 対数正規分布、"resample": 残差リサンプリング）
-                resample_year_range=0, # リサンプリングの場合、残差をリサンプリングする年の範囲
+                resample_year_range=1988:2017, # リサンプリングの場合、残差をリサンプリングする年の範囲
                 backward_duration=5) %>%
     safe_call(make_future_data,.) %>%
       future_vpa(tmb_data=.$data, optim_method="none", multi_init=1)
