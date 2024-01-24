@@ -248,6 +248,7 @@ make_future_data <- function(res_vpa,
                        recruit_age=recruit_age,
                        setting_release=setting_release,
                        backward_duration=backward_duration,
+                       scale_ssb=scale_ssb,
                        model_average_option=model_average_option,
                        regime_shift_option=regime_shift_option,
                        fix_recruit=fix_recruit)
@@ -858,6 +859,7 @@ future_vpa_R <- function(naa_mat,
                      seed_number=MSE_seed,
                      start_random_rec_year_name = dimnames(naa_mat)[[2]][t-1],
                      recruit_age = recruit_age,
+                     scale_ssb=scale_ssb,
                      resid_type                 = MSE_input_data$input$resid_type,
                      resample_year_range        = dimnames(naa_mat)[[2]][1]:dimnames(naa_mat)[[2]][t-2],
                      backward_duration          = MSE_input_data$input$backward_duration,
@@ -1072,6 +1074,7 @@ set_SR_mat <- function(res_vpa=NULL,
                        recruit_intercept=0,
                        setting_release=NULL,
                        recruit_age=0,
+                       scale_ssb=1,
                        model_average_option=NULL,
                        regime_shift_option=NULL,
                        fix_recruit=NULL
@@ -1232,7 +1235,7 @@ set_SR_mat <- function(res_vpa=NULL,
     # intercept=release fish
     SR_mat[recruit_range,,"deviance"] <- SR_mat[recruit_range,,"rand_resid"] <-
         log(SR_mat[recruit_range,,"recruit"]-SR_mat[recruit_range,,"intercept"]) -
-        log(SRF(SR_mat[ssb_range,,"ssb"],SR_mat[recruit_range,,"a"],SR_mat[recruit_range,,"b"],SR_mat[recruit_range,,"gamma"]))
+        log(SRF(SR_mat[ssb_range,,"ssb"],SR_mat[recruit_range,,"a"],SR_mat[recruit_range,,"b"],SR_mat[recruit_range,,"gamma"],scale_ssb))
 
       # define future recruitment deviation
       set.seed(seed_number)
