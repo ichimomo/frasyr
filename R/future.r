@@ -117,6 +117,7 @@ make_future_data <- function(res_vpa,
                              res_SR=NULL,
                              seed_number=1,
                              scale_ssb=1,
+                             scale_R=1,                             
                              resid_type="lognormal", # or resample or backward
                              bias_correction=TRUE,
                              resample_year_range=NA, # only when "resample" or backward
@@ -249,6 +250,7 @@ make_future_data <- function(res_vpa,
                        setting_release=setting_release,
                        backward_duration=backward_duration,
                        scale_ssb=scale_ssb,
+                       scale_R  =scale_R,
                        model_average_option=model_average_option,
                        regime_shift_option=regime_shift_option,
                        fix_recruit=fix_recruit)
@@ -341,6 +343,7 @@ make_future_data <- function(res_vpa,
                    max_exploitation_rate=max_exploitation_rate,
                    max_F=max_F,
                    scale_ssb=scale_ssb,
+                   scale_R  =scale_R,                   
                    HCR_mat = HCR_mat,
                    obj_stat = 0, # 0: mean, 1:geomean
                    objective = 0, # 0: MSY, 1: PGY, 2: percentB0 or Bempirical
@@ -651,6 +654,7 @@ future_vpa_R <- function(naa_mat,
                          obj_value,
                          x,
                          scale_ssb=1,
+                         scale_R=1,
                          what_return="obj",
                          HCR_mat,
                          HCR_function_name,
@@ -751,12 +755,12 @@ future_vpa_R <- function(naa_mat,
       # 加入を再生産関係からの予測値とする場合
       if(all(N_mat[1,t,]==0)){
         N_mat[1,t,] <- purrr::pmap_dbl(tibble(x=SR_mat[t,,"SR_type"],
-                                              ssb=spawner_mat[spawn_t,],
-                                              a=SR_mat[t,,"a"],b=SR_mat[t,,"b"],gamma=SR_mat[t,,"gamma"],scale_ssb=scale_ssb),
-                                       function(x,ssb,a,b,gamma,scale_ssb){
+                                              ssb=spawner_mat[spawn_t,]*scale_ssb,
+                                              a=SR_mat[t,,"a"],b=SR_mat[t,,"b"],gamma=SR_mat[t,,"gamma"]),
+                                       function(x,ssb,a,b,gamma){
                                          fun <- list(SRF_HS,SRF_BH,SRF_RI,SRF_SH,SRF_CU,SRF_BHS)[[x]];
-                                         fun(ssb,a,b,gamma,scale_ssb)
-                                       })
+                                         fun(ssb,a,b,gamma)
+                                       })*scale_R
         N_mat[1,t,] <- N_mat[1,t,]*exp(SR_mat[t,,"deviance"]) + SR_mat[t,,"intercept"]
       }else{
         # fix_recruitですでに加入尾数が入っていて、自己相関ありの場合
@@ -764,12 +768,12 @@ future_vpa_R <- function(naa_mat,
         # 残差を計算しなおす必要がある -> new_deviance
         if(!all(N_mat[1,t,]==0) && all(SR_mat[t-1,,"rho"]>0)){
           rec_predict <- purrr::pmap_dbl(tibble(x=SR_mat[t,,"SR_type"],
-                                              ssb=spawner_mat[spawn_t,],
-                                              a=SR_mat[t,,"a"],b=SR_mat[t,,"b"],gamma=SR_mat[t,,"gamma"],scale_ssb=scale_ssb),
-                                         function(x,ssb,a,b,gamma,scale_ssb){
+                                              ssb=spawner_mat[spawn_t,]*scale_ssb,
+                                              a=SR_mat[t,,"a"],b=SR_mat[t,,"b"],gamma=SR_mat[t,,"gamma"]),
+                                         function(x,ssb,a,b,gamma){
                                            fun <- list(SRF_HS,SRF_BH,SRF_RI,SRF_SH,SRF_CU)[[x]];
-                                           fun(ssb,a,b,gamma,scale_ssb)
-                                         })
+                                           fun(ssb,a,b,gamma)
+                                         })*scale_R
           new_deviance <- log(N_mat[1,t,]) - log(rec_predict)
           SR_mat[t,,"deviance"] <- new_deviance
 
@@ -860,6 +864,7 @@ future_vpa_R <- function(naa_mat,
                      start_random_rec_year_name = dimnames(naa_mat)[[2]][t-1],
                      recruit_age = recruit_age,
                      scale_ssb=scale_ssb,
+                     scale_R  =scale_R,                     
                      resid_type                 = MSE_input_data$input$resid_type,
                      resample_year_range        = dimnames(naa_mat)[[2]][1]:dimnames(naa_mat)[[2]][t-2],
                      backward_duration          = MSE_input_data$input$backward_duration,
@@ -1075,6 +1080,7 @@ set_SR_mat <- function(res_vpa=NULL,
                        setting_release=NULL,
                        recruit_age=0,
                        scale_ssb=1,
+                       scale_R=1,                       
                        model_average_option=NULL,
                        regime_shift_option=NULL,
                        fix_recruit=NULL
@@ -1235,7 +1241,7 @@ set_SR_mat <- function(res_vpa=NULL,
     # intercept=release fish
     SR_mat[recruit_range,,"deviance"] <- SR_mat[recruit_range,,"rand_resid"] <-
         log(SR_mat[recruit_range,,"recruit"]-SR_mat[recruit_range,,"intercept"]) -
-        log(SRF(SR_mat[ssb_range,,"ssb"],SR_mat[recruit_range,,"a"],SR_mat[recruit_range,,"b"],SR_mat[recruit_range,,"gamma"],scale_ssb))
+        log(scale_R*SRF(SR_mat[ssb_range,,"ssb"]*scale_ssb,SR_mat[recruit_range,,"a"],SR_mat[recruit_range,,"b"],SR_mat[recruit_range,,"gamma"]))
 
       # define future recruitment deviation
       set.seed(seed_number)
@@ -1312,23 +1318,33 @@ set_SR_mat <- function(res_vpa=NULL,
 }
 
 #' @export
-SRF_HS <- function(x,a,b,gamma,scale_ssb) ifelse(x/scale_ssb>b,b*a,x*a/scale_ssb)
+SRF_HS <- function(x,a,b,gamma){
+    ifelse(x>b,b*a,x*a)
+}
 
 #' @export
-SRF_BH <- function(x,a,b,gamma,scale_ssb) a*(x/scale_ssb)/(1+b*x/scale_ssb)
+SRF_BH <- function(x,a,b,gamma){
+    a*x/(1+b*x)
+}
 
 #' @export
-SRF_RI <- function(x,a,b,gamma,scale_ssb) a*x/scale_ssb*exp(-b*x/scale_ssb)
+SRF_RI <- function(x,a,b,gamma){
+    a*exp(-b*x)
+}
 
 #' @export
-SRF_SH <- function(x,a,b,gamma,scale_ssb) a*(x/scale_ssb)/(1+(b*x/scale_ssb)^gamma)
+SRF_SH <- function(x,a,b,gamma){
+    a*x/(1+(b*x)^gamma)
+}
 
 #' @export
-SRF_CU <- function(x,a,b,gamma,scale_ssb) a*(x/scale_ssb)^b
+SRF_CU <- function(x,a,b,gamma){
+    a*x^b
+}
 
 #' @export
-SRF_BHS <- function(x,a,b,gamma,scale_ssb){
-    res <- ifelse(x/scale_ssb < b, a*b*((x/scale_ssb)/b)^{1-((x/scale_ssb)/b)^gamma}, a*b)
+SRF_BHS <- function(x,a,b,gamma){
+    res <- ifelse(x < b, a*b*(x/b)^{1-((x)/b)^gamma}, a*b)
     return(res)    
 }
 
