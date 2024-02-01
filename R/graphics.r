@@ -867,7 +867,7 @@ plot_futures <- function(vpares=NULL,
     #    require(tidyverse,quietly=TRUE)
 
     rename_list <- tibble(stat=c("Recruitment","SSB","biomass","cbiomass","catch","beta_gamma","U","Fratio"),
-                          jstat=c(str_c("Recruits(",number_name,"fish)"),
+                          jstat=c(str_c("Recruits(",number.name,"fish)"),
                                   str_c("SB (",junit,"MT)"),
                                   str_c("Biomass (",junit,"MT)"),
                                   str_c("cBiomass (",junit,"MT)"),
@@ -1027,20 +1027,20 @@ plot_futures <- function(vpares=NULL,
     xlab("年")+ylab("")+ labs(fill = "",linetype="",color="")+
     xlim(minyear,maxyear)
 
-  if("SSB" %in% what.plot){
+  if("SSB" %in% what.plot && Btarget*Blimit*Bban>0){
     g1 <- g1 + geom_hline(data = ssb_RP,
                           aes(yintercept = value,linetype=RP_name),
 						  color = c(col.SBtarget, col.SBlim, col.SBban))+
 						  scale_linetype_manual(name="",values=c("solid","dashed",unlist(format_type()[1,3])[[1]],unlist(format_type()[1,3])[[1]],unlist(format_type()[3,3])[[1]],unlist(format_type()[2,3])[[1]],unlist(format_type()[1,3])[[1]]))
   }
 
-  if("catch" %in% what.plot){
+  if("catch" %in% what.plot && MSY!=0 ){
     g1 <- g1 + geom_hline(data = catch_RP,
                           aes(yintercept = value, linetype = RP_name),
                           color = c(col.MSY))
   }
 
-  if("U" %in% what.plot){
+  if("U" %in% what.plot && Umsy!=0){
     g1 <- g1 + geom_hline(data = U_RP,
                           aes(yintercept = value, linetype = RP_name),
                           color = c(col.MSY))
@@ -1064,14 +1064,26 @@ plot_futures <- function(vpares=NULL,
     g1 <- g1+scale_alpha_discrete(guide="none")
   }
 
-  caption_string <- str_c("(塗り:", CI_range[1]*100,"-",CI_range[2]*100,
-                         "%予測区間, ",
+  if(!exclude.japanese.font){
+    caption_string <- str_c("(塗り:", CI_range[1]*100,"-",CI_range[2]*100,
+                          "%予測区間, ",
                          ifelse(average_lwd < example_width, "細い", "太い"),
                          "実線: 平均値",
                          dplyr::case_when(n_example>0 & example_width < average_lwd ~ ", 細い実線: シミュレーションの1例)",
                                           n_example>0 & example_width > average_lwd ~ ", 太い実線: シミュレーションの1例)",
                                           n_example>0 & example_width == average_lwd ~ ", 薄い実線: シミュレーションの1例)",
                                           TRUE ~ ")"))
+  }
+  else{
+    caption_string <- str_c("(Fill:", CI_range[1]*100,"-",CI_range[2]*100,
+                          "%prediction interval, ",
+                         ifelse(average_lwd < example_width, "thin", "thick"),
+                         "sold line: average",
+                         dplyr::case_when(n_example>0 & example_width < average_lwd ~ ", thin solid line: an example in the simulation)",
+                                          n_example>0 & example_width > average_lwd ~ ", bold solid line: an example in the simulation)",
+                                          n_example>0 & example_width == average_lwd ~ ", pale solid line: an example in the simulation)",
+                                          TRUE ~ ")"))
+  }
 
   g1 <- g1 + guides(lty=guide_legend(ncol=3),
                     fill=guide_legend(ncol=3),
