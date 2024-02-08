@@ -20,7 +20,8 @@ fit.SR(
   plus_group = TRUE,
   is_jitter = FALSE,
   HS_fix_b = NULL,
-  gamma = 0.01
+  gamma = 0.01,
+  bias_correct = FALSE
 )
 }
 \arguments{

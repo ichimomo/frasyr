@@ -405,7 +405,7 @@ ref.F <- function(
 
     min.age <- min(as.numeric(rownames(res$naa)))
     if(min.age==0) slide.tmp <- TRUE else slide.tmp <- -1:-min.age
-
+   
     if(!is.null(rps.year)){
       rps.data <- data.frame(year=as.numeric(names(colSums(ssb,na.rm=T))),
                              ssb=as.numeric(colSums(ssb,na.rm=T)),
@@ -430,6 +430,11 @@ ref.F <- function(
     }
   }
   if(is.null(res)){ # VPA結果を与えない場合
+
+    if(is.vector(Fcurrent) && is.null(names(Fcurrent))){
+        names(Fcurrent) <- 1:length(Fcurrent)
+    }
+    
     sel <- Fcurrent/max(Fcurrent,na.rm=TRUE)
     na <- length(Fcurrent)
     assertthat::assert_that(length(Fcurrent) == na)

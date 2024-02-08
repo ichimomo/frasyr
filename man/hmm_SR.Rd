@@ -12,13 +12,14 @@ hmm_SR(
   gamma = 0.01,
   b_range = NULL,
   p0 = NULL,
-  overwrite = FALSE
+  overwrite = FALSE,
+  max.ssb.pred = 1.3
 )
 }
 \arguments{
 \item{SRdata}{\code{get.SRdata}で作成した再生産関係データ}
 
-\item{SR}{再生産関係 (\code{"HS"}: Hockey-stick, \code{"BH"}: Beverton-Holt, \code{"RI"}: Ricker, \code{"Mesnil"}: Continuous HS)}
+\item{SR}{再生産関係 (\code{"HS"}: Hockey-stick, \code{"BH"}: Beverton-Holt, \code{"RI"}: Ricker)}
 
 \item{gamma}{\code{SR="Mesnil"}のときに使用するsmoothing parameter}
 

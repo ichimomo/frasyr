@@ -18,6 +18,8 @@ set_SR_mat(
   recruit_intercept = 0,
   setting_release = NULL,
   recruit_age = 0,
+  scale_ssb = 1,
+  scale_R = 1,
   model_average_option = NULL,
   regime_shift_option = NULL,
   fix_recruit = NULL
