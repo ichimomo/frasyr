@@ -56,6 +56,8 @@ make_future_data(
   max_exploitation_rate = 0.99,
   res_SR = NULL,
   seed_number = 1,
+  scale_ssb = 1,
+  scale_R = 1,
   resid_type = "lognormal",
   bias_correction = TRUE,
   resample_year_range = NA,
