@@ -56,6 +56,21 @@ test_that("ref.F (level 2)",{
                                iterlim=1000,plot=TRUE,Pope=FALSE,F.range = seq(from=0,to=2,length=101) )
   testthat::expect_equal(res_ref_independent$summary,res_ref_f_pma_check$summary, tol=0.001)
 
+  # vpa結果を与えない場合 (biological parameterを単純なベクトルで与える)
+  xx <- as.numeric(unlist(res_vpa_pma$Fc.at.age))
+  res_ref_independent <- ref.F(res=NULL,
+                               Fcurrent=xx,
+                               waa=res_vpa_pma$input$dat$waa$"2011",
+                               maa=res_vpa_pma$input$dat$maa$"2011",
+                               M  =res_vpa_pma$input$dat$M$"2011",
+                               waa.catch=res_vpa_pma$input$dat$waa$"2011",
+                               rps.vector=res_vpa_pma$naa[1,]/colSums(res_vpa_pma$ssb),
+                               max.age = Inf,
+                               min.age = 0,
+                               d = 0.001,Fem.init = 0.5,Fmax.init = 1.5,F0.1.init = 0.7,pSPR = seq(10,90,by=10),
+                               iterlim=1000,plot=TRUE,Pope=FALSE,F.range = seq(from=0,to=2,length=101) )
+  
+
   # 同じ機能を持つcalc_Fratioとの整合性をチェック=> ref.Fとcalc_Fratioは同じ機能を提供
   Fratio_test <- purrr::map_dfr((1:4) * 10, function(x)
     calc_Fratio(res_vpa_pma$Fc.at.age,
