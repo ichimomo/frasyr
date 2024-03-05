@@ -1329,7 +1329,7 @@ SRF_BH <- function(x,a,b,gamma){
 
 #' @export
 SRF_RI <- function(x,a,b,gamma){
-    a*exp(-b*x)
+    a*x*exp(-b*x)
 }
 
 #' @export
