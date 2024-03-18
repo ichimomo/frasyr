@@ -1,6 +1,7 @@
 load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
 SRdata_pma_check_weight <- get.SRdata(res_vpa_pma, weight.year=1990:2000)
 
+set.seed(1)
 SRdata_pma_check_weight$R[] <- rnorm(30,log(mean(SRdata_pma_check_weight$R)),0.2) %>% exp()
     
 res_SR1 <- fit.SR(SRdata_pma_check_weight, SR="HS", AR=0, method="L2", bias_correct=FALSE)
