@@ -34,11 +34,7 @@ theme_SH <- function(legend.position="none",base_size=12){
             axis.text.y=element_text(size=11,color="black"),
             axis.line.x=element_line(size= 0.3528),
             axis.line.y=element_line(size= 0.3528),
-            legend.position=legend.position,
-			axis.minor.ticks.length = rel(0.5))
-
-#  }
-
+            legend.position=legend.position)
 }
 
 #' 会議用の図の出力関数（大きさ・サイズの指定済）：通常サイズ
