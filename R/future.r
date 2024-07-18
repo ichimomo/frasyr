@@ -89,6 +89,7 @@ make_future_data <- function(res_vpa,
                              maa_fun = FALSE,
                              start_maafun_year_name = start_biopar_year_name,
                              M_year, M=NULL,
+                             more_process_error=NA, # c(0.3, 0.3, 0.5, ...) for age 1,2,3,...
                              # faa setting
                              faa_year=NULL,
                              currentF=NULL,futureF=NULL,
@@ -183,7 +184,7 @@ make_future_data <- function(res_vpa,
     array(0, dim=c(nage, total_nyear, nsim),
           dimnames=list(age=age_name, year=allyear_name, nsim=1:nsim))
   class(waa_mat) <- class(M_mat) <- class(maa_mat) <- class(naa_mat) <- class(faa_mat) <- class(caa_mat) <- class(waa_catch_mat) <- "myarray"
-  SR_mat <- array(0, dim=c(total_nyear, nsim, 15),
+  SR_mat <- array(0, dim=c(total_nyear, nsim, 15+6),
                   dimnames=list(year=allyear_name, nsim=1:nsim,
                                 par=c("a","b","rho", #1-3
                                       "SR_type", # 4
@@ -194,6 +195,7 @@ make_future_data <- function(res_vpa,
                                       "bias_factor", #11
                                       "gamma", #12 gamma for shepherd
                                       "biomass","cbiomass", # add biomass statistics
+                                      "rand1", "rand2", "rand3", "rand4", "rand5","rand6",
                                       "blank5")))
 
   #HCR_mat <- array(0, dim=c(total_nyear, nsim, 7),
@@ -255,8 +257,9 @@ make_future_data <- function(res_vpa,
                        scale_R  =scale_R,
                        model_average_option=model_average_option,
                        regime_shift_option=regime_shift_option,
-                       fix_recruit=fix_recruit)
-
+                       fix_recruit=fix_recruit,
+                       more_process_error=more_process_error)
+  
   naa_mat[1,,] <- SR_mat[,,"recruit"]
 
   # set F & HCR parameter
@@ -984,9 +987,13 @@ future_vpa_R <- function(naa_mat,
     if(t<total_nyear){
       # forward calculation
       for(iage in 1:(plus_age-1)) {
-        N_mat[iage+1,t+1,] <- N_mat[iage,t,]*exp(-M_mat[iage,t,]-F_mat[iage,t,])
+        N_mat[iage+1,t+1,] <- N_mat[iage,t,]*exp(-M_mat[iage,t,]-F_mat[iage,t,]) *
+          exp(SR_mat[t,,str_c("rand",iage)])
       }
-      if(plus_group == TRUE) N_mat[plus_age,t+1,] <- N_mat[plus_age,t+1,] + N_mat[plus_age,t,]*exp(-M_mat[plus_age,t,]-F_mat[plus_age,t,])
+      if(plus_group == TRUE){
+        N_mat[plus_age,t+1,] <- N_mat[plus_age,t+1,] + N_mat[plus_age,t,]*exp(-M_mat[plus_age,t,]-F_mat[plus_age,t,])
+        N_mat[plus_age,t+1,] <- N_mat[plus_age,t+1,] * exp(SR_mat[t,,str_c("rand",plus_age-1)])
+      }
       # waaとmaaの更新(ここ、不要では？)
       ## if(is_waa_fun)
       ##   waa_mat[,t,]       <- update_waa_mat(t=t,waa=waa_mat,rand=waa_rand_mat,naa=N_mat,
@@ -1098,7 +1105,8 @@ set_SR_mat <- function(res_vpa=NULL,
                        scale_R=1,                       
                        model_average_option=NULL,
                        regime_shift_option=NULL,
-                       fix_recruit=NULL
+                       fix_recruit=NULL,
+                       more_process_error=NA
 ){
 
   nsim <- dim(SR_mat)[[2]]
@@ -1326,6 +1334,16 @@ set_SR_mat <- function(res_vpa=NULL,
         SR_mat[as.character(fix_recruit$year[i]),,"recruit"] <- as.numeric(unlist(fix_recruit$rec[i]))
         
       }
+    }
+  }
+  
+  if(!is.na(more_process_error[1])){
+    for(k in 1:length(more_process_error)){
+      tmp_SR <- t(SR_mat[random_rec_year_period,,str_c("rand",k)])
+      tmp_SR[] <- rnorm(nsim*length(random_rec_year_period),
+                        mean=0,
+                        sd=more_process_error[k])
+      SR_mat[random_rec_year_period,,str_c("rand",k)] <- t(tmp_SR)
     }
   }
 
