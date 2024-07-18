@@ -987,23 +987,12 @@ future_vpa_R <- function(naa_mat,
     if(t<total_nyear){
       # forward calculation
       for(iage in 1:(plus_age-1)) {
-        N_mat[iage+1,t+1,] <- N_mat[iage,t,]*exp(-M_mat[iage,t,]-F_mat[iage,t,]) *
-          exp(SR_mat[t,,str_c("rand",iage)])
+        N_mat[iage+1,t+1,] <- N_mat[iage,t,]*exp(-M_mat[iage,t,]-F_mat[iage,t,]) 
       }
       if(plus_group == TRUE){
         N_mat[plus_age,t+1,] <- N_mat[plus_age,t+1,] + N_mat[plus_age,t,]*exp(-M_mat[plus_age,t,]-F_mat[plus_age,t,])
-        N_mat[plus_age,t+1,] <- N_mat[plus_age,t+1,] * exp(SR_mat[t,,str_c("rand",plus_age-1)])
       }
-      # waaとmaaの更新(ここ、不要では？)
-      ## if(is_waa_fun)
-      ##   waa_mat[,t,]       <- update_waa_mat(t=t,waa=waa_mat,rand=waa_rand_mat,naa=N_mat,
-      ##                                        pars_b0=waa_par_mat[,,"b0"],pars_b1=waa_par_mat[,,"b1"])
-      ## if(is_waa_catch_fun)
-      ##   waa_catch_mat[,t,] <- update_waa_catch_mat(t=t,waa=waa_catch_mat,rand=waa_catch_rand_mat,naa=N_mat,
-      ##                                              pars_b0=waa_catch_par_mat[,,"b0"],pars_b1=waa_catch_par_mat[,,"b1"])    
-      ## if(is_maa_fun) maa_mat[,t,] <- update_maa_mat(maa=maa_mat[,t,],rand=maa_rand_mat[,t,],naa=N_mat[,t,],
-      ##                                               pars_b0=maa_par_mat[,,"b0"],pars_b1=maa_par_mat[,,"b1"],
-      ##                                               min_value=maa_par_mat[,,"min"],max_value=maa_par_mat[,,"max"])
+      N_mat[-1,t+1,] <- N_mat[-1,t+1,]  * t(exp(SR_mat[t,,str_c("rand",(2:plus_age)-1)]))
     }
     HCR_realized[t,,"wcatch"] <- catch_equation(N_mat[,t,],F_mat[,t,],waa_catch_mat[,t,],M_mat[,t,],Pope=Pope) %>% colSums()
   }
@@ -1339,11 +1328,14 @@ set_SR_mat <- function(res_vpa=NULL,
   
   if(!is.na(more_process_error[1])){
     for(k in 1:length(more_process_error)){
-      tmp_SR <- t(SR_mat[random_rec_year_period,,str_c("rand",k)])
-      tmp_SR[] <- rnorm(nsim*length(random_rec_year_period),
+      # 1歳以上のプロセス誤差はランダム加入がおこる１年前の前進計算からかかるようにする
+      # 加入尾数を計算する前に１歳以上の尾数は前進計算により計算されていないといけないためこのような設定になる
+      random_rec_year_period2 <- c(min(random_rec_year_period)-1,random_rec_year_period)
+      tmp_SR <- t(SR_mat[random_rec_year_period2,,str_c("rand",k)])
+      tmp_SR[] <- rnorm(nsim*length(random_rec_year_period2),
                         mean=0,
                         sd=more_process_error[k])
-      SR_mat[random_rec_year_period,,str_c("rand",k)] <- t(tmp_SR)
+      SR_mat[random_rec_year_period2,,str_c("rand",k)] <- t(tmp_SR)
     }
   }
 
