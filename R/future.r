@@ -855,11 +855,12 @@ future_vpa_R <- function(naa_mat,
           MSE_dummy_data$SR_mat[,k,"ssb"]  <- spawner_mat[,i] # true ssb
           MSE_dummy_data$SR_mat[,k,"recruit"]  <- N_mat[1,,i] # true recruit
         }
-        # re-calculate past deviance and produce random residual in future
+        
         if(!is.null(MSE_sd) && MSE_sd==0){
           MSE_input_data$input$res_SR$pars$sd[] <- 0
           if(!is.null(MSE_input_data$input$res_SR$regime_pars)) MSE_input_data$input$res_SR$regime_pars$sd[] <- 0
         }
+        # re-calculate past deviance and produce random residual in future  
         MSE_dummy_data$SR_mat <-
           set_SR_mat(res_vpa   = NULL, # past deviande is calculated by true ssb
                      res_SR    = MSE_input_data$input$res_SR,
@@ -2104,3 +2105,26 @@ est_MSYRP_proxy <- function(data_future,
 
   return(res_MSY)
 }
+
+#' @export 
+
+check_MSE <- function(res_future0, # nonMSE
+                      res_future1, # MSE
+                      ABC_year, i){
+
+    ABC_year1 <- as.character(ABC_year-1)        
+    ABC_year  <- as.character(ABC_year)
+    #
+    wa <- res_future0$wcaa[, ABC_year,i]
+    # 
+    wa0 <- c(wa[1] / exp(res_future0$SR_mat[ABC_year,i,"deviance"]), # age 0 catch 
+             wa[2] / exp(res_future0$SR_mat[ABC_year1,i,"deviance"]), # age 1 catch 
+             wa[3:length(wa)])
+    # 
+    wa3 <- res_future1$wcaa[, ABC_year,i]  # B<Blimitにあって親魚資源量を間違えるとより差が大きくなる
+    xx <- cbind(wa,wa0,wa3)
+    rbind(xx,
+          apply(xx,2,sum))
+          
+}
+

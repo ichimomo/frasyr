@@ -286,30 +286,56 @@ test_that("future_vpa function (yerly change of beta, Blimit and Bban) (level 2)
 
 test_that("check MSE feature",{ # ----
 
-  data_future_test10 <- redo_future(data_future_test,
-                                    list(nsim=10,nyear=10,
-                                         fix_recruit=NULL,fix_wcatch=NULL),
-                                    only_data=TRUE)
-
+  # # 1000回のノーマル将来予測
   data_future_test1000 <- redo_future(data_future_test,
-                                    list(nsim=1000,nyear=10,
-                                         fix_recruit=NULL,fix_wcatch=NULL),
+                                      list(nsim=1000,nyear=10,
+#                                           maa_year=NULL, maa=c(0,0,1,1)
+                                           fix_recruit=NULL,fix_wcatch=NULL),
                                     only_data=TRUE)  
   
-
-  # 1000回のノーマル将来予測
   res_future_noMSE <- future_vpa(tmb_data=data_future_test1000$data,
                            optim_method="none",
                            multi_init = 1,SPRtarget=0.3,
-                           do_MSE=FALSE, MSE_input_data=data_future_test1000)
+                           do_MSE=FALSE, MSE_input_data=data_future_test1000)    
+  # MSE用10回の計算
+  data_future_test10 <- redo_future(data_future_test,
+                                    list(nsim=10,nyear=10,
+                                         # maa_year=NULL, maa=c(0,0,1,1)
+                                         fix_recruit=NULL,fix_wcatch=NULL),
+                                    only_data=TRUE)
 
-  # 10回のシミュレーションでそれぞれ1000回の将来予測をやってTACを計算する
+  # 0) 10回のノーマル将来予測
+  res_future_noMSE10 <- future_vpa(tmb_data=data_future_test10$data,
+                                 optim_method="none",
+                                 multi_init = 1,SPRtarget=0.3,
+                                 do_MSE=FALSE)
+
+  # 1) 10回のシミュレーションでそれぞれ1000回の将来予測をやってTACを計算する
   res_future_MSE <- future_vpa(tmb_data=data_future_test10$data,
                            optim_method="none",
                            multi_init = 1,SPRtarget=0.3,
                            do_MSE=TRUE, MSE_input_data=data_future_test10,MSE_nsim=1000,
                            MSE_catch_exact_TAC=FALSE)
 
+  # 2)10回のシミュレーションでMSE&sd=0
+  res_future_MSE_sd0 <- future_vpa(tmb_data=data_future_test10$data,
+                           optim_method="none",
+                           multi_init = 1,SPRtarget=0.3,
+                           do_MSE=TRUE, MSE_input_data=data_future_test10,MSE_nsim=2,MSE_sd=0,
+                           MSE_catch_exact_TAC=FALSE)
+  # 1, 2)の結果はほぼ一致
+  expect_equal(mean(res_future_MSE_sd0$naa[,as.character(2020:2027),]/res_future_MSE$naa[,as.character(2020:2027),]),
+               1, tol=0.01)
+
+  #
+  if(0){
+      # tool issue #492の結果をテストしたい場合. この場合、最低成熟年齢を2歳以上にしないと合わない
+      aa1 <- purrr::map_dfr(1:10, function(x) check_MSE(res_future_noMSE10, res_future_MSE    , 2019, x)[5,c(2,3)]  )
+      aa2 <- purrr::map_dfr(1:10, function(x) check_MSE(res_future_noMSE10, res_future_MSE_sd0, 2019, x)[5,c(2,3)]  )
+  }
+
+  #expect_equal(res_future_noMSE$HCR_realized["2019",1,"wcatch"], res_future_MSE_sd0$SR_MSE["2019",1,"real_true_catch"])
+  
   # TAC通りに漁獲する仮定をMSEにも入れる
   res_future_MSE_TAC <- future_vpa(tmb_data=data_future_test10$data,
                            optim_method="none",
