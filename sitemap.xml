@@ -48,6 +48,7 @@
 <url><loc>/reference/convert_faa_perSPR.html</loc></url>
 <url><loc>/reference/convert_future_list_table.html</loc></url>
 <url><loc>/reference/convert_future_table.html</loc></url>
+<url><loc>/reference/convert_hvpa_tibble.html</loc></url>
 <url><loc>/reference/convert_vpa_tibble.html</loc></url>
 <url><loc>/reference/corSR.html</loc></url>
 <url><loc>/reference/create_dummy_vpa.html</loc></url>
@@ -144,6 +145,7 @@
 <url><loc>/reference/tryall_SR.html</loc></url>
 <url><loc>/reference/use_rvpa_tmb.html</loc></url>
 <url><loc>/reference/validate_sr.html</loc></url>
+<url><loc>/reference/vpa.hay.html</loc></url>
 <url><loc>/reference/vpa.html</loc></url>
 </urlset>
 
