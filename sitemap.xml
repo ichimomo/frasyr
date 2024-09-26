@@ -21,6 +21,7 @@
 <url><loc>/reference/bootSR.ggplot.html</loc></url>
 <url><loc>/reference/bootSR.plot.html</loc></url>
 <url><loc>/reference/boot_steepness.html</loc></url>
+<url><loc>/reference/bubble_plot.html</loc></url>
 <url><loc>/reference/bubble_plot2.html</loc></url>
 <url><loc>/reference/caa.est.mat.html</loc></url>
 <url><loc>/reference/caa.est.mat_wrong.html</loc></url>
@@ -52,6 +53,7 @@
 <url><loc>/reference/convert_vpa_tibble.html</loc></url>
 <url><loc>/reference/corSR.html</loc></url>
 <url><loc>/reference/create_dummy_vpa.html</loc></url>
+<url><loc>/reference/data.handler.hay.html</loc></url>
 <url><loc>/reference/data.handler.html</loc></url>
 <url><loc>/reference/derive_RP_value.html</loc></url>
 <url><loc>/reference/derive_biopar.html</loc></url>
@@ -85,6 +87,10 @@
 <url><loc>/reference/ggsave_SH_large.html</loc></url>
 <url><loc>/reference/give_agename.html</loc></url>
 <url><loc>/reference/hmm_SR.html</loc></url>
+<url><loc>/reference/hretro_est.html</loc></url>
+<url><loc>/reference/hretro_plot.html</loc></url>
+<url><loc>/reference/hvpa_plot.html</loc></url>
+<url><loc>/reference/hvpa_plot2.html</loc></url>
 <url><loc>/reference/index.html</loc></url>
 <url><loc>/reference/jackknife.SR.html</loc></url>
 <url><loc>/reference/load_folder.html</loc></url>
@@ -100,6 +106,7 @@
 <url><loc>/reference/make_table.html</loc></url>
 <url><loc>/reference/out.SR.html</loc></url>
 <url><loc>/reference/out.vpa.html</loc></url>
+<url><loc>/reference/out_vpa2.html</loc></url>
 <url><loc>/reference/plot_Fcurrent.html</loc></url>
 <url><loc>/reference/plot_Fref.html</loc></url>
 <url><loc>/reference/plot_HCR.html</loc></url>
@@ -127,6 +134,7 @@
 <url><loc>/reference/read.vpa.html</loc></url>
 <url><loc>/reference/redo_future.html</loc></url>
 <url><loc>/reference/ref.F.html</loc></url>
+<url><loc>/reference/residual_plot.html</loc></url>
 <url><loc>/reference/retrieve_input.html</loc></url>
 <url><loc>/reference/retro.est.html</loc></url>
 <url><loc>/reference/safe_call.html</loc></url>
