@@ -31,6 +31,7 @@ make_future_data(
   start_maafun_year_name = start_biopar_year_name,
   M_year,
   M = NULL,
+  more_process_error = NA,
   faa_year = NULL,
   currentF = NULL,
   futureF = NULL,
