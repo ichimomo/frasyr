@@ -5,11 +5,13 @@ on:
     branches: [dev, master, dev2024]
   pull_request:
     branches: [dev, master]
+    paths-ignore:
+      - README.md
 
-name: R-CMD-check
+name: Check package
 
 jobs:
-  R-CMD-check:
+  check-package:
     runs-on: ${{ matrix.config.os }}
 
     name: ${{ matrix.config.os }} (${{ matrix.config.r }})
@@ -31,10 +33,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: r-lib/actions/setup-pandoc@v2
-
-      - uses: r-lib/actions/setup-tinytex@v2      
-
       - uses: r-lib/actions/setup-r@v2
         with:
           r-version: ${{ matrix.config.r }}
@@ -46,10 +44,51 @@ jobs:
           extra-packages: any::rcmdcheck
           needs: check
 
-      - uses: ichimomo/actions/check-r-package@v2-branch
+      - uses: r-lib/actions/check-r-package@v2
         with:
-          build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'
-#	  upload_snapshots:true		  
-#	  error-on: '"error"'
+          args: 'c("--no-manual", "--ignore-vignettes", "--no-vignettes", "--no-tests")'
+          build_args: 'c("--no-manual", "--no-build-vignettes")'
+          error-on: '"error"'
+#	  upload_snapshots:true
 
+  run-tests:
+    runs-on: ubuntu-latest
 
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-tinytex@v2
+
+      - uses: r-lib/actions/setup-r@v2
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::devtools
+
+      - name: Test package
+        run: |
+          devtools::test()
+        shell: Rscript {0}
+
+  build-vignettes:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-tinytex@v2
+
+      - uses: r-lib/actions/setup-r@v2
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::devtools
+
+      - name: Build vignettes
+        run: |
+          devtools::build_vignettes()
+        shell: Rscript {0}

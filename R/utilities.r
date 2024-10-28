@@ -390,7 +390,7 @@ ref.F <- function(
         else waa.catch <- waa
     }
 
-## Remove duplicate code  
+## Remove duplicate code
 #    if(is.null(waa.catch)){
 #      if(is.null(res$input$dat$waa.catch)){
 #        waa.catch <- waa
@@ -405,7 +405,7 @@ ref.F <- function(
 
     min.age <- min(as.numeric(rownames(res$naa)))
     if(min.age==0) slide.tmp <- TRUE else slide.tmp <- -1:-min.age
-   
+
     if(!is.null(rps.year)){
       rps.data <- data.frame(year=as.numeric(names(colSums(ssb,na.rm=T))),
                              ssb=as.numeric(colSums(ssb,na.rm=T)),
@@ -434,7 +434,7 @@ ref.F <- function(
     if(is.vector(Fcurrent) && is.null(names(Fcurrent))){
         names(Fcurrent) <- 1:length(Fcurrent)
     }
-    
+
     sel <- Fcurrent/max(Fcurrent,na.rm=TRUE)
     na <- length(Fcurrent)
     assertthat::assert_that(length(Fcurrent) == na)
@@ -1506,6 +1506,88 @@ convert_vpa_tibble <- function(vpares,SPRtarget=NULL){
                          Fratio)
 }
 
+
+#' 半期VPAの結果オブジェクトをtibble形式に変換する関数
+#'
+#' @param vpares vpaの結果のオブジェクト
+#' @encoding UTF-8
+#'
+#'
+#' @export
+
+convert_hvpa_tibble <- function(vpares,SPRtarget=NULL){
+
+  total.catch1 <- colSums(vpares$input$dat$caa1*vpares$input$dat$waa1,na.rm=T)
+  total.catch2 <- colSums(vpares$input$dat$caa2*vpares$input$dat$waa2,na.rm=T)
+
+  naa1 <- vpares$naa[seq(1,nrow(vpares$naa),2),]
+  naa2 <- vpares$naa[seq(2,nrow(vpares$naa),2),]
+  faa1 <- vpares$faa[seq(1,nrow(vpares$faa),2),]
+  faa2 <- vpares$faa[seq(2,nrow(vpares$faa),2),]
+  rownames(naa1) <- rownames(naa2) <- rownames(faa1) <- rownames(faa2) <-
+    factor(0:(nrow(faa1)-1))
+
+  ssb1 <- naa1 * vpares$input$dat$maa * vpares$input$dat$waa1
+  ssb2 <- naa2 * vpares$input$dat$maa * vpares$input$dat$waa2
+  biomass1 <- naa1 * vpares$input$dat$waa1
+  biomass2 <- naa2 * vpares$input$dat$waa2
+  if(is.null(vpares$input$dat$waa.catch)){
+    cbiomass1 <- naa1 * vpares$input$dat$waa1
+    cbiomass2 <- naa2 * vpares$input$dat$waa2
+  }
+  U1 <- total.catch1/colSums(cbiomass1, na.rm=T)
+  U2 <- total.catch2/colSums(cbiomass2, na.rm=T)
+  SSB1 <- convert_vector(colSums(ssb1, na.rm=T), "SSB") %>%
+    dplyr::filter(value>0&!is.na(value)) %>% mutate(term = 1)
+  SSB2 <- convert_vector(colSums(ssb2, na.rm=T), "SSB") %>%
+    dplyr::filter(value>0&!is.na(value)) %>% mutate(term = 2)
+  Biomass1 <- convert_vector(colSums(biomass1,na.rm=T),"biomass") %>%
+    dplyr::filter(value>0&!is.na(value)) %>% mutate(term = 1)
+  Biomass2 <- convert_vector(colSums(biomass2,na.rm=T),"biomass") %>%
+    dplyr::filter(value>0&!is.na(value)) %>% mutate(term = 2)
+  cBiomass1 <- convert_vector(colSums(cbiomass1,na.rm=T),"cbiomass") %>%
+    dplyr::filter(value>0&!is.na(value)) %>% mutate(term = 1)
+  cBiomass2 <- convert_vector(colSums(cbiomass2,na.rm=T),"cbiomass") %>%
+    dplyr::filter(value>0&!is.na(value)) %>% mutate(term = 2)
+  FAA1 <- convert_df(faa1, "fishing_mortality") %>%
+    dplyr::filter(value>0&!is.na(value)) %>% mutate(term = 1)
+  FAA2 <- convert_df(faa2, "fishing_mortality") %>%
+    dplyr::filter(value>0&!is.na(value)) %>% mutate(term = 2)
+  Recruitment1 <- convert_vector(colSums(vpares$naa[1,,drop=F]),"Recruitment") %>%
+    dplyr::filter(value>0&!is.na(value)) %>% mutate(term = 1)
+  Recruitment2 <- convert_vector(colSums(vpares$naa[2,,drop=F]),"Recruitment") %>%
+    dplyr::filter(value>0&!is.na(value)) %>% mutate(term = 2)
+
+  Fratio <- NULL
+
+  all_table <- bind_rows(SSB1,
+                         SSB2,
+                         Biomass1,
+                         Biomass2,
+                         cBiomass1,
+                         cBiomass2,
+                         convert_vector(U1[U1>0],"U") %>% mutate(term = 1),
+                         convert_vector(U2[U2>0],"U") %>% mutate(term = 2),
+                         convert_vector(total.catch1[total.catch1>0],"catch") %>% mutate(term = 1),
+                         convert_vector(total.catch2[total.catch2>0],"catch") %>% mutate(term = 2),
+                         convert_df(naa1,"fish_number") %>% mutate(term = 1),
+                         convert_df(naa2,"fish_number") %>% mutate(term = 2),
+                         FAA1,
+                         FAA2,
+                         convert_df(vpares$input$dat$waa1,"weight") %>% mutate(term = 1),
+                         convert_df(vpares$input$dat$waa2,"weight") %>% mutate(term = 1),
+                         convert_df(vpares$input$dat$maa,"maturity") %>% mutate(term = NA),
+                         convert_df(vpares$input$dat$caa1,"catch_number") %>% mutate(term = 1),
+                         convert_df(vpares$input$dat$caa2,"catch_number") %>% mutate(term = 2),
+                         convert_df(vpares$input$dat$M,  "natural_mortality") %>% mutate(term = NA),
+                         Recruitment1,
+                         Recruitment2,
+                         Fratio) %>%
+    mutate(age = factor(age), term = factor(term))
+
+}
+
+
 #' fit.SRの結果をtibble形式に治す
 #'
 #' @param SR_result fit.SRの結果のオブジェクト
@@ -1956,7 +2038,7 @@ beta.simulation <- function(finput,beta_vector,
     tb2 <- list()
     for(i in 1:length(tb)){
         tb2[[i]] <- calculate_all_pm(tb[[i]],...) %>%
-            mutate(HCR_name=label_name[i], beta=beta_vector[i])        
+            mutate(HCR_name=label_name[i], beta=beta_vector[i])
     }
     tb2 <- tb2 %>% bind_rows()
 
@@ -2835,7 +2917,7 @@ derive_future_summary <- function(res_future, target=NULL){
     recruit = tmpfunc(res_future$SR_mat[,,"recruit"]),
     intercept = tmpfunc(res_future$SR_mat[,,"intercept"]),
     deviance = tmpfunc(res_future$SR_mat[,,"deviance"]),
-    deviance_sd = tmpfunc(res_future$SR_mat[,,"deviance"],fun=sd),
+    deviance_sd = tmpfunc(res_future$SR_mat[,,"deviance"],fun=stats::sd),
     catch   = tmpfunc(res_future$HCR_realized[,,"wcatch"]),
     beta    = tmpfunc(res_future$HCR_mat[,,"beta"]),
     Blimit  = tmpfunc(res_future$HCR_mat[,,"Blimit"]),
@@ -3111,14 +3193,14 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
     year_label  <- res_future$mat_year$year
 
     if(!is_scale){
-      ssb_mat   <- res_future$mat_stat["B",,] 
-      catch_mat <- res_future$mat_stat["C",,] 
-      biom_mat  <- res_future$mat_stat["B",,] 
+      ssb_mat   <- res_future$mat_stat["B",,]
+      catch_mat <- res_future$mat_stat["C",,]
+      biom_mat  <- res_future$mat_stat["B",,]
     }
     else{
-      ssb_mat   <- res_future$mat_stat["Bratio",,] 
-      catch_mat <- res_future$mat_stat["Cratio",,] 
-      biom_mat  <- res_future$mat_stat["Bratio",,]       
+      ssb_mat   <- res_future$mat_stat["Bratio",,]
+      catch_mat <- res_future$mat_stat["Cratio",,]
+      biom_mat  <- res_future$mat_stat["Bratio",,]
     }
   }
 
@@ -3130,16 +3212,16 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
     if(type=="AS"){
       x1 <- purrr::map_dfr(seq_len(length(age_label)),
                            #                       function(x) get_annual_pm(res_future$naa [x,year_future,],
-                       function(x) get_annual_pm(res_future$naa [x,,],                           
+                       function(x) get_annual_pm(res_future$naa [x,,],
                                                  fun,str_c(funname,"_naa_", age_label[x])))
       x2 <- purrr::map_dfr(seq_len(length(age_label)),
                            #                     function(x) get_annual_pm(res_future$wcaa[x,year_future,],
-                     function(x) get_annual_pm(res_future$wcaa[x,,],                           
+                     function(x) get_annual_pm(res_future$wcaa[x,,],
                                                fun,str_c(funname,"_wcaa_",age_label[x])))
       x3 <- purrr::map_dfr(seq_len(length(age_label)),
 #                           function(x) get_annual_pm(res_future$faa [x,year_future,],
-                       function(x) get_annual_pm(res_future$faa [x,,],                                                     
-                                                 fun,str_c(funname,"_faa_", age_label[x])))      
+                       function(x) get_annual_pm(res_future$faa [x,,],
+                                                 fun,str_c(funname,"_faa_", age_label[x])))
     }
     else{
       x1 <- x2 <- x3 <- NULL
@@ -3180,7 +3262,7 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
         }
         if(fun_name_char==c("prob_min_any")){
           mat <- sweep(mat, 2, SBmin, FUN="/")
-        }                
+        }
       }
       mat1 <- mat[tmp,]
       res <- apply(mat1,2,fun_name) %>% sum_fun_name()
@@ -3232,12 +3314,12 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
   }
 
   mean2 <- function(x) fun_period(x,na.rm=TRUE)
-    
+
   fun_list2 <- list(cv     = function(x) sd(x, na.rm=TRUE)/mean(x,na.rm=TRUE),
                     mean   = function(x) mean(x,na.rm=TRUE),
                     median   = function(x) median(x,na.rm=TRUE),
                     aav   = function(x) mean(abs(av(x)),na.rm=TRUE),
-                    mav   = function(x) median(abs(av(x)),na.rm=TRUE),                    
+                    mav   = function(x) median(abs(av(x)),na.rm=TRUE),
                     adr = function(x){ x0 <- av(x) ;
                                        x0[x0>0] <- NA ;
                                        mean(x0,na.rm=TRUE)    },
@@ -3258,11 +3340,11 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
                     },
                     prob_half_any  = function(x) ifelse(sum(x[-1]<0.5*x[-length(x)])>0,1,0),
                     prob_ban_any    = function(x){
-                      if(type=="PM") SBban <- rep(1,length(x))                      
+                      if(type=="PM") SBban <- rep(1,length(x))
                       ifelse(sum(x<SBban,na.rm=FALSE)>0,1,0)
                     },
                     prob_min_any    = function(x){
-                      if(type=="PM") SBmin <- rep(1,length(x))                      
+                      if(type=="PM") SBmin <- rep(1,length(x))
                       ifelse(sum(x<SBmin,na.rm=FALSE)>0,1,0)
                     })
 
@@ -3378,8 +3460,8 @@ check_fix_CVoption <- function(res_future){
   wcatch <- res_future$HCR_realized[,,"wcatch"]
   wcatch[-1,]/wcatch[-nrow(wcatch),]
 }
-        
-#' @export      
+
+#' @export
 
 format_type <- function(){
     tribble(~name, ~col, ~ lty,
