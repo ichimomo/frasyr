@@ -118,7 +118,7 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
 
   res_MSY1 <- est_MSYRP(data_future=data_future_test, candidate_PGY=c(0.1,0.6),
                         candidate_B0=c(0.2), candidate_Babs=20000, candidate_Fbase=c(res_future_test_R$multi, 1.3410926))
-  expect_equal(res_MSY1$summary$"Fref/Fcur"[1], res_future_test_R$multi, tol=0.00001)
+  expect_equal(res_MSY1$summary["Fref/Fcur"][1], res_future_test_R$multi, tol=0.00001)
   expect_equal(tail(res_future_test_R$summary$SSB,n=1) %>% as.numeric(),
                res_MSY1$summary$SSB[1] %>% as.numeric(), tol=1)
   expect_equal(res_MSY1$summary$SSB[c(1,3)],res_MSY1$summary$SSB[c(7,8)], tol=0.001) # test Fbase value
@@ -412,7 +412,8 @@ test_that("check MSE feature",{ # ----
 })
 
 
-test_that("future_vpa function (carry over TAC) (level 2)",{
+## check carry over TAC --- 
+test_that("future_vpa function (carry over TAC) (level 2)",{ 
 
   # 0.1まで繰越
   data_future_test <- redo_future(data_future_test,
@@ -427,8 +428,10 @@ test_that("future_vpa function (carry over TAC) (level 2)",{
                    ==0.9),TRUE)  
 
   # 繰入する場合
-  data_future_borrow <- list_modify(data_future_test$input,HCR_TAC_reserve_rate=-0.1, HCR_TAC_carry_rate=1) %>%
+  data_future_borrow <- list_modify(data_future_test$input,nyear=11,
+                                    HCR_TAC_reserve_rate=c(-0.1,0), HCR_TAC_carry_rate=1) %>%
       safe_call(make_future_data,.)
+  aa <- future_vpa(data_future_borrow$data)
   res_future_borrow <- test_sd0_future(data_future_borrow)$res1
   expect_equal(all(round(res_future_borrow$HCR_realized[as.character(2019:2023),,"wcatch"]/
                          res_future_borrow$HCR_realized[as.character(2019:2023),,"original_ABC_plus"],3)

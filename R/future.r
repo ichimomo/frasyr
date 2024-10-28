@@ -613,7 +613,7 @@ future_vpa <- function(tmb_data,
           res_future$HCR_realized[i,j,"Fratio"] <- res_future$HCR_realized[i,j-1,"Fratio"]
         }
         else{
-          tmp <- res_future$naa[,i,j]>0
+          tmp <- 1:tmb_data$plus_age # res_future$naa[,i,j]>0 
           res_future$HCR_realized[i,j,"Fratio"] <-
             calc_Fratio(faa=res_future$faa[tmp,i,j],
                         waa=res_future$waa[tmp,i,j],
@@ -912,33 +912,65 @@ future_vpa_R <- function(naa_mat,
         HCR_realized[t,,"original_ABC"] <- HCR_mat[t,,"expect_wcatch"]
       }
       HCR_realized[t,,"original_ABC_plus"] <- HCR_realized[t,,"original_ABC"] + HCR_realized[t,,"reserved_catch"]
+
       # 比率で繰越量を決める場合
       if(all(!is.na(HCR_mat[t,,"TAC_reserve_rate"]))){
+
+        is_banking <- all(HCR_mat[t,,"TAC_reserve_rate"]>0)
+        if(is_banking==FALSE){ # when borrowing
+          if(is.null(do_MSE)  || do_MSE==FALSE) tmp <- (spawner_mat[t,] < HCR_mat[t,,"Blimit"])
+          if(!is.null(do_MSE) && do_MSE==TRUE) tmp <-  (spawner_mat[t-2,] < HCR_mat[t,,"Blimit"])
+          HCR_mat[t,tmp,"TAC_reserve_rate"]  <- 0
+        }
+        
         if(HCR_reserve_denom=="original_ABC_plus"){
+          # 増減させたあとのABCをもとにする場合
           HCR_mat[t,,"expect_wcatch"] <- HCR_realized[t,,HCR_reserve_denom] * (1-HCR_mat[t,,"TAC_reserve_rate"])
         }
         if(HCR_reserve_denom=="original_ABC"){
+          # もともとのABCをもとにする場合
           HCR_mat[t,,"expect_wcatch"] <- HCR_realized[t,,"original_ABC_plus"] - HCR_realized[t,,"original_ABC"] * HCR_mat[t,,"TAC_reserve_rate"]
           HCR_mat[t,,"expect_wcatch"] <- ifelse(HCR_mat[t,,"expect_wcatch"]<0, 0.01, HCR_mat[t,,"expect_wcatch"])
-        }        
-        
+        }
       }
+      
       # 漁獲量で繰越量を決める場合
       if(all(!is.na(HCR_mat[t,,"TAC_reserve_amount"]))){
+
+        is_banking <- all(HCR_mat[t,,"TAC_reserve_amount"]>0)
+
+        if(is_banking==FALSE){ # when borrowing
+          if(is.null(do_MSE) | do_MSE==FALSE) tmp <- (spawner_mat[t,] < HCR_mat[t,,"Blimit"])
+          if(!is.null(do_MSE) && do_MSE==TRUE) tmp <- (spawner_mat[t-2,] < HCR_mat[t,,"Blimit"])
+          HCR_mat[t,tmp,"TAC_reserve_amount"]  <- 0
+        }
+        
         tmpcatch <- HCR_realized[t,,"original_ABC_plus"] - HCR_mat[t,,"TAC_reserve_amount"]
         HCR_mat[t,,"expect_wcatch"] <- ifelse(tmpcatch<0, 0.01, tmpcatch)
       } #expect_wcatchをゼロにすると不具合がありそうなので、微小値（0.01）を与える
+
       # 次の年の持ち越し分を計算
       if(t<total_nyear){
+
+        # 翌年に持ち越せる上限量を計算
         if(all(!is.na(HCR_mat[t,,"TAC_carry_rate"]))){
-          # 翌年に持ち越せる上限量を計算
           max_carry_amount <- HCR_mat[t,,"TAC_carry_rate"]*HCR_realized[t,,"original_ABC"]
         } #
         if(all(!is.na(HCR_mat[t,,"TAC_carry_amount"]))){
           max_carry_amount <- HCR_mat[t,,"TAC_carry_amount"]
         }
+
         # 実際の漁獲量ともともとのABCの差
-        ABC_reserve_amount <- HCR_realized[t,,"original_ABC"] - HCR_mat[t,,"expect_wcatch"]
+        # 繰越は１年以上引き継がれないという設定なので"original_ABC_plus"でなく"original_ABC"との差を繰越分としているが、前借り設定が混ざると都合が悪くなる
+        # とりあえずbankingの場合とborrowingの場合で場合分けする
+        if(is_banking){
+          # when banking
+          ABC_reserve_amount <- HCR_realized[t,,"original_ABC"] - HCR_mat[t,,"expect_wcatch"]  
+        }
+        else{
+          # when borrowing
+          ABC_reserve_amount <- HCR_realized[t,,"original_ABC_plus"] - HCR_mat[t,,"expect_wcatch"]  
+        }
         #ABC_reserve_amount[ABC_reserve_amount<0] <- 0
         HCR_realized[t+1,,"reserved_catch"] <- cbind(max_carry_amount, ABC_reserve_amount) %>%
           apply(1,min)
@@ -1516,7 +1548,12 @@ naming_adreport <- function(tmb_data, ad_report){
   faa <- ad_report$F_mat
   dimnames(wcaa) <- dimnames(naa) <- dimnames(faa) <-
     dimnames(tmb_data$naa)
-  class(wcaa) <- class(naa) <- class(faa) <- "myarray"
+
+  HCR_realized <- array(0, dim=c(dim(tmb_data$naa)[2], dim(tmb_data$naa)[3], 3))
+  dimnames(HCR_realized) <- list(dimnames(tmb_data$naa)[[2]], dimnames(tmb_data$naa)[[3]], c("beta_gamma","wcatch","Fratio"))
+  
+  class(wcaa) <- class(naa) <- class(faa) <- class(HCR_realized) <- "myarray"
+
 
   tmb_data$SR_mat[,,"ssb"] <- ad_report$spawner_mat
   tmb_data$SR_mat[,,"recruit"] <- ad_report$N_mat[1,,]
@@ -1524,6 +1561,7 @@ naming_adreport <- function(tmb_data, ad_report){
   return(list(wcaa=wcaa, naa=naa, faa=faa,
               SR_mat        = tmb_data$SR_mat,
               HCR_mat       = tmb_data$HCR_mat,
+              HCR_realized  = HCR_realized,              
               waa           = tmb_data$waa_mat,
               waa_catch_mat = tmb_data$waa_catch_mat))
 }

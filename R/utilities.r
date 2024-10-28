@@ -2762,7 +2762,7 @@ take_interval <- function(prob,target){
 #' @export
 #'
 
-derive_biopar <- function(res_obj=NULL, derive_year=NULL, stat=mean){
+derive_biopar <- function(res_obj=NULL, derive_year=NULL, stat=mean, na.rm=TRUE){
 
   derive_year <- as.character(derive_year)
 
@@ -2785,8 +2785,10 @@ derive_biopar <- function(res_obj=NULL, derive_year=NULL, stat=mean){
                    function(x) apply(x[,derive_year,,drop=F],1,stat))
   }
 
-  bio_par <- bio_par[apply(bio_par,1,sum)!=0,]
-  bio_par <- bio_par[!is.na(apply(bio_par,1,sum)),]
+  if(na.rm==TRUE){
+    bio_par <- bio_par[apply(bio_par,1,sum)!=0,]
+    bio_par <- bio_par[!is.na(apply(bio_par,1,sum)),]
+  }
   return(bio_par)
 }
 
@@ -2827,7 +2829,8 @@ derive_future_summary <- function(res_future, target=NULL){
 
   Fmean <- apply(res_future$faa,c(2,3),sum)
 
-  tibble(
+  # tentative setting for tmb option
+  res <- tibble(
     year    = as.numeric(dimnames(res_future$SR_mat[,,"ssb"])[[1]]),
     SSB     = tmpfunc(res_future$SR_mat[,,"ssb"]),
     biomass = tmpfunc(res_future$SR_mat[,,"biomass"]),
@@ -2835,7 +2838,7 @@ derive_future_summary <- function(res_future, target=NULL){
     recruit = tmpfunc(res_future$SR_mat[,,"recruit"]),
     intercept = tmpfunc(res_future$SR_mat[,,"intercept"]),
     deviance = tmpfunc(res_future$SR_mat[,,"deviance"]),
-    deviance_sd = tmpfunc(res_future$SR_mat[,,"deviance"],fun=sd),
+    deviance_sd = tmpfunc(res_future$SR_mat[,,"deviance"],fun=stats::sd),
     catch   = tmpfunc(res_future$HCR_realized[,,"wcatch"]),
     beta    = tmpfunc(res_future$HCR_mat[,,"beta"]),
     Blimit  = tmpfunc(res_future$HCR_mat[,,"Blimit"]),
@@ -2843,6 +2846,8 @@ derive_future_summary <- function(res_future, target=NULL){
     beta_gamma = tmpfunc(res_future$HCR_realized[,,"beta_gamma"]),
     Fmean      = tmpfunc(Fmean),
     Fratio     = tmpfunc(res_future$HCR_realized[,,"Fratio"]))
+
+  return(res)
 }
 
 
