@@ -1824,7 +1824,8 @@ est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE,
                       calc_yieldcurve=TRUE,
                       trace_multi=c(0.9,0.925,0.95,0.975,1.025,1.05,1.075),
                       select_Btarget=0, select_Blimit=0, select_Bban=0,
-                      multi_upper_PGY=10){
+                      multi_upper_PGY=10
+                      ){
 
   res_vpa_MSY <- data_future$input$res_vpa
   res_SR_MSY <-  data_future$input$res_SR

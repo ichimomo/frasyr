@@ -354,7 +354,7 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
   if (SR_result$input$SR=="BHS") SRF <- function(SSB,a,b,gamma){
     SSB <- SSB*xscale
     res <- ifelse(SSB < b, a*b*(SSB/b)^{1-(SSB/b)^gamma}, a*b)
-    return(res/yscale)    
+    return(res/yscale)
 }
 
 
@@ -425,7 +425,7 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
 #                                CI=CI),
                     color="deepskyblue3",lty=3,n=5000)+
       stat_function(fun=SRF_CI,
-                args=list_modify(args_list, sign=1),                
+                args=list_modify(args_list, sign=1),
 #                      args=list(a=SR_result$pars$a,
 #                                b=SR_result$pars$b,
 #                                sigma=SR_result$pars$sd,
@@ -503,7 +503,7 @@ SRplot_gg <- plot.SR <- function(...){
 #' @param biomass.unit 資源量の単位
 #' @param number.unit 尾数の単位
 #' @param newplot なんのためのオプションか不明
-#' 
+#'
 #' @examples
 #' \dontrun{
 #' data(res_sr_HSL1)
@@ -545,11 +545,11 @@ compare_SRfit <- function(SRlist, biomass.unit=1000, number.unit=1000, newplot=T
     g1 <- ggplot(data=SRpred)
     if(!"Regime" %in% colnames(SRpred)){
       g1 <- g1 + geom_line(data=SRpred,
-                           mapping=aes(x=SSB/biomass.unit,y=R/number.unit, linetype=SR_type, col=SR_type)) 
+                           mapping=aes(x=SSB/biomass.unit,y=R/number.unit, linetype=SR_type, col=SR_type))
     }
     else{ # regime case
       g1 <- g1 + geom_line(data=SRpred,
-                           mapping=aes(x=SSB/biomass.unit,y=R/number.unit, linetype=SR_type, col=SR_type, lty=Regime)) 
+                           mapping=aes(x=SSB/biomass.unit,y=R/number.unit, linetype=SR_type, col=SR_type, lty=Regime))
     }
     g1 <- g1 + geom_point(data=SRdata, mapping=aes(x=SSB/biomass.unit, y=R/number.unit), color="black") +
       xlim(c(0,max(SRdata$SSB/biomass.unit))) + ylim(c(0,max(SRdata$R/number.unit))) +
@@ -652,17 +652,17 @@ plot_SRregime <- function (SRregime_result,xscale=1000,xlabel="SSB",yscale=1,yla
   if (is.null(labeling.year)) labeling.year <- c(min(obs_data$Year),obs_data$Year[obs_data$Year %% 5 == 0],max(obs_data$Year))
   combined_data = combined_data %>%
     mutate(label=if_else(is.na(Year),as.numeric(NA),if_else(Year %in% labeling.year, Year, as.numeric(NA)))) %>%
-    mutate(SSB = SSB/xscale, R = R/yscale) 
+    mutate(SSB = SSB/xscale, R = R/yscale)
 
   g1 = ggplot(combined_data, aes(x=SSB,y=R,label=label)) +
     geom_path(data=dplyr::filter(combined_data, Category=="Pred"),aes(group=Regime,colour=Regime,linetype=Regime),size=2, show.legend = show.legend)+
     geom_path(data=dplyr::filter(combined_data, Category=="Obs"),colour="darkgray",size=1)+
     geom_point(data=dplyr::filter(combined_data, Category=="Obs"),aes(group=Regime,color=Regime,shape=Weight), #,fill=fill_color),
-               size=3, show.legend = show.legend,shape=21) +    
+               size=3, show.legend = show.legend,shape=21) +
     scale_shape_manual(values = scaleshapeval) +
     scale_color_manual(values = seq(length(unique(regime.name)))) +
     #    scale_fill_manual(values = seq(length(unique(regime.name)))) +
-#    scale_fill_identity() +    
+#    scale_fill_identity() +
     xlab(xlabel)+ylab(ylabel)+
     ggrepel::geom_label_repel()+
     theme_bw(base_size=base_size)+
@@ -836,6 +836,10 @@ plot_futures <- function(vpares=NULL,
     mutate(value=value/unit)%>%
     mutate(type="future")
 
+  if(is.character(class(future_tibble$sim))) {
+    future_tibble <- future_tibble %>%
+      mutate(sim = as.numeric(gsub("\\D", "", sim)))
+  }
   if(is.null(future.replicate)){
     set.seed(seed)
     future.replicate <- sample(2:max(future_tibble$sim),n_example)
@@ -878,14 +882,14 @@ plot_futures <- function(vpares=NULL,
   future_tibble <-
     bind_rows(future_tibble,vpa_tb,future.dummy) %>%
     mutate(stat=factor(stat,levels=rename_list$stat)) %>%
-    mutate(scenario=factor(scenario,levels=c(future.name,"VPA"))) 
+    mutate(scenario=factor(scenario,levels=c(future.name,"VPA")))
 
   future_tibble.qt <-
     future_tibble %>% group_by(scenario,year,stat,type) %>%
     summarise(low=quantile(value,CI_range[1],na.rm=T),
               high=quantile(value,CI_range[2],na.rm=T),
               median=median(value,na.rm=T),
-              mean=mean(value)) 
+              mean=mean(value))
 
   # make dummy for y range
   dummy <- future_tibble %>% group_by(stat) %>% summarise(max=max(value)) %>%
@@ -907,7 +911,7 @@ plot_futures <- function(vpares=NULL,
   # create data for reference points
   dat_RP <- tibble(jstat=NULL, value=NULL, name=NULL)
   if("SSB" %in% what.plot && (!is.na(Btarget) || !is.na(Blimit) || !is.na(Bban))){
-    dat_RP <- bind_rows(dat_RP, 
+    dat_RP <- bind_rows(dat_RP,
                         tibble(jstat = dplyr::filter(rename_list, stat == "SSB") %>%
                                  dplyr::pull(jstat),
                                value = c(Btarget, Blimit, Bban) / biomass.unit,
@@ -923,7 +927,7 @@ plot_futures <- function(vpares=NULL,
                                scenario="MSY"))
   }
   if("U" %in% what.plot && !is.na(Umsy)){
-    dat_RP <- bind_rows(dat_RP, 
+    dat_RP <- bind_rows(dat_RP,
                         U_RP <- tibble(jstat=dplyr::filter(rename_list, stat == "U") %>%
                                          dplyr::pull(jstat),
                                        value=Umsy,
@@ -957,24 +961,24 @@ plot_futures <- function(vpares=NULL,
       left_join(format_type())
   }
   else{
-    style_def <- tibble(scenario=all_scenario, col=NA, lty=NA)    
+    style_def <- tibble(scenario=all_scenario, col=NA, lty=NA)
   }
   style_def$col[style_def$scenario=="VPA"] <- "black"
-  style_def$lty[style_def$scenario=="VPA"] <- "solid"  
+  style_def$lty[style_def$scenario=="VPA"] <- "solid"
   style_def$col[style_def$scenario=="MSY"] <- "#000001" # 異なるカテゴリと認識させるため、blackとは微妙に違った色にする
   style_def$col[style_def$scenario=="U_MSY"] <- "#000002" # 異なるカテゴリと認識させるため、blackとは微妙に違った色にする
   style_def$lty[style_def$scenario=="MSY"] <- "dashed" # blackとは微妙に違った色にする
-  style_def$lty[style_def$scenario=="U_MSY"] <- "dashed" # blackとは微妙に違った色にする  
+  style_def$lty[style_def$scenario=="U_MSY"] <- "dashed" # blackとは微妙に違った色にする
   tmp <- which(is.na(style_def$col))
   style_def$col[tmp] <- ggColorHue(n=length(tmp))
   style_def$lty[tmp] <- "solid"
-  
+
   alldata <- alldata %>% left_join(style_def %>% select(scenario, col, lty))
 
   g1 <- alldata %>% ggplot() # aes(color=scenario, lty=scenario) とここで一括して指定すればよさげに思えるがそうするとうまくいかない
 
   if(isTRUE(is.plot.CIrange)){
-    # draw prediction interval    
+    # draw prediction interval
     if (isTRUE(is.plot.CIline)) {
       g1 <- g1+
         geom_line(data=. %>% dplyr::filter(type=="future"),
@@ -1048,9 +1052,9 @@ plot_futures <- function(vpares=NULL,
               mapping=aes(x=year, y=mean, color=col, lty=lty),lwd=1) # VPAのプロット
 
   # setting scales and guides
-  g1 <- g1 + 
+  g1 <- g1 +
     theme_SH(base_size=font.size,legend.position=legend.position)+
-    theme(legend.key.width=unit(1.2,"cm")) +    
+    theme(legend.key.width=unit(1.2,"cm")) +
     scale_color_identity(guide="legend", labels=style_def$scenario, breaks=style_def$col) +
     scale_linetype_identity() +
     scale_fill_identity(guide="legend", labels=style_def$scenario, breaks=style_def$col)+
@@ -1058,7 +1062,7 @@ plot_futures <- function(vpares=NULL,
                               override.aes=list(linetype=style_def$lty, color=style_def$col, lwd=0.7)),
            lty="none", fill=guide_legend(ncol=1)) +
   xlab("年")+ylab("") + labs(fill = "",linetype="",color="")
-  
+
   return(g1)
 }
 
@@ -1287,7 +1291,7 @@ plot_yield <- function(MSY_obj,refs_base,
 
   g1 <- trace %>%
     ggplot2::ggplot()
- 
+
   if(is.null(future.name)) future.name <- 1:length(future)
 
   if(is.null(refs.label)) {
@@ -1305,13 +1309,13 @@ plot_yield <- function(MSY_obj,refs_base,
     mutate(age=as.numeric(as.character(age)))
   age.label <- age.label %>%
     mutate(age_name=str_c(age,ifelse(age.label$age==max(age.label$age),plus.char,""),"歳"))
-  
+
   legend.labels <- as.vector(age.label$age_name)
-  
+
   nb.cols <- length(unique(trace$age)) # 年齢グループが多い場合に対応できるように変更
    mycolors <- grDevices::colorRampPalette(c("#F7FBFF", "#DEEBF7", "#C6DBEF", "#9ECAE1", "#6BAED6", "#4292C6",
 "#2171B5", "#084594"))(nb.cols)
-  
+
   g1 <- g1 + geom_area(aes(x=ssb.mean,y=value,fill=`年齢`),col="black",alpha=0.5,lwd=1*0.3528,stat="identity") +
     #    geom_line(aes(x=ssb.mean,y=catch.CV,fill=age)) +
     #    scale_y_continuous(sec.axis = sec_axis(~.*5, name = "CV catch"))+
@@ -1519,7 +1523,7 @@ plot_kobe_gg <- plot_kobe <- function(FBdata=NULL,
 
   max.B <- max(c(FBdata$Bratio,xscale),na.rm=T)
   max.F <- max(c(FBdata$Fratio,yscale),na.rm=T)
-  
+
   red.color <- "indianred1" # rgb(238/255,121/255,72/255)
   yellow.color <- "khaki1" # rgb(245/255,229/255,107/255)
   green.color <- "olivedrab2" # rgb(175/255,209/255,71/255) #"olivedrab2"#rgb(58/255,180/255,131/255)
@@ -2112,30 +2116,30 @@ plot_worm <- function(kobe_data){
 #' サブ目盛りの追加
 #'
 #' 将来予測の図に最適化された設定です
-#' 
+#'
 #' @export
-#' 
+#'
 
 apply_minor_ticks <- function(plot, minor_breaks=1){
   plot +   # サブ目盛の設定
     guides(x=guide_axis(minor.ticks=TRUE), # guideは凡例を制御するための関数。目盛りのスタイルを設定するのはtheme関数だが、どんな目盛りをつけるかはguidesの範疇になる？
-           y=guide_axis(minor.ticks=TRUE)) + 
+           y=guide_axis(minor.ticks=TRUE)) +
     # サブ目盛りをつけるので、目盛りの長さを少し長くし、線幅を狭くする
     theme(axis.ticks.length=unit(0.17,"cm"), # default=unit(0.15,"cm")
           axis.ticks=element_line(linewidth=0.4)) + # default=0.5
     # サブ目盛りの間隔の設定
     scale_x_continuous(minor_breaks=scales::breaks_width(minor_breaks),
                        breaks      =scales::breaks_pretty())
-#    scale_x_continuous(minor_breaks=scales::breaks_width(minor_breaks))  
+#    scale_x_continuous(minor_breaks=scales::breaks_width(minor_breaks))
 }
 
 #'
 #' モデル平均の場合の再生産関係のプロット
 #'
 #' 汎用化していない（２つのモデルの平均の場合だけです）
-#' 
+#'
 #' @export
-#' 
+#'
 
 plot_SRaverage <- function(data_future_MSY, res_vpa_updated, SR_plot_label, CI=0.9, last_year_color=5){
     weight     <- data_future_MSY$input$model_average_option$weight
@@ -2153,7 +2157,7 @@ plot_SRaverage <- function(data_future_MSY, res_vpa_updated, SR_plot_label, CI=0
       rand_error1 <- rnorm(n,-0.5*sd_vector[1]^2,sd_vector[1])
       rand_error2 <- rnorm(n,-0.5*sd_vector[2]^2,sd_vector[2])
       fun1 <- get(str_c("SRF_",res_SR_MSY[[1]]$input$SR))
-      fun2 <- get(str_c("SRF_",res_SR_MSY[[2]]$input$SR))      
+      fun2 <- get(str_c("SRF_",res_SR_MSY[[2]]$input$SR))
       fun1_dist <- fun1(a=res_SR_MSY[[1]]$pars$a,b=res_SR_MSY[[1]]$pars$b,x=ssb_vector[i])*exp(rand_error1)
       fun2_dist <- fun2(a=res_SR_MSY[[2]]$pars$a,b=res_SR_MSY[[2]]$pars$b,x=ssb_vector[i])*exp(rand_error2)
       dist_tmp <- c(fun1_dist[weight_number[[1]]],fun2_dist[weight_number[[2]]])

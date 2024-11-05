@@ -390,7 +390,7 @@ ref.F <- function(
         else waa.catch <- waa
     }
 
-## Remove duplicate code  
+## Remove duplicate code
 #    if(is.null(waa.catch)){
 #      if(is.null(res$input$dat$waa.catch)){
 #        waa.catch <- waa
@@ -405,7 +405,7 @@ ref.F <- function(
 
     min.age <- min(as.numeric(rownames(res$naa)))
     if(min.age==0) slide.tmp <- TRUE else slide.tmp <- -1:-min.age
-   
+
     if(!is.null(rps.year)){
       rps.data <- data.frame(year=as.numeric(names(colSums(ssb,na.rm=T))),
                              ssb=as.numeric(colSums(ssb,na.rm=T)),
@@ -434,7 +434,7 @@ ref.F <- function(
     if(is.vector(Fcurrent) && is.null(names(Fcurrent))){
         names(Fcurrent) <- 1:length(Fcurrent)
     }
-    
+
     sel <- Fcurrent/max(Fcurrent,na.rm=TRUE)
     na <- length(Fcurrent)
     assertthat::assert_that(length(Fcurrent) == na)
@@ -1443,13 +1443,9 @@ convert_vector <- function(vector,name){
 
 convert_vpa_tibble <- function(vpares,SPRtarget=NULL){
 
-  if (is.null(vpares$input$dat$waa.catch)) {
-    vpares$input$dat$waa.catch <- vpares$input$dat$waa
-    if (class(vpares)%in%"sam") {
-      total.catch <- colSums(vpares$caa*vpares$input$dat$waa,na.rm=T)
-    } else {
-      total.catch <- colSums(vpares$input$dat$caa*vpares$input$dat$waa,na.rm=T)
-    }
+  if (is.null(vpares$input$dat$waa.catch)) vpares$input$dat$waa.catch <- vpares$input$dat$waa
+  if ("sam" %in% class(vpares)) {
+    total.catch <- colSums(vpares$caa*vpares$input$dat$waa.catch,na.rm=T)
   } else {
     total.catch <- colSums(vpares$input$dat$caa*vpares$input$dat$waa.catch,na.rm=T)
   }
@@ -1956,7 +1952,7 @@ beta.simulation <- function(finput,beta_vector,
     tb2 <- list()
     for(i in 1:length(tb)){
         tb2[[i]] <- calculate_all_pm(tb[[i]],...) %>%
-            mutate(HCR_name=label_name[i], beta=beta_vector[i])        
+            mutate(HCR_name=label_name[i], beta=beta_vector[i])
     }
     tb2 <- tb2 %>% bind_rows()
 
@@ -3111,14 +3107,14 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
     year_label  <- res_future$mat_year$year
 
     if(!is_scale){
-      ssb_mat   <- res_future$mat_stat["B",,] 
-      catch_mat <- res_future$mat_stat["C",,] 
-      biom_mat  <- res_future$mat_stat["B",,] 
+      ssb_mat   <- res_future$mat_stat["B",,]
+      catch_mat <- res_future$mat_stat["C",,]
+      biom_mat  <- res_future$mat_stat["B",,]
     }
     else{
-      ssb_mat   <- res_future$mat_stat["Bratio",,] 
-      catch_mat <- res_future$mat_stat["Cratio",,] 
-      biom_mat  <- res_future$mat_stat["Bratio",,]       
+      ssb_mat   <- res_future$mat_stat["Bratio",,]
+      catch_mat <- res_future$mat_stat["Cratio",,]
+      biom_mat  <- res_future$mat_stat["Bratio",,]
     }
   }
 
@@ -3130,16 +3126,16 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
     if(type=="AS"){
       x1 <- purrr::map_dfr(seq_len(length(age_label)),
                            #                       function(x) get_annual_pm(res_future$naa [x,year_future,],
-                       function(x) get_annual_pm(res_future$naa [x,,],                           
+                       function(x) get_annual_pm(res_future$naa [x,,],
                                                  fun,str_c(funname,"_naa_", age_label[x])))
       x2 <- purrr::map_dfr(seq_len(length(age_label)),
                            #                     function(x) get_annual_pm(res_future$wcaa[x,year_future,],
-                     function(x) get_annual_pm(res_future$wcaa[x,,],                           
+                     function(x) get_annual_pm(res_future$wcaa[x,,],
                                                fun,str_c(funname,"_wcaa_",age_label[x])))
       x3 <- purrr::map_dfr(seq_len(length(age_label)),
 #                           function(x) get_annual_pm(res_future$faa [x,year_future,],
-                       function(x) get_annual_pm(res_future$faa [x,,],                                                     
-                                                 fun,str_c(funname,"_faa_", age_label[x])))      
+                       function(x) get_annual_pm(res_future$faa [x,,],
+                                                 fun,str_c(funname,"_faa_", age_label[x])))
     }
     else{
       x1 <- x2 <- x3 <- NULL
@@ -3180,7 +3176,7 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
         }
         if(fun_name_char==c("prob_min_any")){
           mat <- sweep(mat, 2, SBmin, FUN="/")
-        }                
+        }
       }
       mat1 <- mat[tmp,]
       res <- apply(mat1,2,fun_name) %>% sum_fun_name()
@@ -3232,12 +3228,12 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
   }
 
   mean2 <- function(x) fun_period(x,na.rm=TRUE)
-    
+
   fun_list2 <- list(cv     = function(x) sd(x, na.rm=TRUE)/mean(x,na.rm=TRUE),
                     mean   = function(x) mean(x,na.rm=TRUE),
                     median   = function(x) median(x,na.rm=TRUE),
                     aav   = function(x) mean(abs(av(x)),na.rm=TRUE),
-                    mav   = function(x) median(abs(av(x)),na.rm=TRUE),                    
+                    mav   = function(x) median(abs(av(x)),na.rm=TRUE),
                     adr = function(x){ x0 <- av(x) ;
                                        x0[x0>0] <- NA ;
                                        mean(x0,na.rm=TRUE)    },
@@ -3258,11 +3254,11 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
                     },
                     prob_half_any  = function(x) ifelse(sum(x[-1]<0.5*x[-length(x)])>0,1,0),
                     prob_ban_any    = function(x){
-                      if(type=="PM") SBban <- rep(1,length(x))                      
+                      if(type=="PM") SBban <- rep(1,length(x))
                       ifelse(sum(x<SBban,na.rm=FALSE)>0,1,0)
                     },
                     prob_min_any    = function(x){
-                      if(type=="PM") SBmin <- rep(1,length(x))                      
+                      if(type=="PM") SBmin <- rep(1,length(x))
                       ifelse(sum(x<SBmin,na.rm=FALSE)>0,1,0)
                     })
 
@@ -3378,8 +3374,8 @@ check_fix_CVoption <- function(res_future){
   wcatch <- res_future$HCR_realized[,,"wcatch"]
   wcatch[-1,]/wcatch[-nrow(wcatch),]
 }
-        
-#' @export      
+
+#' @export
 
 format_type <- function(){
     tribble(~name, ~col, ~ lty,
