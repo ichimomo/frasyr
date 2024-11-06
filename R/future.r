@@ -1029,6 +1029,7 @@ future_vpa_R <- function(naa_mat,
     last_catch <- colSums(wcaa_mat[,total_nyear,])
     if(obj_stat==0) obj <- mean(last_catch)
     if(obj_stat==1) obj <- geomean(last_catch)
+    if(obj_stat==2) obj <- median(last_catch) #2024/11/05 西嶋追加
   }
   else{
     if(obj_stat==0) obj <- mean(spawner_mat[total_nyear,])
@@ -1595,11 +1596,35 @@ trace_future <- function(tmb_data,
 #' @export
 #' @encoding UTF-8
 
-get_summary_stat <- function(all.stat){
+get_summary_stat <- function(all.stat,obj_stat="mean"){
+
+  select_columns_by_stat <- function(data, obj_stat) {
+    # 選択する列名を動的に生成
+    cols <- c(
+      "RP_name",
+      glue::glue("ssb.{obj_stat}"),
+      "SSB2SSB0",
+      glue::glue("biom.{obj_stat}"),
+      glue::glue("cbiom.{obj_stat}"),
+      glue::glue("U.{obj_stat}"),
+      glue::glue("catch.{obj_stat}"),
+      "catch.CV",
+      "Fref2Fcurrent"
+    )
+
+    # 選択した列を返す
+    data %>%
+      select(all_of(cols))
+  }
 
   sumvalue <- all.stat %>% as_tibble %>%
-    mutate(SSB2SSB0=all.stat$ssb.mean/all.stat$ssb.mean[2]) %>%
-    select(RP_name,ssb.mean,SSB2SSB0,biom.mean,cbiom.mean, U.mean,catch.mean,catch.CV,Fref2Fcurrent)
+    mutate(SSB2SSB0=case_when(obj_stat=="mean" ~ all.stat$ssb.mean/all.stat$ssb.mean[2],
+                              obj_stat=="median" ~ all.stat$ssb.median/all.stat$ssb.median[2],
+                              obj_stat=="geomean" ~ all.stat$ssb.geomean/all.stat$ssb.geomean[2])
+    )
+           # %>% select(RP_name,ssb.mean,SSB2SSB0,biom.mean,cbiom.mean, U.mean,catch.mean,catch.CV,Fref2Fcurrent)
+
+  sumvalue <- select_columns_by_stat(sumvalue,obj_stat=obj_stat)
   colnames(sumvalue) <- c("RP_name","SSB","SSB2SSB0","B","cB","U","Catch","Catch.CV","Fref/Fcur")
 
   sumvalue <- bind_cols(sumvalue,all.stat[,substr(colnames(all.stat),1,1)=="F"])
@@ -1824,7 +1849,7 @@ est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE,
                       calc_yieldcurve=TRUE,
                       trace_multi=c(0.9,0.925,0.95,0.975,1.025,1.05,1.075),
                       select_Btarget=0, select_Blimit=0, select_Bban=0,
-                      multi_upper_PGY=10
+                      multi_upper_PGY=10,obj_stat="mean"
                       ){
 
   res_vpa_MSY <- data_future$input$res_vpa
@@ -1844,18 +1869,25 @@ est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE,
                                multi_init=mean(f_range),
                                multi_lower=f_range[1],
                                multi_upper=f_range[2],
-                               compile=compile_tmb)
+                               compile=compile_tmb,
+                               obj_stat=obj_stat)
 
     MSYstat <- res_future_MSY %>% get.stat(use_new_output=TRUE) %>%
       mutate(RP_name="MSY")
 
       # 他管理基準値を推定するためのオブジェクトを作っておく
     obj_mat <- NULL
+
+    catch_target <- MSYstat[paste0("catch.",obj_stat)] %>% as.numeric()
+    ssb_target <- B0stat[paste0("ssb.",obj_stat)] %>% as.numeric()
+
+
     if(candidate_PGY[1]>0){
 
         obj_mat <- bind_rows(obj_mat,
                              tibble(RP_name    = str_c("PGY",candidate_PGY,"lower",sep="_"),
-                                    obj_value  = candidate_PGY * MSYstat$catch.mean,
+                                    # obj_value  = candidate_PGY * MSYstat$catch.mean,
+                                    obj_value  = candidate_PGY * catch_target,
                                     optim_method=optim_method,
                                     multi_init = res_future_MSY$multi*1.2,
                                     multi_lower= res_future_MSY$multi,
@@ -1865,7 +1897,8 @@ est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE,
 
         if(only_lowerPGY=="both"){
             obj_mat2 <- tibble(RP_name    = str_c("PGY",candidate_PGY,"upper",sep="_"),
-                               obj_value  = candidate_PGY * MSYstat$catch.mean,
+                               # obj_value  = candidate_PGY * MSYstat$catch.mean,
+                               obj_value  = candidate_PGY * catch_target,
                                optim_method=optim_method,
                                multi_init = res_future_MSY$multi*0.5,
                                multi_upper= res_future_MSY$multi,
@@ -1879,7 +1912,8 @@ est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE,
         fssb.range <- trace.multi[trace_pre$ssb.mean>0.1]
         obj_mat <- bind_rows(obj_mat,
                              tibble(RP_name    = str_c("B0-",candidate_B0*100,"%"),
-                                    obj_value  = candidate_B0 * B0stat$ssb.mean,
+                                    # obj_value  = candidate_B0 * B0stat$ssb.mean,
+                                    obj_value  = candidate_B0 * ssb_target,
                                     optim_method=optim_method,
                                     multi_init = mean(fssb.range),
                                     multi_upper= max (fssb.range),
@@ -1928,7 +1962,9 @@ est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE,
                                                  compile      = FALSE,
                                                  objective    = obj_mat$objective[x],
                                                  obj_value    = obj_mat$obj_value[x],
-                                                 obj_stat     = "mean") %>%
+                                                 # obj_stat     = "mean"
+                                                 obj_stat     = obj_stat
+                                                 ) %>%
                                    get.stat(use_new_output=TRUE)})
 
         other_RP_stat <- bind_cols(other_RP_stat, select(obj_mat, RP_name))
@@ -1936,7 +1972,7 @@ est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE,
     }
 
     all.stat <- bind_rows(MSYstat, B0stat, other_RP_stat)
-    sum.stat <- get_summary_stat(all.stat)
+    sum.stat <- get_summary_stat(all.stat,obj_stat=obj_stat)
 
     if(calc_yieldcurve==TRUE){
         # update trace
@@ -2017,7 +2053,8 @@ est_MSYRP_proxy <- function(data_future,
                             select_Btarget="F%spr30",
                             select_Blimit="Bmin",
                             select_Bban="0",
-                            F.range = seq(from=0,to=2,length=101)
+                            F.range = seq(from=0,to=2,length=101),
+                            obj_stat = "mean"
                             ){
 
   # waa_fun, maa_fun=TRUEの場合にはFbaseの管理基準値は計算できない
@@ -2088,7 +2125,8 @@ est_MSYRP_proxy <- function(data_future,
                        candidate_PGY=-1,
                        candidate_Babs=Babs_vector, candidate_B0=candidate_B0,
                        candidate_Fbase=f_proxy_vector,
-                       calc_yieldcurve=FALSE)
+                       calc_yieldcurve=FALSE,
+                       obj_stat=obj_stat)
 
   allRP <- c(candidate_B0, Babs_vector,f_proxy_vector)
   allRP <- allRP[allRP>0]

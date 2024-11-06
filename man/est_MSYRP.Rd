@@ -20,7 +20,8 @@ est_MSYRP(
   select_Btarget = 0,
   select_Blimit = 0,
   select_Bban = 0,
-  multi_upper_PGY = 10
+  multi_upper_PGY = 10,
+  obj_stat = "mean"
 )
 }
 \arguments{
