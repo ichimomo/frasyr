@@ -100,10 +100,14 @@ plot_vpa <- function(vpalist,
 
   if(is.null(vpatibble)){
     if(isTRUE("naa" %in% names(vpalist))) vpalist <- list(vpalist)
-    vpadata <- vpalist %>% purrr::map_dfr(convert_vpa_tibble ,.id="id") %>%
-      mutate(age=factor(age))
-  }
-  else{
+    if(class(vpalist[[1]]) == "hvpa"){
+      vpadata <- vpalist %>% purrr::map_dfr(convert_hvpa_tibble ,.id="id") %>%
+        mutate(age=factor(age))
+    } else { ## Yearly VPA (normal one)
+      vpadata <- vpalist %>% purrr::map_dfr(convert_vpa_tibble ,.id="id") %>%
+        mutate(age=factor(age))
+    }
+  } else {
     vpadata <- vpatibble %>%
       mutate(age=factor(age))
     if("id" %in% !names(vpadata)) vpadata$id <- "vpa1"
@@ -118,8 +122,7 @@ plot_vpa <- function(vpalist,
   if(!is.null(what.plot)){
     vpadata <- vpadata %>%
       mutate(stat=factor(stat,levels=what.plot))
-  }
-  else{
+  } else {
     vpadata <- vpadata %>%
       mutate(stat=factor(stat,levels=c(biomass_factor, age_factor)))
   }
@@ -130,43 +133,76 @@ plot_vpa <- function(vpalist,
     scale_value <- 1:(length(unique(vpadata$id)))
     print("Note! Length of scale value was different although plot was done...")
   }
-  # シナリオの違いを線種+shapeにした(浜辺'20/06/30)
-  g1 <- vpadata %>% ggplot()
-  if(all(is.na(vpadata$age))){
-    g1 <- g1+ geom_line(aes(x=year, y=value,lty=id))
-    g1 <- try(g1 + geom_point(aes(x=year, y=value, shape=id)) +
-                scale_shape_manual(values = scale_value))
-  }
-  else{
-    g1 <- g1+ geom_line(aes(x=year, y=value, color=age, lty=id))
-    g1 <- try(g1 + geom_point(aes(x=year, y=value, color=age, shape=id)) +
-                scale_shape_manual(values = scale_value))
-  }
-  # 上のがダメな場合にオリジナルで対応
-  if(class(g1[1])=="try-error"){ # g1の長さは2あって警告が頻発するので[1]を加えた
+
+
+  if(class(vpalist[[1]]) == "hvpa"){
+    g1 <- vpadata %>% ggplot()+
+      geom_line(aes(x=year, y=value, color = age, linetype = id))+
+      geom_point(aes(x=year, y=value, color = age, shape = id)) +
+      scale_shape_manual(values = scale_value)+
+      facet_wrap(~stat+term, scale="free_y", ncol=ncol) + ylim(0,NA) +
+      theme_SH(legend.position=legend.position) +
+      ylab("value") + xlab("Year")+
+      guides(color=guide_legend(nrow=2))
+
+    if(!(is.null(plot_year))){
+      g2 <- g1 + xlim(plot_year[1], max(plot_year))
+    } else {
+      g2 <- g1
+    }
+
+  } else {
+    # シナリオの違いを線種+shapeにした(浜辺'20/06/30)
     g1 <- vpadata %>% ggplot()
     if(all(is.na(vpadata$age))){
       g1 <- g1+ geom_line(aes(x=year, y=value,lty=id))
+      g1 <- try(g1 + geom_point(aes(x=year, y=value, shape=id)) +
+                  scale_shape_manual(values = scale_value))
+    } else {
+      g1 <- g1+ geom_line(aes(x=year, y=value, color=age, lty=id))
+      g1 <- try(g1 + geom_point(aes(x=year, y=value, color=age, shape=id)) +
+                  scale_shape_manual(values = scale_value))
     }
-    else{
-      g1 <- g1+ geom_line(aes(x=year, y=value,color=age,lty=id))
+    # 上のがダメな場合にオリジナルで対応
+    if(class(g1[1])=="try-error"){ # g1の長さは2あって警告が頻発するので[1]を加えた
+      g1 <- vpadata %>% ggplot()
+      if(all(is.na(vpadata$age))){
+        g1 <- g1+ geom_line(aes(x=year, y=value,lty=id))
+      }
+      else{
+        g1 <- g1+ geom_line(aes(x=year, y=value,color=age,lty=id))
+      }
     }
+    g1 <- g1 +
+      facet_wrap(~stat, scale="free_y", ncol=ncol) + ylim(0,NA) +
+      theme_SH(legend.position=legend.position) +
+      ylab("value") + xlab("Year")+
+      guides(color=guide_legend(nrow=2))
   }
 
-  g1 <- g1 +
-    facet_wrap(~stat, scale="free_y", ncol=ncol) + ylim(0,NA) +
-    theme_SH(legend.position=legend.position) +
-    ylab("value") + xlab("Year")+
-    guides(color=guide_legend(nrow=2))
 
-  if(!(is.null(plot_year))){
+  apply_minor_ticks2 <- function(plot, minor_breaks=1){
+    plot +   # サブ目盛の設定
+      guides(x=guide_axis(minor.ticks=TRUE), # guideは凡例を制御するための関数。目盛りのスタイルを設定するのはtheme関数だが、どんな目盛りをつけるかはguidesの範疇になる？
+             y=guide_axis(minor.ticks=TRUE)) +
+      # サブ目盛りをつけるので、目盛りの長さを少し長くし、線幅を狭くする
+      theme(axis.ticks.length=unit(0.17,"cm"), # default=unit(0.15,"cm")
+            axis.ticks=element_line(linewidth=0.4)) + # default=0.5
+      # サブ目盛りの間隔の設定
+      scale_x_continuous(limits=c(plot_year[1], max(plot_year)), minor_breaks=scales::breaks_width(minor_breaks),
+                         breaks      =scales::breaks_pretty())
+    #    scale_x_continuous(minor_breaks=scales::breaks_width(minor_breaks))
+  }
+
+  if(is_minor_ticks==FALSE &!(is.null(plot_year))){
     g2 <- g1 + xlim(plot_year[1], max(plot_year))
   } else {
     g2 <- g1
   } # もし動かない場合はこれまで通りに作図(浜辺'20/06/30)
 
-  if(is_minor_ticks==TRUE) g2 <- apply_minor_ticks(g2)
-  return(g2)
+  if(is_minor_ticks==TRUE & is.null(plot_year)) g2 <- apply_minor_ticks(g2)
+  if(is_minor_ticks==TRUE & !(is.null(plot_year))) g2 <- apply_minor_ticks2(g2)
+  g2
 }
 
 #' F currentをプロットする
@@ -998,7 +1034,7 @@ plot_futures <- function(vpares=NULL,
   g1 <- g1+
     geom_blank(data=dummy,mapping=aes(y=value,x=year))+
     geom_blank(data=dummy2,mapping=aes(y=value,x=year))+
-    scale_y_continuous(expand=expand_scale(mult=c(0,0.05)),labels = scales::comma)+
+    scale_y_continuous(expand=expansion(mult=c(0,0.05)),labels = scales::comma)+
     facet_wrap(~factor(jstat,levels=rename_list$jstat),scales="free_y",ncol=ncol)+
     xlim(minyear,maxyear)
 
@@ -1415,7 +1451,7 @@ plot_yield <- function(MSY_obj,refs_base,
       ggrepel::geom_label_repel(data=refs_base,
                                 aes(y=ymax*ylim.scale*0.85,
                                     x=SSB,label=refs.label),
-                                direction="x",size=11*0.282,nudge_y=ymax*ylim.scale*0.9)
+                                direction="x",size=11*0.282,nudge_y=ymax*ylim.scale*0.1)
   }
 
   if(isTRUE(labeling)){

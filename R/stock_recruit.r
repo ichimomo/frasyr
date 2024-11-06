@@ -2894,35 +2894,42 @@ check_consistent_w <- function(w, SRdata){
 #' @export
 #'
 
-tryall_SR <- function(data_SR, plus_group=TRUE, bio_par=NULL, tol=FALSE){
+tryall_SR <- function(data_SR, plus_group=TRUE, bio_par=NULL, tol=FALSE, detail=FALSE){
 
   SRmodel.list <- expand.grid(SR.rel = c("HS","BH","RI"), L.type = c("L1", "L2")) %>%
     as_tibble()
 
   if(tol==TRUE) fit.SR <- fit.SR_tol
-  SRmodel.list$pars <- purrr::map2(SRmodel.list$SR.rel, SRmodel.list$L.type,
+  allres <- purrr::map2(SRmodel.list$SR.rel, SRmodel.list$L.type,
                                    function(x,y){
-                                     res1 <- unlist(fit.SR(data_SR, SR = x, method = y,
-                                                           AR = 0, hessian = FALSE, out.AR=TRUE,
-                                                           bio_par = bio_par, plus_group = plus_group)
-                                                    [c("pars","AICc","steepness")])
+                                     tmp0 <- fit.SR(data_SR, SR = x, method = y,
+                                                    AR = 0, hessian = FALSE, out.AR=TRUE,
+                                                    bio_par = bio_par, plus_group = plus_group)
+                                     res1 <- unlist(tmp0[c("pars","AICc","steepness")])
                                      tmp <- fit.SR(data_SR, SR = x, method = y,
                                                    AR = 1, hessian = FALSE, out.AR=TRUE,
                                                    bio_par = bio_par, plus_group = plus_group)
                                      res2 <- unlist(tmp[c("pars","AICc","steepness")])
                                      res2 <- c(res2,"deltaAIC(AIC_AR-AIC_noAR)"=tmp$AIC.ar[2]-tmp$AIC.ar[1])
-                                     res3 <- unlist(fit.SR(data_SR, SR = x, method = y,
-                                                           AR = 1, hessian = FALSE, out.AR=FALSE,
-                                                           bio_par = bio_par, plus_group = plus_group)[c("pars","AICc","steepness")])
-                                     bind_rows(res1,res2,res3,.id="id")
+                                     tmp2 <- fit.SR(data_SR, SR = x, method = y,
+                                                    AR = 1, hessian = FALSE, out.AR=FALSE,
+                                                    bio_par = bio_par, plus_group = plus_group)
+                                     res3 <- unlist(tmp2[c("pars","AICc","steepness")])
+                                     list(pars=bind_rows(res1,res2,res3,.id="id"),
+                                          model=list(tmp0, tmp, tmp2))
                                    })
-
-  SRmodel.list <- SRmodel.list %>%
+  SRmodel.list$pars <- purrr::map(allres, function(x) x$pars)
+  result.list <- SRmodel.list %>%
     unnest(col=pars) %>%
-    left_join(tibble(id=as.character(1:3),AR.type=c("non","outer","inner"))) %>%
-    arrange(AICc,AR.type)
-
-  return(SRmodel.list)
+    left_join(tibble(id=as.character(1:3),AR.type=c("non","outer","inner"))) 
+  
+  if(detail==TRUE){
+   SRmodel.list <- SRmodel.list %>% mutate(model=purrr::map(allres, function(x) x$model))  %>%
+    unnest(col=model) 
+   result.list$model <- SRmodel.list$model
+  }
+  
+  return(arrange(result.list, AICc, AR.type))
 
 }
 

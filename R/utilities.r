@@ -1502,6 +1502,88 @@ convert_vpa_tibble <- function(vpares,SPRtarget=NULL){
                          Fratio)
 }
 
+
+#' 半期VPAの結果オブジェクトをtibble形式に変換する関数
+#'
+#' @param vpares vpaの結果のオブジェクト
+#' @encoding UTF-8
+#'
+#'
+#' @export
+
+convert_hvpa_tibble <- function(vpares,SPRtarget=NULL){
+
+  total.catch1 <- colSums(vpares$input$dat$caa1*vpares$input$dat$waa1,na.rm=T)
+  total.catch2 <- colSums(vpares$input$dat$caa2*vpares$input$dat$waa2,na.rm=T)
+
+  naa1 <- vpares$naa[seq(1,nrow(vpares$naa),2),]
+  naa2 <- vpares$naa[seq(2,nrow(vpares$naa),2),]
+  faa1 <- vpares$faa[seq(1,nrow(vpares$faa),2),]
+  faa2 <- vpares$faa[seq(2,nrow(vpares$faa),2),]
+  rownames(naa1) <- rownames(naa2) <- rownames(faa1) <- rownames(faa2) <-
+    factor(0:(nrow(faa1)-1))
+
+  ssb1 <- naa1 * vpares$input$dat$maa * vpares$input$dat$waa1
+  ssb2 <- naa2 * vpares$input$dat$maa * vpares$input$dat$waa2
+  biomass1 <- naa1 * vpares$input$dat$waa1
+  biomass2 <- naa2 * vpares$input$dat$waa2
+  if(is.null(vpares$input$dat$waa.catch)){
+    cbiomass1 <- naa1 * vpares$input$dat$waa1
+    cbiomass2 <- naa2 * vpares$input$dat$waa2
+  }
+  U1 <- total.catch1/colSums(cbiomass1, na.rm=T)
+  U2 <- total.catch2/colSums(cbiomass2, na.rm=T)
+  SSB1 <- convert_vector(colSums(ssb1, na.rm=T), "SSB") %>%
+    dplyr::filter(value>0&!is.na(value)) %>% mutate(term = 1)
+  SSB2 <- convert_vector(colSums(ssb2, na.rm=T), "SSB") %>%
+    dplyr::filter(value>0&!is.na(value)) %>% mutate(term = 2)
+  Biomass1 <- convert_vector(colSums(biomass1,na.rm=T),"biomass") %>%
+    dplyr::filter(value>0&!is.na(value)) %>% mutate(term = 1)
+  Biomass2 <- convert_vector(colSums(biomass2,na.rm=T),"biomass") %>%
+    dplyr::filter(value>0&!is.na(value)) %>% mutate(term = 2)
+  cBiomass1 <- convert_vector(colSums(cbiomass1,na.rm=T),"cbiomass") %>%
+    dplyr::filter(value>0&!is.na(value)) %>% mutate(term = 1)
+  cBiomass2 <- convert_vector(colSums(cbiomass2,na.rm=T),"cbiomass") %>%
+    dplyr::filter(value>0&!is.na(value)) %>% mutate(term = 2)
+  FAA1 <- convert_df(faa1, "fishing_mortality") %>%
+    dplyr::filter(value>0&!is.na(value)) %>% mutate(term = 1)
+  FAA2 <- convert_df(faa2, "fishing_mortality") %>%
+    dplyr::filter(value>0&!is.na(value)) %>% mutate(term = 2)
+  Recruitment1 <- convert_vector(colSums(vpares$naa[1,,drop=F]),"Recruitment") %>%
+    dplyr::filter(value>0&!is.na(value)) %>% mutate(term = 1)
+  Recruitment2 <- convert_vector(colSums(vpares$naa[2,,drop=F]),"Recruitment") %>%
+    dplyr::filter(value>0&!is.na(value)) %>% mutate(term = 2)
+
+  Fratio <- NULL
+
+  all_table <- bind_rows(SSB1,
+                         SSB2,
+                         Biomass1,
+                         Biomass2,
+                         cBiomass1,
+                         cBiomass2,
+                         convert_vector(U1[U1>0],"U") %>% mutate(term = 1),
+                         convert_vector(U2[U2>0],"U") %>% mutate(term = 2),
+                         convert_vector(total.catch1[total.catch1>0],"catch") %>% mutate(term = 1),
+                         convert_vector(total.catch2[total.catch2>0],"catch") %>% mutate(term = 2),
+                         convert_df(naa1,"fish_number") %>% mutate(term = 1),
+                         convert_df(naa2,"fish_number") %>% mutate(term = 2),
+                         FAA1,
+                         FAA2,
+                         convert_df(vpares$input$dat$waa1,"weight") %>% mutate(term = 1),
+                         convert_df(vpares$input$dat$waa2,"weight") %>% mutate(term = 1),
+                         convert_df(vpares$input$dat$maa,"maturity") %>% mutate(term = NA),
+                         convert_df(vpares$input$dat$caa1,"catch_number") %>% mutate(term = 1),
+                         convert_df(vpares$input$dat$caa2,"catch_number") %>% mutate(term = 2),
+                         convert_df(vpares$input$dat$M,  "natural_mortality") %>% mutate(term = NA),
+                         Recruitment1,
+                         Recruitment2,
+                         Fratio) %>%
+    mutate(age = factor(age), term = factor(term))
+
+}
+
+
 #' fit.SRの結果をtibble形式に治す
 #'
 #' @param SR_result fit.SRの結果のオブジェクト
@@ -2831,7 +2913,7 @@ derive_future_summary <- function(res_future, target=NULL){
     recruit = tmpfunc(res_future$SR_mat[,,"recruit"]),
     intercept = tmpfunc(res_future$SR_mat[,,"intercept"]),
     deviance = tmpfunc(res_future$SR_mat[,,"deviance"]),
-    deviance_sd = tmpfunc(res_future$SR_mat[,,"deviance"],fun=sd),
+    deviance_sd = tmpfunc(res_future$SR_mat[,,"deviance"],fun=stats::sd),
     catch   = tmpfunc(res_future$HCR_realized[,,"wcatch"]),
     beta    = tmpfunc(res_future$HCR_mat[,,"beta"]),
     Blimit  = tmpfunc(res_future$HCR_mat[,,"Blimit"]),

@@ -1152,6 +1152,7 @@ set_SR_mat <- function(res_vpa=NULL,
       SR_mat[,,"SR_type"] <- 6
       SRF <- SRF_BHS
     }
+
     if(res_SR$input$SR=="Mesnil" | res_SR$input$SR=="MR"){
       SR_mat[,,"SR_type"] <- 7
       SRF <- SRF_MR
@@ -1400,7 +1401,7 @@ make_array <- function(d3_mat, pars, pars.year, year_replace_future){
   else{
     years <- dimnames(d3_mat)[[2]]
     if(is.null(pars)){
-      pars.future <- rowMeans(d3_mat[,years%in%pars.year,1])
+      pars.future <- rowMeans(d3_mat[,years%in%pars.year,1,drop=F])
     }
     else{
       if(length(pars)==dim(d3_mat)[[1]]) pars.future <- pars
@@ -1837,7 +1838,7 @@ set_lower_limit_catch <- function(catch_previous_year, catch_current_year, lower
 #' @param candidate_PGY PGYの計算候補
 #' @param candidate_B0 b0の計算候補
 #' @param candidate_Babs Babsの計算候補
-#' @param trace_multi （このベクトル）×（管理基準値として計算されるF）の平行状態の資源状態などを計算する。HCR_catchのプロットするときに、この値をもっと細かく設定することが必要になってくるかも
+#' @param trace.multi （このベクトル）×（管理基準値として計算されるF）の平行状態の資源状態などを計算する。HCR_catchのプロットするときに、この値をもっと細かく設定することが必要になってくるかも
 #' @param multi_upper_PGY PGYを計算するときの探索範囲の上限。デフォルトは10だが、うまくいかない場合にはこの数字を少し変えてみるとよいかも。
 #'
 #' @export
@@ -1847,7 +1848,7 @@ set_lower_limit_catch <- function(catch_previous_year, catch_current_year, lower
 est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE, candidate_PGY=c(0.1,0.6),
                       only_lowerPGY="lower", candidate_B0=-1, candidate_Babs=-1, candidate_Fbase=-1,
                       calc_yieldcurve=TRUE,
-                      trace_multi=c(0.9,0.925,0.95,0.975,1.025,1.05,1.075),
+                      trace.multi=unique(sort(c(0.001,seq(from=0,to=2,by=0.1),10,100))),
                       select_Btarget=0, select_Blimit=0, select_Bban=0,
                       multi_upper_PGY=10,obj_stat="mean"
                       ){
@@ -1855,7 +1856,6 @@ est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE,
   res_vpa_MSY <- data_future$input$res_vpa
   res_SR_MSY <-  data_future$input$res_SR
   # F=0からssbがゼロになるまでFを順次大きくしたtraceを実行する
-  trace.multi <- unique(sort(c(0.001,seq(from=0,to=2,by=0.1),10,100)))
   trace_pre <- frasyr::trace_future(data_future$data, trace.multi=trace.multi, ncore=ncore)
   B0stat <- trace_pre %>% dplyr::filter(fmulti==0) %>% mutate(RP_name="B0")
   trace.multi2 <- unique(range(trace.multi[trace_pre$ssb.mean>0.001]))
@@ -1978,7 +1978,7 @@ est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE,
         # update trace
         trace.multi2 <- c(sum.stat$sumvalue$"Fref/Fcur",trace.multi2)
         trace.multi2 <- trace.multi2[trace.multi2>0] %>%
-            purrr::map(function(x) x * trace_multi) %>%
+            purrr::map(function(x) x * trace.multi) %>%
             unlist() %>% sort() %>% unique()
         diff.trace <- diff(log(trace.multi2))
         trace.multi2[which(mean(diff.trace)<diff.trace)]
