@@ -1594,6 +1594,7 @@ trace_future <- function(tmb_data,
 }
 
 #'
+#' @import glue
 #' @export
 #' @encoding UTF-8
 

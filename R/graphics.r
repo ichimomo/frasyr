@@ -1083,9 +1083,15 @@ plot_futures <- function(vpares=NULL,
                                           TRUE ~ ")"))
   }
 
-  g1 <- g1 +
-    geom_line(data=. %>% dplyr::filter(scenario=="VPA"),
-              mapping=aes(x=year, y=mean, color=col, lty=lty),lwd=1) # VPAのプロット
+    g1 <- g1 +
+      geom_line(data=. %>% dplyr::filter(scenario=="VPA"),
+                mapping=aes(x=year, y=mean, color=col, lty=lty),lwd=1) # VPAのプロット
+
+    if(!is.null(vpares)) {
+      if("sam"%in%class(vpares)) {
+        style_def$scenario[style_def$scenario=="VPA"] <- "SAM" #VPA -> SAMに変更
+      }
+    }
 
   # setting scales and guides
   g1 <- g1 +
