@@ -713,6 +713,7 @@ future_vpa_R <- function(naa_mat,
                                       HCR_realized_name))
   class(HCR_realized) <- "myarray"
 
+  # browser()
   if(isTRUE(do_MSE)){
     MSE_seed <- MSE_input_data$input$seed_number + 1
     if(!is.null(MSE_sd) && MSE_sd==0){
@@ -724,8 +725,14 @@ future_vpa_R <- function(naa_mat,
     if( is.null(MSE_nsim)) MSE_nsim <- MSE_input_data$input$nsim
     SR_MSE <- SR_mat
     SR_MSE[,,"recruit"] <- SR_MSE[,,"ssb"] <- 0
-    dimnames(SR_MSE)$par[12] <- "real_true_catch"
-    dimnames(SR_MSE)$par[13] <- "pseudo_true_catch"
+    # dimnames(SR_MSE)$par[12] <- "real_true_catch"
+    # dimnames(SR_MSE)$par[13] <- "pseudo_true_catch"
+    # errrorが出るため修正してみる
+    # browser()
+    tmpname <- dimnames(SR_MSE)[[3]]
+    tmpname[tmpname=="cbiomass"] <- "real_true_catch"
+    tmpname[length(tmpname)] <- "pseudo_true_catch"
+    dimnames(SR_MSE)[[3]] <- tmpname
 
     # max_F, max_exploitation_rateはそのままMSEに引き継ぐとしたけどやめる
     #
@@ -2185,8 +2192,9 @@ unlist_future_data = function(data_future_list) {
     }
     return$input[[j]] <- data_future_list[[j]]$input
   }
-  return$data$nsim <- dim(return$data$caa_mat)[3]
+  return$data$nsim <- return$input$nsim <- dim(return$data$caa_mat)[3]
   return$input <- return$input[[1]] #est_MSYRPでinput$plus_group（など？）を利用するので一つ目を入れておく（これでいい？）
+  return$input$nsim <- dim(return$data$caa_mat)[3]
   return( return )
 }
 

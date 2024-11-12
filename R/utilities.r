@@ -2353,8 +2353,9 @@ get_performance <- function(future_list,res_vpa,ABC_year=2021,
                                 year.catch = ABC_year+indicator_year,
                                 year.ssbtarget = ABC_year+indicator_year,
                                 year.ssblimit  = ABC_year+indicator_year,
-                                year.ssbban=NULL, year.ssbmin=NULL, year.ssbmax=NULL,
-                                year.aav = c(ABC_year,ABC_year-1),
+                                year.ssbban=NULL, year.ssbmin=NULL,
+                                # year.ssbmax=NULL,
+                                # year.aav = c(ABC_year,ABC_year-1),
                                 Btarget= Btarget,
                                 Blimit = Blimit,
                                 Bban   = Bban)
@@ -2387,18 +2388,17 @@ get_performance <- function(future_list,res_vpa,ABC_year=2021,
 
   junit <- c("","十","百","千","万")[log10(biomass.unit)+1]
 
-  stat_data <- tibble(stat_name=c("ssb.mean","catch.mean","Pr(SSB>SSBtarget)","Pr(SSB>SSBlim)",
-                                  "catch.aav"),
-                      stat_category=c("平均親魚量 ", "平均漁獲量 ", "目標上回る確率 ", "限界上回る確率 ",
-                                      "漁獲量変動"))
+  stat_data <- tibble(stat_name=c("ssb.mean","catch.mean","Pr(SSB>SSBtarget)","Pr(SSB>SSBlim)"),
+                      stat_category=c("平均親魚量 ", "平均漁獲量 ", "目標上回る確率 ", "限界上回る確率 "))
 
+  # browser()
   kobe_res <- purrr::map_dfr(kobe_res[c("ssb.mean", "catch.mean", "prob.over.ssbtarget",
-                                        "prob.over.ssblimit", "catch.aav")],
+                                        "prob.over.ssblimit")],
                              function(x) x %>% select(-beta) %>%
                                gather(key=year,value=value,-HCR_name,-stat_name)) %>%
     mutate(value=ifelse(stat_name %in% c("ssb.mean", "catch.mean"), value/biomass.unit, value)) %>%
     mutate(unit =ifelse(stat_name %in% c("ssb.mean", "catch.mean"), str_c(junit, "トン"), "%")) %>%
-    mutate(unit =ifelse(stat_name %in% c("catch.aav"), "", unit)) %>%
+    # mutate(unit =ifelse(stat_name %in% c("catch.aav"), "", unit)) %>%
     left_join(stat_data) %>%
     mutate(stat_year_name=str_c(stat_category,year))
 
