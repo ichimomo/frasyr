@@ -44,10 +44,13 @@ test_that("plot_SRdata", {
 })
 
 test_that("SRplot_gg", {
+    
   g1 <- plot_SR(res_sr_HSL1)
   g2 <- plot_SR(res_sr_HSL2, box.padding=1)
+  g3 <- plot_SR(res_sr_HSL1, yscale=100000000, ylabel="億尾")  
   expect_equal(class(g1)[1],"gg")
   expect_equal(class(g2)[1],"gg")
+  
 })
 
 test_that("compare_SRfit",{
