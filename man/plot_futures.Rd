@@ -38,7 +38,8 @@ plot_futures(
   font.size = 16,
   ncol = 3,
   ncol_legend = 2,
-  remove.last.vpa.year = FALSE
+  remove.last.vpa.year = FALSE,
+  use_median = FALSE
 )
 }
 \arguments{
@@ -95,6 +96,8 @@ plot_futures(
 \item{ncol}{図を並べるときの列数}
 
 \item{remove.last.vpa.year}{VPAの最終年のデータのプロットを除くかどうか（last.catch.zero用オプション）}
+
+\item{use_median}{平均値の代わりに中央値をプロットする}
 
 \item{width_example}{個々のシミュレーションをプロットする場合の線の太さ (default=0.7)}
 }
