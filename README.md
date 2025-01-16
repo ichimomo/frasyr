@@ -1,5 +1,5 @@
 # frasyr
-[![R-CMD-check](https://github.com/ichimomo/frasyr/actions/workflows/R-CMD-check.yml/badge.svg)](https://github.com/ichimomo/frasyr/actions/workflows/R-CMD-check.yml)
+[![Build status](https://github.com/ichimomo/frasyr/actions/workflows/check-standard.yml/badge.svg)](https://github.com/ichimomo/frasyr/actions/workflows/check-standard.yml)
   [![Codecov test coverage](https://codecov.io/gh/ichimomo/frasyr/branch/dev/graph/badge.svg)](https://codecov.io/gh/ichimomo/frasyr?branch=dev)
 - Fisheries Research Agency (FRA) provides the method for calculating sustainable yield (SY) with R
 - VPAを用いた資源量推定と，その推定結果をもとにしてMSYを基礎とした目標管理基準値を計算するためのRのパッケージです．開発途中のものであること，ご承知おきください．

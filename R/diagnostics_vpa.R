@@ -359,22 +359,30 @@ do_retrospective_vpa <- function(res,
   # vpa内でbの推定をしていないにもかかわらず、b_reestがtrueで入力された場合
   # 推定結果(bを推定している)は得られるが、メッセージを出す
 
-  if (!is.null(res_step1)) { #二段階法の場合のレトロ    i
-    retro_step_one <- retro.est(res_step1, n = n_retro)
-    yy <- ifelse(res$input$last.catch.zero,2,1)
-    sel_mat <- sapply(1:n_retro, function(i) rev(retro_step_one$Res[[i]]$saa)[,yy])
-    res_retro <- retro.est(res, n = n_retro, b.fix = !b_reest, remove.maxAgeF=remove_maxAgeF, ssb.forecast=ssb_forecast,sel.mat=sel_mat,grid.init=grid_init)
+  if(class(res) == "hvpa"){
+    res_retro <- hretro_est(res, n = n_retro, b_fix = !b_reest)
+
+  } else {
+    if (!is.null(res_step1)) { #二段階法の場合のレトロ    i
+      retro_step_one <- retro.est(res_step1, n = n_retro)
+      yy <- ifelse(res$input$last.catch.zero,2,1)
+      sel_mat <- sapply(1:n_retro, function(i) rev(retro_step_one$Res[[i]]$saa)[,yy])
+      res_retro <- retro.est(res, n = n_retro, b.fix = !b_reest, remove.maxAgeF=remove_maxAgeF, ssb.forecast=ssb_forecast,sel.mat=sel_mat,grid.init=grid_init)
     } else {
-    res_retro <- retro.est(res, n = n_retro, b.fix = !b_reest, remove.maxAgeF=remove_maxAgeF, ssb.forecast=ssb_forecast, grid.add.ini=grid_add_ini,grid.init=grid_init)
+      res_retro <- retro.est(res, n = n_retro, b.fix = !b_reest, remove.maxAgeF=remove_maxAgeF, ssb.forecast=ssb_forecast, grid.add.ini=grid_add_ini,grid.init=grid_init)
+    }
   }
+
   dat_graph <- list()
   for(i in 1:n_retro) dat_graph[[i]] <- res_retro$Res[[i]]
 
   dat_graph <- c(list(res), dat_graph) # Base case(全データで解析)の追加（浜辺07/08）
-  if(res$input$last.catch.zero){ # last.catch.zero=Tの場合、最終年のプロットはしない（Mohn's rhoとずれるから）（浜辺07/08）
-    names(dat_graph) <- rev(colnames(res$ssb))[2:(n_retro+2)]
-  } else {
-    names(dat_graph) <- rev(colnames(res$ssb))[1:(n_retro+1)]  # 図にinputされる結果に名前をつける
+  if(class(res) == "vpa"){
+    if(res$input$last.catch.zero){ # last.catch.zero=Tの場合、最終年のプロットはしない（Mohn's rhoとずれるから）（浜辺07/08）
+      names(dat_graph) <- rev(colnames(res$ssb))[2:(n_retro+2)]
+    } else {
+      names(dat_graph) <- rev(colnames(res$ssb))[1:(n_retro+1)]  # 図にinputされる結果に名前をつける
+    }
   }
 
   # 図にMohn's rhoの重ね書き用rho data from 市野川さん
@@ -387,6 +395,12 @@ do_retrospective_vpa <- function(res,
   if(!length(what_plot) == 5) rho_data <- rho_data[match(what_plot, rho_data$stat),]
   # ここもしかすると長さが5でもwhat_plotのデフォルトと一致しないとエラー出るかも
   # そういった変数についてはレトロして見る需要は少ないのだろうけど
+  if(class(res) == "hvpa") {
+    rho_data <- rho_data %>% mutate(term = ifelse(index == "SSB","2",substr(index,2,2))) %>% select(-stat) %>%
+      left_join(tibble(index = c("N1", "N2", "B1", "B2", "SSB", "R1", "R2", "F1", "F2"),
+                       stat = c("fish_number", "fish_number", "biomass" , "biomass" ,"SSB",
+                                "Recruitment" ,"Recruitment" ,"fishing_mortality","fishing_mortality")))
+  }
 
   g1 <- plot_vpa(dat_graph,
                  what.plot = factor(what_plot, levels = as.character(what_plot)),
@@ -395,8 +409,11 @@ do_retrospective_vpa <- function(res,
                mapping = aes(x = x, y = y, label = str_c("rho=", round(value,2))),
                vjust="inward", hjust="inward")
 
-  # bの結果出力用 from 市野川さん
-  b_tmp <- purrr::map_dfc(res_retro$Res, function(x) as_tibble(x$b))
+  if(class(res) == "vpa"){
+    b_tmp <- purrr::map_dfc(res_retro$Res, function(x) as_tibble(x$b))
+  } else {
+    b_tmp <- purrr::map_dfc(res_retro$Res, function(x) as_tibble(x$opts$b))
+  }
   colnames(b_tmp) <- rev(colnames(res$ssb))[1:n_retro]
 
   return(list(result = res_retro, mohn_rho = res_retro$mohn, graph = g1, b_res = b_tmp))
@@ -708,7 +725,7 @@ plot_residual_vpa2 <- function(res, index_name = NULL, plot_smooth = FALSE, plot
                                 names_sep = "_",
                                 values_drop_na = TRUE
   )
- 
+
   if(!is.null(index_name)){
     if(!length(index_name) == length(res$q)) stop(paste0("Length of index_name was different to the number of indices"))
     d_tidy$Index_Label <- rep(index_name, nrow(d_tmp))
@@ -737,7 +754,7 @@ plot_residual_vpa2 <- function(res, index_name = NULL, plot_smooth = FALSE, plot
   # 残差プロットに追加する観測誤差と自己相関係数のtidy data
   rho_data <- tibble(Index_Label = unique(d_tidy$Index_Label), sigma = res$sigma, ar1 = rho.numeric, signif = signif.numeric) %>%
     mutate(y = thred_y[y.posi_rho_data], x = xlim_year[1], y.sd = sd.thred_y[sd.y.posi_rho_data])
- 
+
   if(isTRUE(resid_CI)){
     g1 <- ggplot(d_tidy) +
       geom_ribbon(aes(x = year, ymin = -qnorm(0.025)*sigma, ymax = qnorm(0.025)*sigma), alpha=0.05)+
@@ -812,7 +829,7 @@ plot_residual_vpa2 <- function(res, index_name = NULL, plot_smooth = FALSE, plot
     geom_point(aes(x=year, y=obs, colour = Index_Label), size = 2) +
     geom_line(aes(x=year, y=pred, colour = Index_Label), linewidth = 1) +
     facet_wrap(~Index_Label, scale="free") +
-    #xlim(xlim_year) + 
+    #xlim(xlim_year) +
 	ylim(0, NA) +
     ylab("Abundance index") +
     xlab("Year") +
@@ -1161,22 +1178,22 @@ plot_resboot_vpa <- function(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
   if(ci_range >= 1) stop(paste0('"ci_range" must be less than 1'))
   res$input$plot <- FALSE
   res_boo <- boo.vpa(res, B = B_ite, method = B_method)
-  
+
   year <- res_boo[[1]]$index %>% colnames() %>% as.numeric()
   ssb_mat <- abund_mat <- biomass_mat <- matrix(NA, nrow = B_ite, ncol = length(year))
   cor_mat <-   NULL
   n_error <- 0
-  
+
   for(i in 1:B_ite){
     tmp <- res_boo[[i]]
-	if(tmp[1]=="try-error"){n_error <- n_error + 1} else {n_error <- n_error } 
+	if(tmp[1]=="try-error"){n_error <- n_error + 1} else {n_error <- n_error }
     if(tmp[1]=="try-error")next
     ssb_mat[i,] <- colSums(tmp$ssb, na.rm = TRUE)
     abund_mat[i,] <- as.numeric(tmp$naa[1,])
     biomass_mat[i,] <- colSums(tmp$baa, na.rm = TRUE)
     cor_num <- c(tmp$Fc.at.age, tmp$b, last(colSums(tmp$ssb)), last(as.numeric(tmp$naa[1,]))) %>%
       unlist() %>% as.numeric()
-	  
+
     if(res$input$last.catch.zero){
       cor_num <- c(tail(colSums(tmp$ssb),2)[1] %>% as.numeric(),
                    tail(tmp$naa[1,],2)[1] %>% as.numeric())
@@ -1184,9 +1201,9 @@ plot_resboot_vpa <- function(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
     cor_mat <- rbind(cor_mat, cor_num)
   } # for(i)
   cor_mat <- as.data.frame(cor_mat)
-  
+
   rownames(cor_mat) <- str_c("ite",1:(B_ite-n_error))
-  
+
   colnames(cor_mat) <- c(str_c("term.F_age",1:length(tmp$Fc.at.age)-1),
                          str_c("b",1:length(tmp$b)),
                          "SSB_last", "Recruitment_last")
