@@ -952,12 +952,12 @@ future_vpa_R <- function(naa_mat,
 
         is_banking <- all(HCR_mat[t,,"TAC_reserve_amount"]>0)
 
-        if(is_banking==FALSE){ # when borrowing
+        if(is_banking==FALSE){ # Blimit以下の場合、繰入はできない
+
           if(is.null(do_MSE) | do_MSE==FALSE) tmp <- (spawner_mat[t,] < HCR_mat[t,,"Blimit"])
-          if(!is.null(do_MSE) && do_MSE==TRUE) tmp <- (spawner_mat[t-2,] < HCR_mat[t,,"Blimit"])
+          if(!is.null(do_MSE) && do_MSE==TRUE) tmp <- (spawner_mat[t-2,] < HCR_mat[t,,"Blimit"]) # Blimitは管理開始年からしかインプットされていないのでt-2でなくtを使う
           HCR_mat[t,tmp,"TAC_reserve_amount"]  <- 0
         }
-
         tmpcatch <- HCR_realized[t,,"original_ABC_plus"] - HCR_mat[t,,"TAC_reserve_amount"]
         HCR_mat[t,,"expect_wcatch"] <- ifelse(tmpcatch<0, 0.01, tmpcatch)
       } #expect_wcatchをゼロにすると不具合がありそうなので、微小値（0.01）を与える
@@ -965,12 +965,15 @@ future_vpa_R <- function(naa_mat,
       # 次の年の持ち越し分を計算
       if(t<total_nyear){
         # 翌年に持ち越せる上限量を計算
-        if(has_non_na(HCR_mat[t,,"TAC_carry_rate"])){
+        tmp1 <- has_non_na(HCR_mat[t,,"TAC_carry_rate"])
+        tmp2 <- has_non_na(HCR_mat[t,,"TAC_carry_amount"])
+        if(tmp1){
           max_carry_amount <- HCR_mat[t,,"TAC_carry_rate"]*HCR_realized[t,,"original_ABC"]
         } #
-        if(has_non_na(HCR_mat[t,,"TAC_carry_amount"])){
+        if(tmp2){
           max_carry_amount <- HCR_mat[t,,"TAC_carry_amount"]
         }
+        if(!tmp1 && !tmp2) max_carry_amount <- Inf
 
         # 実際の漁獲量ともともとのABCの差
         # 繰越は１年以上引き継がれないという設定なので"original_ABC_plus"でなく"original_ABC"との差を繰越分としているが、前借り設定が混ざると都合が悪くなる
@@ -983,7 +986,6 @@ future_vpa_R <- function(naa_mat,
           # TACでadjustする場合
           if(has_non_na(HCR_mat[t,,"TAC_adjust"])){
               ABC_reserve_amount <- calc_adjust_TAC(HCR_mat[t,,"expect_wcatch"], HCR_realized[t,,"original_ABC_plus"], SR_MSE[t, ,"real_true_catch"], return_limit=HCR_mat[t,,"TAC_adjust"]) * (-1)
-            #browser()
           }
           else{
           # TACでadjustしない場合

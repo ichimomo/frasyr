@@ -474,6 +474,18 @@ test_that("future_vpa function (carry over TAC) (level 2)",{
   org_settei <- data_future_borrow$data$HCR_mat[as.character(2019:lastyear),,"TAC_reserve_rate"]
   expect_equal(as.numeric(1-org_settei), as.numeric(res_rate[,1:10]))
 
+  # Blimit以下だと繰入しない場合のテスト
+  data_future_borrow_limit <- list_modify(data_future_test$input,nyear=11,HCR_Blimit=26000*10, 
+                                    HCR_TAC_reserve_rate=c(-0.1,0), HCR_TAC_carry_rate=1) %>%
+      safe_call(make_future_data,.)
+  aa <- future_vpa(data_future_borrow_limit$data)
+  
+  lastyear <- max(as.numeric(dimnames(aa$naa)[[2]]))
+  res_rate <- round(aa$HCR_realized[as.character(2019:lastyear),,"wcatch"]/
+                    aa$HCR_realized[as.character(2019:lastyear),,"original_ABC_plus"],3)
+  org_settei <- data_future_borrow_limit$data$HCR_mat[as.character(2019:lastyear),,"TAC_reserve_rate"]
+  expect_equal(as.numeric(1-org_settei), as.numeric(res_rate[,1:10]))  
+
   # 余るけど繰越をしない場合# ?? よくわからない，何もしない場合では？
   data_future_no_reserve <- list_modify(data_future_test$input,HCR_TAC_reserve_rate=0) %>%
       safe_call(make_future_data,.)
