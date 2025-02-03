@@ -4,7 +4,7 @@
 \alias{derive_biopar}
 \title{将来予測やVPAの結果から生物パラメータをとりだす}
 \usage{
-derive_biopar(res_obj = NULL, derive_year = NULL, stat = mean)
+derive_biopar(res_obj = NULL, derive_year = NULL, stat = mean, na.rm = TRUE)
 }
 \arguments{
 \item{res_obj}{VPAか将来予測の結果のオブジェクト。どちらでも良い。}

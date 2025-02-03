@@ -4,7 +4,13 @@
 \alias{tryall_SR}
 \title{再生産関係を網羅的にフィットする}
 \usage{
-tryall_SR(data_SR, plus_group = TRUE, bio_par = NULL, tol = FALSE)
+tryall_SR(
+  data_SR,
+  plus_group = TRUE,
+  bio_par = NULL,
+  tol = FALSE,
+  detail = FALSE
+)
 }
 \description{
 regimeなしのものだけに対応
