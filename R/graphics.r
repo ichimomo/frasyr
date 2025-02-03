@@ -297,6 +297,7 @@ plot_Fref <- function(rres,xlabel="max", # or, "mean","Fref/Fcur"
 }
 
 # 再生産関係推定 ----
+#'
 #' SRdataをプロットする
 #'
 #' @param vpares VPAの結果のオブジェクト
@@ -304,7 +305,7 @@ plot_Fref <- function(rres,xlabel="max", # or, "mean","Fref/Fcur"
 #' @param type "classic"(通常プロット) or "gg"(ggplot)
 #'
 #' @encoding UTF-8
-#'
+#' 
 #'
 #' @export
 #'

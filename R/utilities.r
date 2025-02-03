@@ -3466,6 +3466,25 @@ check_fix_CVoption <- function(res_future){
   wcatch[-1,]/wcatch[-nrow(wcatch),]
 }
 
+#' 漁獲量の繰越・繰入をしたときの設定がちゃんと生きているかどうかを確かめる
+#'
+#' @export
+#'
+
+check_BBoption <- function(res_future){
+    xx <- res_future$HCR_realized[,,"wcatch"]/res_future$HCR_realized[,,"original_ABC_plus"]
+    xx[xx==Inf] <- NA
+
+    yy <- res_future$HCR_realized[,,"wcatch"]/res_future$HCR_realized[,,"original_ABC"]
+    yy[yy==Inf] <- NA
+
+    zz <- res_future$HCR_realized[,,"wcatch"]/res_future$HCR_mat[,,"expect_wcatch"]
+    zz[zz==Inf] <- NA
+
+    qq <- (res_future$HCR_realized[,,"original_ABC_plus"] - res_future$HCR_mat[,,"expect_wcatch"])/res_future$HCR_realized[,,"original_ABC"]
+    return(list(xx,yy, zz, qq))
+}
+
 #' @export
 
 format_type <- function(){

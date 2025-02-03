@@ -145,9 +145,9 @@ make_table.fit.SR <- function(result_sr) {
 make_table.fit.SRregime <- function(result_sr) {
   data.frame(kankei     = result_sr$input$SR,
              saitekika  = result_sr$input$method,
-             result_sr$pars) %>%
+             result_sr$regime_pars) %>%
     magrittr::set_colnames(
-      c("再生産関係式", "最適化法", "a", "b", "S.D.")
+      c("再生産関係式", "最適化法", "regime","a", "b", "S.D.")
     )
 }
 

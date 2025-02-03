@@ -153,6 +153,8 @@ make_future_data <- function(res_vpa,
   if(is.numeric(HCR_TAC_reserve_rate) && is.numeric(HCR_TAC_reserve_amount)) stop("HCR_TAC_reserve_rateとHCR_TAC_reserve_amountが同時に指定されています（同時には指定できません）")
   if(is.numeric(HCR_TAC_carry_rate) && is.numeric(HCR_TAC_carry_amount))     stop("HCR_TAC_carry_rateとHCR_TAC_carry_amountが同時に指定されています（同時には指定できません）")
 
+  assertthat::assert_that(is.numeric(HCR_TAC_adjust)|is.na(HCR_TAC_adjust))
+
   # define age and year
   nage <- nrow(res_vpa$naa)
   age_name    <- as.numeric(rownames(res_vpa$naa))
@@ -985,16 +987,16 @@ future_vpa_R <- function(naa_mat,
         else{# when borrowing
           # TACでadjustする場合
           if(has_non_na(HCR_mat[t,,"TAC_adjust"])){
-              ABC_reserve_amount <- calc_adjust_TAC(HCR_mat[t,,"expect_wcatch"], HCR_realized[t,,"original_ABC_plus"], SR_MSE[t, ,"real_true_catch"], return_limit=HCR_mat[t,,"TAC_adjust"]) * (-1)
+            ABC_reserve_amount <- calc_adjust_TAC(HCR_mat[t,,"expect_wcatch"], HCR_realized[t,,"original_ABC_plus"], SR_MSE[t, ,"real_true_catch"], return_limit=HCR_mat[t,,"TAC_adjust"]) * (-1)
           }
           else{
           # TACでadjustしない場合
-            ABC_reserve_amount <- HCR_realized[t,,"original_ABC_plus"] - HCR_mat[t,,"expect_wcatch"]
+            ABC_reserve_amount <- HCR_realized[t,,"original_ABC_plus"] - HCR_mat[t,,"expect_wcatch"] 
           }
         }
         #ABC_reserve_amount[ABC_reserve_amount<0] <- 0
         HCR_realized[t+1,,"reserved_catch"] <- cbind(max_carry_amount, ABC_reserve_amount) %>%
-          apply(1,min)
+            apply(1,min)
       }
     }
 
