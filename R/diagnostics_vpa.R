@@ -1406,29 +1406,51 @@ do_caaboot_vpa <-  function(res,
 #'
 #' @param resboot boot.vpaからの返り値(vpaからの返り値のリスト)
 #' @param res_vpa オリジナルのVPAの結果
-#' @param type モデル選択の方法。"auto"とすると、３種類のSR関数、ARあり（inner）、なし、L1、L2の総当りから、AICcが最も小さいものを選択する。NULLの場合は、fit.SRに与える引数を別途与えることで、モデルを指定する
+#' @param type モデル選択の方法。"auto"とすると、３種類のSR関数、ARあり（inner）、なし、L1、L2の総当りから、AICcが最も小さいものを選択する。"fix"の場合は、fit.SRに与える引数を別途与えることで、モデルを指定する。"regime"はレジームシフト（この場合、fit.SRregimeの引数はあらかじめ与える）
 #'
 #' @export
 
+do_bootSR <- function(resboot, res_vpa, type="fix", ...){
 
-do_bootSR <- function(resboot, res_vpa, type=NULL, ...){
-  SRdata_list <- purrr::map(resboot,     get.SRdata, weight.year=NULL)
-  if(is.null(type)){
+  assertthat::assert_that(type %in% c("fix","auto","regime"))
+  
+  SRdata_list <- purrr::map(resboot, get.SRdata, weight.year=NULL)
+
+  # when SR function is pre-specified (non-regime)
+  if(type=="fix"){
     SRres_list  <- purrr::map(SRdata_list,
                               function(x) fit.SR(x, plus_group=res_vpa$input$plus.group, ...))
   }
-  else{
+
+  # when SR function is pre-specified (regime)
+  if(type=="regime"){
+    SRres_list  <- purrr::map(SRdata_list,
+                              function(x) fit.SRregime(x, plus_group=res_vpa$input$plus.group, ...))
+  }  
+
+  # when SR function is automatically selected
+  if(type=="auto"){
+    SRres_list <- list()
     for(i in 1:length(resboot)){
-      AICtable <- tryall_SR(SRdata_list[[1]],
+      AICtable <- tryall_SR(SRdata_list[[i]],
                             detail=TRUE,
                             plus_group=res_vpa$input$plus.group)
-      AICtable <- AICtable %>% dplyr::filter(AR.type!="outer") %>%
+      AICtable <- AICtable %>%
+        dplyr::filter(AR.type!="outer") %>%
+        dplyr::filter(AR.type=="inner" | L.type=="L1") %>%
         arrange(AICc) %>%
         mutate(delta=AICc-min(AICc)) %>%
         dplyr::filter(delta<0.01)
-      if(nrow(AICtable)>1 && AICtable$SR.rel)
+      while(nrow(AICtable)>1){ # AICが同じ場合、HS, non, L2を優先的にとる
+        if("HS" %in% AICtable$SR) AICtable <- dplyr::filter(SR=="HS")
+        if("non" %in% AICtable$AR.type) AICtable <- dplyr::filter(AR.type=="non")
+        if("L2" %in% AICtable$L.type) AICtable <- dplyr::filter(AR.type=="L2")        
+      }
 
+      SRres_list[[i]] <- AICtable$model[[1]]
     }
   }
+
+  return(SRres_list)
   
 }
