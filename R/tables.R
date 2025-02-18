@@ -1,7 +1,7 @@
-## #' Make table for stock assessment result 
+## #' Make table for stock assessment result
 ## #'
 ## #' !this function is replaced by make_stock_table2 so that currently not used
-## #' 
+## #'
 ## #' @param result_vpa Obejct returned from \code{vpa()}
 ## #' @param result_msy Object MSY result created previous SC meeting...?
 ## #' @param result_future Object returnd from \code{future_vpa()}
@@ -43,7 +43,7 @@
 
 ##     data.frame(Year     = yr_oldest_recent:yr_newest_recent,
 ##                Biomass  = pull_x_from_vpa_result_(x = "biomass"),
-##                cBiomass  = pull_x_from_vpa_result_(x = "cbiomass"),               
+##                cBiomass  = pull_x_from_vpa_result_(x = "cbiomass"),
 ##                SSB      = pull_x_from_vpa_result_(x = "SSB"),
 ##                Catch    = pull_x_from_vpa_result_(x = "catch"),
 ##                `F/Fmsy` = f_per_fmsy_()) %>%
@@ -56,7 +56,7 @@
 
 ##     data.frame(Year = yr_future_start,
 ##                Biomass  = calc_x_from_future_result_(x = "biomass", yr = yr_future_start),
-##                cBiomass  = calc_x_from_future_result_(x = "cbiomass", yr = yr_future_start),               
+##                cBiomass  = calc_x_from_future_result_(x = "cbiomass", yr = yr_future_start),
 ##                SSB      = calc_x_from_future_result_(x = "ssb",     yr = yr_future_start),
 ##                Catch    = calc_x_from_future_result_(x = "catch",   yr = yr_future_start),
 ##                `F/Fmsy` = round(fratio, 2)) %>%
@@ -66,7 +66,7 @@
 ##   abc_year_ <- function() {
 ##     data.frame(Year = yr_abc,
 ##                Biomass  = calc_x_from_future_result_(x = "biomass", yr = yr_abc),
-##                cBiomass  = calc_x_from_future_result_(x = "cbiomass", yr = yr_abc),               
+##                cBiomass  = calc_x_from_future_result_(x = "cbiomass", yr = yr_abc),
 ##                SSB      = calc_x_from_future_result_(x = "ssb"    , yr = yr_abc),
 ##                Catch    = "-",
 ##                `F/Fmsy` = "-",
@@ -92,7 +92,7 @@
 #' @param yr_future_ABC Year when ABC is calculated
 #' @param Fcurrent_per_Fmsy Fcurrent/Fmsy
 #' @param Fcurrent_year_range
-#' 
+#'
 #' @export
 
 make_stock_table2 <- function(result_future0.8,
@@ -111,7 +111,7 @@ make_stock_table2 <- function(result_future0.8,
     rename("F_year/F_msy"=Fratio) %>%
     mutate(year_label=case_when(year==yr_future_ABC ~ "ABC year",
                                 year%in%Fcurrent_year_range ~ "Fcurrent year")) %>%
-    mutate(year=as.character(year)) 
+    mutate(year=as.character(year))
 
   stock_table <- bind_rows(stock_table,
                            tibble(year=str_c(range(Fcurrent_year_range), collapse="-"),
@@ -145,9 +145,9 @@ make_table.fit.SR <- function(result_sr) {
 make_table.fit.SRregime <- function(result_sr) {
   data.frame(kankei     = result_sr$input$SR,
              saitekika  = result_sr$input$method,
-             result_sr$pars) %>%
+             result_sr$regime_pars) %>%
     magrittr::set_colnames(
-      c("再生産関係式", "最適化法", "a", "b", "S.D.")
+      c("再生産関係式", "最適化法", "regime","a", "b", "S.D.")
     )
 }
 
@@ -181,7 +181,7 @@ table4 <- function(...) {
 #' @param sbtarget Value of SB target
 #' @param fmsy Value of Fmsy
 adhoc_table <- function(result_vpa, yrs_preabc, number, sbtarget = NULL, fmsy = NULL,
-                        data_future = NULL, yr_biopar = NULL, result_msy = NULL) {
+                        data_future = NULL, yr_biopar = NULL, result_msy = NULL, yr_latest = NULL) {
   return_ <- function() {
     switch(number,
            "one" = {
@@ -197,10 +197,11 @@ adhoc_table <- function(result_vpa, yrs_preabc, number, sbtarget = NULL, fmsy = 
                    f_latest_over_msy_())
            })
   }
-  yr_latest <- tail(extract_year_from(result_vpa), 1)
+  if(is.null(yr_latest)) yr_latest <- tail(extract_year_from(result_vpa), 1)
   sb_latest_ <- function() {
     make_row(key     = paste0("SB", yr_latest),
-             value   = colSums(extract_from_vpa_("ssb"), na.rm = TRUE),
+             # value   = colSums(extract_from_vpa_("ssb"), na.rm = TRUE),
+             value   = sum(result_vpa$ssb[,as.character(yr_latest)],na.rm=TRUE),
              remarks = paste0(yr_latest, "年漁期の親魚量"))
   }
   f_latest_  <- function(numeric = FALSE) {
@@ -359,7 +360,7 @@ make_abctable <- function(kobe_table, result_future, beta, year, faa_pre, faa_af
   }
   ssb_mean_  <- function(){
     extract_from_kobe_table(kobe_table,
-                            beta = beta,                              
+                            beta = beta,
                             what = "ssb.mean",
                             year = year,
                             unit = "千トン")

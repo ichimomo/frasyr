@@ -17,7 +17,7 @@ Type objective_function<Type>::operator() ()
   DATA_ARRAY(waa_catch_mat);  
   DATA_ARRAY(maa_mat);  
   DATA_ARRAY(M_mat);
-  DATA_ARRAY(faa_mat);  
+  DATA_ARRAY(faa_mat);
   DATA_INTEGER(Pope);
   DATA_INTEGER(total_nyear);  
   DATA_INTEGER(future_initial_year);

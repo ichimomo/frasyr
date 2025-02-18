@@ -1443,13 +1443,9 @@ convert_vector <- function(vector,name){
 
 convert_vpa_tibble <- function(vpares,SPRtarget=NULL){
 
-  if (is.null(vpares$input$dat$waa.catch)) {
-    vpares$input$dat$waa.catch <- vpares$input$dat$waa
-    if (class(vpares)%in%"sam") {
-      total.catch <- colSums(vpares$caa*vpares$input$dat$waa,na.rm=T)
-    } else {
-      total.catch <- colSums(vpares$input$dat$caa*vpares$input$dat$waa,na.rm=T)
-    }
+  if (is.null(vpares$input$dat$waa.catch)) vpares$input$dat$waa.catch <- vpares$input$dat$waa
+  if ("sam" %in% class(vpares)) {
+    total.catch <- colSums(vpares$caa*vpares$input$dat$waa.catch,na.rm=T)
   } else {
     total.catch <- colSums(vpares$input$dat$caa*vpares$input$dat$waa.catch,na.rm=T)
   }
@@ -2357,8 +2353,9 @@ get_performance <- function(future_list,res_vpa,ABC_year=2021,
                                 year.catch = ABC_year+indicator_year,
                                 year.ssbtarget = ABC_year+indicator_year,
                                 year.ssblimit  = ABC_year+indicator_year,
-                                year.ssbban=NULL, year.ssbmin=NULL, year.ssbmax=NULL,
-                                year.aav = c(ABC_year,ABC_year-1),
+                                year.ssbban=NULL, year.ssbmin=NULL,
+                                # year.ssbmax=NULL,
+                                # year.aav = c(ABC_year,ABC_year-1),
                                 Btarget= Btarget,
                                 Blimit = Blimit,
                                 Bban   = Bban)
@@ -2391,18 +2388,17 @@ get_performance <- function(future_list,res_vpa,ABC_year=2021,
 
   junit <- c("","十","百","千","万")[log10(biomass.unit)+1]
 
-  stat_data <- tibble(stat_name=c("ssb.mean","catch.mean","Pr(SSB>SSBtarget)","Pr(SSB>SSBlim)",
-                                  "catch.aav"),
-                      stat_category=c("平均親魚量 ", "平均漁獲量 ", "目標上回る確率 ", "限界上回る確率 ",
-                                      "漁獲量変動"))
+  stat_data <- tibble(stat_name=c("ssb.mean","catch.mean","Pr(SSB>SSBtarget)","Pr(SSB>SSBlim)"),
+                      stat_category=c("平均親魚量 ", "平均漁獲量 ", "目標上回る確率 ", "限界上回る確率 "))
 
+  # browser()
   kobe_res <- purrr::map_dfr(kobe_res[c("ssb.mean", "catch.mean", "prob.over.ssbtarget",
-                                        "prob.over.ssblimit", "catch.aav")],
+                                        "prob.over.ssblimit")],
                              function(x) x %>% select(-beta) %>%
                                gather(key=year,value=value,-HCR_name,-stat_name)) %>%
     mutate(value=ifelse(stat_name %in% c("ssb.mean", "catch.mean"), value/biomass.unit, value)) %>%
     mutate(unit =ifelse(stat_name %in% c("ssb.mean", "catch.mean"), str_c(junit, "トン"), "%")) %>%
-    mutate(unit =ifelse(stat_name %in% c("catch.aav"), "", unit)) %>%
+    # mutate(unit =ifelse(stat_name %in% c("catch.aav"), "", unit)) %>%
     left_join(stat_data) %>%
     mutate(stat_year_name=str_c(stat_category,year))
 
@@ -2844,7 +2840,7 @@ take_interval <- function(prob,target){
 #' @export
 #'
 
-derive_biopar <- function(res_obj=NULL, derive_year=NULL, stat=mean){
+derive_biopar <- function(res_obj=NULL, derive_year=NULL, stat=mean, na.rm=TRUE){
 
   derive_year <- as.character(derive_year)
 
@@ -2867,8 +2863,10 @@ derive_biopar <- function(res_obj=NULL, derive_year=NULL, stat=mean){
                    function(x) apply(x[,derive_year,,drop=F],1,stat))
   }
 
-  bio_par <- bio_par[apply(bio_par,1,sum)!=0,]
-  bio_par <- bio_par[!is.na(apply(bio_par,1,sum)),]
+  if(na.rm==TRUE){
+    bio_par <- bio_par[apply(bio_par,1,sum)!=0,]
+    bio_par <- bio_par[!is.na(apply(bio_par,1,sum)),]
+  }
   return(bio_par)
 }
 
@@ -2909,7 +2907,8 @@ derive_future_summary <- function(res_future, target=NULL){
 
   Fmean <- apply(res_future$faa,c(2,3),sum)
 
-  tibble(
+  # tentative setting for tmb option
+  res <- tibble(
     year    = as.numeric(dimnames(res_future$SR_mat[,,"ssb"])[[1]]),
     SSB     = tmpfunc(res_future$SR_mat[,,"ssb"]),
     biomass = tmpfunc(res_future$SR_mat[,,"biomass"]),
@@ -2925,6 +2924,8 @@ derive_future_summary <- function(res_future, target=NULL){
     beta_gamma = tmpfunc(res_future$HCR_realized[,,"beta_gamma"]),
     Fmean      = tmpfunc(Fmean),
     Fratio     = tmpfunc(res_future$HCR_realized[,,"Fratio"]))
+
+  return(res)
 }
 
 
@@ -3459,6 +3460,25 @@ get.ab.bh <- function(h,R0,biopars){
 check_fix_CVoption <- function(res_future){
   wcatch <- res_future$HCR_realized[,,"wcatch"]
   wcatch[-1,]/wcatch[-nrow(wcatch),]
+}
+
+#' 漁獲量の繰越・繰入をしたときの設定がちゃんと生きているかどうかを確かめる
+#'
+#' @export
+#'
+
+check_BBoption <- function(res_future){
+    xx <- res_future$HCR_realized[,,"wcatch"]/res_future$HCR_realized[,,"original_ABC_plus"]
+    xx[xx==Inf] <- NA
+
+    yy <- res_future$HCR_realized[,,"wcatch"]/res_future$HCR_realized[,,"original_ABC"]
+    yy[yy==Inf] <- NA
+
+    zz <- res_future$HCR_realized[,,"wcatch"]/res_future$HCR_mat[,,"expect_wcatch"]
+    zz[zz==Inf] <- NA
+
+    qq <- (res_future$HCR_realized[,,"original_ABC_plus"] - res_future$HCR_mat[,,"expect_wcatch"])/res_future$HCR_realized[,,"original_ABC"]
+    return(list(xx,yy, zz, qq))
 }
 
 #' @export

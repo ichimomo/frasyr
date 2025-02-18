@@ -31,6 +31,7 @@ make_future_data(
   start_maafun_year_name = start_biopar_year_name,
   M_year,
   M = NULL,
+  more_process_error = NA,
   faa_year = NULL,
   currentF = NULL,
   futureF = NULL,
@@ -48,6 +49,7 @@ make_future_data(
   HCR_TAC_carry_amount = NA,
   HCR_TAC_upper_CV = NA,
   HCR_TAC_lower_CV = NA,
+  HCR_TAC_adjust = NA,
   HCR_function_name = "HCR_default",
   HCR_reserve_denom = "original_ABC_plus",
   Pope = res_vpa$input$Pope,
@@ -132,13 +134,15 @@ make_future_data(
 
 \item{HCR_TAC_reserve_amount}{TACの獲り残し量。マイナス値を入れれば前借りもできる。rateとamountの片方どちらかだけ設定する}
 
-\item{HCR_TAC_carry_rate}{当初TACのうち何トンまで持ち越せるかの上限（比率）。マイナス値を入れれば前借りもできる。}
+\item{HCR_TAC_carry_rate}{当初TACのうち何トンまで持ち越せるかの上限（比率）。}
 
-\item{HCR_TAC_carry_amount}{当初TACのうち何トンまで持ち越せるかの上限（比率）。マイナス値を入れれば前借りもできる。}
+\item{HCR_TAC_carry_amount}{当初TACのうち何トンまで持ち越せるかの上限（比率）。}
 
 \item{HCR_TAC_upper_CV}{漁獲量が前年の漁獲量のHCR_TAC_upper_CV倍と比較し、それよりも変化が大きい場合には前年の漁獲量xHCR_TAC_upper_CVを上限とする。単一の値か、tibble形式 tibble(year=2020:2024, TAC_upper_CV=rep(0.1,5)) で与える}
 
 \item{HCR_TAC_lower_CV}{漁獲量が前年の漁獲量のHCR_TAC_lower_CV倍と比較し、それよりも変化が大きい場合には前年の漁獲量xHCR_TAC_lower_CVを下限とする。単一の値か、tibble形式 tibble(year=2020:2024, TAC_lower_CV=rep(0.1,5)) で与える}
+
+\item{HCR_TAC_adjust}{B&B設定の場合，-1 下方向にadjust, 0 上下方向にadjust, 1 上方向のみadjust, 用いない場合はNA}
 
 \item{HCR_function_name}{デフォルトは"HCR_default" ここを変更(関数名を文字列で与える。関数は別に定義しておく)すると自作のHCRが適用される。その場合、データのほうで定義されているbeta, Blimit, Bbanなど、同じ名前のものは有効}
 

@@ -26,16 +26,18 @@ extract_x <- function(vpadata, x, year, mean_by = NULL) {
     return(perspr[rownames(perspr) == year, ])
   }
   vars      <- vpadata[[x]]
-  extracted <- vars[colnames(vars) %in% as.character(year)]
+  extracted <- vars[,colnames(vars) %in% as.character(year)]
 
-  if (is.null(mean_by)) return(extracted)
-
-  if (mean_by == "year") {
-      colMeans(extracted, na.rm = TRUE)
-  } else if (mean_by == "age") {
-      rowMeans(extracted)
+  if (is.null(mean_by)) {
+    return(sum(extracted))
   } else {
+    if (mean_by == "year") {
+      colMeans(extracted, na.rm = TRUE)
+    } else if (mean_by == "age") {
+      rowMeans(extracted)
+    } else {
       stop("'mean_by' sould be either 'age' or 'year'.")
+    }
   }
 }
 

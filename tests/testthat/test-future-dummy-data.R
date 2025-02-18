@@ -44,7 +44,7 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
   Fvalue <- -log(x)
   data_future_test <-
     make_future_data(res_vpa_base0_nontune,
-                     nsim = 10,
+                     nsim = 100,
                      nyear = 20,
                      future_initial_year_name = max_vpa_year, # 年齢別資源尾数を参照して将来予測をスタートする年
                      start_F_year_name = max_vpa_year+1, # この関数で指定したFに置き換える最初の年
@@ -85,6 +85,51 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
   # 平衡状態ではtarget_eq_naaと一致する（そのようなFを使っているので）
   expect_equal(mean(colSums(res_future_F0.1$naa[,"2035",])),
                target_eq_naa, tol=0.0001)
+
+  ## ad hoc insert to check more_orocess_error
+  data_future_00 <-
+    make_future_data(res_vpa_base0_nontune,
+                     nsim = 100,
+                     nyear = 20,
+                     future_initial_year_name = max_vpa_year, # 年齢別資源尾数を参照して将来予測をスタートする年
+                     start_F_year_name = max_vpa_year+1, # この関数で指定したFに置き換える最初の年
+                     start_biopar_year_name=max_vpa_year+1, # この関数で指定した生物パラメータに置き換える最初の年
+                     start_random_rec_year_name = max_vpa_year+1, # この関数で指定した再生産関係からの加入の予測値に置き換える最初の年
+                     # biopar setting
+                     waa_year=bio_year, waa=NULL, # 将来の年齢別体重の設定。過去の年を指定し、その平均値を使うか、直接ベクトルで指定するか。以下も同じ。
+                     waa_catch_year=bio_year, waa_catch=NULL,
+                     maa_year=bio_year, maa=NULL,
+                     M_year=bio_year, M=c(0,0,0,Inf),
+                     # faa setting
+                     faa_year=2015:2017, # currentF, futureFが指定されない場合だけ有効になる。将来のFを指定の年の平均値とする
+                     currentF=rep(Fvalue,4),futureF=rep(Fvalue,4), # 将来のABC.year以前のFとABC.year以降のFのベクトル
+                     # HCR setting (not work when using TMB)
+                     start_ABC_year_name=max_vpa_year+2, # HCRを適用する最初の年
+                     HCR_beta=1, # HCRのbeta
+                     HCR_Blimit=-1, # HCRのBlimit
+                     HCR_Bban=-1, # HCRのBban
+                     HCR_year_lag=0, # HCRで何年遅れにするか
+                     # SR setting
+                     res_SR=res_sr_list$res_vpa_base0_nontune, # 将来予測に使いたい再生産関係の推定結果が入っているfit.SRの返り値
+                     seed_number=1,
+                     resid_type="lognormal", # 加入の誤差分布（"lognormal": 対数正規分布、"resample": 残差リサンプリング）
+                     resample_year_range=0, # リサンプリングの場合、残差をリサンプリングする年の範囲
+                     bias_correction=TRUE, # バイアス補正をするかどうか
+                     recruit_intercept=0, # 移入や放流などで一定の加入がある場合に足す加入尾数
+                     more_process_error=c(0.1, 0.1, 0.1, 0.1, 0.1, 0.1),
+                     # Other
+                     Pope=res_vpa_base0_nontune$input$Pope,
+                     fix_recruit=NULL,
+                     fix_wcatch=NULL
+                     )
+  
+    res_future_00 <- future_vpa(tmb_data=data_future_00$data,
+                                optim_method="none",
+                                multi_init = 1)
+    res_future_00$naa[,,1]/res_future_F0.1$naa[,,1]
+    log(res_future_00$naa[,as.character(2019),]/res_future_F0.1$naa[,as.character(2019),]) %>%
+        apply(1,sd)  # %>% expect_equal(0.022, 0.1054, 0.097, 0.099) # rouphly OK
+  ###  
 
 
   # simple, MSY
