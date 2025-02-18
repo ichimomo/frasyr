@@ -2840,7 +2840,7 @@ take_interval <- function(prob,target){
 #' @export
 #'
 
-derive_biopar <- function(res_obj=NULL, derive_year=NULL, stat=mean){
+derive_biopar <- function(res_obj=NULL, derive_year=NULL, stat=mean, na.rm=TRUE){
 
   derive_year <- as.character(derive_year)
 
@@ -2863,8 +2863,10 @@ derive_biopar <- function(res_obj=NULL, derive_year=NULL, stat=mean){
                    function(x) apply(x[,derive_year,,drop=F],1,stat))
   }
 
-  bio_par <- bio_par[apply(bio_par,1,sum)!=0,]
-  bio_par <- bio_par[!is.na(apply(bio_par,1,sum)),]
+  if(na.rm==TRUE){
+    bio_par <- bio_par[apply(bio_par,1,sum)!=0,]
+    bio_par <- bio_par[!is.na(apply(bio_par,1,sum)),]
+  }
   return(bio_par)
 }
 
@@ -2905,7 +2907,8 @@ derive_future_summary <- function(res_future, target=NULL){
 
   Fmean <- apply(res_future$faa,c(2,3),sum)
 
-  tibble(
+  # tentative setting for tmb option
+  res <- tibble(
     year    = as.numeric(dimnames(res_future$SR_mat[,,"ssb"])[[1]]),
     SSB     = tmpfunc(res_future$SR_mat[,,"ssb"]),
     biomass = tmpfunc(res_future$SR_mat[,,"biomass"]),
@@ -2921,6 +2924,8 @@ derive_future_summary <- function(res_future, target=NULL){
     beta_gamma = tmpfunc(res_future$HCR_realized[,,"beta_gamma"]),
     Fmean      = tmpfunc(Fmean),
     Fratio     = tmpfunc(res_future$HCR_realized[,,"Fratio"]))
+
+  return(res)
 }
 
 
@@ -3455,6 +3460,25 @@ get.ab.bh <- function(h,R0,biopars){
 check_fix_CVoption <- function(res_future){
   wcatch <- res_future$HCR_realized[,,"wcatch"]
   wcatch[-1,]/wcatch[-nrow(wcatch),]
+}
+
+#' 漁獲量の繰越・繰入をしたときの設定がちゃんと生きているかどうかを確かめる
+#'
+#' @export
+#'
+
+check_BBoption <- function(res_future){
+    xx <- res_future$HCR_realized[,,"wcatch"]/res_future$HCR_realized[,,"original_ABC_plus"]
+    xx[xx==Inf] <- NA
+
+    yy <- res_future$HCR_realized[,,"wcatch"]/res_future$HCR_realized[,,"original_ABC"]
+    yy[yy==Inf] <- NA
+
+    zz <- res_future$HCR_realized[,,"wcatch"]/res_future$HCR_mat[,,"expect_wcatch"]
+    zz[zz==Inf] <- NA
+
+    qq <- (res_future$HCR_realized[,,"original_ABC_plus"] - res_future$HCR_mat[,,"expect_wcatch"])/res_future$HCR_realized[,,"original_ABC"]
+    return(list(xx,yy, zz, qq))
 }
 
 #' @export

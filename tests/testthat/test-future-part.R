@@ -10,18 +10,18 @@ data(res_sr_HSL2)
 data_future_test <- make_future_data(res_vpa_org, # VPAの結果
                                      nsim = 100, # シミュレーション回数
                                      nyear = 20, # 将来予測の年数
-                                     future_initial_year_name = 2017, 
-                                     start_F_year_name = 2018, 
-                                     start_biopar_year_name=2018, 
+                                     future_initial_year_name = 2017,
+                                     start_F_year_name = 2018,
+                                     start_biopar_year_name=2018,
                                      start_random_rec_year_name = 2018,
                                      # biopar setting
-                                     waa_year=2015:2017, waa=NULL, 
+                                     waa_year=2015:2017, waa=NULL,
                                      waa_catch_year=2015:2017, waa_catch=NULL,
                                      maa_year=2015:2017, maa=NULL,
                                      M_year=2015:2017, M=NULL,
                                      # faa setting
-                                     faa_year=2015:2017, 
-                                     currentF=NULL,futureF=NULL, 
+                                     faa_year=2015:2017,
+                                     currentF=NULL,futureF=NULL,
                                      # HCR setting (not work when using TMB)
                                      start_ABC_year_name=2019, # HCRを適用する最初の年
                                      HCR_beta=1, # HCRのbeta
@@ -30,9 +30,9 @@ data_future_test <- make_future_data(res_vpa_org, # VPAの結果
                                      HCR_year_lag=0, # HCRで何年遅れにするか
                                      HCR_function_name = "HCR_default",
                                      # SR setting
-                                     res_SR=res_sr_HSL2, 
-                                     seed_number=1, 
-                                     resid_type="lognormal", 
+                                     res_SR=res_sr_HSL2,
+                                     seed_number=1,
+                                     resid_type="lognormal",
                                      resample_year_range=0, # リサンプリングの場合、残差をリサンプリングする年の範囲
                                      bias_correction=TRUE, # バイアス補正をするかどうか
                                      recruit_intercept=0, # 移入や放流などで一定の加入がある場合に足す加入尾数
@@ -41,32 +41,32 @@ data_future_test <- make_future_data(res_vpa_org, # VPAの結果
                                      fix_recruit=list(year=c(2020,2021),rec=c(1000,2000)),
                                      fix_wcatch=list(year=c(2020,2021),wcatch=c(1000,2000))
                                      )
- 
+
 test_that("future_vpa function (with sample vpa data) (level 2)",{
-    
+
   # check SD0
   x <- test_sd0_future(data_future_test)
   res_future_test <- x[[1]]
   expect_equal(x[[3]],0,tol=0.005)
-  
+
   # check MSE option(時間かかるので省略。通るはず。
   #  x <- check_MSE_sd0(data_future_test, nsim_for_check = 1000)[1:3] %>% as.numeric()
   #  expect_equal(x,c(0,0,1),tol=0.005)
-  
+
   # option fix_recruit、fix_wcatchのチェック
   expect_equal(mean(res_future_test$naa[1,"2020",]), 1000)
   res_future_test$summary %>% dplyr::filter(year==2020 | year==2021) %>%
       select(catch) %>% unlist() %>% as.numeric() %>%
       expect_equal(c(1000,2000), tol=0.001)
-  # catch <- apply(res_future_test$wcaa,c(2,3),sum)  
-  # expect_equal(mean(catch["2020",]), 1000, tol=0.001)  
-  # expect_equal(mean(catch["2021",]), 2000, tol=0.001)  
+  # catch <- apply(res_future_test$wcaa,c(2,3),sum)
+  # expect_equal(mean(catch["2020",]), 1000, tol=0.001)
+  # expect_equal(mean(catch["2021",]), 2000, tol=0.001)
   # beta=0の場合でもwcatchを優先させる
-  
+
   res_future_test <- redo_future(data_future_test, list(HCR_beta=0, fix_recruit=NULL,start_ABC_year_name=2020, nyear=5))
   res_future_test$summary %>% dplyr::filter(year%in%2020:2022) %>%
       select(catch) %>% unlist() %>% as.numeric() %>%
-      expect_equal(c(1000,2000,0), tol=0.001)  
+      expect_equal(c(1000,2000,0), tol=0.001)
 #  catch <- apply(res_future_test$wcaa,c(2,3),sum)
 #  expect_equal(mean(catch["2020",]), 1000, tol=0.001)
 #  expect_equal(mean(catch["2021",]), 2000, tol=0.001)
@@ -118,7 +118,7 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
 
   res_MSY1 <- est_MSYRP(data_future=data_future_test, candidate_PGY=c(0.1,0.6),
                         candidate_B0=c(0.2), candidate_Babs=20000, candidate_Fbase=c(res_future_test_R$multi, 1.3410926))
-  expect_equal(res_MSY1$summary$"Fref/Fcur"[1], res_future_test_R$multi, tol=0.00001)
+  expect_equal(res_MSY1$summary["Fref/Fcur"][1], res_future_test_R$multi, tol=0.00001)
   expect_equal(tail(res_future_test_R$summary$SSB,n=1) %>% as.numeric(),
                res_MSY1$summary$SSB[1] %>% as.numeric(), tol=1)
   expect_equal(res_MSY1$summary$SSB[c(1,3)],res_MSY1$summary$SSB[c(7,8)], tol=0.001) # test Fbase value
@@ -136,7 +136,7 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
 
   res_MSY2 <- est_MSYRP(data_future=data_future_backward, candidate_PGY=-1,
                         candidate_B0=-1, candidate_Babs=-1)
-  expect_equal(round(res_MSY2$summary$"Fref/Fcur"[1],3),0.519)
+  expect_equal(round(res_MSY2$summary$Fref2Fcurrent[1],3),0.519)
 
   if(sum(installed.packages()[,1]=="TMB")){
       # res_future_test_tmb <- future_vpa(tmb_data=data_future_test$data,
@@ -269,10 +269,10 @@ test_that("future_vpa function (yerly change of beta, Blimit and Bban) (level 2)
                                  HCR_TAC_upper_CV=CV_range[2],
                                  HCR_TAC_lower_CV=CV_range[1],
                                  HCR_Blimit=430000, HCR_Bban=400000),
-                     only_data=TRUE) 
+                     only_data=TRUE)
   tmp2 <- future_vpa(tmp$data,
                      do_MSE=FALSE, MSE_input_data=tmp)
-  
+
   # check_MSE_seしたいが計算時間かかるのでコメントアウト
   #data_future <- redo_future(data_future_test,
   #                             list(nsim=10,nyear=7,
@@ -294,8 +294,8 @@ test_that("check MSE feature",{ # ----
   data_future_test1000 <- redo_future(data_future_test,
                                     list(nsim=1000,nyear=10,
                                          fix_recruit=NULL,fix_wcatch=NULL),
-                                    only_data=TRUE)  
-  
+                                    only_data=TRUE)
+
 
   # 1000回のノーマル将来予測
   res_future_noMSE <- future_vpa(tmb_data=data_future_test1000$data,
@@ -303,28 +303,63 @@ test_that("check MSE feature",{ # ----
                            multi_init = 1,SPRtarget=0.3,
                            do_MSE=FALSE, MSE_input_data=data_future_test1000)
 
-  # 10回のシミュレーションでそれぞれ1000回の将来予測をやってTACを計算する
+  # 10回のノーマル将来予測
+  res_future_noMSE10 <- future_vpa(tmb_data=data_future_test10$data,
+                                 optim_method="none",
+                                 multi_init = 1,SPRtarget=0.3,
+                                 do_MSE=FALSE, MSE_input_data=data_future_test1000)
+
+  # 10回のMSE (TAC計算は1000回実施）
   res_future_MSE <- future_vpa(tmb_data=data_future_test10$data,
                            optim_method="none",
                            multi_init = 1,SPRtarget=0.3,
                            do_MSE=TRUE, MSE_input_data=data_future_test10,MSE_nsim=1000,
                            MSE_catch_exact_TAC=FALSE)
 
-  # TAC通りに漁獲する仮定をMSEにも入れる
+  # 10回のMSE（TAC計算は，TAC通りに漁獲する仮定）
   res_future_MSE_TAC <- future_vpa(tmb_data=data_future_test10$data,
                            optim_method="none",
                            multi_init = 1,SPRtarget=0.3,
                            do_MSE=TRUE, MSE_input_data=data_future_test10,MSE_nsim=10,
                            MSE_catch_exact_TAC=TRUE)
 
+  # 10回のMSE：TACの再評価の結果，上方修正・下方修正を実施する
+  res_future_MSE_lower <- future_vpa(tmb_data=data_future_test10$data,
+                               optim_method="none",
+                               multi_init = 1,SPRtarget=0.3,
+                               do_MSE=TRUE, MSE_input_data=data_future_test10,MSE_nsim=1000,
+                               MSE_catch_exact_TAC=FALSE, MSE_TAC_revise=-1)
+
+  res_future_MSE_upper <- future_vpa(tmb_data=data_future_test10$data,
+                                     optim_method="none",
+                                     multi_init = 1,SPRtarget=0.3,
+                                     do_MSE=TRUE, MSE_input_data=data_future_test10,MSE_nsim=1000,
+                                     MSE_catch_exact_TAC=FALSE, MSE_TAC_revise=1)
+
   # 以前の計算と同じ結果が出るかのテスト
-  expect_equal(round(mean(get_wcatch(res_future_noMSE)["2019",])),32311) 
+  expect_equal(round(mean(get_wcatch(res_future_noMSE)["2019",])),32311)
   expect_equal(round(mean(get_wcatch(res_future_MSE)["2019",])),32370)
+
+  # MSE1年目のreal_true_catchと，MSEしない1年目の漁獲量は一致するはず
+  expect_equal(res_future_noMSE10$HCR_realized["2019",1:10,"wcatch"],
+               res_future_MSE$SR_MSE["2019",1:10,"real_true_catch"])
 
   #check_MSE_sd0(data_future_test10, nsim_for_check = 1000)  # 2021/02/10でOK。時間かかるのでコメントアウトする
 
+  # MSE_TAC_revise の設定の確認
+  expect_equal(res_future_noMSE10$HCR_realized["2019",1:10,"wcatch"],
+               res_future_MSE_upper$SR_MSE["2019",1:10,"real_true_catch"])
+
+  (res_future_MSE_upper$HCR_realized[as.character(2019:2025),1:10,"wcatch"]/
+    res_future_MSE_upper$SR_MSE[as.character(2019:2025),1:10,"real_true_catch"]) %>% round(3) %>% max() %>%
+    expect_equal(1)
+
+  (res_future_MSE_lower$HCR_realized[as.character(2019:2025),1:10,"wcatch"]/
+      res_future_MSE_lower$SR_MSE[as.character(2019:2025),1:10,"real_true_catch"]) %>% round(3) %>% min() %>%
+    expect_equal(1)
+
   # 漁獲量が一定の場合
-  CC <- 30000  
+  CC <- 30000
   if(0){
     res_future1 <- redo_future(data_future_test10,
                             list(nsim=10,nyear=10,
@@ -332,7 +367,7 @@ test_that("check MSE feature",{ # ----
                             do_MSE=FALSE, MSE_input_data=data_future_test10,
                             SPRtarget=0.3,
                             MSE_nsim=100)
-  
+
     res_future2 <- redo_future(data_future_test10,
                             list(nsim=10,nyear=10,
                                  fix_recruit=NULL,fix_wcatch=tibble(year=2020:2025, wcatch=CC)),
@@ -340,7 +375,7 @@ test_that("check MSE feature",{ # ----
                             SPRtarget=0.3,
                             MSE_nsim=100)
   }
-  
+
   # 上限あり（MSEでない）
   res_future3 <- redo_future(data_future_test10,
                             list(nsim=10,nyear=10,
@@ -353,14 +388,14 @@ test_that("check MSE feature",{ # ----
 
   expect_equal(max(res_future3$faa[,as.character(2020:2025),]),
                max(res_future_noMSE$faa[,"2018",1]),tol=0.0001)
-  
+
   # 上限あり（MSE）
   # Fの上限を決める、という管理方策を用いる場合には
   # MSEの設定でmax_Fをつけ、真のほうにはmax_Fはつけない
   data_future_test10_for_MSE <- data_future_test10
   data_future_test10_for_MSE$input$max_F <- max(res_future_noMSE$faa[,"2018",1])
   data_future_test10_for_MSE$input$fix_wcatch <- tibble(year=2020:2025, wcatch=CC)
-  
+
   res_future4 <- redo_future(data_future_test10,
                             list(nsim=10,nyear=10,
                                  fix_recruit=NULL,
@@ -375,9 +410,9 @@ test_that("check MSE feature",{ # ----
   #     res_future4$HCR_realized[as.character(2020:2025),,"Fratio"])
   # boxplot(t(res_future4$HCR_realized[as.character(2020:2025),,"wcatch"]))
   max(res_future4$HCR_realized[as.character(2020:2025),,"Fratio"]) %>%
-    round(2) %>% 
+    round(2) %>%
       #    expect_equal(0.18)
-    expect_equal(0.55)      
+    expect_equal(0.55)
 
   tmpfunc <- function(res_future){
       x <- t(get_wcatch(res_future)[as.character(2021:2025),])
@@ -393,51 +428,68 @@ test_that("check MSE feature",{ # ----
       geom_point(aes(x=catch,y=Fratio,col=id)) +
       ylim(0,2)
   }
-  
+
   # TAC通りに漁獲する仮定をMSEにも入れる(MSE_sd=0) => SD>1000の場合とは一致しない（SD=0だとクラッシュするときにはかならずクラッシュしてしまうので）
 #  res_future_MSE_TAC_sd0 <- future_vpa(tmb_data=data_future_test10$data,
 #                           optim_method="none",
 #                           multi_init = 1,SPRtarget=0.3,
 #                           do_MSE=TRUE, MSE_input_data=data_future_test10,MSE_nsim=2,
-#                           MSE_sd=0,MSE_catch_exact_TAC=TRUE)  
-  
+#                           MSE_sd=0,MSE_catch_exact_TAC=TRUE)
+
 #  plot_futures(vpares=NULL,
 #               future.list=list(res_future_MSE_TAC,
 #                                res_future_MSE_TAC_sd0))
 
 
-  # 漁獲量をTACとして将来予測する
-  
-
 })
 
 
+## check carry over TAC ----
 test_that("future_vpa function (carry over TAC) (level 2)",{
+
+  # VPAは2017年まで
+  # 2019年から管理開始
 
   # 0.1まで繰越
   data_future_test <- redo_future(data_future_test,
                                   list(nsim=10,nyear=10,
                                        HCR_TAC_reserve_rate=0.1,
-                                       HCR_TAC_carry_rate=0.1,
+                                       HCR_TAC_carry_rate=1,
                                        fix_recruit=NULL,fix_wcatch=NULL),
                                   only_data=TRUE)
   res_future_noMSE <- test_sd0_future(data_future_test)$res1
   expect_equal(all(round(res_future_noMSE$HCR_realized[as.character(2019:2023),,"wcatch"]/
                          res_future_noMSE$HCR_realized[as.character(2019:2023),,"original_ABC_plus"],3)
-                   ==0.9),TRUE)  
+                   ==0.9),TRUE)
 
-  # 繰入する場合
-  data_future_borrow <- list_modify(data_future_test$input,HCR_TAC_reserve_rate=-0.1, HCR_TAC_carry_rate=1) %>%
+  # 繰入を１年おきに実施する場合
+  data_future_borrow <- list_modify(data_future_test$input,nyear=11,
+                                    HCR_TAC_reserve_rate=c(-0.1,0), HCR_TAC_carry_rate=1) %>%
       safe_call(make_future_data,.)
+  aa <- future_vpa(data_future_borrow$data)
   res_future_borrow <- test_sd0_future(data_future_borrow)$res1
-  expect_equal(all(round(res_future_borrow$HCR_realized[as.character(2019:2023),,"wcatch"]/
-                         res_future_borrow$HCR_realized[as.character(2019:2023),,"original_ABC_plus"],3)
-                   ==1.1),TRUE)
+  lastyear <- max(as.numeric(dimnames(res_future_borrow$naa)[[2]]))
+  res_rate <- round(res_future_borrow$HCR_realized[as.character(2019:lastyear),,"wcatch"]/
+                      res_future_borrow$HCR_realized[as.character(2019:lastyear),,"original_ABC_plus"],3)
+  org_settei <- data_future_borrow$data$HCR_mat[as.character(2019:lastyear),,"TAC_reserve_rate"]
+  expect_equal(as.numeric(1-org_settei), as.numeric(res_rate[,1:10]))
+
+  # Blimit以下だと繰入しない場合のテスト
+  data_future_borrow_limit <- list_modify(data_future_test$input,nyear=11,HCR_Blimit=26000*10, 
+                                    HCR_TAC_reserve_rate=c(-0.1,0), HCR_TAC_carry_rate=1) %>%
+      safe_call(make_future_data,.)
+  aa <- future_vpa(data_future_borrow_limit$data)
   
-  # 余るけど繰越をしない場合
+  lastyear <- max(as.numeric(dimnames(aa$naa)[[2]]))
+  res_rate <- round(aa$HCR_realized[as.character(2019:lastyear),,"wcatch"]/
+                    aa$HCR_realized[as.character(2019:lastyear),,"original_ABC_plus"],3)
+  org_settei <- data_future_borrow_limit$data$HCR_mat[as.character(2019:lastyear),,"TAC_reserve_rate"]
+  expect_equal(as.numeric(1-org_settei), as.numeric(res_rate[,1:10]))  
+
+  # 余るけど繰越をしない場合# ?? よくわからない，何もしない場合では？
   data_future_no_reserve <- list_modify(data_future_test$input,HCR_TAC_reserve_rate=0) %>%
-      safe_call(make_future_data,.)  
-  res_future_noreserve <- test_sd0_future(data_future_no_reserve)$res1  
+      safe_call(make_future_data,.)
+  res_future_noreserve <- test_sd0_future(data_future_no_reserve)$res1
   expect_equal(all(round(res_future_noreserve$HCR_realized[as.character(2019:2023),,"wcatch"]/
                          res_future_noreserve$HCR_realized[as.character(2019:2023),,"original_ABC_plus"],3)
                    ==1),TRUE)
@@ -445,7 +497,7 @@ test_that("future_vpa function (carry over TAC) (level 2)",{
   # 繰越しを量で決める場合
   expect_error(redo_future(data_future_test,list(HCR_TAC_reserve_amount=1000,
                                                  HCR_TAC_reserve_rate=0.1)))
-  
+
   res_future <- redo_future(data_future_test,list(HCR_TAC_reserve_amount=3000,
                                                   HCR_TAC_carry_amount  =1000,
                                                   HCR_TAC_carry_rate    =NA,
@@ -456,7 +508,7 @@ test_that("future_vpa function (carry over TAC) (level 2)",{
   expect_equal(mean(tmp),3000,tol=0.1)
   tmp <- mean(res_future$HCR_realized[as.character(2020:2027),,"reserved_catch"])
   expect_equal(mean(tmp),1000,tol=0.1)
-  
+
   # MSEの場合
   res_future_MSE <- future_vpa(tmb_data=data_future_test$data,
                            optim_method="none",
@@ -467,6 +519,32 @@ test_that("future_vpa function (carry over TAC) (level 2)",{
                          res_future_MSE$HCR_realized[as.character(2019:2023),,"original_ABC_plus"],3)
                    ==0.9),TRUE)
 #   check_MSE_sd0(data_future_test) # (通ることは確認。時間かかるので割愛)
+
+  # MSEかつ繰越分を再評価値で再調整する場合
+  data_future_borrow2 <- list_modify(data_future_test$input,nyear=11,
+                                    HCR_TAC_reserve_rate=c(-0.1,0), HCR_TAC_adjust=1,
+                                    HCR_TAC_carry_rate=10) %>%
+    safe_call(make_future_data,.)
+  res1 <- future_vpa(data_future_borrow2$data,
+                   do_MSE=TRUE, MSE_input_data=data_future_borrow,
+                   MSE_nsim=1000)
+
+  # MSEかつ繰越分を再評価値で再調整する場合
+  data_future_borrow2 <- list_modify(data_future_test$input,nyear=11,
+                                     HCR_TAC_reserve_rate=c(-0.1,0), HCR_TAC_adjust=NA,
+                                     HCR_TAC_carry_rate=10) %>%
+    safe_call(make_future_data,.)
+  res0 <- future_vpa(data_future_borrow2$data,
+                                       do_MSE=TRUE, MSE_input_data=data_future_borrow,
+                                       MSE_nsim=1000)
+
+  lastyear <- max(as.numeric(dimnames(res_future_MSE_borrow2$naa)[[2]]))
+  res_rate <- round(res_future_MSE_borrow2$HCR_realized[as.character(2019:lastyear),,"wcatch"]/
+                   res_future_MSE_borrow2$HCR_realized[as.character(2019:lastyear),,"original_ABC_plus"],3)
+  res_rate <- round(res_future_MSE_borrow2$HCR_realized[as.character(2019:lastyear),,"wcatch"]/
+                      res_future_MSE_borrow2$HCR_realized[as.character(2019:lastyear),,"original_ABC"],3)
+  org_settei <- data_future_borrow2$data$HCR_mat[as.character(2019:lastyear),,"TAC_reserve_rate"]
+  expect_equal(as.numeric(1-org_settei), as.numeric(res_rate))
 
   # 漁獲量一定方策＋繰越設定
   data_future_reserve_CC <- list_modify(data_future_test$input,
@@ -497,8 +575,13 @@ test_that("future_vpa function (carry over TAC) (level 2)",{
       round() %>% unlist() %>% as.numeric() %>% expect_equal(c(100,rep(110,6)))
 
 
+  # 再々評価で繰越量を調整する場合，内部関数のテスト
+  x <- c(70, 90, 110, 130)
+  calc_adjust_TAC(rep(120, 4), rep(100, 4), x, return_limit=1) %>% expect_equal(c(20,20, 10, 0))
+  calc_adjust_TAC(rep(120, 4), rep(100, 4), x, return_limit=Inf) %>% expect_equal(c(50,30, 10, 0))
 
-})
+
+  })
 
 # Naoto Shinohara
 
@@ -614,13 +697,13 @@ test_that("get_wcatch",{
 context("density dependent maturity option") # ----
 
 test_that("density dependent maturity option",{
-    
+
     #aa <- safe_call(make_future_data, data_future_test$input)
     #aa$input$"test" <- 1
     #expect_error(safe_call(make_future_data, aa$input))
 
     data_future_maa <- redo_future(data_future_test,list(maa_fun=TRUE), only_data=TRUE)
-    round(mean(data_future_maa$data$maa_rand_mat[,,1]),5) %>% 
+    round(mean(data_future_maa$data$maa_rand_mat[,,1]),5) %>%
         expect_equal(0)
     data_future_maa$data$maa_par_mat[,1,"b0"] %>%
         expect_equal(apply(res_vpa_org$input$dat$maa,1,mean))
@@ -635,14 +718,14 @@ test_that("density dependent maturity option",{
     res_vpa2$input$dat$maa[2,] <- 1-res_vpa2$naa[2,]/max(res_vpa2$naa[2,]) + 0.1
     res_vpa2$input$dat$waa[] <- res_vpa2$input$dat$waa[] * exp(rnorm(length(unlist(res_vpa_org$input$dat$waa)), 0, 0.1))
     res_vpa2$input$dat$waa_catch[] <- res_vpa2$input$dat$waa_catch[] *
-        exp(rnorm(length(unlist(res_vpa_org$input$dat$waa_catch)), 0, 0.1))    
+        exp(rnorm(length(unlist(res_vpa_org$input$dat$waa_catch)), 0, 0.1))
 
     data_future_maa <- redo_future(data_future_test,
                                    list(maa_fun=TRUE, waa_fun=TRUE, waa_catch_fun=TRUE,nsim=100,
                                         res_vpa=res_vpa2, fix_recruit = NULL), only_data=TRUE)
 
     # check for maa
-    mean(data_future_maa$data$maa_rand_mat[,,1]) %>% round(3) %>% 
+    mean(data_future_maa$data$maa_rand_mat[,,1]) %>% round(3) %>%
         expect_equal(0)
     data_future_maa$data$maa_par_mat[,1,"b0"] %>% round(2) %>% as.numeric %>%
         expect_equal(c(0,1.1,1,1))
@@ -668,10 +751,10 @@ test_that("density dependent maturity option",{
     expect_equal(sum(tmp==0),30)
     # assert parameter
     est_par2 <- purrr::map_dfc(1:4,function(x) lm(as.numeric(log(res_future_maa$waa_catch[x,tmp!=0,]))~as.numeric(log(res_future_maa$naa[x,tmp!=0,])))$coef%>% unlist %>% as.data.frame) %>% t()
-    expect_equal(mean(abs(est_par2-data_future_maa$data$waa_catch_par_mat[,1,-1])),0.001, tol=0.01)    
+    expect_equal(mean(abs(est_par2-data_future_maa$data$waa_catch_par_mat[,1,-1])),0.001, tol=0.01)
 
     # check for maa
-    tmp <- apply(res_future_maa$maa[2,,],1,sd)    
+    tmp <- apply(res_future_maa$maa[2,,],1,sd)
     expect_equal(sum(tmp==0),30)
 
     # 最小・最大値で足切りできているかを確認
@@ -685,20 +768,20 @@ test_that("density dependent maturity option",{
     waafun2 <<- function(t, waa, rand, naa, pars_b0, pars_b1){
         waa[,1,] * 3
     }
-    
+
     data_future_maa2 <- redo_future(data_future_test,
                                    list(maa_fun=FALSE, waa_fun=TRUE, waa_catch_fun=TRUE,nsim=100,
-                                        waa_fun_name="waafun1", waa_catch_fun_name="waafun2", 
+                                        waa_fun_name="waafun1", waa_catch_fun_name="waafun2",
                                         res_vpa=res_vpa2, fix_recruit = NULL), only_data=TRUE)
     expect_equal(data_future_maa2$data$waa_par_mat[1,1,1], "waafun1")
     expect_equal(data_future_maa2$data$waa_catch_par_mat[1,1,1], "waafun2")
 
     res_future_maa2 <- future_vpa(data_future_maa2$data,multi_init=1.5)
     expect_equal(res_future_maa2$waa[,1,]*2, res_future_maa2$waa[,"2037",])
-    expect_equal(res_future_maa2$waa_catch[,1,]*3, res_future_maa2$waa_catch[,"2037",])    
+    expect_equal(res_future_maa2$waa_catch[,1,]*3, res_future_maa2$waa_catch[,"2037",])
 
     rm(waafun1)
-    rm(waafun2)    
+    rm(waafun2)
 })
 
 test_that("set_upper_limit_catch & set_lower_limit_catch",{
