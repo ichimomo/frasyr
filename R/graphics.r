@@ -377,7 +377,7 @@ plot_SRdata <- function(SRdata, type=c("classic","gg")[1]){
 
 plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,ylabel="尾",
                     labeling.year=NULL,add.info=TRUE, recruit_intercept=0,
-                    plot_CI=FALSE, CI=0.9, shape_custom=c(21,3),box.padding=0,
+                    plot_CI=FALSE, CI=0.9, shape_custom=c(21,3),box.padding=0.4,
                     add_graph=NULL, last_year_color=0){
 
   if(is.null(refs$Blimit) && !is.null(refs$Blim)) refs$Blimit <- refs$Blim
@@ -471,13 +471,15 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
                 color="deepskyblue3",lty=3,n=5000)
   }
 
+  #nudge_y_value <- min(max(alldata$R)/5,5)
+
   g1 <- g1+geom_path(data=dplyr::filter(alldata,type=="obs"),
                        aes(y=R,x=SSB),color=gray(0.6)) +
     geom_point(data=dplyr::filter(alldata,type=="obs"),
                aes(y=R,x=SSB,shape=weight, fill=last_years_fill),color="black") +
     scale_shape_manual(values = shape_custom) +
     ggrepel::geom_text_repel(data=dplyr::filter(alldata,type=="obs"),
-                             box.padding=box.padding,segment.color="gray",nudge_y=5,
+                             box.padding=box.padding,segment.color="gray",#nudge_y=nudge_y_value,
                              aes(y=R,x=SSB,label=pick.year)) +
     theme_bw(base_size=14)+
     theme(legend.position = 'none') +
@@ -765,6 +767,7 @@ plot_SRregime <- function (SRregime_result,xscale=1000,xlabel="SSB",yscale=1,yla
 #' @param legend.position 凡例の位置。top, right, left, bottomなど
 #' @param average_lwd 将来予測の平均値の線の太さ. 基本は1.
 #' @param remove.last.vpa.year VPAの最終年のデータのプロットを除くかどうか（last.catch.zero用オプション）
+#' @param use_median 平均値の代わりに中央値をプロットする
 #'
 #' @encoding UTF-8
 #' @export
@@ -796,7 +799,8 @@ plot_futures <- function(vpares=NULL,
                          type="detail",
                          font.size=16,
                          ncol=3,ncol_legend=2,
-                         remove.last.vpa.year = FALSE
+                         remove.last.vpa.year = FALSE,
+                         use_median = FALSE
 ){
 
   for(i in 1:length(future.list)){
@@ -873,6 +877,10 @@ plot_futures <- function(vpares=NULL,
     mutate(value=value/unit)%>%
     mutate(type="future")
 
+  if(is.character(class(future_tibble$sim))) {
+    future_tibble <- future_tibble %>%
+      mutate(sim = as.numeric(gsub("\\D", "", sim)))
+  }
   if(is.null(future.replicate)){
     set.seed(seed)
     future.replicate <- sample(2:max(future_tibble$sim),n_example)
@@ -1008,6 +1016,10 @@ plot_futures <- function(vpares=NULL,
 
   alldata <- alldata %>% left_join(style_def %>% select(scenario, col, lty))
 
+  if(isTRUE(use_median)) {
+    alldata <- alldata %>% dplyr::select(-mean) %>% dplyr::rename(mean=median)
+  }
+
   g1 <- alldata %>% ggplot() # aes(color=scenario, lty=scenario) とここで一括して指定すればよさげに思えるがそうするとうまくいかない
 
   if(isTRUE(is.plot.CIrange)){
@@ -1080,9 +1092,15 @@ plot_futures <- function(vpares=NULL,
                                           TRUE ~ ")"))
   }
 
-  g1 <- g1 +
-    geom_line(data=. %>% dplyr::filter(scenario=="VPA"),
-              mapping=aes(x=year, y=mean, color=col, lty=lty),lwd=1) # VPAのプロット
+    g1 <- g1 +
+      geom_line(data=. %>% dplyr::filter(scenario=="VPA"),
+                mapping=aes(x=year, y=mean, color=col, lty=lty),lwd=1) # VPAのプロット
+
+    if(!is.null(vpares)) {
+      if("sam"%in%class(vpares)) {
+        style_def$scenario[style_def$scenario=="VPA"] <- "SAM" #VPA -> SAMに変更
+      }
+    }
 
   # setting scales and guides
   g1 <- g1 +

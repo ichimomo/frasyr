@@ -12,7 +12,8 @@ adhoc_table(
   fmsy = NULL,
   data_future = NULL,
   yr_biopar = NULL,
-  result_msy = NULL
+  result_msy = NULL,
+  yr_latest = NULL
 )
 }
 \arguments{

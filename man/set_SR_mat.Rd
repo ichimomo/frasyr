@@ -22,7 +22,8 @@ set_SR_mat(
   scale_R = 1,
   model_average_option = NULL,
   regime_shift_option = NULL,
-  fix_recruit = NULL
+  fix_recruit = NULL,
+  more_process_error = NA
 )
 }
 \arguments{
