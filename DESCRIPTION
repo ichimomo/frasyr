@@ -38,6 +38,7 @@ Imports:
     splus2R,
     scales,
     ragg,
+    glue,
 Suggests:
     knitr,
     rmarkdown,
