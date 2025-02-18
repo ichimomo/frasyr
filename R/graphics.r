@@ -764,6 +764,7 @@ plot_SRregime <- function (SRregime_result,xscale=1000,xlabel="SSB",yscale=1,yla
 #' @param legend.position 凡例の位置。top, right, left, bottomなど
 #' @param average_lwd 将来予測の平均値の線の太さ. 基本は1.
 #' @param remove.last.vpa.year VPAの最終年のデータのプロットを除くかどうか（last.catch.zero用オプション）
+#' @param use_median 平均値の代わりに中央値をプロットする
 #'
 #' @encoding UTF-8
 #' @export
@@ -795,7 +796,8 @@ plot_futures <- function(vpares=NULL,
                          type="detail",
                          font.size=16,
                          ncol=3,ncol_legend=2,
-                         remove.last.vpa.year = FALSE
+                         remove.last.vpa.year = FALSE,
+                         use_median = FALSE
 ){
 
   for(i in 1:length(future.list)){
@@ -872,6 +874,10 @@ plot_futures <- function(vpares=NULL,
     mutate(value=value/unit)%>%
     mutate(type="future")
 
+  if(is.character(class(future_tibble$sim))) {
+    future_tibble <- future_tibble %>%
+      mutate(sim = as.numeric(gsub("\\D", "", sim)))
+  }
   if(is.null(future.replicate)){
     set.seed(seed)
     future.replicate <- sample(2:max(future_tibble$sim),n_example)
@@ -1007,6 +1013,10 @@ plot_futures <- function(vpares=NULL,
 
   alldata <- alldata %>% left_join(style_def %>% select(scenario, col, lty))
 
+  if(isTRUE(use_median)) {
+    alldata <- alldata %>% dplyr::select(-mean) %>% dplyr::rename(mean=median)
+  }
+
   g1 <- alldata %>% ggplot() # aes(color=scenario, lty=scenario) とここで一括して指定すればよさげに思えるがそうするとうまくいかない
 
   if(isTRUE(is.plot.CIrange)){
@@ -1079,9 +1089,15 @@ plot_futures <- function(vpares=NULL,
                                           TRUE ~ ")"))
   }
 
-  g1 <- g1 +
-    geom_line(data=. %>% dplyr::filter(scenario=="VPA"),
-              mapping=aes(x=year, y=mean, color=col, lty=lty),lwd=1) # VPAのプロット
+    g1 <- g1 +
+      geom_line(data=. %>% dplyr::filter(scenario=="VPA"),
+                mapping=aes(x=year, y=mean, color=col, lty=lty),lwd=1) # VPAのプロット
+
+    if(!is.null(vpares)) {
+      if("sam"%in%class(vpares)) {
+        style_def$scenario[style_def$scenario=="VPA"] <- "SAM" #VPA -> SAMに変更
+      }
+    }
 
   # setting scales and guides
   g1 <- g1 +

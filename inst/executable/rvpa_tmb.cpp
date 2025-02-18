@@ -131,16 +131,19 @@ Type objective_function<Type>::operator() ()
   }
 
   vector<Type> Catch_weight(Y);
+  vector<Type> scale_U(Y);
   Catch_weight.fill(0.0);
   vector<Type> U(Y);
   U.fill(0.0);
+  scale_U.fill(0.0);
   for (int y=0;y<Y;y++){
     for (int i=0;i<A;i++){
       Catch_weight(y) += CATCH(y,i)*WEI(y,i);
     }
     U(y) += Catch_weight(y)/B_total(y);
+    scale_U(y) += U(y)/(1-U(y));
   }
-  
+
   vector<Type> Sel1(Y);
   vector<Type> FY(A);
   for (int y=0;y<Y;y++){
@@ -371,6 +374,7 @@ Type objective_function<Type>::operator() ()
   ADREPORT(B_total);
   ADREPORT(F_mean);
   ADREPORT(U);
+  ADREPORT(scale_U);
 
   return f;
 }
