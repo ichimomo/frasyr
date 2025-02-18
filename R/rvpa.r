@@ -1685,6 +1685,7 @@ pl.ci.dp <- function(res,target="F",beta=10^5,Alpha=0.8,lo.p=0.1,up.p=2.0,lo.Ref
   return(out)
 }
 
+
 profile.likelihood.vpa.B <- function(res,Alpha=0.95,min.p=1.0E-6,max.p=1,L=20,method="ci"){
 
    res.c <- res
@@ -1728,7 +1729,12 @@ profile.likelihood.vpa.B <- function(res,Alpha=0.95,min.p=1.0E-6,max.p=1,L=20,me
 #' bootstrapを実施する
 #'
 #' @param res vpaの出力値
-#' @param method "p": パラメトリックブートストラップ。"n": ノンパラメトリックブートストラップ。"r": 残差をスムージングした後ブートストラップt法
+#' @param B_ite ブートストラップ法でのイタレーション数
+#' @param type "index": 資源量指標値についてブートストラップ。"caa": 年齢別漁獲尾数についてブートストラップ
+#' @param method `type = "index"`の時に利用可。"p": パラメトリックブートストラップ。"n": ノンパラメトリックブートストラップ。"r": 残差をスムージングした後ブートストラップt法
+#' @param mean.correction デフォルトは`FALSE`。対数正規分布の平均値の補正の有無。`type = "index"`と`type = "caa"`のいずれでも利用可能
+#' @param B_cv `type = "caa"`の時に利用可。漁獲量の変動係数（i.e. 対数取った漁獲量の分散）。
+#' @param ess `type = "caa"`の時に利用可。多項分布の有効サンプルサイズ。
 #'
 #' @encoding UTF-8
 #'
@@ -1737,80 +1743,117 @@ profile.likelihood.vpa.B <- function(res,Alpha=0.95,min.p=1.0E-6,max.p=1,L=20,me
 #'
 #' @export
 
-boo.vpa <- function(res,B=5,method="p",mean.correction=FALSE){
-  ## method == "p": parametric bootstrap
-  ## method == "n": non-parametric bootstrap
-  ## method == "r": smoothed residual bootstrap-t
+boo.vpa = function(res,
+                   type   = "index",
+                   B_ite  = 5,
+                   method = "p",
+                   mean.correction = FALSE,
+                   B_cv   = 0.2,
+                   ess    = 200
+                   ){
 
+  assertthat::assert_that(type == "index" | type == "caa")
   assertthat::assert_that(method == "p" | method == "n" | method == "r")
+  assertthat::assert_that(is.logical(mean.correction))
+  res$input$plot = FALSE
 
-  if(is.numeric(res$input$use.index)){
-    index <- res$input$dat$index[res$input$use.index,]
-    p.index <- res$pred.index
-    assertthat::assert_that(nrow(index) == nrow(p.index)) # obsとpredのデータの種類数が違ったら止める
-    resid <- log(as.matrix(index))-log(as.matrix(p.index))
-  } else { # use.index = "all" (default)
-    index <- res$input$dat$index
-    p.index <- res$pred.index
-    resid <- log(as.matrix(index))-log(as.matrix(p.index))
-  }
+  if(type == "index"){
+    if(is.numeric(res$input$use.index)){
+      index <- res$input$dat$index[res$input$use.index,]
+      p.index <- res$pred.index
+      assertthat::assert_that(nrow(index) == nrow(p.index)) # obsとpredのデータの種類数が違ったら止める
+      resid <- log(as.matrix(index))-log(as.matrix(p.index))
+    } else { # use.index = "all" (default)
+      index <- res$input$dat$index
+      p.index <- res$pred.index
+      resid <- log(as.matrix(index))-log(as.matrix(p.index))
+    }
+    n_resid <- apply(resid,1,function(x) sum(!is.na(x))) # 残差の数
+    rs2 <- rowSums(resid^2, na.rm=TRUE)/(n_resid-res$np)
+    b.index <- res$input$dat$index # ブートストラップCPUEの箱を先に作っておく
 
-  R <- nrow(resid)                               # 残差の行数(=用いたデータの数)
-  n <- apply(resid,1,function(x) sum(!is.na(x))) # 残差の数
-  np <- res$np                                   # パラメータ数
-  rs2 <- rowSums(resid^2, na.rm=TRUE)/(n-np)
+  } else {
+    ## type == "caa" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+    year = colnames(res$input$dat$caa) %>% as.numeric()
+    age  = rownames(res$input$dat$caa) %>% as.numeric()
+    caa_freq = purrr::map(res$input$dat$caa, prop.table)
+    c_all = purrr::map(res$input$dat$caa, sum)
+    if(mean.correction){
+      c_all = c_all %>% purrr::map(function(x){exp(log(x) + rnorm(B_ite, -0.5*B_cv*B_cv, B_cv))})
+    } else {
+      c_all = c_all %>% purrr::map(function(x){exp(log(x) + rnorm(B_ite, 0, B_cv))})
+    }
+    caa_boot = list()
+    for(nc in 1:B_ite){
+      tmp = purrr::map2(caa_freq,
+                        purrr::map(c_all, function(x)x[nc]),
+                        function(.x, .y){
+                          rmultinom(1, ess, .x)*.y/ess
+                        }) %>% unlist() %>% as.numeric() %>%
+        matrix(ncol = length(year), nrow = length(age)) %>% as.data.frame()
+      colnames(tmp) = year ; rownames(tmp) = age
+      caa_boot[[nc]] = tmp
+    } # for(nc)
+  } # if(type == "index")
 
-  res.c <- res
-
-  if(np == 1){
+  res.c = res
+  if(res$np == 1){
     res.c$input$p.init <- res$term.f[1] # original code
   } else {
     res.c$input$p.init <- c(res$term.f,
-                            rev(res$term.f)[1]*res$input$alpha
-                            )    # 初期値とターミナルF合わせてる
+                            rev(res$term.f)[1]*res$input$alpha) # 初期値とターミナルF合わせてる
   }
 
-  b.index <- res$input$dat$index # ブートストラップCPUEの箱を先に作っておく
-  Res1 <- list()
+  res_list <- list()
+  for (b in 1:B_ite){
+    if(type == "index"){
+      for (i in 1:nrow(resid)){
+        if(is.numeric(res$input$use.index)){ j = res$input$use.index[i] }else{ j = i } # use.indexオプションを使っているとき、b.indexの行数とずれるので、b.indexの行番号をjで設定
+        if(method=="p") b.index[j,!is.na(index[i,])] <- exp(log(p.index[i,!is.na(index[i,])]) + rnorm(sum(!is.na(index[i,])),0,sd=sqrt(rs2[i])))
+        if(method=="n") b.index[j,!is.na(index[i,])] <- exp(log(p.index[i,!is.na(index[i,])]) + sample(resid[i,!is.na(index[i,])],length(index[i,!is.na(index[i,])]),replace=TRUE))
+        #if (mean.correction) b.index[j,!is.na(index[i,])] <- b.index[j,!is.na(index[i,])]*exp(-rs2[i]/2)
+        if(method=="r") {
+          rs.d <- density(resid[i,!is.na(index[i,])])
+          rs.db <- sample(rs.d$x,length(index[i,!is.na(index[i,])]),prob=rs.d$y,replace=TRUE)
+          sd.j <- sd(rs.db)
+          s.rs.b <- rs.db/sd.j
+          b.index[j,!is.na(index[i,])] <- exp(log(p.index[i,!is.na(index[i,])]) + s.rs.b*sqrt(rs2[i]))
+        } #if (method=="r")
+        if(mean.correction) b.index[j,!is.na(index[i,])] <- b.index[j,!is.na(index[i,])]*exp(-rs2[i]/2)
+      } # for(i)
+      res.c$input$dat$index <- b.index
 
-  for (b in 1:B){
-    print(b)
+    } else {
+      res.c$input$dat$caa = caa_boot[[b]]
+    } #if(type == "index")
 
-    for (i in 1:R){
-    #use.indexオプションを使っているとき、b.indexの行数とずれるので、b.indexの行番号をjで設定
-      j <- ifelse(is.numeric(res$input$use.index), res$input$use.index[i],i)
-      if (method=="p") b.index[j,!is.na(index[i,])] <- exp(log(p.index[i,!is.na(index[i,])]) + rnorm(sum(!is.na(index[i,])),0,sd=sqrt(rs2[i])))
-      if (method=="n") b.index[j,!is.na(index[i,])] <- exp(log(p.index[i,!is.na(index[i,])]) + sample(resid[i,!is.na(index[i,])],length(index[i,!is.na(index[i,])]),replace=TRUE))
-      if (isTRUE(mean.correction)) b.index[j,!is.na(index[i,])] <- b.index[j,!is.na(index[i,])]*exp(-rs2[i]/2)
-      if (method=="r") {
-        rs.d <- density(resid[i,!is.na(index[i,])])
-        rs.db <- sample(rs.d$x,length(index[i,!is.na(index[i,])]),prob=rs.d$y,replace=TRUE)
-        sd.j <- sd(rs.db)
-        s.rs.b <- rs.db/sd.j
-        b.index[j,!is.na(index[i,])] <- exp(log(p.index[i,!is.na(index[i,])]) + s.rs.b*sqrt(rs2[i]))
+    res_boot <- try(do.call(vpa, res.c$input), silent = TRUE)
+
+    if(class(res_boot) == "try-error"){
+      res_list[[b]] <- "try-error"
+      message(paste('Iteration',b,'was errored ...', sep = " "))
+    } else {
+      res_list[[b]] = list(naa = res_boot$naa, baa = res_boot$baa, ssb = res_boot$ssb,
+                           faa = res_boot$faa, saa = res_boot$saa,
+                           Fc.at.age = res_boot$Fc.at.age,
+                           q = res_boot$q, b = res_boot$b, sigma = res_boot$sigma)
+      if(type=="index"){
+        res_list[[b]] = res_list[[b]] %>%
+          c(index = list(b.index), caa = list(res_boot$input$dat$caa))
+      } else {
+        res_list[[b]] = res_list[[b]] %>%
+          c(index = list(res_boot$input$dat$index), caa = list(caa_boot[[b]]))
       }
-      if (isTRUE(mean.correction)) b.index[j,!is.na(index[i,])] <- b.index[j,!is.na(index[i,])]*exp(-rs2[i]/2)
-    }
+      message(paste('Iteration',b,'has done ...', sep = " "))
+    } # if(class(res_list[[b]]) == "try-error")
+  } # for(b)
 
-    res.c$input$dat$index <- b.index
-
-    res1 <- try(safe_call(vpa,res.c$input, force=TRUE))  # do.callからsafe_callに変更(浜辺'20/06/30)
-    if(class(res1)=="try-error"){
-      Res1[[b]] <- "try-error"
-    }
-    else{
-      Res1[[b]] <- list(index=b.index,naa=res1$naa,baa=res1$baa,ssb=res1$ssb,faa=res1$faa,saa=res1$saa,
-                      Fc.at.age=res1$Fc.at.age,q=res1$q,b=res1$b,sigma=res1$sigma) # 2013.8.20追記(市野川)
-    }
-  }
-
-  return(Res1)
-}
+  return(res_list)
+} # function(boo.vpa)
 
 
 logit <- function(x) log(x/(1-x))
 
-##
 
 cv.est <- function(res,n=5){
 

@@ -632,7 +632,7 @@ res_vpa_jackknife$JKplot_par + ylim(0,1) # 最終年のFの比較 (ここではy
 ### 1. CPUEのブートストラップ法について
 
 先述の通り、ブートストラップ法はデータをリサンプリングする方法ですが、VPAでは残差をリサンプリングすることで、データ（CPUE）を再生成します。
-frasyrの中にはブートストラップ法を自動で行う`boo.vpa`関数がありますが、今回作成した`plot_resboot_vpa`関数内でも`boo.vpa`関数を使っています。したがって、`plot_resboot_vpa`関数に直接vpa計算結果のオブジェクトを入れてください。
+frasyrの中にはブートストラップ法を自動で行う`boo.vpa`関数があり、`type = "index"`とすると、CPUEのブートストラップを実行します。また、その結果を`plot_vpa`関数に与えることで、信頼区間のある資源動態の描画ができます。
 
 - 引数`B_method`でブートストラップ法の方法を変えることができます。基本はパラメトリックブートストラップで問題ありません。ノンパラメトリックブートストラップ法では残差を重複ありでランダムにデータに足し合わせて再生成します。一方、パラメトリックブートストラップは平均0、分散が残差の分散となるような正規分布から乱数でデータを生成して、それぞれ解析する方法です。
 
@@ -644,10 +644,11 @@ frasyrの中にはブートストラップ法を自動で行う`boo.vpa`関数�
 
 ```{r}
 
-res_vpa_bootstrap <- plot_resboot_vpa(res_vpa_estb, B_ite = 10)
+res_boot1 = boo.vpa(res_vpa_estb, type = "index", B_ite = 10, B_method = "p")
+plot_boot1 = plot_boot(res_boot1, ci_range = 0.95)
 
 library(patchwork)
-res_vpa_bootstrap$plot_ssb/res_vpa_bootstrap$plot_rec/res_vpa_bootstrap$plot_biomass
+plot_boot1$plot_ssb/plot_boot1$plot_rec/plot_boot1$plot_biomass
 
 ```
 
@@ -659,7 +660,7 @@ res_vpa_bootstrap$plot_ssb/res_vpa_bootstrap$plot_rec/res_vpa_bootstrap$plot_bio
 ```{r}
 
 res_tmp <- numeric()
-for(i in 1:10) res_tmp[i] <- as.numeric(res_vpa_bootstrap$res_boot[[i]]$Fc.at.age[4])
+for(i in 1:10) res_tmp[i] <- as.numeric(plot_boot1[[i]]$Fc.at.age[4])
 quantile(res_tmp, probs = c(0.025,0.5,0.975))
 
 ```
@@ -669,7 +670,7 @@ quantile(res_tmp, probs = c(0.025,0.5,0.975))
 
 ```{r,fig.width=12,fig.height=10}
 
-res_vpa_bootstrap$plot_cor
+plot_boot1$plot_cor
 
 ```
 
@@ -677,22 +678,23 @@ res_vpa_bootstrap$plot_cor
 
 ### 2. 年齢別漁獲尾数について乱数生成する方法
 
-VPAは年齢別漁獲尾数（catch at age）が真であると仮定して推定するため、catch at ageの不確実性を評価することが出来ないモデルです。
-ここで紹介する`do_caaboot_vpa`関数は、引数として与えている年齢別漁獲尾数(`$input$dat$caa`)の対数を取った後、正規分布乱数で生成した年齢別漁獲尾数を用いて、再度VPA計算を行います。
+VPAは年齢別漁獲尾数（catch at age）が真であると仮定して推定するため、年齢別漁獲尾数の不確実性を評価することが出来ないモデルです。
+`boo.vpa`関数では`type="caa"`引数を与えると、年齢別漁獲尾数についてブートストラップ法を実行可能です。
 
 引数`B_cv`で乱数生成の変動係数を決めることができます。デフォルトで0.2となっていますが、年齢別漁獲尾数データの不確実性が大きいことが想定される場合、この値を適宜大きくして検討してみてください。
 
 
 ```{r}
 
-res_vpa_caaboot <- do_caaboot_vpa(res_vpa_estb, B_ite = 10)
-res_vpa_caaboot$plot_ssb
-res_vpa_caaboot$plot_rec
-res_vpa_caaboot$plot_biomass
+res_boot2 = boo.vpa(res_vpa_estb, type = "caa", B_ite = 10)
+plot_boot2 = plot_boot(res_boot2, ci_range = 0.95)
+plot_boot2$plot_ssb
+plot_boot2$plot_rec
+plot_boot2$plot_biomass
 
 ```
 
-一般に、VPAの資源量推定結果を信頼区間と重ねてプロットすると、先程の`res_vpa_bootstrap$plot_ssb`のように最近年で信頼区間が広く、過去にさかのぼるほど信頼区間は狭くなっています。
+一般に、VPAの資源量推定結果を信頼区間と重ねてプロットすると、先程の`plot_boot1$plot_ssb`のように最近年で信頼区間が広く、過去にさかのぼるほど信頼区間は狭くなっています。
 
 これは決して過去の推定結果が正しいからではなく、確率変数として考えている資源量指数の不確実性を考慮しただけでは、最近の資源量の不確実性しか考慮できず、それより過去は正しいと仮定されている年齢別漁獲尾数データによって、決定的に求まっているだけなのです。
 年齢別漁獲尾数の不確実性を考慮すると、時系列に関係なく資源量推定結果に不確実性があることが明らかになるかと思います。

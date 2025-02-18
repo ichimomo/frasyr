@@ -1030,7 +1030,7 @@ plot_futures <- function(vpares=NULL,
   g1 <- g1+
     geom_blank(data=dummy,mapping=aes(y=value,x=year))+
     geom_blank(data=dummy2,mapping=aes(y=value,x=year))+
-    scale_y_continuous(expand=expand_scale(mult=c(0,0.05)),labels = scales::comma)+
+    scale_y_continuous(expand=expansion(mult=c(0,0.05)),labels = scales::comma)+
     facet_wrap(~factor(jstat,levels=rename_list$jstat),scales="free_y",ncol=ncol)+
     xlim(minyear,maxyear)
 

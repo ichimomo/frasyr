@@ -1150,12 +1150,12 @@ do_jackknife_vpa <- function(res,
 
 
 
-#' ブートストラップ法による信頼区間の算出と作図を自動で行う関数
+#' ブートストラップ法の実行と信頼区間の算出、作図を自動で行う関数
 #'
-#' @param res VPAの結果のオブジェクト
+#' @param res_boo `boo.vap`実行後のオブジェクト
 #' @param B_ite ブートストラップ計算の数。デフォルトで1000。
 #' @param B_method ブートストラップの方法。デフォルトではノンパラメトリックブートストラップ。
-#' @param ci_range 信頼区間の幅。デフォルトでは0.95（95％信頼区間）
+#' @param ci_range 信頼区間の幅（0~1の範囲）。デフォルトでは0.95（95％信頼区間）
 #'
 #' @return 返ってくる値:
 #'     \code{plot} 親魚重量、資源尾数、資源重量それぞれについて信頼区間のプロットが得られる。
@@ -1172,37 +1172,37 @@ do_jackknife_vpa <- function(res,
 #'
 #' @export
 
-# author: Kohei Hamabe
+plot_boot = function(res_boo,
+                     ci_range = 0.95){
 
-plot_resboot_vpa <- function(res, B_ite = 1000, B_method = "p", ci_range = 0.95){
-  if(ci_range >= 1) stop(paste0('"ci_range" must be less than 1'))
-  res$input$plot <- FALSE
-  res_boo <- boo.vpa(res, B = B_ite, method = B_method)
+  assertthat::assert_that(ci_range<1 & ci_range>0)
+  # res$input$plot <- FALSE
+  # res_boo = boo.vpa(res, B_ite = B_ite, type = type, method = method,
+  #                   mean.correction = mean.correction, B_cv = B_cv, ess = ess)
 
-  year <- res_boo[[1]]$index %>% colnames() %>% as.numeric()
-  ssb_mat <- abund_mat <- biomass_mat <- matrix(NA, nrow = B_ite, ncol = length(year))
-  cor_mat <-   NULL
-  n_error <- 0
+  year = res_boo[[1]]$index %>% colnames() %>% as.numeric()
+  ssb_mat = abund_mat = biomass_mat = matrix(NA, nrow = length(res_boo), ncol = length(year))
+  cor_mat =   NULL
+  n_error = 0
 
-  for(i in 1:B_ite){
-    tmp <- res_boo[[i]]
-	if(tmp[1]=="try-error"){n_error <- n_error + 1} else {n_error <- n_error }
+  for(i in 1:length(res_boo)){
+    tmp = res_boo[[i]]
+    if(tmp[1]=="try-error"){n_error = n_error + 1} else {n_error = n_error }
     if(tmp[1]=="try-error")next
-    ssb_mat[i,] <- colSums(tmp$ssb, na.rm = TRUE)
-    abund_mat[i,] <- as.numeric(tmp$naa[1,])
-    biomass_mat[i,] <- colSums(tmp$baa, na.rm = TRUE)
-    cor_num <- c(tmp$Fc.at.age, tmp$b, last(colSums(tmp$ssb)), last(as.numeric(tmp$naa[1,]))) %>%
-      unlist() %>% as.numeric()
+    ssb_mat[i,]     = colSums(tmp$ssb, na.rm = TRUE)
+    abund_mat[i,]   = as.numeric(tmp$naa[1,])
+    biomass_mat[i,] = colSums(tmp$baa, na.rm = TRUE)
+    cor_num         = c(tmp$Fc.at.age, tmp$b, last(colSums(tmp$ssb)), last(as.numeric(tmp$naa[1,]))) %>% unlist() %>% as.numeric()
 
-    if(res$input$last.catch.zero){
-      cor_num <- c(tail(colSums(tmp$ssb),2)[1] %>% as.numeric(),
-                   tail(tmp$naa[1,],2)[1] %>% as.numeric())
+    if(res_boo[[1]]$caa[1,ncol(res_boo[[1]]$caa)] == 0){
+      cor_num = c(tail(colSums(tmp$ssb),2)[1] %>% as.numeric(),
+                  tail(tmp$naa[1,],2)[1] %>% as.numeric())
     } # if(res$input$last.catch.zero)
-    cor_mat <- rbind(cor_mat, cor_num)
+    cor_mat = rbind(cor_mat, cor_num)
   } # for(i)
   cor_mat <- as.data.frame(cor_mat)
 
-  rownames(cor_mat) <- str_c("ite",1:(B_ite-n_error))
+  rownames(cor_mat) <- str_c("ite",1:(length(res_boo)-n_error))
 
   colnames(cor_mat) <- c(str_c("term.F_age",1:length(tmp$Fc.at.age)-1),
                          str_c("b",1:length(tmp$b)),
@@ -1219,23 +1219,29 @@ plot_resboot_vpa <- function(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
   d_abund <- cbind.data.frame(Year = year, d_abund)
   d_biomass <- cbind.data.frame(Year = year, d_biomass)
 
-  g1 <- ggplot(d_ssb, aes(x = Year, y = SSB))+
+  g1 = d_ssb %>% #mutate(Year = factor(Year)) %>%
+    ggplot(aes(x = Year, y = SSB))+
     geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, fill = "blue")+
     geom_line(size = 1.5)+
-    ylim(c(0, NA)) +
+    coord_cartesian(ylim = c(0, NA))+
+    scale_y_continuous(expand = expansion(mult = c(0, 0.05)), labels = scales::label_comma())+
     theme_SH()
 
-  g2 <- ggplot(d_abund, aes(x = Year, y = Abundance))+
+  g2 = d_abund %>% #mutate(Year = factor(Year)) %>%
+    ggplot(aes(x = Year, y = Abundance))+
     geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, fill = "blue")+
     geom_line(size = 1.5)+
     ylab("Recruitment") +
-    ylim(c(0, NA)) +
+    coord_cartesian(ylim = c(0, NA))+
+    scale_y_continuous(expand = expansion(mult = c(0, 0.05)), labels = scales::label_comma())+
     theme_SH()
 
-  g3 <- ggplot(d_biomass, aes(x = Year, y = Biomass))+
+  g3 = d_biomass %>% #mutate(Year = factor(Year)) %>%
+    ggplot(aes(x = Year, y = Biomass))+
     geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, fill = "blue")+
     geom_line(size = 1.5)+
-    ylim(c(0, NA)) +
+    coord_cartesian(ylim = c(0, NA))+
+    scale_y_continuous(expand = expansion(mult = c(0, 0.05)), labels = scales::label_comma())+
     theme_SH()
 
 
@@ -1244,16 +1250,16 @@ plot_resboot_vpa <- function(res, B_ite = 1000, B_method = "p", ci_range = 0.95)
   cor_mat2 <- cor(cor_mat)
   g4 <- GGally::ggpairs(cor_mat) + theme_SH()
 
-  return(list(plot_ssb = g1,
-              plot_rec = g2,
-              plot_biomass = g3,
+  return(list(plot_ssb = g1 %>% apply_minor_ticks(),
+              plot_rec = g2 %>% apply_minor_ticks(),
+              plot_biomass = g3 %>% apply_minor_ticks(),
               res_boot = res_boo,
               res_par_boot = cor_mat,
               cor_mat = cor_mat2,
               plot_cor = g4
   ))
 
-} # function(plot_resboot_vpa)
+} # function(plot_boot)
 
 
 

@@ -58,16 +58,16 @@ test_that("bootstrap using use.index options", {
   resboot2 <- boo.vpa(testvpa, B = nboot, type="caa") # caaを指定すると資源量指数のブートストラップをするようにする
 
   # boo.vpaの返り値はブートストラップ回数分のVPA結果をリストしたもの
-  expect_equal(length(testvpa1), nboot)
-  expect_equal(length(testvpa2), nboot)  
+  expect_equal(length(testboot1), nboot)
+  expect_equal(length(testboot2), nboot)
 
   # それをplot_boot関数に入れるとプロットしたりできる
-  plot_boot(testvpa1)
-  plot_boot(testvpa2)
 
+  testplot1 = plot_boot(testboot1)
+  testplot2 = plot_boot(testboot2)
+  expect_equal(class(testplot1$plot_ssb)[2], "ggplot")
+  expect_equal(class(testplot2$plot_rec)[2], "ggplot")
 
-
-  
 })
 
 

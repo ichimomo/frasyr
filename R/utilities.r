@@ -2590,7 +2590,7 @@ load_folder <- function(folder_name){
   }
   names(res_all) <- file_name
 
-  res_all$res_vpa <- purrr::map(res_all$res_MSY.rda, function(x) if(!is.na(x)) x$res_vpa else NA)
+  res_all$res_vpa <- purrr::map(res_all$res_MSY.rda, function(x) if(!is.na(x)[1]) x$res_vpa else NA)
   res_all$res_vpa <- res_all$res_vpa[!is.na(res_all$res_vpa)]
   invisible(res_all)
 }
