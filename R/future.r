@@ -2274,7 +2274,19 @@ unlist_future_data = function(data_future_list) {
     }
     return$input[[j]] <- data_future_list[[j]]$input
   }
+
   return$data$nsim <- return$input$nsim <- dim(return$data$caa_mat)[3]
+
+  # rename matrix name
+  for(i in 1:length(mat_names)){
+      if(mat_names[i] %in% c("SR_mat","HCR_mat")) {
+          dimnames(return$data[[mat_names[i]]])[[2]] <- 1:return$data$nsim
+      }
+      else{
+          dimnames(return$data[[mat_names[i]]])[[3]] <- 1:return$data$nsim
+      }
+  }
+
   return$input <- return$input[[1]] #est_MSYRPでinput$plus_group（など？）を利用するので一つ目を入れておく（これでいい？）
   return$input$nsim <- dim(return$data$caa_mat)[3]
   return( return )
