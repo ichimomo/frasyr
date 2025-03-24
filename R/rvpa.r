@@ -704,7 +704,7 @@ vpa <- function(
   years <- dimnames(caa)[[2]]  # 年
   ages <- dimnames(caa)[[1]]  # 年齢
 
-  if (class(index)=="numeric") index <- t(as.matrix(index))
+  if ("numeric"%in%class(index)) index <- t(as.matrix(index))
 
 # tuningの際のパラメータが1個だけ指定されている場合は，nindexの数だけ増やす
   if (isTRUE(tune)){
