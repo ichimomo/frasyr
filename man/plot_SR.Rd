@@ -18,7 +18,7 @@ plot_SR(
   plot_CI = FALSE,
   CI = 0.9,
   shape_custom = c(21, 3),
-  box.padding = 0,
+  box.padding = 0.4,
   add_graph = NULL,
   last_year_color = 0
 )

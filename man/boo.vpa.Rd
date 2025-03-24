@@ -12,7 +12,8 @@ boo.vpa(
   method = "p",
   mean.correction = FALSE,
   B_cv = 0.2,
-  ess = 200
+  ess = 200,
+  out = "simple"
 )
 }
 \arguments{
@@ -29,6 +30,8 @@ boo.vpa(
 \item{B_cv}{`type = "caa"`の時に利用可。漁獲量の変動係数（i.e. 対数取った漁獲量の分散）。}
 
 \item{ess}{`type = "caa"`の時に利用可。多項分布の有効サンプルサイズ。}
+
+\item{out}{"simple" 推定結果のみ保存する "full" インプットデータを含めてすべて保存する}
 }
 \description{
 bootstrapを実施する

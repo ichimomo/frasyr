@@ -4,14 +4,14 @@
 \alias{do_bootSR}
 \title{bootstrapの個々の結果に再生産関係をあてはめる}
 \usage{
-do_bootSR(resboot, res_vpa, type = NULL, ...)
+do_bootSR(resboot, res_vpa, type = "fix", ...)
 }
 \arguments{
 \item{resboot}{boot.vpaからの返り値(vpaからの返り値のリスト)}
 
 \item{res_vpa}{オリジナルのVPAの結果}
 
-\item{type}{モデル選択の方法。"auto"とすると、３種類のSR関数、ARあり（inner）、なし、L1、L2の総当りから、AICcが最も小さいものを選択する。NULLの場合は、fit.SRに与える引数を別途与えることで、モデルを指定する}
+\item{type}{モデル選択の方法。"auto"とすると、３種類のSR関数、ARあり（inner）、なし、L1、L2の総当りから、AICcが最も小さいものを選択する。"fix"の場合は、fit.SRに与える引数を別途与えることで、モデルを指定する。"regime"はレジームシフト（この場合、fit.SRregimeの引数はあらかじめ与える）}
 }
 \description{
 bootstrapの個々の結果に再生産関係をあてはめる
