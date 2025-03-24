@@ -1735,6 +1735,7 @@ profile.likelihood.vpa.B <- function(res,Alpha=0.95,min.p=1.0E-6,max.p=1,L=20,me
 #' @param mean.correction デフォルトは`FALSE`。対数正規分布の平均値の補正の有無。`type = "index"`と`type = "caa"`のいずれでも利用可能
 #' @param B_cv `type = "caa"`の時に利用可。漁獲量の変動係数（i.e. 対数取った漁獲量の分散）。
 #' @param ess `type = "caa"`の時に利用可。多項分布の有効サンプルサイズ。
+#' @param out "simple" 推定結果のみ保存する "full" インプットデータを含めてすべて保存する
 #'
 #' @encoding UTF-8
 #'
@@ -1749,11 +1750,13 @@ boo.vpa = function(res,
                    method = "p",
                    mean.correction = FALSE,
                    B_cv   = 0.2,
-                   ess    = 200
+                   ess    = 200,
+                   out= "simple" # or "full"
                    ){
 
-  assertthat::assert_that(type == "index" | type == "caa")
+  assertthat::assert_that(type   == "index" | type == "caa")
   assertthat::assert_that(method == "p" | method == "n" | method == "r")
+  assertthat::assert_that(out    == "simple" | out == "full")
   assertthat::assert_that(is.logical(mean.correction))
   res$input$plot = FALSE
 
@@ -1833,10 +1836,16 @@ boo.vpa = function(res,
       res_list[[b]] <- "try-error"
       message(paste('Iteration',b,'was errored ...', sep = " "))
     } else {
-      res_list[[b]] = list(naa = res_boot$naa, baa = res_boot$baa, ssb = res_boot$ssb,
-                           faa = res_boot$faa, saa = res_boot$saa,
-                           Fc.at.age = res_boot$Fc.at.age,
-                           q = res_boot$q, b = res_boot$b, sigma = res_boot$sigma)
+      if(out=="simple"){
+        res_list[[b]] = list(naa = res_boot$naa, baa = res_boot$baa, ssb = res_boot$ssb,
+                             faa = res_boot$faa, saa = res_boot$saa,
+                             Fc.at.age = res_boot$Fc.at.age,
+                             q = res_boot$q, b = res_boot$b, sigma = res_boot$sigma)
+      }
+      if(out=="full"){
+        res_list[[b]] <- res_boot
+      }
+      
       if(type=="index"){
         res_list[[b]] = res_list[[b]] %>%
           c(index = list(b.index), caa = list(res_boot$input$dat$caa))

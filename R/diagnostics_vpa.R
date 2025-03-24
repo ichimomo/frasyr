@@ -1412,6 +1412,8 @@ do_caaboot_vpa <-  function(res,
 
 do_bootSR <- function(resboot, res_vpa, type="fix", ...){
 
+  # naaがnanになっている場合や、tryでエラーが出ている場合などに対応していない
+
   assertthat::assert_that(type %in% c("fix","auto","regime"))
   
   SRdata_list <- purrr::map(resboot, get.SRdata, weight.year=NULL)
@@ -1442,9 +1444,10 @@ do_bootSR <- function(resboot, res_vpa, type="fix", ...){
         mutate(delta=AICc-min(AICc)) %>%
         dplyr::filter(delta<0.01)
       while(nrow(AICtable)>1){ # AICが同じ場合、HS, non, L2を優先的にとる
-        if("HS" %in% AICtable$SR) AICtable <- dplyr::filter(SR=="HS")
-        if("non" %in% AICtable$AR.type) AICtable <- dplyr::filter(AR.type=="non")
-        if("L2" %in% AICtable$L.type) AICtable <- dplyr::filter(AR.type=="L2")        
+        if("HS" %in% AICtable$SR.rel) AICtable <- AICtable %>% dplyr::filter(SR.rel=="HS")
+        if("non" %in% AICtable$AR.type) AICtable <- AICtable %>% dplyr::filter(AR.type=="non")
+        if("L2" %in% AICtable$L.type) AICtable <- AICtable %>% dplyr::filter(L.type=="L2")
+        if("BH" %in% AICtable$SR.rel) AICtable <- AICtable %>% dplyr::filter(SR.rel=="BH")        
       }
 
       SRres_list[[i]] <- AICtable$model[[1]]
