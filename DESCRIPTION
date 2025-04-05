@@ -4,7 +4,7 @@ Version: 2.4.0.0
 Authors@R: c(person(given="Momoko", family="Ichinokawa", email = "ichinokawa_momoko09@fra.go.jp", role = c("aut", "cre")),
 	   person(given="Mitsuyo", family="Miyagawa", email = "miyagawa_mitsuyo88@fra.go.jp", role = c("aut")),
 	   person(given="Kohei", family="Hamabe", email = "hamabe_kohei20@fra.go.jp", role = c("aut")),
-             person(given="Shota", family="Nishijima", email = "nishijima_shota02@fra.go.jp", role = c("aut")))
+	     person(given="Shota", family="Nishijima", email = "nishijima_shota02@fra.go.jp", role = c("aut")))
 Description: This package estimates stock status with stock assessment models and calculating RPs and ABC for Japanese fisheries management.
 Depends: R (>= 4.0.0)
 License: GPL (>=3)
@@ -32,9 +32,9 @@ Imports:
     foreach,
     doParallel,
     testthat,
-    covr,    
+    covr,
     patchwork,
-    GGally, 
+    GGally,
     splus2R,
     scales,
     ragg,
