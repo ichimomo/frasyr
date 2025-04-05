@@ -42,3 +42,11 @@ Suggests:
     knitr,
     rmarkdown,
 VignetteBuilder: knitr
+Config/testthat/parallel: true
+Config/testthat/start-first: srr-part stock-recruit
+Remotes:
+    renkun-ken/formattable,
+    kaskr/adcomp,
+    alexkowa/EnvStats,
+    RevolutionAnalytics/foreach,
+    RevolutionAnalytics/doparallel
