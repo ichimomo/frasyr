@@ -63,10 +63,6 @@ jobs:
 
       - uses: r-lib/actions/setup-r@v2
 
-      - name: Configure R for later steps
-        run: |
-          echo "TESTTHAT_CPUS=4" >> ~/.Renviron
-
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::devtools
