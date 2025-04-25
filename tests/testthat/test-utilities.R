@@ -444,3 +444,28 @@ test_that("calculate_all_pm", {
   expect_equal(nrow(all_pm)<nrow(all_pm1), TRUE)
   
 })
+
+
+test_that("fit.SR_pen", {
+
+    xx <- array(1:60, dim=c(3,4,5), dimnames=list(c(0,1,2), 2000:2003, 1:5))
+    yy <- make_array(xx, NULL, pars.year=2000:2001, year_replace_future=2003)
+    expect_equal(yy[1,"2003",], apply(yy[1,1:2,],2,mean))
+    expect_equal(yy[2,"2003",], apply(yy[2,1:2,],2,mean))
+
+    yy <- make_array(xx, NULL, pars.year=2000:2001, year_replace_future=2002)
+    expect_equal(yy[1,"2002",], apply(yy[1,1:2,],2,mean))
+    expect_equal(yy[2,"2002",], apply(yy[2,1:2,],2,mean))        
+
+    yy <- make_array(xx, NULL, pars.year=2000:2001, year_replace_future=2002,
+                     specific_value=tibble("2003"=c(0,0,0)))
+    expect_equal(all(yy[,"2003",]==0), TRUE)
+
+    yy <- make_array(xx, rep(0,3), pars.year=NULL, year_replace_future=2002)
+    expect_equal(all(yy[,c("2002","2003"),]==0), TRUE)
+
+    yy <- make_array(xx, NULL, pars.year=2000:2001, year_replace_future=2002:2003, rand=TRUE, rand_seed=10)
+    expect_equal(all(sort(unique(as.numeric(yy[,c("2002","2003"),2]))) %in%
+                     sort(unique(as.numeric(xx[,c("2000","2001"),2])))), TRUE)
+
+})
