@@ -5,12 +5,33 @@
 \alias{boo.vpa}
 \title{bootstrapを実施する}
 \usage{
-boo.vpa(res, B = 5, method = "p", mean.correction = FALSE)
+boo.vpa(
+  res,
+  type = "index",
+  B_ite = 5,
+  method = "p",
+  mean.correction = FALSE,
+  B_cv = 0.2,
+  ess = 200,
+  out = "simple"
+)
 }
 \arguments{
 \item{res}{vpaの出力値}
 
-\item{method}{"p": パラメトリックブートストラップ。"n": ノンパラメトリックブートストラップ。"r": 残差をスムージングした後ブートストラップt法}
+\item{type}{"index": 資源量指標値についてブートストラップ。"caa": 年齢別漁獲尾数についてブートストラップ}
+
+\item{B_ite}{ブートストラップ法でのイタレーション数}
+
+\item{method}{`type = "index"`の時に利用可。"p": パラメトリックブートストラップ。"n": ノンパラメトリックブートストラップ。"r": 残差をスムージングした後ブートストラップt法}
+
+\item{mean.correction}{デフォルトは`FALSE`。対数正規分布の平均値の補正の有無。`type = "index"`と`type = "caa"`のいずれでも利用可能}
+
+\item{B_cv}{`type = "caa"`の時に利用可。漁獲量の変動係数（i.e. 対数取った漁獲量の分散）。}
+
+\item{ess}{`type = "caa"`の時に利用可。多項分布の有効サンプルサイズ。}
+
+\item{out}{"simple" 推定結果のみ保存する "full" インプットデータを含めてすべて保存する}
 }
 \description{
 bootstrapを実施する

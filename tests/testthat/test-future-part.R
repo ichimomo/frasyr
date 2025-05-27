@@ -592,7 +592,6 @@ test_that("future_vpa function (carry over TAC) (level 2)",{
 # SRF_HS
 # SRF_BH
 # SRF_RI
-# make_array
 # arrange_weight
 # average_SR_mat
 # sample_backward

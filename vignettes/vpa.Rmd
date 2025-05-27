@@ -104,7 +104,7 @@ ci0 <- profile_likelihood.vpa(vout3, method="ci",Alpha=0.80)$ci
 ```{r}
 ## ノンパラメトリックブートストラップ(method="n")
 set.seed(1)
-boot.sim1 <- boo.vpa(vout3,B=10,method="n")
+boot.sim1 <- boo.vpa(vout3,B_ite=10,method="n")
   # boo.vpaはブートストラップ回数分のvpa関数の返り値のリストを返す
   # 値の取り出しは、リストの操作関数sapplyまたはlapplyを用いる
   # Bで繰り返し回数を指定します．ここでは10回ですが実際には1000回(B=1000)以上やってください
@@ -113,13 +113,13 @@ ci1 <- quantile(tf.dist1,probs=c(0.1,0.9))
 
 ## パラメトリックブートストラップ(method="p")
 set.seed(1)
-boot.sim2 <- boo.vpa(vout3,B=10,method="p") # 実際には1000回以上(B=1000)やってください
+boot.sim2 <- boo.vpa(vout3,B_ite=10,method="p") # 実際には1000回以上(B=1000)やってください
 tf.dist2 <- sapply(boot.sim2,function(x) x$faa["2000"][6,])
 ci2 <- quantile(tf.dist2,probs=c(0.1,0.9))
 
 ## 平滑化ブートストラップ(method="r")
 set.seed(1) 
-boot.sim3 <- boo.vpa(vout3,B=10,method="r") # 実際には1000回以上(B=1000)やってください
+boot.sim3 <- boo.vpa(vout3,B_ite=10,method="r") # 実際には1000回以上(B=1000)やってください
 tf.dist3 <- sapply(boot.sim3,function(x) x$faa["2000"][6,])
 ci3 <- quantile(tf.dist3,probs=c(0.1,0.9))
 
@@ -128,7 +128,7 @@ rbind(ci0,ci1,ci2,ci3)
 
 ## ノンパラメトリックブートストラップ for vout4
 set.seed(1)
-boot.sim4 <- boo.vpa(vout4,B=10,method="n") # 実際には1000回以上(B=1000)やってください
+boot.sim4 <- boo.vpa(vout4,B_ite=10,method="n") # 実際には1000回以上(B=1000)やってください
 
 tf.dist4 <- sapply(boot.sim4[boot.sim4!="try-error"],function(x) x$faa["2000"][7,])
 ci4 <- quantile(tf.dist4,probs=c(0.1,0.9))

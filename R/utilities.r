@@ -2586,7 +2586,7 @@ load_folder <- function(folder_name){
   }
   names(res_all) <- file_name
 
-  res_all$res_vpa <- purrr::map(res_all$res_MSY.rda, function(x) if(!is.na(x)) x$res_vpa else NA)
+  res_all$res_vpa <- purrr::map(res_all$res_MSY.rda, function(x) if(!is.na(x)[1]) x$res_vpa else NA)
   res_all$res_vpa <- res_all$res_vpa[!is.na(res_all$res_vpa)]
   invisible(res_all)
 }
@@ -3426,6 +3426,20 @@ rank_HCR <- function(summary_HCR,
 
 }
 
+#' @export
+#' 
+
+get.SPR0 <- function(M,maa,waa,output="simple"){
+    nage <- length(M)
+    S <- exp(-M)
+    N <- numeric()
+    N[1] <- 1
+    for(i in 2:(nage-1)) N[i] <- N[i-1]*S[i-1]
+    N[nage] <- N[nage-1] * S[nage]/(1-S[nage])
+    SPR0 <- sum(N * maa * waa)
+    if(output=="simple") return(SPR0) else return(listN2(N,SPR0))
+}
+
 #'
 #' beverton-holtのh,R0とbioparsを与えるとa,bを返す関数
 #'
@@ -3433,16 +3447,6 @@ rank_HCR <- function(summary_HCR,
 
 get.ab.bh <- function(h,R0,biopars){
 
-    get.SPR0 <- function(M,maa,waa,output="simple"){
-        nage <- length(M)
-        S <- exp(-M)
-        N <- numeric()
-        N[1] <- 1
-        for(i in 2:(nage-1)) N[i] <- N[i-1]*S[i-1]
-        N[nage] <- N[nage-1] * S[nage]/(1-S[nage])
-        SPR0 <- sum(N * maa * waa)
-        if(output=="simple") return(SPR0) else return(listN2(N,SPR0))
-    }
     SPR0 <- get.SPR0(biopars$M,biopars$maa,biopars$waa)
     S0 <- R0*SPR0
     beta <- (5*h-1)/(4*h*R0)
