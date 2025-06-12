@@ -1694,8 +1694,9 @@ make_kobeII_table <- function(kobeII_data,
                               year.ssbmin=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
 #                              year.ssbmax=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
 #                              year.aav=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
-#                              year.risk=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
-#                              year.catchdiff=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              year.risk=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                                        #                              year.catchdiff=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              Bspecific=0,
                               Btarget=0,
                               Blimit=0,
                               Bban=0){
@@ -1833,32 +1834,32 @@ make_kobeII_table <- function(kobeII_data,
   ##   arrange(HCR_name,desc(beta))%>%
   ##   mutate(stat_name="catch.risk")
 
-##   bban.risk <- kobeII_data %>%
-##     dplyr::filter(year%in%year.risk & stat=="SSB") %>%
-##     group_by(HCR_name,beta,sim) %>%
-##     dplyr::summarise(Bban.fail=sum(value<Bban)) %>%
-##     group_by(HCR_name,beta) %>%
-##     summarise(value=mean(Bban.fail>0)) %>%
-##     arrange(HCR_name,desc(beta))%>%
-##     mutate(stat_name="bban.risk")
+   bban.risk <- kobeII_data %>%
+     dplyr::filter(year%in%year.risk & stat=="SSB") %>%
+     group_by(HCR_name,beta,sim) %>%
+     dplyr::summarise(Bban.fail=sum(value<Bban)) %>%
+     group_by(HCR_name,beta) %>%
+     summarise(value=mean(Bban.fail>0)) %>%
+     arrange(HCR_name,desc(beta))%>%
+     mutate(stat_name="bban.risk")
 
-##   blimit.risk <- kobeII_data %>%
-##     dplyr::filter(year%in%year.risk,stat=="SSB") %>%
-##     group_by(HCR_name,beta,sim) %>%
-##     dplyr::summarise(Blimit.fail=sum(value<Blimit)) %>%
-##     group_by(HCR_name,beta) %>%
-##     summarise(value=mean(Blimit.fail>0)) %>%
-##     arrange(HCR_name,desc(beta))%>%
-##     mutate(stat_name="blimit.risk")
+   blimit.risk <- kobeII_data %>%
+     dplyr::filter(year%in%year.risk,stat=="SSB") %>%
+     group_by(HCR_name,beta,sim) %>%
+     dplyr::summarise(Blimit.fail=sum(value<Blimit)) %>%
+     group_by(HCR_name,beta) %>%
+     summarise(value=mean(Blimit.fail>0)) %>%
+     arrange(HCR_name,desc(beta))%>%
+     mutate(stat_name="blimit.risk")
 
-##   overfishing.risk <- kobeII_data %>%
-##     dplyr::filter(year%in%year.risk,stat=="Fratio") %>%
-##     group_by(HCR_name,beta,sim) %>%
-##     dplyr::summarise(overfishing=sum(value>1)) %>%
-##     group_by(HCR_name,beta) %>%
-##     summarise(value=mean(overfishing>0)) %>%
-##     arrange(HCR_name,desc(beta))%>%
-##     mutate(stat_name="overfishing.risk")
+   overfishing.risk <- kobeII_data %>%
+     dplyr::filter(year%in%year.risk,stat=="Fratio") %>%
+     group_by(HCR_name,beta,sim) %>%
+     dplyr::summarise(overfishing=sum(value>1)) %>%
+     group_by(HCR_name,beta) %>%
+     summarise(value=mean(overfishing>0)) %>%
+     arrange(HCR_name,desc(beta))%>%
+     mutate(stat_name="overfishing.risk")
 
 ##   redzone.risk1 <- kobeII_data %>%
 ##     dplyr::filter(year%in%year.risk,stat=="Fratio")
@@ -1880,18 +1881,14 @@ make_kobeII_table <- function(kobeII_data,
 ##     arrange(HCR_name,desc(beta)) %>%
 ##     mutate(stat_name="redzone.risk")
 
-  ## if(!is.null(Bspecific)){
-  ##   bspecific.risk <- kobeII_data %>%
-  ##     dplyr::filter(year%in%year.risk,stat=="SSB") %>%
-  ##     group_by(HCR_name,beta,sim) %>%
-  ##     dplyr::summarise(Bspecific.fail=sum(value<Bspecific)) %>%
-  ##     group_by(HCR_name,beta) %>%
-  ##     summarise(value=mean(Bspecific.fail>0)) %>%
-  ##     arrange(HCR_name,desc(beta))%>%
-  ##     mutate(stat_name="bspecific.risk")
-  ## }else{
-  ##   bspecific.risk <- NA
-  ## }
+  bspecific.risk <- kobeII_data %>%
+    dplyr::filter(year%in%year.risk,stat=="SSB") %>%
+    group_by(HCR_name,beta,sim) %>%
+    dplyr::summarise(Bspecific.fail=sum(value<Bspecific)) %>%
+    group_by(HCR_name,beta) %>%
+    summarise(value=mean(Bspecific.fail>0)) %>%
+    arrange(HCR_name,desc(beta))%>%
+    mutate(stat_name="bspecific.risk")
 
   # kobe statistics
   ## overssbtar <- kobeII_data %>%
@@ -1923,16 +1920,16 @@ make_kobeII_table <- function(kobeII_data,
                    prob.over.ssbtarget  = ssbtarget.table,
                    prob.over.ssblimit   = ssblimit.table,
                    prob.over.ssbban     = ssbban.table,
-                   prob.over.ssbmin     = ssbmin.table)
+                   prob.over.ssbmin     = ssbmin.table,
 #                   prob.over.ssbmax     = ssbmax.table,
                    ## catch.aav       = catch.aav.table,
                    ## kobe.stat       = kobe.stat,
                    ## catch.risk = catch.risk,
-                   ## overfishing.risk = overfishing.risk,
+                    overfishing.risk = overfishing.risk,
                    ## redzone.risk = redzone.risk,
-                   ## bban.risk = bban.risk,
-                   ## blimit.risk = blimit.risk,
-#                   bspecific.risk = bspecific.risk)
+                    bban.risk = bban.risk,
+                    blimit.risk = blimit.risk,
+                   bspecific.risk = bspecific.risk)
   return(res_list)
 
 }
@@ -2008,7 +2005,8 @@ beta.simulation <- function(finput,beta_vector,
 
       # summary statistics
       tmp <- calculate_all_pm(fres_base,...) %>%
-          mutate(HCR_name=label_name[i], beta=beta_vector[i])
+          mutate(HCR_name=label_name[i], beta=beta_vector[i]) %>%
+          select(-year1, -year2)
       tb2 <- bind_rows(tb2,tmp)
     }
   }
@@ -3093,6 +3091,8 @@ create_dummy_vpa <- function(res_vpa){
 
     empty_matrix[,-nyear] <- as.matrix(naa)
     empty_matrix[, nyear] <- naa[,nyear]
+    if(is.na(empty_matrix[1, nyear])) empty_matrix[1, nyear] <- empty_matrix[1, nyear-1]
+    if(all(empty_matrix[,nyear]==0)) empty_matrix[,nyear] <- empty_matrix[,nyear-1]
     as.data.frame(empty_matrix)
   }
 
@@ -3132,6 +3132,7 @@ create_dummy_vpa <- function(res_vpa){
 #' @param unit 確率を出力するときの単位。100を入れると％単位で結果が返される
 #' @param period_extra デフォルトではSSBminなどを一度でも下回るなど、期間を指定して計算する統計量はABC_year + 0:9, 0:4, 5:9, 1:10, 1:4, 6:10で決め打ちしているが、それ以外の期間を指定したいときにここの引数で与える
 #' @param type "AS": age-structured from frasyr, "PM": production model from frapmr
+#' @param include_year_name statの名前に年の範囲を入れる(TRUE)か入れないか(FALSE)
 #'
 #'
 # #' @examples
@@ -3143,7 +3144,8 @@ create_dummy_vpa <- function(res_vpa){
 #' @export
 #'
 
-calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmin=-1, MSY=-1, is_scale=FALSE, unit=1, period_extra=NULL, type="AS", fun_period=mean){
+calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmin=-1, MSY=-1, is_scale=FALSE, unit=1, period_extra=NULL, type="AS", fun_period=mean,
+                             include_year_name=TRUE){
     # by year performance (start_future_year:last_year)
     # mean, median, ci5%, ci10%, ci90%, ci95%, CV,
     # ssb, biomass, number by age, catch weight
@@ -3151,7 +3153,10 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
 
     get_annual_pm <- function(mat,fun,label){
         x <- apply(mat,1,fun)
-        tibble(stat=str_c(label,"_",names(x)),value=x)
+        if(include_year_name==TRUE) statname <- str_c(label,"_",names(x)) else statname <- str_c(label)
+        tibble(stat=statname,
+               value=x,
+               year1=as.numeric(names(x)))
     }
 
     fun_list <- list(ci0.05=function(x) quantile(x,0.05, na.rm=TRUE),
@@ -3164,7 +3169,8 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
                      prob_target = function(x) mean(x>SBtarget, na.rm=TRUE)*unit,
                      prob_limit  = function(x) mean(x>SBlimit, na.rm=TRUE)*unit,
                      prob_ban    = function(x) mean(x>SBban, na.rm=TRUE)*unit,
-                     prob_min    = function(x) mean(x>SBmin, na.rm=TRUE)*unit)
+                     prob_min    = function(x) mean(x>SBmin, na.rm=TRUE)*unit
+                     )
 
   if(is_scale){
     scale_ssb <- SBtarget
@@ -3187,6 +3193,7 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
     ssb_mat <- res_future$SR_mat[year_future,,"ssb"] / scale_ssb
     catch_mat <- res_future$HCR_realized[year_future,,"wcatch"] / scale_catch
     biom_mat <- apply(res_future$naa * res_future$waa,c(2,3),sum)
+    fratio_mat <- res_future$HCR_realized[,,"Fratio"]
   }
   if(type=="PM"){
     year_future <- res_future$mat_year$year[!res_future$mat_year$is_est]
@@ -3197,11 +3204,13 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
       ssb_mat   <- res_future$mat_stat["B",,]
       catch_mat <- res_future$mat_stat["C",,]
       biom_mat  <- res_future$mat_stat["B",,]
+      fratio_mat  <- res_future$mat_stat["F",,]
     }
     else{
       ssb_mat   <- res_future$mat_stat["Bratio",,]
       catch_mat <- res_future$mat_stat["Cratio",,]
       biom_mat  <- res_future$mat_stat["Bratio",,]
+      fratio_mat  <- res_future$mat_stat["Fratio",,]
     }
   }
 
@@ -3225,13 +3234,14 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
                                                  fun,str_c(funname,"_faa_", age_label[x])))
     }
     else{
-      x1 <- x2 <- x3 <- NULL
+      x1 <- x2 <- x3 <- x4 <- NULL
     }
     tmp <- bind_rows(
       x1,x2,x3,
       get_annual_pm(ssb_mat,  fun  ,str_c(funname,"_ssb")),
       get_annual_pm(catch_mat,fun  ,str_c(funname,"_catch")),
-      get_annual_pm(biom_mat, fun  ,str_c(funname,"_biom"))
+      get_annual_pm(biom_mat, fun  ,str_c(funname,"_biom")),
+      get_annual_pm(fratio_mat, fun  ,str_c(funname,"_fratio"))
     )
     stat_data <- bind_rows(stat_data, tmp)
   }
@@ -3287,7 +3297,7 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
       }}}
   period_range <- c(period_range, period_extra[ss])
   period_list  <- purrr::map(period_range, function(x) ABC_year + x)
-  names(period_list) <- purrr::map_chr(period_list, function(x) str_c(range(x),collapse="."))
+    names(period_list) <- purrr::map_chr(period_list, function(x) str_c(range(x),collapse="."))
 
   av <- function(x){
     av_value <- (x[-1]-x[-length(x)])/x[-length(x)]
@@ -3347,18 +3357,33 @@ calculate_all_pm <- function(res_future, SBtarget=-1, SBlimit=-1, SBban=-1, SBmi
                     prob_min_any    = function(x){
                       if(type=="PM") SBmin <- rep(1,length(x))
                       ifelse(sum(x<SBmin,na.rm=FALSE)>0,1,0)
-                    })
+                    },
+                    aveyear_under_blimit    = function(x){
+                      if(type=="PM") SBlimit <- rep(1,length(x))
+                      sum(x<SBlimit,na.rm=FALSE)
+                    },
+                    aveyear_over_fmsy    = function(x){
+                      sum(x>1,na.rm=FALSE)
+                    }
+                    )
 
-  mat_list <- lst(ssb=ssb_mat, biom=biom_mat, catch=catch_mat)
+  mat_list <- lst(ssb=ssb_mat, biom=biom_mat, catch=catch_mat, fratio=fratio_mat)
   for(j in seq_len(length(fun_list2))){
     for(i in seq_len(length(period_list))){
       stat_data <- bind_rows(
         stat_data,
         purrr::map_dfr(1:length(mat_list),
                        function(x)
-                           tibble(stat=str_c(names(fun_list2)[j],names(mat_list)[x],names(period_list)[i],sep="_"),
-                                value=get_period_pm(mat_list[[x]], fun_list2[[j]], period_list[[i]], mean2, fun_name_char=names(fun_list2)[j])))
-        )
+                           tibble(stat=ifelse(include_year_name==TRUE,
+                                              str_c(names(fun_list2)[j],names(mat_list)[x],
+                                                    names(period_list)[i],sep="_"),
+                                              str_c(names(fun_list2)[j],names(mat_list)[x],
+                                                    sep="_")),
+                                  value=get_period_pm(mat_list[[x]], fun_list2[[j]],
+                                                      period_list[[i]], mean2, fun_name_char=names(fun_list2)[j]),
+                                  year1=min(period_list[[i]]),
+                                  year2=max(period_list[[i]])
+                                  )))
     }}
   return(stat_data)
 }
@@ -3427,7 +3452,7 @@ rank_HCR <- function(summary_HCR,
 }
 
 #' @export
-#' 
+#'
 
 get.SPR0 <- function(M,maa,waa,output="simple"){
     nage <- length(M)
@@ -3493,3 +3518,5 @@ format_type <- function(){
             "limit",  "#EDB918", "dotdash",
             "ban",   "#C73C2E", "dotted")
 }
+
+

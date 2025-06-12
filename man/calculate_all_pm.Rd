@@ -15,7 +15,8 @@ calculate_all_pm(
   unit = 1,
   period_extra = NULL,
   type = "AS",
-  fun_period = mean
+  fun_period = mean,
+  include_year_name = TRUE
 )
 }
 \arguments{

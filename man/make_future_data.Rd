@@ -33,8 +33,13 @@ make_future_data(
   M = NULL,
   more_process_error = NA,
   faa_year = NULL,
+  faa_year_future = NULL,
   currentF = NULL,
   futureF = NULL,
+  currentF_rand = FALSE,
+  futureF_rand = FALSE,
+  currentF_rand_seed = 1,
+  futureF_rand_seed = 2,
   start_ABC_year_name = 2019,
   HCR_beta = 1,
   HCR_Blimit = -1,
@@ -70,7 +75,11 @@ make_future_data(
   model_average_option = NULL,
   regime_shift_option = NULL,
   silent = FALSE,
-  special_setting = NULL
+  special_setting = NULL,
+  specific_waa_future = NA,
+  specific_waa.catch_future = NA,
+  specific_maa_future = NA,
+  specific_M_future = NA
 )
 }
 \arguments{
@@ -108,11 +117,17 @@ make_future_data(
 
 \item{maa_fun}{maturity ~ number の回帰式から将来のmaturityを予測する(暫定的、太平洋マダラでのみ利用)}
 
-\item{faa_year}{将来のFを過去の平均値とする場合、平均をとる年を指定する。下のcurrentF, futureFが指定されている場合にはこの設定は無視される}
+\item{faa_year}{将来のF(before ABC_year)を過去の平均値とする場合、平均をとる年を指定する。下のcurrentF, futureFが指定されている場合にはこの設定は無視される。}
+
+\item{faa_year_future}{将来のF(before ABC_year)を過去の平均値とする場合、平均をとる年を指定する。下のcurrentF, futureFが指定されている場合にはこの設定は無視される。NULLの場合faa_yearが用いられる}
 
 \item{currentF}{start_ABC_yar_name以前に使うFのベクトル（いわゆるcurrent F）}
 
 \item{futureF}{start_ABC_yar_name以降に使うFのベクトル（いわゆるFmsy）}
+
+\item{currentF_rand}{TRUEの場合、faa_yearで指定された範囲のFから年齢別にランダムサンプリングする（currentFはNULLとする）}
+
+\item{futureF_rand}{TRUEの場合、faa_year_futureで指定された範囲のFから年齢別にランダムサンプリングする（currentFはNULLとする）}
 
 \item{start_ABC_year_name}{HCRを有効にする年}
 
@@ -175,6 +190,14 @@ make_future_data(
 \item{regime_shift_option}{res_SRにfit.SRregimeの返り値を入れた場合に指定する。将来予測で再生産関係のどのフェーズがおこるかを指定する。list(future_regime=将来のregimeの仮定。keyで指定された番号を入れる)}
 
 \item{special_setting}{list形式で与えるmake_future_dataの返り値のdataと同じ名前の要素について、最後にデータをここで示されたarrayのシミュレーション1回めの値で上書きする。arrayのデータに対してのみ有効。}
+
+\item{specific_waa_future}{将来年の特定年だけwaaを変える。tibble("2025"=c(10,20,30,40),"2026"=c(20,30,40,40))という形式で与える。}
+
+\item{specific_waa.catch_future}{将来年の特定年だけwaa.catchを変える}
+
+\item{specific_maa_future}{将来年の特定年だけmaaを変える}
+
+\item{specific_M_future}{将来年の特定年だけMを変える}
 }
 \value{
 以下の要素からなるリスト

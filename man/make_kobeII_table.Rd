@@ -14,6 +14,8 @@ make_kobeII_table(
   year.ssblimit = (max(as.numeric(colnames(res_vpa$naa))) + 1:10),
   year.ssbban = (max(as.numeric(colnames(res_vpa$naa))) + 1:10),
   year.ssbmin = (max(as.numeric(colnames(res_vpa$naa))) + 1:10),
+  year.risk = (max(as.numeric(colnames(res_vpa$naa))) + 1:10),
+  Bspecific = 0,
   Btarget = 0,
   Blimit = 0,
   Bban = 0

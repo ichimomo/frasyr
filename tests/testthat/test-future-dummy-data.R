@@ -116,7 +116,7 @@ test_that("future_vpa function (with dummy vpa data) (level 2-3?)",{
                      resample_year_range=0, # リサンプリングの場合、残差をリサンプリングする年の範囲
                      bias_correction=TRUE, # バイアス補正をするかどうか
                      recruit_intercept=0, # 移入や放流などで一定の加入がある場合に足す加入尾数
-                     more_process_error=c(0.1, 0.1, 0.1, 0.1, 0.1, 0.1),
+                     more_process_error=c(0.1, 0.1, 0.1),
                      # Other
                      Pope=res_vpa_base0_nontune$input$Pope,
                      fix_recruit=NULL,

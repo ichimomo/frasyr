@@ -305,7 +305,7 @@ plot_Fref <- function(rres,xlabel="max", # or, "mean","Fref/Fcur"
 #' @param type "classic"(通常プロット) or "gg"(ggplot)
 #'
 #' @encoding UTF-8
-#' 
+#'
 #'
 #' @export
 #'
@@ -1753,13 +1753,11 @@ plot_HCR <- function(SBtarget,SBlim,SBban,Ftarget,
 #' 縦軸が漁獲量のHCRを書く（traceの結果が必要）
 #'
 #' @param trace
-#' @param fout 将来予測のアウトプット（finputがない場合)
 #' @param Fvector Fのベクトル
 #' @encoding UTF-8
 #' @export
 
 plot_HCR_by_catch <- function(trace,
-                              fout0.8,
                               SBtarget,SBlim,SBban,Fmsy_vector,MSY,
                               M_vector,
                               biomass.unit=1,

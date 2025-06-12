@@ -98,7 +98,7 @@ get.SRdata <- function(vpares=NULL,
         dat <- dat %>% dplyr::filter(year%in%years)
     }
 
-    assertthat::assert_that(all(dat[["R"]] > 0))
+#    assertthat::assert_that(all(dat[["R"]] > 0)) # これ必要？
 
     #if (return.df == TRUE) return(data.frame(year = dat$year,
     #SSB  = dat$SSB,

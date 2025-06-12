@@ -118,7 +118,7 @@ test_that("future_vpa function (with sample vpa data) (level 2)",{
 
   res_MSY1 <- est_MSYRP(data_future=data_future_test, candidate_PGY=c(0.1,0.6),
                         candidate_B0=c(0.2), candidate_Babs=20000, candidate_Fbase=c(res_future_test_R$multi, 1.3410926))
-  expect_equal(res_MSY1$summary["Fref/Fcur"][1], res_future_test_R$multi, tol=0.00001)
+  expect_equal(res_MSY1$summary[["Fref/Fcur"]][1], res_future_test_R$multi, tol=0.00001)
   expect_equal(tail(res_future_test_R$summary$SSB,n=1) %>% as.numeric(),
                res_MSY1$summary$SSB[1] %>% as.numeric(), tol=1)
   expect_equal(res_MSY1$summary$SSB[c(1,3)],res_MSY1$summary$SSB[c(7,8)], tol=0.001) # test Fbase value
@@ -483,8 +483,7 @@ test_that("future_vpa function (carry over TAC) (level 2)",{
   lastyear <- max(as.numeric(dimnames(aa$naa)[[2]]))
   res_rate <- round(aa$HCR_realized[as.character(2019:lastyear),,"wcatch"]/
                     aa$HCR_realized[as.character(2019:lastyear),,"original_ABC_plus"],3)
-  org_settei <- data_future_borrow_limit$data$HCR_mat[as.character(2019:lastyear),,"TAC_reserve_rate"]
-  expect_equal(as.numeric(1-org_settei), as.numeric(res_rate[,1:10]))  
+  expect_equal(all(res_rate==1), TRUE) # 繰越しないのでres_rateは１で良い
 
   # 余るけど繰越をしない場合# ?? よくわからない，何もしない場合では？
   data_future_no_reserve <- list_modify(data_future_test$input,HCR_TAC_reserve_rate=0) %>%
