@@ -36,7 +36,7 @@
 #' @param HCR_Bban_year Bbanを年によって変える場合。tibble(year=2020:2024, Bban=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える。HCR_Bbanで設定されたBbanは上書きされる。
 #' @param HCR_TAC_reserve_rate TACの取り残し率。マイナス値を入れれば前借りもできる。
 #' @param HCR_TAC_reserve_amount TACの獲り残し量。マイナス値を入れれば前借りもできる。rateとamountの片方どちらかだけ設定する
-#' @param HCR_reserve_denom 比率で取り残し量を決める場合、もともとのABCをもとにするか（"original_ABC"、ブリ・マダラ繰越前借り設定）前年からの繰越も考慮したABCをもとにするか（"original_ABC_plus", スケトウ繰越設定）
+#' @param HCR_reserve_denom 比率で取り残し量を決める場合、もともとのABCをもとにするか（"original_ABC"、最新の繰越前借り設定）前年からの繰越も考慮したABCをもとにするか（"original_ABC_plus", 過去のスケトウ繰越設定）
 #' @param HCR_TAC_carry_rate 当初TACのうち何トンまで持ち越せるかの上限（比率）。
 #' @param HCR_TAC_carry_amount 当初TACのうち何トンまで持ち越せるかの上限（比率）。
 #' @param HCR_TAC_adjust B&B設定の場合，-1 下方向にadjust, 0 上下方向にadjust, 1 上方向のみadjust, 用いない場合はNA
@@ -1059,7 +1059,7 @@ future_vpa_R <- function(naa_mat,
         }
         #ABC_reserve_amount[ABC_reserve_amount<0] <- 0
         HCR_realized[t+1,,"reserved_catch"] <- cbind(max_carry_amount, ABC_reserve_amount) %>%
-            apply(1,min)
+          apply(1,min)
       }
     }
 
@@ -1495,7 +1495,7 @@ SRF_MR <- function(x,a,b,gamma) 0.5*a*(x+sqrt(b^2+gamma^2/4)-sqrt((x-b)^2+gamma^
 #' @param d3_mat 将来予測用の３次元行列
 #' @param pars 置き換えるべき生物パラメータ
 #' @param pars.year この期間の生物パラメータを平均して、将来のパラメータとする
-#' @param year_replace_future 生物パラメータを置き換える最初の年
+#' @param year_replace_future 生物パラメータを置き換える"最初の"年
 #' @param specific_value 特定の年をそこで指定されている値に置き換える
 #' @param rand pars.yearの期間のパラメータをランダムサンプリングする
 #' @encoding UTF-8
@@ -1503,6 +1503,7 @@ SRF_MR <- function(x,a,b,gamma) 0.5*a*(x+sqrt(b^2+gamma^2/4)-sqrt((x-b)^2+gamma^
 #'
 
 make_array <- function(d3_mat, pars, pars.year, year_replace_future, specific_value=NA, rand=FALSE, rand_seed=NULL){
+  assertthat::assert_that(length(year_replace_future)==1)
 
   if(length(dim(pars))==3){
     d3_mat <- pars

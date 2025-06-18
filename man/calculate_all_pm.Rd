@@ -39,6 +39,8 @@ calculate_all_pm(
 \item{period_extra}{デフォルトではSSBminなどを一度でも下回るなど、期間を指定して計算する統計量はABC_year + 0:9, 0:4, 5:9, 1:10, 1:4, 6:10で決め打ちしているが、それ以外の期間を指定したいときにここの引数で与える}
 
 \item{type}{"AS": age-structured from frasyr, "PM": production model from frapmr}
+
+\item{include_year_name}{statの名前に年の範囲を入れる(TRUE)か入れないか(FALSE)}
 }
 \description{
 res_futureから考えられるほぼすべてのパフォーマンス指標をとりだし、2行のtibbleで返す

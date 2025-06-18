@@ -20,7 +20,7 @@ plot_futures(
   biomass.unit = 1,
   number.unit = 1,
   number.name = "",
-  RP_name = c("Btarget", "Blimit", "Bban"),
+  RP_name = c("Btarget", "Blimit", "Bban", "Fmsy", "MSY", "U_MSY"),
   Btarget = NA,
   Blimit = NA,
   Bban = NA,
@@ -67,7 +67,7 @@ plot_futures(
 
 \item{number.name}{尾数の凡例をどのように表示するか（「億尾」とか）}
 
-\item{RP_name}{管理基準値をどのように名前つけるか}
+\item{RP_name}{管理基準値をどのように名前つけるか（デフォルトはc("Btarget","Blimit","Bban","Fmsy","MSY","U_MSY"))}
 
 \item{Btarget}{Btargetの値、設定しない場合はNA（デフォルトはNA）}
 

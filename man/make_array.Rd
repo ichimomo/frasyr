@@ -22,7 +22,7 @@ make_array(
 
 \item{pars.year}{この期間の生物パラメータを平均して、将来のパラメータとする}
 
-\item{year_replace_future}{生物パラメータを置き換える最初の年}
+\item{year_replace_future}{生物パラメータを置き換える"最初の"年}
 
 \item{specific_value}{特定の年をそこで指定されている値に置き換える}
 
