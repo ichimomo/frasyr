@@ -47,24 +47,24 @@ test_that("bootstrap using use.index options", {
   testvpa <- do.call(vpa, testinput_use.index) # ここは必ず動きそうなのでdo.call使ってます
 
   # plot_resboot_vpaをテストすればboo.vpaも自動的にカバーされるため、変更
-  resboot <- boo.vpa(testvpa, B = 5)
+  resboot <- boo.vpa(testvpa, B_ite = 5)
   #expect_equal("list", testvpa %>% class)
   #expect_equal("list", plot_resboot_vpa(testvpa, B_ite = 2) %>% class)
   # 時間削減でB=2（目的はエラーが出ないことのテスト）
 
   ## issue891に対応した変更
   nboot <- 5
-  resboot1 <- boo.vpa(testvpa, B = nboot, type="index") # indexを指定すると資源量指数のブートストラップをするようにする
-  resboot2 <- boo.vpa(testvpa, B = nboot, type="caa") # caaを指定すると資源量指数のブートストラップをするようにする
+  resboot1 <- boo.vpa(testvpa, B_ite = nboot, type="index") # indexを指定すると資源量指数のブートストラップをするようにする
+  resboot2 <- boo.vpa(testvpa, B_ite = nboot, type="caa") # caaを指定すると資源量指数のブートストラップをするようにする
 
   # boo.vpaの返り値はブートストラップ回数分のVPA結果をリストしたもの
-  expect_equal(length(testboot1), nboot)
-  expect_equal(length(testboot2), nboot)
+  expect_equal(length(resboot1), nboot)
+  expect_equal(length(resboot2), nboot)
 
   # それをplot_boot関数に入れるとプロットしたりできる
 
-  testplot1 = plot_boot(testboot1)
-  testplot2 = plot_boot(testboot2)
+  testplot1 = plot_boot(resboot1)
+  testplot2 = plot_boot(resboot2)
   expect_equal(class(testplot1$plot_ssb)[2], "ggplot")
   expect_equal(class(testplot2$plot_rec)[2], "ggplot")
 

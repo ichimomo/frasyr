@@ -32,7 +32,8 @@ test_that("read_vpa with release data",{
   
   # data.handlerによる放流データ利用
   load("res_vpa_files.rda")
-  load("data_future_test.rda")  
+  load("data_future_test.rda")
+  data_future_test <- redo_future(data_future_test, list(nsim=10), only_data=TRUE)
   SRdata_from_vpa_release <- res_vpa_base0_nontune_release %>%
       get.SRdata(weight.year=1990:2100)
   res_SR_release <- fit.SR(SRdata=SRdata_from_vpa_release, AR=0)

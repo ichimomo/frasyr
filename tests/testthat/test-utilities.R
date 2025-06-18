@@ -446,7 +446,7 @@ test_that("calculate_all_pm", {
 })
 
 
-test_that("fit.SR_pen", {
+test_that("make_array", {
 
     xx <- array(1:60, dim=c(3,4,5), dimnames=list(c(0,1,2), 2000:2003, 1:5))
     yy <- make_array(xx, NULL, pars.year=2000:2001, year_replace_future=2003)
@@ -464,7 +464,7 @@ test_that("fit.SR_pen", {
     yy <- make_array(xx, rep(0,3), pars.year=NULL, year_replace_future=2002)
     expect_equal(all(yy[,c("2002","2003"),]==0), TRUE)
 
-    yy <- make_array(xx, NULL, pars.year=2000:2001, year_replace_future=2002:2003, rand=TRUE, rand_seed=10)
+    yy <- make_array(xx, NULL, pars.year=2000:2001, year_replace_future=2002, rand=TRUE, rand_seed=10)
     expect_equal(all(sort(unique(as.numeric(yy[,c("2002","2003"),2]))) %in%
                      sort(unique(as.numeric(xx[,c("2000","2001"),2])))), TRUE)
 
