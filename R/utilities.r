@@ -9,6 +9,7 @@
 #' @import stringr
 #' @import assertthat
 #' @import patchwork
+#' @import openxlsx
 #' @importFrom magrittr %>%
 #' @importFrom magrittr %T>%
 #' @importFrom dplyr filter
@@ -29,7 +30,7 @@ NULL
 #' @encoding UTF-8
 
 calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=Inf,Pope=TRUE,ssb.coef=0){
-
+  if(sum(M, na.rm=TRUE)==0) M[] <- 0.001 # テストのときにエラーになるため、緊急措置
   if(is.null(waa.catch)) waa.catch <- waa
   rel.abund <- rep(NA, na)
   rel.abund[1] <- 1
@@ -809,6 +810,7 @@ out.vpa <- function(res=NULL,    # VPA result
       tmp <- x
     }
     write.table(tmp,append=T,sep=",",quote=FALSE,file=csvname,col.names=F,row.names=F,...)
+
   }
 
   pd <- packageDescription("frasyr")
@@ -1663,7 +1665,38 @@ make_RP_table <- function(refs_base){
 #'
 
 derive_RP_value <- function(refs_base,RP_name){
-  refs_base[refs_base$RP.definition%in%RP_name,]
+  if(!RP_name=="MSY"){
+    res <- refs_base[refs_base$RP.definition%in%RP_name,]
+  }
+  if( RP_name=="MSY"){
+    res <- refs_base[refs_base$RP_name%in%RP_name,]
+  }
+  return(res)
+}
+
+
+#' 管理基準値表から目的の管理基準値を取り出す関数(簡易版)
+#'
+#' @param res_MSY est.MSYの帰り値
+#' @param type res_MSY$summaryの列名（Fの場合だけ、"F"とする）
+#' @param name RP_nameで取り出す場合のラベル。使わない場合はTRUE
+#' @param name RP.definitionで取り出す場合のラベル。使わない場合はTRUE
+#' @encoding UTF-8
+#'
+#' @export
+#'
+
+get_RP <- function(res_MSY, type, name=TRUE, def=TRUE){
+  sumtable <- res_MSY$summary
+  if(type!="F"){
+    xx <- sumtable %>% dplyr::filter(RP.definition==def | RP_name==name) %>%
+      select(type) %>% as.numeric()
+  }
+  if(type=="F"){
+    xx <- sumtable %>% dplyr::filter(RP.definition==def | RP_name==name) %>%
+      select(starts_with("F"))  %>% as.numeric()
+  }
+  return(xx)
 }
 
 
@@ -1698,6 +1731,7 @@ make_kobeII_table <- function(kobeII_data,
                                         #                              year.catchdiff=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
                               Bspecific=0,
                               Btarget=0,
+                              Bmsy = NA,
                               Blimit=0,
                               Bban=0){
   # 平均漁獲量
@@ -1744,7 +1778,35 @@ make_kobeII_table <- function(kobeII_data,
       summarise(ssb.ci95=quantile(value,probs=0.95)) %>%
       spread(key=year,value=ssb.ci95) %>% ungroup() %>%
       arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
-      mutate(stat_name="ssb.ci95"))
+     mutate(stat_name="ssb.ci95"))
+
+  # 漁獲量, 下5%
+  (catch.ci05 <- kobeII_data %>%
+      dplyr::filter(year%in%year.ssb,stat=="catch") %>%
+      group_by(HCR_name,beta,year) %>%
+      summarise(catch.ci05=quantile(value,probs=0.05)) %>%
+      spread(key=year,value=catch.ci05) %>% ungroup() %>%
+      arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
+      mutate(stat_name="catch.ci05"))
+
+  # 漁獲量, 上5%
+  (catch.ci95 <- kobeII_data %>%
+      dplyr::filter(year%in%year.ssb,stat=="catch") %>%
+      group_by(HCR_name,beta,year) %>%
+      summarise(catch.ci95=quantile(value,probs=0.95)) %>%
+      spread(key=year,value=catch.ci95) %>% ungroup() %>%
+      arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
+     mutate(stat_name="catch.ci95"))
+
+  # 平均Fratio
+  (Fratio.mean <- kobeII_data %>%
+     dplyr::filter(year%in%year.catch,stat=="Fratio") %>% # 取り出す年とラベル("catch")を選ぶ
+     group_by(HCR_name,beta,year) %>%
+     summarise(Fratio.mean=mean(value)) %>%  # 値の計算方法を指定（漁獲量の平均ならmean(value)）
+     # "-3"とかの値で桁数を指定
+     spread(key=year,value=Fratio.mean) %>% ungroup() %>%
+     arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
+     mutate(stat_name="Fratio.mean"))
 
   # 1-currentFに乗じる値=currentFからの努力量の削減率の平均値（実際には確率分布になっている）
   ## (Fsakugen.table <- kobeII_data %>%
@@ -1764,6 +1826,17 @@ make_kobeII_table <- function(kobeII_data,
     ungroup() %>%
     arrange(HCR_name,desc(beta))%>%
     mutate(stat_name="Pr(SSB>SSBtarget)")
+
+  if(is.na(Bmsy)) Bmsy <- Btarget
+  # SSB>SSBmsyとなる確率
+  ssbmsy.table <- kobeII_data %>%
+    dplyr::filter(year%in%year.ssbtarget,stat=="SSB") %>%
+      group_by(HCR_name,beta,year) %>%
+    summarise(ssb.over=round(100*mean(value>Bmsy))) %>%
+    spread(key=year,value=ssb.over) %>%
+    ungroup() %>%
+    arrange(HCR_name,desc(beta))%>%
+    mutate(stat_name="Pr(SSB>SSBmsy)")
 
   # SSB>SSBlimとなる確率
   ssblimit.table <- kobeII_data %>%
@@ -1914,10 +1987,14 @@ make_kobeII_table <- function(kobeII_data,
 
   res_list <- list(catch.mean   = catch.mean,
                    ssb.mean         = ssb.mean,
+                   Fratio.mean         = Fratio.mean,
                    biomass.mean         = biomass.mean,
                    ssb.lower05percent            = ssb.ci05,
-                   ssb.upper95percent            = ssb.ci95,
+                   ssb.upper05percent            = ssb.ci95,
+                   catch.lower05percent            = catch.ci05,
+                   catch.upper05percent            = catch.ci95,
                    prob.over.ssbtarget  = ssbtarget.table,
+                   prob.over.ssbmsy = ssbmsy.table ,
                    prob.over.ssblimit   = ssblimit.table,
                    prob.over.ssbban     = ssbban.table,
                    prob.over.ssbmin     = ssbmin.table,
@@ -1930,6 +2007,7 @@ make_kobeII_table <- function(kobeII_data,
                     bban.risk = bban.risk,
                     blimit.risk = blimit.risk,
                    bspecific.risk = bspecific.risk)
+  res_list <- purrr::map(res_list, HCR_order)
   return(res_list)
 
 }
@@ -3098,6 +3176,9 @@ create_dummy_vpa <- function(res_vpa){
 
   res_vpa_updated$naa           <- add_1year(res_vpa$naa)
   res_vpa_updated$faa           <- add_1year(res_vpa$faa)
+  res_vpa_updated$wcaa           <- add_1year(res_vpa$wcaa)
+  res_vpa_updated$baa           <- add_1year(res_vpa$baa)
+  res_vpa_updated$ssb           <- add_1year(res_vpa$ssb)
   res_vpa_updated$input$dat$waa <- add_1year(res_vpa$input$dat$waa)
   res_vpa_updated$input$dat$maa <- add_1year(res_vpa$input$dat$maa)
   res_vpa_updated$input$dat$M   <- add_1year(res_vpa$input$dat$M  )
@@ -3519,4 +3600,25 @@ format_type <- function(){
             "ban",   "#C73C2E", "dotted")
 }
 
+#' @export
+#'
+#'
 
+HCR_order <- function(HCR_table){
+  HCR_table <- HCR_table %>%
+    mutate(
+      # 数値として扱えるかを判定
+      type_numeric = suppressWarnings(as.numeric(HCR_name)),
+      order_key = case_when(
+        !is.na(type_numeric) ~ 1,
+       HCR_name == "Fcurrent"   ~ 2,
+       TRUE                 ~ 3
+      ),
+      seq_in_group = row_number()  # 出現順を保持（最後のグループ用）
+   ) %>%
+   arrange(order_key,
+            desc(type_numeric),  # 数値部分は降順
+           seq_in_group) %>%    # その他は出現順
+    select(-type_numeric, -order_key, -seq_in_group)  # 補助列は削除
+  return(HCR_table)
+}
