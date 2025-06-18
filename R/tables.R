@@ -151,6 +151,12 @@ make_table.fit.SRregime <- function(result_sr) {
     )
 }
 
+#' @inheritParams make_table.SRfit.average Return of \code{fit.SR}
+#' @export
+make_table.SRfit.average <- function(result_sr) {
+  purrr::map_dfr(result_sr, function(x) x$pars) %>% as_tibble
+}
+
 #' Make table of latest SB and F
 #'
 #' @inheritParams adhoc_table
