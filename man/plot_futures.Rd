@@ -20,7 +20,7 @@ plot_futures(
   biomass.unit = 1,
   number.unit = 1,
   number.name = "",
-  RP_name = c("Btarget", "Blimit", "Bban"),
+  RP_name = c("Btarget", "Blimit", "Bban", "Fmsy", "MSY", "U_MSY"),
   Btarget = NA,
   Blimit = NA,
   Bban = NA,
@@ -38,7 +38,8 @@ plot_futures(
   font.size = 16,
   ncol = 3,
   ncol_legend = 2,
-  remove.last.vpa.year = FALSE
+  remove.last.vpa.year = FALSE,
+  use_median = FALSE
 )
 }
 \arguments{
@@ -66,7 +67,7 @@ plot_futures(
 
 \item{number.name}{尾数の凡例をどのように表示するか（「億尾」とか）}
 
-\item{RP_name}{管理基準値をどのように名前つけるか}
+\item{RP_name}{管理基準値をどのように名前つけるか（デフォルトはc("Btarget","Blimit","Bban","Fmsy","MSY","U_MSY"))}
 
 \item{Btarget}{Btargetの値、設定しない場合はNA（デフォルトはNA）}
 
@@ -95,6 +96,8 @@ plot_futures(
 \item{ncol}{図を並べるときの列数}
 
 \item{remove.last.vpa.year}{VPAの最終年のデータのプロットを除くかどうか（last.catch.zero用オプション）}
+
+\item{use_median}{平均値の代わりに中央値をプロットする}
 
 \item{width_example}{個々のシミュレーションをプロットする場合の線の太さ (default=0.7)}
 }
