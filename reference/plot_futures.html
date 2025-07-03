@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">frasyr</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.4.0.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.5.0.0</span>
       </span>
     </div>
 
@@ -75,7 +75,7 @@
 <span>  biomass.unit <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  number.unit <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  number.name <span class="op">=</span> <span class="st">""</span>,</span>
-<span>  RP_name <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Btarget"</span>, <span class="st">"Blimit"</span>, <span class="st">"Bban"</span><span class="op">)</span>,</span>
+<span>  RP_name <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Btarget"</span>, <span class="st">"Blimit"</span>, <span class="st">"Bban"</span>, <span class="st">"Fmsy"</span>, <span class="st">"MSY"</span>, <span class="st">"U_MSY"</span><span class="op">)</span>,</span>
 <span>  Btarget <span class="op">=</span> <span class="cn">NA</span>,</span>
 <span>  Blimit <span class="op">=</span> <span class="cn">NA</span>,</span>
 <span>  Bban <span class="op">=</span> <span class="cn">NA</span>,</span>
@@ -93,7 +93,8 @@
 <span>  font.size <span class="op">=</span> <span class="fl">16</span>,</span>
 <span>  ncol <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>  ncol_legend <span class="op">=</span> <span class="fl">2</span>,</span>
-<span>  remove.last.vpa.year <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  remove.last.vpa.year <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  use_median <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -150,7 +151,7 @@
 
 
 <dt id="arg-rp-name">RP_name<a class="anchor" aria-label="anchor" href="#arg-rp-name"></a></dt>
-<dd><p>管理基準値をどのように名前つけるか</p></dd>
+<dd><p>管理基準値をどのように名前つけるか（デフォルトはc("Btarget","Blimit","Bban","Fmsy","MSY","U_MSY"))</p></dd>
 
 
 <dt id="arg-btarget">Btarget<a class="anchor" aria-label="anchor" href="#arg-btarget"></a></dt>
@@ -209,6 +210,10 @@
 <dd><p>VPAの最終年のデータのプロットを除くかどうか（last.catch.zero用オプション）</p></dd>
 
 
+<dt id="arg-use-median">use_median<a class="anchor" aria-label="anchor" href="#arg-use-median"></a></dt>
+<dd><p>平均値の代わりに中央値をプロットする</p></dd>
+
+
 <dt id="arg-width-example">width_example<a class="anchor" aria-label="anchor" href="#arg-width-example"></a></dt>
 <dd><p>個々のシミュレーションをプロットする場合の線の太さ (default=0.7)</p></dd>
 
@@ -226,7 +231,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.9000.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.9000.</p>
 </div>
 
       </footer></div>

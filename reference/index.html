@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">frasyr</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.4.0.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.5.0.0</span>
       </span>
     </div>
 
@@ -170,6 +170,10 @@
         </td>
         <td><p>再生産関係推定が収束しているかや最適解を得られているかを診断する関数</p></td>
       </tr><tr><td>
+          <p><code><a href="check_BBoption.html">check_BBoption()</a></code> </p>
+        </td>
+        <td><p>漁獲量の繰越・繰入をしたときの設定がちゃんと生きているかどうかを確かめる</p></td>
+      </tr><tr><td>
           <p><code><a href="check_MSE_sd0.html">check_MSE_sd0()</a></code> </p>
         </td>
         <td><p>MSEの計算が正しいかを確認するための関数</p></td>
@@ -250,6 +254,14 @@
         </td>
         <td><p>csvデータを読み込んでvpa.hay用のデータを作成する関数</p></td>
       </tr><tr><td>
+          <p><code><a href="data_future_HSL1.html">data_future_HSL1</a></code> </p>
+        </td>
+        <td><p>data_future_HSL1</p></td>
+      </tr><tr><td>
+          <p><code><a href="data_future_HSL2.html">data_future_HSL2</a></code> </p>
+        </td>
+        <td><p>data_future_HSL2</p></td>
+      </tr><tr><td>
           <p><code><a href="derive_RP_value.html">derive_RP_value()</a></code> </p>
         </td>
         <td><p>管理基準値表から目的の管理基準値を取り出す関数</p></td>
@@ -265,6 +277,10 @@
           <p><code><a href="detect_plus_group.html">detect_plus_group()</a></code> </p>
         </td>
         <td><p>与えられた個体群動態でプラスグループが考慮されているかどうか</p></td>
+      </tr><tr><td>
+          <p><code><a href="do_bootSR.html">do_bootSR()</a></code> </p>
+        </td>
+        <td><p>bootstrapの個々の結果に再生産関係をあてはめる</p></td>
       </tr><tr><td>
           <p><code><a href="do_caaboot_vpa.html">do_caaboot_vpa()</a></code> </p>
         </td>
@@ -358,6 +374,10 @@
         </td>
         <td><p>beverton-holtのh,R0とbioparsを与えるとa,bを返す関数</p></td>
       </tr><tr><td>
+          <p><code><a href="get_RP.html">get_RP()</a></code> </p>
+        </td>
+        <td><p>管理基準値表から目的の管理基準値を取り出す関数(簡易版)</p></td>
+      </tr><tr><td>
           <p><code><a href="get_performance.html">get_performance()</a></code> </p>
         </td>
         <td><p>将来予測の結果のリストを入れると、代表的なパフォーマンス指標をピックアップする</p></td>
@@ -421,6 +441,10 @@
           <p><code><a href="make_future_data.html">make_future_data()</a></code> </p>
         </td>
         <td><p>future_vpaにインプットとして入れる将来予測の空のarrayを生成する関数</p></td>
+      </tr><tr><td>
+          <p><code><a href="make_future_data_boot.html">make_future_data_boot()</a></code> </p>
+        </td>
+        <td><p>create future projection data based on bootstrap results</p></td>
       </tr><tr><td>
           <p><code><a href="make_kobeII_table.html">make_kobeII_table()</a></code> </p>
         </td>
@@ -490,6 +514,10 @@
         </td>
         <td><p>fit.SRregimeの結果で得られた再生産関係をプロットするための関数</p></td>
       </tr><tr><td>
+          <p><code><a href="plot_boot.html">plot_boot()</a></code> </p>
+        </td>
+        <td><p>ブートストラップ法の実行と信頼区間の算出、作図を自動で行う関数</p></td>
+      </tr><tr><td>
           <p><code><a href="plot_future_simple.html">plot_future_simple()</a></code> </p>
         </td>
         <td><p>一つの将来予測の結果をプロットする（ggplotは使わず）</p></td>
@@ -505,10 +533,6 @@
           <p><code><a href="plot_kobe_gg.html">plot_kobe_gg()</a></code> </p>
         </td>
         <td><p>Kobe plotを書く</p></td>
-      </tr><tr><td>
-          <p><code><a href="plot_resboot_vpa.html">plot_resboot_vpa()</a></code> </p>
-        </td>
-        <td><p>ブートストラップ法による信頼区間の算出と作図を自動で行う関数</p></td>
       </tr><tr><td>
           <p><code><a href="plot_residual_vpa.html">plot_residual_vpa()</a></code> </p>
         </td>
@@ -561,6 +585,22 @@
           <p><code><a href="ref.F.html">ref.F()</a></code> </p>
         </td>
         <td><p>再生産関係を仮定しない管理基準値計算(SPR,YPR,F0.1,Fmax)のための関数</p></td>
+      </tr><tr><td>
+          <p><code><a href="res_sr_HSL1.html">res_sr_HSL1</a></code> </p>
+        </td>
+        <td><p>res_sr_HSL1</p></td>
+      </tr><tr><td>
+          <p><code><a href="res_sr_HSL2.html">res_sr_HSL2</a></code> </p>
+        </td>
+        <td><p>res_sr_HSL2</p></td>
+      </tr><tr><td>
+          <p><code><a href="res_vpa_example.html">res_vpa_example</a></code> </p>
+        </td>
+        <td><p>vpa_example</p></td>
+      </tr><tr><td>
+          <p><code><a href="res_vpa_example2.html">res_vpa_example2</a></code> </p>
+        </td>
+        <td><p>vpa_example2</p></td>
       </tr><tr><td>
           <p><code><a href="residual_plot.html">residual_plot()</a></code> </p>
         </td>
@@ -630,6 +670,10 @@
         </td>
         <td><p>再生産関係を網羅的にフィットする</p></td>
       </tr><tr><td>
+          <p><code><a href="unlist_future_data.html">unlist_future_data()</a></code> </p>
+        </td>
+        <td><p>ブートストラップ等でmake_future_dataをリスト化したものからfuture_vpaにインプットとして入れる将来予測のデータを生成する関数</p></td>
+      </tr><tr><td>
           <p><code><a href="use_rvpa_tmb.html">use_rvpa_tmb()</a></code> </p>
         </td>
         <td><p>Ridge VPAの計算をTMBで実行するためにcppファイルのコンパイル等をする関数</p></td>
@@ -658,7 +702,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.9000.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.9000.</p>
 </div>
 
       </footer></div>

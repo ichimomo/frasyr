@@ -35,6 +35,7 @@
 <url><loc>/reference/calculate_all_pm.html</loc></url>
 <url><loc>/reference/check.SRdist.html</loc></url>
 <url><loc>/reference/check.SRfit.html</loc></url>
+<url><loc>/reference/check_BBoption.html</loc></url>
 <url><loc>/reference/check_MSE_sd0.html</loc></url>
 <url><loc>/reference/check_consistent_w.html</loc></url>
 <url><loc>/reference/check_fix_CVoption.html</loc></url>
@@ -55,10 +56,13 @@
 <url><loc>/reference/create_dummy_vpa.html</loc></url>
 <url><loc>/reference/data.handler.hay.html</loc></url>
 <url><loc>/reference/data.handler.html</loc></url>
+<url><loc>/reference/data_future_HSL1.html</loc></url>
+<url><loc>/reference/data_future_HSL2.html</loc></url>
 <url><loc>/reference/derive_RP_value.html</loc></url>
 <url><loc>/reference/derive_biopar.html</loc></url>
 <url><loc>/reference/derive_future_summary.html</loc></url>
 <url><loc>/reference/detect_plus_group.html</loc></url>
+<url><loc>/reference/do_bootSR.html</loc></url>
 <url><loc>/reference/do_caaboot_vpa.html</loc></url>
 <url><loc>/reference/do_estcheck_vpa.html</loc></url>
 <url><loc>/reference/do_jackknife_vpa.html</loc></url>
@@ -82,6 +86,7 @@
 <url><loc>/reference/get.SPR.html</loc></url>
 <url><loc>/reference/get.SRdata.html</loc></url>
 <url><loc>/reference/get.ab.bh.html</loc></url>
+<url><loc>/reference/get_RP.html</loc></url>
 <url><loc>/reference/get_performance.html</loc></url>
 <url><loc>/reference/ggsave_SH.html</loc></url>
 <url><loc>/reference/ggsave_SH_large.html</loc></url>
@@ -99,6 +104,7 @@
 <url><loc>/reference/make_abctable.html</loc></url>
 <url><loc>/reference/make_array.html</loc></url>
 <url><loc>/reference/make_future_data.html</loc></url>
+<url><loc>/reference/make_future_data_boot.html</loc></url>
 <url><loc>/reference/make_kobeII_table.html</loc></url>
 <url><loc>/reference/make_kobe_ratio.html</loc></url>
 <url><loc>/reference/make_msytable.html</loc></url>
@@ -116,11 +122,11 @@
 <url><loc>/reference/plot_SRaverage.html</loc></url>
 <url><loc>/reference/plot_SRdata.html</loc></url>
 <url><loc>/reference/plot_SRregime.html</loc></url>
+<url><loc>/reference/plot_boot.html</loc></url>
 <url><loc>/reference/plot_future_simple.html</loc></url>
 <url><loc>/reference/plot_futures.html</loc></url>
 <url><loc>/reference/plot_futures_simple.html</loc></url>
 <url><loc>/reference/plot_kobe_gg.html</loc></url>
-<url><loc>/reference/plot_resboot_vpa.html</loc></url>
 <url><loc>/reference/plot_residual_vpa.html</loc></url>
 <url><loc>/reference/plot_sprypr.html</loc></url>
 <url><loc>/reference/plot_vpa.html</loc></url>
@@ -134,6 +140,10 @@
 <url><loc>/reference/read.vpa.html</loc></url>
 <url><loc>/reference/redo_future.html</loc></url>
 <url><loc>/reference/ref.F.html</loc></url>
+<url><loc>/reference/res_sr_HSL1.html</loc></url>
+<url><loc>/reference/res_sr_HSL2.html</loc></url>
+<url><loc>/reference/res_vpa_example.html</loc></url>
+<url><loc>/reference/res_vpa_example2.html</loc></url>
 <url><loc>/reference/residual_plot.html</loc></url>
 <url><loc>/reference/retrieve_input.html</loc></url>
 <url><loc>/reference/retro.est.html</loc></url>
@@ -151,6 +161,7 @@
 <url><loc>/reference/theme_SH.html</loc></url>
 <url><loc>/reference/to_vpa_data.html</loc></url>
 <url><loc>/reference/tryall_SR.html</loc></url>
+<url><loc>/reference/unlist_future_data.html</loc></url>
 <url><loc>/reference/use_rvpa_tmb.html</loc></url>
 <url><loc>/reference/validate_sr.html</loc></url>
 <url><loc>/reference/vpa.hay.html</loc></url>

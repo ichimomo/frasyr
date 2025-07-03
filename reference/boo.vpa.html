@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">frasyr</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.4.0.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.5.0.0</span>
       </span>
     </div>
 
@@ -60,7 +60,16 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">boo.vpa</span><span class="op">(</span><span class="va">res</span>, B <span class="op">=</span> <span class="fl">5</span>, method <span class="op">=</span> <span class="st">"p"</span>, mean.correction <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">boo.vpa</span><span class="op">(</span></span>
+<span>  <span class="va">res</span>,</span>
+<span>  type <span class="op">=</span> <span class="st">"index"</span>,</span>
+<span>  B_ite <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  method <span class="op">=</span> <span class="st">"p"</span>,</span>
+<span>  mean.correction <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  B_cv <span class="op">=</span> <span class="fl">0.2</span>,</span>
+<span>  ess <span class="op">=</span> <span class="fl">200</span>,</span>
+<span>  out <span class="op">=</span> <span class="st">"simple"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -71,8 +80,32 @@
 <dd><p>vpaの出力値</p></dd>
 
 
+<dt id="arg-type">type<a class="anchor" aria-label="anchor" href="#arg-type"></a></dt>
+<dd><p>"index": 資源量指標値についてブートストラップ。"caa": 年齢別漁獲尾数についてブートストラップ</p></dd>
+
+
+<dt id="arg-b-ite">B_ite<a class="anchor" aria-label="anchor" href="#arg-b-ite"></a></dt>
+<dd><p>ブートストラップ法でのイタレーション数</p></dd>
+
+
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
-<dd><p>"p": パラメトリックブートストラップ。"n": ノンパラメトリックブートストラップ。"r": 残差をスムージングした後ブートストラップt法</p></dd>
+<dd><p>`type = "index"`の時に利用可。"p": パラメトリックブートストラップ。"n": ノンパラメトリックブートストラップ。"r": 残差をスムージングした後ブートストラップt法</p></dd>
+
+
+<dt id="arg-mean-correction">mean.correction<a class="anchor" aria-label="anchor" href="#arg-mean-correction"></a></dt>
+<dd><p>デフォルトは`FALSE`。対数正規分布の平均値の補正の有無。`type = "index"`と`type = "caa"`のいずれでも利用可能</p></dd>
+
+
+<dt id="arg-b-cv">B_cv<a class="anchor" aria-label="anchor" href="#arg-b-cv"></a></dt>
+<dd><p>`type = "caa"`の時に利用可。漁獲量の変動係数（i.e. 対数取った漁獲量の分散）。</p></dd>
+
+
+<dt id="arg-ess">ess<a class="anchor" aria-label="anchor" href="#arg-ess"></a></dt>
+<dd><p>`type = "caa"`の時に利用可。多項分布の有効サンプルサイズ。</p></dd>
+
+
+<dt id="arg-out">out<a class="anchor" aria-label="anchor" href="#arg-out"></a></dt>
+<dd><p>"simple" 推定結果のみ保存する "full" インプットデータを含めてすべて保存する</p></dd>
 
 </dl></div>
     <div id="see-also">
@@ -92,7 +125,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.9000.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.9000.</p>
 </div>
 
       </footer></div>

@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">frasyr</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.4.0.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.5.0.0</span>
       </span>
     </div>
 
@@ -86,9 +86,15 @@
 <span>  start_maafun_year_name <span class="op">=</span> <span class="va">start_biopar_year_name</span>,</span>
 <span>  <span class="va">M_year</span>,</span>
 <span>  M <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  more_process_error <span class="op">=</span> <span class="cn">NA</span>,</span>
 <span>  faa_year <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  faa_year_future <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  currentF <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  futureF <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  currentF_rand <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  futureF_rand <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  currentF_rand_seed <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  futureF_rand_seed <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>  start_ABC_year_name <span class="op">=</span> <span class="fl">2019</span>,</span>
 <span>  HCR_beta <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  HCR_Blimit <span class="op">=</span> <span class="op">-</span><span class="fl">1</span>,</span>
@@ -103,6 +109,7 @@
 <span>  HCR_TAC_carry_amount <span class="op">=</span> <span class="cn">NA</span>,</span>
 <span>  HCR_TAC_upper_CV <span class="op">=</span> <span class="cn">NA</span>,</span>
 <span>  HCR_TAC_lower_CV <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>  HCR_TAC_adjust <span class="op">=</span> <span class="cn">NA</span>,</span>
 <span>  HCR_function_name <span class="op">=</span> <span class="st">"HCR_default"</span>,</span>
 <span>  HCR_reserve_denom <span class="op">=</span> <span class="st">"original_ABC_plus"</span>,</span>
 <span>  Pope <span class="op">=</span> <span class="va">res_vpa</span><span class="op">$</span><span class="va">input</span><span class="op">$</span><span class="va">Pope</span>,</span>
@@ -123,7 +130,11 @@
 <span>  model_average_option <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  regime_shift_option <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  silent <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  special_setting <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  special_setting <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  specific_waa_future <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>  specific_waa.catch_future <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>  specific_maa_future <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>  specific_M_future <span class="op">=</span> <span class="cn">NA</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -200,7 +211,11 @@
 
 
 <dt id="arg-faa-year">faa_year<a class="anchor" aria-label="anchor" href="#arg-faa-year"></a></dt>
-<dd><p>将来のFを過去の平均値とする場合、平均をとる年を指定する。下のcurrentF, futureFが指定されている場合にはこの設定は無視される</p></dd>
+<dd><p>将来のF(before ABC_year)を過去の平均値とする場合、平均をとる年を指定する。下のcurrentF, futureFが指定されている場合にはこの設定は無視される。</p></dd>
+
+
+<dt id="arg-faa-year-future">faa_year_future<a class="anchor" aria-label="anchor" href="#arg-faa-year-future"></a></dt>
+<dd><p>将来のF(before ABC_year)を過去の平均値とする場合、平均をとる年を指定する。下のcurrentF, futureFが指定されている場合にはこの設定は無視される。NULLの場合faa_yearが用いられる</p></dd>
 
 
 <dt id="arg-currentf">currentF<a class="anchor" aria-label="anchor" href="#arg-currentf"></a></dt>
@@ -209,6 +224,14 @@
 
 <dt id="arg-futuref">futureF<a class="anchor" aria-label="anchor" href="#arg-futuref"></a></dt>
 <dd><p>start_ABC_yar_name以降に使うFのベクトル（いわゆるFmsy）</p></dd>
+
+
+<dt id="arg-currentf-rand">currentF_rand<a class="anchor" aria-label="anchor" href="#arg-currentf-rand"></a></dt>
+<dd><p>TRUEの場合、faa_yearで指定された範囲のFから年齢別にランダムサンプリングする（currentFはNULLとする）</p></dd>
+
+
+<dt id="arg-futuref-rand">futureF_rand<a class="anchor" aria-label="anchor" href="#arg-futuref-rand"></a></dt>
+<dd><p>TRUEの場合、faa_year_futureで指定された範囲のFから年齢別にランダムサンプリングする（currentFはNULLとする）</p></dd>
 
 
 <dt id="arg-start-abc-year-name">start_ABC_year_name<a class="anchor" aria-label="anchor" href="#arg-start-abc-year-name"></a></dt>
@@ -252,11 +275,11 @@
 
 
 <dt id="arg-hcr-tac-carry-rate">HCR_TAC_carry_rate<a class="anchor" aria-label="anchor" href="#arg-hcr-tac-carry-rate"></a></dt>
-<dd><p>当初TACのうち何トンまで持ち越せるかの上限（比率）。マイナス値を入れれば前借りもできる。</p></dd>
+<dd><p>当初TACのうち何トンまで持ち越せるかの上限（比率）。</p></dd>
 
 
 <dt id="arg-hcr-tac-carry-amount">HCR_TAC_carry_amount<a class="anchor" aria-label="anchor" href="#arg-hcr-tac-carry-amount"></a></dt>
-<dd><p>当初TACのうち何トンまで持ち越せるかの上限（比率）。マイナス値を入れれば前借りもできる。</p></dd>
+<dd><p>当初TACのうち何トンまで持ち越せるかの上限（比率）。</p></dd>
 
 
 <dt id="arg-hcr-tac-upper-cv">HCR_TAC_upper_CV<a class="anchor" aria-label="anchor" href="#arg-hcr-tac-upper-cv"></a></dt>
@@ -267,12 +290,16 @@
 <dd><p>漁獲量が前年の漁獲量のHCR_TAC_lower_CV倍と比較し、それよりも変化が大きい場合には前年の漁獲量xHCR_TAC_lower_CVを下限とする。単一の値か、tibble形式 tibble(year=2020:2024, TAC_lower_CV=rep(0.1,5)) で与える</p></dd>
 
 
+<dt id="arg-hcr-tac-adjust">HCR_TAC_adjust<a class="anchor" aria-label="anchor" href="#arg-hcr-tac-adjust"></a></dt>
+<dd><p>B&amp;B設定の場合，-1 下方向にadjust, 0 上下方向にadjust, 1 上方向のみadjust, 用いない場合はNA</p></dd>
+
+
 <dt id="arg-hcr-function-name">HCR_function_name<a class="anchor" aria-label="anchor" href="#arg-hcr-function-name"></a></dt>
 <dd><p>デフォルトは"HCR_default" ここを変更(関数名を文字列で与える。関数は別に定義しておく)すると自作のHCRが適用される。その場合、データのほうで定義されているbeta, Blimit, Bbanなど、同じ名前のものは有効</p></dd>
 
 
 <dt id="arg-hcr-reserve-denom">HCR_reserve_denom<a class="anchor" aria-label="anchor" href="#arg-hcr-reserve-denom"></a></dt>
-<dd><p>比率で取り残し量を決める場合、もともとのABCをもとにするか（"original_ABC"、ブリ・マダラ繰越前借り設定）前年からの繰越も考慮したABCをもとにするか（"original_ABC_plus", スケトウ繰越設定）</p></dd>
+<dd><p>比率で取り残し量を決める場合、もともとのABCをもとにするか（"original_ABC"、最新の繰越前借り設定）前年からの繰越も考慮したABCをもとにするか（"original_ABC_plus", 過去のスケトウ繰越設定）</p></dd>
 
 
 <dt id="arg-pope">Pope<a class="anchor" aria-label="anchor" href="#arg-pope"></a></dt>
@@ -330,6 +357,22 @@
 <dt id="arg-special-setting">special_setting<a class="anchor" aria-label="anchor" href="#arg-special-setting"></a></dt>
 <dd><p>list形式で与えるmake_future_dataの返り値のdataと同じ名前の要素について、最後にデータをここで示されたarrayのシミュレーション1回めの値で上書きする。arrayのデータに対してのみ有効。</p></dd>
 
+
+<dt id="arg-specific-waa-future">specific_waa_future<a class="anchor" aria-label="anchor" href="#arg-specific-waa-future"></a></dt>
+<dd><p>将来年の特定年だけwaaを変える。tibble("2025"=c(10,20,30,40),"2026"=c(20,30,40,40))という形式で与える。</p></dd>
+
+
+<dt id="arg-specific-waa-catch-future">specific_waa.catch_future<a class="anchor" aria-label="anchor" href="#arg-specific-waa-catch-future"></a></dt>
+<dd><p>将来年の特定年だけwaa.catchを変える</p></dd>
+
+
+<dt id="arg-specific-maa-future">specific_maa_future<a class="anchor" aria-label="anchor" href="#arg-specific-maa-future"></a></dt>
+<dd><p>将来年の特定年だけmaaを変える</p></dd>
+
+
+<dt id="arg-specific-m-future">specific_M_future<a class="anchor" aria-label="anchor" href="#arg-specific-m-future"></a></dt>
+<dd><p>将来年の特定年だけMを変える</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
@@ -362,7 +405,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.9000.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.9000.</p>
 </div>
 
       </footer></div>

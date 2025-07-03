@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">frasyr</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.4.0.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.5.0.0</span>
       </span>
     </div>
 
@@ -60,7 +60,15 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">make_array</span><span class="op">(</span><span class="va">d3_mat</span>, <span class="va">pars</span>, <span class="va">pars.year</span>, <span class="va">year_replace_future</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">make_array</span><span class="op">(</span></span>
+<span>  <span class="va">d3_mat</span>,</span>
+<span>  <span class="va">pars</span>,</span>
+<span>  <span class="va">pars.year</span>,</span>
+<span>  <span class="va">year_replace_future</span>,</span>
+<span>  specific_value <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>  rand <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  rand_seed <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -80,7 +88,15 @@
 
 
 <dt id="arg-year-replace-future">year_replace_future<a class="anchor" aria-label="anchor" href="#arg-year-replace-future"></a></dt>
-<dd><p>生物パラメータを置き換える最初の年</p></dd>
+<dd><p>生物パラメータを置き換える"最初の"年</p></dd>
+
+
+<dt id="arg-specific-value">specific_value<a class="anchor" aria-label="anchor" href="#arg-specific-value"></a></dt>
+<dd><p>特定の年をそこで指定されている値に置き換える</p></dd>
+
+
+<dt id="arg-rand">rand<a class="anchor" aria-label="anchor" href="#arg-rand"></a></dt>
+<dd><p>pars.yearの期間のパラメータをランダムサンプリングする</p></dd>
 
 </dl></div>
 
@@ -96,7 +112,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.9000.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.9000.</p>
 </div>
 
       </footer></div>
