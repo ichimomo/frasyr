@@ -660,7 +660,7 @@ future_vpa <- function(tmb_data,
           res_future$HCR_realized[i,j,"Fratio"] <- res_future$HCR_realized[i,j-1,"Fratio"]
         }
         else{
-          tmp <- 1:tmb_data$plus_age # res_future$naa[,i,j]>0
+          tmp <- res_future$naa[,i,j]>0 # 1:tmb_data$plus_age # 
           res_future$HCR_realized[i,j,"Fratio"] <-
             calc_Fratio(faa=res_future$faa[tmp,i,j],
                         waa=res_future$waa[tmp,i,j],
