@@ -1670,7 +1670,7 @@ derive_RP_value <- function(refs_base,RP_name){
 # kobe II matrix など、パフォーマンスを計算する関数 ----
 
 #'
-#' beta.simluationの結果などを読んで、kobeII talbeに整形する関数
+#' beta.simluationの結果などを読んで、kobeII tableに整形する関数
 #'
 #' @param kobeII_data beta.simulationまたはconvert_future_list_tableの返り値
 #' @param res_vpa VPAの結果
@@ -1936,6 +1936,150 @@ make_kobeII_table <- function(kobeII_data,
   return(res_list)
 
 }
+
+#'
+#' beta.simluationの結果などを読んで、kobeII tableに整形する関数で平均値の代わりに中央値を計算する関数
+#'
+#' @inheritParams make_kobeII_table
+#' @param B.vector 上回っている確率を算出する親魚量のベクトル
+#'
+#' @details
+#' tidy形式になっているkobeII_dataにおいて、HCR_name, betaの列のラベルの組み合わせを一つの管理方式として、その管理方式ごとに少尉予測の結果を集計する
+#'
+#' @export
+#'
+#' @encoding UTF-8
+
+make_kobeII_table_med <- function(kobeII_data,
+                              res_vpa,
+                              year.catch=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              year.ssb=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              #                              year.Fsakugen=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              year.ssbtarget=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              year.ssblimit=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              year.ssbban=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              year.ssbmin=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              #                              year.ssbmax=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              #                              year.aav=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              #                              year.risk=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              #                              year.catchdiff=(max(as.numeric(colnames(res_vpa$naa)))+1:10),
+                              B.vector=c(Btarget=0,Blimit=0,Bban=0)
+                              ){
+  # 漁獲量の中央値
+  (catch.median <- kobeII_data %>%
+     dplyr::filter(year%in%year.catch,stat=="catch") %>% # 取り出す年とラベル("catch")を選ぶ
+     group_by(HCR_name,beta,year) %>%
+     summarise(catch.median=median(value)) %>%  # 値の計算方法を指定（漁獲量の平均ならmedian(value)）
+     # "-3"とかの値で桁数を指定
+     spread(key=year,value=catch.median) %>% ungroup() %>%
+     arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
+     mutate(stat_name="catch.median"))
+
+  # 親魚量の中央値
+  (ssb.median <- kobeII_data %>%
+      dplyr::filter(year%in%year.ssb,stat=="SSB") %>%
+      group_by(HCR_name,beta,year) %>%
+      summarise(ssb.median=median(value)) %>%
+      spread(key=year,value=ssb.median) %>% ungroup() %>%
+      arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
+      mutate(stat_name="ssb.median"))
+
+  # 資源量の中央値
+  (biomass.median <- kobeII_data %>%
+      dplyr::filter(year%in%year.ssb,stat=="biomass") %>%
+      group_by(HCR_name,beta,year) %>%
+      summarise(biomass.median=median(value)) %>%
+      spread(key=year,value=biomass.median) %>% ungroup() %>%
+      arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
+      mutate(stat_name="biomass.median"))
+
+  # 親魚, 下5%
+  (ssb.ci05 <- kobeII_data %>%
+      dplyr::filter(year%in%year.ssb,stat=="SSB") %>%
+      group_by(HCR_name,beta,year) %>%
+      summarise(ssb.ci05=quantile(value,probs=0.05)) %>%
+      spread(key=year,value=ssb.ci05) %>% ungroup() %>%
+      arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
+      mutate(stat_name="ssb.ci05"))
+
+  # 親魚, 上5%
+  (ssb.ci95 <- kobeII_data %>%
+      dplyr::filter(year%in%year.ssb,stat=="SSB") %>%
+      group_by(HCR_name,beta,year) %>%
+      summarise(ssb.ci95=quantile(value,probs=0.95)) %>%
+      spread(key=year,value=ssb.ci95) %>% ungroup() %>%
+      arrange(HCR_name,desc(beta)) %>% # HCR_nameとbetaの順に並び替え
+      mutate(stat_name="ssb.ci95"))
+
+  res_list <- list(catch.median   = catch.median,
+                   ssb.median         = ssb.median,
+                   biomass.median         = biomass.median,
+                   ssb.lower05percent            = ssb.ci05,
+                   ssb.upper95percent            = ssb.ci95)
+
+  if(is.null(names(B.vector))) names(B.vector) <- paste0("SSB",1:length(B.vector))
+
+  for(i in 1:length(B.vector)) {
+    stat.name = paste0("Pr(SSB>",names(B.vector)[i])
+    # SSB>SSBtargetとなる確率
+    ssbtarget.table <- kobeII_data %>%
+      dplyr::filter(year%in%year.ssbtarget,stat=="SSB") %>%
+      group_by(HCR_name,beta,year) %>%
+      summarise(ssb.over=round(100*mean(value>B.vector[i]))) %>%
+      spread(key=year,value=ssb.over) %>%
+      ungroup() %>%
+      arrange(HCR_name,desc(beta))%>%
+      mutate(stat_name=stat.name)
+    listname <- paste0("prob.over.",names(B.vector)[i])
+    res_list[[listname]] <- ssbtarget.table
+  }
+
+  # # SSB>SSBlimとなる確率
+  # ssblimit.table <- kobeII_data %>%
+  #   dplyr::filter(year%in%year.ssblimit,stat=="SSB") %>%
+  #   group_by(HCR_name,beta,year) %>%
+  #   summarise(ssb.over=round(100*mean(value>Blimit))) %>%
+  #   spread(key=year,value=ssb.over)%>%
+  #   ungroup() %>%
+  #   arrange(HCR_name,desc(beta))%>%
+  #   mutate(stat_name="Pr(SSB>SSBlim)")
+  #
+  # # SSB>SSBbanとなる確率
+  # ssbban.table <- kobeII_data %>%
+  #   dplyr::filter(year%in%year.ssbban,stat=="SSB") %>%
+  #   group_by(HCR_name,beta,year) %>%
+  #   summarise(ssb.over=round(100*mean(value>Bban))) %>%
+  #   spread(key=year,value=ssb.over)%>%
+  #   ungroup() %>%
+  #   arrange(HCR_name,desc(beta))%>%
+  #   mutate(stat_name="Pr(SSB>SSBban)")
+  #
+  # # SSB>SSBmin(過去最低親魚量を上回る確率)
+  # ssb.min <- min(unlist(colSums(res_vpa$ssb, na.rm=T)))
+  # ssbmin.table <- kobeII_data %>%
+  #   dplyr::filter(year%in%year.ssbmin,stat=="SSB") %>%
+  #   group_by(HCR_name,beta,year) %>%
+  #   summarise(ssb.over=round(100*mean(value>ssb.min))) %>%
+  #   spread(key=year,value=ssb.over)%>%
+  #   ungroup() %>%
+  #   arrange(HCR_name,desc(beta))%>%
+  #   mutate(stat_name="Pr(SSB>SSBmin)")
+
+
+  # res_list <- list(catch.median   = catch.median,
+  #                  ssb.median         = ssb.median,
+  #                  biomass.median         = biomass.median,
+  #                  ssb.lower05percent            = ssb.ci05,
+  #                  ssb.upper95percent            = ssb.ci95,
+  #                  prob.over.ssbtarget  = ssbtarget.table,
+  #                  prob.over.ssblimit   = ssblimit.table,
+  #                  prob.over.ssbban     = ssbban.table,
+  #                  prob.over.ssbmin     = ssbmin.table)
+
+  return(res_list)
+
+}
+
 
 
 #'
