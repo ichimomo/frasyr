@@ -44,7 +44,7 @@ resL2 = fit.SR(SRdata, SR = "HS", method = "L2", out.AR = FALSE, AR = 0)
 resL1 = fit.SR(SRdata, SR = "HS", method = "L1", out.AR = FALSE, AR = 0)
 ```
 
-##自己相関の内側推定、外側推定
+## 自己相関の内側推定、外側推定
 
 加入の残差に時間トレンドを考慮した自己相関のオプションには２通りの推定方法が設定されています。再生産関係の関数の中に自己相関を仮定する内側推定と、関数の推定の後から誤差に自己相関を推定する外側推定です。（内側・外側の表現は科学的に確立したものではなく、この関数を利用するにあたってさし当りの表現です。）
 
@@ -58,7 +58,7 @@ resL2inner = fit.SR(SRdata, SR = "HS", method = "L2", out.AR = FALSE, AR = 1)
 
 この再生産関係の妥当性はモデル選択によって検証する必要があります。説明は (./Diagnostics-for-SR.Rmd)を参照してください。
 
-##結果の出力と図示
+## 結果の出力と図示
 
 out.SRで結果をtxtファイルに出力できます。例としてresL2innerを使用します。プロットにはSRplot_ggが使えます。
 
@@ -87,7 +87,7 @@ resR2 <- fit.SRregime(SRdata, SR = "HS", method = "L1", regime.year = c(2005), r
 c(resL2$AICc, resL1$AICc, resL2inner$AICc, resR1$AICc, resR2$AICc)
 ```
 
-#結果の出力と図示
+# 結果の出力と図示
 
 fit.SRのときと同様にout.SRで結果をtxtファイルに出力できます。プロットにはSRregime_plotが使えます。
 
