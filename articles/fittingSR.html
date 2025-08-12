@@ -77,7 +77,7 @@
                         <h4 data-toc-skip class="author">Shota Nisijima
 &amp; Shin Fukui</h4>
             
-            <h4 data-toc-skip class="date">2025-07-03</h4>
+            <h4 data-toc-skip class="date">2025-08-12</h4>
       
 
       <div class="hidden name"><code>fittingSR.Rmd</code></div>
@@ -126,7 +126,9 @@
 <span></span>
 <span><span class="co">## 再生産関係にHockey-Stick型を指定します。推定方法を最小絶対値法とし（method="L1"）、自己相関を仮定しない（AR=0）場合。</span></span>
 <span><span class="va">resL1</span> <span class="op">=</span> <span class="fu"><a href="../reference/fit.SR.html">fit.SR</a></span><span class="op">(</span><span class="va">SRdata</span>, SR <span class="op">=</span> <span class="st">"HS"</span>, method <span class="op">=</span> <span class="st">"L1"</span>, out.AR <span class="op">=</span> <span class="cn">FALSE</span>, AR <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span></code></pre></div>
-<p>##自己相関の内側推定、外側推定</p>
+<div class="section level3">
+<h3 id="自己相関の内側推定外側推定">自己相関の内側推定、外側推定<a class="anchor" aria-label="anchor" href="#%E8%87%AA%E5%B7%B1%E7%9B%B8%E9%96%A2%E3%81%AE%E5%86%85%E5%81%B4%E6%8E%A8%E5%AE%9A%E5%A4%96%E5%81%B4%E6%8E%A8%E5%AE%9A"></a>
+</h3>
 <p>加入の残差に時間トレンドを考慮した自己相関のオプションには２通りの推定方法が設定されています。再生産関係の関数の中に自己相関を仮定する内側推定と、関数の推定の後から誤差に自己相関を推定する外側推定です。（内側・外側の表現は科学的に確立したものではなく、この関数を利用するにあたってさし当りの表現です。）</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">## 再生産関係にHockey-Stick型を指定（SR="HS"）し、推定方法を最小二乗法とし（method="L1"）、自己相関を外側で仮定する（AR=1,out.AR=T）場合。</span></span>
@@ -136,7 +138,10 @@
 <span><span class="va">resL2inner</span> <span class="op">=</span> <span class="fu"><a href="../reference/fit.SR.html">fit.SR</a></span><span class="op">(</span><span class="va">SRdata</span>, SR <span class="op">=</span> <span class="st">"HS"</span>, method <span class="op">=</span> <span class="st">"L2"</span>, out.AR <span class="op">=</span> <span class="cn">FALSE</span>, AR <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
 <p>この再生産関係の妥当性はモデル選択によって検証する必要があります。説明は
 (./Diagnostics-for-SR.Rmd)を参照してください。</p>
-<p>##結果の出力と図示</p>
+</div>
+<div class="section level3">
+<h3 id="結果の出力と図示">結果の出力と図示<a class="anchor" aria-label="anchor" href="#%E7%B5%90%E6%9E%9C%E3%81%AE%E5%87%BA%E5%8A%9B%E3%81%A8%E5%9B%B3%E7%A4%BA"></a>
+</h3>
 <p>out.SRで結果をtxtファイルに出力できます。例としてresL2innerを使用します。プロットにはSRplot_ggが使えます。</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/out.SR.html">out.SR</a></span><span class="op">(</span><span class="va">resL2inner</span>, filename <span class="op">=</span> <span class="st">"L2inner"</span><span class="op">)</span></span>
@@ -147,6 +152,7 @@
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">## 図をpng形式で保存する。</span></span>
 <span><span class="fu"><a href="../reference/ggsave_SH.html">ggsave_SH</a></span><span class="op">(</span><span class="va">g1</span>, file <span class="op">=</span> <span class="st">"SRcurve.png"</span><span class="op">)</span></span></code></pre></div>
+</div>
 </div>
 <div class="section level2">
 <h2 id="fitsr-regimeによるレジームがある場合の再生産関係の推定">fitSR.regimeによるレジームがある場合の再生産関係の推定<a class="anchor" aria-label="anchor" href="#fitsr-regime%E3%81%AB%E3%82%88%E3%82%8B%E3%83%AC%E3%82%B8%E3%83%BC%E3%83%A0%E3%81%8C%E3%81%82%E3%82%8B%E5%A0%B4%E5%90%88%E3%81%AE%E5%86%8D%E7%94%9F%E7%94%A3%E9%96%A2%E4%BF%82%E3%81%AE%E6%8E%A8%E5%AE%9A"></a>
@@ -166,7 +172,10 @@ AICc等の結果はfit.SRと比較できます。</p>
 <span>    <span class="st">"b"</span>, <span class="st">"sd"</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">:</span><span class="fl">3</span><span class="op">]</span>, use.fit.SR <span class="op">=</span> <span class="cn">TRUE</span>, regime.key <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">resL2</span><span class="op">$</span><span class="va">AICc</span>, <span class="va">resL1</span><span class="op">$</span><span class="va">AICc</span>, <span class="va">resL2inner</span><span class="op">$</span><span class="va">AICc</span>, <span class="va">resR1</span><span class="op">$</span><span class="va">AICc</span>, <span class="va">resR2</span><span class="op">$</span><span class="va">AICc</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 10.79385 14.07974 13.40053 11.29241 19.24803</span></span></code></pre></div>
-<p>#結果の出力と図示</p>
+</div>
+<div class="section level2">
+<h2 id="結果の出力と図示-1">結果の出力と図示<a class="anchor" aria-label="anchor" href="#%E7%B5%90%E6%9E%9C%E3%81%AE%E5%87%BA%E5%8A%9B%E3%81%A8%E5%9B%B3%E7%A4%BA-1"></a>
+</h2>
 <p>fit.SRのときと同様にout.SRで結果をtxtファイルに出力できます。プロットにはSRregime_plotが使えます。</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/out.SR.html">out.SR</a></span><span class="op">(</span><span class="va">resR1</span>, filename <span class="op">=</span> <span class="st">"Regime1"</span><span class="op">)</span></span>
