@@ -160,6 +160,9 @@ caa.est.mat_wrong <- function(naa,saa,waa,M,catch.obs,Pope,max_exploitation_rate
 #   return(list(x=tmp$minimum,caa=tmp2))
 # }
 
+#' @export
+#' @encoding UTF-8
+ 
 catch_equation <- function(naa,faa,waa,M,Pope=1){
   if(Pope==1 | Pope==TRUE) is.pope <- TRUE else is.pope <- FALSE
   if(is.pope){
