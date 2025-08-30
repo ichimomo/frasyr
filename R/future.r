@@ -660,7 +660,13 @@ future_vpa <- function(tmb_data,
           res_future$HCR_realized[i,j,"Fratio"] <- res_future$HCR_realized[i,j-1,"Fratio"]
         }
         else{
-          tmp <- res_future$naa[,i,j]>0 # 1:tmb_data$plus_age # 
+          # どの範囲まで実際に考慮する年齢か？ <- VPA期間に途中でプラスグループが変わる資源への対応
+          if(j < tmb_data$future_initial_year){
+            tmp <- res_future$waa[,i,j]>0 # VPA期間はwaaにデータが入っているところを考慮すべき年齢とする
+          }
+          else{
+            tmp <- 1:tmb_data$plus_age # 将来予測期間はplus_ageで指定された行を考慮すべき年齢とする
+          }
           res_future$HCR_realized[i,j,"Fratio"] <-
             calc_Fratio(faa=res_future$faa[tmp,i,j],
                         waa=res_future$waa[tmp,i,j],
