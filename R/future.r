@@ -19,6 +19,7 @@
 #' @param waa_catch_fun FALSE: 使わない、TRUE: log(weight)~log(number)の回帰式から将来のweightを予測する
 #' @param waa_catch_fun_name カスタマイズされたwaa_funを使う場合、その関数のオブジェクトの名前
 #' @param maa_fun maturity ~ number の回帰式から将来のmaturityを予測する(暫定的、太平洋マダラでのみ利用)
+#' @param maa_fun_name カスタマイズされたmaa_funを使う場合、その関数のオブジェクトの名前
 #' @param start_waafun_year_name 上記の設定がスタートする最初の年。それ以外の年は上で設定されたパラメータが使われる
 #' @param faa_year 将来のF(before ABC_year)を過去の平均値とする場合、平均をとる年を指定する。下のcurrentF, futureFが指定されている場合にはこの設定は無視される。
 #' @param faa_year_future 将来のF(before ABC_year)を過去の平均値とする場合、平均をとる年を指定する。下のcurrentF, futureFが指定されている場合にはこの設定は無視される。NULLの場合faa_yearが用いられる
@@ -95,6 +96,7 @@ make_future_data <- function(res_vpa,
                              waa_catch_fun_name = NA,
                              maa_year, maa=NULL,
                              maa_fun = FALSE,
+                             maa_fun_name = NA,
                              start_maafun_year_name = start_biopar_year_name,
                              M_year, M=NULL,
                              more_process_error=NA, # c(0.3, 0.3, 0.5, ...) for age 1,2,3,...
@@ -472,25 +474,31 @@ make_future_data <- function(res_vpa,
   if(isTRUE(maa_fun)){
     maa_rand_mat <- array(0,dim=c(nage,total_nyear,nsim),
                           dimnames=list(age=age_name, year=allyear_name, nsim=1:nsim))
-    maa_par_mat <- array(0,dim=c(nage,nsim,5),
-                         dimnames=list(age=age_name, nsim=1:nsim, pars=c("sd", "b0", "b1","min","max")))
+    maa_par_mat  <- array(0,dim=c(nage,nsim,5),
+                          dimnames=list(age=age_name, nsim=1:nsim, pars=c("sd", "b0", "b1","min","max")))
     class(maa_rand_mat) <- class(maa_par_mat) <- "myarray"
     maa_fun_year <- which(allyear_name %in% start_maafun_year_name:max(allyear_name))
 
-    for(a in 1:nage){
-      for(i in 1:nsim){
-        data_tmp <- data.frame(naa=naa_mat[a,,i], maa=maa_mat[a,,i])
-        observed <- naa_mat[a,,i]>0
-        tmp <- lm(maa~naa, data=data_tmp[observed,])
-        maa_par_mat[a,i,c("b0","b1")] <- as.numeric(tmp$coef[1:2])
-        maa_par_mat[a,i,c("sd")] <- sqrt(mean(tmp$residual^2))
-        maa_par_mat[a,i,c("min")] <- min(maa_mat[a,,i])
-        maa_par_mat[a,i,c("max")] <- max(maa_mat[a,,i])
-        maa_rand_mat[a,observed,i] <- tmp$residual
-        maa_rand_mat[a,maa_fun_year,i] <- rnorm(length(maa_fun_year),-0.5*maa_par_mat[a,i,c("sd")]^2,maa_par_mat[a,i,c("sd")])
-      }}
+    if(is.na(maa_fun_name)){      
+      for(a in 1:nage){
+        for(i in 1:nsim){
+          data_tmp <- data.frame(naa=naa_mat[a,,i], maa=maa_mat[a,,i])
+          observed <- naa_mat[a,,i]>0
+          tmp <- lm(maa~naa, data=data_tmp[observed,])
+          maa_par_mat[a,i,c("b0","b1")] <- as.numeric(tmp$coef[1:2])
+          maa_par_mat[a,i,c("sd")] <- sqrt(mean(tmp$residual^2))
+          maa_par_mat[a,i,c("min")] <- min(maa_mat[a,,i])
+          maa_par_mat[a,i,c("max")] <- max(maa_mat[a,,i])
+          maa_rand_mat[a,observed,i] <- tmp$residual
+          maa_rand_mat[a,maa_fun_year,i] <- rnorm(length(maa_fun_year),-0.5*maa_par_mat[a,i,c("sd")]^2,maa_par_mat[a,i,c("sd")])
+        }}
+    }else{# maa_fun_nameを使う場合
+      dimnames(maa_par_mat)[[3]][1] <- c("maa_fun_name")
+      maa_par_mat[,,1] <- maa_fun_name
+      maa_rand_mat[,maa_fun_year,] <- 1      
+    }
     tmb_data$maa_rand_mat <- maa_rand_mat
-    tmb_data$maa_par_mat <- maa_par_mat
+    tmb_data$maa_par_mat <- maa_par_mat    
     tmb_data$maa_mat[,maa_fun_year,] <- 0
   }
 
@@ -736,14 +744,19 @@ future_vpa_R <- function(naa_mat,
   is_maa_fun <- !is.null(maa_par_mat)
   if(is_maa_fun) when_maa_fun <- apply(maa_mat[,,1],2,sum)==0
 
-  # setting for specific function for waa_fun
+  # setting for specific function for waa_fun and maa_fun
+  # update_waa_matなど、waaを更新する関数をオリジナル関数に置き換える
   if(is_waa_fun && dimnames(waa_par_mat)[[3]][1]=="waa_fun_name"){
     update_waa_mat <- get(waa_par_mat[1,1,"waa_fun_name"])
   }
   if(is_waa_catch_fun && dimnames(waa_catch_par_mat)[[3]][1]=="waa_catch_fun_name"){
     update_waa_catch_mat <- get(waa_catch_par_mat[1,1,"waa_catch_fun_name"])
   }
+  if(is_maa_fun && dimnames(maa_par_mat)[[3]][1]=="maa_fun_name"){
+    update_maa_mat <- get(maa_par_mat[1,1,"maa_fun_name"])
+  }
 
+  
   HCR_function <- get(HCR_function_name)
   allyear_name <- as.numeric(dimnames(SR_mat)[[1]])
 
@@ -805,13 +818,19 @@ future_vpa_R <- function(naa_mat,
     # 再生産関係から加入を推定するため、０歳以外のSSB計算用の体重と成熟率を更新
     if(is_waa_fun)
       waa_mat[,t,]       <- update_waa_mat(t=t,waa=waa_mat,rand=waa_rand_mat,naa=N_mat,
-                                     pars_b0=waa_par_mat[,,"b0"],pars_b1=waa_par_mat[,,"b1"])
+                                           pars_b0=waa_par_mat[,,"b0"],pars_b1=waa_par_mat[,,"b1"])
+#  この時点ではwaa_catchは計算しなくてもよいのでコメントアウト    
 #    if(is_waa_catch_fun)
 #      waa_catch_mat[,t,] <- update_waa_catch_mat(t=t,waa=waa_catch_mat,rand=waa_catch_rand_mat,naa=N_mat,
 #                                                 pars_b0=waa_catch_par_mat[,,"b0"],pars_b1=waa_catch_par_mat[,,"b1"])
-    if(is_maa_fun) maa_mat[,t,] <- update_maa_mat(maa=maa_mat[,t,],rand=maa_rand_mat[,t,],naa=N_mat[,t,],
-                                                  pars_b0=maa_par_mat[,,"b0"],pars_b1=maa_par_mat[,,"b1"],
-                                                  min_value=maa_par_mat[,,"min"],max_value=maa_par_mat[,,"max"])
+    if(is_maa_fun){
+#      maa_mat[,t,] <- update_maa_mat(maa=maa_mat[,t,],rand=maa_rand_mat[,t,],naa=N_mat[,t,],
+#                                     pars_b0=maa_par_mat[,,"b0"],pars_b1=maa_par_mat[,,"b1"],
+#                                     min_value=maa_par_mat[,,"min"],max_value=maa_par_mat[,,"max"])
+      maa_mat[,t,] <- update_maa_mat(t=t, maa=maa_mat,rand=maa_rand_mat,naa=N_mat,
+                                     pars_b0=maa_par_mat[,,"b0"],pars_b1=maa_par_mat[,,"b1"],
+                                     min_value=maa_par_mat[,,"min"],max_value=maa_par_mat[,,"max"])      
+    }
     spawner_mat[t,] <- colSums(N_mat[,t,,drop=F] * waa_mat[,t,,drop=F] * maa_mat[,t,,drop=F])
     spawner_mat[t,spawner_mat[t,]<0.0001] <-  0.0001
 
@@ -1847,6 +1866,7 @@ safe_call <- function(func,args,force=FALSE,...){
     if("waa_catch_fun" %in% non_defined_arg) args$waa_catch_fun <- FALSE
     if("start_waacatchfun_year_name" %in% non_defined_arg) args$start_waacatchfun_year_name <- args$start_biopar_year
     if("waa_fun_name" %in% non_defined_arg) args$waa_fun_name <- NA
+    if("maa_fun_name" %in% non_defined_arg) args$maa_fun_name <- NA
     if("waa_catch_fun_name" %in% non_defined_arg) args$waa_catch_fun_name <- NA
     check_argument <- names(args) %in% argname
     force <- TRUE
@@ -1898,14 +1918,17 @@ update_waa_mat <- update_waa_catch_mat <-function(t,waa,rand,naa,pars_b0,pars_b1
   waa[,t,]
 }
 
-update_maa_mat <- function(maa,rand,naa,pars_b0,pars_b1,min_value,max_value){
-  maa_tmp <- pars_b0+pars_b1*naa+rand
-  maa_tmp[maa_tmp <= min_value] <- min_value[maa_tmp <= min_value]
-  maa_tmp[maa_tmp >= max_value] <- max_value[maa_tmp >= max_value]
-  is_maa_zero <- apply(maa,2,sum)==0
-  maa[,is_maa_zero] <- maa_tmp[,is_maa_zero]
-  maa[naa==0] <- 0
-  maa
+# update_maa_mat <- function(maa,rand,naa,pars_b0,pars_b1,min_value,max_value){
+update_maa_mat <- function(t,maa,rand,naa,pars_b0,pars_b1,min_value,max_value){
+  maa_org <- maa[,t,]
+  maa_pred <- pars_b0+pars_b1*naa[,t,]+rand[,t,]
+  maa_pred[maa_pred <= min_value] <- min_value[maa_pred <= min_value]
+  maa_pred[maa_pred >= max_value] <- max_value[maa_pred >= max_value]
+  is_maa_zero <- apply(maa_org,2,sum)==0 # 全年齢で０が入力されている列＝予測値を入れるべき列の抽出
+  maa_org[,is_maa_zero] <- maa_pred[,is_maa_zero] # 上記のところだけ予測値に置き換える
+  
+  maa_org[naa[,t,]==0] <- 0
+  maa[,t,] <- maa_org
 }
 
 #' @export
