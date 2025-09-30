@@ -173,7 +173,7 @@ test_that("Add Shaefer and Cusing",{
   gg <- plot_SRregime(res_sr_SHr)
   gg <- plot_SRregime(res_sr_CUr)
   # テストにはなっていないが、empty testと言われないために
-  expect_equal(class(gg)[1],"gg")
+  expect_error(ggplot_build(gg),NA)
 })
 
 

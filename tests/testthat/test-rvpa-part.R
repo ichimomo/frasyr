@@ -65,8 +65,8 @@ test_that("bootstrap using use.index options", {
 
   testplot1 = plot_boot(resboot1)
   testplot2 = plot_boot(resboot2)
-  expect_equal(class(testplot1$plot_ssb)[2], "ggplot")
-  expect_equal(class(testplot2$plot_rec)[2], "ggplot")
+  expect_error(ggplot_build(testplot1$plot_ssb), NA)
+  expect_error(ggplot_build(testplot2$plot_rec), NA)
 
 })
 
