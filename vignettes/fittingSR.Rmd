@@ -36,7 +36,7 @@ names(SRdata)
 # fitSRによる再生産関係の推定
 
 引数を指定することでHockey-Stick型/Beverton-Holt型/Ricker型のそれぞれで再生産関係を推定できます。また、methodオプションで推定方法として最小絶対値法と最小二乗法を選べます。さらに、加入の残差に時間トレンドを考慮し、オプションAR=1として自己相関を考慮することができます。
-```{r, warning=FALSE}
+```{r est_HS, warning=FALSE}
 ## 再生産関係にHockey-Stick型を指定（SR="HS"）します。推定方法を最小二乗法とし（method="L2"）、自己相関を仮定しない（AR=0）場合。
 resL2 = fit.SR(SRdata, SR = "HS", method = "L2", out.AR = FALSE, AR = 0)
 
@@ -48,7 +48,7 @@ resL1 = fit.SR(SRdata, SR = "HS", method = "L1", out.AR = FALSE, AR = 0)
 
 加入の残差に時間トレンドを考慮した自己相関のオプションには２通りの推定方法が設定されています。再生産関係の関数の中に自己相関を仮定する内側推定と、関数の推定の後から誤差に自己相関を推定する外側推定です。（内側・外側の表現は科学的に確立したものではなく、この関数を利用するにあたってさし当りの表現です。）
 
-```{r, warning=FALSE}
+```{r est_AR, warning=FALSE}
 ## 再生産関係にHockey-Stick型を指定（SR="HS"）し、推定方法を最小二乗法とし（method="L1"）、自己相関を外側で仮定する（AR=1,out.AR=T）場合。
 resL1outer = fit.SR(SRdata, SR = "HS", method = "L1", out.AR = TRUE, AR = 1)
 
@@ -56,13 +56,13 @@ resL1outer = fit.SR(SRdata, SR = "HS", method = "L1", out.AR = TRUE, AR = 1)
 resL2inner = fit.SR(SRdata, SR = "HS", method = "L2", out.AR = FALSE, AR = 1)
 ```
 
-この再生産関係の妥当性はモデル選択によって検証する必要があります。説明は (./Diagnostics-for-SR.Rmd)を参照してください。
+この再生産関係の妥当性はモデル選択によって検証する必要があります。説明は[再生産関係の決定に関するガイドライン](https://abchan.fra.go.jp/about/references_list/#s1)の付録、または、[frasyr_tool](https://github.com/ichimomo/frasyr_tool/tree/YR2025/SRcheck)(内部向け)を参照してください。
 
 ## 結果の出力と図示
 
 out.SRで結果をtxtファイルに出力できます。例としてresL2innerを使用します。プロットにはSRplot_ggが使えます。
 
-```{r, warning=FALSE}
+```{r output, warning=FALSE}
 out.SR(resL2inner, filename = "L2inner")
 
 ## プロットする。
@@ -79,7 +79,7 @@ regime.year = c(1995,2005)と指定してください。
 regime.parはレジームごとに異なるパラメータを設定します。今はすべてのパラメータが異なる場合 (resR1)とaは共通でbとsdが異なる場合 (resR2) を使います。
 AICc等の結果はfit.SRと比較できます。
 
-```{r, warning=FALSE}
+```{r fit_SRregime, warning=FALSE}
 resR1 <- fit.SRregime(SRdata, SR = "HS", method = "L1", regime.year = c(2005), regime.par = c("a", 
     "b", "sd")[1:3], use.fit.SR = TRUE, regime.key = c(0, 1))
 resR2 <- fit.SRregime(SRdata, SR = "HS", method = "L1", regime.year = c(2005), regime.par = c("a", 
@@ -91,7 +91,7 @@ c(resL2$AICc, resL1$AICc, resL2inner$AICc, resR1$AICc, resR2$AICc)
 
 fit.SRのときと同様にout.SRで結果をtxtファイルに出力できます。プロットにはSRregime_plotが使えます。
 
-```{r, warning=FALSE}
+```{r output_regime, warning=FALSE}
 out.SR(resR1, filename = "Regime1")
 
 ## プロットする。
