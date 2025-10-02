@@ -77,7 +77,7 @@
                         <h4 data-toc-skip class="author">Shota Nisijima
 &amp; Shin Fukui</h4>
             
-            <h4 data-toc-skip class="date">2025-08-12</h4>
+            <h4 data-toc-skip class="date">2025-10-02</h4>
       
 
       <div class="hidden name"><code>fittingSR.Rmd</code></div>
@@ -136,8 +136,7 @@
 <span></span>
 <span><span class="co">## SR="HS", method="L2"として、自己相関を内側で仮定する（AR=1,out.AR=F）場合。</span></span>
 <span><span class="va">resL2inner</span> <span class="op">=</span> <span class="fu"><a href="../reference/fit.SR.html">fit.SR</a></span><span class="op">(</span><span class="va">SRdata</span>, SR <span class="op">=</span> <span class="st">"HS"</span>, method <span class="op">=</span> <span class="st">"L2"</span>, out.AR <span class="op">=</span> <span class="cn">FALSE</span>, AR <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
-<p>この再生産関係の妥当性はモデル選択によって検証する必要があります。説明は
-(./Diagnostics-for-SR.Rmd)を参照してください。</p>
+<p>この再生産関係の妥当性はモデル選択によって検証する必要があります。説明は<a href="https://abchan.fra.go.jp/about/references_list/#s1" class="external-link">再生産関係の決定に関するガイドライン</a>の付録、または、<a href="https://github.com/ichimomo/frasyr_tool/tree/YR2025/SRcheck" class="external-link">frasyr_tool</a>(内部向け)を参照してください。</p>
 </div>
 <div class="section level3">
 <h3 id="結果の出力と図示">結果の出力と図示<a class="anchor" aria-label="anchor" href="#%E7%B5%90%E6%9E%9C%E3%81%AE%E5%87%BA%E5%8A%9B%E3%81%A8%E5%9B%B3%E7%A4%BA"></a>
@@ -147,11 +146,9 @@
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/out.SR.html">out.SR</a></span><span class="op">(</span><span class="va">resL2inner</span>, filename <span class="op">=</span> <span class="st">"L2inner"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co">## プロットする。</span></span>
-<span><span class="op">(</span><span class="va">g1</span> <span class="op">=</span> <span class="fu">SRplot_gg</span><span class="op">(</span><span class="va">resL2inner</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="fittingSR_files/figure-html/unnamed-chunk-4-1.png" width="700"></p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co">## 図をpng形式で保存する。</span></span>
-<span><span class="fu"><a href="../reference/ggsave_SH.html">ggsave_SH</a></span><span class="op">(</span><span class="va">g1</span>, file <span class="op">=</span> <span class="st">"SRcurve.png"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co">#(g1 = SRplot_gg(resL2inner))</span></span>
+<span><span class="co">## 図をpng形式で保存する。</span></span>
+<span><span class="co">#ggsave_SH(g1, file = "SRcurve.png")</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -165,7 +162,7 @@ regime.year = c(1995,2005)と指定してください。
 regime.parはレジームごとに異なるパラメータを設定します。今はすべてのパラメータが異なる場合
 (resR1)とaは共通でbとsdが異なる場合 (resR2) を使います。
 AICc等の結果はfit.SRと比較できます。</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">resR1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit.SRregime.html">fit.SRregime</a></span><span class="op">(</span><span class="va">SRdata</span>, SR <span class="op">=</span> <span class="st">"HS"</span>, method <span class="op">=</span> <span class="st">"L1"</span>, regime.year <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2005</span><span class="op">)</span>, regime.par <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"a"</span>, </span>
 <span>    <span class="st">"b"</span>, <span class="st">"sd"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span><span class="op">]</span>, use.fit.SR <span class="op">=</span> <span class="cn">TRUE</span>, regime.key <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">resR2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit.SRregime.html">fit.SRregime</a></span><span class="op">(</span><span class="va">SRdata</span>, SR <span class="op">=</span> <span class="st">"HS"</span>, method <span class="op">=</span> <span class="st">"L1"</span>, regime.year <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2005</span><span class="op">)</span>, regime.par <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"a"</span>, </span>
@@ -177,14 +174,14 @@ AICc等の結果はfit.SRと比較できます。</p>
 <h2 id="結果の出力と図示-1">結果の出力と図示<a class="anchor" aria-label="anchor" href="#%E7%B5%90%E6%9E%9C%E3%81%AE%E5%87%BA%E5%8A%9B%E3%81%A8%E5%9B%B3%E7%A4%BA-1"></a>
 </h2>
 <p>fit.SRのときと同様にout.SRで結果をtxtファイルに出力できます。プロットにはSRregime_plotが使えます。</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/out.SR.html">out.SR</a></span><span class="op">(</span><span class="va">resR1</span>, filename <span class="op">=</span> <span class="st">"Regime1"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co">## プロットする。</span></span>
 <span><span class="op">(</span><span class="va">g2</span> <span class="op">=</span> <span class="fu"><a href="../reference/plot_SRregime.html">plot_SRregime</a></span><span class="op">(</span><span class="va">resR1</span>, regime.name <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Usual"</span>, <span class="st">"High"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Joining with `by = join_by(Regime, SSB, R, Category)`</span></span></code></pre></div>
-<p><img src="fittingSR_files/figure-html/unnamed-chunk-6-1.png" width="700"></p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<p><img src="fittingSR_files/figure-html/output_regime-1.png" width="700"></p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="co">## 図をpng形式で保存する。</span></span>
 <span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsave.html" class="external-link">ggsave</a></span><span class="op">(</span><span class="va">g2</span>, file <span class="op">=</span> <span class="st">"SRregime_curve.png"</span>, unit <span class="op">=</span> <span class="st">"mm"</span>, width <span class="op">=</span> <span class="fl">240</span>, height <span class="op">=</span> <span class="fl">120</span>, </span>
