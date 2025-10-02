@@ -1,6 +1,8 @@
 on:
   push:
-    branches: dev
+    branches:
+      - dev
+      - pkgdwn
 
 name: pkgdown
 
