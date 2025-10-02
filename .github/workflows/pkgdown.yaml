@@ -1,12 +1,16 @@
 on:
   push:
     branches: dev
+  pull_request:
+    branches:
+    - master
+    - dev
 
 name: pkgdown
 
 jobs:
   pkgdown:
-    runs-on: macOS-latest
+    runs-on: windows-latest
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -46,6 +50,14 @@ jobs:
           usethis::use_git_config(user.name = "GitHub Action", user.email = "foobar@email.com")
         shell: Rscript {0}
 
-      - name: Deploy package
-        run: pkgdown::deploy_to_branch(new_process = FALSE)
+      - name: Build site on pull request
+        if: github.event_name == 'pull_request'
+        run: pkgdown::build_site()
+        shell: Rscript {0}
+
+      - name: Deploy package on merge
+        if: |
+          github.event_name == 'push' &&
+          github.ref == 'refs/heads/dev'
+        run: pkgdown::deploy_to_branch()
         shell: Rscript {0}
