@@ -67,9 +67,9 @@ out.SRで結果をtxtファイルに出力できます。例としてresL2inner�
 out.SR(resL2inner, filename = "L2inner")
 
 ## プロットする。
-#(g1 = SRplot_gg(resL2inner))
-## 図をpng形式で保存する。
-#ggsave_SH(g1, file = "SRcurve.png")
+(g1 = SRplot_gg(resL2inner))
+# 図をpng形式で保存する。
+ggsave_SH(g1, file = "SRcurve.png")
 ```
 
 # fitSR.regimeによるレジームがある場合の再生産関係の推定
