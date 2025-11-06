@@ -297,6 +297,7 @@ plot_Fref <- function(rres,xlabel="max", # or, "mean","Fref/Fcur"
 }
 
 # 再生産関係推定 ----
+#'
 #' SRdataをプロットする
 #'
 #' @param vpares VPAの結果のオブジェクト
@@ -376,7 +377,7 @@ plot_SRdata <- function(SRdata, type=c("classic","gg")[1]){
 
 plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,ylabel="尾",
                     labeling.year=NULL,add.info=TRUE, recruit_intercept=0,
-                    plot_CI=FALSE, CI=0.9, shape_custom=c(21,3),box.padding=0,
+                    plot_CI=FALSE, CI=0.9, shape_custom=c(21,3),box.padding=0.4,
                     add_graph=NULL, last_year_color=0){
 
   if(is.null(refs$Blimit) && !is.null(refs$Blim)) refs$Blimit <- refs$Blim
@@ -470,13 +471,15 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
                 color="deepskyblue3",lty=3,n=5000)
   }
 
+  #nudge_y_value <- min(max(alldata$R)/5,5)
+
   g1 <- g1+geom_path(data=dplyr::filter(alldata,type=="obs"),
                        aes(y=R,x=SSB),color=gray(0.6)) +
     geom_point(data=dplyr::filter(alldata,type=="obs"),
                aes(y=R,x=SSB,shape=weight, fill=last_years_fill),color="black") +
     scale_shape_manual(values = shape_custom) +
     ggrepel::geom_text_repel(data=dplyr::filter(alldata,type=="obs"),
-                             box.padding=box.padding,segment.color="gray",nudge_y=5,
+                             box.padding=box.padding,segment.color="gray",#nudge_y=nudge_y_value,
                              aes(y=R,x=SSB,label=pick.year)) +
     theme_bw(base_size=14)+
     theme(legend.position = 'none') +
@@ -751,7 +754,7 @@ plot_SRregime <- function (SRregime_result,xscale=1000,xlabel="SSB",yscale=1,yla
 #' @param number.unit 尾数（加入尾数とか）のときの単位
 #' @param biomass.unit 量の単位
 #' @param number.name 尾数の凡例をどのように表示するか（「億尾」とか）
-#' @param RP_name 管理基準値をどのように名前つけるか
+#' @param RP_name 管理基準値をどのように名前つけるか（デフォルトはc("Btarget","Blimit","Bban","Fmsy","MSY","U_MSY"))
 #' @param Btarget Btargetの値、設定しない場合はNA（デフォルトはNA）
 #' @param Blimit Blimitの値、設定しない場合はNA（デフォルトはNA）
 #' @param Bban Bbanの値、設定しない場合はNA（デフォルトはNA）
@@ -782,7 +785,7 @@ plot_futures <- function(vpares=NULL,
                          biomass.unit=1,
                          number.unit=1,
                          number.name="",
-                         RP_name=c("Btarget","Blimit","Bban"),
+                         RP_name=c("Btarget","Blimit","Bban","Fmsy","MSY","U_MSY"),
                          Btarget=NA,Blimit=NA,Bban=NA,#Blow=0,
                          MSY=NA,Umsy=NA,
                          SPRtarget=NULL,
@@ -816,9 +819,9 @@ plot_futures <- function(vpares=NULL,
                                       str_c("資源量 (",junit,"トン)"),
                                       str_c("漁獲資源量 (",junit,"トン)"),
                                       str_c("漁獲量 (",junit,"トン)"),
-                                      "beta_gamma(F/Fmsy)",
+                                      str_c("beta_gamma(F/",RP_name[4],")"),
                                       "漁獲割合(%)",
-                                      "漁獲圧の比(F/Fmsy)"))
+                                      str_c("漁獲圧の比(F/",RP_name[4],")")))
     }
     if(type=="simple"){
         rename_list <- tibble(stat=c("Recruitment","SSB","biomass","cbiomass","catch","beta_gamma","U","Fratio"),
@@ -827,9 +830,9 @@ plot_futures <- function(vpares=NULL,
                                       str_c("資源量 (",junit,"トン)"),
                                       str_c("漁獲資源量 (",junit,"トン)"),
                                       str_c("将来の漁獲量 (",junit,"トン)"),
-                                      "beta_gamma(F/Fmsy)",
+                                      str_c("beta_gamma(F/",RP_name[4],")"),
                                       "漁獲割合(%)",
-                                      "漁獲圧の比(F/Fmsy)"))
+                                      str_c("漁獲圧の比(F/",RP_name[4],")")))
     }
   }
   else{
@@ -842,9 +845,9 @@ plot_futures <- function(vpares=NULL,
                                   str_c("Biomass (",junit,"MT)"),
                                   str_c("cBiomass (",junit,"MT)"),
                                   str_c("Catch (",junit,"MT)"),
-                                  "multiplier to Fmsy",
+                                  str_c("multiplier to ", RP_name[4]),
                                   "Catch/Biomass (U)",
-                                  "F ratio (F/Fmsy)"))
+                                  str_c("F ratio (F/", RP_name[4],")")))
   }
 
   # define unit of value
@@ -954,23 +957,23 @@ plot_futures <- function(vpares=NULL,
                                  dplyr::pull(jstat),
                                value = c(Btarget, Blimit, Bban) / biomass.unit,
                                name = c("target","limit","ban"),
-                               scenario = RP_name))
+                               scenario = RP_name[1:3]))
   }
   if("catch" %in% what.plot && !is.na(MSY)){
     dat_RP <- bind_rows(dat_RP,
                         tibble(jstat=dplyr::filter(rename_list, stat == "catch") %>%
                                  dplyr::pull(jstat),
                                value=MSY/biomass.unit,
-                               name="MSY",
-                               scenario="MSY"))
+                               name=RP_name[5],
+                               scenario=RP_name[5]))
   }
   if("U" %in% what.plot && !is.na(Umsy)){
     dat_RP <- bind_rows(dat_RP,
                         U_RP <- tibble(jstat=dplyr::filter(rename_list, stat == "U") %>%
                                          dplyr::pull(jstat),
                                        value=Umsy,
-                                       name="U_MSY",
-                                       scenario="U_MSY"))
+                                       name=RP_name[6],
+                                       scenario=RP_name[6]))
   }
   dat_RP <- dat_RP %>% mutate(type="RP")
 
@@ -1003,10 +1006,10 @@ plot_futures <- function(vpares=NULL,
   }
   style_def$col[style_def$scenario=="VPA"] <- "black"
   style_def$lty[style_def$scenario=="VPA"] <- "solid"
-  style_def$col[style_def$scenario=="MSY"] <- "#000001" # 異なるカテゴリと認識させるため、blackとは微妙に違った色にする
-  style_def$col[style_def$scenario=="U_MSY"] <- "#000002" # 異なるカテゴリと認識させるため、blackとは微妙に違った色にする
-  style_def$lty[style_def$scenario=="MSY"] <- "dashed" # blackとは微妙に違った色にする
-  style_def$lty[style_def$scenario=="U_MSY"] <- "dashed" # blackとは微妙に違った色にする
+  style_def$col[style_def$scenario==RP_name[5]] <- "#000001" # 異なるカテゴリと認識させるため、blackとは微妙に違った色にする
+  style_def$col[style_def$scenario==RP_name[6]] <- "#000002" # 異なるカテゴリと認識させるため、blackとは微妙に違った色にする
+  style_def$lty[style_def$scenario==RP_name[5]] <- "dashed" # blackとは微妙に違った色にする
+  style_def$lty[style_def$scenario==RP_name[6]] <- "dashed" # blackとは微妙に違った色にする
   tmp <- which(is.na(style_def$col))
   style_def$col[tmp] <- ggColorHue(n=length(tmp))
   style_def$lty[tmp] <- "solid"
@@ -1647,6 +1650,7 @@ plot_kobe_gg <- plot_kobe <- function(FBdata=NULL,
 #' @param SBlim    禁漁水準
 #' @param Ftarget  Ftarget
 #' @param is.text ラベルを記入するかどうか（FALSEにすると後で自分で書き換えられる）
+#' @param RP.label 管理基準値のラベル
 #' @encoding UTF-8
 #'
 #' @export
@@ -1657,7 +1661,7 @@ plot_HCR <- function(SBtarget,SBlim,SBban,Ftarget,
                      beta=0.8,col.multi2currf="black",col.SBtarget="#00533E",
                      col.SBlim="#edb918",col.SBban="#C73C2E",col.Ftarget="black",
                      col.betaFtarget="gray",is.text = TRUE,
-                     RP.label=c("目標管理基準値","限界管理基準値","禁漁水準")){
+                     RP.label=c("目標管理基準値","限界管理基準値","禁漁水準","Fmsy","0.8Fmsy")){
 
   # Arguments; SBtarget,SBlim,SBban,Ftarget,beta,col.multi2currf,col.SBtarget,col.SBlim,col.SBban,col.Ftarget,col.betaFtarget.
   # col.xx means the line color for xx on figure.
@@ -1689,7 +1693,7 @@ plot_HCR <- function(SBtarget,SBlim,SBban,Ftarget,
     geom_vline(xintercept = SBban, size = 0.9, linetype = unlist(format_type()[3,3]), color = col.SBban) +
     geom_hline(yintercept = Ftarget, size = 0.9, linetype = "43", color = col.Ftarget) +
     geom_hline(yintercept = beta*Ftarget, size = 0.7, linetype = "43", color = col.betaFtarget) +
-    labs(x = str_c("親魚量 (",junit,"トン)"),y = "漁獲圧の比(F/Fmsy)",color = "") +
+    labs(x = str_c("親魚量 (",junit,"トン)"),y = str_c("漁獲圧の比(F/",RP.label[4],")"),color = "") +
     theme_bw(base_size=12)+
     theme(legend.position="none",panel.grid = element_blank())+
     stat_function(fun = h,lwd=1,color=col.multi2currf)
@@ -1701,12 +1705,12 @@ plot_HCR <- function(SBtarget,SBlim,SBban,Ftarget,
   }
 
   if(is.text) {
-    RPdata <- tibble(RP.label=RP.label, value=c(SBtarget, SBlim, SBban), y=c(1.1,1.05,1.05))
+    RPdata <- tibble(RP.label=RP.label[1:3], value=c(SBtarget, SBlim, SBban), y=c(1.1,1.05,1.05))
     g <- g + ggrepel::geom_label_repel(data=RPdata,
                                        mapping=aes(x=value, y=y, label=RP.label),
                                        box.padding=0.5, nudge_y=0.05) +
-      geom_label(label="Fmsy", x=SBtarget*1.3, y=Ftarget)+
-      geom_label(label=str_c(beta,"Fmsy"), x=SBtarget*1.3, y=beta*Ftarget)+
+      geom_label(label=RP.label[4], x=SBtarget*1.3, y=Ftarget)+
+      geom_label(label=RP.label[5], x=SBtarget*1.3, y=beta*Ftarget)+
       ylim(0,1.3)
   }
 
@@ -1750,13 +1754,11 @@ plot_HCR <- function(SBtarget,SBlim,SBban,Ftarget,
 #' 縦軸が漁獲量のHCRを書く（traceの結果が必要）
 #'
 #' @param trace
-#' @param fout 将来予測のアウトプット（finputがない場合)
 #' @param Fvector Fのベクトル
 #' @encoding UTF-8
 #' @export
 
 plot_HCR_by_catch <- function(trace,
-                              fout0.8,
                               SBtarget,SBlim,SBban,Fmsy_vector,MSY,
                               M_vector,
                               biomass.unit=1,
@@ -2276,9 +2278,12 @@ plot_SRaverage <- function(data_future_MSY, res_vpa_updated, SR_plot_label, CI=0
     }
     SRdata_old <- SRdata_old %>% dplyr::filter(weight>0)
 
+    SRdata <- get.SRdata(res_vpa_updated,return.df=TRUE)
     if(last_year_color>0) last_years <- rev(sort(SRdata$year))[1:last_year_color] else last_years <- ""
-    SRdata <- get.SRdata(res_vpa_updated,return.df=TRUE) %>%
+    SRdata <- SRdata %>%
       mutate(fill_color=ifelse(year%in%last_years, "red", "white"))
+
+
     glist <- list()
     for(i in 1:2){
       glist[[i]] <- rec_expect %>% ggplot() +

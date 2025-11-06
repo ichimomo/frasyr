@@ -29,7 +29,8 @@ extract_x <- function(vpadata, x, year, mean_by = NULL) {
   extracted <- vars[,colnames(vars) %in% as.character(year)]
 
   if (is.null(mean_by)) {
-    return(sum(extracted))
+                                        #    return(sum(extracted))
+      return(extracted) # sumだとテストが通らない。いつから通らなくなっていた？？
   } else {
     if (mean_by == "year") {
       colMeans(extracted, na.rm = TRUE)

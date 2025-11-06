@@ -11,6 +11,20 @@ res_vpa_example <- vpa(dat,fc.year=2015:2017,tf.year = 2015:2016,
                term.F="max",stat.tf="mean",Pope=TRUE,tune=FALSE,p.init=0.5)
 use_data(res_vpa_example, overwrite=TRUE)
 
+# tuning VPA
+set.seed(1)
+index.year <- colnames(res_vpa_example$naa)
+index1 <- res_vpa_example$naa[1,index.year] * exp(rnorm(length(index.year), 0, 0.2))
+index2 <- colSums(res_vpa_example$ssb[,index.year]) * exp(rnorm(length(index.year), 0, 0.2))
+dat2 <- data.handler(caa=caa, waa=waa, maa=maa, M=0.5, index=rbind(index1, index2))
+
+# tuningVPA
+res_vpa_example2 <- vpa(dat2,fc.year=2015:2017,tf.year = 2015:2016,
+                        term.F="max",stat.tf="mean",Pope=TRUE,tune=TRUE,
+                        sel.update=TRUE, p.init=0.5, abund=c("N","SSB"),
+                        max.age=c(0,4), min.age=c(0,0))
+use_data(res_vpa_example2, overwrite=TRUE)
+
 # SR関数のフィット
 SRdata <- get.SRdata(res_vpa)
 res_sr_HSL2 <- fit.SR(SRdata,SR="HS",method="L2",AR=0,hessian=FALSE)

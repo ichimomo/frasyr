@@ -33,8 +33,13 @@ make_future_data(
   M = NULL,
   more_process_error = NA,
   faa_year = NULL,
+  faa_year_future = NULL,
   currentF = NULL,
   futureF = NULL,
+  currentF_rand = FALSE,
+  futureF_rand = FALSE,
+  currentF_rand_seed = 1,
+  futureF_rand_seed = 2,
   start_ABC_year_name = 2019,
   HCR_beta = 1,
   HCR_Blimit = -1,
@@ -49,6 +54,7 @@ make_future_data(
   HCR_TAC_carry_amount = NA,
   HCR_TAC_upper_CV = NA,
   HCR_TAC_lower_CV = NA,
+  HCR_TAC_adjust = NA,
   HCR_function_name = "HCR_default",
   HCR_reserve_denom = "original_ABC_plus",
   Pope = res_vpa$input$Pope,
@@ -69,7 +75,11 @@ make_future_data(
   model_average_option = NULL,
   regime_shift_option = NULL,
   silent = FALSE,
-  special_setting = NULL
+  special_setting = NULL,
+  specific_waa_future = NA,
+  specific_waa.catch_future = NA,
+  specific_maa_future = NA,
+  specific_M_future = NA
 )
 }
 \arguments{
@@ -107,11 +117,17 @@ make_future_data(
 
 \item{maa_fun}{maturity ~ number の回帰式から将来のmaturityを予測する(暫定的、太平洋マダラでのみ利用)}
 
-\item{faa_year}{将来のFを過去の平均値とする場合、平均をとる年を指定する。下のcurrentF, futureFが指定されている場合にはこの設定は無視される}
+\item{faa_year}{将来のF(before ABC_year)を過去の平均値とする場合、平均をとる年を指定する。下のcurrentF, futureFが指定されている場合にはこの設定は無視される。}
+
+\item{faa_year_future}{将来のF(before ABC_year)を過去の平均値とする場合、平均をとる年を指定する。下のcurrentF, futureFが指定されている場合にはこの設定は無視される。NULLの場合faa_yearが用いられる}
 
 \item{currentF}{start_ABC_yar_name以前に使うFのベクトル（いわゆるcurrent F）}
 
 \item{futureF}{start_ABC_yar_name以降に使うFのベクトル（いわゆるFmsy）}
+
+\item{currentF_rand}{TRUEの場合、faa_yearで指定された範囲のFから年齢別にランダムサンプリングする（currentFはNULLとする）}
+
+\item{futureF_rand}{TRUEの場合、faa_year_futureで指定された範囲のFから年齢別にランダムサンプリングする（currentFはNULLとする）}
 
 \item{start_ABC_year_name}{HCRを有効にする年}
 
@@ -133,17 +149,19 @@ make_future_data(
 
 \item{HCR_TAC_reserve_amount}{TACの獲り残し量。マイナス値を入れれば前借りもできる。rateとamountの片方どちらかだけ設定する}
 
-\item{HCR_TAC_carry_rate}{当初TACのうち何トンまで持ち越せるかの上限（比率）。マイナス値を入れれば前借りもできる。}
+\item{HCR_TAC_carry_rate}{当初TACのうち何トンまで持ち越せるかの上限（比率）。}
 
-\item{HCR_TAC_carry_amount}{当初TACのうち何トンまで持ち越せるかの上限（比率）。マイナス値を入れれば前借りもできる。}
+\item{HCR_TAC_carry_amount}{当初TACのうち何トンまで持ち越せるかの上限（比率）。}
 
 \item{HCR_TAC_upper_CV}{漁獲量が前年の漁獲量のHCR_TAC_upper_CV倍と比較し、それよりも変化が大きい場合には前年の漁獲量xHCR_TAC_upper_CVを上限とする。単一の値か、tibble形式 tibble(year=2020:2024, TAC_upper_CV=rep(0.1,5)) で与える}
 
 \item{HCR_TAC_lower_CV}{漁獲量が前年の漁獲量のHCR_TAC_lower_CV倍と比較し、それよりも変化が大きい場合には前年の漁獲量xHCR_TAC_lower_CVを下限とする。単一の値か、tibble形式 tibble(year=2020:2024, TAC_lower_CV=rep(0.1,5)) で与える}
 
+\item{HCR_TAC_adjust}{B&B設定の場合，-1 下方向にadjust, 0 上下方向にadjust, 1 上方向のみadjust, 用いない場合はNA}
+
 \item{HCR_function_name}{デフォルトは"HCR_default" ここを変更(関数名を文字列で与える。関数は別に定義しておく)すると自作のHCRが適用される。その場合、データのほうで定義されているbeta, Blimit, Bbanなど、同じ名前のものは有効}
 
-\item{HCR_reserve_denom}{比率で取り残し量を決める場合、もともとのABCをもとにするか（"original_ABC"、ブリ・マダラ繰越前借り設定）前年からの繰越も考慮したABCをもとにするか（"original_ABC_plus", スケトウ繰越設定）}
+\item{HCR_reserve_denom}{比率で取り残し量を決める場合、もともとのABCをもとにするか（"original_ABC"、最新の繰越前借り設定）前年からの繰越も考慮したABCをもとにするか（"original_ABC_plus", 過去のスケトウ繰越設定）}
 
 \item{Pope}{漁獲方程式にPopeの近似式を使うかどうか。与えない場合には、VPAのオプションが引き継がれる}
 
@@ -172,6 +190,14 @@ make_future_data(
 \item{regime_shift_option}{res_SRにfit.SRregimeの返り値を入れた場合に指定する。将来予測で再生産関係のどのフェーズがおこるかを指定する。list(future_regime=将来のregimeの仮定。keyで指定された番号を入れる)}
 
 \item{special_setting}{list形式で与えるmake_future_dataの返り値のdataと同じ名前の要素について、最後にデータをここで示されたarrayのシミュレーション1回めの値で上書きする。arrayのデータに対してのみ有効。}
+
+\item{specific_waa_future}{将来年の特定年だけwaaを変える。tibble("2025"=c(10,20,30,40),"2026"=c(20,30,40,40))という形式で与える。}
+
+\item{specific_waa.catch_future}{将来年の特定年だけwaa.catchを変える}
+
+\item{specific_maa_future}{将来年の特定年だけmaaを変える}
+
+\item{specific_M_future}{将来年の特定年だけMを変える}
 }
 \value{
 以下の要素からなるリスト

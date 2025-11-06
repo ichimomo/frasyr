@@ -98,7 +98,7 @@ get.SRdata <- function(vpares=NULL,
         dat <- dat %>% dplyr::filter(year%in%years)
     }
 
-    assertthat::assert_that(all(dat[["R"]] > 0))
+#    assertthat::assert_that(all(dat[["R"]] > 0)) # これ必要？
 
     #if (return.df == TRUE) return(data.frame(year = dat$year,
     #SSB  = dat$SSB,
@@ -2435,7 +2435,7 @@ check.SRfit = function(resSR,n=100,sigma=5,seed = 1,output=FALSE,filename="check
     if (sum(problem)>0) {
       flag[5] <- 1
       RES$loglik_diff <- loglik_diff
-      message(RES$pars <- str_c("5. 同じ最大尤度(",diff_threshold,"よりも小さい違い)を持つ複数のパラメータが見つかりました（L1かつHSでよく見られます）。"))
+      message(RES$pars <- str_c("5. 同じ最大尤度(",diff_threshold,"よりも小さい違い)を持つ複数のパラメータが見つかりました（L1かつHSでよく見られます）。これを理由にこのmodelを棄却する必要は必ずしもありませんが、下で出力される「ほとんど同じ尤度を持つパラメータの範囲」が広過ぎる場合には、このような問題があることを説明するなどをしながら使用してください。"))
       # RES$percent_bias = c("a"=max(a_diff),"b"=max(b_diff),"sd" = max(sd_diff))
       # message("Maximum percent bias of 'a' is ", round(as.numeric(RES$percent_bias["a"]),6),"%")
       # message("Maximum percent bias of 'b' is ", round(as.numeric(RES$percent_bias["b"]),6),"%")

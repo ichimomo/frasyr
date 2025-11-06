@@ -20,7 +20,8 @@ plot_HCR(
   col.Ftarget = "black",
   col.betaFtarget = "gray",
   is.text = TRUE,
-  RP.label = c("目標管理基準値", "限界管理基準値", "禁漁水準")
+  RP.label = c("目標管理基準値", "限界管理基準値", "禁漁水準", "Fmsy",
+    "0.8Fmsy")
 )
 }
 \arguments{
@@ -31,6 +32,8 @@ plot_HCR(
 \item{Ftarget}{Ftarget}
 
 \item{is.text}{ラベルを記入するかどうか（FALSEにすると後で自分で書き換えられる）}
+
+\item{RP.label}{管理基準値のラベル}
 }
 \description{
 HCRを書く

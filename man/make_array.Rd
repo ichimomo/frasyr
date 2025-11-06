@@ -5,7 +5,15 @@
 \alias{make_array}
 \title{将来予測用の三次元行列（年齢×年×シミュレーション）を与えられたら, pars.yearで指定された期間のパラメータを平均するか、parで指定されたパラメータを、year_replace_future以降の年で置き換える}
 \usage{
-make_array(d3_mat, pars, pars.year, year_replace_future)
+make_array(
+  d3_mat,
+  pars,
+  pars.year,
+  year_replace_future,
+  specific_value = NA,
+  rand = FALSE,
+  rand_seed = NULL
+)
 }
 \arguments{
 \item{d3_mat}{将来予測用の３次元行列}
@@ -14,7 +22,11 @@ make_array(d3_mat, pars, pars.year, year_replace_future)
 
 \item{pars.year}{この期間の生物パラメータを平均して、将来のパラメータとする}
 
-\item{year_replace_future}{生物パラメータを置き換える最初の年}
+\item{year_replace_future}{生物パラメータを置き換える"最初の"年}
+
+\item{specific_value}{特定の年をそこで指定されている値に置き換える}
+
+\item{rand}{pars.yearの期間のパラメータをランダムサンプリングする}
 }
 \description{
 将来予測用の三次元行列（年齢×年×シミュレーション）を与えられたら, pars.yearで指定された期間のパラメータを平均するか、parで指定されたパラメータを、year_replace_future以降の年で置き換える
