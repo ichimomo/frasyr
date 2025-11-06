@@ -13,10 +13,7 @@ https://ichimomo.github.io/main/ に一括した情報へのリンクがあり�
 # devtoolsをインストールしていない人はインストールする
 install.packages("devtools")
 
-# マスター版（最新・安定版）をインストールする場合
-devtools::install_github("ichimomo/frasyr")
-
-# 開発中の最新版をインストールする場合（バグ可能性あり！）
+# 開発中の最新版をインストールする
 # ref=""で開発中のブランチを指定します。だいたい、"dev"ブランチに開発中のものがあります
 devtools::install_github("ichimomo/frasyr", ref="dev")
 
@@ -30,6 +27,9 @@ library(frasyr)
 ```
 
 # リリースバージョン
+最新のリリース状況についてはこちらを参照ください　https://github.com/ichimomo/frasyr/releases
+
+以下は過去のリリースです
 - v1.00 : future-rvpaから移動してきたほぼそのままのバージョン
 - v1.10 : future.vpaにuse.MSEオプションを追加
 - v1.20 : 2019年アジ・イワシ事前検討会用
@@ -56,7 +56,6 @@ vignette("vpa",package="frasyr") # VPAの実施のしかた
 vignette("Diagnostics-for-VPA",package="frasyr") # VPAのモデル診断
 ```
 
-- 再生産関係のモデル診断 [wiki](https://github.com/ichimomo/frasyr/wiki/Diagnostics-for-Stock-Recruitment-Relationships)
 - 将来予測関数の使い方：[wiki](https://github.com/ichimomo/frasyr/wiki/future_new)
 
 

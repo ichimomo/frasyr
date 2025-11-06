@@ -7,7 +7,6 @@
 \usage{
 plot_HCR_by_catch(
   trace,
-  fout0.8,
   SBtarget,
   SBlim,
   SBban,
@@ -29,8 +28,6 @@ plot_HCR_by_catch(
 )
 }
 \arguments{
-\item{fout}{将来予測のアウトプット（finputがない場合)}
-
 \item{Fvector}{Fのベクトル}
 }
 \description{
