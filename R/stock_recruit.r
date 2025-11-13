@@ -2743,7 +2743,7 @@ corSR = function(resSR) {
 #' @encoding UTF-8
 #' @export
 
-calc_steepness = function(SR="HS",rec_pars,M,waa,maa,plus_group=TRUE,faa = NULL, waa_catch=NULL, Pope=TRUE) {
+calc_steepness = function(SR="HS",rec_pars,M,waa,maa,plus_group=TRUE,faa = NULL, waa_catch=NULL, Pope=TRUE, ...) {
   if (length(M)==1) {
     M = rep(M,length(waa))
   }
@@ -2808,7 +2808,7 @@ calc_steepness = function(SR="HS",rec_pars,M,waa,maa,plus_group=TRUE,faa = NULL,
     if(is_MSY==1){
       if(is.null(waa_catch)) waa_catch <- waa
       ypr.spr = ref.F(Fcurrent=x*faa,M=M,waa=waa,waa.catch = waa_catch,maa =maa,
-                      Pope=Pope,pSPR=NULL,F.range=NULL,plot=FALSE)
+                      Pope=Pope,pSPR=NULL,F.range=NULL,plot=FALSE, ...)
       ypr.spr <- ypr.spr$ypr.spr[1,]
       Yield <- as.numeric(R0*ypr.spr["ypr"])
       Res = cbind(Res,data.frame(Yield=Yield))
