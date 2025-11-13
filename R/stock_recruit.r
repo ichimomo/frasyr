@@ -2714,6 +2714,8 @@ corSR = function(resSR) {
 #' @param M 年齢別自然死亡係数 (ベクトルで与えるか、年齢共通の場合\code{M=0.4}のようにしてもよい)
 #' @param waa （親魚量の）年齢別体重
 #' @param maa 年齢別親魚量
+#' @param faa デフォルトはNULLだが、与えられた場合、このFAAを選択率としたときの決定論的なMSY管理基準値も計算する
+#' @param waa_catch (漁獲量の)年齢別体重。通常は使わないがMSY管理基準値を計算するときには使用する。与えられない場合はwaaを代用する
 #' @param plus_group 最高齢がプラスグループかどうか
 #' @return 以下の要素からなるデータフレーム
 #' \describe{
@@ -2740,7 +2742,8 @@ corSR = function(resSR) {
 #' }
 #' @encoding UTF-8
 #' @export
-calc_steepness = function(SR="HS",rec_pars,M,waa,maa,plus_group=TRUE,faa = NULL, Pope=TRUE) {
+
+calc_steepness = function(SR="HS",rec_pars,M,waa,maa,plus_group=TRUE,faa = NULL, waa_catch=NULL, Pope=TRUE) {
   if (length(M)==1) {
     M = rep(M,length(waa))
   }
@@ -2803,7 +2806,8 @@ calc_steepness = function(SR="HS",rec_pars,M,waa,maa,plus_group=TRUE,faa = NULL,
     Res = data.frame(SPR0 = SPR0, SB0 = SB0, R0 = R0, B0 = B0, h = h)
 
     if(is_MSY==1){
-      ypr.spr = ref.F(Fcurrent=x*faa,M=M,waa=waa,waa.catch = waa,maa =maa,
+      if(is.null(waa_catch)) waa_catch <- waa
+      ypr.spr = ref.F(Fcurrent=x*faa,M=M,waa=waa,waa.catch = waa_catch,maa =maa,
                       Pope=Pope,pSPR=NULL,F.range=NULL,plot=FALSE)
       ypr.spr <- ypr.spr$ypr.spr[1,]
       Yield <- as.numeric(R0*ypr.spr["ypr"])
