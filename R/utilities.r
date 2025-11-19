@@ -162,7 +162,7 @@ caa.est.mat_wrong <- function(naa,saa,waa,M,catch.obs,Pope,max_exploitation_rate
 
 #' @export
 #' @encoding UTF-8
- 
+
 catch_equation <- function(naa,faa,waa,M,Pope=1){
   if(Pope==1 | Pope==TRUE) is.pope <- TRUE else is.pope <- FALSE
   if(is.pope){
@@ -1353,11 +1353,17 @@ convert_df <- function(df,name){
 #' @export
 #' @encoding UTF-8
 convert_2d_future <- function(df, name, label="tmp"){
-  df %>%
+  df <- df %>%
     as_tibble %>%
     mutate(year=rownames(df)) %>%
     gather(key=sim, value=value, -year, convert=TRUE) %>%
     mutate(year=as.numeric(year), stat=name, label=label)
+  if(!(class(df$sim) %in% c("integer","numeric"))) {
+    df <- df %>%
+      mutate(sim_num = as.numeric(str_extract(sim, "\\d+"))) %>%
+      dplyr::select(-sim) %>% dplyr::rename(sim = sim_num)
+  }
+  df
 }
 
 #' future_vpaの結果オブジェクトのリストをtibble形式に変換する関数
