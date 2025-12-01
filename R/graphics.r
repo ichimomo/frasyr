@@ -1102,6 +1102,12 @@ plot_futures <- function(vpares=NULL,
       }
     }
 
+	if(!is.null(vpares)) {
+      if("SS"%in%class(vpares)) {
+        style_def$scenario[style_def$scenario=="VPA"] <- "SS" #VPA -> SSに変更
+      }
+    }
+	
   # setting scales and guides
   g1 <- g1 +
     theme_SH(base_size=font.size,legend.position=legend.position)+
