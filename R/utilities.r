@@ -672,7 +672,7 @@ get.SPR <- function(dres,target.SPR=30,Fmax=10,max.age=Inf){
     if(!all(dres$Fc.at.age==0, na.rm=T)){
       byear <- colnames(dres$faa)[i] # 何年の生物パラメータを使うか
 
-      a <- ref.F(dres,waa.year=byear,maa.year=byear,M.year=byear,rps.year=2000:2011,
+      a <- ref.F(dres,waa.year=byear,maa.year=byear,M.year=byear,waa.catch.year=byear,rps.year=2000:2011,
                  pSPR=target.SPR,
                  F.range=c(seq(from=0,to=ceiling(max(dres$Fc.at.age,na.rm=T)*Fmax),
                                length=301),max(dres$Fc.at.age,na.rm=T)),plot=FALSE)
