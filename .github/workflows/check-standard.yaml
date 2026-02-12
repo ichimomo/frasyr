@@ -10,6 +10,12 @@ on:
 
 name: Check package
 
+env:
+  # Tests that set up data for other tests
+  SETUP_TESTS: "data.handler"
+  # Heavy tests that run in parallel (must match matrix.heavy-test values below)
+  HEAVY_TESTS_PATTERN: "future-dummy-data|future-part"
+
 jobs:
   check-package:
     runs-on: ${{ matrix.config.os }}
@@ -51,12 +57,43 @@ jobs:
           error-on: '"error"'
 #	  upload_snapshots:true
 
-  run-tests:
+  setup-data:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::devtools, any::testthat
+
+      - name: Generate test data
+        run: |
+          devtools::test(filter = "${{ env.SETUP_TESTS }}", stop_on_failure = TRUE)
+        shell: Rscript {0}
+
+      - name: Upload test data artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-data
+          path: tests/testthat/*.rda
+          retention-days: 1
+
+  heavy-tests:
+    runs-on: ubuntu-latest
+    needs: setup-data
     strategy:
       fail-fast: false
       matrix:
-        test-group: [1, 2, 3, 4, 5, 6]
+        # IMPORTANT: Keep these values in sync with env.HEAVY_TESTS_PATTERN above
+        # Pattern format: "test1|test2" must match matrix values
+        heavy-test:
+          - "future-dummy-data"
+          - "future-part"
 
     steps:
       - uses: actions/checkout@v4
@@ -69,11 +106,53 @@ jobs:
         with:
           extra-packages: any::devtools, any::testthat
 
+      - name: Download test data
+        uses: actions/download-artifact@v4
+        with:
+          name: test-data
+          path: tests/testthat/
+
+      - name: Run heavy test - ${{ matrix.heavy-test }}
+        run: |
+          devtools::test(filter = "${{ matrix.heavy-test }}", stop_on_failure = TRUE)
+        shell: Rscript {0}
+
+  run-tests:
+    runs-on: ubuntu-latest
+    needs: setup-data
+    strategy:
+      fail-fast: false
+      matrix:
+        test-group: [1, 2, 3]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::devtools, any::testthat
+
+      - name: Download test data
+        uses: actions/download-artifact@v4
+        with:
+          name: test-data
+          path: tests/testthat/
+
       - name: Test group ${{ matrix.test-group }}
         run: |
           test_files <- sort(list.files("tests/testthat", pattern = "^test-", full.names = TRUE))
+
+          # Exclude heavy tests and setup tests
+          # Pattern: SETUP_TESTS | HEAVY_TESTS_PATTERN
+          exclude_pattern <- paste0("${{ env.SETUP_TESTS }}", "|", "${{ env.HEAVY_TESTS_PATTERN }}")
+          test_files <- test_files[!grepl(exclude_pattern, test_files)]
+
           n <- length(test_files)
-          group_size <- ceiling(n / 4)
+          group_size <- ceiling(n / 3)
           group <- as.numeric("${{ matrix.test-group }}")
           start_idx <- (group - 1) * group_size + 1
           end_idx <- min(group * group_size, n)
