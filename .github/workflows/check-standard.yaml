@@ -52,7 +52,7 @@ jobs:
 
       - uses: r-lib/actions/check-r-package@v2
         with:
-          args: 'c("--no-manual", "--ignore-vignettes", "--no-vignettes", "--no-tests")'
+          args: 'c("--no-manual", "--no-build-vignettes", "--no-tests")'
           build_args: 'c("--no-manual", "--no-build-vignettes")'
           error-on: '"error"'
 #	  upload_snapshots:true
@@ -206,9 +206,14 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::devtools
+          extra-packages: local::., any::rmarkdown, any::knitr
+          dependencies: '"hard"'
 
       - name: Build vignettes
         run: |
-          devtools::build_vignettes()
+          lapply(
+            Sys.glob("vignettes/*.Rmd"),
+            rmarkdown::render,
+            output_dir = "vignettes/output"
+          )
         shell: Rscript {0}
