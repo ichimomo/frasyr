@@ -117,9 +117,17 @@ jobs:
           devtools::test(filter = "${{ matrix.heavy-test }}", stop_on_failure = TRUE)
         shell: Rscript {0}
 
+      - name: Upload generated test data
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-data
+          path: tests/testthat/*.rda
+          retention-days: 1
+
   run-tests:
     runs-on: ubuntu-latest
-    needs: setup-data
+    needs: [setup-data, heavy-tests]
     strategy:
       fail-fast: false
       matrix:
