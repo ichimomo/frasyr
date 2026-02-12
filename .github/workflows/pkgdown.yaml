@@ -2,6 +2,7 @@ on:
   push:
     branches:
       - dev
+      - fix-pkgdown
 
 name: pkgdown
 
