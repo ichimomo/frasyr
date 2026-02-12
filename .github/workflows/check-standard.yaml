@@ -73,15 +73,20 @@ jobs:
         run: |
           test_files <- sort(list.files("tests/testthat", pattern = "^test-", full.names = TRUE))
           n <- length(test_files)
-          group_size <- ceiling(n / 6)
+          group_size <- ceiling(n / 4)
           group <- as.numeric("${{ matrix.test-group }}")
           start_idx <- (group - 1) * group_size + 1
           end_idx <- min(group * group_size, n)
           selected_files <- test_files[start_idx:end_idx]
 
-          for (file in selected_files) {
-            testthat::test_file(file)
-          }
+          # Build filter pattern from selected files
+          file_names <- basename(selected_files)
+          file_names <- gsub("test-", "", file_names)
+          file_names <- gsub(".R$", "", file_names)
+          filter_pattern <- paste0(file_names, collapse = "|")
+
+          # Run tests with filter
+          devtools::test(filter = filter_pattern, stop_on_failure = TRUE)
         shell: Rscript {0}
 
   build-vignettes:
