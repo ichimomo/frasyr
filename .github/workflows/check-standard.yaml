@@ -79,7 +79,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-data
+          name: test-data-setup
           path: tests/testthat/*.rda
           retention-days: 1
 
@@ -106,10 +106,10 @@ jobs:
         with:
           extra-packages: any::devtools, any::testthat
 
-      - name: Download test data
+      - name: Download setup test data
         uses: actions/download-artifact@v4
         with:
-          name: test-data
+          name: test-data-setup
           path: tests/testthat/
 
       - name: Run heavy test - ${{ matrix.heavy-test }}
@@ -121,7 +121,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-data
+          name: test-data-heavy-${{ matrix.heavy-test }}
           path: tests/testthat/*.rda
           retention-days: 1
 
@@ -144,10 +144,24 @@ jobs:
         with:
           extra-packages: any::devtools, any::testthat
 
-      - name: Download test data
+      - name: Download setup test data
         uses: actions/download-artifact@v4
         with:
-          name: test-data
+          name: test-data-setup
+          path: tests/testthat/
+
+      # Download artifacts from all heavy tests
+      # IMPORTANT: These names must match env.HEAVY_TESTS_PATTERN matrix values
+      - name: Download heavy test data - future-dummy-data
+        uses: actions/download-artifact@v4
+        with:
+          name: test-data-heavy-future-dummy-data
+          path: tests/testthat/
+
+      - name: Download heavy test data - future-part
+        uses: actions/download-artifact@v4
+        with:
+          name: test-data-heavy-future-part
           path: tests/testthat/
 
       - name: Test group ${{ matrix.test-group }}
