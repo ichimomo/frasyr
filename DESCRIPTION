@@ -31,10 +31,8 @@ Imports:
     assertthat,
     foreach,
     doParallel,
-    testthat,
-    covr,    
     patchwork,
-    GGally, 
+    GGally,
     splus2R,
     scales,
     ragg,
@@ -44,4 +42,6 @@ Imports:
 Suggests:
     knitr,
     rmarkdown,
+    testthat,
+    covr
 VignetteBuilder: knitr
