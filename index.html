@@ -90,16 +90,13 @@
 <pre><code><span><span class="co"># devtoolsをインストールしていない人はインストールする</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"devtools"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># マスター版（最新・安定版）をインストールする場合</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"ichimomo/frasyr"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 開発中の最新版をインストールする場合（バグ可能性あり！）</span></span>
+<span><span class="co"># 開発中の最新版をインストールする</span></span>
 <span><span class="co"># ref=""で開発中のブランチを指定します。だいたい、"dev"ブランチに開発中のものがあります</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"ichimomo/frasyr"</span>, ref<span class="op">=</span><span class="st">"dev"</span><span class="op">)</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"ichimomo/frasyr"</span>, ref<span class="op">=</span><span class="st">"dev"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 過去の安定版を指定してインストールする場合</span></span>
 <span><span class="co"># @以下にリリースバージョンを指定します</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"ichimomo/frasyr@v1.00"</span><span class="op">)</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"ichimomo/frasyr@v1.00"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 以上の操作をしてfrasyrをインストールしてから、以下のコマンドで呼び出します</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">frasyr</span><span class="op">)</span></span></code></pre>
@@ -107,28 +104,8 @@
 <div class="section level1">
 <h1 id="リリースバージョン">リリースバージョン<a class="anchor" aria-label="anchor" href="#%E3%83%AA%E3%83%AA%E3%83%BC%E3%82%B9%E3%83%90%E3%83%BC%E3%82%B8%E3%83%A7%E3%83%B3"></a>
 </h1>
-<ul>
-<li>v1.00 : future-rvpaから移動してきたほぼそのままのバージョン</li>
-<li>v1.10 : future.vpaにuse.MSEオプションを追加</li>
-<li>v1.20 : 2019年アジ・イワシ事前検討会用</li>
-<li>v2.00 : 2020年アジ・イワシ研究機関会議用(事前配布版)
-<ul>
-<li>将来予測のメイン関数をfuture.vpaからfuture_vpaに移行。基本的な使い方は以下のマニュアルのリンク先を参照のこと</li>
-</ul>
-</li>
-<li>v2.01 : 2020年アジ・イワシ研究機関会議用(最終版)
-<ul>
-<li>fit.parでL1の場合のSDをRMSEに統一</li>
-</ul>
-</li>
-<li>v2.1.0.0 : 2020年度資源評価会議用プロトタイプバージョン
-<ul>
-<li>VPAを用いたモデル診断スクリプトをvignetteに追加</li>
-<li>途中でプラスグループが変わる（対馬マイワシ）VPAの計算を修正</li>
-<li>ほか、関数のテストを充実。</li>
-</ul>
-</li>
-</ul>
+<p>最新のリリース状況についてはこちらを参照ください　<a href="https://github.com/ichimomo/frasyr/releases" class="external-link uri">https://github.com/ichimomo/frasyr/releases</a></p>
+<p>以下は過去のリリースです - v1.00 : future-rvpaから移動してきたほぼそのままのバージョン - v1.10 : future.vpaにuse.MSEオプションを追加 - v1.20 : 2019年アジ・イワシ事前検討会用 - v2.00 : 2020年アジ・イワシ研究機関会議用(事前配布版) - 将来予測のメイン関数をfuture.vpaからfuture_vpaに移行。基本的な使い方は以下のマニュアルのリンク先を参照のこと - v2.01 : 2020年アジ・イワシ研究機関会議用(最終版) - fit.parでL1の場合のSDをRMSEに統一 - v2.1.0.0 : 2020年度資源評価会議用プロトタイプバージョン - VPAを用いたモデル診断スクリプトをvignetteに追加 - 途中でプラスグループが変わる（対馬マイワシ）VPAの計算を修正 - ほか、関数のテストを充実。</p>
 </div>
 <div class="section level1">
 <h1 id="マニュアル">マニュアル<a class="anchor" aria-label="anchor" href="#%E3%83%9E%E3%83%8B%E3%83%A5%E3%82%A2%E3%83%AB"></a>
@@ -142,14 +119,12 @@
 </li>
 </ul>
 <p>これらはRコマンドで以下のようにしても見れます。</p>
-<pre><code><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"ichimomo/frasyr"</span>, ref<span class="op">=</span><span class="st">"dev"</span>, build_vignettes<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span> <span class="co"># インストールするときにvignetteを作る（時間かかります）</span></span>
+<pre><code><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"ichimomo/frasyr"</span>, ref<span class="op">=</span><span class="st">"dev"</span>, build_vignettes<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span> <span class="co"># インストールするときにvignetteを作る（時間かかります）</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">frasyr</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/vignette.html" class="external-link">vignette</a></span><span class="op">(</span>package<span class="op">=</span><span class="st">"frasyr"</span><span class="op">)</span> <span class="co"># 利用可能なvignetteを調べる</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/vignette.html" class="external-link">vignette</a></span><span class="op">(</span><span class="st">"vpa"</span>,package<span class="op">=</span><span class="st">"frasyr"</span><span class="op">)</span> <span class="co"># VPAの実施のしかた</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/vignette.html" class="external-link">vignette</a></span><span class="op">(</span><span class="st">"Diagnostics-for-VPA"</span>,package<span class="op">=</span><span class="st">"frasyr"</span><span class="op">)</span> <span class="co"># VPAのモデル診断</span></span></code></pre>
 <ul>
-<li>再生産関係のモデル診断 <a href="https://github.com/ichimomo/frasyr/wiki/Diagnostics-for-Stock-Recruitment-Relationships" class="external-link">wiki</a>
-</li>
 <li>将来予測関数の使い方：<a href="https://github.com/ichimomo/frasyr/wiki/future_new" class="external-link">wiki</a>
 </li>
 </ul>
@@ -201,7 +176,7 @@
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.9000.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
       </footer>
