@@ -162,7 +162,7 @@ caa.est.mat_wrong <- function(naa,saa,waa,M,catch.obs,Pope,max_exploitation_rate
 
 #' @export
 #' @encoding UTF-8
- 
+
 catch_equation <- function(naa,faa,waa,M,Pope=1){
   if(Pope==1 | Pope==TRUE) is.pope <- TRUE else is.pope <- FALSE
   if(is.pope){
@@ -854,7 +854,7 @@ out.vpa <- function(res=NULL,    # VPA result
     write("\n# YPR & SPR history ",file=csvname,append=T)
     get.SPR(res)$ysdata %>% rownames_to_column(var="year") %>%
                    as_tibble() %>% select(-"F/Ftarget") %>%
-                   write_csv(path=csvname,append=T, col_names=TRUE)
+                   write_csv(file=csvname,append=T, col_names=TRUE)
   }
 
   if(!is.null(srres)){
@@ -871,44 +871,44 @@ out.vpa <- function(res=NULL,    # VPA result
     if("fit.SR" %in% class(srres)){
       write("\n# SR fit data",file=csvname,append=T)
       srres$input$SRdata %>% as_tibble() %>%  mutate(weight=srres$input$w) %>%
-        write_csv(path=csvname,append=T,col_names=TRUE)
+        write_csv(file=csvname,append=T,col_names=TRUE)
       write("\n# SR fit resutls",file=csvname,append=T)
       sr_summary <- get_summary_(srres)
-      write_csv(sr_summary,path=csvname,append=T,
+      write_csv(sr_summary,file=csvname,append=T,
                 col_names=TRUE)
     }
     if("fit.SRregime" %in% class(srres)){
       write("\n# SR fit data",file=csvname,append=T)
       srres$input$SRdata %>% as_tibble() %>%  mutate(weight=srres$input$w) %>%
-        write_csv(path=csvname,append=T,col_names=TRUE)
+        write_csv(file=csvname,append=T,col_names=TRUE)
 
       write("\n# SR fit resutls",file=csvname,append=T)
       tibble(AICc   =srres$AICc,
              AIC    =srres$AIC,
              method=srres$input$method,
              type  =srres$input$SR) %>%
-        write_csv(path=csvname,append=T,col_names=TRUE)
+        write_csv(file=csvname,append=T,col_names=TRUE)
 
       partable <- srres$regime_pars
       if(!is.null(srres$steepness)) partable <- partable %>% left_join(srres$steepness)
       # tentative
-      write_csv(partable, path=csvname,append=T,col_names=TRUE)
+      write_csv(partable, file=csvname,append=T,col_names=TRUE)
     }
     if("SRfit.average" %in% class(srres)){
       write("\n# SR fit data",file=csvname,append=T)
       srres[[1]]$input$SRdata %>% as_tibble() %>%  mutate(weight=srres$input$w) %>%
-        write_csv(path=csvname, append=T, col_names=TRUE)
+        write_csv(file=csvname, append=T, col_names=TRUE)
 
       write("\n# SR fit resutls",file=csvname,append=T)
       sr_summary <- purrr::map_dfr(srres, function(x) get_summary_(x), .id="id")
-      write_csv(sr_summary,path=csvname,append=T,
+      write_csv(sr_summary,file=csvname,append=T,
                 col_names=TRUE)
     }
   }
 
   if(!is.null(msyres)){
     write("\n# MSY Reference points",file=csvname,append=T)
-    write_csv(msyres$summary,path=csvname,append=T,
+    write_csv(msyres$summary,file=csvname,append=T,
               col_names=TRUE)
   }
 
@@ -935,12 +935,12 @@ out.vpa <- function(res=NULL,    # VPA result
     write(str_c("\n# future total biomass",label), file=csvname,append=T)
     make_summary_table(fres$vbiom,1,probs=ci.future) %>%
       rownames_to_column(var="year") %>%
-      write_csv(path=csvname,append=TRUE, col_names = TRUE)
+      write_csv(file=csvname,append=TRUE, col_names = TRUE)
 
     write(str_c("\n# future total catch",label), file=csvname,append=T)
     make_summary_table(fres$vwcaa,1,probs=ci.future) %>%
       rownames_to_column(var="year") %>%
-      write_csv(path=csvname,append=TRUE, col_names = TRUE)
+      write_csv(file=csvname,append=TRUE, col_names = TRUE)
   }
 
   if(!is.null(fres_current)){
@@ -960,7 +960,7 @@ out.vpa <- function(res=NULL,    # VPA result
       tmptable <- kobeII[kobeII.table_name[i]][[1]]
       if(nrow(tmptable)>0){
         write(str_c("\n# ",kobeII.table_name[i]),file=csvname,append=T)
-        write_csv(tmptable,path=csvname,append=TRUE,
+        write_csv(tmptable,file=csvname,append=TRUE,
                   col_names = TRUE)
       }
     }
@@ -969,14 +969,14 @@ out.vpa <- function(res=NULL,    # VPA result
   if(!is.null(kobe.ratio)){
     write("\n# Kobe ratio",file=csvname,append=T)
     kobe.ratio %>%
-        write_csv(path=csvname,append=T, col_names=TRUE)
+        write_csv(file=csvname,append=T, col_names=TRUE)
   }
 
   if(!is.null(other_tables)){
     for(i in seq_len(length(other_tables))){
       write(str_c("\n# ", names(other_tables)[i]), file=csvname,append=T)
       other_tables[[i]] %>%
-        write_csv(path=csvname,append=T, col_names=TRUE)
+        write_csv(file=csvname,append=T, col_names=TRUE)
     }
   }
 }
