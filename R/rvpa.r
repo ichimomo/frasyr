@@ -1758,7 +1758,8 @@ boo.vpa <- function(res,B=5,method="p",mean.correction=FALSE){
   R <- nrow(resid)                               # 残差の行数(=用いたデータの数)
   n <- apply(resid,1,function(x) sum(!is.na(x))) # 残差の数
   np <- res$np                                   # パラメータ数
-  rs2 <- rowSums(resid^2, na.rm=TRUE)/(n-np)
+  #rs2 <- rowSums(resid^2, na.rm=TRUE)/(n-np)
+  rs2 <- rowSums(resid^2, na.rm=TRUE)/(n-1) # see issue525@frasyr_tool
 
   res.c <- res
 
