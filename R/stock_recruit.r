@@ -2715,6 +2715,8 @@ corSR = function(resSR) {
 #' @param waa （親魚量の）年齢別体重
 #' @param maa 年齢別親魚量
 #' @param plus_group 最高齢がプラスグループかどうか
+#' @param faa 選択率（年齢の長さのベクトル）を与えると、その選択率のもとでの決定論的なMSY管理基準値（SPRmsy,SBmsy,Rmsy,Bmsy,MSY,Fmsy2F) も返す
+#' 
 #' @return 以下の要素からなるデータフレーム
 #' \describe{
 #' \item{\code{SPR0}}{F=0のときのSPR(この逆数がreplacement lineの傾き)}

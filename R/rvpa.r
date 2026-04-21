@@ -701,6 +701,13 @@ vpa <- function(
 
   if (isTRUE(tune) & is.null(index)) {print("Check!: There is no abundance index."); stop()}
 
+  # dataをすべて明示的にdata.frameに揃える
+  if(!is.data.frame(caa)) caa <- as.data.frame(caa)
+  if(!is.data.frame(maa)) maa <- as.data.frame(maa)
+  if(!is.data.frame(waa)) waa <- as.data.frame(waa)
+  if(!is.data.frame(M))   M   <- as.data.frame(M)  
+  if(!is.data.frame(waa.catch)) waa.catch <- as.data.frame(waa.catch)    
+
   years <- dimnames(caa)[[2]]  # 年
   ages <- dimnames(caa)[[1]]  # 年齢
 
