@@ -981,7 +981,7 @@ future_vpa_R <- function(naa_mat,
         set_lower_limit_catch(HCR_realized[t-1,,"wcatch"], HCR_mat[t,,"expect_wcatch"], HCR_mat[t,,"TAC_lower_CV"])
     }
       
-    # --- CV設定がある全体の上で繰越・繰入をする
+    # --- CV設定がある前提の上で繰越・繰入をする
     # TAC carry over setting
     if(has_non_na(HCR_mat[t,,"TAC_reserve_rate"]) || has_non_na(HCR_mat[t,,"TAC_reserve_amount"])){
       if(sum(HCR_mat[t,,"expect_wcatch"])==0){
@@ -1091,8 +1091,11 @@ future_vpa_R <- function(naa_mat,
                                                                      max_F=max_F,
                                                                      Pope=Pope)$x)
       F_mat[,t,which(F_max_tmp>0)] <- sweep(saa.tmp[,which(F_max_tmp>0)],2, fix_catch_multiplier, FUN="*")
-      HCR_realized[t,which(F_max_tmp>0),"beta_gamma"] <- HCR_realized[t,which(F_max_tmp>0),"beta_gamma"] *
-        fix_catch_multiplier / F_max_tmp[which(F_max_tmp>0)]
+      # HCR_realized[,,"beta_gamma"]にはすでに0.8とかの値が入っているので、それに乗じると2回0.8を掛けることになるので修正
+      # (プロットのみに影響し、計算には影響しない修正)
+      # expect_wcatchのほうにbeta, gammaの要素は入っている
+      HCR_realized[t,which(F_max_tmp>0),"beta_gamma"] <- #HCR_realized[t,which(F_max_tmp>0),"beta_gamma"] * 
+          fix_catch_multiplier / F_max_tmp[which(F_max_tmp>0)]
     }
 
     if(t<total_nyear){
