@@ -28,6 +28,7 @@ make_future_data(
   maa_year,
   maa = NULL,
   maa_fun = FALSE,
+  maa_fun_name = NA,
   start_maafun_year_name = start_biopar_year_name,
   M_year,
   M = NULL,
@@ -116,6 +117,8 @@ make_future_data(
 \item{waa_catch_fun_name}{カスタマイズされたwaa_funを使う場合、その関数のオブジェクトの名前}
 
 \item{maa_fun}{maturity ~ number の回帰式から将来のmaturityを予測する(暫定的、太平洋マダラでのみ利用)}
+
+\item{maa_fun_name}{カスタマイズされたmaa_funを使う場合、その関数のオブジェクトの名前}
 
 \item{faa_year}{将来のF(before ABC_year)を過去の平均値とする場合、平均をとる年を指定する。下のcurrentF, futureFが指定されている場合にはこの設定は無視される。}
 

@@ -712,15 +712,16 @@ test_that("density dependent maturity option",{
     #aa$input$"test" <- 1
     #expect_error(safe_call(make_future_data, aa$input))
 
+    # maaが一定の資源でmaa_funをTRUEにしてみるテスト
     data_future_maa <- redo_future(data_future_test,list(maa_fun=TRUE), only_data=TRUE)
     round(mean(data_future_maa$data$maa_rand_mat[,,1]),5) %>%
-        expect_equal(0)
-    data_future_maa$data$maa_par_mat[,1,"b0"] %>%
-        expect_equal(apply(res_vpa_org$input$dat$maa,1,mean))
+      expect_equal(0) # sd=0になるので乱数は0
+    data_future_maa$data$maa_par_mat[,1,"b0"] %>% # 切片はmaaと同じ
+      expect_equal(apply(res_vpa_org$input$dat$maa,1,mean))
     data_future_maa$data$maa_par_mat[,1,"sd"] %>% round(5) %>% as.numeric %>%
-        expect_equal(rep(0,4))
+        expect_equal(rep(0,4)) # sdはゼロ
     data_future_maa$data$maa_par_mat[,1,"b1"] %>% round(5) %>% as.numeric %>%
-        expect_equal(rep(0,4))
+        expect_equal(rep(0,4)) # 傾きはゼロ
 
     # maa&waaを置き換えてwaa_fun, maa_funをやる
     set.seed(1)
@@ -748,7 +749,10 @@ test_that("density dependent maturity option",{
 
     # 十分なテストではないがとりあえず
     res_future_maa <- future_vpa(data_future_maa$data,multi_init=1.5)
-
+    # 2018年以前にはmaaは置き換わっていないことの確認
+    xx <- apply(apply(res_future_maa$maa,c(1,2),sd),2,sum)
+    xx[as.character(1988:2017)] %>% mean() %>% expect_equal(0)
+    
     # check for waa
     tmp <- apply(res_future_maa$waa[1,,],1,sd)
     expect_equal(sum(tmp==0),30)
@@ -792,6 +796,37 @@ test_that("density dependent maturity option",{
 
     rm(waafun1)
     rm(waafun2)
+
+    # specific function for maa
+    maafun1 <<- function(t, maa, rand, naa, pars_b0, pars_b1, min_value, max_value){
+      if(all(maa[,t,]==0)){ # maaの値がすべてゼロ＝将来予測において置き換えるべきmaa
+        maa[1,t,] <- 0 # 0歳成熟率はゼロ
+        logit_maa <- function(x1){
+          x2 <- 4.70 - 2.78 * 10^(-2) * x1 # ここのパラメータを調整する
+          exp(x2)/(1+exp(x2))
+        }
+        maa[2,t,]  <- logit_maa(naa[1,t-1,]) #1歳成熟率はnaaに依存
+        maa[3:4,t,] <- 1 # 2-3歳成熟率は1
+      }
+      return(maa[,t,]) # t年のmaaだけ返す
+    }
+
+    data_future_maa3 <- redo_future(data_future_test,
+                                    list(maa_fun=TRUE, waa_fun=FALSE, waa_catch_fun=FALSE,nsim=100,
+                                         maa_fun_name="maafun1", 
+                                         fix_recruit = NULL), only_data=TRUE)
+    expect_equal(data_future_maa3$data$maa_par_mat[1,1,1], "maafun1")
+
+    res_future_maa3 <- future_vpa(data_future_maa3$data,multi_init=1.5)
+    #expect_equal(res_future_maa2$maa[,1,]*2, res_future_maa2$maa[,"2037",])
+    res_future_maa3$maa[,,1:2]
+    xx <- apply(apply(res_future_maa3$maa,c(1,2),sd),2,sum)
+    xx[as.character(1988:2017)] %>% mean() %>% expect_equal(0)
+
+    # 生で計算したものと関数からの出力が一致しているか
+    maafun1(50,res_future_maa3$maa,NA,res_future_maa3$naa,NA,NA,NA,NA) %>%
+      expect_equal(res_future_maa3$maa[,50,])
+    rm(maafun1)    
 })
 
 test_that("set_upper_limit_catch & set_lower_limit_catch",{
