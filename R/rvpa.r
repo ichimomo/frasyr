@@ -1779,7 +1779,8 @@ boo.vpa = function(res,
       resid <- log(as.matrix(index))-log(as.matrix(p.index))
     }
     n_resid <- apply(resid,1,function(x) sum(!is.na(x))) # 残差の数
-    rs2 <- rowSums(resid^2, na.rm=TRUE)/(n_resid-res$np)
+    ##rs2 <- rowSums(resid^2, na.rm=TRUE)/(n_resid-res$np)
+    rs2 <- rowSums(resid^2, na.rm=TRUE)/(n_resid-1) # パラメータ数はqの数で1つ （see issue525@frasyr_tool）
     b.index <- res$input$dat$index # ブートストラップCPUEの箱を先に作っておく
 
   } else {
