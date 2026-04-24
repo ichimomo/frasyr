@@ -3,6 +3,9 @@ library(frasyr)
 context("check ref.F") # ----
 
 test_that("ref.F (level 2)",{
+  data(res_MSY_HSL1)
+  data(res_future_HSL1)
+  data(res_vpa_example)
   load(system.file("extdata","res_vpa_pma.rda",package = "frasyr"))
 
   res_ref_f_pma_check <- ref.F(res_vpa_pma,Fcurrent=NULL,waa=NULL,maa=NULL,M=NULL,waa.catch=NULL,M.year=NULL,
