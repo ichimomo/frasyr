@@ -3095,7 +3095,8 @@ hmm_SR = function(SRdata,SR="BH",k_regime=2,gamma=0.01,b_range=NULL,p0=NULL,over
   regime_prob = (rep[["r_pred"]])
   colnames(regime_prob) = data$year
   Res$regime_prob=round(t(regime_prob),3)
-  regime=Rfast::colMaxs(regime_prob)
+  #regime=Rfast::colMaxs(regime_prob) #Rfast依存を解消するためapplyに変更
+  regime=apply(regime_prob,2,which.max)
   names(regime) = data$year
   Res$regime = regime
   Res$trans_prob = rep[["qij"]]
