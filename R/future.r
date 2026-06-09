@@ -505,8 +505,11 @@ make_future_data <- function(res_vpa,
   if(!is.null(special_setting)){
     set_name <- names(special_setting)
     for(i in seq_len(length(set_name))){
-      tmb_data[[which(set_name[[i]]==tmb_data)[[1]]]][] <- special_setting[[i]][]
-    }}
+      if(!set_name[[i]] %in% names(tmb_data))
+        stop(paste0("special_setting: '", set_name[[i]], "' は tmb_data に存在しません"))
+      tmb_data[[ set_name[[i]] ]][] <- special_setting[[i]][]
+    }
+  }
 
   return(tibble::lst(data=tmb_data,input=input))
 }
@@ -522,7 +525,7 @@ make_future_data <- function(res_vpa,
 #' @param MSE_input_data 簡易MSEを実施する場合、ABC計算するための将来予測を実施するための設定ファイル
 #' @param MSE_nsim 簡易MSEを実施する場合、ABC計算するための将来予測の繰り返し回数。
 #' @param MSE_sd 簡易MSEをする場合の加入変動の大きさ。ここをゼロにすれば決定論的な将来予測の値を得られる。その場合MSE_nsimは自動的に２に設定される。単純なモデルの場合、ここがゼロでも多分問題ない。モデル平均を使っている場合にはちゃんとした簡易MSEをすること。リサンプリングオプションの場合も使えない。
-#' @param MSE_TAC_revise 簡易MSEする場合，真のABCをいてTACをリバイスするか．何もしない場合はNA，下方修正飲みする場合は-1，上方修正飲みする場合は1, make_future_dataで設定するHCR_TAC_adjustと似ているが，こちらのほうは，B&B設定とは関係なく動く．HCRのほうは，繰入・繰越率が上限となる
+#' @param MSE_TAC_revise 簡易MSEする場合，真のABCを用いてTACをリバイスするか．何もしない場合はNA，下方修正のみする場合は-1，上方修正のみする場合は1, make_future_dataで設定するHCR_TAC_adjustと似ているが，こちらのほうは，B&B設定とは関係なく動く．HCRのほうは，繰入・繰越率が上限となる
 #' @param objective MSY:MSYの推定、PGY:PGYの値をobj_valueに入れる、percentB0:B0パーセント、何％にするかはobj_valueで指定, SSB:obj_valueで指定した特定の親魚資源量に一致するようにする
 #' @param obj_stat 目的関数を計算するときに利用する計算方法（"mean"だと平均、"median"だと中央値、"geomean"だと幾何平均）
 #' @param obj_value 目的とする値
@@ -538,7 +541,7 @@ future_vpa <- function(tmb_data,
                        objective ="MSY", # or PGY, percentB0, Bempirical
                        obj_value = 0,
                        obj_stat  ="mean",
-                       do_MSE=NULL,
+                       do_MSE=FALSE,
                        MSE_input_data=NULL,
                        MSE_nsim=NULL,
                        MSE_sd=NULL,
@@ -769,6 +772,8 @@ future_vpa_R <- function(naa_mat,
   argname <- ls()
   tmb_data <- lapply(argname,function(x) eval(parse(text=x)))
   names(tmb_data) <- argname
+
+  do_MSE <- isTRUE(do_MSE) # do_MSE=NULL (for old default option)  
 
   HCR_realized_name <- c("wcatch", "beta_gamma", "Fratio","reserved_catch","original_ABC","original_ABC_plus")
   HCR_realized <- array(0,dim=c(dim(HCR_mat)[[1]],dim(HCR_mat)[[2]],length(HCR_realized_name)),
