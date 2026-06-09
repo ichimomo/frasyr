@@ -694,8 +694,8 @@ plot_SRregime <- function (SRregime_result,xscale=1000,xlabel="SSB",yscale=1,yla
     mutate(SSB = SSB/xscale, R = R/yscale)
 
   g1 = ggplot(combined_data, aes(x=SSB,y=R,label=label)) +
-    geom_path(data=dplyr::filter(combined_data, Category=="Pred"),aes(group=Regime,colour=Regime,linetype=Regime),size=2, show.legend = show.legend)+
-    geom_path(data=dplyr::filter(combined_data, Category=="Obs"),colour="darkgray",size=1)+
+    geom_path(data=dplyr::filter(combined_data, Category=="Pred"),aes(group=Regime,colour=Regime,linetype=Regime),linewidth=2, show.legend = show.legend)+
+    geom_path(data=dplyr::filter(combined_data, Category=="Obs"),colour="darkgray",linewidth=1)+
     geom_point(data=dplyr::filter(combined_data, Category=="Obs"),aes(group=Regime,color=Regime,shape=Weight), #,fill=fill_color),
                size=3, show.legend = show.legend,shape=21) +
     scale_shape_manual(values = scaleshapeval) +
@@ -1694,18 +1694,18 @@ plot_HCR <- function(SBtarget,SBlim,SBban,Ftarget,
   #Drawing of the funciton by ggplot2
   ggplct <- ggplot(data.frame(x = c(0,1.5*SBtarget),y= c(0,1.5*Ftarget)), aes(x=x)) +
     stat_function(fun = h,lwd=1.5,color=col.multi2currf, n=5000)
-  g <- ggplct  + geom_vline(xintercept = SBtarget, size = 0.9, linetype = unlist(format_type()[1,3]), color = col.SBtarget) +
-    geom_vline(xintercept = SBlim, size = 0.9, linetype = unlist(format_type()[2,3]), color = col.SBlim) +
-    geom_vline(xintercept = SBban, size = 0.9, linetype = unlist(format_type()[3,3]), color = col.SBban) +
-    geom_hline(yintercept = Ftarget, size = 0.9, linetype = "43", color = col.Ftarget) +
-    geom_hline(yintercept = beta*Ftarget, size = 0.7, linetype = "43", color = col.betaFtarget) +
+  g <- ggplct  + geom_vline(xintercept = SBtarget, linewidth = 0.9, linetype = unlist(format_type()[1,3]), color = col.SBtarget) +
+    geom_vline(xintercept = SBlim, linewidth = 0.9, linetype = unlist(format_type()[2,3]), color = col.SBlim) +
+    geom_vline(xintercept = SBban, linewidth = 0.9, linetype = unlist(format_type()[3,3]), color = col.SBban) +
+    geom_hline(yintercept = Ftarget, linewidth = 0.9, linetype = "43", color = col.Ftarget) +
+    geom_hline(yintercept = beta*Ftarget, linewidth = 0.7, linetype = "43", color = col.betaFtarget) +
     labs(x = str_c("親魚量 (",junit,"トン)"),y = str_c("漁獲圧の比(F/",RP.label[4],")"),color = "") +
     theme_bw(base_size=12)+
     theme(legend.position="none",panel.grid = element_blank())+
     stat_function(fun = h,lwd=1,color=col.multi2currf)
 
   if(Fcurrent>0){
-    g <- g+geom_hline(yintercept = Fcurrent, size = 0.7, linetype = 1, color = "gray")+
+    g <- g+geom_hline(yintercept = Fcurrent, linewidth = 0.7, linetype = 1, color = "gray")+
       geom_label(label="Fcurrent", x=SBtarget*1.1, y=Fcurrent)
 
   }
@@ -1806,9 +1806,9 @@ plot_HCR_by_catch <- function(trace,
     ggplot()+
     geom_line(aes(x=ssb.mean/biomass.unit,y=catch_HCR/biomass.unit),lwd=1)+
     theme_SH()+
-    geom_vline(xintercept = SBtarget/biomass.unit, size = 0.9, linetype = unlist(format_type()[1,3]), color = col.SBtarget) +
-    geom_vline(xintercept = SBlim/biomass.unit, size = 0.9, linetype = unlist(format_type()[2,3]), color = col.SBlim) +
-    geom_vline(xintercept = SBban/biomass.unit, size = 0.9, linetype = unlist(format_type()[3,3]), color = col.SBban) +
+    geom_vline(xintercept = SBtarget/biomass.unit, linewidth = 0.9, linetype = unlist(format_type()[1,3]), color = col.SBtarget) +
+    geom_vline(xintercept = SBlim/biomass.unit, linewidth = 0.9, linetype = unlist(format_type()[2,3]), color = col.SBlim) +
+    geom_vline(xintercept = SBban/biomass.unit, linewidth = 0.9, linetype = unlist(format_type()[3,3]), color = col.SBban) +
     #      geom_hline(yintercept = MSY/biomass.unit,color="gray")+
     xlab(str_c("親魚量 (",junit,"トン)"))+
     ylab(str_c("漁獲量 (",junit,"トン)"))
@@ -2252,10 +2252,10 @@ plot_SRaverage <- function(data_future_MSY, res_vpa_updated, SR_plot_label, CI=0
       if(i==1) glist[[i]] <- glist[[i]] + geom_point(data=SRdata_old,mapping=aes(x=SSB,y=R),color="#92D050",shape=21,size=4,fill="#92D050")
       glist[[i]] <- glist[[i]] +
         geom_line(data=dplyr::filter(rec_expect,SR_model!="(c) Average"),
-                  aes(x=ssb,y   =L5per,color=SR_model,lty=SR_model),size=0.5)+
+                  aes(x=ssb,y   =L5per,color=SR_model,lty=SR_model),linewidth=0.5)+
         geom_line(data=dplyr::filter(rec_expect,SR_model!="(c) Average"),
-                  aes(x=ssb,y   =H5per,color=SR_model,lty=SR_model),size=0.5)+
-        geom_line(aes(x=ssb,y   =Median ,color=SR_model, lty=SR_model),size=1) +
+                  aes(x=ssb,y   =H5per,color=SR_model,lty=SR_model),linewidth=0.5)+
+        geom_line(aes(x=ssb,y   =Median ,color=SR_model, lty=SR_model),linewidth=1) +
         theme_SH() + #facet_wrap(.~SR_model)
         scale_color_hue(l=40) +
         ylab("加入量（100万尾）") + xlab("親魚量(トン)") +
