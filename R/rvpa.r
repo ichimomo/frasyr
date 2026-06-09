@@ -666,9 +666,21 @@ vpa <- function(
   no_eta_age = NULL, #etaがNULLでなく，penalty="p"で，選択率更新法を採用していて，年齢別にペナルテイーを与えたいときに，etaがかからないほうの年齢範囲
   sdreport = FALSE,
   use.equ = "new" ,#plus-groupが途中で変わる場合の計算方法の指定．従来の方法でないものを用いる場合は"new"を指定する
-  ave_S=TRUE #ヒラメ瀬戸内海のように，選択率更新法において，最終年の選択率がtf.yearで指定した年の平均のF（つまりSUM（F,a)/SUM(F,maxage))に等しいと仮定する場合．注意：tf.yearで指定した年の平均の選択率とは異なる
+  ave_S=TRUE, #ヒラメ瀬戸内海のように，選択率更新法において，最終年の選択率がtf.yearで指定した年の平均のF（つまりSUM（F,a)/SUM(F,maxage))に等しいと仮定する場合．注意：tf.yearで指定した年の平均の選択率とは異なる
+  ...
 )
 {
+
+  # 廃止した引数をdo.callでerrorにしないための手当
+  dots <- names(list(...))
+  if (length(dots)) {
+    deprecated <- c("ti.scale")              # ← 廃止した引数をここに列挙
+    dep <- intersect(dots, deprecated)
+    unk <- setdiff(dots, deprecated)
+    if (length(dep)) warning("vpa(): 廃止された引数を無視します: ", paste(dep, collapse=", "))
+    if (length(unk)) warning("vpa(): 未知の引数を無視します: ",   paste(unk, collapse=", "))
+  }
+  
   #sigma.constで引数を指定してしまったときは，sigma.constraintで引数を指定しなおしてもらうようにする
   if(length(sigma.const)>length(unique(sigma.const))){print("Try again!: please set sigma.const as sigma.constraint in the argument.");stop()}
 
@@ -680,12 +692,14 @@ vpa <- function(
   # }
 
   # inputデータをリスト化
-
   argname <- ls()  # 関数が呼び出されたばかりのときのls()は引数のみが入っている
   arglist <- lapply(argname,function(xx) eval(parse(text=xx)))
   names(arglist) <- argname
 
   if (isTRUE(TMB) & isTRUE(no.est) ) TMB <- FALSE
+
+  # 
+    
 
   # data handling
 
