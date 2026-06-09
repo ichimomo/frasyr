@@ -9,7 +9,6 @@
 #' @import stringr
 #' @import assertthat
 #' @import patchwork
-#' @import openxlsx
 #' @importFrom magrittr %>%
 #' @importFrom magrittr %T>%
 #' @importFrom dplyr filter
@@ -2943,8 +2942,8 @@ rowtapply2 <- function(a0,FUN.name){
 #'
 #' kobe.tableをさらにsummaryする
 #'
-#' @param target_threshold c(60, 50)みたいな２つの長さのベクトル。一番目はbeta=0.8のときのtargetを上回る確率、２番めは50%のときの。資源状態が良い場合には１番目の値は２番めの値よりも大きいが、資源状態が悪いと１番目の値は２番めよりも小さくなる。その場合には自動的にc(100,50)となるように置き換わる（つまりランク３は出現しない）
-#' @param risk_threshold c(0.2,15) みたいな2つの長さのベクトル。一番目はbeta=0.8のときに10年間でずっとthresholdを上回る確率、２番めは50%のとき。資源状態が良い場合には１番目の値は２番めの値よりも小さくなる。
+#' @param target_threshold c(60, 50)みたいな２つの長さのベクトル。一番目はbeta=0.8のときのtargetを上回る確率、２番めは50\%のときの。資源状態が良い場合には１番目の値は２番めの値よりも大きいが、資源状態が悪いと１番目の値は２番めよりも小さくなる。その場合には自動的にc(100,50)となるように置き換わる（つまりランク３は出現しない）
+#' @param risk_threshold c(0.2,15) みたいな2つの長さのベクトル。一番目はbeta=0.8のときに10年間でずっとthresholdを上回る確率、２番めは50\%のとき。資源状態が良い場合には１番目の値は２番めの値よりも小さくなる。
 #' @param ssbpercent_summary_year 目標管理基準値を上回るかどうかを判断する年
 #' @param ssb_summary_year パフォーマンス指標として取り出すSSBの年
 #' @param catch_summary_year パフォーマンス指標として取り出すCatchの年

@@ -14,7 +14,7 @@ future_vpa(
   objective = "MSY",
   obj_value = 0,
   obj_stat = "mean",
-  do_MSE = NULL,
+  do_MSE = FALSE,
   MSE_input_data = NULL,
   MSE_nsim = NULL,
   MSE_sd = NULL,
@@ -46,7 +46,7 @@ future_vpa(
 
 \item{MSE_sd}{簡易MSEをする場合の加入変動の大きさ。ここをゼロにすれば決定論的な将来予測の値を得られる。その場合MSE_nsimは自動的に２に設定される。単純なモデルの場合、ここがゼロでも多分問題ない。モデル平均を使っている場合にはちゃんとした簡易MSEをすること。リサンプリングオプションの場合も使えない。}
 
-\item{MSE_TAC_revise}{簡易MSEする場合，真のABCをいてTACをリバイスするか．何もしない場合はNA，下方修正飲みする場合は-1，上方修正飲みする場合は1, make_future_dataで設定するHCR_TAC_adjustと似ているが，こちらのほうは，B&B設定とは関係なく動く．HCRのほうは，繰入・繰越率が上限となる}
+\item{MSE_TAC_revise}{簡易MSEする場合，真のABCを用いてTACをリバイスするか．何もしない場合はNA，下方修正のみする場合は-1，上方修正のみする場合は1, make_future_dataで設定するHCR_TAC_adjustと似ているが，こちらのほうは，B&B設定とは関係なく動く．HCRのほうは，繰入・繰越率が上限となる}
 
 \item{SPR_target}{目標とする\%SPR。NULL以外の値の場合、過去〜将来のそれぞれの年・シミュレーションが、目標とするF\%SPRに対して何倍にあたるか(F/Ftarget)を計算して、HCR_realizedの"Fratio"に入れる。HCRが生きている年については"beta_gamma"と一致するはず。}
 
