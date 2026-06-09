@@ -629,7 +629,6 @@ vpa <- function(
   sel.update=FALSE,  # チューニングVPAにおいて，選択率を更新しながら推定
   sel.def = "max",  #  sel.update=TRUEで選択率を更新していく際に，選択率をどのように計算するか．最大値を1とするか，平均値を1にするか...
   max.dd = 0.000001,  # sel.updateの際の収束判定基準
-  ti.scale = NULL,   # 資源量の係数と切片のscaling
   tf.mat = NULL,   # terminal Fの平均をとる年の設定．0-1行列．
   eq.tf.mean = FALSE, # terminal Fの平均値を過去のFの平均値と等しくする
   no.est = FALSE,   # パラメータ推定しない．
