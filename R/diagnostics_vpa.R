@@ -549,12 +549,12 @@ do_estcheck_vpa <- function(res, n_ite = 10, sd_jitter = 1, what_plot = NULL, TM
     geom_segment(aes(x=0, xend = 4, y = result_est, yend = result_est), color = "red", size = 1.3)+
     geom_point(aes(x = initial, y = estimated), size = 5) +
     facet_wrap( ~ age) +
-    xlab("initial value") +
+    xlab("initial value of F at max age") + ylab("Estimated value")+
     theme_SH(base_size = 14)
   g2 <- ggplot(data = d_tmp[d_tmp$age == "max",]) +
     geom_segment(aes(x=0, xend = 4, y = result_lk, yend = result_lk), color = "red", size = 1.3)+
     geom_point(aes(x = initial, y = likelihood), size = 5) +
-    ylab("log Likelihood") + xlab("initial value of F of age Max") +
+    ylab("log Likelihood") + xlab("initial value of F at max age") +
     theme_SH(base_size = 14)
 
   if((range(d_tmp[d_tmp$age=="max","likelihood"], na.rm=TRUE) %>% diff) < 5){

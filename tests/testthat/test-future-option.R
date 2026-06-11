@@ -35,5 +35,48 @@ test_that("utility function check",{
     
 })
 
+test_that("make_future_data: special_setting で指定配列を上書きできる (level 1)", {
+  data(res_vpa_org)
+  data(res_sr_HSL2)
 
+  base_args <- list(
+    res_vpa = res_vpa_org, nsim = 5, nyear = 5,
+    future_initial_year_name = 2017,
+    start_F_year_name = 2018, start_biopar_year_name = 2018,
+    start_random_rec_year_name = 2018,
+    waa_year = 2015:2017, waa_catch_year = 2015:2017,
+    maa_year = 2015:2017, M_year = 2015:2017, faa_year = 2015:2017,
+    start_ABC_year_name = 2019, res_SR = res_sr_HSL2, silent = TRUE
+  )
 
+  # 上書きなしの基準データ
+  d0 <- do.call(make_future_data, base_args)
+
+  # M_mat と同じ形・全要素を sentinel 値で埋めた置換配列
+  M_replace <- d0$data$M_mat
+  M_replace[] <- 0.123
+
+  d1 <- do.call(make_future_data,
+                c(base_args, list(special_setting = list(M_mat = M_replace))))
+
+  # special_setting で M_mat が上書きされている
+  expect_equal(as.numeric(d1$data$M_mat), rep(0.123, length(d1$data$M_mat)))
+  # 他の配列（naa_mat）は基準と一致＝副作用がない
+  expect_equal(d1$data$naa_mat, d0$data$naa_mat)
+})
+
+test_that("make_future_data: special_setting に存在しない名前を渡すとエラー (level 1)", {
+  data(res_vpa_org); data(res_sr_HSL2)
+  expect_error(
+    make_future_data(
+      res_vpa = res_vpa_org, nsim = 2, nyear = 3,
+      future_initial_year_name = 2017,
+      start_F_year_name = 2018, start_biopar_year_name = 2018,
+      start_random_rec_year_name = 2018,
+      waa_year = 2015:2017, waa_catch_year = 2015:2017,
+      maa_year = 2015:2017, M_year = 2015:2017, faa_year = 2015:2017,
+      start_ABC_year_name = 2019, res_SR = res_sr_HSL2, silent = TRUE,
+      special_setting = list(no_such_array = 1)
+    )
+  )
+})

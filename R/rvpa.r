@@ -629,7 +629,6 @@ vpa <- function(
   sel.update=FALSE,  # チューニングVPAにおいて，選択率を更新しながら推定
   sel.def = "max",  #  sel.update=TRUEで選択率を更新していく際に，選択率をどのように計算するか．最大値を1とするか，平均値を1にするか...
   max.dd = 0.000001,  # sel.updateの際の収束判定基準
-  ti.scale = NULL,   # 資源量の係数と切片のscaling
   tf.mat = NULL,   # terminal Fの平均をとる年の設定．0-1行列．
   eq.tf.mean = FALSE, # terminal Fの平均値を過去のFの平均値と等しくする
   no.est = FALSE,   # パラメータ推定しない．
@@ -667,9 +666,21 @@ vpa <- function(
   no_eta_age = NULL, #etaがNULLでなく，penalty="p"で，選択率更新法を採用していて，年齢別にペナルテイーを与えたいときに，etaがかからないほうの年齢範囲
   sdreport = FALSE,
   use.equ = "new" ,#plus-groupが途中で変わる場合の計算方法の指定．従来の方法でないものを用いる場合は"new"を指定する
-  ave_S=TRUE #ヒラメ瀬戸内海のように，選択率更新法において，最終年の選択率がtf.yearで指定した年の平均のF（つまりSUM（F,a)/SUM(F,maxage))に等しいと仮定する場合．注意：tf.yearで指定した年の平均の選択率とは異なる
+  ave_S=TRUE, #ヒラメ瀬戸内海のように，選択率更新法において，最終年の選択率がtf.yearで指定した年の平均のF（つまりSUM（F,a)/SUM(F,maxage))に等しいと仮定する場合．注意：tf.yearで指定した年の平均の選択率とは異なる
+  ...
 )
 {
+
+  # 廃止した引数をdo.callでerrorにしないための手当
+  dots <- names(list(...))
+  if (length(dots)) {
+    deprecated <- c("ti.scale")              # ← 廃止した引数をここに列挙
+    dep <- intersect(dots, deprecated)
+    unk <- setdiff(dots, deprecated)
+    if (length(dep)) warning("vpa(): 廃止された引数を無視します: ", paste(dep, collapse=", "))
+    if (length(unk)) warning("vpa(): 未知の引数を無視します: ",   paste(unk, collapse=", "))
+  }
+  
   #sigma.constで引数を指定してしまったときは，sigma.constraintで引数を指定しなおしてもらうようにする
   if(length(sigma.const)>length(unique(sigma.const))){print("Try again!: please set sigma.const as sigma.constraint in the argument.");stop()}
 
@@ -681,12 +692,14 @@ vpa <- function(
   # }
 
   # inputデータをリスト化
-
   argname <- ls()  # 関数が呼び出されたばかりのときのls()は引数のみが入っている
   arglist <- lapply(argname,function(xx) eval(parse(text=xx)))
   names(arglist) <- argname
 
   if (isTRUE(TMB) & isTRUE(no.est) ) TMB <- FALSE
+
+  # 
+    
 
   # data handling
 
@@ -700,6 +713,13 @@ vpa <- function(
   if(is.null(dat$waa.catch)) waa.catch <- waa else waa.catch <- dat$waa.catch
 
   if (isTRUE(tune) & is.null(index)) {print("Check!: There is no abundance index."); stop()}
+
+  # dataをすべて明示的にdata.frameに揃える
+  if(!is.data.frame(caa)) caa <- as.data.frame(caa)
+  if(!is.data.frame(maa)) maa <- as.data.frame(maa)
+  if(!is.data.frame(waa)) waa <- as.data.frame(waa)
+  if(!is.data.frame(M))   M   <- as.data.frame(M)  
+  if(!is.data.frame(waa.catch)) waa.catch <- as.data.frame(waa.catch)    
 
   years <- dimnames(caa)[[2]]  # 年
   ages <- dimnames(caa)[[1]]  # 年齢
@@ -1772,7 +1792,8 @@ boo.vpa = function(res,
       resid <- log(as.matrix(index))-log(as.matrix(p.index))
     }
     n_resid <- apply(resid,1,function(x) sum(!is.na(x))) # 残差の数
-    rs2 <- rowSums(resid^2, na.rm=TRUE)/(n_resid-res$np)
+    ##rs2 <- rowSums(resid^2, na.rm=TRUE)/(n_resid-res$np)
+    rs2 <- rowSums(resid^2, na.rm=TRUE)/(n_resid-1) # パラメータ数はqの数で1つ （see issue525@frasyr_tool）
     b.index <- res$input$dat$index # ブートストラップCPUEの箱を先に作っておく
 
   } else {

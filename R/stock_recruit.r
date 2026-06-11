@@ -531,6 +531,7 @@ fit.SR <- function(SRdata,
   Res$AIC <- -2*loglik+2*k
   Res$AICc <- Res$AIC+2*k*(k+1)/(NN-k-1)
   Res$BIC <- -2*loglik+k*log(NN)
+  Res$sd.marginal <- Res$pars$sd/sqrt(1-Res$pars$rho^2)
 
   if(!is.null(bio_par)){
     if(SR!="Mesnil") Res$steepness <- calc_steepness(SR=SR,Res$pars,bio_par$M,bio_par$waa,bio_par$maa,plus_group=plus_group) else{ #add gamma to Res$pars if SR=Mesnil
@@ -2715,6 +2716,8 @@ corSR = function(resSR) {
 #' @param waa （親魚量の）年齢別体重
 #' @param maa 年齢別親魚量
 #' @param plus_group 最高齢がプラスグループかどうか
+#' @param faa 選択率（年齢の長さのベクトル）を与えると、その選択率のもとでの決定論的なMSY管理基準値（SPRmsy,SBmsy,Rmsy,Bmsy,MSY,Fmsy2F) も返す
+#' 
 #' @return 以下の要素からなるデータフレーム
 #' \describe{
 #' \item{\code{SPR0}}{F=0のときのSPR(この逆数がreplacement lineの傾き)}
@@ -3098,7 +3101,8 @@ hmm_SR = function(SRdata,SR="BH",k_regime=2,gamma=0.01,b_range=NULL,p0=NULL,over
   regime_prob = (rep[["r_pred"]])
   colnames(regime_prob) = data$year
   Res$regime_prob=round(t(regime_prob),3)
-  regime=Rfast::colMaxs(regime_prob)
+  #regime=Rfast::colMaxs(regime_prob) #Rfast依存を解消するためapplyに変更
+  regime=apply(regime_prob,2,which.max)
   names(regime) = data$year
   Res$regime = regime
   Res$trans_prob = rep[["qij"]]

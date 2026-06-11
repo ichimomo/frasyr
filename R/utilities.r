@@ -9,7 +9,6 @@
 #' @import stringr
 #' @import assertthat
 #' @import patchwork
-#' @import openxlsx
 #' @importFrom magrittr %>%
 #' @importFrom magrittr %T>%
 #' @importFrom dplyr filter
@@ -1630,39 +1629,6 @@ convert_SR_tibble <- function(res_SR){
   return(resSRtibble)
 }
 
-#' 管理基準値の表を作成する
-#'
-#' @param refs_base est.MSYから得られる管理基準値の表
-#' @encoding UTF-8
-#'
-#' @export
-#'
-
-make_RP_table <- function(refs_base){
-  #    require(formattable)
-  #    require(tidyverse,quietly=TRUE)
-  table_output <- refs_base %>%
-    select(-RP_name) %>% # どの列を表示させるか選択する
-    # 各列の有効数字を指定
-    mutate(SSB=round(SSB,-floor(log10(min(SSB)))),
-           SSB2SSB0=round(SSB2SSB0,2),
-           Catch=round(Catch,-floor(log10(min(Catch)))),
-           Catch.CV=round(Catch.CV,2),
-           U=round(U,2),
-           Fref2Fcurrent=round(Fref2Fcurrent,2)) %>%
-    rename("管理基準値"=RP.definition,"親魚資源量"=SSB,"B0に対する比"=SSB2SSB0,
-           "漁獲量"=Catch,"漁獲量の変動係数"=Catch.CV,"漁獲率"=U,"努力量の乗数"=Fref2Fcurrent)
-
-  table_output  %>%
-    # 表をhtmlで出力
-    formattable::formattable(list(`親魚資源量`=color_bar("olivedrab"),
-                                       `漁獲量`=color_bar("steelblue"),
-                                       `漁獲率`=color_bar("orange"),
-                                       `努力量の乗数`=color_bar("tomato")))
-
-  #    return(table_output)
-
-}
 
 #' 管理基準値表から目的の管理基準値を取り出す関数
 #'
@@ -2432,114 +2398,6 @@ calc_future_perSPR <- function(fout=NULL,
   }
 }
 
-#' kobeIItable から任意の表を指名して取り出す
-#'
-#' @param kobeII_table \code{make_kobeII_table}の出力
-#' @param name \code{kobeII_table}の要素名
-#'
-#' @encoding UTF-8
-pull_var_from_kobeII_table <- function(kobeII_table, name) {
-  table <- kobeII.table[[name]]
-  table %>%
-    dplyr::arrange(desc(beta)) %>%
-    dplyr::select(-HCR_name, -stat_name)
-}
-
-#' kobeIItableから取り出した表を整形
-#'
-#' - 報告書に不要な列を除去する
-#' - 単位を千トンに変換
-#' @param beta_table \code{pull_var_from_kobeII_table}で取得した表
-#' @param divide_by 表の値をこの値で除する．トンを千トンにする場合には1000
-#' @param round TRUEなら値を丸める．漁獲量は現状整数表示なのでデフォルトはTRUE
-format_beta_table <- function(beta_table, divide_by = 1, round = TRUE) {
-  beta   <- beta_table %>%
-    dplyr::select(beta) %>%
-    magrittr::set_colnames("\u03B2") # greek beta in unicode
-  values <- beta_table %>%
-    dplyr::select(-beta) / divide_by
-  if (round == TRUE) return(cbind(beta, round(values)))
-  cbind(beta, values)
-}
-
-#' 値の大小に応じて表の背景にグラデーションをつける
-#' @param beta_table \code{format_beta_table}で整形したβの表
-#' @param color 表の背景となる任意の色
-colorize_table <- function(beta_table, color) {
-  beta_table %>%
-    formattable::formattable(list(formattable::area(col = -1) ~
-                                    formattable::color_tile("white", color)))
-}
-
-#' 表を画像として保存
-#'
-#' # @inheritParams \code{\link{formattable::as.htmlwidget}}
-#' # @inheritParams \code{\link{htmltools::html_print}}
-#' # @inheritParams \code{\link{webshot::webshot}}
-#' @param table ファイルとして保存したい表
-#' @examples
-#' \dontrun{
-#' your_table %>%
-#'  export_formattable(file = "foo.png")
-#' }
-#' @export
-export_formattable <- function(table, file, width = "100%", height = NULL,
-                               background = "white", delay = 0.1) {
-  widget <- formattable::as.htmlwidget(table, width = width, height = height)
-  path   <- htmltools::html_print(widget, background = background, viewer = NULL)
-  url    <- paste0("file:///", gsub("\\\\", "/", normalizePath(path)))
-  webshot::webshot(url,
-                   file = file,
-                   selector = ".formattable_widget",
-                   delay = delay)
-}
-
-#' kobeIItableから任意の表を取得し画像として保存
-#'
-#' @inheritParams \code{\link{pull_var_from_kobeII_table}}
-#' @inheritParams \code{\link{format_beta_table}}
-#' @inheritParams \code{\link{colorize_table}}
-#' @inheritParams \code{\link{export_formattable}}
-export_kobeII_table <- function(name, divide_by, color, fname, kobeII_table) {
-  kobeII_table %>%
-    pull_var_from_kobeII_table(name) %>%
-    format_beta_table(divide_by = divide_by) %>%
-    colorize_table(color) %>%
-    export_formattable(fname)
-}
-
-#' β調整による管理効果を比較する表を画像として一括保存
-#'
-#' @inheritParams \code{\link{pull_var_from_kobeII_table}}
-#' @param fname_ssb 「平均親魚量」の保存先ファイル名
-#' @param fname_catch 「平均漁獲量」の保存先ファイル名
-#' @param fname_ssb_above_target 「親魚量が目標管理基準値を上回る確率」の保存先ファイル名
-#' @param fname_ssb_above_limit 「親魚量が限界管理基準値を上回る確率」の保存先ファイル名
-#' @examples
-#' \dontrun{
-#' export_kobeII_tables(kobeII.table)
-#' }
-#' @export
-export_kobeII_tables <- function(kobeII_table,
-                                 fname_ssb = "tbl_ssb.png",
-                                 fname_catch = "tbl_catch.png",
-                                 fname_ssb_above_target = "tbl_ssb>target.png",
-                                 fname_ssb_above_limit = "tbl_ssb>limit.png") {
-  blue   <- "#96A9D8"
-  green  <- "#B3CE94"
-  yellow <- "#F1C040"
-
-  purrr::pmap(list(name = c("ssb.mean", "catch.mean",
-                            "prob.over.ssbtarget", "prob.over.ssblimit"),
-                   divide_by = c(1000, 1000, 1, 1),
-                   color = c(blue, green, yellow, yellow),
-                   fname = c(fname_ssb, fname_catch,
-                             fname_ssb_above_target, fname_ssb_above_limit)),
-              .f = export_kobeII_table,
-              kobeII_table = kobeII_table)
-}
-
-
 
 
 #'
@@ -3234,8 +3092,8 @@ rowtapply2 <- function(a0,FUN.name){
 #'
 #' kobe.tableをさらにsummaryする
 #'
-#' @param target_threshold c(60, 50)みたいな２つの長さのベクトル。一番目はbeta=0.8のときのtargetを上回る確率、２番めは50%のときの。資源状態が良い場合には１番目の値は２番めの値よりも大きいが、資源状態が悪いと１番目の値は２番めよりも小さくなる。その場合には自動的にc(100,50)となるように置き換わる（つまりランク３は出現しない）
-#' @param risk_threshold c(0.2,15) みたいな2つの長さのベクトル。一番目はbeta=0.8のときに10年間でずっとthresholdを上回る確率、２番めは50%のとき。資源状態が良い場合には１番目の値は２番めの値よりも小さくなる。
+#' @param target_threshold c(60, 50)みたいな２つの長さのベクトル。一番目はbeta=0.8のときのtargetを上回る確率、２番めは50\%のときの。資源状態が良い場合には１番目の値は２番めの値よりも大きいが、資源状態が悪いと１番目の値は２番めよりも小さくなる。その場合には自動的にc(100,50)となるように置き換わる（つまりランク３は出現しない）
+#' @param risk_threshold c(0.2,15) みたいな2つの長さのベクトル。一番目はbeta=0.8のときに10年間でずっとthresholdを上回る確率、２番めは50\%のとき。資源状態が良い場合には１番目の値は２番めの値よりも小さくなる。
 #' @param ssbpercent_summary_year 目標管理基準値を上回るかどうかを判断する年
 #' @param ssb_summary_year パフォーマンス指標として取り出すSSBの年
 #' @param catch_summary_year パフォーマンス指標として取り出すCatchの年
