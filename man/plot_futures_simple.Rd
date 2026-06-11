@@ -3,7 +3,7 @@
 \encoding{UTF-8}
 \name{plot_futures_simple}
 \alias{plot_futures_simple}
-\title{複数の将来予測の結果をプロットする（ggplotは使わず）}
+\title{Plot multiple future projection results without ggplot}
 \usage{
 plot_futures_simple(
   fres.list,
@@ -16,8 +16,8 @@ plot_futures_simple(
 )
 }
 \arguments{
-\item{fres.list}{future.vpaからの出力結果をリストで並べたもの}
+\item{fres.list}{List of future projection results from `future.vpa`.}
 }
 \description{
-複数の将来予測の結果をプロットする（ggplotは使わず）
+Plot multiple future projection results without ggplot
 }

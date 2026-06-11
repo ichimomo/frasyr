@@ -701,6 +701,7 @@ test_that("HCR_default",{
 context("get_wcatch") # ----
 
 test_that("get_wcatch",{
+  data(res_future_HSL2)
   expect_equal(get_wcatch(res_future_HSL2), apply(res_future_HSL2$wcaa,c(2,3),sum))
 })
 

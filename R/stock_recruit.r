@@ -146,7 +146,7 @@ validate_sr <- function(SR = NULL, method = NULL, AR = NULL, out.AR = NULL, res_
   if (!is.null(SR)) {
     assertthat::assert_that(
       length(SR) == 1,
-      SR %in% c("HS", "BH", "RI","Mesnil", "Shepherd", "Cushing","BHS")
+      SR %in% c("HS", "BH", "RI","Mesnil", "Shepherd", "Cushing","BHS","Const")
     )
   }
   if (!is.null(method)) {
@@ -348,7 +348,7 @@ fit.SR <- function(SRdata,
           rss <- w[1]*resid2[1]^2*(1-rho^2)
           for(i in 2:N) rss <- rss + w[i]*resid2[i]^2
           sd <-  sqrt(rss/NN)
-          sd2 <- c(sd/sqrt(1-rho^2), rep(sd,N-1))          
+          sd2 <- c(sd/sqrt(1-rho^2), rep(sd,N-1))
           obj <- -sum(w*dnorm(resid2,-0.5*sd2^2,sd2,log=TRUE))
         }
       } else {
@@ -2780,6 +2780,11 @@ calc_steepness = function(SR="HS",rec_pars,M,waa,maa,plus_group=TRUE,faa = NULL,
       }
       h = (SB0-rec_b)/SB0
     }
+    if (SR == "Const") {
+      R0 = rec_pars$a
+      SB0 = R0*SPR0
+      h = 1
+    }
     if (SR == "Mesnil") {
       gamma <- rec_pars$gamma
       K = sqrt(rec_b^2+gamma^2/4)
@@ -2924,14 +2929,14 @@ tryall_SR <- function(data_SR, plus_group=TRUE, bio_par=NULL, tol=FALSE, detail=
   SRmodel.list$pars <- purrr::map(allres, function(x) x$pars)
   result.list <- SRmodel.list %>%
     unnest(col=pars) %>%
-    left_join(tibble(id=as.character(1:3),AR.type=c("non","outer","inner"))) 
-  
+    left_join(tibble(id=as.character(1:3),AR.type=c("non","outer","inner")))
+
   if(detail==TRUE){
    SRmodel.list <- SRmodel.list %>% mutate(model=purrr::map(allres, function(x) x$model))  %>%
-    unnest(col=model) 
+    unnest(col=model)
    result.list$model <- SRmodel.list$model
   }
-  
+
   return(arrange(result.list, AICc, AR.type))
 
 }

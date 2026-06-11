@@ -1124,17 +1124,320 @@ plot_futures <- function(vpares=NULL,
 
   return(g1)
 }
-
-
-#' 複数の将来予測の結果をプロットする（ggplotは使わず）
+#' Plot retrospective assessment and future projection results
 #'
-#' @param fres.list future.vpaからの出力結果をリストで並べたもの
+#' This is a data-first variant of [plot_futures()] for comparing future
+#' projection objects from multiple assessment years. Lines are split at each
+#' assessment terminal year: VPA assessment years are drawn as solid lines and
+#' future projection years are drawn as dotted lines.
+#'
+#' @param future.list List of future projection objects.
+#' @param future.name Character vector used for scenario labels. Defaults to
+#'   `names(future.list)`.
+#' @param assessment.years Numeric vector of assessment years, in the same order
+#'   as `future.list`. The terminal year is `assessment.years - 1` unless
+#'   `terminal.years` is supplied.
+#' @param terminal.years Numeric vector of terminal years for each scenario.
+#' @param CI_range Numeric vector of two probabilities used for prediction
+#'   intervals.
+#' @param maxyear Maximum year to show. If `NULL`, all years are shown.
+#' @param minyear Minimum year to show. If `NULL`, all years are shown.
+#' @param what.plot Statistics to plot. See [plot_futures()].
+#' @param biomass.unit Unit divisor for biomass and catch values.
+#' @param number.unit Unit divisor for recruitment values.
+#' @param number.name Unit name for recruitment.
+#' @param RP_name Labels for reference points: Btarget, Blimit, Bban, Fmsy, MSY,
+#'   and Umsy.
+#' @param Btarget,Blimit,Bban Biomass reference points.
+#' @param MSY,Umsy Catch and exploitation-rate reference points.
+#' @param is.plot.CIrange Logical. If `TRUE`, draw prediction interval ribbons.
+#' @param use_median Logical. If `TRUE`, draw medians instead of means.
+#' @param ncol Number of facet columns.
+#' @param legend.position Legend position passed to [theme_SH()].
+#' @param font.size Base font size.
+#' @param latest.name Scenario to draw with a thicker line. Defaults to the first
+#'   future scenario.
+#' @param xlab X-axis label.
+#'
+#' @return A ggplot object. The plotting data are stored in
+#'   `attr(plot, "plot_data")`.
 #' @encoding UTF-8
-#'
-#'
-#'
 #' @export
+plot_futures2 <- function(future.list,
+                          future.name = names(future.list),
+                          assessment.years = NULL,
+                          terminal.years = NULL,
+                          CI_range = c(0.1, 0.9),
+                          maxyear = NULL,
+                          minyear = NULL,
+                          what.plot = c("Recruitment", "biomass", "SSB", "catch", "U", "Fratio"),
+                          biomass.unit = 1,
+                          number.unit = 1,
+                          number.name = "",
+                          RP_name = c("Btarget", "Blimit", "Bban", "Fmsy", "MSY", "Umsy"),
+                          Btarget = NA,
+                          Blimit = NA,
+                          Bban = NA,
+                          MSY = NA,
+                          Umsy = NA,
+                          is.plot.CIrange = TRUE,
+                          use_median = FALSE,
+                          ncol = 2,
+                          legend.position = "top",
+                          font.size = 15,
+                          latest.name = NULL,
+                          xlab = "漁期年") {
 
+  if (is.null(future.list) || length(future.list) == 0) {
+    stop("`future.list` must contain at least one future projection object.", call. = FALSE)
+  }
+
+  for (i in seq_along(future.list)) {
+    if ("future_new" %in% class(future.list[[i]])) {
+      future.list[[i]] <- format_to_old_future(future.list[[i]])
+    }
+  }
+
+  if (is.null(future.name)) {
+    future.name <- paste0("s", seq_along(future.list))
+  }
+  if (length(future.name) != length(future.list)) {
+    stop("`future.name` must have the same length as `future.list`.", call. = FALSE)
+  }
+  names(future.list) <- future.name
+
+  if (length(RP_name) < 6) {
+    default_RP_name <- c("Btarget", "Blimit", "Bban", "Fmsy", "MSY", "Umsy")
+    default_RP_name[seq_along(RP_name)] <- RP_name
+    RP_name <- default_RP_name
+  }
+
+  if (is.null(terminal.years)) {
+    if (is.null(assessment.years)) {
+      assessment.years <- suppressWarnings(as.numeric(stringr::str_extract(future.name, "^\\d{4}")))
+    }
+    if (length(assessment.years) != length(future.list) || any(is.na(assessment.years))) {
+      stop("Specify `assessment.years` or `terminal.years` for every future object.", call. = FALSE)
+    }
+    terminal.years <- assessment.years - 1
+  }
+  if (length(terminal.years) != length(future.list)) {
+    stop("`terminal.years` must have the same length as `future.list`.", call. = FALSE)
+  }
+  terminal_tbl <- tibble::tibble(
+    scenario = future.name,
+    terminal_year = as.numeric(terminal.years)
+  )
+
+  junit <- c("", "十", "百", "千", "万")[log10(biomass.unit) + 1]
+  rename_list <- tibble::tibble(
+    stat = c("Recruitment", "SSB", "biomass", "cbiomass", "catch", "beta_gamma", "U", "Fratio"),
+    jstat = c(
+      stringr::str_c("加入尾数(", number.name, ")"),
+      stringr::str_c("親魚量 (", junit, "トン)"),
+      stringr::str_c("資源量 (", junit, "トン)"),
+      stringr::str_c("漁獲資源量 (", junit, "トン)"),
+      stringr::str_c("漁獲量 (", junit, "トン)"),
+      stringr::str_c("beta_gamma(F/", RP_name[4], ")"),
+      "漁獲割合(%)",
+      stringr::str_c("漁獲圧の比(F/", RP_name[4], ")")
+    )
+  ) %>%
+    dplyr::mutate(unit = dplyr::case_when(
+      stat %in% c("SSB", "biomass", "cbiomass", "catch") ~ biomass.unit,
+      stat == "Recruitment" ~ number.unit,
+      stat == "U" ~ 0.01,
+      TRUE ~ 1
+    )) %>%
+    dplyr::filter(stat %in% what.plot)
+
+  future_tibble <- purrr::map_dfr(future.list, convert_future_table, .id = "scenario") %>%
+    dplyr::filter(stat %in% rename_list$stat) %>%
+    dplyr::left_join(rename_list, by = "stat") %>%
+    dplyr::mutate(
+      year = as.numeric(year),
+      value = value / unit,
+      stat = factor(stat, levels = rename_list$stat),
+      jstat = factor(jstat, levels = rename_list$jstat)
+    )
+
+  if (is.character(future_tibble$sim)) {
+    future_tibble <- future_tibble %>%
+      dplyr::mutate(sim = as.numeric(gsub("\\D", "", sim)))
+  }
+
+  plot_data <- future_tibble %>%
+    dplyr::group_by(scenario, year, stat, jstat) %>%
+    dplyr::summarise(
+      low = stats::quantile(value, CI_range[1], na.rm = TRUE),
+      high = stats::quantile(value, CI_range[2], na.rm = TRUE),
+      median = stats::median(value, na.rm = TRUE),
+      mean = mean(value, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    dplyr::left_join(terminal_tbl, by = "scenario") %>%
+    dplyr::mutate(
+      Type = dplyr::if_else(year <= terminal_year, "評価", "将来予測")
+    )
+
+  terminal_rows <- plot_data %>%
+    dplyr::filter(year == terminal_year) %>%
+    dplyr::mutate(Type = "将来予測")
+
+  plot_data <- dplyr::bind_rows(plot_data, terminal_rows) %>%
+    dplyr::mutate(
+      value = if (isTRUE(use_median)) median else mean,
+      Type = factor(Type, levels = c("評価", "将来予測", "基準値"))
+    )
+
+  ref_data <- tibble::tibble(jstat = character(), value = numeric(), scenario = character())
+  if ("SSB" %in% what.plot) {
+    ref_data <- dplyr::bind_rows(
+      ref_data,
+      tibble::tibble(
+        jstat = dplyr::filter(rename_list, stat == "SSB") %>% dplyr::pull(jstat),
+        value = c(Btarget, Blimit, Bban) / biomass.unit,
+        scenario = RP_name[1:3]
+      )
+    )
+  }
+  if ("catch" %in% what.plot) {
+    ref_data <- dplyr::bind_rows(
+      ref_data,
+      tibble::tibble(
+        jstat = dplyr::filter(rename_list, stat == "catch") %>% dplyr::pull(jstat),
+        value = MSY / biomass.unit,
+        scenario = RP_name[5]
+      )
+    )
+  }
+  if ("U" %in% what.plot) {
+    ref_data <- dplyr::bind_rows(
+      ref_data,
+      tibble::tibble(
+        jstat = dplyr::filter(rename_list, stat == "U") %>% dplyr::pull(jstat),
+        value = Umsy,
+        scenario = RP_name[6]
+      )
+    )
+  }
+  if ("Fratio" %in% what.plot) {
+    ref_data <- dplyr::bind_rows(
+      ref_data,
+      tibble::tibble(
+        jstat = dplyr::filter(rename_list, stat == "Fratio") %>% dplyr::pull(jstat),
+        value = 1,
+        scenario = RP_name[4]
+      )
+    )
+  }
+  ref_data <- ref_data %>%
+    dplyr::filter(!is.na(value), !is.na(scenario), scenario != "") %>%
+    dplyr::mutate(
+      jstat = factor(jstat, levels = rename_list$jstat),
+      Type = factor("基準値", levels = c("評価", "将来予測", "基準値"))
+    )
+
+  if (is.null(minyear)) {
+    minyear <- min(plot_data$year, na.rm = TRUE)
+  }
+  if (is.null(maxyear)) {
+    maxyear <- max(plot_data$year, na.rm = TRUE)
+  }
+  plot_data <- plot_data %>%
+    dplyr::filter(year >= minyear, year <= maxyear)
+
+  ggColorHue <- function(n, l = 65) {
+    hues <- seq(15, 375, length = n + 1)
+    grDevices::hcl(h = hues, l = l, c = 100)[seq_len(n)]
+  }
+
+  ref_names <- unique(ref_data$scenario)
+  scenario_levels <- c(ref_names, future.name)
+  future_cols <- ggColorHue(length(future.name))
+  ref_cols <- c("#00533E", "#edb918", "#C73C2E", "blue4", "#000001", "#000002")
+  names(ref_cols) <- RP_name
+  color_values <- c(ref_cols[ref_names], stats::setNames(future_cols, future.name))
+  color_values <- color_values[!is.na(names(color_values))]
+
+  if (is.null(latest.name)) {
+    latest.name <- future.name[1]
+  }
+  size_values <- stats::setNames(rep(0.5, length(scenario_levels)), scenario_levels)
+  size_values[latest.name] <- 1.1
+  size_values[ref_names] <- 0.5
+
+  plot_data <- plot_data %>%
+    dplyr::mutate(Scenario = factor(scenario, levels = scenario_levels))
+  ref_data <- ref_data %>%
+    dplyr::mutate(Scenario = factor(scenario, levels = scenario_levels))
+
+  plot_years <- seq(minyear, maxyear)
+  if (nrow(ref_data) > 0) {
+    ref_plot_data <- ref_data[rep(seq_len(nrow(ref_data)), each = length(plot_years)), ]
+    ref_plot_data$year <- rep(plot_years, times = nrow(ref_data))
+    ref_plot_data$low <- NA_real_
+    ref_plot_data$high <- NA_real_
+    ref_plot_data$median <- ref_plot_data$value
+    ref_plot_data$mean <- ref_plot_data$value
+    ref_plot_data$stat <- NA
+    ref_plot_data$terminal_year <- NA_real_
+  } else {
+    ref_plot_data <- ref_data
+  }
+
+  g1 <- ggplot2::ggplot(plot_data, ggplot2::aes(x = year, y = value))
+
+  if (isTRUE(is.plot.CIrange)) {
+    g1 <- g1 +
+      ggplot2::geom_ribbon(
+        ggplot2::aes(ymin = low, ymax = high, fill = Scenario, group = Scenario),
+        alpha = 0.3,
+        colour = NA
+      )
+  }
+
+  g1 <- g1 +
+    ggplot2::geom_line(
+      ggplot2::aes(colour = Scenario, linetype = Type, size = Scenario, group = interaction(Scenario, Type))
+    )
+
+  if (nrow(ref_data) > 0) {
+    g1 <- g1 +
+      ggplot2::geom_hline(
+        data = ref_data,
+        ggplot2::aes(yintercept = value, colour = Scenario, linetype = Type, size = Scenario)
+      )
+  }
+
+  g1 <- g1 +
+    ggplot2::facet_wrap(~jstat, ncol = ncol, scales = "free_y") +
+    ggplot2::scale_y_continuous(limits = c(0, NA), labels = scales::comma) +
+    ggplot2::scale_colour_manual(name = "", values = color_values, drop = FALSE) +
+    ggplot2::scale_fill_manual(name = "", values = color_values, drop = FALSE) +
+    ggplot2::scale_linetype_manual(name = "", values = c("評価" = "solid", "将来予測" = "dotted", "基準値" = "dashed")) +
+    ggplot2::scale_size_manual(name = "", values = size_values, drop = FALSE) +
+    theme_SH(legend.position = legend.position, base_size = font.size) +
+    ggplot2::xlab(xlab) +
+    ggplot2::ylab("") +
+    ggplot2::guides(
+      fill = "none",
+      size = "none",
+      colour = ggplot2::guide_legend(order = 1, override.aes = list(linetype = "solid", size = 0.7)),
+      linetype = ggplot2::guide_legend(order = 2)
+    )
+
+  attr(g1, "plot_data") <- dplyr::bind_rows(plot_data, ref_plot_data)
+  attr(g1, "colour_values") <- color_values
+
+  g1
+}
+
+#' Plot multiple future projection results without ggplot
+#'
+#' @param fres.list List of future projection results from `future.vpa`.
+#' @encoding UTF-8
+#' @export
 plot_futures_simple <- function(fres.list,conf=c(0.1,0.5,0.9),target="SSB",legend.text="",xlim.tmp=NULL,y.scale=1,det.run=TRUE){
 
   if(legend.text=="") legend.text <- names(fres.list)
@@ -2169,6 +2472,52 @@ plot_worm <- function(kobe_data){
     g_worm
 
 }
+
+#' @encoding UTF-8
+#' @export
+
+
+plot_worm2 <- function(kobe_data,nrow=1){
+
+  #  HCR_selection <- read_csv("HCR_selection.csv") %>%
+  #    rename(HCR_category="HCR category",
+  #           num=`Serial number`,
+  #           stock=`Appied stock`) %>%
+  #    dplyr::filter(!is.na(HCR_category)) %>%
+  #    mutate(size=ifelse(Type=="B"|Type=="SS", 3, 1)) %>%
+  #    mutate(size=factor(size))
+
+  mean_data <- bind_rows(kobe_data$catch.median,
+                         kobe_data$ssb.median  ,
+                         kobe_data$ssb.lower05percent,
+                         kobe_data$ssb.upper95percent) %>%
+    pivot_longer(cols=c(-HCR_name,-beta,-stat_name)) %>%
+    rename(Year=name) %>%
+    mutate(Year=as.numeric(Year), MT=value/1000) %>%
+    mutate(stat_name = forcats::fct_inorder(stat_name))
+  #      left_join(HCR_selection) %>%
+  #      left_join(tibble(stat_name =c("catch.mean","ssb.mean","ssb.ci10"),
+  #                       stat_name2=c("Catch (average)",     "SB (average)", "SB (L10%)"))) %>%
+  #      mutate(Type=factor(Type, levels=c("B","S","SS","A"))) %>%
+  #      dplyr::filter(use==1)
+
+  g_worm <- mean_data %>%
+    ggplot() +
+    geom_line(aes(x=Year, y=MT, color=HCR_name, group=HCR_name),
+              alpha=0.8) +
+    ylim(0,NA) +
+    facet_wrap(.~stat_name, scale="free_y",nrow=nrow) +
+    theme_SH(base_size=14) +
+    coord_cartesian(ylim=c(0,NA)) +
+    ylab("1000 MT") +
+    #      scale_color_manual(values=c(1,gray(0.2),2,3)) +
+    #      scale_size_manual(values=c(1,0.5,1,0.5)) +
+    theme(legend.position="bottom")
+
+  g_worm
+
+}
+
 
 #'
 #' サブ目盛りの追加

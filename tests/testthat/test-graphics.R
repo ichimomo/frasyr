@@ -9,6 +9,26 @@ test_that("plot_futures",{
     expect_error(NA)
 })
 
+test_that("plot_futures2",{
+  g1 <- plot_futures2(
+    future.list = list(res_future_HSL2, res_future_HSL1),
+    future.name = c("2023年度評価", "2022年度評価"),
+    assessment.years = c(2023, 2022),
+    what.plot = c("SSB", "catch", "U", "Fratio"),
+    Btarget = 100000,
+    Blimit = 50000,
+    Bban = 10000,
+    MSY = 10000,
+    Umsy = 10,
+    maxyear = 2025
+  )
+  expect_error(ggplot_build(g1), NA)
+
+  gdat <- attr(g1, "plot_data")
+  expect_true(all(c("評価", "将来予測", "基準値") %in% unique(as.character(gdat$Type))))
+  expect_true(all(gdat$year[!is.na(gdat$year)] <= 2025))
+})
+
 test_that("plot.futures",{
   g1 <- plot.futures(fres.list=list(res_future_HSL2,res_future_HSL1)) 
   expect_equal(class(g1)[1],"list")

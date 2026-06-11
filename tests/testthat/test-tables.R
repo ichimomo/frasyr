@@ -12,6 +12,8 @@ yrs_pre_abc <- 2008:2011
 
 #! make_stock_table have been moved to make_stock_table2
 test_that("make_stock_table() works", {
+  data(res_future_HSL1)
+
 ##   tbl <- make_stock_table2(result_vpa        = res_vpa_example,
 ##                           result_msy        = res_MSY_HSL2,
 ##                           result_future     = generate_dummy_future_new_object(),
