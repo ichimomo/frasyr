@@ -451,7 +451,9 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
   if(!is.null(add_graph)) g1 <- g1+add_graph
 
   if(isTRUE(plot_CI)){
-    args_list <- args_list %>% list_modify(sigma=SR_result$pars$sd, CI=CI)
+    sigma_marginal <- if(!is.null(SR_result$sd.marginal)) SR_result$sd.marginal
+                    else SR_result$pars$sd/sqrt(1-SR_result$pars$rho^2)
+    args_list <- args_list %>% list_modify(sigma=sigma_marginal, CI=CI)
     g1 <- g1+
       stat_function(fun=SRF_CI,
                     args=list_modify(args_list, sign=-1),

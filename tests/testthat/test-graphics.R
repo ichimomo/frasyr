@@ -47,10 +47,18 @@ test_that("SRplot_gg", {
     
   g1 <- plot_SR(res_sr_HSL1)
   g2 <- plot_SR(res_sr_HSL2, box.padding=1)
-  g3 <- plot_SR(res_sr_HSL1, yscale=100000000, ylabel="億尾")  
+  g3 <- plot_SR(res_sr_HSL1, yscale=100000000, ylabel="億尾")
+
   expect_error(ggplot_build(g1), NA)
   expect_error(ggplot_build(g2), NA)
-  
+  expect_error(ggplot_build(g3), NA)
+
+  # check the effect of tool_issue #529
+  res_sr_tmp <- res_sr_HSL1
+  res_sr_tmp$pars$rho <- 0.8
+  g4 <- plot_SR(res_sr_tmp, plot_CI=TRUE)
+  expect_error(ggplot_build(g4), NA)
+
 })
 
 test_that("compare_SRfit",{
@@ -162,6 +170,7 @@ test_that("plot_sprypr", {
 test_that("plot_SR_AReffect", {
   SRdata <- get.SRdata(res_vpa_example)
   res_SR <- fit.SR(SRdata,SR="BH",AR=1,out.AR=FALSE)
+  expect_equal(res_SR$sd.marginal, res_SR$pars$sd/sqrt(1-res_SR$pars$rho^2))  
   (g <- plot_SR_AReffect(res_SR))
   expect_error(ggplot_build(g), NA)
 })

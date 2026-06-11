@@ -10,7 +10,7 @@ Depends: R (>= 4.0.0)
 License: GPL (>=3)
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.3
 Imports:
     ggplot2,
     purrr,
@@ -20,7 +20,6 @@ Imports:
     readr,
     forcats,
     stringr,
-    formattable,
     ggrepel,
     magrittr,
     RcppRoll,
@@ -31,17 +30,15 @@ Imports:
     assertthat,
     foreach,
     doParallel,
-    testthat,
-    covr,    
     patchwork,
     GGally, 
-    splus2R,
     scales,
-    ragg,
     glue,
-    openxlsx,
-    png
+    abind
 Suggests:
     knitr,
     rmarkdown,
+    testthat,
+    covr,
+    mvtnorm
 VignetteBuilder: knitr
