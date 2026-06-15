@@ -653,6 +653,54 @@ test_that("future_vpa errors clearly when TAC_adjust is used without do_MSE (lev
                regexp="HCR_TAC_adjust")
 })
 
+## B2/B3: sim-wise sign mixing is rejected ----
+test_that("future_vpa errors when banking/borrowing are mixed across sims (level 2)",{
+  d <- redo_future(data_future_test,
+                   list(nsim=2, nyear=10, HCR_TAC_reserve_rate=0.1,
+                        HCR_reserve_denom="original_ABC_plus",
+                        fix_recruit=NULL, fix_wcatch=NULL),
+                   only_data=TRUE)
+  # 通常の引数ではsim間の符号混在は作れないので、HCR_matを直接書き換えて再現する
+  d$data$HCR_mat[as.character(2019:2027),1,"TAC_reserve_rate"] <-  0.1
+  d$data$HCR_mat[as.character(2019:2027),2,"TAC_reserve_rate"] <- -0.1
+  expect_error(future_vpa(d$data, optim_method="none", multi_init=1),
+               regexp="混在")
+})
+
+## B5(part1): reserve_rate > 1 is rejected ----
+test_that("future_vpa errors when TAC_reserve_rate exceeds 1 (level 2)",{
+  d <- redo_future(data_future_test,
+                   list(nsim=2, nyear=8, HCR_TAC_reserve_rate=1.5,
+                        HCR_reserve_denom="original_ABC_plus",
+                        fix_recruit=NULL, fix_wcatch=NULL),
+                   only_data=TRUE)
+  expect_error(future_vpa(d$data, optim_method="none", multi_init=1),
+               regexp="1以下")
+})
+
+## B5(part3): insolvency (original_ABC_plus<0) -> no catch & debt forgiven ----
+test_that("future_vpa stops catch and forgives unpayable debt on insolvency (level 2)",{
+  # 過大な前借り(量指定)で債務超過(original_ABC_plus<0)を誘発し、決定論(sd=0)で確認
+  res <- redo_future(data_future_test,
+                     list(nsim=2, nyear=12, HCR_TAC_reserve_amount=-3000,
+                          fix_recruit=NULL, fix_wcatch=NULL),
+                     SR_sd=0, multi_init=0.01)
+  P <- res$HCR_realized[,1,"original_ABC_plus"]   # 精算後ABC
+  E <- res$HCR_mat[,1,"expect_wcatch"]            # 漁獲予定量
+  R <- res$HCR_realized[,1,"reserved_catch"]      # 翌年への繰越(負=債務)
+
+  insolvent <- which(P < 0)
+  expect_true(length(insolvent) > 0)   # 債務超過が実際に発生する(テストが意味を持つ)
+
+  # 債務超過年は繰り入れできず漁獲ゼロ(expect_wcatch==0.01)
+  expect_equal(as.numeric(E[insolvent]), rep(0.01, length(insolvent)), tol=1e-8)
+
+  # 債務超過年の残債は翌年に帳消し(reserved_catch[t+1]==0)
+  insolvent_not_last <- insolvent[insolvent < length(P)]
+  expect_equal(as.numeric(R[insolvent_not_last + 1]),
+               rep(0, length(insolvent_not_last)), tol=1e-8)
+})
+
 # Naoto Shinohara
 
 # テストされていない関数たち
