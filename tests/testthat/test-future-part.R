@@ -511,21 +511,6 @@ test_that("future_vpa function (carry over TAC) (level 2)",{
                          res_future_noreserve$HCR_realized[as.character(2019:2023),,"original_ABC_plus"],3)
                    ==1),TRUE)
 
-  # 繰越しを量で決める場合
-  expect_error(redo_future(data_future_test,list(HCR_TAC_reserve_amount=1000,
-                                                 HCR_TAC_reserve_rate=0.1)))
-
-  res_future <- redo_future(data_future_test,list(HCR_TAC_reserve_amount=3000,
-                                                  HCR_TAC_carry_amount  =1000,
-                                                  HCR_TAC_carry_rate    =NA,
-                                                  HCR_TAC_reserve_rate  =NA))
-
-  tmp <- mean(res_future$HCR_realized[as.character(2019:2027),,"original_ABC_plus"]-
-              res_future$HCR_realized[as.character(2019:2027),,"wcatch"])
-  expect_equal(mean(tmp),3000,tol=0.1)
-  tmp <- mean(res_future$HCR_realized[as.character(2020:2027),,"reserved_catch"])
-  expect_equal(mean(tmp),1000,tol=0.1)
-
   # MSEの場合
   res_future_MSE <- future_vpa(tmb_data=data_future_test$data,
                            optim_method="none",
@@ -680,9 +665,10 @@ test_that("future_vpa errors when TAC_reserve_rate exceeds 1 (level 2)",{
 
 ## B5(part3): insolvency (original_ABC_plus<0) -> no catch & debt forgiven ----
 test_that("future_vpa stops catch and forgives unpayable debt on insolvency (level 2)",{
-  # 過大な前借り(量指定)で債務超過(original_ABC_plus<0)を誘発し、決定論(sd=0)で確認
+  # 過大な前借り(率指定 -2 = 200%借入, denom=original_ABC)で債務超過(original_ABC_plus<0)を誘発し、決定論(sd=0)で確認
   res <- redo_future(data_future_test,
-                     list(nsim=2, nyear=12, HCR_TAC_reserve_amount=-3000,
+                     list(nsim=2, nyear=12, HCR_TAC_reserve_rate=-2,
+                          HCR_reserve_denom="original_ABC",
                           fix_recruit=NULL, fix_wcatch=NULL),
                      SR_sd=0, multi_init=0.01)
   P <- res$HCR_realized[,1,"original_ABC_plus"]   # 精算後ABC

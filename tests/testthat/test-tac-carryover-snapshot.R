@@ -79,13 +79,6 @@ test_that("TAC carryover numeric behavior is stable (characterization)", {
     optim_method = "none", multi_init = 1)
   expect_snapshot_value(.snap_carryover(resB), style = "serialize", tolerance = 1e-6)
 
-  # (C) banking by amount, carry by amount
-  resC <- future_vpa(.make_carryover_data(list(
-    HCR_TAC_reserve_amount = 3000, HCR_TAC_carry_amount = 1000,
-    HCR_TAC_carry_rate = NA, HCR_TAC_reserve_rate = NA))$data,
-    optim_method = "none", multi_init = 1)
-  expect_snapshot_value(.snap_carryover(resC), style = "serialize", tolerance = 1e-6)
-
   # (D) borrowing + Blimit guard (SSB < Blimit -> no borrowing)
   resD <- future_vpa(.make_carryover_data(list(
     HCR_Blimit = 26000 * 10,
@@ -116,14 +109,6 @@ test_that("TAC carryover numeric behavior is stable (characterization)", {
     HCR_reserve_denom = "original_ABC"))$data,
     optim_method = "none", multi_init = 1)
   expect_snapshot_value(.snap_carryover(resI), style = "serialize", tolerance = 1e-6)
-
-  ## --- amount borrowing -----------------------------------------------
-  # (J) borrowing by amount (hits amount borrowing branch + Blimit guard + floor)
-  resJ <- future_vpa(.make_carryover_data(list(
-    HCR_TAC_reserve_amount = -3000, HCR_TAC_carry_amount = NA,
-    HCR_TAC_carry_rate = NA, HCR_TAC_reserve_rate = NA))$data,
-    optim_method = "none", multi_init = 1)
-  expect_snapshot_value(.snap_carryover(resJ), style = "serialize", tolerance = 1e-6)
 
   ## --- year-to-year banking<->borrowing mix (weakness 1) ---------------
   # (K) alternating banking/borrowing across years, denom = original_ABC.

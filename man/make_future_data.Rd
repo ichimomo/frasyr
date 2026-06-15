@@ -50,9 +50,7 @@ make_future_data(
   HCR_Blimit_year = NULL,
   HCR_Bban_year = NULL,
   HCR_TAC_reserve_rate = NA,
-  HCR_TAC_reserve_amount = NA,
   HCR_TAC_carry_rate = NA,
-  HCR_TAC_carry_amount = NA,
   HCR_TAC_upper_CV = NA,
   HCR_TAC_lower_CV = NA,
   HCR_TAC_adjust = NA,
@@ -150,21 +148,17 @@ make_future_data(
 
 \item{HCR_TAC_reserve_rate}{TACの取り残し率。マイナス値を入れれば前借りもできる。}
 
-\item{HCR_TAC_reserve_amount}{TACの獲り残し量。マイナス値を入れれば前借りもできる。rateとamountの片方どちらかだけ設定する}
-
 \item{HCR_TAC_carry_rate}{翌年に持ち越せる量の上限を当初ABC(original_ABC)に対する比率で指定（例: 0.1なら当初ABCの10%、1なら100%まで）。}
-
-\item{HCR_TAC_carry_amount}{翌年に持ち越せる量の上限を量（トン）で指定。}
 
 \item{HCR_TAC_upper_CV}{漁獲量が前年の漁獲量のHCR_TAC_upper_CV倍と比較し、それよりも変化が大きい場合には前年の漁獲量xHCR_TAC_upper_CVを上限とする。単一の値か、tibble形式 tibble(year=2020:2024, TAC_upper_CV=rep(0.1,5)) で与える}
 
 \item{HCR_TAC_lower_CV}{漁獲量が前年の漁獲量のHCR_TAC_lower_CV倍と比較し、それよりも変化が大きい場合には前年の漁獲量xHCR_TAC_lower_CVを下限とする。単一の値か、tibble形式 tibble(year=2020:2024, TAC_lower_CV=rep(0.1,5)) で与える}
 
-\item{HCR_TAC_adjust}{B&B（前借り・繰越）設定での前借り返却額を、推定ABCと真のABCの差にもとづいて繰越枠の範囲内で調整する。-1 下方向にadjust, 0 上下方向にadjust, 1 上方向のみadjust, 用いない場合はNA。繰越枠の上限を無視してexpect_wcatchを直接上書きする\code{future_vpa()}の\code{MSE_TAC_revise}とは別物。 (do_MSE=TRUEのみ)}
+\item{HCR_TAC_adjust}{B&B（前借り・繰越）設定での「前借り返却額」を、推定ABCと真のABCの差にもとづいて繰越枠の範囲内で調整する。-1 下方向にadjust, 0 上下方向にadjust, 1 上方向のみadjust, 用いない場合はNA。do_MSE=TRUEのみ。繰越枠の上限を無視してexpect_wcatchを直接上書きする\code{future_vpa()}の\code{MSE_TAC_revise}とは別物。}
 
 \item{HCR_function_name}{デフォルトは"HCR_default" ここを変更(関数名を文字列で与える。関数は別に定義しておく)すると自作のHCRが適用される。その場合、データのほうで定義されているbeta, Blimit, Bbanなど、同じ名前のものは有効}
 
-\item{HCR_reserve_denom}{比率で取り残し量を決める場合、もともとのABCをもとにするか（"original_ABC"、最新の繰越前借り設定）前年からの繰越も考慮したABCをもとにするか（"original_ABC_plus", 過去のスケトウ繰越設定）}
+\item{HCR_reserve_denom}{比率で取り残し量を決める場合、もともとのABCをもとにするか（"original_ABC_plus"、最新の繰越前借り設定）前年からの繰越も考慮したABCをもとにするか（"original_ABC", 過去のスケトウ繰越設定）}
 
 \item{Pope}{漁獲方程式にPopeの近似式を使うかどうか。与えない場合には、VPAのオプションが引き継がれる}
 
