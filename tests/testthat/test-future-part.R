@@ -594,6 +594,65 @@ test_that("future_vpa function (carry over TAC) (level 2)",{
 
   })
 
+## check carry over / borrowing chain ACROSS YEARS ----
+test_that("future_vpa carry over / borrowing chain across years (level 2)",{
+
+  # 決定論的(sd=0)に走らせて、ある年に繰り越した量が翌年の原資(original_ABC_plus)に
+  # 連鎖して反映されるかを年跨ぎで検証する。2019から管理開始。
+  yrs <- as.character(2019:2026)
+
+  ## --- banking（繰越）: 毎年10%取り残し、繰越上限なし ---
+  res_bank <- redo_future(data_future_test,
+                          list(nsim=2, nyear=10,
+                               HCR_TAC_reserve_rate=0.1, HCR_TAC_carry_rate=NA,
+                               HCR_reserve_denom="original_ABC_plus",
+                               fix_recruit=NULL, fix_wcatch=NULL),
+                          SR_sd=0, multi_init=0.01)
+  A <- as.numeric(res_bank$HCR_realized[yrs,1,"original_ABC"])
+  P <- as.numeric(res_bank$HCR_realized[yrs,1,"original_ABC_plus"])
+  R <- as.numeric(res_bank$HCR_realized[yrs,1,"reserved_catch"])
+  E <- as.numeric(res_bank$HCR_mat[yrs,1,"expect_wcatch"])
+
+  # 精算恒等式: 精算後ABC = 当初ABC + 前年からの繰越
+  expect_equal(P, A + R, tol=1e-6)
+  # 年跨ぎ伝播(banking枝 A-expect): 翌年の繰越 = 当年(当初ABC - 漁獲予定量)
+  expect_equal(R[-1], (A - E)[-length(A)], tol=1e-6)
+  # 初年度は繰越ゼロ、2年目以降は正の繰越が毎年連鎖する
+  expect_equal(R[1], 0)
+  expect_true(all(R[-1] > 0))
+
+  ## --- borrowing（繰入/前借り）: 毎年10%前借り → 翌年に返済(負の繰越) ---
+  res_borrow <- redo_future(data_future_test,
+                            list(nsim=2, nyear=10,
+                                 HCR_TAC_reserve_rate=-0.1, HCR_TAC_carry_rate=NA,
+                                 HCR_reserve_denom="original_ABC_plus",
+                                 fix_recruit=NULL, fix_wcatch=NULL),
+                            SR_sd=0, multi_init=0.01)
+  Ab <- as.numeric(res_borrow$HCR_realized[yrs,1,"original_ABC"])
+  Pb <- as.numeric(res_borrow$HCR_realized[yrs,1,"original_ABC_plus"])
+  Rb <- as.numeric(res_borrow$HCR_realized[yrs,1,"reserved_catch"])
+  Eb <- as.numeric(res_borrow$HCR_mat[yrs,1,"expect_wcatch"])
+
+  expect_equal(Pb, Ab + Rb, tol=1e-6)
+  # 年跨ぎ伝播(borrowing枝 plus-expect): 翌年の繰越(返済,負) = 当年(精算後ABC - 漁獲予定量)
+  expect_equal(Rb[-1], (Pb - Eb)[-length(Pb)], tol=1e-6)
+  expect_equal(Rb[1], 0)
+  expect_true(all(Rb[-1] < 0))
+})
+
+## B1: TAC_adjust requires do_MSE=TRUE ----
+test_that("future_vpa errors clearly when TAC_adjust is used without do_MSE (level 2)",{
+  d <- redo_future(data_future_test,
+                   list(nsim=2, nyear=8,
+                        HCR_TAC_reserve_rate=-0.1, HCR_TAC_adjust=1,
+                        HCR_TAC_carry_rate=1,
+                        fix_recruit=NULL, fix_wcatch=NULL),
+                   only_data=TRUE)
+  # 非MSEではTAC_adjustは無効 → 明確なエラーで停止（旧挙動: object 'SR_MSE' not found のクラッシュ）
+  expect_error(future_vpa(d$data, optim_method="none", multi_init=1),
+               regexp="HCR_TAC_adjust")
+})
+
 # Naoto Shinohara
 
 # テストされていない関数たち

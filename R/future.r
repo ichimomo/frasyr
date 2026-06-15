@@ -1929,6 +1929,11 @@ apply_TAC_carryover <- function(HCR_mat, HCR_realized, t, do_MSE, total_nyear,
                                 N_mat, F_mat, waa_catch_mat, M_mat, Pope){
   has_non_na <- function(x) any(!is.na(x))
   if(has_non_na(HCR_mat[t,,"TAC_reserve_rate"]) || has_non_na(HCR_mat[t,,"TAC_reserve_amount"])){
+    # TAC_adjustは真のABC(real_true_catch)が必要で、do_MSE=TRUEのときしか算出されない。
+    # 非MSEでTAC_adjustが設定されているとSR_MSE未定義でクラッシュするため早期に止める。
+    assertthat::assert_that(
+      isTRUE(do_MSE) || !has_non_na(HCR_mat[t,,"TAC_adjust"]),
+      msg = "HCR_TAC_adjust は do_MSE=TRUE のときのみ有効です（真のABCの算出にMSEが必要）。do_MSE=TRUE にするか HCR_TAC_adjust=NA にしてください。")
     if(sum(HCR_mat[t,,"expect_wcatch"])==0){
       # non-MSE
       HCR_realized[t,,"original_ABC"] <-
@@ -1947,8 +1952,9 @@ apply_TAC_carryover <- function(HCR_mat, HCR_realized, t, do_MSE, total_nyear,
       is_banking <- all(HCR_mat[t,,"TAC_reserve_rate"]>0)
       # when borrowing
       if(is_banking==FALSE){
-        if(is.null(do_MSE)  || do_MSE==FALSE) tmp <- (spawner_mat[t,] < HCR_mat[t,,"Blimit"])
-        if(!is.null(do_MSE) && do_MSE==TRUE) tmp <-  (spawner_mat[t-2,] < HCR_mat[t,,"Blimit"])
+        # do_MSEはisTRUE()で正規化済み（TRUE/FALSEのみ）なのでis.null判定は不要
+        if(!do_MSE) tmp <- (spawner_mat[t,]   < HCR_mat[t,,"Blimit"])
+        else        tmp <- (spawner_mat[t-2,] < HCR_mat[t,,"Blimit"])
         HCR_mat[t,tmp,"TAC_reserve_rate"]  <- 0
       }
 
@@ -1970,8 +1976,8 @@ apply_TAC_carryover <- function(HCR_mat, HCR_realized, t, do_MSE, total_nyear,
 
       if(is_banking==FALSE){ # Blimit以下の場合、繰入はできない
 
-        if(is.null(do_MSE) | do_MSE==FALSE) tmp <- (spawner_mat[t,] < HCR_mat[t,,"Blimit"])
-        if(!is.null(do_MSE) && do_MSE==TRUE) tmp <- (spawner_mat[t-2,] < HCR_mat[t,,"Blimit"]) # Blimitは管理開始年からしかインプットされていないのでt-2でなくtを使う
+        if(!do_MSE) tmp <- (spawner_mat[t,]   < HCR_mat[t,,"Blimit"])
+        else        tmp <- (spawner_mat[t-2,] < HCR_mat[t,,"Blimit"]) # Blimitは管理開始年からしかインプットされていないのでt-2でなくtを使う
         HCR_mat[t,tmp,"TAC_reserve_amount"]  <- 0
       }
       tmpcatch <- HCR_realized[t,,"original_ABC_plus"] - HCR_mat[t,,"TAC_reserve_amount"]
@@ -2008,7 +2014,6 @@ apply_TAC_carryover <- function(HCR_mat, HCR_realized, t, do_MSE, total_nyear,
           ABC_reserve_amount <- HCR_realized[t,,"original_ABC_plus"] - HCR_mat[t,,"expect_wcatch"] 
         }
       }
-      #ABC_reserve_amount[ABC_reserve_amount<0] <- 0
       HCR_realized[t+1,,"reserved_catch"] <- cbind(max_carry_amount, ABC_reserve_amount) %>%
         apply(1,min)
     }
