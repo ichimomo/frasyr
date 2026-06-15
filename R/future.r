@@ -774,7 +774,8 @@ future_vpa_R <- function(naa_mat,
   tmb_data <- lapply(argname,function(x) eval(parse(text=x)))
   names(tmb_data) <- argname
 
-  do_MSE <- isTRUE(do_MSE) # do_MSE=NULL (for old default option)  
+  do_MSE <- isTRUE(do_MSE) # do_MSE=NULL (for old default option)
+  validate_TAC_carryover_settings(HCR_mat, do_MSE) # 繰越設定の静的検査を冒頭で1回だけ実施
 
   HCR_realized_name <- c("wcatch", "beta_gamma", "Fratio","reserved_catch","original_ABC","original_ABC_plus")
   HCR_realized <- array(0,dim=c(dim(HCR_mat)[[1]],dim(HCR_mat)[[2]],length(HCR_realized_name)),
@@ -1915,6 +1916,41 @@ calc_forward <- function(naa,M,faa,t, plus_age, plus_group = TRUE){
   return(naa)
 }
 
+#' Validate TAC carryover settings once (called at the start of future_vpa_R).
+#'
+#' These are static checks over the whole HCR_mat, so they run once up front
+#' instead of every projection year inside apply_TAC_carryover.
+#' @noRd
+validate_TAC_carryover_settings <- function(HCR_mat, do_MSE){
+  has_non_na <- function(x) any(!is.na(x))
+  ny <- dim(HCR_mat)[1]
+  rr <- matrix(HCR_mat[,,"TAC_reserve_rate"],   nrow = ny)   # [year x sim]
+  ra <- matrix(HCR_mat[,,"TAC_reserve_amount"], nrow = ny)
+  if(!(has_non_na(rr) || has_non_na(ra))) return(invisible(TRUE))  # 繰越設定なしは検査不要
+
+  # B1: TAC_adjustは真のABC(MSE)が必要。非MSEで設定されているとSR_MSE未定義でクラッシュ。
+  assertthat::assert_that(
+    isTRUE(do_MSE) || !has_non_na(HCR_mat[,,"TAC_adjust"]),
+    msg = "HCR_TAC_adjust は do_MSE=TRUE のときのみ有効です（真のABCの算出にMSEが必要）。do_MSE=TRUE にするか HCR_TAC_adjust=NA にしてください。")
+
+  # B5(part1): rate>1（100%超の取り残し）は漁獲量が負になる無意味な入力
+  assertthat::assert_that(
+    all(rr <= 1, na.rm = TRUE),
+    msg = "TAC_reserve_rate は1以下にしてください（1超は当初ABCの100%超の取り残しで漁獲量が負になります）。")
+
+  # B2/B3: sim間で取り残し(正)とそれ以外(<=0)の混在を各年について弾く（通常の引数では起きない想定外設定）
+  assert_uniform_direction <- function(mat, name){
+    pos    <- rowSums(mat > 0, na.rm = TRUE)
+    nonpos <- rowSums(!is.na(mat) & mat <= 0, na.rm = TRUE)
+    assertthat::assert_that(
+      !any(pos > 0 & nonpos > 0),
+      msg = sprintf("%s がsim間で取り残し(正)とそれ以外(<=0)に混在しています（sim間の符号混在は未対応です）。", name))
+  }
+  if(has_non_na(rr)) assert_uniform_direction(rr, "TAC_reserve_rate")
+  if(has_non_na(ra)) assert_uniform_direction(ra, "TAC_reserve_amount")
+  invisible(TRUE)
+}
+
 #' Apply TAC carryover (banking) / borrowing for one projection year.
 #'
 #' Behavior-preserving extraction of the carryover block from future_vpa_R
@@ -1928,12 +1964,8 @@ apply_TAC_carryover <- function(HCR_mat, HCR_realized, t, do_MSE, total_nyear,
                                 HCR_reserve_denom, spawner_mat, SR_MSE,
                                 N_mat, F_mat, waa_catch_mat, M_mat, Pope){
   has_non_na <- function(x) any(!is.na(x))
+  # 設定の妥当性検査は validate_TAC_carryover_settings() で future_vpa_R 冒頭に実施済み
   if(has_non_na(HCR_mat[t,,"TAC_reserve_rate"]) || has_non_na(HCR_mat[t,,"TAC_reserve_amount"])){
-    # TAC_adjustは真のABC(real_true_catch)が必要で、do_MSE=TRUEのときしか算出されない。
-    # 非MSEでTAC_adjustが設定されているとSR_MSE未定義でクラッシュするため早期に止める。
-    assertthat::assert_that(
-      isTRUE(do_MSE) || !has_non_na(HCR_mat[t,,"TAC_adjust"]),
-      msg = "HCR_TAC_adjust は do_MSE=TRUE のときのみ有効です（真のABCの算出にMSEが必要）。do_MSE=TRUE にするか HCR_TAC_adjust=NA にしてください。")
     if(sum(HCR_mat[t,,"expect_wcatch"])==0){
       # non-MSE
       HCR_realized[t,,"original_ABC"] <-
