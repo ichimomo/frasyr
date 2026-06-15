@@ -1975,16 +1975,17 @@ apply_TAC_carryover <- function(HCR_mat, HCR_realized, t, do_MSE, total_nyear,
       # MSE
       HCR_realized[t,,"original_ABC"] <- HCR_mat[t,,"expect_wcatch"]
     }
-    # original_ABC_plus; 貸し借りを精算したあとのABC
+    # original_ABC_plus; 貸し借りを精算したあとのABCを計算する
     HCR_realized[t,,"original_ABC_plus"] <- HCR_realized[t,,"original_ABC"] + HCR_realized[t,,"reserved_catch"]
+    # 債務超過(前年の繰り入れで精算後ABCが負)のsim。その年は繰り入れ不可とする。
+    insolvent <- HCR_realized[t,,"original_ABC_plus"] < 0
 
-    # 比率で繰越量を決める場合
+    # 実際に漁獲したい量(expect_wcatch)を決める：比率から
     if(has_non_na(HCR_mat[t,,"TAC_reserve_rate"])){
 
       is_banking <- all(HCR_mat[t,,"TAC_reserve_rate"]>0)
       # when borrowing
       if(is_banking==FALSE){
-        # do_MSEはisTRUE()で正規化済み（TRUE/FALSEのみ）なのでis.null判定は不要
         if(!do_MSE) tmp <- (spawner_mat[t,]   < HCR_mat[t,,"Blimit"])
         else        tmp <- (spawner_mat[t-2,] < HCR_mat[t,,"Blimit"])
         HCR_mat[t,tmp,"TAC_reserve_rate"]  <- 0
@@ -1997,11 +1998,10 @@ apply_TAC_carryover <- function(HCR_mat, HCR_realized, t, do_MSE, total_nyear,
       if(HCR_reserve_denom=="original_ABC"){
         # もともとのABCをもとにする場合
         HCR_mat[t,,"expect_wcatch"] <- HCR_realized[t,,"original_ABC_plus"] - HCR_realized[t,,"original_ABC"] * HCR_mat[t,,"TAC_reserve_rate"]
-        HCR_mat[t,,"expect_wcatch"] <- ifelse(HCR_mat[t,,"expect_wcatch"]<0, 0.01, HCR_mat[t,,"expect_wcatch"])
       }
     }
 
-    # 漁獲量で繰越量を決める場合
+    # 実際に漁獲したい量(expect_wcatch)を決める：漁獲量から
     if(has_non_na(HCR_mat[t,,"TAC_reserve_amount"])){
 
       is_banking <- all(HCR_mat[t,,"TAC_reserve_amount"]>0)
@@ -2012,11 +2012,16 @@ apply_TAC_carryover <- function(HCR_mat, HCR_realized, t, do_MSE, total_nyear,
         else        tmp <- (spawner_mat[t-2,] < HCR_mat[t,,"Blimit"]) # Blimitは管理開始年からしかインプットされていないのでt-2でなくtを使う
         HCR_mat[t,tmp,"TAC_reserve_amount"]  <- 0
       }
-      tmpcatch <- HCR_realized[t,,"original_ABC_plus"] - HCR_mat[t,,"TAC_reserve_amount"]
-      HCR_mat[t,,"expect_wcatch"] <- ifelse(tmpcatch<0, 0.01, tmpcatch)
-    } #expect_wcatchをゼロにすると不具合がありそうなので、微小値（0.01）を与える
+      HCR_mat[t,,"expect_wcatch"] <- HCR_realized[t,,"original_ABC_plus"] - HCR_mat[t,,"TAC_reserve_amount"]
+    }
 
-    # 次の年の持ち越し分を計算
+    # どの枝で決めたexpect_wcatchも、負なら漁獲不可の下限(0.01)に統一する
+    # original_ABC_plusが負（返せない）になってしまっている、または、「繰越」量が想定以上に多すぎる場合
+    HCR_mat[t,,"expect_wcatch"] <- pmax(HCR_mat[t,,"expect_wcatch"], 0.01)
+    # 債務超過simはその年は繰り入れできず漁獲ゼロ(0.01)とする（TAC_adjust有無に関係なく）
+    if(any(insolvent)) HCR_mat[t, insolvent, "expect_wcatch"] <- 0.01
+
+    # 次の年の持ち越し分 (reserved_catch = [original_ABC_plus - expect_wcatch] with 上限) を計算
     if(t<total_nyear){
       # 翌年に持ち越せる上限量を計算
       tmp1 <- has_non_na(HCR_mat[t,,"TAC_carry_rate"])
@@ -2035,6 +2040,8 @@ apply_TAC_carryover <- function(HCR_mat, HCR_realized, t, do_MSE, total_nyear,
       if(is_banking){
         # when banking
         ABC_reserve_amount <- HCR_realized[t,,"original_ABC"] - HCR_mat[t,,"expect_wcatch"]
+        # 将来の分岐として、繰越された分も含めてさらなる繰越も許容するなら、以下の式になる
+        # ABC_reserve_amount <- HCR_realized[t,,"original_ABC_plus"] - HCR_mat[t,,"expect_wcatch"]
       }
       else{# when borrowing
         # TACでadjustする場合
@@ -2048,6 +2055,8 @@ apply_TAC_carryover <- function(HCR_mat, HCR_realized, t, do_MSE, total_nyear,
       }
       HCR_realized[t+1,,"reserved_catch"] <- cbind(max_carry_amount, ABC_reserve_amount) %>%
         apply(1,min)
+      # 債務超過simは返しきれなかった残債を帳消しにする（翌年に繰り越さない）
+      if(any(insolvent)) HCR_realized[t+1, insolvent, "reserved_catch"] <- 0
     }
   }
   list(HCR_mat = HCR_mat, HCR_realized = HCR_realized)
