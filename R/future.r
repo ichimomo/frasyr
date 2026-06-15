@@ -38,9 +38,9 @@
 #' @param HCR_TAC_reserve_rate TACの取り残し率。マイナス値を入れれば前借りもできる。
 #' @param HCR_TAC_reserve_amount TACの獲り残し量。マイナス値を入れれば前借りもできる。rateとamountの片方どちらかだけ設定する
 #' @param HCR_reserve_denom 比率で取り残し量を決める場合、もともとのABCをもとにするか（"original_ABC"、最新の繰越前借り設定）前年からの繰越も考慮したABCをもとにするか（"original_ABC_plus", 過去のスケトウ繰越設定）
-#' @param HCR_TAC_carry_rate 当初TACのうち何トンまで持ち越せるかの上限（比率）。
-#' @param HCR_TAC_carry_amount 当初TACのうち何トンまで持ち越せるかの上限（比率）。
-#' @param HCR_TAC_adjust B&B設定の場合，-1 下方向にadjust, 0 上下方向にadjust, 1 上方向のみadjust, 用いない場合はNA
+#' @param HCR_TAC_carry_rate 翌年に持ち越せる量の上限を当初ABC(original_ABC)に対する比率で指定（例: 0.1なら当初ABCの10%、1なら100%まで）。
+#' @param HCR_TAC_carry_amount 翌年に持ち越せる量の上限を量（トン）で指定。
+#' @param HCR_TAC_adjust B&B（前借り・繰越）設定での前借り返却額を、推定ABCと真のABCの差にもとづいて繰越枠の範囲内で調整する。-1 下方向にadjust, 0 上下方向にadjust, 1 上方向のみadjust, 用いない場合はNA。繰越枠の上限を無視してexpect_wcatchを直接上書きする\code{future_vpa()}の\code{MSE_TAC_revise}とは別物。 (do_MSE=TRUEのみ)
 #' @param HCR_TAC_upper_CV 漁獲量が前年の漁獲量のHCR_TAC_upper_CV倍と比較し、それよりも変化が大きい場合には前年の漁獲量xHCR_TAC_upper_CVを上限とする。単一の値か、tibble形式 tibble(year=2020:2024, TAC_upper_CV=rep(0.1,5)) で与える
 #' @param HCR_TAC_lower_CV 漁獲量が前年の漁獲量のHCR_TAC_lower_CV倍と比較し、それよりも変化が大きい場合には前年の漁獲量xHCR_TAC_lower_CVを下限とする。単一の値か、tibble形式 tibble(year=2020:2024, TAC_lower_CV=rep(0.1,5)) で与える
 #' @param Pope 漁獲方程式にPopeの近似式を使うかどうか。与えない場合には、VPAのオプションが引き継がれる
@@ -525,7 +525,8 @@ make_future_data <- function(res_vpa,
 #' @param MSE_input_data 簡易MSEを実施する場合、ABC計算するための将来予測を実施するための設定ファイル
 #' @param MSE_nsim 簡易MSEを実施する場合、ABC計算するための将来予測の繰り返し回数。
 #' @param MSE_sd 簡易MSEをする場合の加入変動の大きさ。ここをゼロにすれば決定論的な将来予測の値を得られる。その場合MSE_nsimは自動的に２に設定される。単純なモデルの場合、ここがゼロでも多分問題ない。モデル平均を使っている場合にはちゃんとした簡易MSEをすること。リサンプリングオプションの場合も使えない。
-#' @param MSE_TAC_revise 簡易MSEする場合，真のABCを用いてTACをリバイスするか．何もしない場合はNA，下方修正のみする場合は-1，上方修正のみする場合は1, make_future_dataで設定するHCR_TAC_adjustと似ているが，こちらのほうは，B&B設定とは関係なく動く．HCRのほうは，繰入・繰越率が上限となる
+#' @param MSE_TAC_revise 簡易MSE（do_MSE=TRUE）専用の、簡易的・試験的なTAC補正オプション。各シミュレーションで推定ABC（assessmentにもとづくexpect_wcatch）と真のABC（真のFで漁獲した場合の漁獲量real_true_catch）を比較し、片方向のずれだけをTACに反映する。NA=補正しない（既定）。1=推定ABCが真のABCより大きい（上振れ）simのみTACを真のABCまで引き下げる。-1=推定ABCが真のABCより小さい（下振れ）simのみTACを真のABCまで引き上げる。
+#' make_future_dataで設定する\code{HCR_TAC_adjust}と目的は似るが次の点で異なる: (1)繰越・前借り（B&B）の機構を経由せず、繰越計算の後にexpect_wcatchを直接上書きする、(2)繰入・繰越率による上限がかからない、(3)\code{future_vpa()}の引数として与える（\code{HCR_TAC_adjust}は\code{make_future_data()}でHCR_matに設定し、前借りの返却額を繰越枠の範囲内で調整する正規の経路）。なお本オプションは、TACの上方修正のみ・下方修正のみが行われた場合に結果がどうなるかを見る目的で試験的に追加されたもので、繰越枠を尊重する通常運用では\code{HCR_TAC_adjust}を用いる。
 #' @param objective MSY:MSYの推定、PGY:PGYの値をobj_valueに入れる、percentB0:B0パーセント、何％にするかはobj_valueで指定, SSB:obj_valueで指定した特定の親魚資源量に一致するようにする
 #' @param obj_stat 目的関数を計算するときに利用する計算方法（"mean"だと平均、"median"だと中央値、"geomean"だと幾何平均）
 #' @param obj_value 目的とする値
@@ -728,7 +729,7 @@ future_vpa_R <- function(naa_mat,
                          HCR_reserve_denom,
                          max_F=exp(10),
                          max_exploitation_rate=0.99,
-                         do_MSE=NULL,
+                         do_MSE=FALSE,
                          MSE_input_data=NULL,
                          MSE_nsim = NULL,
                          MSE_sd = NULL,
