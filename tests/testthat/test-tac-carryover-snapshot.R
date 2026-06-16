@@ -68,28 +68,28 @@ test_that("TAC carryover numeric behavior is stable (characterization)", {
   ## --- non-MSE, no CV --------------------------------------------------
   # (A) banking by rate, denom = original_ABC_plus
   resA <- future_vpa(.make_carryover_data(list(
-    HCR_TAC_reserve_rate = 0.1, HCR_TAC_carry_rate = NA,
+    HCR_TAC_reserve_rate = 0.1,
     HCR_reserve_denom = "original_ABC_plus"))$data,
     optim_method = "none", multi_init = 1)
   expect_snapshot_value(.snap_carryover(resA), style = "serialize", tolerance = 1e-6)
 
-  # (B) borrowing by rate, alternating across sims, carry_rate = 1
+  # (B) borrowing by rate, alternating across years
   resB <- future_vpa(.make_carryover_data(list(
-    HCR_TAC_reserve_rate = c(-0.1, 0), HCR_TAC_carry_rate = 1))$data,
+    HCR_TAC_reserve_rate = c(-0.1, 0)))$data,
     optim_method = "none", multi_init = 1)
   expect_snapshot_value(.snap_carryover(resB), style = "serialize", tolerance = 1e-6)
 
   # (D) borrowing + Blimit guard (SSB < Blimit -> no borrowing)
   resD <- future_vpa(.make_carryover_data(list(
     HCR_Blimit = 26000 * 10,
-    HCR_TAC_reserve_rate = c(-0.1, 0), HCR_TAC_carry_rate = 1))$data,
+    HCR_TAC_reserve_rate = c(-0.1, 0)))$data,
     optim_method = "none", multi_init = 1)
   expect_snapshot_value(.snap_carryover(resD), style = "serialize", tolerance = 1e-6)
 
   ## --- non-MSE + CV limits --------------------------------------------
   # (E) banking by rate + upper/lower CV
   resE <- future_vpa(.make_carryover_data(list(
-    HCR_TAC_reserve_rate = 0.1, HCR_TAC_carry_rate = NA,
+    HCR_TAC_reserve_rate = 0.1,
     HCR_reserve_denom = "original_ABC_plus",
     HCR_TAC_upper_CV = 0.1, HCR_TAC_lower_CV = 0.1))$data,
     optim_method = "none", multi_init = 1)
@@ -97,7 +97,7 @@ test_that("TAC carryover numeric behavior is stable (characterization)", {
 
   # (F) borrowing by rate + upper/lower CV
   resF <- future_vpa(.make_carryover_data(list(
-    HCR_TAC_reserve_rate = c(-0.1, 0), HCR_TAC_carry_rate = 1,
+    HCR_TAC_reserve_rate = c(-0.1, 0),
     HCR_TAC_upper_CV = 0.1, HCR_TAC_lower_CV = 0.1))$data,
     optim_method = "none", multi_init = 1)
   expect_snapshot_value(.snap_carryover(resF), style = "serialize", tolerance = 1e-6)
@@ -105,7 +105,7 @@ test_that("TAC carryover numeric behavior is stable (characterization)", {
   ## --- denom = "original_ABC" (rate_original) path ----------------------
   # (I) banking by rate, denom = original_ABC (hits L1040 + 0.01 floor)
   resI <- future_vpa(.make_carryover_data(list(
-    HCR_TAC_reserve_rate = 0.1, HCR_TAC_carry_rate = NA,
+    HCR_TAC_reserve_rate = 0.1,
     HCR_reserve_denom = "original_ABC"))$data,
     optim_method = "none", multi_init = 1)
   expect_snapshot_value(.snap_carryover(resI), style = "serialize", tolerance = 1e-6)
@@ -118,8 +118,7 @@ test_that("TAC carryover numeric behavior is stable (characterization)", {
   #     vectors recycle over YEARS, identical across sims) and is left for a
   #     phase-4 guard, not snapshotted here.
   resK <- future_vpa(.make_carryover_data(list(
-    HCR_TAC_reserve_rate = c(0.1, -0.1), HCR_reserve_denom = "original_ABC",
-    HCR_TAC_carry_rate = 1))$data,
+    HCR_TAC_reserve_rate = c(0.1, -0.1), HCR_reserve_denom = "original_ABC"))$data,
     optim_method = "none", multi_init = 1)
   expect_snapshot_value(.snap_carryover(resK), style = "serialize", tolerance = 1e-6)
 })
@@ -128,7 +127,7 @@ test_that("TAC carryover numeric behavior is stable under MSE (characterization)
   testthat::local_edition(3)
 
   base <- .make_carryover_data(list(
-    HCR_TAC_reserve_rate = 0.1, HCR_TAC_carry_rate = NA,
+    HCR_TAC_reserve_rate = 0.1,
     HCR_reserve_denom = "original_ABC_plus"))
 
   # (G) MSE banking by rate
@@ -139,7 +138,7 @@ test_that("TAC carryover numeric behavior is stable under MSE (characterization)
 
   # (H) MSE borrowing + TAC_adjust
   base2 <- .make_carryover_data(list(
-    HCR_TAC_reserve_rate = c(-0.1, 0), HCR_TAC_adjust = 1, HCR_TAC_carry_rate = 10))
+    HCR_TAC_reserve_rate = c(-0.1, 0), HCR_TAC_adjust = 1))
   resH <- future_vpa(tmb_data = base2$data,
                      optim_method = "none", multi_init = 1, SPRtarget = 0.3,
                      do_MSE = TRUE, MSE_input_data = base2, MSE_nsim = 30)

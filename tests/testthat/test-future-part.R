@@ -454,7 +454,6 @@ test_that("future_vpa function (carry over TAC) (level 2)",{
   data_future_test <- redo_future(data_future_test,
                                   list(nsim=10,nyear=10,
                                        HCR_TAC_reserve_rate=0.1,
-                                       HCR_TAC_carry_rate=NA,
                                        HCR_reserve_denom="original_ABC_plus",
                                        fix_recruit=NULL,fix_wcatch=NULL),
                                   only_data=TRUE)
@@ -468,7 +467,6 @@ test_that("future_vpa function (carry over TAC) (level 2)",{
   data_future_test2 <- redo_future(data_future_test,
                                   list(nsim=10,nyear=10,
                                        HCR_TAC_reserve_rate=-0.1,
-                                       HCR_TAC_carry_rate=NA,
                                        HCR_reserve_denom="original_ABC",
                                        fix_recruit=NULL,fix_wcatch=NULL),
                                   only_data=TRUE)
@@ -482,7 +480,7 @@ test_that("future_vpa function (carry over TAC) (level 2)",{
 
   # 繰入を１年おきに実施する場合
   data_future_borrow <- list_modify(data_future_test$input,nyear=11,
-                                    HCR_TAC_reserve_rate=c(-0.1,0), HCR_TAC_carry_rate=1) %>%
+                                    HCR_TAC_reserve_rate=c(-0.1,0)) %>%
       safe_call(make_future_data,.)
   aa <- future_vpa(data_future_borrow$data)
   res_future_borrow <- test_sd0_future(data_future_borrow)$res1
@@ -494,7 +492,7 @@ test_that("future_vpa function (carry over TAC) (level 2)",{
 
   # Blimit以下だと繰入しない場合のテスト
   data_future_borrow_limit <- list_modify(data_future_test$input,nyear=11,HCR_Blimit=26000*10, 
-                                    HCR_TAC_reserve_rate=c(-0.1,0), HCR_TAC_carry_rate=1) %>%
+                                    HCR_TAC_reserve_rate=c(-0.1,0)) %>%
       safe_call(make_future_data,.)
   aa <- future_vpa(data_future_borrow_limit$data)
   
@@ -525,8 +523,7 @@ test_that("future_vpa function (carry over TAC) (level 2)",{
   if(0){
   # MSEかつ繰越分を再評価値で再調整する場合??
   data_future_borrow2 <- list_modify(data_future_test$input,nyear=11,
-                                     HCR_TAC_reserve_rate=c(-0.1,0), HCR_TAC_adjust=1,
-                                     HCR_TAC_carry_rate=10) %>%
+                                     HCR_TAC_reserve_rate=c(-0.1,0), HCR_TAC_adjust=1) %>%
     safe_call(make_future_data,.)
   res_future_MSE_borrow2 <- future_vpa(data_future_borrow2$data,
                                        do_MSE=TRUE, MSE_input_data=data_future_borrow,
@@ -589,7 +586,7 @@ test_that("future_vpa carry over / borrowing chain across years (level 2)",{
   ## --- banking（繰越）: 毎年10%取り残し、繰越上限なし ---
   res_bank <- redo_future(data_future_test,
                           list(nsim=2, nyear=10,
-                               HCR_TAC_reserve_rate=0.1, HCR_TAC_carry_rate=NA,
+                               HCR_TAC_reserve_rate=0.1,
                                HCR_reserve_denom="original_ABC_plus",
                                fix_recruit=NULL, fix_wcatch=NULL),
                           SR_sd=0, multi_init=0.01)
@@ -609,7 +606,7 @@ test_that("future_vpa carry over / borrowing chain across years (level 2)",{
   ## --- borrowing（繰入/前借り）: 毎年10%前借り → 翌年に返済(負の繰越) ---
   res_borrow <- redo_future(data_future_test,
                             list(nsim=2, nyear=10,
-                                 HCR_TAC_reserve_rate=-0.1, HCR_TAC_carry_rate=NA,
+                                 HCR_TAC_reserve_rate=-0.1,
                                  HCR_reserve_denom="original_ABC_plus",
                                  fix_recruit=NULL, fix_wcatch=NULL),
                             SR_sd=0, multi_init=0.01)
@@ -630,7 +627,6 @@ test_that("future_vpa errors clearly when TAC_adjust is used without do_MSE (lev
   d <- redo_future(data_future_test,
                    list(nsim=2, nyear=8,
                         HCR_TAC_reserve_rate=-0.1, HCR_TAC_adjust=1,
-                        HCR_TAC_carry_rate=1,
                         fix_recruit=NULL, fix_wcatch=NULL),
                    only_data=TRUE)
   # 非MSEではTAC_adjustは無効 → 明確なエラーで停止（旧挙動: object 'SR_MSE' not found のクラッシュ）
@@ -685,6 +681,26 @@ test_that("future_vpa stops catch and forgives unpayable debt on insolvency (lev
   insolvent_not_last <- insolvent[insolvent < length(P)]
   expect_equal(as.numeric(R[insolvent_not_last + 1]),
                rep(0, length(insolvent_not_last)), tol=1e-8)
+})
+
+## HCR_carry_denom: banking の繰越基準 (1年限り vs compound) ----
+test_that("HCR_carry_denom switches banking carryover base (level 2)",{
+  yrs <- as.character(2019:2026)
+  run <- function(cd) redo_future(data_future_test,
+                     list(nsim=2, nyear=10, HCR_TAC_reserve_rate=0.1,
+                          HCR_reserve_denom="original_ABC_plus", HCR_carry_denom=cd,
+                          fix_recruit=NULL, fix_wcatch=NULL),
+                     SR_sd=0, multi_init=0.01)
+  rn <- run("original_ABC")        # 非compound（既定）
+  rc <- run("original_ABC_plus")   # compound
+  An <- as.numeric(rn$HCR_realized[yrs,1,"original_ABC"]); En <- as.numeric(rn$HCR_mat[yrs,1,"expect_wcatch"]); Rn <- as.numeric(rn$HCR_realized[yrs,1,"reserved_catch"])
+  Pc <- as.numeric(rc$HCR_realized[yrs,1,"original_ABC_plus"]); Ec <- as.numeric(rc$HCR_mat[yrs,1,"expect_wcatch"]); Rc <- as.numeric(rc$HCR_realized[yrs,1,"reserved_catch"])
+  # 非compound: 翌年繰越 = original_ABC − expect
+  expect_equal(Rn[-1], (An - En)[-length(An)], tol=1e-6)
+  # compound:   翌年繰越 = original_ABC_plus − expect
+  expect_equal(Rc[-1], (Pc - Ec)[-length(Pc)], tol=1e-6)
+  # compound のほうが繰越が積み上がる（2年目以降は厳密に大きい）
+  expect_true(all(Rc[-(1:2)] > Rn[-(1:2)]))
 })
 
 # Naoto Shinohara

@@ -50,12 +50,12 @@ make_future_data(
   HCR_Blimit_year = NULL,
   HCR_Bban_year = NULL,
   HCR_TAC_reserve_rate = NA,
-  HCR_TAC_carry_rate = NA,
   HCR_TAC_upper_CV = NA,
   HCR_TAC_lower_CV = NA,
   HCR_TAC_adjust = NA,
   HCR_function_name = "HCR_default",
   HCR_reserve_denom = "original_ABC_plus",
+  HCR_carry_denom = "original_ABC",
   Pope = res_vpa$input$Pope,
   fix_recruit = NULL,
   fix_wcatch = NULL,
@@ -148,8 +148,6 @@ make_future_data(
 
 \item{HCR_TAC_reserve_rate}{TACの取り残し率。マイナス値を入れれば前借りもできる。}
 
-\item{HCR_TAC_carry_rate}{翌年に持ち越せる量の上限を当初ABC(original_ABC)に対する比率で指定（例: 0.1なら当初ABCの10%、1なら100%まで）。}
-
 \item{HCR_TAC_upper_CV}{漁獲量が前年の漁獲量のHCR_TAC_upper_CV倍と比較し、それよりも変化が大きい場合には前年の漁獲量xHCR_TAC_upper_CVを上限とする。単一の値か、tibble形式 tibble(year=2020:2024, TAC_upper_CV=rep(0.1,5)) で与える}
 
 \item{HCR_TAC_lower_CV}{漁獲量が前年の漁獲量のHCR_TAC_lower_CV倍と比較し、それよりも変化が大きい場合には前年の漁獲量xHCR_TAC_lower_CVを下限とする。単一の値か、tibble形式 tibble(year=2020:2024, TAC_lower_CV=rep(0.1,5)) で与える}
@@ -159,6 +157,8 @@ make_future_data(
 \item{HCR_function_name}{デフォルトは"HCR_default" ここを変更(関数名を文字列で与える。関数は別に定義しておく)すると自作のHCRが適用される。その場合、データのほうで定義されているbeta, Blimit, Bbanなど、同じ名前のものは有効}
 
 \item{HCR_reserve_denom}{取り残し率(HCR_TAC_reserve_rate)を「どの量に対する割合」とみなすか。"original_ABC_plus"（既定・スケトウ等）＝当年ABCに前年からの繰越/前借りを精算した「実際に使える量」(original_ABC_plus)に対する割合（取り残し量＝その量×率なので、繰越が増えれば取り残し量も増える）。"original_ABC"（カタクチ等）＝当年の素のABC（繰越と無関係, original_ABC）に対する割合（取り残し量＝ABC×率で固定）。}
+
+\item{HCR_carry_denom}{翌年への繰越量（繰越=banking時）をどの量を基準に計算するか。"original_ABC"（既定）＝もとのABC基準で1年限り（非compound、取り残した分が翌年に積み上がらない）。"original_ABC_plus"＝繰越込みの量を基準にして繰越分も翌年へ積み上げる（compound）。繰入(borrowing)時は使わない。}
 
 \item{Pope}{漁獲方程式にPopeの近似式を使うかどうか。与えない場合には、VPAのオプションが引き継がれる}
 
