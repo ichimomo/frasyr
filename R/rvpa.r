@@ -2180,7 +2180,23 @@ autocalc_ridgevpa <- function(input,
     lambda_set1 <- seq(0,1,0.1)
     res1 <- purrr::map(as.list(lambda_set1), search_lambda_vpa) %>% as.numeric()
     tmp_min <- which(abs(res1) == min(abs(res1)))
-    lambda_set2 <- seq(lambda_set1[tmp_min-1],lambda_set1[tmp_min+1],0.01)
+	if (tmp_min == 1) {
+       # λ=0が最適 → 右側だけ探索
+       lambda_set2 <- seq(lambda_set1[tmp_min],
+                     lambda_set1[tmp_min + 1],
+                     0.01)
+       } else if (tmp_min == length(lambda_set1)) {
+      # 右端 → 左側だけ探索
+       lambda_set2 <- seq(lambda_set1[tmp_min - 1],
+                     lambda_set1[tmp_min],
+                     0.01)
+       } else {
+     # 通常通り前後探索
+       lambda_set2 <- seq(lambda_set1[tmp_min - 1],
+                     lambda_set1[tmp_min + 1],
+                     0.01)
+      }
+
     res2 <- purrr::map(as.list(lambda_set2), search_lambda_vpa) %>% as.numeric()
     tmp_min <- which(abs(res2) == min(abs(res2)))
 

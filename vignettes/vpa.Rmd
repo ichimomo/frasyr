@@ -1,6 +1,6 @@
 ---
 title: "VPA関数を使った資源量推定"
-author: "市野川桃子"
+author: "市野川桃子 & 宮川光代"
 date: "`r Sys.Date()`"
 output:
   pdf_document:
@@ -14,6 +14,7 @@ vignette: >
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
+  warning = FALSE,
   collapse = TRUE,
   comment = "#>"
 )
@@ -31,6 +32,7 @@ dat <- data.handler(caa=caa, waa=waa, maa=maa, M=0.5)
 # VPAによる資源量推定
 res_vpa <- vpa(dat,fc.year=2015:2017,tf.year = 2015:2016,
                term.F="max",stat.tf="mean",Pope=TRUE,tune=FALSE,p.init=0.5)
+
 res_vpa$Fc.at.age # 将来予測やMSY計算で使うcurrent F (fc.yearのオプションでいつのFの平均かが指定される)
 plot(res_vpa$Fc.at.age,type="b",xlab="Age",ylab="F",ylim=c(0,max(res_vpa$Fc.at.age)))
 ```
@@ -44,7 +46,6 @@ plot(res_vpa$Fc.at.age,type="b",xlab="Age",ylab="F",ylim=c(0,max(res_vpa$Fc.at.a
 #out.vpa(res_vpa) # vpa.csvというファイルが作成されます。VPAの結果のグラフ出力となるvpa.pdfも出力されます。
 res_vpa2 <- read.vpa("https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex2_vpa.csv") # vpa.csvを編集後、read.vpa関数で読み込みます
 ```
-
 # さまざまなVPAのデモ
 
 ## データの読み込みと整形
@@ -61,15 +62,15 @@ dat <- data.handler(caa=caa, waa=waa, maa=maa, index=index, M=0.4)
 ```
 
 ## チューニングなしVPAのバリエーション 
-```{r}
+```{r, fig.show='hold', fig.width=6, fig.height=8}
   # p.initは初期値。収束しない場合（Fがゼロになる場合など）は、初期値を変えてみる
   # fc.yearは、Fcurrentを計算する範囲。管理基準値と将来予測で使われる。
 vout1 <- vpa(dat,tf.year=1997:1999,Pope=TRUE,fc.year=1998:2000,alpha=1,p.init=0.5) 
 vout1a <- vpa(dat,tf.year=1997:1999,Pope=FALSE,fc.year=1998:2000,alpha=1,p.init=0.5)
 vout1b <- vpa(dat,tf.year=1997:1999,Pope=TRUE,fc.year=1998:2000,alpha=0.5,p.init=0.5)
 vout1c <- vpa(dat,tf.year=1999:1999,Pope=TRUE,fc.year=1998:2000,alpha=1,p.init=0.5) 
+plot_vpa(vout1c, plot_year=1991:2000) # 様々な結果のプロット
 ```
-
 ## チューニングVPAのバリエーション
 ```{r}
 ## vout2; チューニング，選択率updateなし
@@ -93,63 +94,44 @@ vout4 <- vpa(dat,tune=TRUE,sel.update=FALSE,term.F="all",
              alpha=1,p.init=0.5,max.dd = 0.00001,fc.year=1998:2000)
 ```
 
-# モデル診断・推定パラメータの不確実性の評価
-
-## 尤度プロファイル
+## RidgeVPA
 ```{r}
-ci0 <- profile_likelihood.vpa(vout3, method="ci",Alpha=0.80)$ci
+## チューニング，選択率update, ridgeVPA
+  # lambda, penalty, betaの三つの引数を追加する
+vout5 <- vpa(dat,tune=TRUE,sel.update=TRUE,Pope=FALSE,
+             tf.year=1997:1999,sel.f=NULL, 
+             abund=c("N"),min.age=c(0),max.age=c(7), # 資源量指数の設定
+             alpha=1,p.init=0.5,max.dd = 0.00001,fc.year=1998:2000,
+			 lambda=0.01, # ridge penaltyの大きさ（下記のlambdaの決め方を参考にして探索した値を代入）
+			 penalty="p", # penalty項の与え方("p" or "f" or "s")
+			 beta=2) # penaltyの種類：1=lasso回帰, 2=ridge回帰
 ```
 
-## ブートストラップ
-```{r}
-## ノンパラメトリックブートストラップ(method="n")
-set.seed(1)
-boot.sim1 <- boo.vpa(vout3,B_ite=10,method="n")
-  # boo.vpaはブートストラップ回数分のvpa関数の返り値のリストを返す
-  # 値の取り出しは、リストの操作関数sapplyまたはlapplyを用いる
-  # Bで繰り返し回数を指定します．ここでは10回ですが実際には1000回(B=1000)以上やってください
-tf.dist1 <- sapply(boot.sim1,function(x) x$faa["2000"][7,])
-ci1 <- quantile(tf.dist1,probs=c(0.1,0.9))
-
-## パラメトリックブートストラップ(method="p")
-set.seed(1)
-boot.sim2 <- boo.vpa(vout3,B_ite=10,method="p") # 実際には1000回以上(B=1000)やってください
-tf.dist2 <- sapply(boot.sim2,function(x) x$faa["2000"][6,])
-ci2 <- quantile(tf.dist2,probs=c(0.1,0.9))
-
-## 平滑化ブートストラップ(method="r")
-set.seed(1) 
-boot.sim3 <- boo.vpa(vout3,B_ite=10,method="r") # 実際には1000回以上(B=1000)やってください
-tf.dist3 <- sapply(boot.sim3,function(x) x$faa["2000"][6,])
-ci3 <- quantile(tf.dist3,probs=c(0.1,0.9))
-
-## 4つの信頼区間の比較
-rbind(ci0,ci1,ci2,ci3)
-
-## ノンパラメトリックブートストラップ for vout4
-set.seed(1)
-boot.sim4 <- boo.vpa(vout4,B_ite=10,method="n") # 実際には1000回以上(B=1000)やってください
-
-tf.dist4 <- sapply(boot.sim4[boot.sim4!="try-error"],function(x) x$faa["2000"][7,])
-ci4 <- quantile(tf.dist4,probs=c(0.1,0.9))
-
-## 親魚量の信頼区間のプロット
-Years <- colnames(dat$caa)
-ssb.boot <- sapply(boot.sim1,function(x) colSums(x$ssb))
-x <- t(apply(ssb.boot,1,quantile,probs=c(0.1,0.5,0.9)))
-matplot(Years,x,ylim=c(0,max(x)),col=1,type=c("l","b","l"),
-        pch=1,lty=c(2,1,2),ylab="Spawning biomass")
+## RidgeVPAにおけるlambdaの決め方
+```{r, eval=FALSE}
+  # autocalc_ridgevpaという関数を使用 ※VPAの計算を何度も繰り返し行うので，TMB=TRUEでない場合はかなりの計算時間がかかります
+ridge_res <- autocalc_ridgevpa(
+             input=vout3$input,
+			 target_retro="F", # レトロスペクティブバイアスを何について計るか；"F", "B", "SSB", "N", "R"の中から選択する
+			 n_retro=5, # レトロスペクティブ解析で遡る年数
+			 b_fix=TRUE, # レトロスペクティブ解析内でbを固定するか
+			 bin=0.1) # lambdaの探索の幅
+			 
+ridge_res$min_penalty # target_retroで指定した指標のモーンズρが最小になるようなlambdaの値.これをlambdaとして代入する
 ```
 
-## 残差の自己相関のチェック
-```{r}
-resid <- as.numeric(log(vout3$pred.index) - log(dat$index))
-plot(resid,type="b")
-acf(resid) # 自己相関は特にない
-# 正規性の検定
-ks.test(resid,"pnorm",mean=mean(resid),sd=sd(resid))
-# 分布が有意に正規分布から外れているわけではない
-ks.test(c(resid,10),"pnorm",mean=mean(c(resid,10)),sd=sd(c(resid,10)))
-# 大きな外れ値があると、p値が小さくなって、正規分布でない、となる。
+## RidgeVPAの特殊な設定(etaをいれる場合）
+```{r, eval=FALSE}
+  # ペナルティー項の重みを年齢によって変える場合はeta, eta.ageを追加する
+vout6 <- vpa(dat,tune=TRUE,sel.update=FALSE,term.F="all",
+             tf.year=NULL,sel.f=NULL,
+             abund=c("N"),min.age=c(0),max.age=c(6), 
+             alpha=1,p.init=0.5,max.dd = 0.00001,fc.year=1998:2000,
+			 lambda=0.01, 
+			 penalty="p", 
+			 beta=2,
+			 eta=0.99, # penaltyを年齢で分けて与えるときにeta.ageで指定した年齢への相対的なpenalty(0~1).autocalc_ridgevpaで探索可能
+			 eta.age=0) #penaltyを年齢で分けるときにetaを与える年齢(0=0歳（加入）, 0:1=0~1歳)
 ```
+
 
