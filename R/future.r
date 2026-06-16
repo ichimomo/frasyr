@@ -36,7 +36,7 @@
 #' @param HCR_Blimit_year Blimitを年によって変える場合。tibble(year=2020:2024, Blimit=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える。HCR_Blimitで設定されたBlimitは上書きされる。
 #' @param HCR_Bban_year Bbanを年によって変える場合。tibble(year=2020:2024, Bban=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える。HCR_Bbanで設定されたBbanは上書きされる。
 #' @param HCR_TAC_reserve_rate TACの取り残し率。マイナス値を入れれば前借りもできる。
-#' @param HCR_reserve_denom 比率で取り残し量を決める場合、もともとのABCをもとにするか（"original_ABC_plus"、最新の繰越前借り設定）前年からの繰越も考慮したABCをもとにするか（"original_ABC", 過去のスケトウ繰越設定）
+#' @param HCR_reserve_denom 取り残し率(HCR_TAC_reserve_rate)を「どの量に対する割合」とみなすか。"original_ABC_plus"（既定・スケトウ等）＝当年ABCに前年からの繰越/前借りを精算した「実際に使える量」(original_ABC_plus)に対する割合（取り残し量＝その量×率なので、繰越が増えれば取り残し量も増える）。"original_ABC"（カタクチ等）＝当年の素のABC（繰越と無関係, original_ABC）に対する割合（取り残し量＝ABC×率で固定）。
 #' @param HCR_TAC_carry_rate 翌年に持ち越せる量の上限を当初ABC(original_ABC)に対する比率で指定（例: 0.1なら当初ABCの10%、1なら100%まで）。
 #' @param HCR_TAC_adjust B&B（前借り・繰越）設定での「前借り返却額」を、推定ABCと真のABCの差にもとづいて繰越枠の範囲内で調整する。-1 下方向にadjust, 0 上下方向にadjust, 1 上方向のみadjust, 用いない場合はNA。do_MSE=TRUEのみ。繰越枠の上限を無視してexpect_wcatchを直接上書きする\code{future_vpa()}の\code{MSE_TAC_revise}とは別物。 
 #' @param HCR_TAC_upper_CV 漁獲量が前年の漁獲量のHCR_TAC_upper_CV倍と比較し、それよりも変化が大きい場合には前年の漁獲量xHCR_TAC_upper_CVを上限とする。単一の値か、tibble形式 tibble(year=2020:2024, TAC_upper_CV=rep(0.1,5)) で与える

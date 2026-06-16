@@ -158,7 +158,7 @@ make_future_data(
 
 \item{HCR_function_name}{デフォルトは"HCR_default" ここを変更(関数名を文字列で与える。関数は別に定義しておく)すると自作のHCRが適用される。その場合、データのほうで定義されているbeta, Blimit, Bbanなど、同じ名前のものは有効}
 
-\item{HCR_reserve_denom}{比率で取り残し量を決める場合、もともとのABCをもとにするか（"original_ABC_plus"、最新の繰越前借り設定）前年からの繰越も考慮したABCをもとにするか（"original_ABC", 過去のスケトウ繰越設定）}
+\item{HCR_reserve_denom}{取り残し率(HCR_TAC_reserve_rate)を「どの量に対する割合」とみなすか。"original_ABC_plus"（既定・スケトウ等）＝当年ABCに前年からの繰越/前借りを精算した「実際に使える量」(original_ABC_plus)に対する割合（取り残し量＝その量×率なので、繰越が増えれば取り残し量も増える）。"original_ABC"（カタクチ等）＝当年の素のABC（繰越と無関係, original_ABC）に対する割合（取り残し量＝ABC×率で固定）。}
 
 \item{Pope}{漁獲方程式にPopeの近似式を使うかどうか。与えない場合には、VPAのオプションが引き継がれる}
 
