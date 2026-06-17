@@ -634,18 +634,28 @@ test_that("future_vpa errors clearly when TAC_adjust is used without do_MSE (lev
                regexp="HCR_TAC_adjust")
 })
 
-## B2/B3: sim-wise sign mixing is rejected ----
-test_that("future_vpa errors when banking/borrowing are mixed across sims (level 2)",{
+## sim間で取り残し/前借りが混在しても sim単位で繰越が計算される（制限撤廃）----
+test_that("future_vpa handles banking/borrowing mixed across sims per-sim (level 2)",{
   d <- redo_future(data_future_test,
-                   list(nsim=2, nyear=10, HCR_TAC_reserve_rate=0.1,
+                   list(nsim=2, nyear=10, HCR_Blimit=-1,
                         HCR_reserve_denom="original_ABC_plus",
+                        HCR_TAC_reserve_rate=0.1,
                         fix_recruit=NULL, fix_wcatch=NULL),
                    only_data=TRUE)
-  # 通常の引数ではsim間の符号混在は作れないので、HCR_matを直接書き換えて再現する
+  # sim1=取り残し(+0.1), sim2=前借り(-0.1) を直接設定（引数では年方向にしか変えられないため）
   d$data$HCR_mat[as.character(2019:2027),1,"TAC_reserve_rate"] <-  0.1
   d$data$HCR_mat[as.character(2019:2027),2,"TAC_reserve_rate"] <- -0.1
-  expect_error(future_vpa(d$data, optim_method="none", multi_init=1),
-               regexp="混在")
+  res <- future_vpa(d$data, optim_method="none", multi_init=1)  # 混在でもエラーにならない
+  yrs <- as.character(2019:2026)
+  A1 <- as.numeric(res$HCR_realized[yrs,1,"original_ABC"]);      E1 <- as.numeric(res$HCR_mat[yrs,1,"expect_wcatch"]); R1 <- as.numeric(res$HCR_realized[yrs,1,"reserved_catch"])
+  P2 <- as.numeric(res$HCR_realized[yrs,2,"original_ABC_plus"]); E2 <- as.numeric(res$HCR_mat[yrs,2,"expect_wcatch"]); R2 <- as.numeric(res$HCR_realized[yrs,2,"reserved_catch"])
+  # 取り残しsim(sim1): 翌年繰越 = original_ABC − expect（compound=FALSE既定）
+  expect_equal(R1[-1], (A1 - E1)[-length(A1)], tol=1e-6)
+  # 前借りsim(sim2): 翌年繰越(負債) = original_ABC_plus − expect
+  expect_equal(R2[-1], (P2 - E2)[-length(P2)], tol=1e-6)
+  # 方向どおり: sim1は取り残し(>=0)、sim2は前借り(<=0)
+  expect_true(all(R1[-1] >= -1e-6))
+  expect_true(all(R2[-1] <=  1e-6))
 })
 
 ## B5(part1): reserve_rate > 1 is rejected ----
@@ -683,23 +693,23 @@ test_that("future_vpa stops catch and forgives unpayable debt on insolvency (lev
                rep(0, length(insolvent_not_last)), tol=1e-8)
 })
 
-## HCR_carry_denom: banking の繰越基準 (1年限り vs compound) ----
-test_that("HCR_carry_denom switches banking carryover base (level 2)",{
+## HCR_carry_compound: banking の繰越基準 (1年限り vs 積み上げ) ----
+test_that("HCR_carry_compound switches banking carryover base (level 2)",{
   yrs <- as.character(2019:2026)
-  run <- function(cd) redo_future(data_future_test,
+  run <- function(cc) redo_future(data_future_test,
                      list(nsim=2, nyear=10, HCR_TAC_reserve_rate=0.1,
-                          HCR_reserve_denom="original_ABC_plus", HCR_carry_denom=cd,
+                          HCR_reserve_denom="original_ABC_plus", HCR_carry_compound=cc,
                           fix_recruit=NULL, fix_wcatch=NULL),
                      SR_sd=0, multi_init=0.01)
-  rn <- run("original_ABC")        # 非compound（既定）
-  rc <- run("original_ABC_plus")   # compound
+  rn <- run(FALSE)   # 1年限り（既定）
+  rc <- run(TRUE)    # 積み上げ
   An <- as.numeric(rn$HCR_realized[yrs,1,"original_ABC"]); En <- as.numeric(rn$HCR_mat[yrs,1,"expect_wcatch"]); Rn <- as.numeric(rn$HCR_realized[yrs,1,"reserved_catch"])
   Pc <- as.numeric(rc$HCR_realized[yrs,1,"original_ABC_plus"]); Ec <- as.numeric(rc$HCR_mat[yrs,1,"expect_wcatch"]); Rc <- as.numeric(rc$HCR_realized[yrs,1,"reserved_catch"])
-  # 非compound: 翌年繰越 = original_ABC − expect
+  # 1年限り(FALSE): 翌年繰越 = original_ABC − expect
   expect_equal(Rn[-1], (An - En)[-length(An)], tol=1e-6)
-  # compound:   翌年繰越 = original_ABC_plus − expect
+  # 積み上げ(TRUE): 翌年繰越 = original_ABC_plus − expect
   expect_equal(Rc[-1], (Pc - Ec)[-length(Pc)], tol=1e-6)
-  # compound のほうが繰越が積み上がる（2年目以降は厳密に大きい）
+  # 積み上げのほうが繰越が大きくなる（2年目以降は厳密に大きい）
   expect_true(all(Rc[-(1:2)] > Rn[-(1:2)]))
 })
 
