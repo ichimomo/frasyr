@@ -109,13 +109,14 @@ vout5 <- vpa(dat,tune=TRUE,sel.update=TRUE,Pope=FALSE,
 
 ## RidgeVPAにおけるlambdaの決め方
 ```{r, eval=FALSE}
-  # autocalc_ridgevpaという関数を使用 ※VPAの計算を何度も繰り返し行うので，TMB=TRUEでない場合はかなりの計算時間がかかります
+  # autocalc_ridgevpaという関数を使用（初めに0-1の間で0.1刻みで探索し，モーンズρが最も低かったlambdaのところで，次はその値の前後±0.1の範囲を0.01刻みで探索する仕様になっています）．
+  ※VPAの計算を何度も繰り返し行うので，TMB=TRUEでない場合はかなりの計算時間がかかります
+  
 ridge_res <- autocalc_ridgevpa(
              input=vout3$input,
 			 target_retro="F", # レトロスペクティブバイアスを何について計るか；"F", "B", "SSB", "N", "R"の中から選択する
 			 n_retro=5, # レトロスペクティブ解析で遡る年数
-			 b_fix=TRUE, # レトロスペクティブ解析内でbを固定するか
-			 bin=0.1) # lambdaの探索の幅
+			 b_fix=TRUE) # レトロスペクティブ解析内でbを固定するか
 			 
 ridge_res$min_penalty # target_retroで指定した指標のモーンズρが最小になるようなlambdaの値.これをlambdaとして代入する
 ```
@@ -132,6 +133,17 @@ vout6 <- vpa(dat,tune=TRUE,sel.update=FALSE,term.F="all",
 			 beta=2,
 			 eta=0.99, # penaltyを年齢で分けて与えるときにeta.ageで指定した年齢への相対的なpenalty(0~1).autocalc_ridgevpaで探索可能
 			 eta.age=0) #penaltyを年齢で分けるときにetaを与える年齢(0=0歳（加入）, 0:1=0~1歳)
+
+  # autocalc_ridgevpaを用いてlambdaとetaの２次元探索を行う（ここでは２段階探索は行っていません）
+  ※lambdaとetaをグリッド探索するのでかなりの計算時間がかかります
+ridge_res2 <- autocalc_ridgevpa(
+             input=vout6$input,
+			 target_retro="F", 
+			 n_retro=5, 
+			 b_fix=TRUE, 
+			 bin=0.1) # lambdaとetaの探索刻み幅を指定
+			 
+ridge_res2$min_penalty # target_retroで指定した指標のモーンズρが最小になるようなlambdaとetaの組み合わせ
 ```
 
 
