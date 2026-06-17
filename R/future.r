@@ -35,12 +35,10 @@
 #' @param HCR_beta_year betaを年によって変える場合。tibble(year=2020:2024, beta=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える。HCR_betaで設定されたbetaは上書きされる。
 #' @param HCR_Blimit_year Blimitを年によって変える場合。tibble(year=2020:2024, Blimit=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える。HCR_Blimitで設定されたBlimitは上書きされる。
 #' @param HCR_Bban_year Bbanを年によって変える場合。tibble(year=2020:2024, Bban=c(1.3,1.2,1.1,1,0.9))　のようにtibble形式で与える。HCR_Bbanで設定されたBbanは上書きされる。
-#' @param HCR_TAC_reserve_rate TACの取り残し率。マイナス値を入れれば前借りもできる。
-#' @param HCR_TAC_reserve_amount TACの獲り残し量。マイナス値を入れれば前借りもできる。rateとamountの片方どちらかだけ設定する
-#' @param HCR_reserve_denom 比率で取り残し量を決める場合、もともとのABCをもとにするか（"original_ABC"、最新の繰越前借り設定）前年からの繰越も考慮したABCをもとにするか（"original_ABC_plus", 過去のスケトウ繰越設定）
-#' @param HCR_TAC_carry_rate 当初TACのうち何トンまで持ち越せるかの上限（比率）。
-#' @param HCR_TAC_carry_amount 当初TACのうち何トンまで持ち越せるかの上限（比率）。
-#' @param HCR_TAC_adjust B&B設定の場合，-1 下方向にadjust, 0 上下方向にadjust, 1 上方向のみadjust, 用いない場合はNA
+#' @param HCR_TAC_reserve_rate TACの取り残し率。マイナス値を入れれば前借りもできる。年・シミュレーションごとに長さを揃えたベクトルで与えてよく、sim間・年間で取り残し(正)と前借り(負)が混在していてもよい（simごとに方向別に繰越が計算される。HCR_carry_compound・HCR_TAC_adjustとの併用も可）。
+#' @param HCR_reserve_denom 取り残し率(HCR_TAC_reserve_rate)を「どの量に対する割合」とみなすか。"original_ABC_plus"（既定・スケトウ等）＝当年ABCに前年からの繰越/前借りを精算した「実際に使える量」(original_ABC_plus)に対する割合（取り残し量＝その量×率なので、繰越が増えれば取り残し量も増える）。"original_ABC"（カタクチ等）＝当年の素のABC（繰越と無関係, original_ABC）に対する割合（取り残し量＝ABC×率で固定）。
+#' @param HCR_carry_compound 繰り越し（取り残し=HCR_TAC_reserve_rate>0）のとき、繰り越した分を翌年以降に積み上げるか。FALSE（既定）＝もとのABCを基準にするので繰り越せるのはもとのABC以下・1年限り（取り残した分が翌年以降にさらに積み上がらない）。TRUE＝繰越込みの量を基準にするので繰越分も翌年へ繰り越され、もとのABCを超えて積み上がりうる。前借り（borrowing）時は使われない。
+#' @param HCR_TAC_adjust B&B（前借り・繰越）設定での「前借り返却額」を、推定ABCと真のABCの差にもとづいて繰越枠の範囲内で調整する。-1 下方向にadjust, 0 上下方向にadjust, 1 上方向のみadjust, 用いない場合はNA。do_MSE=TRUEのみ。繰越枠の上限を無視してexpect_wcatchを直接上書きする\code{future_vpa()}の\code{MSE_TAC_revise}とは別物。 
 #' @param HCR_TAC_upper_CV 漁獲量が前年の漁獲量のHCR_TAC_upper_CV倍と比較し、それよりも変化が大きい場合には前年の漁獲量xHCR_TAC_upper_CVを上限とする。単一の値か、tibble形式 tibble(year=2020:2024, TAC_upper_CV=rep(0.1,5)) で与える
 #' @param HCR_TAC_lower_CV 漁獲量が前年の漁獲量のHCR_TAC_lower_CV倍と比較し、それよりも変化が大きい場合には前年の漁獲量xHCR_TAC_lower_CVを下限とする。単一の値か、tibble形式 tibble(year=2020:2024, TAC_lower_CV=rep(0.1,5)) で与える
 #' @param Pope 漁獲方程式にPopeの近似式を使うかどうか。与えない場合には、VPAのオプションが引き継がれる
@@ -119,14 +117,12 @@ make_future_data <- function(res_vpa,
                              HCR_Blimit_year=NULL,
                              HCR_Bban_year=NULL,
                              HCR_TAC_reserve_rate=NA,
-                             HCR_TAC_reserve_amount=NA,  #
-                             HCR_TAC_carry_rate=NA,
-                             HCR_TAC_carry_amount=NA,    #
                              HCR_TAC_upper_CV=NA,
                              HCR_TAC_lower_CV=NA,
                              HCR_TAC_adjust=NA,
                              HCR_function_name="HCR_default",
                              HCR_reserve_denom="original_ABC_plus",
+                             HCR_carry_compound=FALSE,
                              # Other
                              Pope=res_vpa$input$Pope,
                              fix_recruit=NULL, # list(year=2020, rec=1000)
@@ -162,17 +158,11 @@ make_future_data <- function(res_vpa,
   names(input) <- argname
 
 #  if(!is.na(HCR_TAC_reserve_rate  )) assertthat::assert_that(min(HCR_TAC_reserve_rate  ) >= 0)
-#  if(!is.na(HCR_TAC_carry_rate    )) assertthat::assert_that(min(HCR_TAC_carry_rate    ) >= 0)
-#  if(!is.na(HCR_TAC_reserve_amount)) assertthat::assert_that(min(HCR_TAC_reserve_amount) >= 0)
-#  if(!is.na(HCR_TAC_carry_amount  )) assertthat::assert_that(min(HCR_TAC_carry_amount  ) >= 0)
 
   assertthat::assert_that(is.logical(waa_fun),
                           is.logical(waa_catch_fun),
                           is.logical(maa_fun),
                           is.logical(bias_correction))
-
-  if(is.numeric(HCR_TAC_reserve_rate) && is.numeric(HCR_TAC_reserve_amount)) stop("HCR_TAC_reserve_rateとHCR_TAC_reserve_amountが同時に指定されています（同時には指定できません）")
-  if(is.numeric(HCR_TAC_carry_rate) && is.numeric(HCR_TAC_carry_amount))     stop("HCR_TAC_carry_rateとHCR_TAC_carry_amountが同時に指定されています（同時には指定できません）")
 
   assertthat::assert_that(is.numeric(HCR_TAC_adjust)|is.na(HCR_TAC_adjust))
 
@@ -225,18 +215,15 @@ make_future_data <- function(res_vpa,
                                       "blank5")))
 
   #HCR_mat <- array(0, dim=c(total_nyear, nsim, 7),
-  HCR_mat <- array(0, dim=c(total_nyear, nsim, 12),
+  HCR_mat <- array(0, dim=c(total_nyear, nsim, 9),
                    dimnames=list(year=allyear_name, nsim=1:nsim,
                                  par=c("beta","Blimit","Bban","year_lag", #1-4
                                        "expect_wcatch",# 5 漁獲量。ここにあらかじめ値を入れているとこの漁獲量どおりに漁獲する
                                        # 以下、取り残し用の設定
                                        "TAC_reserve_rate", # 6 全漁獲可能量の何割まで獲り残すか      #
-                                       "TAC_carry_rate", # 7 TACの何割まで翌年に持ち越しを許容するか  #
-                                       "TAC_reserve_amount", # 8 全漁獲可能量のうち何トンまで獲り残すか  #
-                                       "TAC_carry_amount", # 9 何トンまで持ち越しを許容するか             #
-                                       "TAC_upper_CV", # 10 漁獲量の変動の上側の上限
-                                       "TAC_lower_CV", # 11 漁獲量の変動の下側の下限
-                                       "TAC_adjust" # 12 返却のさいにTACの調整をするかどうか
+                                       "TAC_upper_CV", # 7 漁獲量の変動の上側の上限
+                                       "TAC_lower_CV", # 8 漁獲量の変動の下側の下限
+                                       "TAC_adjust" # 9 返却のさいにTACの調整をするかどうか
                                        )))
   class(SR_mat)  <- "myarray"
   class(HCR_mat) <- "myarray"
@@ -244,8 +231,7 @@ make_future_data <- function(res_vpa,
   HCR_mat[,,"Blimit"] <- HCR_mat[,,"Bban"] <- -1
 #  HCR_mat[,,"beta"] <- HCR_mat[,,"beta_gamma"] <- 1
   HCR_mat[,,"beta"] <- 1
-  HCR_mat[,,"TAC_reserve_rate"] <- HCR_mat[,,"TAC_carry_rate"] <- NA
-  HCR_mat[,,"TAC_reserve_amount"] <- HCR_mat[,,"TAC_carry_amount"] <- NA
+  HCR_mat[,,"TAC_reserve_rate"] <- NA
   HCR_mat[,,"TAC_upper_CV"] <- NA
   HCR_mat[,,"TAC_lower_CV"] <- NA
   HCR_mat[,,"TAC_adjust"] <- NA
@@ -306,9 +292,6 @@ make_future_data <- function(res_vpa,
     HCR_mat[nn,,"Bban"    ] <- HCR_Bban
     HCR_mat[nn,,"year_lag"] <- HCR_year_lag
     HCR_mat[nn,,"TAC_reserve_rate"]   <- rep(HCR_TAC_reserve_rate, length.out=length(nn))
-    HCR_mat[nn,,"TAC_carry_rate"  ]   <- rep(HCR_TAC_carry_rate, length.out=length(nn))
-    HCR_mat[nn,,"TAC_reserve_amount"] <- rep(HCR_TAC_reserve_amount, length.out=length(nn))
-    HCR_mat[nn,,"TAC_carry_amount"]   <- rep(HCR_TAC_carry_amount , length.out=length(nn))
     HCR_mat[nn,,"TAC_adjust"]   <- rep(HCR_TAC_adjust , length.out=length(nn))
 
     assign_HCR_ <- function(HCR_mat, HCR_year, target){
@@ -393,7 +376,8 @@ make_future_data <- function(res_vpa,
                    objective = 0, # 0: MSY, 1: PGY, 2: percentB0 or Bempirical
                    obj_value = -1,
                    HCR_function_name=HCR_function_name,
-                   HCR_reserve_denom=HCR_reserve_denom
+                   HCR_reserve_denom=HCR_reserve_denom,
+                   HCR_carry_compound=HCR_carry_compound
   )
 
   if(isTRUE(waa_fun)){
@@ -525,7 +509,8 @@ make_future_data <- function(res_vpa,
 #' @param MSE_input_data 簡易MSEを実施する場合、ABC計算するための将来予測を実施するための設定ファイル
 #' @param MSE_nsim 簡易MSEを実施する場合、ABC計算するための将来予測の繰り返し回数。
 #' @param MSE_sd 簡易MSEをする場合の加入変動の大きさ。ここをゼロにすれば決定論的な将来予測の値を得られる。その場合MSE_nsimは自動的に２に設定される。単純なモデルの場合、ここがゼロでも多分問題ない。モデル平均を使っている場合にはちゃんとした簡易MSEをすること。リサンプリングオプションの場合も使えない。
-#' @param MSE_TAC_revise 簡易MSEする場合，真のABCを用いてTACをリバイスするか．何もしない場合はNA，下方修正のみする場合は-1，上方修正のみする場合は1, make_future_dataで設定するHCR_TAC_adjustと似ているが，こちらのほうは，B&B設定とは関係なく動く．HCRのほうは，繰入・繰越率が上限となる
+#' @param MSE_TAC_revise 簡易MSE（do_MSE=TRUE）専用の、簡易的・試験的なTAC補正オプション。各シミュレーションで推定ABC（assessmentにもとづくexpect_wcatch）と真のABC（真のFで漁獲した場合の漁獲量real_true_catch）を比較し、片方向のずれだけをTACに反映する。NA=補正しない（既定）。1=推定ABCが真のABCより大きい（上振れ）simのみTACを真のABCまで引き下げる。-1=推定ABCが真のABCより小さい（下振れ）simのみTACを真のABCまで引き上げる。
+#' make_future_dataで設定する\code{HCR_TAC_adjust}と目的は似るが次の点で異なる: (1)繰越・前借り（B&B）の機構を経由せず、繰越計算の後にexpect_wcatchを直接上書きする、(2)繰入・繰越率による上限がかからない、(3)\code{future_vpa()}の引数として与える（\code{HCR_TAC_adjust}は\code{make_future_data()}でHCR_matに設定し、前借りの返却額を繰越枠の範囲内で調整する正規の経路）。なお本オプションは、TACの上方修正のみ・下方修正のみが行われた場合に結果がどうなるかを見る目的で試験的に追加されたもので、繰越枠を尊重する通常運用では\code{HCR_TAC_adjust}を用いる。
 #' @param objective MSY:MSYの推定、PGY:PGYの値をobj_valueに入れる、percentB0:B0パーセント、何％にするかはobj_valueで指定, SSB:obj_valueで指定した特定の親魚資源量に一致するようにする
 #' @param obj_stat 目的関数を計算するときに利用する計算方法（"mean"だと平均、"median"だと中央値、"geomean"だと幾何平均）
 #' @param obj_value 目的とする値
@@ -726,9 +711,10 @@ future_vpa_R <- function(naa_mat,
                          HCR_mat,
                          HCR_function_name,
                          HCR_reserve_denom,
+                         HCR_carry_compound=FALSE,
                          max_F=exp(10),
                          max_exploitation_rate=0.99,
-                         do_MSE=NULL,
+                         do_MSE=FALSE,
                          MSE_input_data=NULL,
                          MSE_nsim = NULL,
                          MSE_sd = NULL,
@@ -773,7 +759,8 @@ future_vpa_R <- function(naa_mat,
   tmb_data <- lapply(argname,function(x) eval(parse(text=x)))
   names(tmb_data) <- argname
 
-  do_MSE <- isTRUE(do_MSE) # do_MSE=NULL (for old default option)  
+  do_MSE <- isTRUE(do_MSE) # do_MSE=NULL (for old default option)
+  validate_TAC_carryover_settings(HCR_mat, do_MSE) # 繰越設定の静的検査を冒頭で1回だけ実施
 
   HCR_realized_name <- c("wcatch", "beta_gamma", "Fratio","reserved_catch","original_ABC","original_ABC_plus")
   HCR_realized <- array(0,dim=c(dim(HCR_mat)[[1]],dim(HCR_mat)[[2]],length(HCR_realized_name)),
@@ -928,9 +915,6 @@ future_vpa_R <- function(naa_mat,
         MSE_dummy_data$M_mat[]   <-  M_mat[,,i] # in case
         # MSEのシミュレーション内では繰越設定はオフにする（自然な条件下でABCがいくつになるか知りたいので。繰越がある場合はこのあとで漁獲量が調整されるので大丈夫）
         MSE_dummy_data$HCR_mat[,,"TAC_reserve_rate"] <- NA
-        MSE_dummy_data$HCR_mat[,,"TAC_carry_rate"] <- NA
-        MSE_dummy_data$HCR_mat[,,"TAC_reserve_amount"] <- NA #
-        MSE_dummy_data$HCR_mat[,,"TAC_carry_amount"] <- NA   #
         # 同様にTACの変動の上限設定もオフにする +> オフにしない (2025/05/08変更)
         #MSE_dummy_data$HCR_mat[,,"TAC_upper_CV"] <- NA
         #MSE_dummy_data$HCR_mat[,,"TAC_lower_CV"] <- NA
@@ -1005,93 +989,13 @@ future_vpa_R <- function(naa_mat,
         set_lower_limit_catch(HCR_realized[t-1,,"wcatch"], HCR_mat[t,,"expect_wcatch"], HCR_mat[t,,"TAC_lower_CV"])
     }
       
-    # --- CV設定がある前提の上で繰越・繰入をする
-    # TAC carry over setting
-    if(has_non_na(HCR_mat[t,,"TAC_reserve_rate"]) || has_non_na(HCR_mat[t,,"TAC_reserve_amount"])){
-      if(sum(HCR_mat[t,,"expect_wcatch"])==0){
-        # non-MSE
-        HCR_realized[t,,"original_ABC"] <-
-          catch_equation(N_mat[,t,],F_mat[,t,],waa_catch_mat[,t,],M_mat[,t,],Pope=Pope) %>% colSums()
-      }
-      else{
-        # MSE
-        HCR_realized[t,,"original_ABC"] <- HCR_mat[t,,"expect_wcatch"]
-      }
-      # original_ABC_plus; 貸し借りを精算したあとのABC
-      HCR_realized[t,,"original_ABC_plus"] <- HCR_realized[t,,"original_ABC"] + HCR_realized[t,,"reserved_catch"]
-
-      # 比率で繰越量を決める場合
-      if(has_non_na(HCR_mat[t,,"TAC_reserve_rate"])){
-
-        is_banking <- all(HCR_mat[t,,"TAC_reserve_rate"]>0)
-        # when borrowing
-        if(is_banking==FALSE){
-          if(is.null(do_MSE)  || do_MSE==FALSE) tmp <- (spawner_mat[t,] < HCR_mat[t,,"Blimit"])
-          if(!is.null(do_MSE) && do_MSE==TRUE) tmp <-  (spawner_mat[t-2,] < HCR_mat[t,,"Blimit"])
-          HCR_mat[t,tmp,"TAC_reserve_rate"]  <- 0
-        }
-
-        if(HCR_reserve_denom=="original_ABC_plus"){
-          # 増減させたあとのABCをもとにする場合
-          HCR_mat[t,,"expect_wcatch"] <- HCR_realized[t,,HCR_reserve_denom] * (1-HCR_mat[t,,"TAC_reserve_rate"])
-        }
-        if(HCR_reserve_denom=="original_ABC"){
-          # もともとのABCをもとにする場合
-          HCR_mat[t,,"expect_wcatch"] <- HCR_realized[t,,"original_ABC_plus"] - HCR_realized[t,,"original_ABC"] * HCR_mat[t,,"TAC_reserve_rate"]
-          HCR_mat[t,,"expect_wcatch"] <- ifelse(HCR_mat[t,,"expect_wcatch"]<0, 0.01, HCR_mat[t,,"expect_wcatch"])
-        }
-      }
-
-      # 漁獲量で繰越量を決める場合
-      if(has_non_na(HCR_mat[t,,"TAC_reserve_amount"])){
-
-        is_banking <- all(HCR_mat[t,,"TAC_reserve_amount"]>0)
-
-        if(is_banking==FALSE){ # Blimit以下の場合、繰入はできない
-
-          if(is.null(do_MSE) | do_MSE==FALSE) tmp <- (spawner_mat[t,] < HCR_mat[t,,"Blimit"])
-          if(!is.null(do_MSE) && do_MSE==TRUE) tmp <- (spawner_mat[t-2,] < HCR_mat[t,,"Blimit"]) # Blimitは管理開始年からしかインプットされていないのでt-2でなくtを使う
-          HCR_mat[t,tmp,"TAC_reserve_amount"]  <- 0
-        }
-        tmpcatch <- HCR_realized[t,,"original_ABC_plus"] - HCR_mat[t,,"TAC_reserve_amount"]
-        HCR_mat[t,,"expect_wcatch"] <- ifelse(tmpcatch<0, 0.01, tmpcatch)
-      } #expect_wcatchをゼロにすると不具合がありそうなので、微小値（0.01）を与える
-
-      # 次の年の持ち越し分を計算
-      if(t<total_nyear){
-        # 翌年に持ち越せる上限量を計算
-        tmp1 <- has_non_na(HCR_mat[t,,"TAC_carry_rate"])
-        tmp2 <- has_non_na(HCR_mat[t,,"TAC_carry_amount"])
-        if(tmp1){
-          max_carry_amount <- HCR_mat[t,,"TAC_carry_rate"]*HCR_realized[t,,"original_ABC"]
-        } #
-        if(tmp2){
-          max_carry_amount <- HCR_mat[t,,"TAC_carry_amount"]
-        }
-        if(!tmp1 && !tmp2) max_carry_amount <- Inf
-
-        # 実際の漁獲量ともともとのABCの差
-        # 繰越は１年以上引き継がれないという設定なので"original_ABC_plus"でなく"original_ABC"との差を繰越分としているが、前借り設定が混ざると都合が悪くなる
-        # とりあえずbankingの場合とborrowingの場合で場合分けする
-        if(is_banking){
-          # when banking
-          ABC_reserve_amount <- HCR_realized[t,,"original_ABC"] - HCR_mat[t,,"expect_wcatch"]
-        }
-        else{# when borrowing
-          # TACでadjustする場合
-          if(has_non_na(HCR_mat[t,,"TAC_adjust"])){
-            ABC_reserve_amount <- calc_adjust_TAC(HCR_mat[t,,"expect_wcatch"], HCR_realized[t,,"original_ABC_plus"], SR_MSE[t, ,"real_true_catch"], return_limit=HCR_mat[t,,"TAC_adjust"]) * (-1)
-          }
-          else{
-          # TACでadjustしない場合
-            ABC_reserve_amount <- HCR_realized[t,,"original_ABC_plus"] - HCR_mat[t,,"expect_wcatch"] 
-          }
-        }
-        #ABC_reserve_amount[ABC_reserve_amount<0] <- 0
-        HCR_realized[t+1,,"reserved_catch"] <- cbind(max_carry_amount, ABC_reserve_amount) %>%
-          apply(1,min)
-      }
-    }
+    # --- CV設定がある前提の上で繰越・繰入をする (TAC carry over)
+    # 振る舞い不変の関数抽出: apply_TAC_carryover (refactor-tac-carryover phase2)
+    .carry <- apply_TAC_carryover(HCR_mat, HCR_realized, t, do_MSE, total_nyear,
+                                  HCR_reserve_denom, HCR_carry_compound, spawner_mat, SR_MSE,
+                                  N_mat, F_mat, waa_catch_mat, M_mat, Pope)
+    HCR_mat      <- .carry$HCR_mat
+    HCR_realized <- .carry$HCR_realized
 
 
     # do_MSEの場合，真のABCを見てTACの再調整をする場合
@@ -1992,6 +1896,110 @@ calc_forward <- function(naa,M,faa,t, plus_age, plus_group = TRUE){
     if(plus_group == TRUE) naa[plus_age,t+1] <- naa[plus_age,t+1] + naa[plus_age,t]*exp(-M[plus_age,t]-faa[plus_age,t])
   }
   return(naa)
+}
+
+#' Validate TAC carryover settings once (called at the start of future_vpa_R).
+#'
+#' These are static checks over the whole HCR_mat, so they run once up front
+#' instead of every projection year inside apply_TAC_carryover.
+#' @noRd
+validate_TAC_carryover_settings <- function(HCR_mat, do_MSE){
+  has_non_na <- function(x) any(!is.na(x))
+  ny <- dim(HCR_mat)[1]
+  rr <- matrix(HCR_mat[,,"TAC_reserve_rate"],   nrow = ny)   # [year x sim]
+  if(!has_non_na(rr)) return(invisible(TRUE))  # 繰越設定なしは検査不要
+
+  # B1: TAC_adjustは真のABC(MSE)が必要。非MSEで設定されているとSR_MSE未定義でクラッシュ。
+  assertthat::assert_that(
+    isTRUE(do_MSE) || !has_non_na(HCR_mat[,,"TAC_adjust"]),
+    msg = "HCR_TAC_adjust は do_MSE=TRUE のときのみ有効です（真のABCの算出にMSEが必要）。do_MSE=TRUE にするか HCR_TAC_adjust=NA にしてください。")
+
+  # B5(part1): rate>1（100%超の取り残し）は漁獲量が負になる無意味な入力
+  assertthat::assert_that(
+    all(rr <= 1, na.rm = TRUE),
+    msg = "TAC_reserve_rate は1以下にしてください（1超は当初ABCの100%超の取り残しで漁獲量が負になります）。")
+
+  # sim間・年間で取り残し(正)/前借り(負)が混在しても、apply_TAC_carryover() が
+  # sim単位で方向別に繰越を計算するため、符号の一様性は要求しない。
+  invisible(TRUE)
+}
+
+#' Apply TAC carryover (banking) / borrowing for one projection year.
+#'
+#' Behavior-preserving extraction of the carryover block from future_vpa_R
+#' (refactor-tac-carryover, phase 2). The body is identical to the original
+#' in-loop code; it is only wrapped into a function returning the updated arrays.
+#' SR_MSE is referenced only in the borrowing + TAC_adjust branch, so by R's lazy
+#' argument evaluation it is never forced in non-MSE runs (preserving the original
+#' behavior, including the existing error when non-MSE is combined with TAC_adjust).
+#' @noRd
+apply_TAC_carryover <- function(HCR_mat, HCR_realized, t, do_MSE, total_nyear,
+                                HCR_reserve_denom, HCR_carry_compound, spawner_mat, SR_MSE,
+                                N_mat, F_mat, waa_catch_mat, M_mat, Pope){
+  has_non_na <- function(x) any(!is.na(x))
+  # 設定の妥当性検査は validate_TAC_carryover_settings() で future_vpa_R 冒頭に実施済み
+  if(has_non_na(HCR_mat[t,,"TAC_reserve_rate"])){
+    if(sum(HCR_mat[t,,"expect_wcatch"])==0){
+      # non-MSE
+      HCR_realized[t,,"original_ABC"] <-
+        catch_equation(N_mat[,t,],F_mat[,t,],waa_catch_mat[,t,],M_mat[,t,],Pope=Pope) %>% colSums()
+    }
+    else{
+      # MSE
+      HCR_realized[t,,"original_ABC"] <- HCR_mat[t,,"expect_wcatch"]
+    }
+    # original_ABC_plus; 貸し借りを精算したあとのABCを計算する
+    HCR_realized[t,,"original_ABC_plus"] <- HCR_realized[t,,"original_ABC"] + HCR_realized[t,,"reserved_catch"]
+    # 債務超過(前年の繰り入れで精算後ABCが負)のsim。その年は繰り入れ不可とする。
+    insolvent <- HCR_realized[t,,"original_ABC_plus"] < 0
+
+    # 実際に漁獲したい量(expect_wcatch)を決める：取り残し率(TAC_reserve_rate)から
+    # 各simの方向を判定: 正=取り残し(banking) / 0以下=前借り(borrowing)・設定なし
+    banking_sim <- HCR_mat[t,,"TAC_reserve_rate"] > 0
+    # 前借り(borrowing)simは資源がBlimitを下回ると前借りしない（reserve_rate=0に倒す）。banking のみの年はスキップ。
+    if(!all(banking_sim)){
+      if(!do_MSE) below <- (spawner_mat[t,]   < HCR_mat[t,,"Blimit"])
+      else        below <- (spawner_mat[t-2,] < HCR_mat[t,,"Blimit"])
+      HCR_mat[t, (!banking_sim) & below, "TAC_reserve_rate"]  <- 0
+    }
+
+    if(HCR_reserve_denom=="original_ABC_plus"){
+      # 増減させたあとのABCをもとにする場合
+      HCR_mat[t,,"expect_wcatch"] <- HCR_realized[t,,HCR_reserve_denom] * (1-HCR_mat[t,,"TAC_reserve_rate"])
+    }
+    if(HCR_reserve_denom=="original_ABC"){
+      # もともとのABCをもとにする場合
+      HCR_mat[t,,"expect_wcatch"] <- HCR_realized[t,,"original_ABC_plus"] - HCR_realized[t,,"original_ABC"] * HCR_mat[t,,"TAC_reserve_rate"]
+    }
+
+    # どの枝で決めたexpect_wcatchも、負なら漁獲不可の下限(0.01)に統一する
+    # original_ABC_plusが負（返せない）になってしまっている、または、「繰越」量が想定以上に多すぎる場合
+    HCR_mat[t,,"expect_wcatch"] <- pmax(HCR_mat[t,,"expect_wcatch"], 0.01)
+    # 債務超過simはその年は繰り入れできず漁獲ゼロ(0.01)とする（TAC_adjust有無に関係なく）
+    if(any(insolvent)) HCR_mat[t, insolvent, "expect_wcatch"] <- 0.01
+
+    # 次の年の持ち越し分 (reserved_catch = 基準ABC - expect_wcatch) を計算
+    # sim単位で方向別に計算してから選択するので、sim間で取り残し/前借りが混在してもよい
+    if(t<total_nyear){
+      # 取り残し(banking)simの繰越基準: HCR_carry_compound=TRUE なら繰越込み(original_ABC_plus)を基準に積み上げ、
+      # FALSE(既定)はもとのABC(original_ABC)基準で1年限り（もとのABCを超えて繰り越さない）
+      banking_base <- if(isTRUE(HCR_carry_compound)) "original_ABC_plus" else "original_ABC"
+      carry_bank   <- HCR_realized[t,,banking_base] - HCR_mat[t,,"expect_wcatch"]
+      # 前借り(borrowing)simの繰越(=負債)。TAC_adjust使用時は返却量を真のABC(SR_MSE,要do_MSE)で調整
+      if(has_non_na(HCR_mat[t,,"TAC_adjust"])){
+        carry_borrow <- calc_adjust_TAC(HCR_mat[t,,"expect_wcatch"], HCR_realized[t,,"original_ABC_plus"], SR_MSE[t, ,"real_true_catch"], return_limit=HCR_mat[t,,"TAC_adjust"]) * (-1)
+      }
+      else{
+        carry_borrow <- HCR_realized[t,,"original_ABC_plus"] - HCR_mat[t,,"expect_wcatch"]
+      }
+      # sim単位で方向別に選択（取り残しsim=carry_bank / 前借り・設定なしsim=carry_borrow）
+      ABC_reserve_amount <- ifelse(banking_sim, carry_bank, carry_borrow)
+      HCR_realized[t+1,,"reserved_catch"] <- ABC_reserve_amount
+      # 債務超過simは返しきれなかった残債を帳消しにする（翌年に繰り越さない）
+      if(any(insolvent)) HCR_realized[t+1, insolvent, "reserved_catch"] <- 0
+    }
+  }
+  list(HCR_mat = HCR_mat, HCR_realized = HCR_realized)
 }
 
 set_upper_limit_catch <- function(catch_previous_year, catch_current_year, upper_limit){
