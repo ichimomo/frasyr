@@ -110,7 +110,7 @@ vout5 <- vpa(dat,tune=TRUE,sel.update=TRUE,Pope=FALSE,
 ## RidgeVPAにおけるlambdaの決め方
 ```{r, eval=FALSE}
   # autocalc_ridgevpaという関数を使用（初めに0-1の間で0.1刻みで探索し，モーンズρが最も低かったlambdaのところで，次はその値の前後±0.1の範囲を0.01刻みで探索する仕様になっています）．
-  ※VPAの計算を何度も繰り返し行うので，TMB=TRUEでない場合はかなりの計算時間がかかります
+  #※VPAの計算を何度も繰り返し行うので，TMB=TRUEでない場合はかなりの計算時間がかかります
   
 ridge_res <- autocalc_ridgevpa(
              input=vout3$input,
@@ -135,7 +135,7 @@ vout6 <- vpa(dat,tune=TRUE,sel.update=FALSE,term.F="all",
 			 eta.age=0) #penaltyを年齢で分けるときにetaを与える年齢(0=0歳（加入）, 0:1=0~1歳)
 
   # autocalc_ridgevpaを用いてlambdaとetaの２次元探索を行う（ここでは２段階探索は行っていません）
-  ※lambdaとetaをグリッド探索するのでかなりの計算時間がかかります
+  #※lambdaとetaをグリッド探索するのでかなりの計算時間がかかります
 ridge_res2 <- autocalc_ridgevpa(
              input=vout6$input,
 			 target_retro="F", 
