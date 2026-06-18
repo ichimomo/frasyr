@@ -52,4 +52,4 @@ jobs:
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release create "v${{ steps.bump.outputs.new }}" --generate-notes --target "${{ github.ref_name }}"
+        run: gh release create "v${{ steps.bump.outputs.new }}" --generate-notes --target "${{ github.ref_name }}" --prerelease
