@@ -1,17 +1,18 @@
 name: bump-version-and-tag
 
-# dev への push ごとに DESCRIPTION の Version 末尾を +1 し、コミットを書き戻して
-# 同名タグ＋GitHub Release を自動作成する（連続リリース型・連番タグ）。
+# 年度ブランチ(dev2026, dev2027, ...)への push(直接push / PRマージ どちらも)ごとに
+# DESCRIPTION の Version 末尾を +1 し、コミットを書き戻して同名タグ＋GitHub Release を
+# 自動作成する（連番タグ）。dev は対象外。
 on:
   push:
-    branches: [dev]
+    branches: ['dev20[0-9][0-9]']
 
 permissions:
   contents: write
 
 # 同時実行を直列化（2つの push が同じ Version から採番して衝突するのを防ぐ）
 concurrency:
-  group: bump-version-and-tag
+  group: bump-version-and-tag-${{ github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -23,7 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: dev
+          ref: ${{ github.ref_name }}        # 発火した年度ブランチ
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -45,10 +46,10 @@ jobs:
           git add DESCRIPTION
           git commit -m "bump version to ${new} [skip ci]"
           git tag "v${new}"
-          git push origin dev
+          git push origin "HEAD:${{ github.ref_name }}"
           git push origin "v${new}"
 
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release create "v${{ steps.bump.outputs.new }}" --generate-notes
+        run: gh release create "v${{ steps.bump.outputs.new }}" --generate-notes --target "${{ github.ref_name }}"
