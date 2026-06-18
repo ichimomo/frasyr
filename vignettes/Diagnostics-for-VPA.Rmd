@@ -678,7 +678,7 @@ plot_boot2$plot_ssb/plot_boot2$plot_rec/plot_boot2$plot_biomass
 
 推定したターミナルf(term.f)の信頼区間を尤度プロファイル(profile likelihood)を使って評価する。
 ```{r}
-ci0 <- profile_likelihood.vpa(vout3, method="ci",Alpha=0.80)$ci
+ci0 <- profile_likelihood.vpa(res_vpa_estb, method="ci",Alpha=0.80)$ci
 ```
 
 ## 8. おわりに
