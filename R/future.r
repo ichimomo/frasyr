@@ -829,7 +829,7 @@ future_vpa_R <- function(naa_mat,
                                      pars_b0=maa_par_mat[,,"b0"],pars_b1=maa_par_mat[,,"b1"],
                                      min_value=maa_par_mat[,,"min"],max_value=maa_par_mat[,,"max"])      
     }
-    spawner_mat[t,] <- colSums(N_mat[,t,,drop=F] * waa_mat[,t,,drop=F] * maa_mat[,t,,drop=F])
+    spawner_mat[t,] <- colSums(N_mat[,t,,drop=FALSE] * waa_mat[,t,,drop=FALSE] * maa_mat[,t,,drop=FALSE])
     spawner_mat[t,spawner_mat[t,]<0.0001] <-  0.0001
 
     if(t>=start_random_rec_year){
@@ -1240,7 +1240,7 @@ set_SR_mat <- function(res_vpa=NULL,
 
     # ここ大事なところ。res_vpaが別に与えられている（VPA結果が更新されている）場合には、SR_matのssbとRについても更新された値に置き換える。過去の加入の残差はここで計算するため、将来の自己相関を計算したりするときに影響する
     if(!is.null(res_vpa)){
-      SR_mat[1:(start_random_rec_year-1),,"ssb"] <- as.numeric(colSums(res_vpa$ssb,na.rm=T))[1:(start_random_rec_year-1)]
+      SR_mat[1:(start_random_rec_year-1),,"ssb"] <- as.numeric(colSums(res_vpa$ssb,na.rm=TRUE))[1:(start_random_rec_year-1)]
       SR_mat[1:(start_random_rec_year-1),,"recruit"] <- as.numeric(res_vpa$naa[1,1:(start_random_rec_year-1)])
     }
 
@@ -1450,11 +1450,11 @@ make_array <- function(d3_mat, pars, pars.year, year_replace_future, specific_va
     if(length(which(year_replace_future==years))>0){
       tmp_year <- which(year_replace_future==years):length(years)
       if(is.null(pars)){
-        past_data <- d3_mat[,years%in%pars.year,,drop=F]
-        new_data <- d3_mat[,tmp_year,, drop=F]
+        past_data <- d3_mat[,years%in%pars.year,,drop=FALSE]
+        new_data <- d3_mat[,tmp_year,, drop=FALSE]
         if(rand==TRUE) set.seed(rand_seed)      
       
-        #pars.future <- rowMeans(d3_mat[,years%in%pars.year,1,drop=F])
+        #pars.future <- rowMeans(d3_mat[,years%in%pars.year,1,drop=FALSE])
         for(k in 1:dim(past_data)[[1]]){
           for(kk in 1:dim(past_data)[[3]]){
             if(rand==FALSE)  new_data[k,,kk] <- mean(past_data[k,,kk])
@@ -1733,10 +1733,10 @@ format_to_old_future <- function(fout){
       fout_old$maa       <- fout$input$tmb_data$maa_mat
   }
   fout_old$M         <- fout$input$tmb_data$M_mat
-  fout_old$vssb      <- apply(fout$naa * fout_old$waa * fout_old$maa, c(2,3), sum, na.rm=T)
-  fout_old$vbiom_catch <- apply(fout$naa * fout_old$waa.catch, c(2,3),sum, na.rm=T)
-  fout_old$vbiom     <- apply(fout$naa * fout_old$waa, c(2,3),sum, na.rm=T)
-  fout_old$vwcaa     <- apply(fout$wcaa,c(2,3),sum, na.rm=T)
+  fout_old$vssb      <- apply(fout$naa * fout_old$waa * fout_old$maa, c(2,3), sum, na.rm=TRUE)
+  fout_old$vbiom_catch <- apply(fout$naa * fout_old$waa.catch, c(2,3),sum, na.rm=TRUE)
+  fout_old$vbiom     <- apply(fout$naa * fout_old$waa, c(2,3),sum, na.rm=TRUE)
+  fout_old$vwcaa     <- apply(fout$wcaa,c(2,3),sum, na.rm=TRUE)
   if(max(dim(fout$faa)[[2]]) >= fout$input$tmb_data$start_ABC_year){
     fout_old$currentF  <- fout$faa[,fout$input$tmb_data$start_ABC_year-1,1] # ほんとはここは1ではいけないがとりあえず。。。
     fout_old$futureF   <- fout$faa[,fout$input$tmb_data$start_ABC_year,1]
@@ -1855,8 +1855,8 @@ update_maa_mat <- function(t,maa,rand,naa,pars_b0,pars_b1,min_value,max_value){
 get_wcatch <- function(res){
     if(class(res)%in%"future_new")  return(apply(res$wcaa,c(2,3),sum))
     if(class(res)%in%c("vpa","sam") || "tune" %in% names(res$input)){
-        if(!is.null(res$input$dat$waa.catch)) return(colSums(res$input$dat$caa * res$input$dat$waa.catch,na.rm=T))
-        if(is.null(res$input$dat$waa.catch)) return(colSums(res$input$dat$caa * res$input$dat$waa,na.rm=T))
+        if(!is.null(res$input$dat$waa.catch)) return(colSums(res$input$dat$caa * res$input$dat$waa.catch,na.rm=TRUE))
+        if(is.null(res$input$dat$waa.catch)) return(colSums(res$input$dat$caa * res$input$dat$waa,na.rm=TRUE))
     }
 }
 
@@ -1871,7 +1871,7 @@ get_U <- function(res){
     if(class(res)%in%"future_new")  return(res$HCR_realized[,,"wcatch"]/apply(res$naa * res$waa_catch,c(2,3),sum))
     if(class(res)%in%c("vpa","sam") || "tune" %in% names(res$input)){
         wcatch <- get_wcatch(res)
-        biomass <- colSums(res$naa * res$input$dat$waa,na.rm=T)
+        biomass <- colSums(res$naa * res$input$dat$waa,na.rm=TRUE)
         return(wcatch/biomass)
     }
 }

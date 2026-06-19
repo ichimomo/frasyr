@@ -1393,7 +1393,7 @@ out_vpa2 <- function(res=NULL, # VPA result
   write.table2 <- function(x,title.tmp="",is.plot=FALSE,...){
     if(is.plot){
       if(!is.null(dim(x))){
-        matplot(colnames(x),t(x),type="b",ylim=c(0,max(x,na.rm=T)),pch=substr(rownames(x),1,1))
+        matplot(colnames(x),t(x),type="b",ylim=c(0,max(x,na.rm=TRUE)),pch=substr(rownames(x),1,1))
       }
       else{
         barplot(x)
@@ -1409,78 +1409,78 @@ out_vpa2 <- function(res=NULL, # VPA result
     else{
       tmp <- x
     }
-    write.table(tmp,append=T,sep=",",quote=FALSE,file=csvname,col.names=F,row.names=F,...)
+    write.table(tmp,append=TRUE,sep=",",quote=FALSE,file=csvname,col.names=FALSE,row.names=FALSE,...)
   }
 
   write(paste("# RVPA outputs at ",date()," & ",getwd()),file=csvname)
 
   if(!is.null(res)){
-    write("# VPA results",file=csvname, append=T)
+    write("# VPA results",file=csvname, append=TRUE)
 
-    write("\n# catch at age 1",file=csvname,append=T)
+    write("\n# catch at age 1",file=csvname,append=TRUE)
     write.table2(res$input$dat$caa1,title.tmp="Catch at age1")
 
-    write("\n# catch at age 2",file=csvname,append=T)
+    write("\n# catch at age 2",file=csvname,append=TRUE)
     write.table2(res$input$dat$caa2,title.tmp="Catch at age2")
 
-    write("\n# maturity at age",file=csvname,append=T)
+    write("\n# maturity at age",file=csvname,append=TRUE)
     write.table2(res$input$dat$maa,title.tmp="Maturity at age")
 
-    write("\n# weight at age",file=csvname,append=T)
+    write("\n# weight at age",file=csvname,append=TRUE)
     write.table2(res$input$dat$waa,title.tmp="Weight at age")
 
-    write("\n# M at age",file=csvname,append=T)
+    write("\n# M at age",file=csvname,append=TRUE)
     write.table2(res$input$dat$M,title.tmp="M at age")
 
-    write("\n# fishing mortality at age 1",file=csvname,append=T)
+    write("\n# fishing mortality at age 1",file=csvname,append=TRUE)
     write.table2(res$outputs$faa1,title.tmp="F at age1")
 
-    write("\n# fishing mortality at age 2",file=csvname,append=T)
+    write("\n# fishing mortality at age 2",file=csvname,append=TRUE)
     write.table2(res$outputs$faa2,title.tmp="F at age2")
 
-    #    write("\n# Current F",file=csvname,append=T)
+    #    write("\n# Current F",file=csvname,append=TRUE)
     #    write.table2(res$Fc.at.age,title.tmp="Current F")
 
-    write("\n# numbers at age 1",file=csvname,append=T)
+    write("\n# numbers at age 1",file=csvname,append=TRUE)
     write.table2(res$outputs$naa1,title.tmp="Numbers at age1")
 
-    write("\n# numbers at age 1",file=csvname,append=T)
+    write("\n# numbers at age 1",file=csvname,append=TRUE)
     write.table2(res$outputs$naa2,title.tmp="Numbers at age1")
 
-    write("\n# total and spawning biomass ",file=csvname,append=T)
+    write("\n# total and spawning biomass ",file=csvname,append=TRUE)
     x <- rbind(colSums(res$ssb),colSums(res$outputs$baa1),colSums(res$outputs$baa2),colSums(res$input$dat$caa1*res$input$dat$waa1),colSums(res$input$dat$caa2*res$input$dat$waa2))
     rownames(x) <- c("Spawning biomass","Total biomass 1","Total biomass 2","Catch biomass 1","Catch biomass 2")
     write.table2(x,title.tmp="Total and spawning biomass")
   }
 
   if(!is.null(rres)){
-    write("\n# Reference points",file=csvname,append=T)
-    write.table2(rres$summary,title.tmp="Future F at age",is.plot=F)
+    write("\n# Reference points",file=csvname,append=TRUE)
+    write.table2(rres$summary,title.tmp="Future F at age",is.plot=FALSE)
   }
 
   if(!is.null(fres)){
-    write("\n# future projection results",file=csvname,append=T)
-    write("\n# future F at age",file=csvname,append=T)
+    write("\n# future projection results",file=csvname,append=TRUE)
+    write("\n# future F at age",file=csvname,append=TRUE)
     write.table2(fres$faa[,,1],title.tmp="Future F at age")
 
-    write("\n# future numbers at age",file=csvname,append=T)
+    write("\n# future numbers at age",file=csvname,append=TRUE)
     write.table2(fres$naa[,,1],title.tmp="Future numbers at age")
 
-    write("\n# future total and spawning biomass",file=csvname,append=T)
+    write("\n# future total and spawning biomass",file=csvname,append=TRUE)
     x <- rbind(fres$vssb[,1],fres$vbiom[,1],fres$vwcaa[,1])
     rownames(x) <- c("Spawning biomass","Total biomass","Catch biomass")
     write.table2(x,title.tmp="Future total, spawning and catch biomass")
   }
 
   if(!is.null(ABC)){
-    write("\n# ABC summary",file=csvname,append=T)
-    write.table2(ABC$ABC,title.tmp="Future F at age",is.plot=F)
-    write("\n# Kobe matrix",file=csvname,append=T)
+    write("\n# ABC summary",file=csvname,append=TRUE)
+    write.table2(ABC$ABC,title.tmp="Future F at age",is.plot=FALSE)
+    write("\n# Kobe matrix",file=csvname,append=TRUE)
     for(i in 1:dim(ABC$kobe.matrix)[[3]]){
       write(paste("\n# ",dimnames(ABC$kobe.matrix)[[3]][i]),
-            file=csvname,append=T)
+            file=csvname,append=TRUE)
       write.table2(ABC$kobe.matrix[,,i],
-                   title.tmp=dimnames(ABC$kobe.matrix)[[3]][i],is.plot=T)
+                   title.tmp=dimnames(ABC$kobe.matrix)[[3]][i],is.plot=TRUE)
     }
   }
 }

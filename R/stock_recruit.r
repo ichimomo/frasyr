@@ -1619,8 +1619,8 @@ autocor.plot = function(resSR,use.resid=1,lag.max=NULL,output = FALSE,filename =
     abline(v=c(resSR$input$regime.year)-0.5,lty=3,col="blue")
   }
   abline(0,0,lty=2)
-  par(new=T)
-  scatter.smooth(Year, Resid, lpars=list(col="red",lwd=lwd),ann=F,axes=FALSE)
+  par(new=TRUE)
+  scatter.smooth(Year, Resid, lpars=list(col="red",lwd=lwd),ann=FALSE,axes=FALSE)
 
   if (is.null(lag.max)) lag.max = 10*log10(length(Resid))
   ac.res <- acf(Resid,plot=FALSE,lag.max=lag.max)
@@ -2166,9 +2166,9 @@ prof.likSR = function(resSR,output=FALSE,filename="Profile_Likelihood",a_range =
       }))
     }
     if (output) png(file = paste0(filename,".png"), width=7.5, height=5, res=432, units='in')
-    image(b.grid,a.grid,matrix(prof.lik.res,nrow=length),ann=F,col=cm.colors(12),
+    image(b.grid,a.grid,matrix(prof.lik.res,nrow=length),ann=FALSE,col=cm.colors(12),
           ylim=range(a.grid),xlim=range(b.grid))
-    par(new=T, xaxs="i",yaxs="i")
+    par(new=TRUE, xaxs="i",yaxs="i")
     contour(b.grid,a.grid,matrix(prof.lik.res,nrow=length),
             ylim=range(a.grid),xlim=range(b.grid),
             xlab="b",ylab="a",main="Profile Likelihood")
@@ -2227,9 +2227,9 @@ prof.likSR = function(resSR,output=FALSE,filename="Profile_Likelihood",a_range =
       }
       ba.grid.res[[j]] <- ba.grid
 
-      image(b.grid,a.grid,matrix(prof.lik.res[,j],nrow=length),ann=F,col=cm.colors(12),
+      image(b.grid,a.grid,matrix(prof.lik.res[,j],nrow=length),ann=FALSE,col=cm.colors(12),
             ylim=range(a.grid),xlim=range(b.grid))
-      par(new=T, xaxs="i",yaxs="i")
+      par(new=TRUE, xaxs="i",yaxs="i")
       contour(b.grid,a.grid,matrix(prof.lik.res[,j],nrow=length),
               ylim=range(a.grid),xlim=range(b.grid),
               xlab="b",ylab="a",main=paste0("Profile Likelihood for Regime ",resSR$regime_pars$regime[j]))
@@ -3076,7 +3076,7 @@ hmm_SR = function(SRdata,SR="BH",k_regime=2,gamma=0.01,b_range=NULL,p0=NULL,over
     use_rvpa_tmb("HMM_SR")
   }
 
-  obj = TMB::MakeADFun(tmb_data,parameters,DLL="HMM_SR",inner.control=list(maxit=50000,trace=F),silent=TRUE)
+  obj = TMB::MakeADFun(tmb_data,parameters,DLL="HMM_SR",inner.control=list(maxit=50000,trace=FALSE),silent=TRUE)
   if (length(obj$par)>length(st)) {
     stop("NOT estimable because k > n (k: parameter number, n: sample size")
   }
