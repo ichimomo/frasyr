@@ -2,7 +2,7 @@
 # Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
 on:
   push:
-    branches: [dev, dev2024]
+    branches: [dev, 'dev20[0-9][0-9]']
     paths:
       - R/**
       - tests/**
