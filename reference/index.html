@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">frasyr</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.5.0.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.5.0.4</span>
       </span>
     </div>
 
@@ -36,6 +36,9 @@
     </li>
     <li>
       <a href="../articles/fittingSR.html">fitSR関数を使った再生産関係の推定</a>
+    </li>
+    <li>
+      <a href="../articles/future.html">future_vpaを使った将来予測とMSY管理基準値計算、簡易MSEの実行</a>
     </li>
     <li>
       <a href="../articles/vpa.html">VPA関数を使った資源量推定</a>
@@ -77,6 +80,10 @@
           <p><code><a href="arrange_weight.html">arrange_weight()</a></code> </p>
         </td>
         <td><p>モデルのAICから計算される重みに応じて、複数のモデルからシミュレーション結果を抜き出す</p></td>
+      </tr><tr><td>
+          <p><code><a href="as_age_year_tibble.html">as_age_year_tibble()</a></code> </p>
+        </td>
+        <td><p>Convert an age-year matrix to a long tibble</p></td>
       </tr><tr><td>
           <p><code><a href="autocalc_ridgevpa.html">autocalc_ridgevpa()</a></code> </p>
         </td>
@@ -185,10 +192,6 @@
           <p><code><a href="check_fix_CVoption.html">check_fix_CVoption()</a></code> </p>
         </td>
         <td><p>漁獲量の上限設定をしたときの設定がちゃんと生きているかどうかを確かめる</p></td>
-      </tr><tr><td>
-          <p><code><a href="colorize_table.html">colorize_table()</a></code> </p>
-        </td>
-        <td><p>値の大小に応じて表の背景にグラデーションをつける</p></td>
       </tr><tr><td>
           <p><code><a href="compare_MSY.html">compare_MSY()</a></code> </p>
         </td>
@@ -310,18 +313,6 @@
         </td>
         <td><p>future_vpaを使ってMSY管理基準値などを計算するwrapper関数</p></td>
       </tr><tr><td>
-          <p><code><a href="export_formattable.html">export_formattable()</a></code> </p>
-        </td>
-        <td><p>表を画像として保存</p></td>
-      </tr><tr><td>
-          <p><code><a href="export_kobeII_table.html">export_kobeII_table()</a></code> </p>
-        </td>
-        <td><p>kobeIItableから任意の表を取得し画像として保存</p></td>
-      </tr><tr><td>
-          <p><code><a href="export_kobeII_tables.html">export_kobeII_tables()</a></code> </p>
-        </td>
-        <td><p>β調整による管理効果を比較する表を画像として一括保存</p></td>
-      </tr><tr><td>
           <p><code><a href="export_tables.html">export_tables()</a></code> </p>
         </td>
         <td><p>Export tables to csv</p></td>
@@ -329,6 +320,10 @@
           <p><code><a href="extract_x.html">extract_x()</a></code> </p>
         </td>
         <td><p>Extract value at age from vpadata</p></td>
+      </tr><tr><td>
+          <p><code><a href="find_project_root.html">find_project_root()</a></code> </p>
+        </td>
+        <td><p>Find a project root by walking up parent directories</p></td>
       </tr><tr><td>
           <p><code><a href="fit.SR.html">fit.SR()</a></code> </p>
         </td>
@@ -354,10 +349,6 @@
         </td>
         <td><p>Fit and draw SR line(s) over observed stock-recruitment plots</p></td>
       </tr><tr><td>
-          <p><code><a href="format_beta_table.html">format_beta_table()</a></code> </p>
-        </td>
-        <td><p>kobeIItableから取り出した表を整形</p></td>
-      </tr><tr><td>
           <p><code><a href="future_vpa.html">future_vpa()</a></code> </p>
         </td>
         <td><p>将来予測の実施関数</p></td>
@@ -378,9 +369,17 @@
         </td>
         <td><p>管理基準値表から目的の管理基準値を取り出す関数(簡易版)</p></td>
       </tr><tr><td>
+          <p><code><a href="get_assessment_age_component_data.html">get_assessment_age_component_data()</a></code> </p>
+        </td>
+        <td><p>Extract age-specific assessment components from future results</p></td>
+      </tr><tr><td>
           <p><code><a href="get_performance.html">get_performance()</a></code> </p>
         </td>
         <td><p>将来予測の結果のリストを入れると、代表的なパフォーマンス指標をピックアップする</p></td>
+      </tr><tr><td>
+          <p><code><a href="get_sr_recruitment_multiplier.html">get_sr_recruitment_multiplier()</a></code> </p>
+        </td>
+        <td><p>Calculate effective recruitment multipliers from SR_mat</p></td>
       </tr><tr><td>
           <p><code><a href="ggsave_SH.html">ggsave_SH()</a></code> </p>
         </td>
@@ -422,10 +421,6 @@
         </td>
         <td><p>使うフォルダ名を与えると一連の結果の関数を読み込む関数</p></td>
       </tr><tr><td>
-          <p><code><a href="make_RP_table.html">make_RP_table()</a></code> </p>
-        </td>
-        <td><p>管理基準値の表を作成する</p></td>
-      </tr><tr><td>
           <p><code><a href="make_SR_dframe.html">make_SR_dframe()</a></code> </p>
         </td>
         <td><p>Get fitted SR data with model names</p></td>
@@ -448,7 +443,11 @@
       </tr><tr><td>
           <p><code><a href="make_kobeII_table.html">make_kobeII_table()</a></code> </p>
         </td>
-        <td><p>beta.simluationの結果などを読んで、kobeII talbeに整形する関数</p></td>
+        <td><p>beta.simluationの結果などを読んで、kobeII tableに整形する関数</p></td>
+      </tr><tr><td>
+          <p><code><a href="make_kobeII_table_med.html">make_kobeII_table_med()</a></code> </p>
+        </td>
+        <td><p>beta.simluationの結果などを読んで、kobeII tableに整形する関数で平均値の代わりに中央値を計算する関数</p></td>
       </tr><tr><td>
           <p><code><a href="make_kobe_ratio.html">make_kobe_ratio()</a></code> </p>
         </td>
@@ -514,6 +513,10 @@
         </td>
         <td><p>fit.SRregimeの結果で得られた再生産関係をプロットするための関数</p></td>
       </tr><tr><td>
+          <p><code><a href="plot_assessment_age_component.html">plot_assessment_age_component()</a></code> </p>
+        </td>
+        <td><p>Plot age-specific assessment components across assessment years</p></td>
+      </tr><tr><td>
           <p><code><a href="plot_boot.html">plot_boot()</a></code> </p>
         </td>
         <td><p>ブートストラップ法の実行と信頼区間の算出、作図を自動で行う関数</p></td>
@@ -526,9 +529,13 @@
         </td>
         <td><p>将来予測の複数の結果をggplotで重ね書きする</p></td>
       </tr><tr><td>
+          <p><code><a href="plot_futures2.html">plot_futures2()</a></code> </p>
+        </td>
+        <td><p>Plot retrospective assessment and future projection results</p></td>
+      </tr><tr><td>
           <p><code><a href="plot_futures_simple.html">plot_futures_simple()</a></code> </p>
         </td>
-        <td><p>複数の将来予測の結果をプロットする（ggplotは使わず）</p></td>
+        <td><p>Plot multiple future projection results without ggplot</p></td>
       </tr><tr><td>
           <p><code><a href="plot_kobe_gg.html">plot_kobe_gg()</a></code> </p>
         </td>
@@ -550,6 +557,10 @@
         </td>
         <td><p>漁獲量曲線(yield curve)を書く</p></td>
       </tr><tr><td>
+          <p><code><a href="predict_recruitment_from_sr_pars.html">predict_recruitment_from_sr_pars()</a></code> </p>
+        </td>
+        <td><p>Predict recruitment from stock-recruitment parameters</p></td>
+      </tr><tr><td>
           <p><code><a href="prof.lik.html">prof.lik()</a></code> </p>
         </td>
         <td><p>profile likelihood</p></td>
@@ -565,10 +576,6 @@
           <p><code><a href="pull_df_from_list.html">pull_df_from_list()</a></code> </p>
         </td>
         <td><p>Util functions for select SRmodels Pull data frame from list</p></td>
-      </tr><tr><td>
-          <p><code><a href="pull_var_from_kobeII_table.html">pull_var_from_kobeII_table()</a></code> </p>
-        </td>
-        <td><p>kobeIItable から任意の表を指名して取り出す</p></td>
       </tr><tr><td>
           <p><code><a href="rank_HCR.html">rank_HCR()</a></code> </p>
         </td>

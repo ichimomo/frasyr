@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">frasyr</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.5.0.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.5.0.4</span>
       </span>
     </div>
 
@@ -55,6 +55,9 @@
       <a href="../articles/fittingSR.html">fitSR関数を使った再生産関係の推定</a>
     </li>
     <li>
+      <a href="../articles/future.html">future_vpaを使った将来予測とMSY管理基準値計算、簡易MSEの実行</a>
+    </li>
+    <li>
       <a href="../articles/vpa.html">VPA関数を使った資源量推定</a>
     </li>
   </ul>
@@ -74,9 +77,10 @@
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>VPA関数を使った資源量推定</h1>
-                        <h4 data-toc-skip class="author">市野川桃子</h4>
+                        <h4 data-toc-skip class="author">市野川桃子
+&amp; 宮川光代</h4>
             
-            <h4 data-toc-skip class="date">2026-04-24</h4>
+            <h4 data-toc-skip class="date">2026-06-19</h4>
       
 
       <div class="hidden name"><code>vpa.Rmd</code></div>
@@ -93,22 +97,6 @@
 </h3>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">frasyr</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: replacing previous import 'magrittr::set_names' by 'purrr::set_names'</span></span>
-<span><span class="co">#&gt; when loading 'frasyr'</span></span>
-<span><span class="co">#&gt; Warning: replacing previous import 'EnvStats::rpareto' by 'rmutil::rpareto'</span></span>
-<span><span class="co">#&gt; when loading 'frasyr'</span></span>
-<span><span class="co">#&gt; Warning: replacing previous import 'EnvStats::ppareto' by 'rmutil::ppareto'</span></span>
-<span><span class="co">#&gt; when loading 'frasyr'</span></span>
-<span><span class="co">#&gt; Warning: replacing previous import 'EnvStats::qpareto' by 'rmutil::qpareto'</span></span>
-<span><span class="co">#&gt; when loading 'frasyr'</span></span>
-<span><span class="co">#&gt; Warning: replacing previous import 'EnvStats::dpareto' by 'rmutil::dpareto'</span></span>
-<span><span class="co">#&gt; when loading 'frasyr'</span></span>
-<span><span class="co">#&gt; Warning: replacing previous import 'assertthat::has_name' by 'tibble::has_name'</span></span>
-<span><span class="co">#&gt; when loading 'frasyr'</span></span>
-<span><span class="co">#&gt; Warning: replacing previous import 'rmutil::nesting' by 'tidyr::nesting' when</span></span>
-<span><span class="co">#&gt; loading 'frasyr'</span></span>
-<span><span class="co">#&gt; Warning: replacing previous import 'magrittr::extract' by 'tidyr::extract' when</span></span>
-<span><span class="co">#&gt; loading 'frasyr'</span></span>
 <span><span class="va">caa</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex2_caa.csv"</span>,  row.names<span class="op">=</span><span class="fl">1</span><span class="op">)</span></span>
 <span><span class="va">waa</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex2_waa.csv"</span>,  row.names<span class="op">=</span><span class="fl">1</span><span class="op">)</span></span>
 <span><span class="va">maa</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"https://raw.githubusercontent.com/ichimomo/frasyr/dev/data-raw/ex2_maa.csv"</span>,  row.names<span class="op">=</span><span class="fl">1</span><span class="op">)</span></span>
@@ -117,6 +105,7 @@
 <span><span class="co"># VPAによる資源量推定</span></span>
 <span><span class="va">res_vpa</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">dat</span>,fc.year<span class="op">=</span><span class="fl">2015</span><span class="op">:</span><span class="fl">2017</span>,tf.year <span class="op">=</span> <span class="fl">2015</span><span class="op">:</span><span class="fl">2016</span>,</span>
 <span>               term.F<span class="op">=</span><span class="st">"max"</span>,stat.tf<span class="op">=</span><span class="st">"mean"</span>,Pope<span class="op">=</span><span class="cn">TRUE</span>,tune<span class="op">=</span><span class="cn">FALSE</span>,p.init<span class="op">=</span><span class="fl">0.5</span><span class="op">)</span></span>
+<span></span>
 <span><span class="va">res_vpa</span><span class="op">$</span><span class="va">Fc.at.age</span> <span class="co"># 将来予測やMSY計算で使うcurrent F (fc.yearのオプションでいつのFの平均かが指定される)</span></span>
 <span><span class="co">#&gt;         0         1         2         3 </span></span>
 <span><span class="co">#&gt; 0.4901521 1.1503151 1.3131002 1.3131001</span></span>
@@ -164,11 +153,10 @@
 <span><span class="va">vout1a</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">dat</span>,tf.year<span class="op">=</span><span class="fl">1997</span><span class="op">:</span><span class="fl">1999</span>,Pope<span class="op">=</span><span class="cn">FALSE</span>,fc.year<span class="op">=</span><span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span>,alpha<span class="op">=</span><span class="fl">1</span>,p.init<span class="op">=</span><span class="fl">0.5</span><span class="op">)</span></span>
 <span><span class="va">vout1b</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">dat</span>,tf.year<span class="op">=</span><span class="fl">1997</span><span class="op">:</span><span class="fl">1999</span>,Pope<span class="op">=</span><span class="cn">TRUE</span>,fc.year<span class="op">=</span><span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span>,alpha<span class="op">=</span><span class="fl">0.5</span>,p.init<span class="op">=</span><span class="fl">0.5</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "Warning! The estimated F for the older ages may not be accurate if C&lt;&lt;N is not satisfied for the older ages."</span></span>
-<span><span class="va">vout1c</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">dat</span>,tf.year<span class="op">=</span><span class="fl">1999</span><span class="op">:</span><span class="fl">1999</span>,Pope<span class="op">=</span><span class="cn">TRUE</span>,fc.year<span class="op">=</span><span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span>,alpha<span class="op">=</span><span class="fl">1</span>,p.init<span class="op">=</span><span class="fl">0.5</span><span class="op">)</span> </span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="チューニングvpaのバリエーション">チューニングVPAのバリエーション<a class="anchor" aria-label="anchor" href="#%E3%83%81%E3%83%A5%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0vpa%E3%81%AE%E3%83%90%E3%83%AA%E3%82%A8%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3"></a>
-</h3>
+<span><span class="va">vout1c</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">dat</span>,tf.year<span class="op">=</span><span class="fl">1999</span><span class="op">:</span><span class="fl">1999</span>,Pope<span class="op">=</span><span class="cn">TRUE</span>,fc.year<span class="op">=</span><span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span>,alpha<span class="op">=</span><span class="fl">1</span>,p.init<span class="op">=</span><span class="fl">0.5</span><span class="op">)</span> </span>
+<span><span class="fu"><a href="../reference/plot_vpa.html">plot_vpa</a></span><span class="op">(</span><span class="va">vout1c</span>, plot_year<span class="op">=</span><span class="fl">1991</span><span class="op">:</span><span class="fl">2000</span><span class="op">)</span> <span class="co"># 様々な結果のプロット</span></span></code></pre></div>
+<p><img src="vpa_files/figure-html/unnamed-chunk-4-1.png" class="r-plt" alt="" width="576">
+## チューニングVPAのバリエーション</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">## vout2; チューニング，選択率updateなし</span></span>
 <span><span class="va">vout2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">dat</span>,tune<span class="op">=</span><span class="cn">TRUE</span>,sel.update<span class="op">=</span><span class="cn">FALSE</span>,Pope<span class="op">=</span><span class="cn">FALSE</span>,</span>
@@ -190,132 +178,60 @@
 <span>             abund<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"N"</span><span class="op">)</span>,min.age<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span>,max.age<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">6</span><span class="op">)</span>, <span class="co"># 資源量指数の設定</span></span>
 <span>             alpha<span class="op">=</span><span class="fl">1</span>,p.init<span class="op">=</span><span class="fl">0.5</span>,max.dd <span class="op">=</span> <span class="fl">0.00001</span>,fc.year<span class="op">=</span><span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span><span class="op">)</span></span></code></pre></div>
 </div>
-</div>
-<div class="section level2">
-<h2 id="モデル診断推定パラメータの不確実性の評価">モデル診断・推定パラメータの不確実性の評価<a class="anchor" aria-label="anchor" href="#%E3%83%A2%E3%83%87%E3%83%AB%E8%A8%BA%E6%96%AD%E6%8E%A8%E5%AE%9A%E3%83%91%E3%83%A9%E3%83%A1%E3%83%BC%E3%82%BF%E3%81%AE%E4%B8%8D%E7%A2%BA%E5%AE%9F%E6%80%A7%E3%81%AE%E8%A9%95%E4%BE%A1"></a>
-</h2>
 <div class="section level3">
-<h3 id="尤度プロファイル">尤度プロファイル<a class="anchor" aria-label="anchor" href="#%E5%B0%A4%E5%BA%A6%E3%83%97%E3%83%AD%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB"></a>
+<h3 id="ridgevpa">RidgeVPA<a class="anchor" aria-label="anchor" href="#ridgevpa"></a>
 </h3>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">ci0</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/profile_likelihood.vpa.html">profile_likelihood.vpa</a></span><span class="op">(</span><span class="va">vout3</span>, method<span class="op">=</span><span class="st">"ci"</span>,Alpha<span class="op">=</span><span class="fl">0.80</span><span class="op">)</span><span class="op">$</span><span class="va">ci</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="co">## チューニング，選択率update, ridgeVPA</span></span>
+<span>  <span class="co"># lambda, penalty, betaの三つの引数を追加する</span></span>
+<span><span class="va">vout5</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">dat</span>,tune<span class="op">=</span><span class="cn">TRUE</span>,sel.update<span class="op">=</span><span class="cn">TRUE</span>,Pope<span class="op">=</span><span class="cn">FALSE</span>,</span>
+<span>             tf.year<span class="op">=</span><span class="fl">1997</span><span class="op">:</span><span class="fl">1999</span>,sel.f<span class="op">=</span><span class="cn">NULL</span>, </span>
+<span>             abund<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"N"</span><span class="op">)</span>,min.age<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span>,max.age<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">7</span><span class="op">)</span>, <span class="co"># 資源量指数の設定</span></span>
+<span>             alpha<span class="op">=</span><span class="fl">1</span>,p.init<span class="op">=</span><span class="fl">0.5</span>,max.dd <span class="op">=</span> <span class="fl">0.00001</span>,fc.year<span class="op">=</span><span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span>,</span>
+<span>             lambda<span class="op">=</span><span class="fl">0.01</span>, <span class="co"># ridge penaltyの大きさ（下記のlambdaの決め方を参考にして探索した値を代入）</span></span>
+<span>             penalty<span class="op">=</span><span class="st">"p"</span>, <span class="co"># penalty項の与え方("p" or "f" or "s")</span></span>
+<span>             beta<span class="op">=</span><span class="fl">2</span><span class="op">)</span> <span class="co"># penaltyの種類：1=lasso回帰, 2=ridge回帰</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="ブートストラップ">ブートストラップ<a class="anchor" aria-label="anchor" href="#%E3%83%96%E3%83%BC%E3%83%88%E3%82%B9%E3%83%88%E3%83%A9%E3%83%83%E3%83%97"></a>
+<h3 id="ridgevpaにおけるlambdaの決め方">RidgeVPAにおけるlambdaの決め方<a class="anchor" aria-label="anchor" href="#ridgevpa%E3%81%AB%E3%81%8A%E3%81%91%E3%82%8Blambda%E3%81%AE%E6%B1%BA%E3%82%81%E6%96%B9"></a>
 </h3>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co">## ノンパラメトリックブートストラップ(method="n")</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
-<span><span class="va">boot.sim1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/boo.vpa.html">boo.vpa</a></span><span class="op">(</span><span class="va">vout3</span>,B_ite<span class="op">=</span><span class="fl">10</span>,method<span class="op">=</span><span class="st">"n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Iteration 1 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 2 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 3 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 4 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 5 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 6 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 7 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 8 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 9 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 10 has done ...</span></span>
-<span>  <span class="co"># boo.vpaはブートストラップ回数分のvpa関数の返り値のリストを返す</span></span>
-<span>  <span class="co"># 値の取り出しは、リストの操作関数sapplyまたはlapplyを用いる</span></span>
-<span>  <span class="co"># Bで繰り返し回数を指定します．ここでは10回ですが実際には1000回(B=1000)以上やってください</span></span>
-<span><span class="va">tf.dist1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">boot.sim1</span>,<span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="va">x</span><span class="op">$</span><span class="va">faa</span><span class="op">[</span><span class="st">"2000"</span><span class="op">]</span><span class="op">[</span><span class="fl">7</span>,<span class="op">]</span><span class="op">)</span></span>
-<span><span class="va">ci1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile</a></span><span class="op">(</span><span class="va">tf.dist1</span>,probs<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>,<span class="fl">0.9</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co">## パラメトリックブートストラップ(method="p")</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
-<span><span class="va">boot.sim2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/boo.vpa.html">boo.vpa</a></span><span class="op">(</span><span class="va">vout3</span>,B_ite<span class="op">=</span><span class="fl">10</span>,method<span class="op">=</span><span class="st">"p"</span><span class="op">)</span> <span class="co"># 実際には1000回以上(B=1000)やってください</span></span>
-<span><span class="co">#&gt; Iteration 1 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 2 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 3 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 4 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 5 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 6 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 7 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 8 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 9 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 10 has done ...</span></span>
-<span><span class="va">tf.dist2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">boot.sim2</span>,<span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="va">x</span><span class="op">$</span><span class="va">faa</span><span class="op">[</span><span class="st">"2000"</span><span class="op">]</span><span class="op">[</span><span class="fl">6</span>,<span class="op">]</span><span class="op">)</span></span>
-<span><span class="va">ci2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile</a></span><span class="op">(</span><span class="va">tf.dist2</span>,probs<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>,<span class="fl">0.9</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co">## 平滑化ブートストラップ(method="r")</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span> </span>
-<span><span class="va">boot.sim3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/boo.vpa.html">boo.vpa</a></span><span class="op">(</span><span class="va">vout3</span>,B_ite<span class="op">=</span><span class="fl">10</span>,method<span class="op">=</span><span class="st">"r"</span><span class="op">)</span> <span class="co"># 実際には1000回以上(B=1000)やってください</span></span>
-<span><span class="co">#&gt; Iteration 1 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 2 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 3 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 4 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 5 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 6 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 7 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 8 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 9 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 10 has done ...</span></span>
-<span><span class="va">tf.dist3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">boot.sim3</span>,<span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="va">x</span><span class="op">$</span><span class="va">faa</span><span class="op">[</span><span class="st">"2000"</span><span class="op">]</span><span class="op">[</span><span class="fl">6</span>,<span class="op">]</span><span class="op">)</span></span>
-<span><span class="va">ci3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile</a></span><span class="op">(</span><span class="va">tf.dist3</span>,probs<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>,<span class="fl">0.9</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co">## 4つの信頼区間の比較</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span><span class="va">ci0</span>,<span class="va">ci1</span>,<span class="va">ci2</span>,<span class="va">ci3</span><span class="op">)</span></span>
-<span><span class="co">#&gt;           10%       90%</span></span>
-<span><span class="co">#&gt; ci0 0.2317481 0.3879756</span></span>
-<span><span class="co">#&gt; ci1 0.2445851 0.3954071</span></span>
-<span><span class="co">#&gt; ci2 0.2406343 0.3193398</span></span>
-<span><span class="co">#&gt; ci3 0.2027727 0.3153419</span></span>
-<span></span>
-<span><span class="co">## ノンパラメトリックブートストラップ for vout4</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
-<span><span class="va">boot.sim4</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/boo.vpa.html">boo.vpa</a></span><span class="op">(</span><span class="va">vout4</span>,B_ite<span class="op">=</span><span class="fl">10</span>,method<span class="op">=</span><span class="st">"n"</span><span class="op">)</span> <span class="co"># 実際には1000回以上(B=1000)やってください</span></span>
-<span><span class="co">#&gt; Iteration 1 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 2 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 3 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 4 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 5 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 6 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 7 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 8 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 9 has done ...</span></span>
-<span><span class="co">#&gt; Iteration 10 has done ...</span></span>
-<span></span>
-<span><span class="va">tf.dist4</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">boot.sim4</span><span class="op">[</span><span class="va">boot.sim4</span><span class="op">!=</span><span class="st">"try-error"</span><span class="op">]</span>,<span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="va">x</span><span class="op">$</span><span class="va">faa</span><span class="op">[</span><span class="st">"2000"</span><span class="op">]</span><span class="op">[</span><span class="fl">7</span>,<span class="op">]</span><span class="op">)</span></span>
-<span><span class="va">ci4</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile</a></span><span class="op">(</span><span class="va">tf.dist4</span>,probs<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>,<span class="fl">0.9</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co">## 親魚量の信頼区間のプロット</span></span>
-<span><span class="va">Years</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">caa</span><span class="op">)</span></span>
-<span><span class="va">ssb.boot</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">boot.sim1</span>,<span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colSums</a></span><span class="op">(</span><span class="va">x</span><span class="op">$</span><span class="va">ssb</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">ssb.boot</span>,<span class="fl">1</span>,<span class="va">quantile</span>,probs<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>,<span class="fl">0.5</span>,<span class="fl">0.9</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/matplot.html" class="external-link">matplot</a></span><span class="op">(</span><span class="va">Years</span>,<span class="va">x</span>,ylim<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span>,col<span class="op">=</span><span class="fl">1</span>,type<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"l"</span>,<span class="st">"b"</span>,<span class="st">"l"</span><span class="op">)</span>,</span>
-<span>        pch<span class="op">=</span><span class="fl">1</span>,lty<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span>,ylab<span class="op">=</span><span class="st">"Spawning biomass"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vpa_files/figure-html/unnamed-chunk-7-1.png" class="r-plt" alt="" width="700"></p>
+<code class="sourceCode R"><span>  <span class="co"># autocalc_ridgevpaという関数を使用（初めに0-1の間で0.1刻みで探索し，モーンズρが最も低かったlambdaのところで，次はその値の前後±0.1の範囲を0.01刻みで探索する仕様になっています）．</span></span>
+<span>  <span class="co">#※VPAの計算を何度も繰り返し行うので，TMB=TRUEでない場合はかなりの計算時間がかかります</span></span>
+<span>  </span>
+<span><span class="va">ridge_res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/autocalc_ridgevpa.html">autocalc_ridgevpa</a></span><span class="op">(</span></span>
+<span>             input<span class="op">=</span><span class="va">vout3</span><span class="op">$</span><span class="va">input</span>,</span>
+<span>             target_retro<span class="op">=</span><span class="st">"F"</span>, <span class="co"># レトロスペクティブバイアスを何について計るか；"F", "B", "SSB", "N", "R"の中から選択する</span></span>
+<span>             n_retro<span class="op">=</span><span class="fl">5</span>, <span class="co"># レトロスペクティブ解析で遡る年数</span></span>
+<span>             b_fix<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span> <span class="co"># レトロスペクティブ解析内でbを固定するか</span></span>
+<span>             </span>
+<span><span class="va">ridge_res</span><span class="op">$</span><span class="va">min_penalty</span> <span class="co"># target_retroで指定した指標のモーンズρが最小になるようなlambdaの値.これをlambdaとして代入する</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="残差の自己相関のチェック">残差の自己相関のチェック<a class="anchor" aria-label="anchor" href="#%E6%AE%8B%E5%B7%AE%E3%81%AE%E8%87%AA%E5%B7%B1%E7%9B%B8%E9%96%A2%E3%81%AE%E3%83%81%E3%82%A7%E3%83%83%E3%82%AF"></a>
+<h3 id="ridgevpaの特殊な設定etaをいれる場合">RidgeVPAの特殊な設定(etaをいれる場合）<a class="anchor" aria-label="anchor" href="#ridgevpa%E3%81%AE%E7%89%B9%E6%AE%8A%E3%81%AA%E8%A8%AD%E5%AE%9Aeta%E3%82%92%E3%81%84%E3%82%8C%E3%82%8B%E5%A0%B4%E5%90%88"></a>
 </h3>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">resid</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">vout3</span><span class="op">$</span><span class="va">pred.index</span><span class="op">)</span> <span class="op">-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">index</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">resid</span>,type<span class="op">=</span><span class="st">"b"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vpa_files/figure-html/unnamed-chunk-8-1.png" class="r-plt" alt="" width="700"></p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/acf.html" class="external-link">acf</a></span><span class="op">(</span><span class="va">resid</span><span class="op">)</span> <span class="co"># 自己相関は特にない</span></span></code></pre></div>
-<p><img src="vpa_files/figure-html/unnamed-chunk-8-2.png" class="r-plt" alt="" width="700"></p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># 正規性の検定</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/stats/ks.test.html" class="external-link">ks.test</a></span><span class="op">(</span><span class="va">resid</span>,<span class="st">"pnorm"</span>,mean<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">resid</span><span class="op">)</span>,sd<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/sd.html" class="external-link">sd</a></span><span class="op">(</span><span class="va">resid</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;  Exact one-sample Kolmogorov-Smirnov test</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; data:  resid</span></span>
-<span><span class="co">#&gt; D = 0.13904, p-value = 0.9759</span></span>
-<span><span class="co">#&gt; alternative hypothesis: two-sided</span></span>
-<span><span class="co"># 分布が有意に正規分布から外れているわけではない</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/stats/ks.test.html" class="external-link">ks.test</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">resid</span>,<span class="fl">10</span><span class="op">)</span>,<span class="st">"pnorm"</span>,mean<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">resid</span>,<span class="fl">10</span><span class="op">)</span><span class="op">)</span>,sd<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/sd.html" class="external-link">sd</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">resid</span>,<span class="fl">10</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;  Exact one-sample Kolmogorov-Smirnov test</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; data:  c(resid, 10)</span></span>
-<span><span class="co">#&gt; D = 0.48991, p-value = 0.005872</span></span>
-<span><span class="co">#&gt; alternative hypothesis: two-sided</span></span>
-<span><span class="co"># 大きな外れ値があると、p値が小さくなって、正規分布でない、となる。</span></span></code></pre></div>
+<code class="sourceCode R"><span>  <span class="co"># ペナルティー項の重みを年齢によって変える場合はeta, eta.ageを追加する</span></span>
+<span><span class="va">vout6</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vpa.html">vpa</a></span><span class="op">(</span><span class="va">dat</span>,tune<span class="op">=</span><span class="cn">TRUE</span>,sel.update<span class="op">=</span><span class="cn">FALSE</span>,term.F<span class="op">=</span><span class="st">"all"</span>,</span>
+<span>             tf.year<span class="op">=</span><span class="cn">NULL</span>,sel.f<span class="op">=</span><span class="cn">NULL</span>,</span>
+<span>             abund<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"N"</span><span class="op">)</span>,min.age<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span>,max.age<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">6</span><span class="op">)</span>, </span>
+<span>             alpha<span class="op">=</span><span class="fl">1</span>,p.init<span class="op">=</span><span class="fl">0.5</span>,max.dd <span class="op">=</span> <span class="fl">0.00001</span>,fc.year<span class="op">=</span><span class="fl">1998</span><span class="op">:</span><span class="fl">2000</span>,</span>
+<span>             lambda<span class="op">=</span><span class="fl">0.01</span>, </span>
+<span>             penalty<span class="op">=</span><span class="st">"p"</span>, </span>
+<span>             beta<span class="op">=</span><span class="fl">2</span>,</span>
+<span>             eta<span class="op">=</span><span class="fl">0.99</span>, <span class="co"># penaltyを年齢で分けて与えるときにeta.ageで指定した年齢への相対的なpenalty(0~1).autocalc_ridgevpaで探索可能</span></span>
+<span>             eta.age<span class="op">=</span><span class="fl">0</span><span class="op">)</span> <span class="co">#penaltyを年齢で分けるときにetaを与える年齢(0=0歳（加入）, 0:1=0~1歳)</span></span>
+<span></span>
+<span>  <span class="co"># autocalc_ridgevpaを用いてlambdaとetaの２次元探索を行う（ここでは２段階探索は行っていません）</span></span>
+<span>  <span class="co">#※lambdaとetaをグリッド探索するのでかなりの計算時間がかかります</span></span>
+<span><span class="va">ridge_res2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/autocalc_ridgevpa.html">autocalc_ridgevpa</a></span><span class="op">(</span></span>
+<span>             input<span class="op">=</span><span class="va">vout6</span><span class="op">$</span><span class="va">input</span>,</span>
+<span>             target_retro<span class="op">=</span><span class="st">"F"</span>, </span>
+<span>             n_retro<span class="op">=</span><span class="fl">5</span>, </span>
+<span>             b_fix<span class="op">=</span><span class="cn">TRUE</span>, </span>
+<span>             bin<span class="op">=</span><span class="fl">0.1</span><span class="op">)</span> <span class="co"># lambdaとetaの探索刻み幅を指定</span></span>
+<span>             </span>
+<span><span class="va">ridge_res2</span><span class="op">$</span><span class="va">min_penalty</span> <span class="co"># target_retroで指定した指標のモーンズρが最小になるようなlambdaとetaの組み合わせ</span></span></code></pre></div>
 </div>
 </div>
   </div>

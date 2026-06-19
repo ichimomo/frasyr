@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">frasyr</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.5.0.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.5.0.4</span>
       </span>
     </div>
 
@@ -36,6 +36,9 @@
     </li>
     <li>
       <a href="../articles/fittingSR.html">fitSR関数を使った再生産関係の推定</a>
+    </li>
+    <li>
+      <a href="../articles/future.html">future_vpaを使った将来予測とMSY管理基準値計算、簡易MSEの実行</a>
     </li>
     <li>
       <a href="../articles/vpa.html">VPA関数を使った資源量推定</a>
@@ -103,7 +106,6 @@
 <span>  sel.update <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  sel.def <span class="op">=</span> <span class="st">"max"</span>,</span>
 <span>  max.dd <span class="op">=</span> <span class="fl">1e-06</span>,</span>
-<span>  ti.scale <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  tf.mat <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  eq.tf.mean <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  no.est <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -140,7 +142,8 @@
 <span>  no_eta_age <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sdreport <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  use.equ <span class="op">=</span> <span class="st">"new"</span>,</span>
-<span>  ave_S <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  ave_S <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -292,10 +295,6 @@
 <dd><p>sel.updateの際の収束判定基準</p></dd>
 
 
-<dt id="arg-ti-scale">ti.scale<a class="anchor" aria-label="anchor" href="#arg-ti-scale"></a></dt>
-<dd><p>資源量の係数と切片のscaling</p></dd>
-
-
 <dt id="arg-tf-mat">tf.mat<a class="anchor" aria-label="anchor" href="#arg-tf-mat"></a></dt>
 <dd><p>terminal Fの平均をとる年の設定．NA行列に平均をとる箇所に1を入れる．</p></dd>
 
@@ -402,6 +401,10 @@
 
 <dt id="arg-ave-s">ave_S<a class="anchor" aria-label="anchor" href="#arg-ave-s"></a></dt>
 <dd><p>選択率更新法において，最終年の選択率の仮定が通常(TRUE)とは違い，ヒラメ瀬戸内のように，最終年の選択率がtf.yearで指定した年の平均のF（つまりSUM（F,a)/SUM(F,maxage))に等しいと仮定する場合はFALSEにする.この場合，sel.def="maxage"必須．</p></dd>
+
+
+<dt id="arg-ti-scale">ti.scale<a class="anchor" aria-label="anchor" href="#arg-ti-scale"></a></dt>
+<dd><p>資源量の係数と切片のscaling</p></dd>
 
 </dl></div>
     <div id="value">

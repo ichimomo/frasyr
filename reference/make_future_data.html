@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">frasyr</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.5.0.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.5.0.4</span>
       </span>
     </div>
 
@@ -36,6 +36,9 @@
     </li>
     <li>
       <a href="../articles/fittingSR.html">fitSR関数を使った再生産関係の推定</a>
+    </li>
+    <li>
+      <a href="../articles/future.html">future_vpaを使った将来予測とMSY管理基準値計算、簡易MSEの実行</a>
     </li>
     <li>
       <a href="../articles/vpa.html">VPA関数を使った資源量推定</a>
@@ -83,6 +86,7 @@
 <span>  <span class="va">maa_year</span>,</span>
 <span>  maa <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  maa_fun <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  maa_fun_name <span class="op">=</span> <span class="cn">NA</span>,</span>
 <span>  start_maafun_year_name <span class="op">=</span> <span class="va">start_biopar_year_name</span>,</span>
 <span>  <span class="va">M_year</span>,</span>
 <span>  M <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -104,14 +108,12 @@
 <span>  HCR_Blimit_year <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  HCR_Bban_year <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  HCR_TAC_reserve_rate <span class="op">=</span> <span class="cn">NA</span>,</span>
-<span>  HCR_TAC_reserve_amount <span class="op">=</span> <span class="cn">NA</span>,</span>
-<span>  HCR_TAC_carry_rate <span class="op">=</span> <span class="cn">NA</span>,</span>
-<span>  HCR_TAC_carry_amount <span class="op">=</span> <span class="cn">NA</span>,</span>
 <span>  HCR_TAC_upper_CV <span class="op">=</span> <span class="cn">NA</span>,</span>
 <span>  HCR_TAC_lower_CV <span class="op">=</span> <span class="cn">NA</span>,</span>
 <span>  HCR_TAC_adjust <span class="op">=</span> <span class="cn">NA</span>,</span>
 <span>  HCR_function_name <span class="op">=</span> <span class="st">"HCR_default"</span>,</span>
 <span>  HCR_reserve_denom <span class="op">=</span> <span class="st">"original_ABC_plus"</span>,</span>
+<span>  HCR_carry_compound <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  Pope <span class="op">=</span> <span class="va">res_vpa</span><span class="op">$</span><span class="va">input</span><span class="op">$</span><span class="va">Pope</span>,</span>
 <span>  fix_recruit <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  fix_wcatch <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -210,6 +212,10 @@
 <dd><p>maturity ~ number の回帰式から将来のmaturityを予測する(暫定的、太平洋マダラでのみ利用)</p></dd>
 
 
+<dt id="arg-maa-fun-name">maa_fun_name<a class="anchor" aria-label="anchor" href="#arg-maa-fun-name"></a></dt>
+<dd><p>カスタマイズされたmaa_funを使う場合、その関数のオブジェクトの名前</p></dd>
+
+
 <dt id="arg-faa-year">faa_year<a class="anchor" aria-label="anchor" href="#arg-faa-year"></a></dt>
 <dd><p>将来のF(before ABC_year)を過去の平均値とする場合、平均をとる年を指定する。下のcurrentF, futureFが指定されている場合にはこの設定は無視される。</p></dd>
 
@@ -267,19 +273,7 @@
 
 
 <dt id="arg-hcr-tac-reserve-rate">HCR_TAC_reserve_rate<a class="anchor" aria-label="anchor" href="#arg-hcr-tac-reserve-rate"></a></dt>
-<dd><p>TACの取り残し率。マイナス値を入れれば前借りもできる。</p></dd>
-
-
-<dt id="arg-hcr-tac-reserve-amount">HCR_TAC_reserve_amount<a class="anchor" aria-label="anchor" href="#arg-hcr-tac-reserve-amount"></a></dt>
-<dd><p>TACの獲り残し量。マイナス値を入れれば前借りもできる。rateとamountの片方どちらかだけ設定する</p></dd>
-
-
-<dt id="arg-hcr-tac-carry-rate">HCR_TAC_carry_rate<a class="anchor" aria-label="anchor" href="#arg-hcr-tac-carry-rate"></a></dt>
-<dd><p>当初TACのうち何トンまで持ち越せるかの上限（比率）。</p></dd>
-
-
-<dt id="arg-hcr-tac-carry-amount">HCR_TAC_carry_amount<a class="anchor" aria-label="anchor" href="#arg-hcr-tac-carry-amount"></a></dt>
-<dd><p>当初TACのうち何トンまで持ち越せるかの上限（比率）。</p></dd>
+<dd><p>TACの取り残し率。マイナス値を入れれば前借りもできる。年・シミュレーションごとに長さを揃えたベクトルで与えてよく、sim間・年間で取り残し(正)と前借り(負)が混在していてもよい（simごとに方向別に繰越が計算される。HCR_carry_compound・HCR_TAC_adjustとの併用も可）。</p></dd>
 
 
 <dt id="arg-hcr-tac-upper-cv">HCR_TAC_upper_CV<a class="anchor" aria-label="anchor" href="#arg-hcr-tac-upper-cv"></a></dt>
@@ -291,7 +285,7 @@
 
 
 <dt id="arg-hcr-tac-adjust">HCR_TAC_adjust<a class="anchor" aria-label="anchor" href="#arg-hcr-tac-adjust"></a></dt>
-<dd><p>B&amp;B設定の場合，-1 下方向にadjust, 0 上下方向にadjust, 1 上方向のみadjust, 用いない場合はNA</p></dd>
+<dd><p>B&amp;B（前借り・繰越）設定での「前借り返却額」を、推定ABCと真のABCの差にもとづいて繰越枠の範囲内で調整する。-1 下方向にadjust, 0 上下方向にadjust, 1 上方向のみadjust, 用いない場合はNA。do_MSE=TRUEのみ。繰越枠の上限を無視してexpect_wcatchを直接上書きする<code><a href="future_vpa.html">future_vpa()</a></code>の<code>MSE_TAC_revise</code>とは別物。</p></dd>
 
 
 <dt id="arg-hcr-function-name">HCR_function_name<a class="anchor" aria-label="anchor" href="#arg-hcr-function-name"></a></dt>
@@ -299,7 +293,11 @@
 
 
 <dt id="arg-hcr-reserve-denom">HCR_reserve_denom<a class="anchor" aria-label="anchor" href="#arg-hcr-reserve-denom"></a></dt>
-<dd><p>比率で取り残し量を決める場合、もともとのABCをもとにするか（"original_ABC"、最新の繰越前借り設定）前年からの繰越も考慮したABCをもとにするか（"original_ABC_plus", 過去のスケトウ繰越設定）</p></dd>
+<dd><p>取り残し率(HCR_TAC_reserve_rate)を「どの量に対する割合」とみなすか。"original_ABC_plus"（既定・スケトウ等）＝当年ABCに前年からの繰越/前借りを精算した「実際に使える量」(original_ABC_plus)に対する割合（取り残し量＝その量×率なので、繰越が増えれば取り残し量も増える）。"original_ABC"（カタクチ等）＝当年の素のABC（繰越と無関係, original_ABC）に対する割合（取り残し量＝ABC×率で固定）。</p></dd>
+
+
+<dt id="arg-hcr-carry-compound">HCR_carry_compound<a class="anchor" aria-label="anchor" href="#arg-hcr-carry-compound"></a></dt>
+<dd><p>繰り越し（取り残し=HCR_TAC_reserve_rate&gt;0）のとき、繰り越した分を翌年以降に積み上げるか。FALSE（既定）＝もとのABCを基準にするので繰り越せるのはもとのABC以下・1年限り（取り残した分が翌年以降にさらに積み上がらない）。TRUE＝繰越込みの量を基準にするので繰越分も翌年へ繰り越され、もとのABCを超えて積み上がりうる。前借り（borrowing）時は使われない。</p></dd>
 
 
 <dt id="arg-pope">Pope<a class="anchor" aria-label="anchor" href="#arg-pope"></a></dt>

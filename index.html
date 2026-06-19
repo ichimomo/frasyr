@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">frasyr</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.5.0.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.5.0.4</span>
       </span>
     </div>
 
@@ -54,6 +54,9 @@
     </li>
     <li>
       <a href="articles/fittingSR.html">fitSR関数を使った再生産関係の推定</a>
+    </li>
+    <li>
+      <a href="articles/future.html">future_vpaを使った将来予測とMSY管理基準値計算、簡易MSEの実行</a>
     </li>
     <li>
       <a href="articles/vpa.html">VPA関数を使った資源量推定</a>
@@ -87,36 +90,35 @@
 <div class="section level1">
 <h1 id="インストール方法">インストール方法<a class="anchor" aria-label="anchor" href="#%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB%E6%96%B9%E6%B3%95"></a>
 </h1>
-<pre><code><span><span class="co"># devtoolsをインストールしていない人はインストールする</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"devtools"</span><span class="op">)</span></span>
+<p>pak（推奨）または devtools でインストールできます。</p>
+<pre><code><span><span class="co"># --- pak を使う場合（推奨） ---</span></span>
+<span><span class="co"># pakをインストールしていない人はインストールする</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"pak"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 開発中の最新版をインストールする</span></span>
-<span><span class="co"># ref=""で開発中のブランチを指定します。だいたい、"dev"ブランチに開発中のものがあります</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"ichimomo/frasyr"</span>, ref<span class="op">=</span><span class="st">"dev"</span><span class="op">)</span></span>
+<span><span class="co"># 開発中の最新版（devブランチ）をインストールする</span></span>
+<span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pkg_install.html" class="external-link">pkg_install</a></span><span class="op">(</span><span class="st">"github::ichimomo/frasyr@dev"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 過去の安定版を指定してインストールする場合</span></span>
-<span><span class="co"># @以下にリリースバージョンを指定します</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"ichimomo/frasyr@v1.00"</span><span class="op">)</span></span>
+<span><span class="co"># 特定の年・ブランチやリリースを指定する場合は @ 以下を変える</span></span>
+<span><span class="co"># pak::pkg_install("github::ichimomo/frasyr@dev2026")  # 2026年資源評価用ブランチ</span></span>
+<span><span class="co"># pak::pkg_install("github::ichimomo/frasyr@v1.00")    # 過去の安定版</span></span>
 <span></span>
-<span><span class="co"># 以上の操作をしてfrasyrをインストールしてから、以下のコマンドで呼び出します</span></span>
+<span><span class="co"># --- devtools を使う場合 ---</span></span>
+<span><span class="co"># install.packages("devtools")</span></span>
+<span><span class="co"># devtools::install_github("ichimomo/frasyr", ref="dev")</span></span>
+<span><span class="co"># devtools::install_github("ichimomo/frasyr@v1.00")    # 過去の安定版</span></span>
+<span></span>
+<span><span class="co"># インストール後、以下のコマンドで呼び出します</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">frasyr</span><span class="op">)</span></span></code></pre>
-</div>
-<div class="section level1">
-<h1 id="リリースバージョン">リリースバージョン<a class="anchor" aria-label="anchor" href="#%E3%83%AA%E3%83%AA%E3%83%BC%E3%82%B9%E3%83%90%E3%83%BC%E3%82%B8%E3%83%A7%E3%83%B3"></a>
-</h1>
-<p>最新のリリース状況についてはこちらを参照ください　<a href="https://github.com/ichimomo/frasyr/releases" class="external-link uri">https://github.com/ichimomo/frasyr/releases</a></p>
-<p>以下は過去のリリースです - v1.00 : future-rvpaから移動してきたほぼそのままのバージョン - v1.10 : future.vpaにuse.MSEオプションを追加 - v1.20 : 2019年アジ・イワシ事前検討会用 - v2.00 : 2020年アジ・イワシ研究機関会議用(事前配布版) - 将来予測のメイン関数をfuture.vpaからfuture_vpaに移行。基本的な使い方は以下のマニュアルのリンク先を参照のこと - v2.01 : 2020年アジ・イワシ研究機関会議用(最終版) - fit.parでL1の場合のSDをRMSEに統一 - v2.1.0.0 : 2020年度資源評価会議用プロトタイプバージョン - VPAを用いたモデル診断スクリプトをvignetteに追加 - 途中でプラスグループが変わる（対馬マイワシ）VPAの計算を修正 - ほか、関数のテストを充実。</p>
 </div>
 <div class="section level1">
 <h1 id="マニュアル">マニュアル<a class="anchor" aria-label="anchor" href="#%E3%83%9E%E3%83%8B%E3%83%A5%E3%82%A2%E3%83%AB"></a>
 </h1>
 <ul>
-<li>VPAによる資源量推定　<a href="https://ichimomo.github.io/frasyr/articles/vpa.html" class="external-link">vignette</a>
-</li>
-<li>VPAモデル診断スクリプト　<a href="https://ichimomo.github.io/frasyr/articles/Diagnostics-for-VPA.html" class="external-link">vignette</a>
-</li>
-<li>fitSR関数による再生産関係推定　<a href="https://ichimomo.github.io/frasyr/articles/fittingSR.html" class="external-link">vignette</a>
-</li>
+<li><p>パッケージ解説サイト（pkgdown）: <a href="https://ichimomo.github.io/frasyr/" class="external-link uri">https://ichimomo.github.io/frasyr/</a></p></li>
+<li><p>関数のヘルプ一覧（リファレンス）: <a href="https://ichimomo.github.io/frasyr/reference/" class="external-link uri">https://ichimomo.github.io/frasyr/reference/</a></p></li>
+<li><p>VPAによる資源量推定　<a href="https://ichimomo.github.io/frasyr/articles/vpa.html" class="external-link">vignette</a></p></li>
+<li><p>VPAモデル診断スクリプト　<a href="https://ichimomo.github.io/frasyr/articles/Diagnostics-for-VPA.html" class="external-link">vignette</a></p></li>
+<li><p>fitSR関数による再生産関係推定　<a href="https://ichimomo.github.io/frasyr/articles/fittingSR.html" class="external-link">vignette</a></p></li>
 </ul>
 <p>これらはRコマンドで以下のようにしても見れます。</p>
 <pre><code><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"ichimomo/frasyr"</span>, ref<span class="op">=</span><span class="st">"dev"</span>, build_vignettes<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span> <span class="co"># インストールするときにvignetteを作る（時間かかります）</span></span>

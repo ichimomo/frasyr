@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">frasyr</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.5.0.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.5.0.4</span>
       </span>
     </div>
 
@@ -53,6 +53,9 @@
     </li>
     <li>
       <a href="../articles/fittingSR.html">fitSR関数を使った再生産関係の推定</a>
+    </li>
+    <li>
+      <a href="../articles/future.html">future_vpaを使った将来予測とMSY管理基準値計算、簡易MSEの実行</a>
     </li>
     <li>
       <a href="../articles/vpa.html">VPA関数を使った資源量推定</a>
@@ -76,7 +79,7 @@
       <h1 data-toc-skip>VPAモデル診断スクリプト</h1>
                         <h4 data-toc-skip class="author">濵邉昂平・市野川桃子</h4>
             
-            <h4 data-toc-skip class="date">2026-04-24</h4>
+            <h4 data-toc-skip class="date">2026-06-19</h4>
       
 
       <div class="hidden name"><code>Diagnostics-for-VPA.Rmd</code></div>
@@ -85,36 +88,6 @@
 
     
     
-<div class="section level2">
-<h2 id="年度変更点">2021年度変更点<a class="anchor" aria-label="anchor" href="#%E5%B9%B4%E5%BA%A6%E5%A4%89%E6%9B%B4%E7%82%B9"></a>
-</h2>
-<p><font color="red"></font></p>
-<ul>
-<li>残差プロット
-<ul>
-<li>残差プロットのスムージング曲線がデフォルトで表記されません</li>
-<li>観測誤差と自己相関係数が図中に出力されます</li>
-<li>残差プロットの背景に観測誤差に基づく信頼区間が表記されます</li>
-</ul>
-</li>
-<li>
-<strong>注意事項</strong>
-<ul>
-<li>以下のような計算法の資源には対応していません
-<ul>
-<li>最高齢や+グループが時系列で変化する資源</li>
-<li>直近年の加入尾数を、過去の平均で計算している資源</li>
-<li>直近年の加入尾数にRPS等を乗じている資源</li>
-<li>etc…</li>
-</ul>
-</li>
-<li>上述のような資源担当の方は別途お問い合わせください</li>
-<li>その場合、関数の修正 or VPAの再実行等でご対応頂きます</li>
-</ul>
-</li>
-</ul>
-<p></p>
-</div>
 <div class="section level2">
 <h2 id="vpaモデル診断用スクリプト">VPAモデル診断用スクリプト<a class="anchor" aria-label="anchor" href="#vpa%E3%83%A2%E3%83%87%E3%83%AB%E8%A8%BA%E6%96%AD%E7%94%A8%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%97%E3%83%88"></a>
 </h2>
@@ -573,7 +546,7 @@ CPUEと予測CPUEをそれぞれ重ねてプロットしたもの。データと
 <p><img src="Diagnostics-for-VPA_files/figure-html/unnamed-chunk-24-1.png" class="r-plt" alt="" width="672"></p>
 <p>これらの残差プロットは今回のバージョンから、<code>vpa</code>関数実行時に引数<code>plot = T</code>にすると自動生成されるようになっています。モデル診断の最も基本パートとなるので、是非活用ください。</p>
 <div class="section level3">
-<h3 id="年度変更点-1">2021年度変更点<a class="anchor" aria-label="anchor" href="#%E5%B9%B4%E5%BA%A6%E5%A4%89%E6%9B%B4%E7%82%B9-1"></a>
+<h3 id="年度変更点">2021年度変更点<a class="anchor" aria-label="anchor" href="#%E5%B9%B4%E5%BA%A6%E5%A4%89%E6%9B%B4%E7%82%B9"></a>
 </h3>
 <p>先程の図の通り、残差プロットに信頼区間が明記されるようになりました。
 <strong>信頼区間は濃い色が80%、薄い色が95%</strong>のそれぞれ信頼区間となっております。</p>
@@ -672,7 +645,7 @@ frasyrの中にはブートストラップ法を自動で行う<code>boo.vpa</co
 <span><span class="kw">for</span><span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span> <span class="va">res_tmp</span><span class="op">[</span><span class="va">i</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">res_boot1</span><span class="op">[[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="va">Fc.at.age</span><span class="op">[</span><span class="fl">4</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile</a></span><span class="op">(</span><span class="va">res_tmp</span>, probs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.025</span>,<span class="fl">0.5</span>,<span class="fl">0.975</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <pre><code>     2.5%       50%     97.5% 
-0.4392048 0.7634732 7.5320518 </code></pre>
+0.4599486 0.7676411 7.5678267 </code></pre>
 <p>この他、各パラメータの相関関係について、ブートストラップ標本を基にプロットが得られます。相関係数が非常に高い（0.9以上など）パラメータのペアがある場合、その２つのパラメータを同時に推定することが難しいことを示している場合がありますので、その場合はモデルの構造をよく検討してください。</p>
 <div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">plot_boot1</span><span class="op">$</span><span class="va">plot_cor</span></span></code></pre></div>
@@ -695,7 +668,15 @@ age）が真であると仮定して推定するため、年齢別漁獲尾数�
 </div>
 </div>
 <div class="section level2">
-<h2 id="おわりに">7. おわりに<a class="anchor" aria-label="anchor" href="#%E3%81%8A%E3%82%8F%E3%82%8A%E3%81%AB"></a>
+<h2 id="尤度プロファイル">7. 尤度プロファイル<a class="anchor" aria-label="anchor" href="#%E5%B0%A4%E5%BA%A6%E3%83%97%E3%83%AD%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB"></a>
+</h2>
+<p>推定したターミナルf(term.f)の信頼区間を尤度プロファイル(profile
+likelihood)を使って評価する。</p>
+<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">ci0</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/profile_likelihood.vpa.html">profile_likelihood.vpa</a></span><span class="op">(</span><span class="va">res_vpa_estb</span>, method<span class="op">=</span><span class="st">"ci"</span>,Alpha<span class="op">=</span><span class="fl">0.80</span><span class="op">)</span><span class="op">$</span><span class="va">ci</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="おわりに">8. おわりに<a class="anchor" aria-label="anchor" href="#%E3%81%8A%E3%82%8F%E3%82%8A%E3%81%AB"></a>
 </h2>
 <p>以上が、現在開発配布されている、VPAのモデル診断関数です。</p>
 <p>VPAのモデル診断結果が芳しくない場合、そこから推定される再生産関係、管理基準値の推定、更には将来予測などに、大きな影響を及ぼします。</p>
