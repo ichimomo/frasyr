@@ -3,7 +3,7 @@ title: "future_vpaを使った将来予測とMSY管理基準値計算、簡易MS
 author: "市野川桃子"
 date: "`r Sys.Date()`"
 output:
-  md_document:
+  html_document:
 vignette: >
   %\VignetteIndexEntry{function of future projection}
   %\VignetteEngine{knitr::rmarkdown}

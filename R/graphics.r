@@ -253,8 +253,8 @@ plot_Fcurrent <- function(vpares,
               mapping=aes(x=age_name,y=F,group=type),color="black",lwd=1.5,lty=1)+
     geom_point(data=fc_at_age_current,
                mapping=aes(x=age_name,y=F,shape=type),color="black",size=3)+
-    coord_cartesian(ylim=c(0,max(faa_history$F,na.rm=T)))+
-    ##                        xlim=range(as.numeric(faa_history$age_name,na.rm=T))+c(-0.5,0.5)
+    coord_cartesian(ylim=c(0,max(faa_history$F,na.rm=TRUE)))+
+    ##                        xlim=range(as.numeric(faa_history$age_name,na.rm=TRUE))+c(-0.5,0.5)
     #                        )+
     xlab("年齢")+ylab("漁獲係数(F)")+theme_SH(legend.position="right")+
     scale_shape_discrete(name="", labels=c("F current"))
@@ -282,8 +282,8 @@ plot_Fref <- function(rres,xlabel="max", # or, "mean","Fref/Fcur"
   spr <- rres$ypr.spr$pspr
   ypr <- rres$ypr.spr$ypr
   plot(F.range,spr,xlab=xlabel,ylab="%SPR",type="l",ylim=c(0,max(spr)))
-  par(new=T)
-  plot(F.range,ypr,axes=F,xlab="",ylab="",lty=2,type="l",ylim=c(0,max(ypr)))
+  par(new=TRUE)
+  plot(F.range,ypr,axes=FALSE,xlab="",ylab="",lty=2,type="l",ylim=c(0,max(ypr)))
   axis(side=4)
   mtext("YPR",side=4,line=2)
   n.line <- which(rownames(rres$summary) %in% xlabel)
@@ -428,7 +428,7 @@ plot_SR <- function(SR_result,refs=NULL,xscale=1000,xlabel="千トン",yscale=1,
   alldata <- bind_rows(SRdata,SRdata.pred,SRdata.release) %>%
     mutate(R=R/yscale,SSB=SSB/xscale)
   ymax <- max(alldata$R)
-  year.max <- max(alldata$year,na.rm=T)
+  year.max <- max(alldata$year,na.rm=TRUE)
   tmp <- 0:3000
   if(is.null(labeling.year)) labeling.year <- c(tmp[tmp%%5==0],year.max)
   alldata <- alldata %>% mutate(pick.year=ifelse(year%in%labeling.year,year,""))
@@ -678,7 +678,7 @@ plot_SRregime <- function (SRregime_result,xscale=1000,xlabel="SSB",yscale=1,yla
   combined_data <- combined_data %>% mutate(Regime) %>%
     mutate(fill_color=ifelse(Year%in%last_years, "red", "white"))
 
-  if(prod(as.numeric(as.character(combined_data$weight)),na.rm=T)==0){
+  if(prod(as.numeric(as.character(combined_data$weight)),na.rm=TRUE)==0){
     scaleshapeval <- c(3,20)
   }else{
     scaleshapeval <- c(20)
@@ -910,8 +910,8 @@ plot_futures <- function(vpares=NULL,
 
     # 将来と過去をつなげるためのダミーデータ
     tmp <- vpa_tb %>% group_by(stat) %>%
-      summarise(value=tail(value[!is.na(value)],n=1,na.rm=T),
-                year=tail(year[!is.na(value)],n=1,na.rm=T),sim=0)
+      summarise(value=tail(value[!is.na(value)],n=1,na.rm=TRUE),
+                year=tail(year[!is.na(value)],n=1,na.rm=TRUE),sim=0)
     future.dummy <- purrr::map_dfr(future.name,function(x) mutate(tmp,scenario=x))%>%
     mutate(type="future")
   }
@@ -929,20 +929,20 @@ plot_futures <- function(vpares=NULL,
 
   future_tibble.qt <-
     future_tibble %>% group_by(scenario,year,stat,type) %>%
-    summarise(low=quantile(value,CI_range[1],na.rm=T),
-              high=quantile(value,CI_range[2],na.rm=T),
-              median=median(value,na.rm=T),
+    summarise(low=quantile(value,CI_range[1],na.rm=TRUE),
+              high=quantile(value,CI_range[2],na.rm=TRUE),
+              median=median(value,na.rm=TRUE),
               mean=mean(value))
 
   # make dummy for y range
   dummy <- future_tibble %>% group_by(stat) %>% summarise(max=max(value)) %>%
-    mutate(value=0,year=min(future_tibble$year,na.rm=T)) %>%
+    mutate(value=0,year=min(future_tibble$year,na.rm=TRUE)) %>%
     select(-max)
 
   dummy2 <- future_tibble %>% group_by(stat) %>%
-    summarise(max=max(quantile(value,CI_range[2],na.rm=T))) %>%
+    summarise(max=max(quantile(value,CI_range[2],na.rm=TRUE))) %>%
     mutate(value=max*1.1,
-           year=min(future_tibble$year,na.rm=T)) %>%
+           year=min(future_tibble$year,na.rm=TRUE)) %>%
     select(-max)
 
   future_tibble.qt <- left_join(future_tibble.qt,rename_list) %>%
@@ -1562,7 +1562,7 @@ plot_future_simple <- function(fres0,ylim.tmp=NULL,xlim.tmp=NULL,vpares=NULL,wha
     if(N.line>0) matpoints(rownames(fres0$vwcaa),fres0$vwcaa[,2:(N.line+1)],col="gray",type="l",lty=1)
   }
   if(is.legend){
-    if(sum(what)>1) plot(1:10,type = "n",ylab = "", xlab = "", axes = F)
+    if(sum(what)>1) plot(1:10,type = "n",ylab = "", xlab = "", axes = FALSE)
     legend("topleft",lty=c(NA,NA,1,2),legend=c("Deterministic","Mean","Median",paste(100-(conf*2)*100,"%conf")),pch=c(3,1,NA,NA))
   }
 
@@ -1664,7 +1664,7 @@ plot_yield <- function(MSY_obj,refs_base,
 
   plus.char <- ifelse(plus_group==TRUE,"+","")
 
-  xmax <- max(trace$ssb.mean,na.rm=T)
+  xmax <- max(trace$ssb.mean,na.rm=TRUE)
   age.label.position <- trace$ssb.mean[which.min((trace$ssb.mean-xmax*xlim.scale*age.label.ratio)^2)]
   age.label <- trace %>% dplyr::filter(round(age.label.position,1)==round(ssb.mean,1))%>%
     mutate(cumcatch=cumsum(value)-value/2)%>%
@@ -1752,13 +1752,13 @@ plot_yield <- function(MSY_obj,refs_base,
   }
 
   if(!is.null(past)){
-    catch.past = unlist(colSums(past$input$dat$caa*past$input$dat$waa, na.rm=T)/biomass.unit)
+    catch.past = unlist(colSums(past$input$dat$caa*past$input$dat$waa, na.rm=TRUE)/biomass.unit)
     if (past$input$last.catch.zero && !is.null(future)) {
       catch.past[length(catch.past)] = apply(future[[1]]$vwcaa[,-1],1,mean)[1]/biomass.unit
     }
     pastdata <- tibble(
       year      =as.numeric(colnames(past$ssb)),
-      ssb.past  =unlist(colSums(past$ssb, na.rm=T))/biomass.unit,
+      ssb.past  =unlist(colSums(past$ssb, na.rm=TRUE))/biomass.unit,
       catch.past=catch.past
     )
 
@@ -1883,8 +1883,8 @@ plot_kobe_gg <- plot_kobe <- function(FBdata=NULL,
   FBdata <- FBdata %>%
     mutate(year.label=ifelse(year%in%labeling.year,year,""))
 
-  max.B <- max(c(FBdata$Bratio,xscale),na.rm=T)
-  max.F <- max(c(FBdata$Fratio,yscale),na.rm=T)
+  max.B <- max(c(FBdata$Bratio,xscale),na.rm=TRUE)
+  max.F <- max(c(FBdata$Fratio,yscale),na.rm=TRUE)
 
   red.color <- "indianred1" # rgb(238/255,121/255,72/255)
   yellow.color <- "khaki1" # rgb(245/255,229/255,107/255)
