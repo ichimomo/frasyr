@@ -28,6 +28,8 @@ calc_steepness(
 \item{maa}{年齢別親魚量}
 
 \item{plus_group}{最高齢がプラスグループかどうか}
+
+\item{faa}{選択率（年齢の長さのベクトル）を与えると、その選択率のもとでの決定論的なMSY管理基準値（SPRmsy,SBmsy,Rmsy,Bmsy,MSY,Fmsy2F) も返す}
 }
 \value{
 以下の要素からなるデータフレーム

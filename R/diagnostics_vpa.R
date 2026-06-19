@@ -549,12 +549,12 @@ do_estcheck_vpa <- function(res, n_ite = 10, sd_jitter = 1, what_plot = NULL, TM
     geom_segment(aes(x=0, xend = 4, y = result_est, yend = result_est), color = "red", size = 1.3)+
     geom_point(aes(x = initial, y = estimated), size = 5) +
     facet_wrap( ~ age) +
-    xlab("initial value") +
+    xlab("initial value of F at max age") + ylab("Estimated value")+
     theme_SH(base_size = 14)
   g2 <- ggplot(data = d_tmp[d_tmp$age == "max",]) +
     geom_segment(aes(x=0, xend = 4, y = result_lk, yend = result_lk), color = "red", size = 1.3)+
     geom_point(aes(x = initial, y = likelihood), size = 5) +
-    ylab("log Likelihood") + xlab("initial value of F of age Max") +
+    ylab("log Likelihood") + xlab("initial value of F at max age") +
     theme_SH(base_size = 14)
 
   if((range(d_tmp[d_tmp$age=="max","likelihood"], na.rm=TRUE) %>% diff) < 5){
@@ -843,8 +843,8 @@ plot_residual_vpa2 <- function(res, index_name = NULL, plot_smooth = FALSE, plot
   for(i in 1:length(Lab_tmp)){
     tmp_data <- d_tidy[d_tidy$Index_Label == Lab_tmp[i],]
     predIndex_g3[[i]] <- with(tmp_data,
-                              seq(#min(tmp_data$pred, na.rm = T),
-                                0, max(tmp_data$pred, na.rm = T), length=100))
+                              seq(#min(tmp_data$pred, na.rm = TRUE),
+                                0, max(tmp_data$pred, na.rm = TRUE), length=100))
     predabund_g3[[i]] <- (as.numeric(predIndex_g3[[i]])/res$q[i])^(1/res$b[i])
 
     tmp <- str_split(res$input$abund[i], "") %>% unlist()
@@ -1209,9 +1209,9 @@ plot_boot = function(res_boo,
                          "SSB_last", "Recruitment_last")
 
   PB_value <- c((1-ci_range)/2, 0.5, 1-(1-ci_range)/2)
-  d_ssb <- t(apply(ssb_mat, 2, quantile, probs = PB_value, na.rm = T))
-  d_abund <- t(apply(abund_mat, 2, quantile, probs = PB_value, na.rm = T))
-  d_biomass <- t(apply(biomass_mat, 2, quantile, probs = PB_value, na.rm = T))
+  d_ssb <- t(apply(ssb_mat, 2, quantile, probs = PB_value, na.rm = TRUE))
+  d_abund <- t(apply(abund_mat, 2, quantile, probs = PB_value, na.rm = TRUE))
+  d_biomass <- t(apply(biomass_mat, 2, quantile, probs = PB_value, na.rm = TRUE))
   colnames(d_ssb) <- c("Lower", "SSB", "Upper")
   colnames(d_abund) <- c("Lower", "Abundance", "Upper")
   colnames(d_biomass) <- c("Lower", "Biomass", "Upper")
@@ -1355,9 +1355,9 @@ do_caaboot_vpa <-  function(res,
   }
 
   PB_value <- c((1-ci_range)/2, 0.5, 1-(1-ci_range)/2)
-  d_ssb <- t(apply(ssb_mat, 2, quantile, probs = PB_value, na.rm = T))
-  d_abund <- t(apply(abund_mat, 2, quantile, probs = PB_value, na.rm = T))
-  d_biomass <- t(apply(biomass_mat, 2, quantile, probs = PB_value, na.rm = T))
+  d_ssb <- t(apply(ssb_mat, 2, quantile, probs = PB_value, na.rm = TRUE))
+  d_abund <- t(apply(abund_mat, 2, quantile, probs = PB_value, na.rm = TRUE))
+  d_biomass <- t(apply(biomass_mat, 2, quantile, probs = PB_value, na.rm = TRUE))
   colnames(d_ssb) <- c("Lower", "SSB", "Upper")
   colnames(d_abund) <- c("Lower", "Abundance", "Upper")
   colnames(d_biomass) <- c("Lower", "Biomass", "Upper")

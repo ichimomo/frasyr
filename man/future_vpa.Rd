@@ -14,7 +14,7 @@ future_vpa(
   objective = "MSY",
   obj_value = 0,
   obj_stat = "mean",
-  do_MSE = NULL,
+  do_MSE = FALSE,
   MSE_input_data = NULL,
   MSE_nsim = NULL,
   MSE_sd = NULL,
@@ -46,7 +46,8 @@ future_vpa(
 
 \item{MSE_sd}{簡易MSEをする場合の加入変動の大きさ。ここをゼロにすれば決定論的な将来予測の値を得られる。その場合MSE_nsimは自動的に２に設定される。単純なモデルの場合、ここがゼロでも多分問題ない。モデル平均を使っている場合にはちゃんとした簡易MSEをすること。リサンプリングオプションの場合も使えない。}
 
-\item{MSE_TAC_revise}{簡易MSEする場合，真のABCをいてTACをリバイスするか．何もしない場合はNA，下方修正飲みする場合は-1，上方修正飲みする場合は1, make_future_dataで設定するHCR_TAC_adjustと似ているが，こちらのほうは，B&B設定とは関係なく動く．HCRのほうは，繰入・繰越率が上限となる}
+\item{MSE_TAC_revise}{簡易MSE（do_MSE=TRUE）専用の、簡易的・試験的なTAC補正オプション。各シミュレーションで推定ABC（assessmentにもとづくexpect_wcatch）と真のABC（真のFで漁獲した場合の漁獲量real_true_catch）を比較し、片方向のずれだけをTACに反映する。NA=補正しない（既定）。1=推定ABCが真のABCより大きい（上振れ）simのみTACを真のABCまで引き下げる。-1=推定ABCが真のABCより小さい（下振れ）simのみTACを真のABCまで引き上げる。
+make_future_dataで設定する\code{HCR_TAC_adjust}と目的は似るが次の点で異なる: (1)繰越・前借り（B&B）の機構を経由せず、繰越計算の後にexpect_wcatchを直接上書きする、(2)繰入・繰越率による上限がかからない、(3)\code{future_vpa()}の引数として与える（\code{HCR_TAC_adjust}は\code{make_future_data()}でHCR_matに設定し、前借りの返却額を繰越枠の範囲内で調整する正規の経路）。なお本オプションは、TACの上方修正のみ・下方修正のみが行われた場合に結果がどうなるかを見る目的で試験的に追加されたもので、繰越枠を尊重する通常運用では\code{HCR_TAC_adjust}を用いる。}
 
 \item{SPR_target}{目標とする\%SPR。NULL以外の値の場合、過去〜将来のそれぞれの年・シミュレーションが、目標とするF\%SPRに対して何倍にあたるか(F/Ftarget)を計算して、HCR_realizedの"Fratio"に入れる。HCRが生きている年については"beta_gamma"と一致するはず。}
 

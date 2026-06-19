@@ -9,40 +9,34 @@ https://ichimomo.github.io/main/ に一括した情報へのリンクがあり�
 
 # インストール方法
 
+pak（推奨）または devtools でインストールできます。
+
 ```
-# devtoolsをインストールしていない人はインストールする
-install.packages("devtools")
+# --- pak を使う場合（推奨） ---
+# pakをインストールしていない人はインストールする
+install.packages("pak")
 
-# 開発中の最新版をインストールする
-# ref=""で開発中のブランチを指定します。だいたい、"dev"ブランチに開発中のものがあります
-devtools::install_github("ichimomo/frasyr", ref="dev")
+# 開発中の最新版（devブランチ）をインストールする
+pak::pkg_install("github::ichimomo/frasyr@dev")
 
-# 過去の安定版を指定してインストールする場合
-# @以下にリリースバージョンを指定します
-devtools::install_github("ichimomo/frasyr@v1.00")
+# 特定の年・ブランチやリリースを指定する場合は @ 以下を変える
+# pak::pkg_install("github::ichimomo/frasyr@dev2026")  # 2026年資源評価用ブランチ
+# pak::pkg_install("github::ichimomo/frasyr@v1.00")    # 過去の安定版
 
-# 以上の操作をしてfrasyrをインストールしてから、以下のコマンドで呼び出します
+# --- devtools を使う場合 ---
+# install.packages("devtools")
+# devtools::install_github("ichimomo/frasyr", ref="dev")
+# devtools::install_github("ichimomo/frasyr@v1.00")    # 過去の安定版
+
+# インストール後、以下のコマンドで呼び出します
 library(frasyr)
 
 ```
 
-# リリースバージョン
-最新のリリース状況についてはこちらを参照ください　https://github.com/ichimomo/frasyr/releases
-
-以下は過去のリリースです
-- v1.00 : future-rvpaから移動してきたほぼそのままのバージョン
-- v1.10 : future.vpaにuse.MSEオプションを追加
-- v1.20 : 2019年アジ・イワシ事前検討会用
-- v2.00 : 2020年アジ・イワシ研究機関会議用(事前配布版)
-   - 将来予測のメイン関数をfuture.vpaからfuture_vpaに移行。基本的な使い方は以下のマニュアルのリンク先を参照のこと
-- v2.01 : 2020年アジ・イワシ研究機関会議用(最終版)
-   - fit.parでL1の場合のSDをRMSEに統一
-- v2.1.0.0 : 2020年度資源評価会議用プロトタイプバージョン
-   - VPAを用いたモデル診断スクリプトをvignetteに追加
-   - 途中でプラスグループが変わる（対馬マイワシ）VPAの計算を修正
-   - ほか、関数のテストを充実。
-
 # マニュアル
+- パッケージ解説サイト（pkgdown）: https://ichimomo.github.io/frasyr/
+- 関数のヘルプ一覧（リファレンス）: https://ichimomo.github.io/frasyr/reference/
+
 - VPAによる資源量推定　[vignette](https://ichimomo.github.io/frasyr/articles/vpa.html)
 - VPAモデル診断スクリプト　[vignette](https://ichimomo.github.io/frasyr/articles/Diagnostics-for-VPA.html)
 - fitSR関数による再生産関係推定　[vignette](https://ichimomo.github.io/frasyr/articles/fittingSR.html)

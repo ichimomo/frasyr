@@ -48,7 +48,6 @@ vpa(
   sel.update = FALSE,
   sel.def = "max",
   max.dd = 1e-06,
-  ti.scale = NULL,
   tf.mat = NULL,
   eq.tf.mean = FALSE,
   no.est = FALSE,
@@ -85,7 +84,8 @@ vpa(
   no_eta_age = NULL,
   sdreport = FALSE,
   use.equ = "new",
-  ave_S = TRUE
+  ave_S = TRUE,
+  ...
 )
 }
 \arguments{
@@ -161,8 +161,6 @@ vpa(
 
 \item{max.dd}{sel.updateの際の収束判定基準}
 
-\item{ti.scale}{資源量の係数と切片のscaling}
-
 \item{tf.mat}{terminal Fの平均をとる年の設定．NA行列に平均をとる箇所に1を入れる．}
 
 \item{eq.tf.mean}{terminal Fの平均値を過去のFの平均値と等しくする}
@@ -216,6 +214,8 @@ vpa(
 \item{use.equ}{plus groupが途中で変わる場合の計算式の選択 （old = 従来の方法（プラスグループが延長している年はプラスグループのＦが一歳若い年齢のＦと等しいという仮定は置かない），new= 新しい方法（プラスグループが延長している年はプラスグループのＦが一歳若い年齢のＦと等しいという仮定を置く)}
 
 \item{ave_S}{選択率更新法において，最終年の選択率の仮定が通常(TRUE)とは違い，ヒラメ瀬戸内のように，最終年の選択率がtf.yearで指定した年の平均のF（つまりSUM（F,a)/SUM(F,maxage))に等しいと仮定する場合はFALSEにする.この場合，sel.def="maxage"必須．}
+
+\item{ti.scale}{資源量の係数と切片のscaling}
 }
 \value{
 list object:

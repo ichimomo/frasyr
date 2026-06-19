@@ -146,7 +146,7 @@ validate_sr <- function(SR = NULL, method = NULL, AR = NULL, out.AR = NULL, res_
   if (!is.null(SR)) {
     assertthat::assert_that(
       length(SR) == 1,
-      SR %in% c("HS", "BH", "RI","Mesnil", "Shepherd", "Cushing","BHS")
+      SR %in% c("HS", "BH", "RI","Mesnil", "Shepherd", "Cushing","BHS","Const")
     )
   }
   if (!is.null(method)) {
@@ -348,7 +348,7 @@ fit.SR <- function(SRdata,
           rss <- w[1]*resid2[1]^2*(1-rho^2)
           for(i in 2:N) rss <- rss + w[i]*resid2[i]^2
           sd <-  sqrt(rss/NN)
-          sd2 <- c(sd/sqrt(1-rho^2), rep(sd,N-1))          
+          sd2 <- c(sd/sqrt(1-rho^2), rep(sd,N-1))
           obj <- -sum(w*dnorm(resid2,-0.5*sd2^2,sd2,log=TRUE))
         }
       } else {
@@ -531,6 +531,7 @@ fit.SR <- function(SRdata,
   Res$AIC <- -2*loglik+2*k
   Res$AICc <- Res$AIC+2*k*(k+1)/(NN-k-1)
   Res$BIC <- -2*loglik+k*log(NN)
+  Res$sd.marginal <- Res$pars$sd/sqrt(1-Res$pars$rho^2)
 
   if(!is.null(bio_par)){
     if(SR!="Mesnil") Res$steepness <- calc_steepness(SR=SR,Res$pars,bio_par$M,bio_par$waa,bio_par$maa,plus_group=plus_group) else{ #add gamma to Res$pars if SR=Mesnil
@@ -1618,8 +1619,8 @@ autocor.plot = function(resSR,use.resid=1,lag.max=NULL,output = FALSE,filename =
     abline(v=c(resSR$input$regime.year)-0.5,lty=3,col="blue")
   }
   abline(0,0,lty=2)
-  par(new=T)
-  scatter.smooth(Year, Resid, lpars=list(col="red",lwd=lwd),ann=F,axes=FALSE)
+  par(new=TRUE)
+  scatter.smooth(Year, Resid, lpars=list(col="red",lwd=lwd),ann=FALSE,axes=FALSE)
 
   if (is.null(lag.max)) lag.max = 10*log10(length(Resid))
   ac.res <- acf(Resid,plot=FALSE,lag.max=lag.max)
@@ -2165,9 +2166,9 @@ prof.likSR = function(resSR,output=FALSE,filename="Profile_Likelihood",a_range =
       }))
     }
     if (output) png(file = paste0(filename,".png"), width=7.5, height=5, res=432, units='in')
-    image(b.grid,a.grid,matrix(prof.lik.res,nrow=length),ann=F,col=cm.colors(12),
+    image(b.grid,a.grid,matrix(prof.lik.res,nrow=length),ann=FALSE,col=cm.colors(12),
           ylim=range(a.grid),xlim=range(b.grid))
-    par(new=T, xaxs="i",yaxs="i")
+    par(new=TRUE, xaxs="i",yaxs="i")
     contour(b.grid,a.grid,matrix(prof.lik.res,nrow=length),
             ylim=range(a.grid),xlim=range(b.grid),
             xlab="b",ylab="a",main="Profile Likelihood")
@@ -2226,9 +2227,9 @@ prof.likSR = function(resSR,output=FALSE,filename="Profile_Likelihood",a_range =
       }
       ba.grid.res[[j]] <- ba.grid
 
-      image(b.grid,a.grid,matrix(prof.lik.res[,j],nrow=length),ann=F,col=cm.colors(12),
+      image(b.grid,a.grid,matrix(prof.lik.res[,j],nrow=length),ann=FALSE,col=cm.colors(12),
             ylim=range(a.grid),xlim=range(b.grid))
-      par(new=T, xaxs="i",yaxs="i")
+      par(new=TRUE, xaxs="i",yaxs="i")
       contour(b.grid,a.grid,matrix(prof.lik.res[,j],nrow=length),
               ylim=range(a.grid),xlim=range(b.grid),
               xlab="b",ylab="a",main=paste0("Profile Likelihood for Regime ",resSR$regime_pars$regime[j]))
@@ -2715,6 +2716,8 @@ corSR = function(resSR) {
 #' @param waa （親魚量の）年齢別体重
 #' @param maa 年齢別親魚量
 #' @param plus_group 最高齢がプラスグループかどうか
+#' @param faa 選択率（年齢の長さのベクトル）を与えると、その選択率のもとでの決定論的なMSY管理基準値（SPRmsy,SBmsy,Rmsy,Bmsy,MSY,Fmsy2F) も返す
+#' 
 #' @return 以下の要素からなるデータフレーム
 #' \describe{
 #' \item{\code{SPR0}}{F=0のときのSPR(この逆数がreplacement lineの傾き)}
@@ -2776,6 +2779,11 @@ calc_steepness = function(SR="HS",rec_pars,M,waa,maa,plus_group=TRUE,faa = NULL,
         SB0 <- 0
       }
       h = (SB0-rec_b)/SB0
+    }
+    if (SR == "Const") {
+      R0 = rec_pars$a
+      SB0 = R0*SPR0
+      h = 1
     }
     if (SR == "Mesnil") {
       gamma <- rec_pars$gamma
@@ -2921,14 +2929,14 @@ tryall_SR <- function(data_SR, plus_group=TRUE, bio_par=NULL, tol=FALSE, detail=
   SRmodel.list$pars <- purrr::map(allres, function(x) x$pars)
   result.list <- SRmodel.list %>%
     unnest(col=pars) %>%
-    left_join(tibble(id=as.character(1:3),AR.type=c("non","outer","inner"))) 
-  
+    left_join(tibble(id=as.character(1:3),AR.type=c("non","outer","inner")))
+
   if(detail==TRUE){
    SRmodel.list <- SRmodel.list %>% mutate(model=purrr::map(allres, function(x) x$model))  %>%
-    unnest(col=model) 
+    unnest(col=model)
    result.list$model <- SRmodel.list$model
   }
-  
+
   return(arrange(result.list, AICc, AR.type))
 
 }
@@ -3068,7 +3076,7 @@ hmm_SR = function(SRdata,SR="BH",k_regime=2,gamma=0.01,b_range=NULL,p0=NULL,over
     use_rvpa_tmb("HMM_SR")
   }
 
-  obj = TMB::MakeADFun(tmb_data,parameters,DLL="HMM_SR",inner.control=list(maxit=50000,trace=F),silent=TRUE)
+  obj = TMB::MakeADFun(tmb_data,parameters,DLL="HMM_SR",inner.control=list(maxit=50000,trace=FALSE),silent=TRUE)
   if (length(obj$par)>length(st)) {
     stop("NOT estimable because k > n (k: parameter number, n: sample size")
   }
@@ -3093,7 +3101,8 @@ hmm_SR = function(SRdata,SR="BH",k_regime=2,gamma=0.01,b_range=NULL,p0=NULL,over
   regime_prob = (rep[["r_pred"]])
   colnames(regime_prob) = data$year
   Res$regime_prob=round(t(regime_prob),3)
-  regime=Rfast::colMaxs(regime_prob)
+  #regime=Rfast::colMaxs(regime_prob) #Rfast依存を解消するためapplyに変更
+  regime=apply(regime_prob,2,which.max)
   names(regime) = data$year
   Res$regime = regime
   Res$trans_prob = rep[["qij"]]

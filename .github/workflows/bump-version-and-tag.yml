@@ -1,0 +1,55 @@
+name: bump-version-and-tag
+
+# 年度ブランチ(dev2026, dev2027, ...)への push(直接push / PRマージ どちらも)ごとに
+# DESCRIPTION の Version 末尾を +1 し、コミットを書き戻して同名タグ＋GitHub Release を
+# 自動作成する（連番タグ）。dev は対象外。
+on:
+  push:
+    branches: ['dev20[0-9][0-9]']
+
+permissions:
+  contents: write
+
+# 同時実行を直列化（2つの push が同じ Version から採番して衝突するのを防ぐ）
+concurrency:
+  group: bump-version-and-tag-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  bump-and-tag:
+    # bot 自身の bump コミット([skip ci])では走らせない
+    # （二重防御。GITHUB_TOKEN による push はそもそもワークフローを再トリガしない）
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}        # 発火した年度ブランチ
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Bump last version component in DESCRIPTION
+        id: bump
+        run: |
+          cur=$(grep -E '^Version:' DESCRIPTION | sed -E 's/^Version:[[:space:]]*//')
+          base=$(echo "$cur" | sed -E 's/\.[0-9]+$//')        # 2.5.0.2 -> 2.5.0
+          last=$(echo "$cur" | sed -E 's/.*\.([0-9]+)$/\1/')  # 2.5.0.2 -> 2
+          new="${base}.$((last+1))"                           # -> 2.5.0.3
+          echo "new=$new" >> "$GITHUB_OUTPUT"
+          sed -i -E "s/^Version:.*/Version: ${new}/" DESCRIPTION
+
+      - name: Commit, tag and push
+        run: |
+          new="${{ steps.bump.outputs.new }}"
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add DESCRIPTION
+          git commit -m "bump version to ${new} [skip ci]"
+          git tag "v${new}"
+          git push origin "HEAD:${{ github.ref_name }}"
+          git push origin "v${new}"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "v${{ steps.bump.outputs.new }}" --generate-notes --target "${{ github.ref_name }}" --prerelease

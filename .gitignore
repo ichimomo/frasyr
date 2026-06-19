@@ -53,3 +53,4 @@ tests/testthat/*rda
 tests/testthat/tmp.pdf
 tests/testthat/vpa.csv
 tests/testthat/vpa.pdf
+.positai
