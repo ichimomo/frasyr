@@ -349,8 +349,8 @@ Type objective_function<Type>::operator() ()
       // sigma(k) = pow(sigma(k), Type(0.5));
     }
     for (int k=0;k<K;k++){
-      // f += 0.5*nI(k)*(1+log(2*PI))+0.5*nI(k)*(log(sigma2(k))-log(nI(k)));
-      f += Type(0.5)*nI(k)*log(Type(2.0)*PI*sigma(k))+Type(0.5)*sigma2(k)/sigma(k);
+      // f += 0.5*nI(k)*(1+log(2*M_PI))+0.5*nI(k)*(log(sigma2(k))-log(nI(k)));
+      f += Type(0.5)*nI(k)*log(Type(2.0)*M_PI*sigma(k))+Type(0.5)*sigma2(k)/sigma(k);
     }
   }
   f *= (1-lambda);
