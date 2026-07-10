@@ -54,3 +54,7 @@ tests/testthat/tmp.pdf
 tests/testthat/vpa.csv
 tests/testthat/vpa.pdf
 .positai
+
+rvpa_tmb.cpp
+rvpa_tmb.dll
+rvpa_tmb.o
