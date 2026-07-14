@@ -680,7 +680,7 @@ vpa <- function(
     if (length(dep)) warning("vpa(): 廃止された引数を無視します: ", paste(dep, collapse=", "))
     if (length(unk)) warning("vpa(): 未知の引数を無視します: ",   paste(unk, collapse=", "))
   }
-  
+
   #sigma.constで引数を指定してしまったときは，sigma.constraintで引数を指定しなおしてもらうようにする
   if(length(sigma.const)>length(unique(sigma.const))){print("Try again!: please set sigma.const as sigma.constraint in the argument.");stop()}
 
@@ -698,8 +698,8 @@ vpa <- function(
 
   if (isTRUE(TMB) & isTRUE(no.est) ) TMB <- FALSE
 
-  # 
-    
+  #
+
 
   # data handling
 
@@ -718,8 +718,8 @@ vpa <- function(
   if(!is.data.frame(caa)) caa <- as.data.frame(caa)
   if(!is.data.frame(maa)) maa <- as.data.frame(maa)
   if(!is.data.frame(waa)) waa <- as.data.frame(waa)
-  if(!is.data.frame(M))   M   <- as.data.frame(M)  
-  if(!is.data.frame(waa.catch)) waa.catch <- as.data.frame(waa.catch)    
+  if(!is.data.frame(M))   M   <- as.data.frame(M)
+  if(!is.data.frame(waa.catch)) waa.catch <- as.data.frame(waa.catch)
 
   years <- dimnames(caa)[[2]]  # 年
   ages <- dimnames(caa)[[1]]  # 年齢
@@ -1866,7 +1866,7 @@ boo.vpa = function(res,
       if(out=="full"){
         res_list[[b]] <- res_boot
       }
-      
+
       if(type=="index"){
         res_list[[b]] = res_list[[b]] %>%
           c(index = list(b.index), caa = list(res_boot$input$dat$caa))
@@ -2023,6 +2023,9 @@ retro.est <- function(res,n=5,stat="mean",init.est=FALSE, b.fix=TRUE,
      Res[[i]] <- res1
 
      if ((max(abs(res1$gradient)) < 10^(-3) & !isTRUE(res1$input$ADMB)) | (max(abs(res1$gradient)) > 0 & max(abs(res1$gradient)) < 10^(-3) & isTRUE(res1$input$ADMB)) | (is.na(max(abs(res1$gradient))) & res1$input$optimizer=="nlminb")){
+       sum <- function(..., na.rm = TRUE) {
+         base::sum(..., na.rm = na.rm)
+       } ##マイワシ対馬で最高齢がNAでsumが計算できないので再定義
        obj.n <- c(obj.n, (sum(res1$naa[,Y])-sum(res$naa[,Y]))/sum(res$naa[,Y]))
        obj.b <- c(obj.b, (sum(res1$baa[,Y])-sum(res$baa[,Y]))/sum(res$baa[,Y]))
        if (ssb.forecast && res.c$input$last.catch.zero) {
