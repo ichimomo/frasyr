@@ -79,7 +79,7 @@
       <h1 data-toc-skip>VPAモデル診断スクリプト</h1>
                         <h4 data-toc-skip class="author">濵邉昂平・市野川桃子</h4>
             
-            <h4 data-toc-skip class="date">2026-07-10</h4>
+            <h4 data-toc-skip class="date">2026-07-14</h4>
       
 
       <div class="hidden name"><code>Diagnostics-for-VPA.Rmd</code></div>
@@ -393,7 +393,7 @@ b(hyperstability/depletion)をレトロスペクティブ解析内で再推定�
 <span>                                              b_reest <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="va">res_vpa_retrospective</span><span class="op">$</span><span class="va">mohn_rho</span></span></code></pre></div>
 <pre><code>            N             B           SSB             R             F 
--1.353966e-01 -1.019165e-01 -9.331418e-02 -1.829777e-01  1.626003e+05 </code></pre>
+-1.353966e-01 -1.019165e-01 -9.331419e-02 -1.829777e-01  1.626003e+05 </code></pre>
 <p>結果はlist型式でまとめてあり、<code>$</code>を使って呼び出すことが可能です。resultはVPAの推定結果、mohn_rhoはmorhのrhoの値、graphはグラフ、b_resはbの再推定結果です。またMohn’s
 rhoは、グラフ中にも併記してあります。 ここで、漁獲係数のMohn’s
 rhoは年齢別漁獲係数を全て足し合わせた値となっています。</p>
@@ -645,7 +645,7 @@ frasyrの中にはブートストラップ法を自動で行う<code>boo.vpa</co
 <span><span class="kw">for</span><span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span> <span class="va">res_tmp</span><span class="op">[</span><span class="va">i</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">res_boot1</span><span class="op">[[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="va">Fc.at.age</span><span class="op">[</span><span class="fl">4</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile</a></span><span class="op">(</span><span class="va">res_tmp</span>, probs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.025</span>,<span class="fl">0.5</span>,<span class="fl">0.975</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <pre><code>     2.5%       50%     97.5% 
-0.4599486 0.7676411 7.5678267 </code></pre>
+0.4599486 0.7676411 7.7392560 </code></pre>
 <p>この他、各パラメータの相関関係について、ブートストラップ標本を基にプロットが得られます。相関係数が非常に高い（0.9以上など）パラメータのペアがある場合、その２つのパラメータを同時に推定することが難しいことを示している場合がありますので、その場合はモデルの構造をよく検討してください。</p>
 <div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">plot_boot1</span><span class="op">$</span><span class="va">plot_cor</span></span></code></pre></div>
