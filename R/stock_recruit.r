@@ -547,6 +547,51 @@ fit.SR <- function(SRdata,
 
 
 
+#' SRdataに対する再生産関係の予測値を計算する
+#'
+#' @param resSR \code{fit.SR()}の結果オブジェクト
+#' @param SRdata 予測に用いるSSBを含むデータ。\code{NULL}の場合は\code{resSR$input$SRdata}を使う
+#' @param CI 予測区間の幅
+#' @param bias_correction 対数正規分布のバイアス補正を予測区間に適用するか
+#'
+#' @return 入力した\code{SRdata}に\code{R_pred}, \code{R_lower}, \code{R_upper}を追加したデータフレーム
+#' @encoding UTF-8
+#' @export
+predict_SRdata <- function(resSR, SRdata = NULL, CI = 0.9, bias_correction = TRUE) {
+  validate_sr(res_sr = resSR)
+  assertthat::assert_that(is.numeric(CI), length(CI) == 1, CI > 0, CI < 1)
+  assertthat::assert_that(is.logical(bias_correction), length(bias_correction) == 1)
+  if (is.null(SRdata)) SRdata <- resSR$input$SRdata
+  if (is.null(SRdata$SSB)) stop("`SRdata` must contain `SSB`.", call. = FALSE)
+
+  SR <- resSR$input$SR
+  ssb <- SRdata$SSB
+  a <- resSR$pars$a
+  b <- resSR$pars$b
+  gamma <- resSR$input$gamma
+
+  if (SR == "HS") R_pred <- ifelse(ssb > b, b * a, ssb * a)
+  if (SR == "BH") R_pred <- a * ssb / (1 + b * ssb)
+  if (SR == "RI") R_pred <- a * ssb * exp(-b * ssb)
+  if (SR == "Mesnil") R_pred <- 0.5 * a * (ssb + sqrt(b^2 + gamma^2 / 4) - sqrt((ssb - b)^2 + gamma^2 / 4))
+  if (SR == "Shepherd") R_pred <- a * ssb / (1 + (b * ssb)^gamma)
+  if (SR == "Cushing") R_pred <- a * ssb^b
+  if (SR == "BHS") R_pred <- ifelse(ssb < b, a * b * (ssb / b)^{1 - (ssb / b)^gamma}, a * b)
+  if (SR == "Const") stop("SR = `Const` is not implemented in predict_SRdata().", call. = FALSE)
+
+  sigma_marginal <- if (!is.null(resSR$sd.marginal)) resSR$sd.marginal else resSR$pars$sd / sqrt(1 - resSR$pars$rho^2)
+  z <- qnorm(1 - (1 - CI) / 2)
+  bias_factor <- ifelse(bias_correction, 0.5 * sigma_marginal^2, 0)
+
+  dplyr::mutate(
+    tibble::as_tibble(SRdata),
+    R_pred = R_pred,
+    R_lower = R_pred * exp(-bias_factor - z * sigma_marginal),
+    R_upper = R_pred * exp(-bias_factor + z * sigma_marginal)
+  )
+}
+
+
 #' L1とL2のmixtureによる再生産関係の推定（beta版なのでexportしない）
 #'
 #' 3種類の再生産関係の推定を、最小二乗法か最小絶対値法で、さらに加入の残差の自己相関を考慮して行うことができる
