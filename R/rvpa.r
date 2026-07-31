@@ -832,7 +832,7 @@ vpa <- function(
     # sel.f==NULLで，パラメータpが1個なら，最終年最高齢のfaaとnaaを推定
     if (is.null(sel.f) & length(p) == 1){
       faa[na[ny], ny] <- p
-      if (isTRUE(Pope)) naa[na[ny], ny] <- caa[na[ny], ny]*exp(M[na[ny], ny]/2)/(1-exp(-faa[na[ny], ny]))
+      if (isTRUE(Pope)) naa[na[ny], ny] <- caa[na[ny], ny]*exp(M[na[ny], ny]*p.pope)/(1-exp(-faa[na[ny], ny]))
       else  naa[na[ny], ny] <- caa[na[ny], ny]/(1-exp(-faa[na[ny], ny]-M[na[ny], ny]))*(faa[na[ny],ny]+M[na[ny],ny])/faa[na[ny],ny]
     }
 
