@@ -83,7 +83,6 @@ test_that("ref.F (level 2)",{
                 SPRtarget=x,
                 plus_group=TRUE,
                 waa.catch=NULL,
-                Pope=res_vpa_pma$input$Pope,
                 return_SPR=TRUE))
   for_test_tmp <- 1/res_ref_f_pma_check$summary[str_c("FpSPR.",1:4 * 10,".SPR")][3,] %>%
     unlist() %>% as.numeric()

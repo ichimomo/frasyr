@@ -2265,7 +2265,6 @@ calc_perspr <- function(...){
 #'
 #' @param fout 将来予測のアウトプット（finputがない場合)。future_vpaの結果はformat_to_old_future関数をかまさないと動かない。
 #' @param res_vpa Popeの式を使うかどうか、plus_groupの設定のために利用。実際、漁獲量は計算していないので、不要といえば不要。is_popleとplus_groupが設定されていてもこちらを優先する。
-#' @param is_pope res_vpaがない場合、popeの式を使うか
 #' @param plus_group es_vpaがない場合、プラスグループを考慮するか
 #' @param Fvector Fのベクトル
 #' @param target.col 将来予測の何列目の年を取り出すか（NULLの場合、最後の年）
@@ -2280,18 +2279,16 @@ calc_future_perSPR <- function(fout=NULL,
                                res_vpa=NULL,
                                biopar=NULL,
                                Fvector,
-                               is_pope=NULL,
                                plus_group=NULL,
                         Fmax=10,
                         target.col=NULL,
                         target.year=NULL,
                         SPRtarget=NULL,
                         SPR_unit="digit" # or "%"
-){
+                        ){
 
   if(!is.null(res_vpa)){
     info_source <- "vpa"
-    is_pope <- res_vpa$input$Pope
     plus_group <- res_vpa$input$plus.group
   }
   if(!is.null(fout)){
@@ -2383,7 +2380,7 @@ calc_future_perSPR <- function(fout=NULL,
   # SPRを計算
   if(!is.null(SPRtarget)) SPRtarget_tmp <- SPRtarget/SPR_multi*100 else SPRtarget_tmp <- NULL
   tmp <- calc_Fratio(Fvector,waa=waa.tmp,maa=maa.tmp,M=M.tmp,SPRtarget=SPRtarget_tmp,
-                     waa.catch=waa.catch.tmp,Pope=is_pope,
+                     waa.catch=waa.catch.tmp,
                      return_SPR=TRUE,plus_group=plus_group)
   if(is.null(SPRtarget))  return(ifelse(length(tmp)==1,1*SPR_multi,tmp$SPR_original/100*SPR_multi))
   else{
@@ -2596,13 +2593,16 @@ compare_future_performance <- function(future_list,res_vpa,res_MSY,
 #'
 
 
-calc_Fratio <- function(faa, waa, maa, M, SPRtarget=30, waa.catch=NULL,Pope=TRUE, return_SPR=FALSE, plus_group=TRUE, max.age=Inf){
+calc_Fratio <- function(faa, waa, maa, M, SPRtarget=30, waa.catch=NULL,
+                        #Pope=TRUE # Fratioの計算にPopeは影響ない。意味のない引数だったので削除
+                        return_SPR=FALSE, plus_group=TRUE, max.age=Inf){
 
   if(plus_group==FALSE) max.age  <- length(faa)
 
   calc.rel.abund2_ <- function(sel,Fr){
+    # Pope=TRUEと決め打ちしているが、SPR計算に漁獲方程式は影響しないので問題ない
     calc.rel.abund(sel,Fr,na=length(faa),M=M, waa=waa, waa.catch=waa.catch,
-                     min.age=1,max.age=max.age,Pope=Pope,ssb.coef=0,maa=maa)
+                     min.age=1,max.age=max.age,Pope=TRUE,ssb.coef=0,maa=maa)
   }
 
   tmpfunc <- function(x,SPR0=0,...){
