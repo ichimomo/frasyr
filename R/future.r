@@ -42,6 +42,7 @@
 #' @param HCR_TAC_upper_CV 漁獲量が前年の漁獲量のHCR_TAC_upper_CV倍と比較し、それよりも変化が大きい場合には前年の漁獲量xHCR_TAC_upper_CVを上限とする。単一の値か、tibble形式 tibble(year=2020:2024, TAC_upper_CV=rep(0.1,5)) で与える
 #' @param HCR_TAC_lower_CV 漁獲量が前年の漁獲量のHCR_TAC_lower_CV倍と比較し、それよりも変化が大きい場合には前年の漁獲量xHCR_TAC_lower_CVを下限とする。単一の値か、tibble形式 tibble(year=2020:2024, TAC_lower_CV=rep(0.1,5)) で与える
 #' @param Pope 漁獲方程式にPopeの近似式を使うかどうか。与えない場合には、VPAのオプションが引き継がれる
+#' @param p.pope Popeの式でどこで漁獲するか（0.5=年の真ん中）。与えない場合には、VPAのオプションが引き継がれる
 #' @param HCR_function_name デフォルトは"HCR_default" ここを変更(関数名を文字列で与える。関数は別に定義しておく)すると自作のHCRが適用される。その場合、データのほうで定義されているbeta, Blimit, Bbanなど、同じ名前のものは有効
 #' @param fix_recruit 将来予測において再生産関係を無視して加入量を一定値で与える場合、その加入の値。list(year=2020, rec=1000)のように与える。
 #' @param fix_wcatch 将来予測において漁獲量をあらかじめ決める場合
@@ -125,6 +126,7 @@ make_future_data <- function(res_vpa,
                              HCR_carry_compound=FALSE,
                              # Other
                              Pope=res_vpa$input$Pope,
+                             p.pope=res_vpa$input$p.pope,
                              fix_recruit=NULL, # list(year=2020, rec=1000)
                              fix_wcatch=NULL, # list(year=2020, wcatch=2000)
                              max_F=exp(10),
@@ -191,6 +193,7 @@ make_future_data <- function(res_vpa,
       print(tmpdata)
       cat("plus.group =",plus_group,"\n")
       cat("Pope =",Pope,"\n")
+      cat("p.pope =",p.pope,"\n")
   }
 
   # define empty array
@@ -358,6 +361,7 @@ make_future_data <- function(res_vpa,
                    M_mat = M_mat,
                    faa_mat = faa_mat,
                    Pope = as.numeric(Pope),
+                   p_pope = p.pope,
                    total_nyear = total_nyear,
                    future_initial_year = future_initial_year,
                    start_ABC_year=start_ABC_year,
@@ -692,6 +696,7 @@ future_vpa_R <- function(naa_mat,
                          maa_mat,
                          faa_mat,
                          Pope,
+                         p_pope,
                          total_nyear,
                          future_initial_year,
                          start_ABC_year, # the year for estimating multiplier F & conduct HCR
@@ -963,7 +968,7 @@ future_vpa_R <- function(naa_mat,
         SR_MSE[t,i,"recruit"] <- mean(res_tmp$naa[1,t,])
         SR_MSE[t,i,"ssb"]     <- mean(res_tmp$SR_mat[t,,"ssb"])
         # MSEでなく本来のFで漁獲していたらどうなっていたか
-        SR_MSE[t,i,"real_true_catch"] <- catch_equation(N_mat[,t,i],F_mat[,t,i], waa_catch_mat[,t,i], M_mat[,t,i], Pope=Pope) %>% sum()
+        SR_MSE[t,i,"real_true_catch"] <- catch_equation(N_mat[,t,i],F_mat[,t,i], waa_catch_mat[,t,i], M_mat[,t,i], Pope=Pope,p.pope=p_pope) %>% sum()
         MSE_seed <- MSE_seed+1
       }
    }
@@ -972,7 +977,7 @@ future_vpa_R <- function(naa_mat,
     if(do_MSE==FALSE && t>=start_ABC_year && has_non_na(HCR_mat[t,,"TAC_upper_CV"])){
       # expect_wcatchが全部空だったらexpect catchを計算して入れる
       if(all(HCR_mat[t,,"expect_wcatch"]==0)){
-        HCR_mat[t,,"expect_wcatch"] <- catch_equation(N_mat[,t,],F_mat[,t,],waa_catch_mat[,t,],M_mat[,t,],Pope=Pope) %>% colSums()
+        HCR_mat[t,,"expect_wcatch"] <- catch_equation(N_mat[,t,],F_mat[,t,],waa_catch_mat[,t,],M_mat[,t,],Pope=Pope,p.pope=p_pope) %>% colSums()
       }
       # CVよりも小さい・大きかったら上限値にexpect_wcatchを置き換える
       HCR_mat[t,, "expect_wcatch"] <-
@@ -983,7 +988,7 @@ future_vpa_R <- function(naa_mat,
     if(do_MSE==FALSE && t>=start_ABC_year && has_non_na(HCR_mat[t,,"TAC_lower_CV"])){
       # expect_wcatchが全部空だったらexpect catchを計算して入れる
       if(all(HCR_mat[t,,"expect_wcatch"]==0)){
-        HCR_mat[t,,"expect_wcatch"] <- catch_equation(N_mat[,t,],F_mat[,t,],waa_catch_mat[,t,],M_mat[,t,],Pope=Pope) %>% colSums()
+        HCR_mat[t,,"expect_wcatch"] <- catch_equation(N_mat[,t,],F_mat[,t,],waa_catch_mat[,t,],M_mat[,t,],Pope=Pope,p.pope=p_pope) %>% colSums()
       }
       HCR_mat[t,, "expect_wcatch"] <-
         set_lower_limit_catch(HCR_realized[t-1,,"wcatch"], HCR_mat[t,,"expect_wcatch"], HCR_mat[t,,"TAC_lower_CV"])
@@ -993,7 +998,7 @@ future_vpa_R <- function(naa_mat,
     # 振る舞い不変の関数抽出: apply_TAC_carryover (refactor-tac-carryover phase2)
     .carry <- apply_TAC_carryover(HCR_mat, HCR_realized, t, do_MSE, total_nyear,
                                   HCR_reserve_denom, HCR_carry_compound, spawner_mat, SR_MSE,
-                                  N_mat, F_mat, waa_catch_mat, M_mat, Pope)
+                                  N_mat, F_mat, waa_catch_mat, M_mat, Pope, p_pope)
     HCR_mat      <- .carry$HCR_mat
     HCR_realized <- .carry$HCR_realized
 
@@ -1017,7 +1022,7 @@ future_vpa_R <- function(naa_mat,
                                                                      HCR_mat[t,x,"expect_wcatch"],
                                                                      max_exploitation_rate=max_exploitation_rate,
                                                                      max_F=max_F,
-                                                                     Pope=Pope)$x)
+                                                                     Pope=Pope,p.pope=p_pope)$x)
       F_mat[,t,which(F_max_tmp>0)] <- sweep(saa.tmp[,which(F_max_tmp>0)],2, fix_catch_multiplier, FUN="*")
       # HCR_realized[,,"beta_gamma"]にはすでに0.8とかの値が入っているので、それに乗じると2回0.8を掛けることになるので修正
       # (プロットのみに影響し、計算には影響しない修正)
@@ -1037,11 +1042,11 @@ future_vpa_R <- function(naa_mat,
       #      N_mat[-1,t+1,] <- N_mat[-1,t+1,]  * t(exp(SR_mat[t,,str_c("rand",(2:plus_age))]))
       N_mat[2:plus_age,t+1,] <- N_mat[2:plus_age,t+1,]  * t(exp(SR_mat[t,,str_c("rand",(2:plus_age))]))      
     }
-    HCR_realized[t,,"wcatch"] <- catch_equation(N_mat[,t,],F_mat[,t,],waa_catch_mat[,t,],M_mat[,t,],Pope=Pope) %>% colSums()
+    HCR_realized[t,,"wcatch"] <- catch_equation(N_mat[,t,],F_mat[,t,],waa_catch_mat[,t,],M_mat[,t,],Pope=Pope,p.pope=p_pope) %>% colSums()
   }
 
   if(Pope==1){
-    wcaa_mat <- N_mat*(1-exp(-F_mat))*exp(-M_mat/2) * waa_catch_mat
+    wcaa_mat <- N_mat*(1-exp(-F_mat))*exp(-M_mat*p_pope) * waa_catch_mat
   }
   else{
     wcaa_mat <- N_mat*(1-exp(-F_mat-M_mat))*F_mat/(F_mat+M_mat) * waa_catch_mat
@@ -1058,7 +1063,7 @@ future_vpa_R <- function(naa_mat,
     F_pseudo_mat[] <- sweep(F_pseudo_mat,c(2,3),beta_gamma,FUN="*")
 
     if(Pope==1){
-      wcaa_tmp <- N_mat*(1-exp(-F_pseudo_mat))*exp(-M_mat/2) * waa_catch_mat
+      wcaa_tmp <- N_mat*(1-exp(-F_pseudo_mat))*exp(-M_mat*p_pope) * waa_catch_mat
     }
     else{
       wcaa_tmp <- N_mat*(1-exp(-F_pseudo_mat-M_mat))*F_pseudo_mat/
@@ -1935,14 +1940,14 @@ validate_TAC_carryover_settings <- function(HCR_mat, do_MSE){
 #' @noRd
 apply_TAC_carryover <- function(HCR_mat, HCR_realized, t, do_MSE, total_nyear,
                                 HCR_reserve_denom, HCR_carry_compound, spawner_mat, SR_MSE,
-                                N_mat, F_mat, waa_catch_mat, M_mat, Pope){
+                                N_mat, F_mat, waa_catch_mat, M_mat, Pope, p_pope){
   has_non_na <- function(x) any(!is.na(x))
   # 設定の妥当性検査は validate_TAC_carryover_settings() で future_vpa_R 冒頭に実施済み
   if(has_non_na(HCR_mat[t,,"TAC_reserve_rate"])){
     if(sum(HCR_mat[t,,"expect_wcatch"])==0){
       # non-MSE
       HCR_realized[t,,"original_ABC"] <-
-        catch_equation(N_mat[,t,],F_mat[,t,],waa_catch_mat[,t,],M_mat[,t,],Pope=Pope) %>% colSums()
+        catch_equation(N_mat[,t,],F_mat[,t,],waa_catch_mat[,t,],M_mat[,t,],Pope=Pope,p.pope=p_pope) %>% colSums()
     }
     else{
       # MSE
@@ -2287,6 +2292,7 @@ est_MSYRP_proxy <- function(data_future,
                     waa.catch  = waa.catch,
                     rps.vector = NULL,
                     Pope     = data_future$input$Pope,
+                    p.pope   = data_future$input$p.pope,
                     min.age  = min(age_name),
                     max.age  = ifelse(data_future$input$res_vpa$input$plus.group==FALSE, max(age_name), Inf),
                     pSPR     = msy_SPR_candidate,plot=FALSE,
