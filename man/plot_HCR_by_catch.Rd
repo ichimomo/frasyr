@@ -24,11 +24,14 @@ plot_HCR_by_catch(
   is.text = TRUE,
   HCR_function_name = "HCR_default",
   Pope = TRUE,
+  p.pope = 0.5,
   RP.label = c("目標管理基準値", "限界管理基準値", "禁漁水準")
 )
 }
 \arguments{
 \item{Fvector}{Fのベクトル}
+
+\item{p.pope}{Popeの式でどこで漁獲するか（0.5=年の真ん中）}
 }
 \description{
 縦軸が漁獲量のHCRを書く（traceの結果が必要）

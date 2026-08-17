@@ -2066,6 +2066,7 @@ plot_HCR <- function(SBtarget,SBlim,SBban,Ftarget,
 #'
 #' @param trace
 #' @param Fvector Fのベクトル
+#' @param p.pope Popeの式でどこで漁獲するか（0.5=年の真ん中）
 #' @encoding UTF-8
 #' @export
 
@@ -2078,6 +2079,7 @@ plot_HCR_by_catch <- function(trace,
                               col.betaFtarget="gray",is.text = TRUE,
                               HCR_function_name="HCR_default",
                               Pope=TRUE,
+                              p.pope=0.5,
                               RP.label=c("目標管理基準値","限界管理基準値","禁漁水準")){
   # 本当は途中までplot_HCRと統合させたい
   junit <- c("","十","百","千","万")[log10(biomass.unit)+1]
@@ -2086,9 +2088,9 @@ plot_HCR_by_catch <- function(trace,
   M_vector <- M_vector[Fmsy_vector>0]
   Fmsy_vector <- Fmsy_vector[Fmsy_vector>0]
 
-  calc_catch <- function(B, M, Fvec, Pope=TRUE){
+  calc_catch <- function(B, M, Fvec, Pope=TRUE, p.pope=0.5){
     if(isTRUE(Pope)){
-      total.catch <- B*(1-exp(-Fvec))*exp(-M/2)
+      total.catch <- B*(1-exp(-Fvec))*exp(-M*p.pope)
     }
     else{
       total.catch <- B*(1-exp(-Fvec-M))*Fvec/(Fvec+M)
@@ -2102,7 +2104,7 @@ plot_HCR_by_catch <- function(trace,
                        Blimit=rep(SBlim,n),Bban=rep(SBban,n),beta=rep(beta,n))
   F_matrix <- outer(gamma, Fmsy_vector)
   trace$catch_HCR <- purrr::map_dbl(1:nrow(trace), function(x)
-    calc_catch(biomass_comp[x,],M_vector, F_matrix[x,], Pope=Pope))
+    calc_catch(biomass_comp[x,],M_vector, F_matrix[x,], Pope=Pope, p.pope=p.pope))
 
   trace <- trace %>% dplyr::arrange(ssb.mean) %>%
     dplyr::filter(ssb.mean < SBtarget*1.5)
@@ -2129,7 +2131,7 @@ plot_HCR_by_catch <- function(trace,
     #        ylim(0,1.3)
   }
 
-
+  return(g)
 }
 
 #' F一定の場合で平衡状態になったときの統計量をx軸、y軸にプロットして比較する
