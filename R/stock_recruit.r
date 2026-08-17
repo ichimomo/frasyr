@@ -2717,6 +2717,8 @@ corSR = function(resSR) {
 #' @param maa 年齢別親魚量
 #' @param plus_group 最高齢がプラスグループかどうか
 #' @param faa 選択率（年齢の長さのベクトル）を与えると、その選択率のもとでの決定論的なMSY管理基準値（SPRmsy,SBmsy,Rmsy,Bmsy,MSY,Fmsy2F) も返す
+#' @param Pope faaを与えたときのYield計算にPopeの式を使うかどうか
+#' @param p.pope faaを与えたときのYield計算でPopeの式でどこで漁獲するか（0.5=年の真ん中）
 #' 
 #' @return 以下の要素からなるデータフレーム
 #' \describe{
@@ -2743,7 +2745,7 @@ corSR = function(resSR) {
 #' }
 #' @encoding UTF-8
 #' @export
-calc_steepness = function(SR="HS",rec_pars,M,waa,maa,plus_group=TRUE,faa = NULL, Pope=TRUE) {
+calc_steepness = function(SR="HS",rec_pars,M,waa,maa,plus_group=TRUE,faa = NULL, Pope=TRUE, p.pope=0.5) {
   if (length(M)==1) {
     M = rep(M,length(waa))
   }
@@ -2812,7 +2814,7 @@ calc_steepness = function(SR="HS",rec_pars,M,waa,maa,plus_group=TRUE,faa = NULL,
 
     if(is_MSY==1){
       ypr.spr = ref.F(Fcurrent=x*faa,M=M,waa=waa,waa.catch = waa,maa =maa,
-                      Pope=Pope,pSPR=NULL,F.range=NULL,plot=FALSE)
+                      Pope=Pope,p.pope=p.pope,pSPR=NULL,F.range=NULL,plot=FALSE)
       ypr.spr <- ypr.spr$ypr.spr[1,]
       Yield <- as.numeric(R0*ypr.spr["ypr"])
       Res = cbind(Res,data.frame(Yield=Yield))

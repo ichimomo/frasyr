@@ -28,7 +28,7 @@ NULL
 #' @export
 #' @encoding UTF-8
 
-calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=Inf,Pope=TRUE,ssb.coef=0){
+calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=Inf,Pope=TRUE,ssb.coef=0,p.pope=0.5){
   if(sum(M, na.rm=TRUE)==0) M[] <- 0.001 # テストのときにエラーになるため、緊急措置
   if(is.null(waa.catch)) waa.catch <- waa
   rel.abund <- rep(NA, na)
@@ -40,7 +40,7 @@ calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=
   rel.abund[na] <- rel.abund[na-1]*exp(-M[na-1]-sel[na-1]*Fr)*(1-exp(-((max.age-min.age)-(na-2))*(M[na]+sel[na]*Fr)))/(1-exp(-M[na]-sel[na]*Fr))
 
   if(isTRUE(Pope)){
-    ypr1 <- rel.abund*waa.catch[1:na]*(1-exp(-sel[1:na]*Fr))*exp(-M[1:na]/2)
+    ypr1 <- rel.abund*waa.catch[1:na]*(1-exp(-sel[1:na]*Fr))*exp(-M[1:na]*p.pope)
   }
   else{
     # use Baranov catch equation
@@ -60,13 +60,13 @@ calc.rel.abund <- function(sel,Fr,na,M,waa,waa.catch=NULL,maa,min.age=0,max.age=
 #' @export
 #' @encoding UTF-8
 
-caa.est.mat <- function(naa,saa,waa,M,catch.obs,Pope,set_max1=TRUE,max_exploitation_rate=0.99,max_F=exp(10)){
+caa.est.mat <- function(naa,saa,waa,M,catch.obs,Pope,set_max1=TRUE,max_exploitation_rate=0.99,max_F=exp(10),p.pope=0.5){
 
-  tmpfunc <- function(logx,catch.obs=catch.obs,naa=naa,saa=saa,waa=waa,M=M,out=FALSE,Pope=Pope){
+  tmpfunc <- function(logx,catch.obs=catch.obs,naa=naa,saa=saa,waa=waa,M=M,out=FALSE,Pope=Pope,p.pope=p.pope){
     if(Pope==1 | Pope==TRUE) is.pope <- TRUE else is.pope <- FALSE
     x <- exp(logx)
     if(is.pope){
-      caa <- naa*(1-exp(-saa*x))*exp(-M/2)
+      caa <- naa*(1-exp(-saa*x))*exp(-M*p.pope)
     }
     else{
       caa <- naa*(1-exp(-saa*x-M))*saa*x/(saa*x+M)
@@ -80,7 +80,7 @@ caa.est.mat <- function(naa,saa,waa,M,catch.obs,Pope,set_max1=TRUE,max_exploitat
     }
   }
 
-  C0 <- sum(tmpfunc(logx=100,catch.obs=catch.obs,naa=naa,saa=rep(1,length(saa)),waa=waa,M=M,Pope=Pope,out=TRUE) * waa)
+  C0 <- sum(tmpfunc(logx=100,catch.obs=catch.obs,naa=naa,saa=rep(1,length(saa)),waa=waa,M=M,Pope=Pope,p.pope=p.pope,out=TRUE) * waa)
   if(C0 < catch.obs){
     warning("The expected catch (", catch.obs, ") is over potential maximum catch (",round(C0,5),"). The expected catch is replaced by",round(C0,3),"x", max_exploitation_rate)
     catch.obs <- C0 * max_exploitation_rate
@@ -88,8 +88,8 @@ caa.est.mat <- function(naa,saa,waa,M,catch.obs,Pope,set_max1=TRUE,max_exploitat
   }
 
   # caa.est.mat_wrongで初期値を設定するとはやそう
-  tmp <- optimize(tmpfunc,c(-10,log(max_F)),catch.obs=catch.obs,naa=naa,saa=saa,waa=waa,M=M,Pope=Pope,out=FALSE)#,tol=.Machine$double.eps)
-  tmp2 <- tmpfunc(logx=tmp$minimum,catch.obs=catch.obs,naa=naa,saa=saa,waa=waa,M=M,Pope=Pope,out=TRUE)
+  tmp <- optimize(tmpfunc,c(-10,log(max_F)),catch.obs=catch.obs,naa=naa,saa=saa,waa=waa,M=M,Pope=Pope,p.pope=p.pope,out=FALSE)#,tol=.Machine$double.eps)
+  tmp2 <- tmpfunc(logx=tmp$minimum,catch.obs=catch.obs,naa=naa,saa=saa,waa=waa,M=M,Pope=Pope,p.pope=p.pope,out=TRUE)
   realized.catch <- sum(tmp2*waa)
   if(!is.nan(realized.catch/catch.obs) & abs(realized.catch/catch.obs-1)>0.1) warning("expected catch:",catch.obs,", realized catch:",realized.catch)
   return(list(x=exp(tmp$minimum),caa=tmp2,realized.catch=realized.catch, expected.catch=catch.obs))
@@ -162,10 +162,10 @@ caa.est.mat_wrong <- function(naa,saa,waa,M,catch.obs,Pope,max_exploitation_rate
 #' @export
 #' @encoding UTF-8
 
-catch_equation <- function(naa,faa,waa,M,Pope=1){
+catch_equation <- function(naa,faa,waa,M,Pope=1,p.pope=0.5){
   if(Pope==1 | Pope==TRUE) is.pope <- TRUE else is.pope <- FALSE
   if(is.pope){
-    wcaa_mat <- naa*(1-exp(-faa))*exp(-M/2) * waa
+    wcaa_mat <- naa*(1-exp(-faa))*exp(-M*p.pope) * waa
   }
   else{
     wcaa_mat <- naa*(1-exp(-faa-M))*faa/(faa+M) * waa
@@ -309,7 +309,8 @@ dyn.msy <- function(naa.past,naa.init=NULL,fmsy,a,b,resid,resid.year,waa,maa,M,a
 #' @param  F0.1.init F0.1の初期値 (default=0.7)
 #' @param  iterlim
 #' @param  plot 結果のプロットを表示するかどうか
-#' @param  Pope Popeの式を使うか
+#' @param  Pope Popeの式を使うか。NULLの場合、resが与えられればres$input$Popeが使われる
+#' @param  p.pope Popeの式でどこで漁獲するか（0.5=年の真ん中）。NULLの場合、resが与えられればres$input$p.popeが使われる
 #' @param  F.range YPR, SPR曲線を書くときのFの範囲（Fの最大値のスケール）、かつ、F\%SPRを計算するときの初期値を決めるために利用される。F\%SPRの推定がうまくいかない場合はこの範囲を調整してください。
 #' @encoding UTF-8
 #'
@@ -359,6 +360,7 @@ ref.F <- function(
   iterlim=1000,
   plot=TRUE,
   Pope=NULL, # 2014.7.4追加
+  p.pope=NULL, # Popeの式でどこで漁獲するか。NULLかつresが与えられればres$input$p.popeを用いる。resが与えられない場合、p.popeが与えられないとエラーで止まる
   F.range = seq(from=0,to=2,length=101)  # YPR, SPR曲線を書くときのFの範囲
 ){
 
@@ -368,6 +370,7 @@ ref.F <- function(
 
   if(!is.null(res)){
     if(is.null(Pope)) Pope <- res$input$Pope
+    if(is.null(p.pope)) p.pope <- res$input$p.pope
 
     naa <- res$naa
     ssb <- res$ssb
@@ -446,6 +449,7 @@ ref.F <- function(
     assertthat::assert_that(length(M)   == na)
     assertthat::assert_that(length(waa.catch) == na)
     assertthat::assert_that(!is.null(Pope))
+    assertthat::assert_that(!is.null(p.pope))
     ssb.coef <- 0
 
     if(!is.null(rps.vector)){
@@ -472,7 +476,7 @@ ref.F <- function(
     calc.rel.abund(Fx,multi,na,M,waa,waa.catch,maa,
                    min.age=min.age,
                    max.age=max.age,
-                   Pope=Pope,ssb.coef=ssb.coef)
+                   Pope=Pope,ssb.coef=ssb.coef,p.pope=p.pope)
   }
 
   original.spr <- calc.rel.abund2_(Fcurrent,1)
@@ -1109,7 +1113,7 @@ read.vpa <- function(tfile,
     if(abs(1-mean(diff.bara))>abs(1-mean(diff.pope))){
       dres$input$Pope <- TRUE
 
-      cat("Pope is TRUE... OK? (mean difference=", 1-mean(diff.pope),")\n")
+      cat("Pope is TRUE ... OK? (mean difference=", 1-mean(diff.pope),")\n")
     }
     else{
       dres$input$Pope <- FALSE
@@ -2265,7 +2269,6 @@ calc_perspr <- function(...){
 #'
 #' @param fout 将来予測のアウトプット（finputがない場合)。future_vpaの結果はformat_to_old_future関数をかまさないと動かない。
 #' @param res_vpa Popeの式を使うかどうか、plus_groupの設定のために利用。実際、漁獲量は計算していないので、不要といえば不要。is_popleとplus_groupが設定されていてもこちらを優先する。
-#' @param is_pope res_vpaがない場合、popeの式を使うか
 #' @param plus_group es_vpaがない場合、プラスグループを考慮するか
 #' @param Fvector Fのベクトル
 #' @param target.col 将来予測の何列目の年を取り出すか（NULLの場合、最後の年）
@@ -2280,18 +2283,16 @@ calc_future_perSPR <- function(fout=NULL,
                                res_vpa=NULL,
                                biopar=NULL,
                                Fvector,
-                               is_pope=NULL,
                                plus_group=NULL,
                         Fmax=10,
                         target.col=NULL,
                         target.year=NULL,
                         SPRtarget=NULL,
                         SPR_unit="digit" # or "%"
-){
+                        ){
 
   if(!is.null(res_vpa)){
     info_source <- "vpa"
-    is_pope <- res_vpa$input$Pope
     plus_group <- res_vpa$input$plus.group
   }
   if(!is.null(fout)){
@@ -2383,7 +2384,7 @@ calc_future_perSPR <- function(fout=NULL,
   # SPRを計算
   if(!is.null(SPRtarget)) SPRtarget_tmp <- SPRtarget/SPR_multi*100 else SPRtarget_tmp <- NULL
   tmp <- calc_Fratio(Fvector,waa=waa.tmp,maa=maa.tmp,M=M.tmp,SPRtarget=SPRtarget_tmp,
-                     waa.catch=waa.catch.tmp,Pope=is_pope,
+                     waa.catch=waa.catch.tmp,
                      return_SPR=TRUE,plus_group=plus_group)
   if(is.null(SPRtarget))  return(ifelse(length(tmp)==1,1*SPR_multi,tmp$SPR_original/100*SPR_multi))
   else{
@@ -2596,13 +2597,16 @@ compare_future_performance <- function(future_list,res_vpa,res_MSY,
 #'
 
 
-calc_Fratio <- function(faa, waa, maa, M, SPRtarget=30, waa.catch=NULL,Pope=TRUE, return_SPR=FALSE, plus_group=TRUE, max.age=Inf){
+calc_Fratio <- function(faa, waa, maa, M, SPRtarget=30, waa.catch=NULL,
+                        #Pope=TRUE # Fratioの計算にPopeは影響ない。意味のない引数だったので削除
+                        return_SPR=FALSE, plus_group=TRUE, max.age=Inf){
 
   if(plus_group==FALSE) max.age  <- length(faa)
 
   calc.rel.abund2_ <- function(sel,Fr){
+    # Pope=TRUEと決め打ちしているが、SPR計算に漁獲方程式は影響しないので問題ない
     calc.rel.abund(sel,Fr,na=length(faa),M=M, waa=waa, waa.catch=waa.catch,
-                     min.age=1,max.age=max.age,Pope=Pope,ssb.coef=0,maa=maa)
+                     min.age=1,max.age=max.age,Pope=TRUE,ssb.coef=0,maa=maa)
   }
 
   tmpfunc <- function(x,SPR0=0,...){

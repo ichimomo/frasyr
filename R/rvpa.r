@@ -832,7 +832,7 @@ vpa <- function(
     # sel.f==NULLで，パラメータpが1個なら，最終年最高齢のfaaとnaaを推定
     if (is.null(sel.f) & length(p) == 1){
       faa[na[ny], ny] <- p
-      if (isTRUE(Pope)) naa[na[ny], ny] <- caa[na[ny], ny]*exp(M[na[ny], ny]/2)/(1-exp(-faa[na[ny], ny]))
+      if (isTRUE(Pope)) naa[na[ny], ny] <- caa[na[ny], ny]*exp(M[na[ny], ny]*p.pope)/(1-exp(-faa[na[ny], ny]))
       else  naa[na[ny], ny] <- caa[na[ny], ny]/(1-exp(-faa[na[ny], ny]-M[na[ny], ny]))*(faa[na[ny],ny]+M[na[ny],ny])/faa[na[ny],ny]
     }
 
@@ -998,13 +998,13 @@ if (isTRUE(madara)){
      denom <- get(stat.tf)(faa[na[ny], years %in% tf.year])
      for (i in (na[ny]-1):1){
           faa[i,ny] <- get(stat.tf)(faa[i, years %in% tf.year])/denom*faa[na[ny],ny]
-          naa[i, ny] <- caa[i, ny]*exp(M[i, ny]/2)/(1-exp(-faa[i, ny]))
+          naa[i, ny] <- caa[i, ny]*exp(M[i, ny]*p.pope)/(1-exp(-faa[i, ny]))
           k <- 0
           for (j in (i-1):1){
             k <- k + 1
             if (i-k > 0){
-              naa[j,ny-k] <- naa[j+1,ny-k+1]*exp(M[j,ny-k])+caa[j,ny-k]*exp(M[j,ny-k]/2)
-              faa[j,ny-k] <- -log(1-caa[j,ny-k]*exp(M[j,ny-k]/2)/naa[j,ny-k])
+              naa[j,ny-k] <- naa[j+1,ny-k+1]*exp(M[j,ny-k])+caa[j,ny-k]*exp(M[j,ny-k]*p.pope)
+              faa[j,ny-k] <- -log(1-caa[j,ny-k]*exp(M[j,ny-k]*p.pope)/naa[j,ny-k])
             }
           }
 
@@ -1017,13 +1017,13 @@ if (isTRUE(madara)){
         for (i in (na[ny]-1):1){
           if (is.null(tf.mat)) faa[i, ny] <- get(stat.tf)(faa[i, years %in% tf.year])
           else faa[i, ny] <- get(stat.tf)(faa[i, !is.na(tf.mat[i,])])
-          naa[i, ny] <- caa[i, ny]*exp(M[i, ny]/2)/(1-exp(-faa[i, ny]))
+          naa[i, ny] <- caa[i, ny]*exp(M[i, ny]*p.pope)/(1-exp(-faa[i, ny]))
           k <- 0
           for (j in (i-1):1){
             k <- k + 1
             if (i-k > 0){
-              naa[j,ny-k] <- naa[j+1,ny-k+1]*exp(M[j,ny-k])+caa[j,ny-k]*exp(M[j,ny-k]/2)
-              faa[j,ny-k] <- -log(1-caa[j,ny-k]*exp(M[j,ny-k]/2)/naa[j,ny-k])
+              naa[j,ny-k] <- naa[j+1,ny-k+1]*exp(M[j,ny-k])+caa[j,ny-k]*exp(M[j,ny-k]*p.pope)
+              faa[j,ny-k] <- -log(1-caa[j,ny-k]*exp(M[j,ny-k]*p.pope)/naa[j,ny-k])
             }
           }
         }
@@ -1047,7 +1047,7 @@ if (isTRUE(madara)){
 
    if (!is.null(rec)){
      naa[1, years %in% rec.year] <- rec
-     if(isTRUE(Pope)) faa[1, years %in% rec.year] <- -as.numeric(log(1-caa[1, years %in% rec.year]/naa[1, years %in% rec.year]*exp(M[1, years %in% rec.year]/2)))
+     if(isTRUE(Pope)) faa[1, years %in% rec.year] <- -as.numeric(log(1-caa[1, years %in% rec.year]/naa[1, years %in% rec.year]*exp(M[1, years %in% rec.year]*p.pope)))
      else{
        for (j in which(years %in% rec.year)){
          faa[1,j] <- f.forward.est(caa,naa,M,1,j,maxit=maxit,d=d)
@@ -1059,7 +1059,7 @@ if (isTRUE(madara)){
        for (i in rec.year[kk]:terminal.year){
          if(terminal.year-i > 0 & i-rec.year[kk]+1 <= max(ages)){
            naa[i-rec.year[kk]+2, years %in% (i+1)] <- naa[i-rec.year[kk]+1, years %in% i]*exp(-faa[i-rec.year[kk]+1, years %in% i]-M[i-rec.year[kk]+1, years %in% i])
-           if (isTRUE(Pope)) faa[i-rec.year[kk]+2, years %in% (i+1)] <- -log(1-caa[i-rec.year[kk]+2, years %in% (i+1)]/naa[i-rec.year[kk]+2, years %in% (i+1)]*exp(M[i-rec.year[kk]+2, years %in% (i+1)]/2))
+           if (isTRUE(Pope)) faa[i-rec.year[kk]+2, years %in% (i+1)] <- -log(1-caa[i-rec.year[kk]+2, years %in% (i+1)]/naa[i-rec.year[kk]+2, years %in% (i+1)]*exp(M[i-rec.year[kk]+2, years %in% (i+1)]*p.pope))
            else {
              for (j in which(years %in% (i+1))){
                if(i-rec.year[kk]+2 < na[j]-1) faa[i-rec.year[kk]+2, j] <- f.forward.est(caa,naa,M,i-rec.year[kk]+2,j,maxit=maxit,d=d)
@@ -1098,7 +1098,7 @@ if (isTRUE(madara)){
         baa[1,ny+n.add] <- naa[1,ny+n.add]*waa[1,ny+n.add]
 
         if (!is.null(f.new) & !is.null(saa.new)) faa[,ny+n.add] <- f.new*saa.new else faa[,ny+n.add] <- 0
-         if (isTRUE(Pope)) caa[,ny+n.add] <- naa[,ny+n.add]*(1-exp(-faa[,ny+n.add]))*exp(-M[,ny+n.add]/2) else caa[,ny+n.add] <- naa[,ny+n.add]*(1-exp(-faa[,ny+n.add]-M[,ny+n.add]))*faa[,ny+n.add]/(faa[,ny+n.add]+M[,ny+n.add])
+         if (isTRUE(Pope)) caa[,ny+n.add] <- naa[,ny+n.add]*(1-exp(-faa[,ny+n.add]))*exp(-M[,ny+n.add]*p.pope) else caa[,ny+n.add] <- naa[,ny+n.add]*(1-exp(-faa[,ny+n.add]-M[,ny+n.add]))*faa[,ny+n.add]/(faa[,ny+n.add]+M[,ny+n.add])
 
         ssb[1,ny+n.add] <- baa[1,ny+n.add]*maa[1,ny+n.add]*exp(-ssb.coef*(faa[1,ny+n.add]+M[1,ny+n.add]))
 
@@ -1356,7 +1356,7 @@ if (isTRUE(madara)){
           naa[1,ny+n.add] <- new.naa[1]
           baa[1,ny+n.add] <- naa[1,ny+n.add]*waa[1,ny+n.add]
 
-          if (isTRUE(Pope)) caa[,ny+n.add] <- naa[,ny+n.add]*(1-exp(-faa[,ny+n.add]))*exp(-M[,ny+n.add]/2) else caa[,ny+n.add] <- naa[,ny+n.add]*(1-exp(-faa[,ny+n.add]-M[,ny+n.add]))*faa[,ny+n.add]/(faa[,ny+n.add]+M[,ny+n.add])
+          if (isTRUE(Pope)) caa[,ny+n.add] <- naa[,ny+n.add]*(1-exp(-faa[,ny+n.add]))*exp(-M[,ny+n.add]*p.pope) else caa[,ny+n.add] <- naa[,ny+n.add]*(1-exp(-faa[,ny+n.add]-M[,ny+n.add]))*faa[,ny+n.add]/(faa[,ny+n.add]+M[,ny+n.add])
 
           ssb[1,ny+n.add] <- baa[1,ny+n.add]*maa[1,ny+n.add]*exp(-ssb.coef*(faa[1,ny+n.add]+M[1,ny+n.add]))
 

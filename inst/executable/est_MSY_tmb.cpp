@@ -19,7 +19,8 @@ Type objective_function<Type>::operator() ()
   DATA_ARRAY(M_mat);
   DATA_ARRAY(faa_mat);
   DATA_INTEGER(Pope);
-  DATA_INTEGER(total_nyear);  
+  DATA_SCALAR(p_pope);
+  DATA_INTEGER(total_nyear);
   DATA_INTEGER(future_initial_year);
   DATA_INTEGER(start_ABC_year);
   DATA_INTEGER(start_random_rec_year);      
@@ -78,7 +79,7 @@ Type objective_function<Type>::operator() ()
       }
 	
       // update recruitment except for t=initial year (t=0)
-      if(t>start_random_rec_year){      
+      if(t>=start_random_rec_year-1){
 	if(SR_mat(t,i,3) == 1) { //Hockey-stick
 	  vector<Type> rec_pred(2);
 	  rec_pred(0) = spawner_mat(t-recruit_age,i)*SR_mat(t,i,0);
@@ -110,7 +111,7 @@ Type objective_function<Type>::operator() ()
     for(int t=0; t<total_nyear; t++) {
       for(int a=0; a<nage; a++){
    	if(Pope) {
-   	  catch_mat(a,t,i) = waa_catch_mat(a,t,i)*N_mat(a,t,i)*exp(-Type(0.5)*M_mat(a,t,i))*(1-exp(-F_mat(a,t,i)));
+   	  catch_mat(a,t,i) = waa_catch_mat(a,t,i)*N_mat(a,t,i)*exp(-p_pope*M_mat(a,t,i))*(1-exp(-F_mat(a,t,i)));
    	}else{
    	  catch_mat(a,t,i) = waa_catch_mat(a,t,i)*N_mat(a,t,i)*(1-exp(-M_mat(a,t,i)-F_mat(a,t,i)))*F_mat(a,t,i)/(M_mat(a,t,i)+F_mat(a,t,i));
 	}

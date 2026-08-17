@@ -12,7 +12,7 @@ test_that("ref.F (level 2)",{
                                waa.year=NULL,maa.year=NULL,rps.year = as.numeric(colnames(res_vpa_pma$naa)),
                                max.age = Inf,min.age = 0,
                                d = 0.001,Fem.init = 0.5,Fmax.init = 1.5,F0.1.init = 0.7,pSPR = seq(10,90,by=10),
-                               iterlim=1000,plot=TRUE,Pope=FALSE,F.range = seq(from=0,to=2,length=101) )
+                               iterlim=1000,plot=TRUE,Pope=FALSE,p.pope=0.5,F.range = seq(from=0,to=2,length=101) )
 
   res.ref.f_2times <- ref.F(res_vpa_pma,Fcurrent=res_vpa_pma$Fc.at.age*2,
                             waa=NULL,maa=NULL,M=NULL,waa.catch=NULL,M.year=NULL,
@@ -56,7 +56,7 @@ test_that("ref.F (level 2)",{
                                max.age = Inf,
                                min.age = 0,
                                d = 0.001,Fem.init = 0.5,Fmax.init = 1.5,F0.1.init = 0.7,pSPR = seq(10,90,by=10),
-                               iterlim=1000,plot=TRUE,Pope=FALSE,F.range = seq(from=0,to=2,length=101) )
+                               iterlim=1000,plot=TRUE,Pope=FALSE,p.pope=0.5,F.range = seq(from=0,to=2,length=101) )
   testthat::expect_equal(res_ref_independent$summary,res_ref_f_pma_check$summary, tol=0.001)
 
   # vpa結果を与えない場合 (biological parameterを単純なベクトルで与える)
@@ -71,7 +71,7 @@ test_that("ref.F (level 2)",{
                                max.age = Inf,
                                min.age = 0,
                                d = 0.001,Fem.init = 0.5,Fmax.init = 1.5,F0.1.init = 0.7,pSPR = seq(10,90,by=10),
-                               iterlim=1000,plot=TRUE,Pope=FALSE,F.range = seq(from=0,to=2,length=101) )
+                               iterlim=1000,plot=TRUE,Pope=FALSE,p.pope=0.5,F.range = seq(from=0,to=2,length=101) )
   
 
   # 同じ機能を持つcalc_Fratioとの整合性をチェック=> ref.Fとcalc_Fratioは同じ機能を提供
@@ -83,7 +83,6 @@ test_that("ref.F (level 2)",{
                 SPRtarget=x,
                 plus_group=TRUE,
                 waa.catch=NULL,
-                Pope=res_vpa_pma$input$Pope,
                 return_SPR=TRUE))
   for_test_tmp <- 1/res_ref_f_pma_check$summary[str_c("FpSPR.",1:4 * 10,".SPR")][3,] %>%
     unlist() %>% as.numeric()
@@ -116,7 +115,7 @@ test_that("ref.F (level 2)",{
                                       waa.year=NULL,maa.year=NULL,rps.year = as.numeric(colnames(res_vpa_pma$naa)),
                                       max.age = Inf,min.age = 0,
                                       d = 0.001,Fem.init = 0.5,Fmax.init = 1.5,F0.1.init = 0.7,pSPR = seq(10,90,by=10),
-                                      iterlim=1000,plot=TRUE,Pope=FALSE,F.range = seq(from=0,to=2,length=101) )
+                                      iterlim=1000,plot=TRUE,Pope=FALSE,p.pope=0.5,F.range = seq(from=0,to=2,length=101) )
   tmp2 <- calc_future_perSPR(fout=NULL,res_vpa=res_vpa_pma_noplus,Fvector=faa,
                              target.year=2011:2010)
   expect_equal(res_ref_f_pma_check_noplus$currentSPR$perSPR,tmp2)
