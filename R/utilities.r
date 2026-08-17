@@ -360,7 +360,7 @@ ref.F <- function(
   iterlim=1000,
   plot=TRUE,
   Pope=NULL, # 2014.7.4追加
-  p.pope=NULL, # Popeの式でどこで漁獲するか。NULLの場合、resが与えられればres$input$p.popeを、なければ0.5を用いる
+  p.pope=NULL, # Popeの式でどこで漁獲するか。NULLかつresが与えられればres$input$p.popeを用いる。resが与えられない場合、p.popeが与えられないとエラーで止まる
   F.range = seq(from=0,to=2,length=101)  # YPR, SPR曲線を書くときのFの範囲
 ){
 
@@ -1113,7 +1113,7 @@ read.vpa <- function(tfile,
     if(abs(1-mean(diff.bara))>abs(1-mean(diff.pope))){
       dres$input$Pope <- TRUE
 
-      cat("Pope is TRUE... OK? (mean difference=", 1-mean(diff.pope),")\n")
+      cat("Pope is TRUE ... OK? (mean difference=", 1-mean(diff.pope),")\n")
     }
     else{
       dres$input$Pope <- FALSE
