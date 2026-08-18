@@ -6,10 +6,16 @@
   ],
   timezone: "Asia/Tokyo",
   enabledManagers: ["github-actions"],
-  "github-actions": {
-    enabled: true,
-    pinDigests: true,
-    automerge: false,
-    labels: ["renovate"],
-  },
+  packageRules: [
+    {
+      description: "GitHub Actions configuration",
+      matchManagers: ["github-actions"],
+      pinDigests: true,
+      automerge: false,
+      labels: ["renovate"],
+      schedule: [
+        "at 21:40 on Tuesday",
+      ],
+    },
+  ],
 }
