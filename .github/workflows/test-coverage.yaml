@@ -9,6 +9,7 @@ on:
       - data/**
       - data-raw/**
       - inst/**
+      - .github/workflows/test-coverage.yaml
 
 name: test-coverage
 

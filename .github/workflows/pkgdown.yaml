@@ -2,6 +2,12 @@ on:
   push:
     branches:
       - dev
+    paths:
+      - R/**
+      - docs/**
+      - vignettes/**
+      - man/**
+      - .github/workflows/pkgdown.yaml
 
 name: pkgdown
 
