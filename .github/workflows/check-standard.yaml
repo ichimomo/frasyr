@@ -3,10 +3,22 @@
 on:
   push:
     branches: [dev, master, 'dev20[0-9][0-9]']
+    paths:
+      - R/**
+      - tests/**
+      - data/**
+      - data-raw/**
+      - inst/**
+      - .github/workflows/check-standard.yaml
   pull_request:
     branches: [dev, master, 'dev20[0-9][0-9]']
-    paths-ignore:
-      - README.md
+    paths:
+      - R/**
+      - tests/**
+      - data/**
+      - data-raw/**
+      - inst/**
+      - .github/workflows/check-standard.yaml
 
 name: Check package
 
