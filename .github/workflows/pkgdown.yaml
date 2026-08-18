@@ -21,7 +21,7 @@ jobs:
 
       - uses: r-lib/actions/setup-r@6f6e5bc62fba3a704f74e7ad7ef7676c5c6a2590 #v2
 
-      - uses: r-lib/actions/setup-pandoc@4f58f8ffa872cbd4cb016c51ec497fdbe0a02711 #2.11.4
+      - uses: r-lib/actions/setup-pandoc@6f6e5bc62fba3a704f74e7ad7ef7676c5c6a2590 #2.11.4
 
       - uses: r-lib/actions/setup-r-dependencies@6f6e5bc62fba3a704f74e7ad7ef7676c5c6a2590 #v2
         with:
