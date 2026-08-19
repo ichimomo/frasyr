@@ -744,6 +744,18 @@ future_vpa_R <- function(naa_mat,
   is_maa_fun <- !is.null(maa_par_mat)
   if(is_maa_fun) when_maa_fun <- apply(maa_mat[,,1],2,sum)==0
 
+  # maa_funは加入年齢(最若齢)が成熟している資源には対応していないので、その組み合わせの場合は止める
+  # update_maa_mat内で maa[naa==0] <- 0 としており、加入が入る前に呼ばれる加入年齢の成熟率は
+  # ゼロに固定される。しかも一度値が入ると再計算されないため、将来のSSBに加入年齢が反映されない
+  # (recruit_ageによらず起こる。VPA期間の成熟率をみて、最若齢が成熟しているかを判定する)
+  if(is_maa_fun){
+    if(any(maa_mat[1,!when_maa_fun,] > 0, na.rm=TRUE)){
+      stop("加入年齢(最若齢)が成熟している資源ではmaa_funを使えません。",
+           "将来予測での加入年齢の成熟率がゼロに固定され、SSBに反映されないためです。",
+           "maa_fun=FALSEにして成熟率を直接指定してください")
+    }
+  }
+
   # setting for specific function for waa_fun and maa_fun
   # update_waa_matなど、waaを更新する関数をオリジナル関数に置き換える
   if(is_waa_fun && dimnames(waa_par_mat)[[3]][1]=="waa_fun_name"){
@@ -882,15 +894,6 @@ future_vpa_R <- function(naa_mat,
       if(is_waa_fun)
         waa_mat[1,t,]       <- update_waa_mat(t=t,waa=waa_mat,rand=waa_rand_mat,naa=N_mat,
                                              pars_b0=waa_par_mat[,,"b0"],pars_b1=waa_par_mat[,,"b1"])[1,]
-      # 体重と同様に、加入が入力されたあとで加入年齢の成熟率も更新する
-      # recruit_age==0の場合はその年のSSBからその年の加入が決まるので、更新すると循環する。
-      # また既存の資源(recruit_age==0)の結果を変えないため、recruit_age>=1のときのみ更新する
-      # 注: maa_fun_nameで自作の関数を使う場合、2回目の呼び出しで値が更新されない作りに
-      #     なっていることがあるので、その場合は関数側の対応が必要(waa_funも同様)
-      if(is_maa_fun && recruit_age > 0)
-        maa_mat[1,t,]       <- update_maa_mat(t=t,maa=maa_mat,rand=maa_rand_mat,naa=N_mat,
-                                              pars_b0=maa_par_mat[,,"b0"],pars_b1=maa_par_mat[,,"b1"],
-                                              min_value=maa_par_mat[,,"min"],max_value=maa_par_mat[,,"max"])[1,]
       if(is_waa_catch_fun)
         waa_catch_mat[,t,] <- update_waa_catch_mat(t=t,waa=waa_catch_mat,rand=waa_catch_rand_mat,naa=N_mat,
                                                    pars_b0=waa_catch_par_mat[,,"b0"],pars_b1=waa_catch_par_mat[,,"b1"])
