@@ -681,6 +681,20 @@ plot_boot2$plot_ssb/plot_boot2$plot_rec/plot_boot2$plot_biomass
 ci0 <- profile_likelihood.vpa(res_vpa_estb, method="ci",Alpha=0.80)$ci
 ```
 
+## 8. データの影響程度を見る
+VPAは過去年については年齢漁獲尾数が、チューニングしている場合の最近年は資源量指数が大きく影響するため、資源評価期間を通じてデータの影響度が異なります。`data_influence`関数は、インプットデータを微小量動かしたときの結果への影響度を見ることで、どの年・年齢の推定にどのデータが影響しているかを可視化します。データの数だけ再計算するので計算時間がけっこうかかってしまうことはご注意ください。
+
+```{r}
+  # 各データの影響を見るために微小量を動して計算しなおす
+  res_inf <- data_influence(res_vpa_estb, h=0.01, sources=c("caa","index"), cores=1)
+  # 推定資源量の誤差の分散を、CAA 由来と資源量指数由来に分ける
+  res_dep <- data_dependence(res_inf, caa_sd = 1, index_sd = 1)
+  # 推定資源量の各セルが資源量指数にどれだけ依存しているかのヒートマップを書く
+  (gg_heat <- plot_data_dependence(res_dep, value=c("share_index")))
+  
+```
+
+
 ## 8. おわりに
 
 以上が、現在開発配布されている、VPAのモデル診断関数です。
