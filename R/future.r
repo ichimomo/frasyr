@@ -744,6 +744,18 @@ future_vpa_R <- function(naa_mat,
   is_maa_fun <- !is.null(maa_par_mat)
   if(is_maa_fun) when_maa_fun <- apply(maa_mat[,,1],2,sum)==0
 
+  # maa_funは加入年齢(最若齢)が成熟している資源には対応していないので、その組み合わせの場合は止める
+  # update_maa_mat内で maa[naa==0] <- 0 としており、加入が入る前に呼ばれる加入年齢の成熟率は
+  # ゼロに固定される。しかも一度値が入ると再計算されないため、将来のSSBに加入年齢が反映されない
+  # (recruit_ageによらず起こる。VPA期間の成熟率をみて、最若齢が成熟しているかを判定する)
+  if(is_maa_fun){
+    if(any(maa_mat[1,!when_maa_fun,] > 0, na.rm=TRUE)){
+      stop("加入年齢(最若齢)が成熟している資源ではmaa_funを使えません。",
+           "将来予測での加入年齢の成熟率がゼロに固定され、SSBに反映されないためです。",
+           "maa_fun=FALSEにして成熟率を直接指定してください")
+    }
+  }
+
   # setting for specific function for waa_fun and maa_fun
   # update_waa_matなど、waaを更新する関数をオリジナル関数に置き換える
   if(is_waa_fun && dimnames(waa_par_mat)[[3]][1]=="waa_fun_name"){
@@ -834,9 +846,11 @@ future_vpa_R <- function(naa_mat,
                                      pars_b0=maa_par_mat[,,"b0"],pars_b1=maa_par_mat[,,"b1"],
                                      min_value=maa_par_mat[,,"min"],max_value=maa_par_mat[,,"max"])      
     }
+    # この時点では加入年齢の尾数は0が入っているのでspawnerにはカウントされない  
     spawner_mat[t,] <- colSums(N_mat[,t,,drop=FALSE] * waa_mat[,t,,drop=FALSE] * maa_mat[,t,,drop=FALSE])
     spawner_mat[t,spawner_mat[t,]<0.0001] <-  0.0001
 
+    # ここで加入尾数を入れる
     if(t>=start_random_rec_year){
       spawn_t <- t-recruit_age
       # 加入を再生産関係からの予測値とする場合
@@ -883,6 +897,15 @@ future_vpa_R <- function(naa_mat,
       if(is_waa_catch_fun)
         waa_catch_mat[,t,] <- update_waa_catch_mat(t=t,waa=waa_catch_mat,rand=waa_catch_rand_mat,naa=N_mat,
                                                    pars_b0=waa_catch_par_mat[,,"b0"],pars_b1=waa_catch_par_mat[,,"b1"])
+    }
+
+    # 上のspawner_matはその年の加入が入る前に計算されているので、加入が確定した後に計算しなおす(recruit_age>=0の将来の加入計算のために)
+    # (recruit_age>=1、t年の加入はt-recruit_age年のSSBから決まるので循環しない)
+    # recruit_age==0の場合はt年のSSBからt年の加入が決まるため、加入を含めない値のままにする
+    # 最若齢のmaaがゼロの資源では、計算しなおしても値は変わらない
+    if(recruit_age > 0){
+      spawner_mat[t,] <- colSums(N_mat[,t,,drop=FALSE] * waa_mat[,t,,drop=FALSE] * maa_mat[,t,,drop=FALSE])
+      spawner_mat[t,spawner_mat[t,]<0.0001] <-  0.0001
     }
 
     if(t>=start_ABC_year){
@@ -2070,7 +2093,7 @@ est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE,
     obj_mat <- NULL
 
     catch_target <- MSYstat[paste0("catch.",obj_stat)] %>% as.numeric()
-    ssb_target <- B0stat[paste0("ssb.",obj_stat)] %>% as.numeric()
+    ssb_target <- B0stat[paste0("ssb.",obj_stat)] %>% as.numeric() # targetとあるがSB0
 
 
     if(candidate_PGY[1]>0){
@@ -2100,7 +2123,10 @@ est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE,
     }
 
     if(candidate_B0[1]>0){
-        fssb.range <- trace.multi[trace_pre$ssb.mean>0.1]
+        ## 0.1という値を決め打ちで与えているため、SBの単位が大きい（SBの値が小さい）資源では
+        ## うまく計算できない問題があったので修正
+        ## fssb.range <- trace.multi[trace_pre$ssb.mean>0.1]
+        fssb.range <- trace.multi[trace_pre$ssb.mean>ssb_target*1e-6]
         obj_mat <- bind_rows(obj_mat,
                              tibble(RP_name    = str_c("B0-",candidate_B0*100,"%"),
                                     # obj_value  = candidate_B0 * B0stat$ssb.mean,
@@ -2114,7 +2140,10 @@ est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE,
     }
 
     if(candidate_Babs[1]>0){
-        fssb.range <- trace.multi[trace_pre$ssb.mean>0.1]
+        ## 0.1という値を決め打ちで与えているため、SBの単位が大きい（SBの値が小さい）資源では
+        ## うまく計算できない問題があったので修正
+        ## fssb.range <- trace.multi[trace_pre$ssb.mean>0.1]        
+        fssb.range <- trace.multi[trace_pre$ssb.mean>ssb_target*1e-6]
         obj_mat <- bind_rows(obj_mat,
                              tibble(RP_name    = str_c("Ben-",candidate_Babs,""),
                                     obj_value  = candidate_Babs,
@@ -2155,8 +2184,21 @@ est_MSYRP <- function(data_future, ncore=0, optim_method="R", compile_tmb=FALSE,
                                                  obj_value    = obj_mat$obj_value[x],
                                                  # obj_stat     = "mean"
                                                  obj_stat     = obj_stat
-                                                 ) %>%
-                                   get.stat(use_new_output=TRUE)})
+                                                 )
+                               # Fの探索範囲の端で解が求まった場合、目標値に到達できていない可能性が高い。
+                               # 黙って別の管理基準値と同じ値が入ってしまうことがあるので警告を出す
+                               if(obj_mat$optim_method[x]!="none"){
+                                 for(i in c("multi_upper","multi_lower")){
+                                   if(isTRUE(abs(log(res$multi/obj_mat[[i]][x])) < 1e-3)){
+                                     warning(obj_mat$RP_name[x], ": Fの探索範囲の", i, "(",
+                                             signif(obj_mat[[i]][x],4),
+                                             ")で解が求まりました。目標値(", signif(obj_mat$obj_value[x],4),
+                                             ")に到達していない可能性があります。",
+                                             "PGYではmulti_upper_PGY、それ以外ではtrace.multiの範囲を確認してください")
+                                   }
+                                 }
+                               }
+                               get.stat(res, use_new_output=TRUE)})
 
         other_RP_stat <- bind_cols(other_RP_stat, select(obj_mat, RP_name))
         print(bind_cols(obj_mat[,1:2], select(other_RP_stat,catch.mean, ssb.mean)))
