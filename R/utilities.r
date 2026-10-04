@@ -1064,7 +1064,7 @@ read.vpa <- function(tfile,
   dres$input <- list()
   dres$input$dat <- list()
   dres$input$dat$maa <- tmpfunc(tmpdata,maa.label)
-  dres$input$dat$caa <- tmpfunc(tmpdata,caa.label)
+  dres$input$dat$caa <- dres$caa <- tmpfunc(tmpdata,caa.label) # 返り値にcaaを追加 2027/10/3
   dres$input$dat$M <- tmpfunc(tmpdata,M.label)
   dres$input$dat$waa <- tmpfunc(tmpdata,waa.label)
   if(is.null(dres$input$dat$waa)) dres$input$dat$waa <- tmpfunc(tmpdata,waa.biomass.label)

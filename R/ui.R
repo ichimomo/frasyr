@@ -4,14 +4,34 @@ load_data <- function(fname) {
   if (request_from_developers) {
     fname <- system.file("extdata", extract_filename(fname), package = "frasyr")
   }
-  ftype <- return_file_type(fname)
-  if (ftype == "csv") {
-    return(read.vpa(fname))
-  } else if (ftype == "rda") {
-    get(load(fname))
-  } else {
-    stop("Unknown filetype", call. = TRUE)
+  
+  res <- switch(return_file_type(fname),
+                "csv" = read.vpa(fname),
+                "rda" = get(load(fname)),
+                "rds" = readRDS(fname),
+                stop("Unknown filetype: ", fname, call. = FALSE))
+
+  # 古いバージョンのVPAでresにcaaが入っていない場合に補完
+  if(inherits(res,"vpa") || "tune" %in% names(res$input)){
+    if(is.null(res$caa)) res$caa <- res$input$dat$caa   # VPAは漁獲量が誤差なしの入力
   }
+
+  if(inherits(res,"sam")){
+    # samでもwaa, wcaaはresに保持していないため追加
+    if(is.null(res$wcaa)){    
+      waa_catch_tmp <- res$input$dat$waa.catch
+      if(is.null(waa_catch_tmp)){
+        waa_catch_tmp <- res$input$dat$waa
+      }
+      res$wcaa <- as.data.frame(res$caa * waa_catch_tmp)
+      warning("SAMのwcaa (年齢別漁獲重量)を予測caaと観測waaから計算しました")                      
+    }
+    # 将来予測に対応させるためPope設定を追加
+    if(is.null(res$input$Pope)) res$input$Pope <- FALSE # SAMはBaranovの式(frasam R/sam.R:664)    
+  }  
+
+  return(res)
+  
 }
 
 #' Retrieve function argument settings to reuse
