@@ -14,7 +14,8 @@ caa.est.mat(
   Pope,
   set_max1 = TRUE,
   max_exploitation_rate = 0.99,
-  max_F = exp(10)
+  max_F = exp(10),
+  p.pope = 0.5
 )
 }
 \arguments{

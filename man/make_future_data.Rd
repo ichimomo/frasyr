@@ -57,6 +57,7 @@ make_future_data(
   HCR_reserve_denom = "original_ABC_plus",
   HCR_carry_compound = FALSE,
   Pope = res_vpa$input$Pope,
+  p.pope = res_vpa$input$p.pope,
   fix_recruit = NULL,
   fix_wcatch = NULL,
   max_F = exp(10),
@@ -161,6 +162,8 @@ make_future_data(
 \item{HCR_carry_compound}{繰り越し（取り残し=HCR_TAC_reserve_rate>0）のとき、繰り越した分を翌年以降に積み上げるか。FALSE（既定）＝もとのABCを基準にするので繰り越せるのはもとのABC以下・1年限り（取り残した分が翌年以降にさらに積み上がらない）。TRUE＝繰越込みの量を基準にするので繰越分も翌年へ繰り越され、もとのABCを超えて積み上がりうる。前借り（borrowing）時は使われない。}
 
 \item{Pope}{漁獲方程式にPopeの近似式を使うかどうか。与えない場合には、VPAのオプションが引き継がれる}
+
+\item{p.pope}{Popeの式でどこで漁獲するか（0.5=年の真ん中）。与えない場合には、VPAのオプションが引き継がれる}
 
 \item{fix_recruit}{将来予測において再生産関係を無視して加入量を一定値で与える場合、その加入の値。list(year=2020, rec=1000)のように与える。}
 

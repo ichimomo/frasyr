@@ -16,7 +16,8 @@ calc.rel.abund(
   min.age = 0,
   max.age = Inf,
   Pope = TRUE,
-  ssb.coef = 0
+  ssb.coef = 0,
+  p.pope = 0.5
 )
 }
 \arguments{

@@ -10,7 +10,6 @@ calc_future_perSPR(
   res_vpa = NULL,
   biopar = NULL,
   Fvector,
-  is_pope = NULL,
   plus_group = NULL,
   Fmax = 10,
   target.col = NULL,
@@ -25,8 +24,6 @@ calc_future_perSPR(
 \item{res_vpa}{Popeの式を使うかどうか、plus_groupの設定のために利用。実際、漁獲量は計算していないので、不要といえば不要。is_popleとplus_groupが設定されていてもこちらを優先する。}
 
 \item{Fvector}{Fのベクトル}
-
-\item{is_pope}{res_vpaがない場合、popeの式を使うか}
 
 \item{plus_group}{es_vpaがない場合、プラスグループを考慮するか}
 
