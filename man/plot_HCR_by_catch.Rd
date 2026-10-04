@@ -29,9 +29,9 @@ plot_HCR_by_catch(
 )
 }
 \arguments{
-\item{Fvector}{Fのベクトル}
-
 \item{p.pope}{Popeの式でどこで漁獲するか（0.5=年の真ん中）}
+
+\item{Fvector}{Fのベクトル}
 }
 \description{
 縦軸が漁獲量のHCRを書く（traceの結果が必要）

@@ -12,7 +12,6 @@ calc_Fratio(
   M,
   SPRtarget = 30,
   waa.catch = NULL,
-  Pope = TRUE,
   return_SPR = FALSE,
   plus_group = TRUE,
   max.age = Inf

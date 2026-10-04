@@ -6,6 +6,8 @@ return_file_type <- function(fname) {
     "csv"
   } else if (stringr::str_detect(fname, "rda$")) {
     "rda"
+  } else if (stringr::str_detect(fname, "rds$")) {
+      "rds"
   } else {
     stop("Unknown file type", fname)
   }

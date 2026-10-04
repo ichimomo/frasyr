@@ -13,7 +13,8 @@ calc_steepness(
   maa,
   plus_group = TRUE,
   faa = NULL,
-  Pope = TRUE
+  Pope = TRUE,
+  p.pope = 0.5
 )
 }
 \arguments{
@@ -30,6 +31,10 @@ calc_steepness(
 \item{plus_group}{最高齢がプラスグループかどうか}
 
 \item{faa}{選択率（年齢の長さのベクトル）を与えると、その選択率のもとでの決定論的なMSY管理基準値（SPRmsy,SBmsy,Rmsy,Bmsy,MSY,Fmsy2F) も返す}
+
+\item{Pope}{faaを与えたときのYield計算にPopeの式を使うかどうか}
+
+\item{p.pope}{faaを与えたときのYield計算でPopeの式でどこで漁獲するか（0.5=年の真ん中）}
 }
 \value{
 以下の要素からなるデータフレーム

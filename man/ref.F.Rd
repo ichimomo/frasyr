@@ -28,6 +28,7 @@ ref.F(
   iterlim = 1000,
   plot = TRUE,
   Pope = NULL,
+  p.pope = NULL,
   F.range = seq(from = 0, to = 2, length = 101)
 )
 }
@@ -72,7 +73,9 @@ ref.F(
 
 \item{plot}{結果のプロットを表示するかどうか}
 
-\item{Pope}{Popeの式を使うか}
+\item{Pope}{Popeの式を使うか。NULLの場合、resが与えられればres$input$Popeが使われる}
+
+\item{p.pope}{Popeの式でどこで漁獲するか（0.5=年の真ん中）。NULLの場合、resが与えられればres$input$p.popeが使われる}
 
 \item{F.range}{YPR, SPR曲線を書くときのFの範囲（Fの最大値のスケール）、かつ、F\%SPRを計算するときの初期値を決めるために利用される。F\%SPRの推定がうまくいかない場合はこの範囲を調整してください。}
 }
