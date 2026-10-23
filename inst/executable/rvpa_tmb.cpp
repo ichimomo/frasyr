@@ -78,7 +78,6 @@ Type objective_function<Type>::operator() ()
   DATA_SCALAR(lambda);
   DATA_SCALAR(beta);
   DATA_IVECTOR(Ab_type);  // Ab_type = 1: SSB, Ab_type = 2: number at age, Ab_type = 3: biomass at age, AD_type = 4: Bs(biomass x selectivity)
-  DATA_INTEGER(sel_def); //selectivity definition (which F or age should be set at 1)
   // 0:max, 1: mean, 2: maxage
   DATA_IVECTOR(Ab_type_age);
   DATA_IVECTOR(Ab_type_max_age);
@@ -98,7 +97,7 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(maxit); // maximum iteration number for Baranov
   DATA_INTEGER(plus_group); //0: no plus group, 1: with plus group
   DATA_SCALAR(p_pope); // timing of catch within the (fishing) year
-  DATA_SCALAR(min_caa); // replace this value by zero caa
+  DATA_SCALAR(min_caa); // replace zero caa by this value
 
   // Parameter Section //
   PARAMETER_VECTOR(log_F);
