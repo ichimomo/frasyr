@@ -1449,7 +1449,7 @@ if (isTRUE(madara)){
   if (isTRUE(TMB)) {
   if(isTRUE(TMB) & isTRUE(sel.update)){print("TMB is not supported for sel.update method");stop()}
   # if(isTRUE(TMB) & alpha!=1){print("TMB is not supported for alpha!=1");stop()}
-  if(isTRUE(TMB) & isFALSE(Pope)){print("TMB is not supported for baranov equation option. only for Pope");stop()}
+  # if(isTRUE(TMB) & isFALSE(Pope)){print("TMB is not supported for baranov equation option. only for Pope");stop()}
   if(isTRUE(TMB) & penalty=="f"){print("TMB is not supported for penalty=f. only for penalty=p");stop()}
   if(isTRUE(TMB) & penalty=="s"){print("TMB is not supported for penalty=s. only for penalty=p");stop()}
 
@@ -1486,7 +1486,7 @@ if (isTRUE(madara)){
     eta_age[eta.age+1] <- 0
     data2 <- list(Est=ifelse(est.method=="ls",0,1),b_fix=as.numeric(b_fix),
                   alpha=alpha,lambda=lambda,beta=beta,Ab_type=Ab_type,sel_def=sel_def,
-                  Ab_type_age=Ab_type_age,Ab_type_max_age=Ab_type_max_age,w=index.w,af=af,CATCH=t(as.matrix(dat$caa)),WEI=t(as.matrix(dat$waa)),MAT=t(MAA),M=t(as.matrix(dat$M)),CPUE=t(index2),MISS=t(ifelse(index2==0,1,0)),Last_Catch_Zero=ifelse(isTRUE(last.catch.zero),1,0),sigma_constraint=sigma_constraint,eta=eta,eta_age=eta_age,Pope=as.integer(Pope),maxit=as.integer(maxit),plus_group=as.integer(plus.group),p_pope=p.pope)
+                  Ab_type_age=Ab_type_age,Ab_type_max_age=Ab_type_max_age,w=index.w,af=af,CATCH=t(as.matrix(dat$caa)),WEI=t(as.matrix(dat$waa)),MAT=t(MAA),M=t(as.matrix(dat$M)),CPUE=t(index2),MISS=t(ifelse(index2==0,1,0)),Last_Catch_Zero=ifelse(isTRUE(last.catch.zero),1,0),sigma_constraint=sigma_constraint,eta=eta,eta_age=eta_age,Pope=as.integer(Pope),maxit=as.integer(maxit),plus_group=as.integer(plus.group),p_pope=p.pope,min_caa=min.caa)
 
     parameters <- list(
       log_F=log(p.init)

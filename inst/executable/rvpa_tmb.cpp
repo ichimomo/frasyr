@@ -3,6 +3,70 @@
 #include <TMB.hpp>
 #include <iostream>
 
+// https://github.com/ichimomo/frasyr/blob/a38f8bae1aa7f8f84b2c4e1c70ae7d656b7cb4ff/R/rvpa.r#L96-L114
+// より移植（石岡・岸田の方法）
+template<class Type>
+Type ik_est(
+    Type catch_n,
+    Type next_n,
+    Type mortality,
+    int maxit)
+{
+  Type f = Type(1.0);
+
+  for (int it = 0; it < maxit; ++it) {
+    f = log(
+      Type(1.0)
+    + catch_n / next_n * exp(-mortality)
+    * (f + mortality) * (Type(1.0) - exp(-f))
+    / (f * (Type(1.0) - exp(-f - mortality)))
+    );
+  }
+
+  return f;
+}
+
+// https://github.com/ichimomo/frasyr/blob/a38f8bae1aa7f8f84b2c4e1c70ae7d656b7cb4ff/R/rvpa.r#L116-L134
+// より移植（平松の方法）
+template<class Type>
+Type hira_est(
+    Type catch_prev,     // 当年の最高齢−1の漁獲尾数
+    Type catch_plus,     // 当年の最高齢の漁獲尾数
+    Type next_n,         // 翌年の最高齢の資源尾数
+    Type m_prev,         // 当年の最高齢−1のM
+    Type m_plus,         // 当年の最高齢のM
+    Type alpha,
+    int maxit)
+{
+  Type f = Type(1.0);
+
+  for (int it = 0; it < maxit; ++it) {
+    Type factor =
+      (Type(1.0) - exp(-f)) * exp(-m_prev) / (next_n * f);
+
+    Type plus_term =
+      catch_plus * (alpha * f + m_plus)
+      / (alpha * (Type(1.0) - exp(-alpha * f - m_plus)))
+      * exp((Type(1.0) - alpha) * f);
+
+    Type prev_term =
+      catch_prev * (f + m_prev)
+        / (Type(1.0) - exp(-f - m_prev));
+
+    f = log(Type(1.0) + factor * (plus_term + prev_term));
+  }
+
+  return f;
+}
+
+template<class Type>
+Type lower_bound_catch(Type catch_n, Type min_caa)
+{
+  return CppAD::CondExpGt(
+    catch_n, min_caa, catch_n, min_caa
+  );
+}
+
 /* Parameter transform */
 template<class Type>
 Type objective_function<Type>::operator() ()
@@ -33,7 +97,8 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(Pope); //0: Baranov. 1: Pope
   DATA_INTEGER(maxit); // maximum iteration number for Baranov
   DATA_INTEGER(plus_group); //0: no plus group, 1: with plus group
-  DATA_SCALAR(p_pope); // timing of catch within the (fishing )year
+  DATA_SCALAR(p_pope); // timing of catch within the (fishing) year
+  DATA_SCALAR(min_caa); // replace this value by zero caa
 
   // Parameter Section //
   PARAMETER_VECTOR(log_F);
@@ -86,41 +151,75 @@ Type objective_function<Type>::operator() ()
 
   for (int i=0;i<A;i++){
       if (i < A-1){F(Y-1-Last_Catch_Zero,i) = exp(log_F(i));}else{F(Y-1-Last_Catch_Zero,i)=alpha*F(Y-1-Last_Catch_Zero,A-2);}
-      N(Y-1-Last_Catch_Zero,i)=CATCH(Y-1-Last_Catch_Zero,i)*exp(M(Y-1-Last_Catch_Zero,i)*p_pope)/(1-exp(-F(Y-1-Last_Catch_Zero,i)));
-  }
+      if (Pope==1) {
+        N(Y-1-Last_Catch_Zero,i)=CATCH(Y-1-Last_Catch_Zero,i)*exp(M(Y-1-Last_Catch_Zero,i)*p_pope)/(Type(1.0)-exp(-F(Y-1-Last_Catch_Zero,i)));
+      } else { // Baranov
+          N(Y-1-Last_Catch_Zero,i)=CATCH(Y-1-Last_Catch_Zero,i)*(1+M(Y-1-Last_Catch_Zero,i)/F(Y-1-Last_Catch_Zero,i))/(Type(1.0)-exp(-F(Y-1-Last_Catch_Zero,i)-M(Y-1-Last_Catch_Zero,i)));
+        }
+    }
 
   for (int t=(0+Last_Catch_Zero);t<Y-1;t++){
     for (int i=0;i<A-2;i++){
-      N(Y-2-t,i)=N(Y-1-t,i+1)*exp(M(Y-2-t,i))+CATCH(Y-2-t,i)*exp(M(Y-2-t,i)*p_pope);
-      F(Y-2-t,i)=-log(1-CATCH(Y-2-t,i)*exp(M(Y-2-t,i)*p_pope)/N(Y-2-t,i));
+      if (Pope==1) {
+        N(Y-2-t,i)=N(Y-1-t,i+1)*exp(M(Y-2-t,i))+CATCH(Y-2-t,i)*exp(M(Y-2-t,i)*p_pope);
+        F(Y-2-t,i)=-log(1-CATCH(Y-2-t,i)*exp(M(Y-2-t,i)*p_pope)/N(Y-2-t,i));
+      } else {
+        F(Y-2-t,i) = ik_est(
+          lower_bound_catch(CATCH(Y-2-t,i),min_caa),
+          N(Y-1-t,i+1), M(Y-2-t,i), maxit);
+        N(Y-2-t,i)=CATCH(Y-2-t,i)*(Type(1.0)+M(Y-2-t,i)/F(Y-2-t,i))/(Type(1.0)-exp(-F(Y-2-t,i)-M(Y-2-t,i)));
+      }
     }
 
     Type c_prev = CATCH(Y-2-t,A-2);
     Type c_plus = CATCH(Y-2-t,A-1);
     Type denom = alpha*c_prev + c_plus;
 
-    if(plus_group==1) {
-      N(Y-2-t,A-2) =
-        c_prev*exp(M(Y-2-t,A-2)*p_pope)
-      + N(Y-1-t,A-1)*exp(M(Y-2-t,A-2))
-      *alpha*c_prev/denom;
+    if (Pope==1) {
+      if (plus_group==1) {
+        N(Y-2-t,A-2) =
+          c_prev*exp(M(Y-2-t,A-2)*p_pope)
+        + N(Y-1-t,A-1)*exp(M(Y-2-t,A-2))
+        *alpha*c_prev/denom;
 
-      N(Y-2-t,A-1) =
-      c_plus*exp(M(Y-2-t,A-1)*p_pope)
-        + N(Y-1-t,A-1)*exp(M(Y-2-t,A-1))
-        *c_plus/denom;
-    } else {
-      N(Y-2-t,A-2) =
-      c_prev*exp(M(Y-2-t,A-2)*p_pope)
+        N(Y-2-t,A-1) =
+        c_plus*exp(M(Y-2-t,A-1)*p_pope)
+          + N(Y-1-t,A-1)*exp(M(Y-2-t,A-1))
+          *c_plus/denom;
+      } else {
+        N(Y-2-t,A-2) =
+          c_prev*exp(M(Y-2-t,A-2)*p_pope)
         + N(Y-1-t,A-1)*exp(M(Y-2-t,A-2));
 
-      N(Y-2-t,A-1) =
-      N(Y-2-t,A-2)*c_plus/c_prev
-      *exp((M(Y-2-t,A-1)-M(Y-2-t,A-2))*p_pope);
+        N(Y-2-t,A-1) =
+        N(Y-2-t,A-2)*c_plus/c_prev
+        *exp((M(Y-2-t,A-1)-M(Y-2-t,A-2))*p_pope);
+      }
+      F(Y-2-t,A-2) = -log(1-CATCH(Y-2-t,A-2)*exp(M(Y-2-t,A-2)*p_pope)/N(Y-2-t,A-2));
+      F(Y-2-t,A-1) = alpha*F(Y-2-t,A-2);
+    } else {
+      if (plus_group==1) {
+        F(Y-2-t,A-2) = hira_est(
+          lower_bound_catch(CATCH(Y-2-t,A-2),min_caa),
+          lower_bound_catch(CATCH(Y-2-t,A-1),min_caa),
+          N(Y-1-t,A-1),         // 翌年の最高齢の資源尾数
+          M(Y-2-t,A-2),         // 当年の最高齢−1のM
+          M(Y-2-t,A-1),         // 当年の最高齢のM
+          alpha,
+          maxit);
+      } else {
+        F(Y-2-t,A-2) = ik_est(lower_bound_catch(CATCH(Y-2-t,A-2),min_caa),
+          N(Y-1-t,A-1), M(Y-2-t,A-2), maxit);
+      }
+      F(Y-2-t,A-1) = alpha*F(Y-2-t,A-2);
+      // 最高齢−1と最高齢のNをBaranovの式で計算
+      for (int i = A-2; i < A; ++i) {
+        N(Y-2-t,i) =
+          CATCH(Y-2-t,i)
+        * (Type(1.0) + M(Y-2-t,i)/F(Y-2-t,i))
+        / (Type(1.0) - exp(-F(Y-2-t,i)-M(Y-2-t,i)));
+      }
     }
-
-    F(Y-2-t,A-2) = -log(1-CATCH(Y-2-t,A-2)*exp(M(Y-2-t,A-2)*p_pope)/N(Y-2-t,A-2));
-    F(Y-2-t,A-1) = alpha*F(Y-2-t,A-2);
   }
 
   if (Last_Catch_Zero==1){
@@ -190,7 +289,7 @@ Type objective_function<Type>::operator() ()
       Sel1(y)=max(FY);
     }else{
       if (sel_def==1) { //mean
-        Sel1(y)=F.col(y).sum();
+        Sel1(y)=F.row(y).sum();
         Sel1(y)/=A;
       }else{//maxage
         Sel1(y)=F(y,A-1);
