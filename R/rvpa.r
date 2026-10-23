@@ -616,7 +616,7 @@ vpa <- function(
   scale = 1000,  # 重量のscaling
   hessian = TRUE,
   alpha = 1,  # 最高齢と最高齢-1のFの比 F_a = alpha*F_{a-1}
-  maxit = 5,  # 石岡・岸田/平松の方法の最大繰り返し数
+  maxit = 10,  # 石岡・岸田/平松の方法の最大繰り返し数
   d = 0.0001,  # 石岡・岸田/平松の方法の収束判定基準
   min.caa = 0.001,   # caaに0があるとき，0をmin.caaで置き換える
   plot = FALSE,   # tuningに使った資源量指数に対するフィットのプロット
@@ -1446,10 +1446,9 @@ if (isTRUE(madara)){
 #    summary.p.est$code <- 0
 #    log.p.hat <- log(summary.p.est$estimate)
 #  } else {
-  if (isTRUE(TMB)){
-
+  if (isTRUE(TMB)) {
   if(isTRUE(TMB) & isTRUE(sel.update)){print("TMB is not supported for sel.update method");stop()}
-  if(isTRUE(TMB) & alpha!=1){print("TMB is not supported for alpha!=1");stop()}
+  # if(isTRUE(TMB) & alpha!=1){print("TMB is not supported for alpha!=1");stop()}
   if(isTRUE(TMB) & isFALSE(Pope)){print("TMB is not supported for baranov equation option. only for Pope");stop()}
   if(isTRUE(TMB) & penalty=="f"){print("TMB is not supported for penalty=f. only for penalty=p");stop()}
   if(isTRUE(TMB) & penalty=="s"){print("TMB is not supported for penalty=s. only for penalty=p");stop()}
@@ -1487,7 +1486,7 @@ if (isTRUE(madara)){
     eta_age[eta.age+1] <- 0
     data2 <- list(Est=ifelse(est.method=="ls",0,1),b_fix=as.numeric(b_fix),
                   alpha=alpha,lambda=lambda,beta=beta,Ab_type=Ab_type,sel_def=sel_def,
-                  Ab_type_age=Ab_type_age,Ab_type_max_age=Ab_type_max_age,w=index.w,af=af,CATCH=t(as.matrix(dat$caa)),WEI=t(as.matrix(dat$waa)),MAT=t(MAA),M=t(as.matrix(dat$M)),CPUE=t(index2),MISS=t(ifelse(index2==0,1,0)),Last_Catch_Zero=ifelse(isTRUE(last.catch.zero),1,0),sigma_constraint=sigma_constraint,eta=eta,eta_age=eta_age)
+                  Ab_type_age=Ab_type_age,Ab_type_max_age=Ab_type_max_age,w=index.w,af=af,CATCH=t(as.matrix(dat$caa)),WEI=t(as.matrix(dat$waa)),MAT=t(MAA),M=t(as.matrix(dat$M)),CPUE=t(index2),MISS=t(ifelse(index2==0,1,0)),Last_Catch_Zero=ifelse(isTRUE(last.catch.zero),1,0),sigma_constraint=sigma_constraint,eta=eta,eta_age=eta_age,Pope=as.integer(Pope),maxit=as.integer(maxit),plus_group=as.integer(plus.group),p_pope=p.pope)
 
     parameters <- list(
       log_F=log(p.init)
@@ -1568,7 +1567,7 @@ Ft <- mean(faa[,ny],na.rm=TRUE)
   Fc.max <- max(Fc.at.age,na.rm=TRUE)
 
   res <- list(input=arglist, term.f=term.f, np=np, minimum=out$minimum, minimum.c=out$minimum.c, logLik=logLik, gradient=gradient, code=code, q=q, b=b, sigma=sigma, convergence=convergence, message=message, hessian=hessian, Ft=Ft, Fc.at.age=Fc.at.age, Fc.mean=Fc.mean, Fc.max=Fc.max, last.year=last.year, Pope=Pope, ssb.coef=ssb.coef, pred.index=pred.index, wcaa=caa*waa.catch,naa=naa, faa=faa, baa=baa, ssb=ssb, saa=saa, caa=caa) # 2026/10/3  返り値にcaaを追加（res$直下のcaaは予測値という位置づけ）
-    
+
   res2 <- list(input=arglist, use.index=use.index, abund=abund, min.age=min.age, max.age=max.age, link=link, base=base, af=af, index.w=index.w, q=q, naa=naa, faa=faa, baa=baa, ssb=ssb, pred.index=pred.index, sigma=sigma, b=b) #use.indexを考慮し，実際にVPAのチューニングで与えた値
 
   # print(list(use.index=use.index, abund=abund, min.age=min.age, max.age=max.age, link=link, base=base, af=af, index.w=index.w))

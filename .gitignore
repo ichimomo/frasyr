@@ -58,3 +58,5 @@ tests/testthat/vpa.pdf
 rvpa_tmb.cpp
 rvpa_tmb.dll
 rvpa_tmb.o
+
+tools/tmb/

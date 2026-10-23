@@ -30,6 +30,10 @@ Type objective_function<Type>::operator() ()
   DATA_IVECTOR(sigma_constraint);
   DATA_SCALAR(eta);
   DATA_IVECTOR(eta_age);
+  DATA_INTEGER(Pope); //0: Baranov. 1: Pope
+  DATA_INTEGER(maxit); // maximum iteration number for Baranov
+  DATA_INTEGER(plus_group); //0: no plus group, 1: with plus group
+  DATA_SCALAR(p_pope); // timing of catch within the (fishing )year
 
   // Parameter Section //
   PARAMETER_VECTOR(log_F);
@@ -82,17 +86,40 @@ Type objective_function<Type>::operator() ()
 
   for (int i=0;i<A;i++){
       if (i < A-1){F(Y-1-Last_Catch_Zero,i) = exp(log_F(i));}else{F(Y-1-Last_Catch_Zero,i)=alpha*F(Y-1-Last_Catch_Zero,A-2);}
-      N(Y-1-Last_Catch_Zero,i)=CATCH(Y-1-Last_Catch_Zero,i)*exp(M(Y-1-Last_Catch_Zero,i)/2)/(1-exp(-F(Y-1-Last_Catch_Zero,i)));
+      N(Y-1-Last_Catch_Zero,i)=CATCH(Y-1-Last_Catch_Zero,i)*exp(M(Y-1-Last_Catch_Zero,i)*p_pope)/(1-exp(-F(Y-1-Last_Catch_Zero,i)));
   }
 
   for (int t=(0+Last_Catch_Zero);t<Y-1;t++){
     for (int i=0;i<A-2;i++){
-      N(Y-2-t,i)=N(Y-1-t,i+1)*exp(M(Y-2-t,i))+CATCH(Y-2-t,i)*exp(M(Y-2-t,i)/2);
-      F(Y-2-t,i)=-log(1-CATCH(Y-2-t,i)*exp(M(Y-2-t,i)/2)/N(Y-2-t,i));
+      N(Y-2-t,i)=N(Y-1-t,i+1)*exp(M(Y-2-t,i))+CATCH(Y-2-t,i)*exp(M(Y-2-t,i)*p_pope);
+      F(Y-2-t,i)=-log(1-CATCH(Y-2-t,i)*exp(M(Y-2-t,i)*p_pope)/N(Y-2-t,i));
     }
-    N(Y-2-t,A-2) = CATCH(Y-2-t,A-2)*exp(M(Y-2-t,A-2)/2)+N(Y-1-t,A-1)*exp(M(Y-2-t,A-2))*CATCH(Y-2-t,A-2)/(CATCH(Y-2-t,A-2)+CATCH(Y-2-t,A-1));
-    N(Y-2-t,A-1) = CATCH(Y-2-t,A-1)*exp(M(Y-2-t,A-1)/2)+N(Y-1-t,A-1)*exp(M(Y-2-t,A-1))*CATCH(Y-2-t,A-1)/(CATCH(Y-2-t,A-2)+CATCH(Y-2-t,A-1));
-    F(Y-2-t,A-2) = -log(1-CATCH(Y-2-t,A-2)*exp(M(Y-2-t,A-2)/2)/N(Y-2-t,A-2));
+
+    Type c_prev = CATCH(Y-2-t,A-2);
+    Type c_plus = CATCH(Y-2-t,A-1);
+    Type denom = alpha*c_prev + c_plus;
+
+    if(plus_group==1) {
+      N(Y-2-t,A-2) =
+        c_prev*exp(M(Y-2-t,A-2)*p_pope)
+      + N(Y-1-t,A-1)*exp(M(Y-2-t,A-2))
+      *alpha*c_prev/denom;
+
+      N(Y-2-t,A-1) =
+      c_plus*exp(M(Y-2-t,A-1)*p_pope)
+        + N(Y-1-t,A-1)*exp(M(Y-2-t,A-1))
+        *c_plus/denom;
+    } else {
+      N(Y-2-t,A-2) =
+      c_prev*exp(M(Y-2-t,A-2)*p_pope)
+        + N(Y-1-t,A-1)*exp(M(Y-2-t,A-2));
+
+      N(Y-2-t,A-1) =
+      N(Y-2-t,A-2)*c_plus/c_prev
+      *exp((M(Y-2-t,A-1)-M(Y-2-t,A-2))*p_pope);
+    }
+
+    F(Y-2-t,A-2) = -log(1-CATCH(Y-2-t,A-2)*exp(M(Y-2-t,A-2)*p_pope)/N(Y-2-t,A-2));
     F(Y-2-t,A-1) = alpha*F(Y-2-t,A-2);
   }
 
@@ -101,7 +128,16 @@ Type objective_function<Type>::operator() ()
     for (int i=0;i<A-2;i++){
       N(Y-1,i+1)=N(Y-2,i)*exp(-F(Y-2,i)-M(Y-2,i));
     }
-    N(Y-1,A-1)=N(Y-2,A-2)*exp(-F(Y-2,A-2)-M(Y-2,A-2))+N(Y-2,A-1)*exp(-F(Y-2,A-1)-M(Y-2,A-1));
+
+    N(Y-1,A-1) =
+      N(Y-2,A-2)*exp(-F(Y-2,A-2)-M(Y-2,A-2));
+
+    if (plus_group == 1) {
+      N(Y-1,A-1) +=
+        N(Y-2,A-1)*exp(-F(Y-2,A-1)-M(Y-2,A-1));
+    }
+
+    // N(Y-1,A-1)=N(Y-2,A-2)*exp(-F(Y-2,A-2)-M(Y-2,A-2))+N(Y-2,A-1)*exp(-F(Y-2,A-1)-M(Y-2,A-1));
   }
 
   B = N.array()*WEI.array();
